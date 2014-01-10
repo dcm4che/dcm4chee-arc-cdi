@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Archiver-Version: Plexus Archiver
+Created-By: Apache Maven
+Built-By: gunter
+Build-Jdk: 1.7.0_40
+Dependencies: org.dcm4che.conf.ldap-hl7, org.dcm4che.conf.prefs-hl7, o
+ rg.dcm4che.net-hl7, org.dcm4che.soundex
+
