@@ -79,6 +79,9 @@ public interface StoreService {
     Instance findInstance(EntityManager em, StoreContext storeContext)
             throws DicomServiceException;
 
+    boolean replaceInstance(StoreService storeService, EntityManager em,
+            StoreContext storeContext, Instance instance);
+
     Series findSeries(EntityManager em, StoreContext storeContext)
             throws DicomServiceException;
 
@@ -101,11 +104,7 @@ public interface StoreService {
             Series series) throws DicomServiceException;
 
     void createFileRef(EntityManager em, StoreContext storeContext,
-            Instance instance) throws DicomServiceException;
-
-    StoreDuplicate storeDuplicate(StoreContext storeContext, Instance instance);
-
-    void coerceAttributes(StoreContext storeContext, Attributes newAttrs);
+            Instance instance);
 
     void updatePatient(StoreContext storeContext, Patient patient);
 
@@ -113,6 +112,8 @@ public interface StoreService {
 
     void updateSeries(StoreContext storeContext, Series series);
 
-    void updateInstance(StoreContext storeContext, Instance instance);
+    void updateInstance(StoreContext storeContext, Instance inst);
+
+    void coerceAttributes(StoreContext storeContext, Attributes attributes);
 
 }

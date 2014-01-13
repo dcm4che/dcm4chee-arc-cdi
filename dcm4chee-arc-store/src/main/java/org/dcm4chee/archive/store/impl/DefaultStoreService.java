@@ -46,17 +46,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.EnumSet;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4che.data.IDWithIssuer;
 import org.dcm4che.data.Sequence;
 import org.dcm4che.data.Tag;
 import org.dcm4che.data.UID;
@@ -87,7 +84,6 @@ import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.request.RequestService;
 import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.StoreDuplicate;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSource;
 import org.slf4j.Logger;
@@ -240,56 +236,6 @@ public class DefaultStoreService implements StoreService {
 
 
     @Override
-    public void updatePatient(StoreContext storeContext, Patient patient) {
-        patientService.updatePatientOnStorage(patient,
-                storeContext.getAttributes(), storeContext.getStoreParam());
-    }
-
-    @Override
-    public void updateStudy(StoreContext storeContext, Study study) {
-        Attributes data = storeContext.getAttributes();
-        StoreParam storeParam = storeContext.getStoreParam();
-        study.addModalityInStudy(data.getString(Tag.Modality, null));
-        study.addSOPClassInStudy(data.getString(Tag.SOPClassUID, null));
-//        study.retainRetrieveAETs(storeParam.getRetrieveAETs());
-//        study.retainExternalRetrieveAET(storeParam.getExternalRetrieveAET());
-//        study.floorAvailability(availability);
-        study.resetNumberOfInstances();
-        AttributeFilter studyFilter = storeParam.getAttributeFilter(Entity.Study);
-        Attributes studyAttrs = study.getAttributes();
-        if (studyAttrs.mergeSelected(data, studyFilter.getSelection())) {
-            study.setAttributes(studyAttrs, studyFilter, storeParam.getFuzzyStr());
-        }
-    }
-
-    @Override
-    public void updateSeries(StoreContext storeContext, Series series) {
-        Attributes data = storeContext.getAttributes();
-        StoreParam storeParam = storeContext.getStoreParam();
-//        series.retainRetrieveAETs(storeParam.getRetrieveAETs());
-//        series.retainExternalRetrieveAET(storeParam.getExternalRetrieveAET());
-//        series.floorAvailability(availability);
-        series.resetNumberOfInstances();
-        Attributes seriesAttrs = series.getAttributes();
-        AttributeFilter seriesFilter = storeParam.getAttributeFilter(Entity.Series);
-        if (seriesAttrs.mergeSelected(data, seriesFilter.getSelection())) {
-            series.setAttributes(seriesAttrs, seriesFilter, storeParam.getFuzzyStr());
-        }
-    }
-
-    @Override
-    public void updateInstance(StoreContext storeContext, Instance inst) {
-        Attributes data = storeContext.getAttributes();
-        Attributes instAttrs = inst.getAttributes();
-        StoreParam storeParam = storeContext.getStoreParam();
-        final AttributeFilter filter = storeParam.getAttributeFilter(Entity.Instance);
-        Attributes updated = new Attributes();
-        if (instAttrs.updateSelected(data, updated, filter.getSelection())) {
-            inst.setAttributes(data, filter, storeParam.getFuzzyStr());
-        }
-    }
-
-    @Override
     public Patient createPatient(EntityManager em, StoreContext storeContext) {
         return patientService.createPatientOnStorage(
                 storeContext.getAttributes(), storeContext.getStoreParam());
@@ -387,21 +333,6 @@ public class DefaultStoreService implements StoreService {
         em.persist(fileRef);
     }
 
-    @Override
-    public StoreDuplicate storeDuplicate(StoreContext storeContext,
-            Instance instance) {
-        String externalRetrieveAET = instance.getExternalRetrieveAET();
-        String sendingAETitle = storeContext.getSendingAETitle();
-        if (externalRetrieveAET == null
-                || !externalRetrieveAET.equals(sendingAETitle))
-            return StoreDuplicate.REPLACE;
-
-        Collection<FileRef> fileRefs = instance.getFileRefs();
-        return fileRefs.isEmpty()
-                ? StoreDuplicate.STORE
-                : StoreDuplicate.IGNORE;
-    }
-
     private Collection<ScheduledProcedureStep> getScheduledProcedureSteps(
             Sequence requestAttrsSeq, Attributes data, Patient patient,
             StoreParam storeParam) {
@@ -497,11 +428,88 @@ public class DefaultStoreService implements StoreService {
         return issuerService.findOrCreate(new Issuer(item));
     }
 
+
+    @Override
+    public boolean replaceInstance(StoreService storeService, EntityManager em,
+            StoreContext storeContext,
+            Instance inst) {
+        String externalRetrieveAET = inst.getExternalRetrieveAET();
+        String sendingAETitle = storeContext.getSendingAETitle();
+        if (externalRetrieveAET != null
+                && externalRetrieveAET.equals(sendingAETitle)) {
+            Series series = inst.getSeries();
+            Study study = series.getStudy();
+            Patient patient = study.getPatient();
+            Collection<FileRef> fileRefs = inst.getFileRefs();
+            if (fileRefs.isEmpty()) {
+                storeService.updatePatient(storeContext, patient);
+                storeService.updateStudy(storeContext, study);
+                storeService.updateSeries(storeContext, series);
+                storeService.updateInstance(storeContext, inst);
+                storeService.createFileRef(em, storeContext, inst);
+            }
+            storeService.coerceAttributes(storeContext, patient.getAttributes());
+            storeService.coerceAttributes(storeContext, study.getAttributes());
+            storeService.coerceAttributes(storeContext, series.getAttributes());
+            storeService.coerceAttributes(storeContext, inst.getAttributes());
+            return false;
+        }
+
+        inst.setReplaced(true);
+        return true;
+    }
+
+
     @Override
     public void coerceAttributes(StoreContext storeContext,
-            Attributes newAttrs) {
-        storeContext.getAttributes().update(newAttrs,
-                storeContext.getCoercedAttributes());
+            Attributes entityAttrs) {
+        Attributes storedAttrs = storeContext.getAttributes();
+        Attributes coercedAtts = storeContext.getCoercedAttributes();
+        storedAttrs.update(entityAttrs, coercedAtts);
+    }
+
+    @Override
+    public void updatePatient(StoreContext storeContext, Patient patient) {
+        patientService.updatePatientOnStorage(patient,
+                storeContext.getAttributes(), storeContext.getStoreParam());
+    }
+
+    @Override
+    public void updateStudy(StoreContext storeContext, Study study) {
+        Attributes data = storeContext.getAttributes();
+        StoreParam storeParam = storeContext.getStoreParam();
+        study.addModalityInStudy(data.getString(Tag.Modality, null));
+        study.addSOPClassInStudy(data.getString(Tag.SOPClassUID, null));
+        study.resetNumberOfInstances();
+        AttributeFilter studyFilter = storeParam.getAttributeFilter(Entity.Study);
+        Attributes studyAttrs = study.getAttributes();
+        if (studyAttrs.mergeSelected(data, studyFilter.getSelection())) {
+            study.setAttributes(studyAttrs, studyFilter, storeParam.getFuzzyStr());
+        }
+    }
+
+    @Override
+    public void updateSeries(StoreContext storeContext, Series series) {
+        Attributes data = storeContext.getAttributes();
+        StoreParam storeParam = storeContext.getStoreParam();
+        series.resetNumberOfInstances();
+        Attributes seriesAttrs = series.getAttributes();
+        AttributeFilter seriesFilter = storeParam.getAttributeFilter(Entity.Series);
+        if (seriesAttrs.mergeSelected(data, seriesFilter.getSelection())) {
+            series.setAttributes(seriesAttrs, seriesFilter, storeParam.getFuzzyStr());
+        }
+    }
+
+    @Override
+    public void updateInstance(StoreContext storeContext, Instance inst) {
+        Attributes data = storeContext.getAttributes();
+        StoreParam storeParam = storeContext.getStoreParam();
+        Attributes instAttrs = inst.getAttributes();
+        AttributeFilter instFilter = storeParam.getAttributeFilter(Entity.Instance);
+        Attributes updated = new Attributes();
+        if (instAttrs.updateSelected(data, updated, instFilter.getSelection())) {
+            inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
+        }
     }
 
 }

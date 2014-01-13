@@ -67,24 +67,8 @@ public class StoreServiceEJB {
     public void updateDB(StoreContext storeContext)
             throws DicomServiceException {
         Instance instance = storeService.findInstance(em, storeContext);
-        if (instance != null) {
-            switch (storeService.storeDuplicate(storeContext, instance)) {
-            case IGNORE:
-                Series series = instance.getSeries();
-                Study study = series.getStudy();
-                Patient patient = study.getPatient();
-                storeService.coerceAttributes(storeContext, patient.getAttributes());
-                storeService.coerceAttributes(storeContext, study.getAttributes());
-                storeService.coerceAttributes(storeContext, series.getAttributes());
-                storeService.coerceAttributes(storeContext, instance.getAttributes());
-                return;
-            case REPLACE:
-                instance.setReplaced(true);
-                instance = null;
-            case STORE:
-            }
-        }
-        if (instance == null) {
+        if (instance == null
+                || storeService.replaceInstance(storeService, em, storeContext, instance)) {
             Series series = storeService.findSeries(em, storeContext);
             if (series == null) {
                 Study study = storeService.findStudy(em, storeContext);
@@ -116,20 +100,8 @@ public class StoreServiceEJB {
                 storeService.coerceAttributes(storeContext, series.getAttributes());
             }
             instance = storeService.createInstance(em, storeContext, series);
-        } else {
-            Series series = instance.getSeries();
-            Study study = series.getStudy();
-            Patient patient = study.getPatient();
-            storeService.updatePatient(storeContext, patient);
-            storeService.updateStudy(storeContext, study);
-            storeService.updateSeries(storeContext, series);
-            storeService.updateInstance(storeContext, instance);
-            storeService.coerceAttributes(storeContext, patient.getAttributes());
-            storeService.coerceAttributes(storeContext, study.getAttributes());
-            storeService.coerceAttributes(storeContext, series.getAttributes());
-            storeService.coerceAttributes(storeContext, instance.getAttributes());
+            storeService.createFileRef(em, storeContext, instance);
         }
-        storeService.createFileRef(em, storeContext, instance);
      }
 
 }
