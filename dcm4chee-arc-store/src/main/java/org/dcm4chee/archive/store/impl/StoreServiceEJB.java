@@ -70,8 +70,14 @@ public class StoreServiceEJB {
         if (instance != null) {
             switch (storeService.storeDuplicate(storeContext, instance)) {
             case IGNORE:
-                   storeService.coerceAttributes(storeContext, instance);
-                   return;
+                Series series = instance.getSeries();
+                Study study = series.getStudy();
+                Patient patient = study.getPatient();
+                storeService.coerceAttributes(storeContext, patient.getAttributes());
+                storeService.coerceAttributes(storeContext, study.getAttributes());
+                storeService.coerceAttributes(storeContext, series.getAttributes());
+                storeService.coerceAttributes(storeContext, instance.getAttributes());
+                return;
             case REPLACE:
                 instance.setReplaced(true);
                 instance = null;
@@ -87,19 +93,41 @@ public class StoreServiceEJB {
                     if (patient == null) {
                         patient = storeService.createPatient(em, storeContext);
                     } else {
-                        storeService.coerceAttributes(storeContext, patient);
+                        storeService.updatePatient(storeContext, patient);
+                        storeService.coerceAttributes(storeContext, patient.getAttributes());
                     }
                     study = storeService.createStudy(em, storeContext, patient);
                 } else {
-                    storeService.coerceAttributes(storeContext, study);
+                    Patient patient = study.getPatient();
+                    storeService.updatePatient(storeContext, patient);
+                    storeService.updateStudy(storeContext, study);
+                    storeService.coerceAttributes(storeContext, patient.getAttributes());
+                    storeService.coerceAttributes(storeContext, study.getAttributes());
                 }
                 series = storeService.createSeries(em, storeContext, study);
             } else {
-                storeService.coerceAttributes(storeContext, series);
+                Study study = series.getStudy();
+                Patient patient = study.getPatient();
+                storeService.updatePatient(storeContext, patient);
+                storeService.updateStudy(storeContext, study);
+                storeService.updateSeries(storeContext, series);
+                storeService.coerceAttributes(storeContext, patient.getAttributes());
+                storeService.coerceAttributes(storeContext, study.getAttributes());
+                storeService.coerceAttributes(storeContext, series.getAttributes());
             }
             instance = storeService.createInstance(em, storeContext, series);
         } else {
-            storeService.coerceAttributes(storeContext, instance);
+            Series series = instance.getSeries();
+            Study study = series.getStudy();
+            Patient patient = study.getPatient();
+            storeService.updatePatient(storeContext, patient);
+            storeService.updateStudy(storeContext, study);
+            storeService.updateSeries(storeContext, series);
+            storeService.updateInstance(storeContext, instance);
+            storeService.coerceAttributes(storeContext, patient.getAttributes());
+            storeService.coerceAttributes(storeContext, study.getAttributes());
+            storeService.coerceAttributes(storeContext, series.getAttributes());
+            storeService.coerceAttributes(storeContext, instance.getAttributes());
         }
         storeService.createFileRef(em, storeContext, instance);
      }

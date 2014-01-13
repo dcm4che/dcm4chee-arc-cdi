@@ -42,6 +42,7 @@ import java.nio.file.Path;
 
 import javax.persistence.EntityManager;
 
+import org.dcm4che.data.Attributes;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.FileSystem;
@@ -104,12 +105,14 @@ public interface StoreService {
 
     StoreDuplicate storeDuplicate(StoreContext storeContext, Instance instance);
 
-    void coerceAttributes(StoreContext storeContext, Patient patient);
+    void coerceAttributes(StoreContext storeContext, Attributes newAttrs);
 
-    void coerceAttributes(StoreContext storeContext, Study study);
+    void updatePatient(StoreContext storeContext, Patient patient);
 
-    void coerceAttributes(StoreContext storeContext, Series series);
+    void updateStudy(StoreContext storeContext, Study study);
 
-    void coerceAttributes(StoreContext storeContext, Instance instance);
+    void updateSeries(StoreContext storeContext, Series series);
+
+    void updateInstance(StoreContext storeContext, Instance instance);
 
 }

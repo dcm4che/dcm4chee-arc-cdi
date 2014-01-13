@@ -52,4 +52,7 @@ public interface PatientService {
 
     Patient createPatientOnStorage(Attributes attrs, StoreParam storeParam);
 
+    void updatePatientOnStorage(Patient patient, Attributes attrs,
+            StoreParam storeParam);
+
 }

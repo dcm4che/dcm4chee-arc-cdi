@@ -48,6 +48,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
 import org.dcm4che.data.Attributes;
+import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.IDWithIssuer;
@@ -126,5 +127,21 @@ public class PatientServiceEJB implements PatientService {
                 storeParam.getFuzzyStr());
         em.persist(patient);
         return patient;
+    }
+
+    @Override
+    public void updatePatientOnStorage(Patient patient, Attributes attrs,
+            StoreParam storeParam) {
+        Attributes patientAttrs = patient.getAttributes();
+        AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
+        if (patientAttrs.mergeSelected(attrs, filter.getSelection())) {
+            if (patient.getIssuerOfPatientID() == null) {
+                IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(attrs);
+                if (pid != null && pid.getIssuer() != null)
+                    patient.setIssuerOfPatientID(
+                            issuerService.findOrCreate(pid.getIssuer()));
+            }
+            patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
+        }
     }
 }

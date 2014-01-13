@@ -238,6 +238,57 @@ public class DefaultStoreService implements StoreService {
         return patientService.findPatientOnStorage(storeContext.getAttributes());
     }
 
+
+    @Override
+    public void updatePatient(StoreContext storeContext, Patient patient) {
+        patientService.updatePatientOnStorage(patient,
+                storeContext.getAttributes(), storeContext.getStoreParam());
+    }
+
+    @Override
+    public void updateStudy(StoreContext storeContext, Study study) {
+        Attributes data = storeContext.getAttributes();
+        StoreParam storeParam = storeContext.getStoreParam();
+        study.addModalityInStudy(data.getString(Tag.Modality, null));
+        study.addSOPClassInStudy(data.getString(Tag.SOPClassUID, null));
+//        study.retainRetrieveAETs(storeParam.getRetrieveAETs());
+//        study.retainExternalRetrieveAET(storeParam.getExternalRetrieveAET());
+//        study.floorAvailability(availability);
+        study.resetNumberOfInstances();
+        AttributeFilter studyFilter = storeParam.getAttributeFilter(Entity.Study);
+        Attributes studyAttrs = study.getAttributes();
+        if (studyAttrs.mergeSelected(data, studyFilter.getSelection())) {
+            study.setAttributes(studyAttrs, studyFilter, storeParam.getFuzzyStr());
+        }
+    }
+
+    @Override
+    public void updateSeries(StoreContext storeContext, Series series) {
+        Attributes data = storeContext.getAttributes();
+        StoreParam storeParam = storeContext.getStoreParam();
+//        series.retainRetrieveAETs(storeParam.getRetrieveAETs());
+//        series.retainExternalRetrieveAET(storeParam.getExternalRetrieveAET());
+//        series.floorAvailability(availability);
+        series.resetNumberOfInstances();
+        Attributes seriesAttrs = series.getAttributes();
+        AttributeFilter seriesFilter = storeParam.getAttributeFilter(Entity.Series);
+        if (seriesAttrs.mergeSelected(data, seriesFilter.getSelection())) {
+            series.setAttributes(seriesAttrs, seriesFilter, storeParam.getFuzzyStr());
+        }
+    }
+
+    @Override
+    public void updateInstance(StoreContext storeContext, Instance inst) {
+        Attributes data = storeContext.getAttributes();
+        Attributes instAttrs = inst.getAttributes();
+        StoreParam storeParam = storeContext.getStoreParam();
+        final AttributeFilter filter = storeParam.getAttributeFilter(Entity.Instance);
+        Attributes updated = new Attributes();
+        if (instAttrs.updateSelected(data, updated, filter.getSelection())) {
+            inst.setAttributes(data, filter, storeParam.getFuzzyStr());
+        }
+    }
+
     @Override
     public Patient createPatient(EntityManager em, StoreContext storeContext) {
         return patientService.createPatientOnStorage(
@@ -351,33 +402,6 @@ public class DefaultStoreService implements StoreService {
                 : StoreDuplicate.IGNORE;
     }
 
-    @Override
-    public void coerceAttributes(StoreContext storeContext, Patient patient) {
-        storeContext.getAttributes().update(patient.getAttributes(),
-                storeContext.getCoercedAttributes());
-    }
-
-    @Override
-    public void coerceAttributes(StoreContext storeContext, Study study) {
-        coerceAttributes(storeContext, study.getPatient());
-        storeContext.getAttributes().update(study.getAttributes(),
-                storeContext.getCoercedAttributes());
-    }
-
-    @Override
-    public void coerceAttributes(StoreContext storeContext, Series series) {
-        coerceAttributes(storeContext, series.getStudy());
-        storeContext.getAttributes().update(series.getAttributes(),
-                storeContext.getCoercedAttributes());
-    }
-
-    @Override
-    public void coerceAttributes(StoreContext storeContext, Instance instance) {
-        coerceAttributes(storeContext, instance.getSeries());
-        storeContext.getAttributes().update(instance.getAttributes(),
-                storeContext.getCoercedAttributes());
-    }
-
     private Collection<ScheduledProcedureStep> getScheduledProcedureSteps(
             Sequence requestAttrsSeq, Attributes data, Patient patient,
             StoreParam storeParam) {
@@ -471,6 +495,13 @@ public class DefaultStoreService implements StoreService {
             return null;
 
         return issuerService.findOrCreate(new Issuer(item));
+    }
+
+    @Override
+    public void coerceAttributes(StoreContext storeContext,
+            Attributes newAttrs) {
+        storeContext.getAttributes().update(newAttrs,
+                storeContext.getCoercedAttributes());
     }
 
 }
