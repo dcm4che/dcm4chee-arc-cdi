@@ -40,14 +40,12 @@ package org.dcm4chee.archive.store.impl;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.EnumSet;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Tag;
 import org.dcm4che.util.AttributesFormat;
 import org.dcm4che.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.FileRef;
