@@ -52,7 +52,6 @@ import org.dcm4che.data.UID;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Association;
 import org.dcm4che.net.Commands;
-import org.dcm4che.net.Device;
 import org.dcm4che.net.Dimse;
 import org.dcm4che.net.IncompatibleConnectionException;
 import org.dcm4che.net.Status;
