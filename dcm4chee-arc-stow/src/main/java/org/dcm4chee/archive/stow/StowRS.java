@@ -112,7 +112,6 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
     public static final String NOT_PARSEABLE_CUID = "1.2.40.0.13.1.15.10.99";
     public static final String NOT_PARSEABLE_IUID = "1.2.40.0.13.1.15.10.99.1";
 
-
     @Context
     private HttpServletRequest request;
 
@@ -372,15 +371,12 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
         String cuid = NOT_PARSEABLE_CUID;
         try {
             storeService.parseAttributes(storeContext);
-            Attributes attrs = storeContext.getAttributes();
-            iuid = attrs.getString(Tag.SOPInstanceUID);
-            cuid = attrs.getString(Tag.SOPClassUID);
-                checkStudyInstanceUID(attrs);
-            checkTransferCapability(cuid, storeContext.getTransferSyntax());
+            checkStudyInstanceUID(storeContext);
+            checkTransferCapability(storeContext);
             storeService.coerceAttributes(storeContext);
             storeService.moveFile(storeContext);
             storeService.updateDB(storeContext);
-            sopSequence.add(sopRef(attrs, storeContext.getCoercedAttributes()));
+            sopSequence.add(sopRef(storeContext));
         } catch (DicomServiceException e) {
             storageFailed(iuid, cuid, e.getStatus());
         }
@@ -413,21 +409,20 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
         storeDicomObject(path, digest());
     }
 
-    private Attributes sopRef(Attributes ds, Attributes modified) {
+    private Attributes sopRef(StoreContext ctx) {
         Attributes sopRef = new Attributes(5);
-        String cuid = ds.getString(Tag.SOPClassUID);
-        String iuid = ds.getString(Tag.SOPInstanceUID);
-        sopRef.setString(Tag.ReferencedSOPClassUID, VR.UI, cuid);
-        sopRef.setString(Tag.ReferencedSOPInstanceUID, VR.UI, iuid);
+        sopRef.setString(Tag.ReferencedSOPClassUID, VR.UI, ctx.getSOPClassUID());
+        sopRef.setString(Tag.ReferencedSOPInstanceUID, VR.UI, ctx.getSOPInstanceUID());
         sopRef.setString(Tag.RetrieveURL, VR.UT, wadoURL
-                + ds.getString(Tag.StudyInstanceUID) + "/series/"
-                + ds.getString(Tag.SeriesInstanceUID) + "/instances/"
-                + iuid);
-        if (!modified.isEmpty()) {
+                + ctx.getStudyInstanceUID() + "/series/"
+                + ctx.getSeriesInstanceUID() + "/instances/"
+                + ctx.getSOPInstanceUID());
+        if (!ctx.getCoercedAttributes().isEmpty()) {
             sopRef.setInt(Tag.WarningReason, VR.US,
                           org.dcm4che.net.Status.CoercionOfDataElements);
             if (arcAE.isStoreOriginalAttributes()) {
-                Sequence seq = ds.getSequence(Tag.OriginalAttributesSequence);
+                Sequence seq = ctx.getAttributes()
+                        .getSequence(Tag.OriginalAttributesSequence);
                 sopRef.newSequence(Tag.OriginalAttributesSequence, 1)
                     .add(new Attributes(seq.get(seq.size()-1)));
             }
@@ -447,18 +442,18 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
         failedSOPSequence.add(sopRef);
     }
 
-    private void checkStudyInstanceUID(Attributes attrs) throws DicomServiceException {
+    private void checkStudyInstanceUID(StoreContext ctx) throws DicomServiceException {
         if (studyInstanceUID != null
-                && !studyInstanceUID.equals(attrs.getString(Tag.StudyInstanceUID)))
+                && !studyInstanceUID.equals(ctx.getStudyInstanceUID()))
             throw new DicomServiceException(DIFF_STUDY_INSTANCE_UID);
     }
 
-    private void checkTransferCapability(String cuid, String tsuid) throws DicomServiceException {
-        TransferCapability tc = ae.getTransferCapabilityFor(cuid, Role.SCP);
+    private void checkTransferCapability(StoreContext ctx) throws DicomServiceException {
+        TransferCapability tc = ae.getTransferCapabilityFor(ctx.getSOPClassUID(), Role.SCP);
         if (tc == null) {
             throw new DicomServiceException(org.dcm4che.net.Status.SOPclassNotSupported);
         }
-        if (!tc.containsTransferSyntax(tsuid)) {
+        if (!tc.containsTransferSyntax(ctx.getTransferSyntax())) {
             throw new DicomServiceException(TRANSFER_SYNTAX_NOT_SUPPORTED);
         }
     }
