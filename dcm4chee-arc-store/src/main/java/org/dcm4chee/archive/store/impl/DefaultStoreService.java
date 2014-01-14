@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumSet;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -81,6 +80,8 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.issuer.IssuerService;
+import org.dcm4chee.archive.patient.NonUniquePatientException;
+import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.request.RequestService;
 import org.dcm4chee.archive.store.StoreContext;
@@ -230,8 +231,18 @@ public class DefaultStoreService implements StoreService {
     }
 
     @Override
-    public Patient findPatient(EntityManager em, StoreContext storeContext) {
-        return patientService.findPatientOnStorage(storeContext.getAttributes());
+    public Patient findPatient(EntityManager em, StoreContext storeContext) throws DicomServiceException {
+        try {
+            return patientService.findPatientOnStorage(storeContext.getAttributes());
+        } catch (NonUniquePatientException e) {
+            LOG.info("Could not find unique Patient Record for received Study - create new Patient Record");
+            return null;
+        } catch (PatientCircularMergedException e) {
+            LOG.warn("Detect circular merged Patient Record for received Study - create new Patient Record", e);
+            return null;
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.ProcessingFailure, e);
+        }
     }
 
 
@@ -448,24 +459,17 @@ public class DefaultStoreService implements StoreService {
                 storeService.updateInstance(storeContext, inst);
                 storeService.createFileRef(em, storeContext, inst);
             }
-            storeService.coerceAttributes(storeContext, patient.getAttributes());
-            storeService.coerceAttributes(storeContext, study.getAttributes());
-            storeService.coerceAttributes(storeContext, series.getAttributes());
-            storeService.coerceAttributes(storeContext, inst.getAttributes());
+            Attributes storedAttrs = storeContext.getAttributes();
+            Attributes coercedAtts = storeContext.getCoercedAttributes();
+            storedAttrs.update(patient.getAttributes(), coercedAtts);
+            storedAttrs.update(study.getAttributes(), coercedAtts);
+            storedAttrs.update(series.getAttributes(), coercedAtts);
+            storedAttrs.update(inst.getAttributes(), coercedAtts);
             return false;
         }
 
         inst.setReplaced(true);
         return true;
-    }
-
-
-    @Override
-    public void coerceAttributes(StoreContext storeContext,
-            Attributes entityAttrs) {
-        Attributes storedAttrs = storeContext.getAttributes();
-        Attributes coercedAtts = storeContext.getCoercedAttributes();
-        storedAttrs.update(entityAttrs, coercedAtts);
     }
 
     @Override

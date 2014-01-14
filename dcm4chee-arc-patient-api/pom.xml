@@ -5,35 +5,17 @@
     <artifactId>dcm4chee-arc-parent</artifactId>
     <version>4.3.0-SNAPSHOT</version>
   </parent>
-  <artifactId>dcm4chee-arc-patient</artifactId>
+  <artifactId>dcm4chee-arc-patient-api</artifactId>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-issuer</artifactId>
+      <artifactId>dcm4chee-arc-entity</artifactId>
+      <classifier>${db}</classifier>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-soundex</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>javax.enterprise</groupId>
-      <artifactId>cdi-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hibernate.javax.persistence</groupId>
-      <artifactId>hibernate-jpa-2.1-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.spec.javax.ejb</groupId>
-      <artifactId>jboss-ejb-api_3.2_spec</artifactId>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
@@ -44,7 +26,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.core, org.dcm4che.soundex</Dependencies>
+              <Dependencies>org.dcm4che.core</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

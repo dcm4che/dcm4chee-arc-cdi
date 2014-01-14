@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.patient.impl;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -55,6 +56,8 @@ import org.dcm4chee.archive.entity.IDWithIssuer;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.issuer.IssuerService;
+import org.dcm4chee.archive.patient.NonUniquePatientException;
+import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientService;
 
 /**
@@ -74,12 +77,15 @@ public class PatientServiceEJB implements PatientService {
     public Patient findPatientOnStorage(Attributes attrs) {
         IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(attrs);
         if (pid == null)
-            return null;
+            throw new NonUniquePatientException(pid);
 
         List<Patient> list = findPatients(pid);
-        if (list.size() != 1)
+        if (list.isEmpty())
             return null;
 
+        if (list.size() > 1) {
+            throw new NonUniquePatientException(pid);
+        }
         return followMergedWith(list.get(0));
     }
 
@@ -107,8 +113,13 @@ public class PatientServiceEJB implements PatientService {
     }
 
     private Patient followMergedWith(Patient patient) {
+        HashSet<Long> pks = new HashSet<Long>();
         Patient mergedWith;
+        pks.add(patient.getPk());
         while ((mergedWith = patient.getMergedWith()) != null) {
+            if (!pks.add(mergedWith.getPk())) {
+                throw new PatientCircularMergedException(patient);
+            }
             patient = mergedWith;
         }
         return patient;

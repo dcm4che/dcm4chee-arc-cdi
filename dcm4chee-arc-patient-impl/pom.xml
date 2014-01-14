@@ -5,7 +5,7 @@
     <artifactId>dcm4chee-arc-parent</artifactId>
     <version>4.3.0-SNAPSHOT</version>
   </parent>
-  <artifactId>dcm4chee-arc-store</artifactId>
+  <artifactId>dcm4chee-arc-patient-impl</artifactId>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -14,17 +14,12 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-code</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-request</artifactId>
+      <artifactId>dcm4chee-arc-issuer</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-net</artifactId>
+      <artifactId>dcm4che-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
@@ -54,7 +49,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.net, org.dcm4che.soundex</Dependencies>
+              <Dependencies>org.dcm4che.core, org.dcm4che.soundex</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

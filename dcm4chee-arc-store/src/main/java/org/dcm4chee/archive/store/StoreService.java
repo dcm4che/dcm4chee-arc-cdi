@@ -114,6 +114,4 @@ public interface StoreService {
 
     void updateInstance(StoreContext storeContext, Instance inst);
 
-    void coerceAttributes(StoreContext storeContext, Attributes attributes);
-
 }

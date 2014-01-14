@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.dcm4che.data.Attributes;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
@@ -67,41 +68,44 @@ public class StoreServiceEJB {
     public void updateDB(StoreContext storeContext)
             throws DicomServiceException {
         Instance instance = storeService.findInstance(em, storeContext);
-        if (instance == null
-                || storeService.replaceInstance(storeService, em, storeContext, instance)) {
-            Series series = storeService.findSeries(em, storeContext);
-            if (series == null) {
-                Study study = storeService.findStudy(em, storeContext);
-                if (study == null) {
-                    Patient patient = storeService.findPatient(em, storeContext);
-                    if (patient == null) {
-                        patient = storeService.createPatient(em, storeContext);
-                    } else {
-                        storeService.updatePatient(storeContext, patient);
-                        storeService.coerceAttributes(storeContext, patient.getAttributes());
-                    }
-                    study = storeService.createStudy(em, storeContext, patient);
+        if (instance != null && !storeService.replaceInstance(
+                storeService, em, storeContext, instance))
+            return;
+
+        Attributes storedAttrs = storeContext.getAttributes();
+        Attributes coercedAtts = storeContext.getCoercedAttributes();
+        Series series = storeService.findSeries(em, storeContext);
+        if (series == null) {
+            Study study = storeService.findStudy(em, storeContext);
+            if (study == null) {
+                Patient patient = storeService.findPatient(em, storeContext);
+                if (patient == null) {
+                    patient = storeService.createPatient(em, storeContext);
                 } else {
-                    Patient patient = study.getPatient();
                     storeService.updatePatient(storeContext, patient);
-                    storeService.updateStudy(storeContext, study);
-                    storeService.coerceAttributes(storeContext, patient.getAttributes());
-                    storeService.coerceAttributes(storeContext, study.getAttributes());
+                    storedAttrs.update(patient.getAttributes(), coercedAtts);
                 }
-                series = storeService.createSeries(em, storeContext, study);
+                study = storeService.createStudy(em, storeContext, patient);
             } else {
-                Study study = series.getStudy();
                 Patient patient = study.getPatient();
                 storeService.updatePatient(storeContext, patient);
                 storeService.updateStudy(storeContext, study);
-                storeService.updateSeries(storeContext, series);
-                storeService.coerceAttributes(storeContext, patient.getAttributes());
-                storeService.coerceAttributes(storeContext, study.getAttributes());
-                storeService.coerceAttributes(storeContext, series.getAttributes());
+                storedAttrs.update(patient.getAttributes(), coercedAtts);
+                storedAttrs.update(study.getAttributes(), coercedAtts);
             }
-            instance = storeService.createInstance(em, storeContext, series);
-            storeService.createFileRef(em, storeContext, instance);
+            series = storeService.createSeries(em, storeContext, study);
+        } else {
+            Study study = series.getStudy();
+            Patient patient = study.getPatient();
+            storeService.updatePatient(storeContext, patient);
+            storeService.updateStudy(storeContext, study);
+            storeService.updateSeries(storeContext, series);
+            storedAttrs.update(patient.getAttributes(), coercedAtts);
+            storedAttrs.update(study.getAttributes(), coercedAtts);
+            storedAttrs.update(series.getAttributes(), coercedAtts);
         }
+        instance = storeService.createInstance(em, storeContext, series);
+        storeService.createFileRef(em, storeContext, instance);
      }
 
 }
