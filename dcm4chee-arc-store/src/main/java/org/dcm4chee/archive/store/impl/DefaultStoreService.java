@@ -92,12 +92,13 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * 
  */
 @ApplicationScoped
 public class DefaultStoreService implements StoreService {
 
-    private static Logger LOG = LoggerFactory.getLogger(DefaultStoreService.class);
+    private static Logger LOG = LoggerFactory
+            .getLogger(DefaultStoreService.class);
 
     @Inject
     private PatientService patientService;
@@ -136,16 +137,15 @@ public class DefaultStoreService implements StoreService {
     }
 
     @Override
-    public void parseAttributes(StoreContext storeContext) throws DicomServiceException {
-        try (
-            DicomInputStream in = new DicomInputStream(
-                    storeContext.getFile().toFile());
-        ) {
+    public void parseAttributes(StoreContext storeContext)
+            throws DicomServiceException {
+        try (DicomInputStream in = new DicomInputStream(storeContext.getFile()
+                .toFile());) {
             in.setIncludeBulkData(IncludeBulkData.URI);
             Attributes fmi = in.readFileMetaInformation();
             Attributes ds = in.readDataset(-1, -1);
-            storeContext.setTransferSyntax(fmi != null
-                    ? fmi.getString(Tag.TransferSyntaxUID)
+            storeContext.setTransferSyntax(fmi != null ? fmi
+                    .getString(Tag.TransferSyntaxUID)
                     : UID.ImplicitVRLittleEndian);
             storeContext.setAttributes(ds);
         } catch (IOException e) {
@@ -159,40 +159,44 @@ public class DefaultStoreService implements StoreService {
     }
 
     @Override
-    public void moveFile(StoreContext storeContext) throws DicomServiceException {
+    public void moveFile(StoreContext storeContext)
+            throws DicomServiceException {
         try {
-            storeContext.setFile(
-                    move(storeContext.getFile(), storeContext.getStorePath()));
+            storeContext.setFile(move(storeContext.getFile(),
+                    storeContext.getStorePath()));
         } catch (IOException e) {
             throw new DicomServiceException(Status.ProcessingFailure);
         }
     }
 
-    private Path move(Path source, Path target)
-            throws IOException {
+    private Path move(Path source, Path target) throws IOException {
         Files.createDirectories(target.getParent());
         for (;;) {
             try {
                 return Files.move(source, target);
             } catch (FileAlreadyExistsException e) {
-                target = target.resolveSibling(
-                        target.getFileName().toString() + '-');
+                target = target
+                        .resolveSibling(target.getFileName().toString() + '-');
             }
         }
     }
 
     @Override
-    public void updateDB(StoreContext storeContext) throws DicomServiceException {
+    public void updateDB(StoreContext storeContext)
+            throws DicomServiceException {
         storeServiceEJB.updateDB(storeContext);
     }
 
     @Override
-    public Instance findInstance(EntityManager em, StoreContext storeContext) throws DicomServiceException {
-        String iuid = storeContext.getAttributes().getString(Tag.SOPInstanceUID);
+    public Instance findInstance(EntityManager em, StoreContext storeContext)
+            throws DicomServiceException {
+        String iuid = storeContext.getAttributes()
+                .getString(Tag.SOPInstanceUID);
         try {
-            return em.createNamedQuery(
-                    Instance.FIND_BY_SOP_INSTANCE_UID, Instance.class)
-                 .setParameter(1, iuid).getSingleResult();
+            return em
+                    .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID,
+                            Instance.class).setParameter(1, iuid)
+                    .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
@@ -203,11 +207,13 @@ public class DefaultStoreService implements StoreService {
     @Override
     public Series findSeries(EntityManager em, StoreContext storeContext)
             throws DicomServiceException {
-        String iuid = storeContext.getAttributes().getString(Tag.SeriesInstanceUID);
+        String iuid = storeContext.getAttributes().getString(
+                Tag.SeriesInstanceUID);
         try {
-            return em.createNamedQuery(
-                    Series.FIND_BY_SERIES_INSTANCE_UID, Series.class)
-                 .setParameter(1, iuid).getSingleResult();
+            return em
+                    .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID,
+                            Series.class).setParameter(1, iuid)
+                    .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
@@ -218,11 +224,13 @@ public class DefaultStoreService implements StoreService {
     @Override
     public Study findStudy(EntityManager em, StoreContext storeContext)
             throws DicomServiceException {
-        String iuid = storeContext.getAttributes().getString(Tag.StudyInstanceUID);
+        String iuid = storeContext.getAttributes().getString(
+                Tag.StudyInstanceUID);
         try {
-            return em.createNamedQuery(
-                    Study.FIND_BY_STUDY_INSTANCE_UID, Study.class)
-                 .setParameter(1, iuid).getSingleResult();
+            return em
+                    .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID,
+                            Study.class).setParameter(1, iuid)
+                    .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
@@ -231,20 +239,23 @@ public class DefaultStoreService implements StoreService {
     }
 
     @Override
-    public Patient findPatient(EntityManager em, StoreContext storeContext) throws DicomServiceException {
+    public Patient findPatient(EntityManager em, StoreContext storeContext)
+            throws DicomServiceException {
         try {
-            return patientService.findPatientOnStorage(storeContext.getAttributes());
+            return patientService.findPatientOnStorage(storeContext
+                    .getAttributes());
         } catch (NonUniquePatientException e) {
             LOG.info("Could not find unique Patient Record for received Study - create new Patient Record");
             return null;
         } catch (PatientCircularMergedException e) {
-            LOG.warn("Detect circular merged Patient Record for received Study - create new Patient Record", e);
+            LOG.warn(
+                    "Detect circular merged Patient Record for received Study - create new Patient Record",
+                    e);
             return null;
         } catch (Exception e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }
     }
-
 
     @Override
     public Patient createPatient(EntityManager em, StoreContext storeContext) {
@@ -261,15 +272,14 @@ public class DefaultStoreService implements StoreService {
         Study study = new Study();
         study.setPatient(patient);
         study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
-        study.setIssuerOfAccessionNumber(issuer(
-                attrs.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
+        study.setIssuerOfAccessionNumber(issuer(attrs
+                .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         study.setModalitiesInStudy(attrs.getString(Tag.Modality, null));
         study.setSOPClassesInStudy(attrs.getString(Tag.SOPClassUID, null));
         study.setRetrieveAETs(storeParam.getRetrieveAETs());
         study.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
         study.setAvailability(fs.getAvailability());
-        study.setAttributes(attrs, 
-                storeParam.getAttributeFilter(Entity.Study),
+        study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
                 storeParam.getFuzzyStr());
         em.persist(study);
         return study;
@@ -283,12 +293,10 @@ public class DefaultStoreService implements StoreService {
         FileSystem fs = storeContext.getFileSystem();
         Series series = new Series();
         series.setStudy(study);
-        series.setInstitutionCode(
-                singleCode(data, Tag.InstitutionCodeSequence));
-        series.setScheduledProcedureSteps(
-                getScheduledProcedureSteps(
-                        data.getSequence(Tag.RequestAttributesSequence),
-                        data, study.getPatient(), storeParam));
+        series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
+        series.setScheduledProcedureSteps(getScheduledProcedureSteps(
+                data.getSequence(Tag.RequestAttributesSequence), data,
+                study.getPatient(), storeParam));
         series.setSourceAET(storeContext.getReceivingAETitle());
         series.setRetrieveAETs(storeParam.getRetrieveAETs());
         series.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
@@ -309,14 +317,16 @@ public class DefaultStoreService implements StoreService {
         Attributes coercedAttrs = storeContext.getCoercedAttributes();
         if (!coercedAttrs.isEmpty() && storeParam.isStoreOriginalAttributes()) {
             Attributes item = new Attributes(4);
-            Sequence origAttrsSeq =
-                    data.ensureSequence(Tag.OriginalAttributesSequence, 1);
+            Sequence origAttrsSeq = data.ensureSequence(
+                    Tag.OriginalAttributesSequence, 1);
             origAttrsSeq.add(item);
             item.setDate(Tag.AttributeModificationDateTime, VR.DT, new Date());
             item.setString(Tag.ModifyingSystem, VR.LO,
                     storeParam.getModifyingSystem());
-            item.setString(Tag.SourceOfPreviousValues, VR.LO, storeContext.getSendingAETitle());
-            item.newSequence(Tag.ModifiedAttributesSequence, 1).add(coercedAttrs);
+            item.setString(Tag.SourceOfPreviousValues, VR.LO,
+                    storeContext.getSendingAETitle());
+            item.newSequence(Tag.ModifiedAttributesSequence, 1).add(
+                    coercedAttrs);
         }
         Instance inst = new Instance();
         inst.setSeries(series);
@@ -324,8 +334,8 @@ public class DefaultStoreService implements StoreService {
         inst.setVerifyingObservers(createVerifyingObservers(
                 data.getSequence(Tag.VerifyingObserverSequence),
                 storeParam.getFuzzyStr()));
-        inst.setContentItems(
-                createContentItems(data.getSequence(Tag.ContentSequence)));
+        inst.setContentItems(createContentItems(data
+                .getSequence(Tag.ContentSequence)));
         inst.setRetrieveAETs(storeParam.getRetrieveAETs());
         inst.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
         inst.setAvailability(fs.getAvailability());
@@ -349,20 +359,20 @@ public class DefaultStoreService implements StoreService {
             StoreParam storeParam) {
         if (requestAttrsSeq == null)
             return null;
-        ArrayList<ScheduledProcedureStep> list =
-                new ArrayList<ScheduledProcedureStep>(requestAttrsSeq.size());
+        ArrayList<ScheduledProcedureStep> list = new ArrayList<ScheduledProcedureStep>(
+                requestAttrsSeq.size());
         for (Attributes requestAttrs : requestAttrsSeq) {
             if (requestAttrs.containsValue(Tag.ScheduledProcedureStepID)
                     && requestAttrs.containsValue(Tag.RequestedProcedureID)
-                    && (requestAttrs.containsValue(Tag.AccessionNumber)
-                            || data.contains(Tag.AccessionNumber))) {
-                Attributes attrs = new Attributes(data.bigEndian(),
-                        data.size() + requestAttrs.size());
+                    && (requestAttrs.containsValue(Tag.AccessionNumber) || data
+                            .contains(Tag.AccessionNumber))) {
+                Attributes attrs = new Attributes(data.bigEndian(), data.size()
+                        + requestAttrs.size());
                 attrs.addAll(data);
                 attrs.addAll(requestAttrs);
-                ScheduledProcedureStep sps =
-                        requestService.findOrCreateScheduledProcedureStep(
-                                attrs, patient, storeParam);
+                ScheduledProcedureStep sps = requestService
+                        .findOrCreateScheduledProcedureStep(attrs, patient,
+                                storeParam);
                 list.add(sps);
             }
         }
@@ -374,8 +384,8 @@ public class DefaultStoreService implements StoreService {
         if (seq == null || seq.isEmpty())
             return null;
 
-        ArrayList<VerifyingObserver> list =
-                new ArrayList<VerifyingObserver>(seq.size());
+        ArrayList<VerifyingObserver> list = new ArrayList<VerifyingObserver>(
+                seq.size());
         for (Attributes item : seq)
             list.add(new VerifyingObserver(item, fuzzyStr));
         return list;
@@ -389,15 +399,15 @@ public class DefaultStoreService implements StoreService {
         for (Attributes item : seq) {
             String type = item.getString(Tag.ValueType);
             if ("CODE".equals(type)) {
-                list.add(new ContentItem(
-                        item.getString(Tag.RelationshipType).toUpperCase(),
-                        singleCode(item, Tag.ConceptNameCodeSequence),
-                        singleCode(item, Tag.ConceptCodeSequence)));
+                list.add(new ContentItem(item.getString(Tag.RelationshipType)
+                        .toUpperCase(), singleCode(item,
+                        Tag.ConceptNameCodeSequence), singleCode(item,
+                        Tag.ConceptCodeSequence)));
             } else if ("TEXT".equals(type)) {
-                list.add(new ContentItem(
-                        item.getString(Tag.RelationshipType).toUpperCase(),
-                        singleCode(item, Tag.ConceptNameCodeSequence),
-                        item.getString(Tag.TextValue, "*")));
+                list.add(new ContentItem(item.getString(Tag.RelationshipType)
+                        .toUpperCase(), singleCode(item,
+                        Tag.ConceptNameCodeSequence), item.getString(
+                        Tag.TextValue, "*")));
             }
         }
         return list;
@@ -412,14 +422,14 @@ public class DefaultStoreService implements StoreService {
                 LOG.info("Illegal code item in Sequence {}:\n{}",
                         TagUtils.toString(seqTag), item);
             }
-        return null ;
+        return null;
     }
 
     private Collection<Code> codeList(Attributes attrs, int seqTag) {
         Sequence seq = attrs.getSequence(seqTag);
         if (seq == null || seq.isEmpty())
             return Collections.emptyList();
-        
+
         ArrayList<Code> list = new ArrayList<Code>(seq.size());
         for (Attributes item : seq) {
             try {
@@ -439,10 +449,8 @@ public class DefaultStoreService implements StoreService {
         return issuerService.findOrCreate(new Issuer(item));
     }
 
-
     @Override
-    public boolean replaceInstance(StoreService storeService, EntityManager em,
-            StoreContext storeContext,
+    public boolean replaceInstance(EntityManager em, StoreContext storeContext,
             Instance inst) {
         String externalRetrieveAET = inst.getExternalRetrieveAET();
         String sendingAETitle = storeContext.getSendingAETitle();
@@ -453,11 +461,11 @@ public class DefaultStoreService implements StoreService {
             Patient patient = study.getPatient();
             Collection<FileRef> fileRefs = inst.getFileRefs();
             if (fileRefs.isEmpty()) {
-                storeService.updatePatient(storeContext, patient);
-                storeService.updateStudy(storeContext, study);
-                storeService.updateSeries(storeContext, series);
-                storeService.updateInstance(storeContext, inst);
-                storeService.createFileRef(em, storeContext, inst);
+                storeContext.getService().updatePatient(storeContext, patient);
+                storeContext.getService().updateStudy(storeContext, study);
+                storeContext.getService().updateSeries(storeContext, series);
+                storeContext.getService().updateInstance(storeContext, inst);
+                storeContext.getService().createFileRef(em, storeContext, inst);
             }
             Attributes storedAttrs = storeContext.getAttributes();
             Attributes coercedAtts = storeContext.getCoercedAttributes();
@@ -485,10 +493,12 @@ public class DefaultStoreService implements StoreService {
         study.addModalityInStudy(data.getString(Tag.Modality, null));
         study.addSOPClassInStudy(data.getString(Tag.SOPClassUID, null));
         study.resetNumberOfInstances();
-        AttributeFilter studyFilter = storeParam.getAttributeFilter(Entity.Study);
+        AttributeFilter studyFilter = storeParam
+                .getAttributeFilter(Entity.Study);
         Attributes studyAttrs = study.getAttributes();
         if (studyAttrs.mergeSelected(data, studyFilter.getSelection())) {
-            study.setAttributes(studyAttrs, studyFilter, storeParam.getFuzzyStr());
+            study.setAttributes(studyAttrs, studyFilter,
+                    storeParam.getFuzzyStr());
         }
     }
 
@@ -498,9 +508,11 @@ public class DefaultStoreService implements StoreService {
         StoreParam storeParam = storeContext.getStoreParam();
         series.resetNumberOfInstances();
         Attributes seriesAttrs = series.getAttributes();
-        AttributeFilter seriesFilter = storeParam.getAttributeFilter(Entity.Series);
+        AttributeFilter seriesFilter = storeParam
+                .getAttributeFilter(Entity.Series);
         if (seriesAttrs.mergeSelected(data, seriesFilter.getSelection())) {
-            series.setAttributes(seriesAttrs, seriesFilter, storeParam.getFuzzyStr());
+            series.setAttributes(seriesAttrs, seriesFilter,
+                    storeParam.getFuzzyStr());
         }
     }
 
@@ -509,7 +521,8 @@ public class DefaultStoreService implements StoreService {
         Attributes data = storeContext.getAttributes();
         StoreParam storeParam = storeContext.getStoreParam();
         Attributes instAttrs = inst.getAttributes();
-        AttributeFilter instFilter = storeParam.getAttributeFilter(Entity.Instance);
+        AttributeFilter instFilter = storeParam
+                .getAttributeFilter(Entity.Instance);
         Attributes updated = new Attributes();
         if (instAttrs.updateSelected(data, updated, instFilter.getSelection())) {
             inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());

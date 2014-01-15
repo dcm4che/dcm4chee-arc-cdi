@@ -55,6 +55,8 @@ import org.dcm4chee.archive.entity.FileSystem;
  */
 public interface StoreContext {
 
+    /** GETTERS **/
+    
     StoreSource getStoreSource();
 
     FileSystem getFileSystem();
@@ -63,18 +65,14 @@ public interface StoreContext {
 
     String getTransferSyntax();
 
-    void setTransferSyntax(String tsuid);
-
     Attributes getAttributes();
-
-    void setAttributes(Attributes attrs);
 
     Attributes getCoercedAttributes();
 
+    // path to the file to be processed/moved
     Path getFile();
 
-    void setFile(Path file);
-
+    // path where the processed file will be moved
     Path getStorePath();
 
     String getSendingAETitle();
@@ -86,4 +84,21 @@ public interface StoreContext {
     Availability getAvailability();
 
     FileRef getFileRef();
+    
+    StoreService getService();
+    
+    
+    /** SETTERS **/
+    
+    // digest
+    void setDigest(byte[] digest);
+
+    void setFile(Path file);
+    
+    void setTransferSyntax(String tsuid);
+
+    void setAttributes(Attributes attrs);
+    
+    void setService(StoreService service);
+    
 }

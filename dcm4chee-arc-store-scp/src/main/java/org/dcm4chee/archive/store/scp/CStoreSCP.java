@@ -104,6 +104,7 @@ public class CStoreSCP extends BasicCStoreSCP {
             StoreContext storeContext = storeService.createStoreContext(
                     source, arcAE, fs, file,
                     digest != null ? digest.digest() : null);
+            storeContext.setService(storeService);
             storeService.parseAttributes(storeContext);
             storeService.coerceAttributes(storeContext);
             storeService.moveFile(storeContext);

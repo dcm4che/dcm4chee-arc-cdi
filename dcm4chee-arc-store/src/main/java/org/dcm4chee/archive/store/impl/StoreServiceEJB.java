@@ -62,14 +62,16 @@ public class StoreServiceEJB {
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
 
-    @Inject
-    private StoreService storeService;
+//    @Inject
+//    private StoreService storeService;
 
     public void updateDB(StoreContext storeContext)
             throws DicomServiceException {
+        
+        StoreService storeService = storeContext.getService();
+        
         Instance instance = storeService.findInstance(em, storeContext);
-        if (instance != null && !storeService.replaceInstance(
-                storeService, em, storeContext, instance))
+        if (instance != null && !storeService.replaceInstance(em, storeContext, instance))
             return;
 
         Attributes storedAttrs = storeContext.getAttributes();

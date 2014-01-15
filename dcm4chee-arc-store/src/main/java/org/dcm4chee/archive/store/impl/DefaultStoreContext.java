@@ -52,6 +52,7 @@ import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSource;
 
 /**
@@ -61,6 +62,7 @@ import org.dcm4chee.archive.store.StoreSource;
 public class DefaultStoreContext implements StoreContext {
 
     private StoreSource source;
+    private StoreService service;
     private ArchiveAEExtension arcAE;
     private FileSystem fs;
     private Path file;
@@ -130,6 +132,11 @@ public class DefaultStoreContext implements StoreContext {
     public void setFile(Path file) {
         this.file = file;
     }
+    
+    @Override
+    public void setDigest(byte[] digest) {
+        this.digest = digest;
+    }
 
     @Override
     public Path getStorePath() {
@@ -179,4 +186,14 @@ public class DefaultStoreContext implements StoreContext {
             .replace(File.separatorChar, '/');
     }
 
+    @Override
+    public StoreService getService() {
+        return service;
+    }
+
+    @Override
+    public void setService(StoreService service) {
+        this.service = service;
+    }
+    
 }

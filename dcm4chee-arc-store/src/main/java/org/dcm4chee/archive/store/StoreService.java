@@ -79,7 +79,7 @@ public interface StoreService {
     Instance findInstance(EntityManager em, StoreContext storeContext)
             throws DicomServiceException;
 
-    boolean replaceInstance(StoreService storeService, EntityManager em,
+    boolean replaceInstance(EntityManager em,
             StoreContext storeContext, Instance instance);
 
     Series findSeries(EntityManager em, StoreContext storeContext)
