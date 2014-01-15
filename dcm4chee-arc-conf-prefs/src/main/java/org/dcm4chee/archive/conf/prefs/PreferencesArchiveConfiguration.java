@@ -184,7 +184,7 @@ public class PreferencesArchiveConfiguration
                     ArchiveAEExtension.DEF_RETRY_INTERVAL);
         PreferencesUtils.storeNotDef(prefs, "dcmReturnOtherPatientIDs", arcAE.isReturnOtherPatientIDs(), false);
         PreferencesUtils.storeNotDef(prefs, "dcmReturnOtherPatientNames", arcAE.isReturnOtherPatientNames(), false);
-        PreferencesUtils.storeNotDef(prefs, "dcmShowRejectedInstances", arcAE.isShowRejectedInstances(), false);
+        PreferencesUtils.storeNotDef(prefs, "dcmShowRejectedInstances", arcAE.isShowRejectedForQualityReasons(), false);
         PreferencesUtils.storeNotNull(prefs, "hl7PIXConsumerApplication", arcAE.getLocalPIXConsumerApplication());
         PreferencesUtils.storeNotNull(prefs, "hl7PIXManagerApplication", arcAE.getRemotePIXManagerApplication());
         PreferencesUtils.storeNotDef(prefs, "dcmQidoMaxNumberOfResults", arcAE.getQIDOMaxNumberOfResults(), 0);
@@ -269,7 +269,7 @@ public class PreferencesArchiveConfiguration
                 prefs.getBoolean("dcmReturnOtherPatientIDs", false));
         arcae.setReturnOtherPatientNames(
                 prefs.getBoolean("dcmReturnOtherPatientNames", false));
-        arcae.setShowRejectedInstances(
+        arcae.setShowRejectedForQualityReasons(
                 prefs.getBoolean("dcmShowRejectedInstances", false));
         arcae.setLocalPIXConsumerApplication(prefs.get("hl7PIXConsumerApplication", null));
         arcae.setRemotePIXManagerApplication(prefs.get("hl7PIXManagerApplication", null));
@@ -466,8 +466,8 @@ public class PreferencesArchiveConfiguration
                  bb.isReturnOtherPatientNames(),
                  false);
          PreferencesUtils.storeDiff(prefs, "dcmShowRejectedInstances",
-                 aa.isShowRejectedInstances(),
-                 bb.isShowRejectedInstances(),
+                 aa.isShowRejectedForQualityReasons(),
+                 bb.isShowRejectedForQualityReasons(),
                  false);
          PreferencesUtils.storeDiff(prefs, "hl7PIXConsumerApplication",
                  aa.getLocalPIXConsumerApplication(),

@@ -53,6 +53,7 @@ import javax.inject.Inject;
 
 import org.dcm4che.conf.api.ConfigurationException;
 import org.dcm4che.conf.api.DicomConfiguration;
+import org.dcm4che.data.Code;
 import org.dcm4che.net.Device;
 import org.dcm4che.net.hl7.HL7DeviceExtension;
 import org.dcm4che.net.hl7.service.HL7Service;
@@ -61,6 +62,8 @@ import org.dcm4che.net.service.BasicCEchoSCP;
 import org.dcm4che.net.service.DicomService;
 import org.dcm4che.net.service.DicomServiceRegistry;
 import org.dcm4chee.archive.ArchiveService;
+import org.dcm4chee.archive.code.CodeService;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -100,6 +103,9 @@ public class ArchiveServiceImpl implements ArchiveService {
     @Inject
     private DicomConfiguration conf;
 
+    @Inject
+    private CodeService codeService;
+
     private Device device;
 
     private boolean running;
@@ -133,6 +139,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         addJBossDirURLSystemProperties();
         try {
             device = findDevice();
+            findOrCreateRejectionCodes(device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class));
             device.setExecutor(executor);
             device.setScheduledExecutor(scheduledExecutor);
             serviceRegistry.addDicomService(echoscp);
@@ -184,6 +191,7 @@ public class ArchiveServiceImpl implements ArchiveService {
     @Override
     public void reload() throws Exception {
         device.reconfigure(findDevice());
+        findOrCreateRejectionCodes(device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class));
         device.rebindConnections();
     }
 
@@ -195,6 +203,28 @@ public class ArchiveServiceImpl implements ArchiveService {
     @Override
     public boolean isRunning() {
         return running;
+    }
+
+    private void findOrCreateRejectionCodes(ArchiveDeviceExtension arcDev) {
+        arcDev.setIncorrectWorklistEntrySelectedCode(
+                findOrCreate(arcDev.getIncorrectWorklistEntrySelectedCode()));
+        arcDev.setRejectedForQualityReasonsCode(
+                findOrCreate(arcDev.getRejectedForQualityReasonsCode()));
+        arcDev.setRejectedForPatientSafetyReasonsCode(
+                findOrCreate(arcDev.getRejectedForPatientSafetyReasonsCode()));
+        arcDev.setIncorrectModalityWorklistEntryCode(
+                findOrCreate(arcDev.getIncorrectModalityWorklistEntryCode()));
+        arcDev.setDataRetentionPeriodExpiredCode(
+                findOrCreate(arcDev.getDataRetentionPeriodExpiredCode()));
+    }
+
+    private Code findOrCreate(Code code) {
+        try {
+            return (org.dcm4chee.archive.entity.Code) code;
+        } catch (ClassCastException e) {
+             return codeService.findOrCreate(
+                        new org.dcm4chee.archive.entity.Code(code));
+        }
     }
 
 }

@@ -92,11 +92,8 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     query="SELECT NEW org.dcm4chee.archive.entity.QueryPatientStudySeriesAttributes("
             + "s.study.pk, "
             + "s.study.numberOfSeries, "
-            + "s.study.numberOfSeriesA, "
             + "s.study.numberOfInstances, "
-            + "s.study.numberOfInstancesA, "
             + "s.numberOfInstances, "
-            + "s.numberOfInstancesA, "
             + "s.study.modalitiesInStudy, "
             + "s.study.sopClassesInStudy, "
             + "s.encodedAttributes, "
@@ -104,16 +101,28 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "s.study.patient.encodedAttributes) "
             + "FROM Series s WHERE s.pk = ?1"),
 @NamedQuery(
-    name="Series.numberOfSeries",
-    query="SELECT COUNT(s) FROM Series s WHERE s.study.pk = ?1 AND EXISTS ("
-            + "SELECT i FROM Instance i WHERE i.series = s "
-            + "AND i.replaced = FALSE AND i.availability <= ?2)"),
+        name="Series.queryPatientStudySeriesAttributesA",
+        query="SELECT NEW org.dcm4chee.archive.entity.QueryPatientStudySeriesAttributes("
+                + "s.study.pk, "
+                + "s.study.numberOfSeriesA, "
+                + "s.study.numberOfInstancesA, "
+                + "s.numberOfInstancesA, "
+                + "s.study.modalitiesInStudy, "
+                + "s.study.sopClassesInStudy, "
+                + "s.encodedAttributes, "
+                + "s.study.encodedAttributes, "
+                + "s.study.patient.encodedAttributes) "
+                + "FROM Series s WHERE s.pk = ?1"),
 @NamedQuery(
     name="Series.updateNumberOfInstances",
     query="UPDATE Series s "
-            + "SET s.numberOfInstances = ?1, "
-                + "s.numberOfInstancesA = ?2 "
-            + "WHERE s.pk = ?3")
+            + "SET s.numberOfInstances = ?1 "
+            + "WHERE s.pk = ?2"),
+@NamedQuery(
+    name="Series.updateNumberOfInstancesA",
+    query="UPDATE Series s "
+            + "SET s.numberOfInstancesA = ?1 "
+            + "WHERE s.pk = ?2")
 })
 @Entity
 @Table(name = "series")
@@ -124,8 +133,9 @@ public class Series implements Serializable {
     public static final String FIND_BY_SERIES_INSTANCE_UID = "Series.findBySeriesInstanceUID";
     public static final String PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.patientStudySeriesAttributes";
     public static final String QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.queryPatientStudySeriesAttributes";
-    public static final String NUMBER_OF_SERIES = "Series.numberOfSeries";
+    public static final String QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES_A = "Series.queryPatientStudySeriesAttributesA";
     public static final String UPDATE_NUMBER_OF_INSTANCES = "Series.updateNumberOfInstances";
+    public static final String UPDATE_NUMBER_OF_INSTANCES_A = "Series.updateNumberOfInstancesA";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

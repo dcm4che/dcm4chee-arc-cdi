@@ -146,17 +146,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "i.encodedAttributes) "
             + "FROM Instance i "
             + "LEFT JOIN i.fileRefs f "
-            + "WHERE i.series.seriesInstanceUID = ?1 AND i.replaced = FALSE"),
-@NamedQuery(
-    name="Instance.numberOfStudyRelatedInstances",
-    query="SELECT COUNT(i) FROM Instance i "
-            + "WHERE i.series.study.pk = ?1 "
-            + "AND i.replaced = FALSE AND i.availability <= ?2"),
-@NamedQuery(
-    name="Instance.numberOfSeriesRelatedInstances",
-    query="SELECT COUNT(i) FROM Instance i "
-            + "WHERE i.series.pk = ?1 "
-            + "AND i.replaced = FALSE AND i.availability <= ?2")})
+            + "WHERE i.series.seriesInstanceUID = ?1 AND i.replaced = FALSE")})
 @Entity
 @Table(name = "instance")
 public class Instance implements Serializable {
@@ -177,10 +167,6 @@ public class Instance implements Serializable {
             "Instance.instanceFileRefBySeriesInstanceUID";
     public static final String INSTANCE_FILE_REF_BY_STUDY_INSTANCE_UID =
             "Instance.instanceFileRefByStudyInstanceUID";
-    public static final String NUMBER_OF_STUDY_RELATED_INSTANCES =
-            "Instance.numberOfStudyRelatedInstances";
-    public static final String NUMBER_OF_SERIES_RELATED_INSTANCES =
-            "Instance.numberOfSeriesRelatedInstances";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -260,6 +246,10 @@ public class Instance implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "srcode_fk")
     private Code conceptNameCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reject_code_fk")
+    private Code rejectionNoteCode;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "instance_fk")
@@ -417,6 +407,14 @@ public class Instance implements Serializable {
 
     public void setConceptNameCode(Code conceptNameCode) {
         this.conceptNameCode = conceptNameCode;
+    }
+
+    public Code getRejectionNoteCode() {
+        return rejectionNoteCode;
+    }
+
+    public void setRejectionNoteCode(Code rejectionNoteCode) {
+        this.rejectionNoteCode = rejectionNoteCode;
     }
 
     public Collection<VerifyingObserver> getVerifyingObservers() {

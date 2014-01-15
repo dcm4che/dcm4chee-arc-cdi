@@ -109,7 +109,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.dataRetentionPeriodExpiredCode = code;
     }
 
-    public String getFuzzyAlgorithmClass() {
+   public String getFuzzyAlgorithmClass() {
         return fuzzyAlgorithmClass;
     }
 
@@ -207,5 +207,22 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         storeParam.setAttributeFilters(attributeFilters);
         return storeParam;
         
+    }
+
+    public QueryParam getQueryParam() {
+        QueryParam queryParam = new QueryParam();
+        queryParam.setIncorrectWorklistEntrySelectedCode(
+                incorrectWorklistEntrySelectedCode);
+        queryParam.setRejectedForQualityReasonsCode(
+                rejectedForQualityReasonsCode);
+        queryParam.setRejectedForPatientSafetyReasonsCode(
+                rejectedForPatientSafetyReasonsCode);
+        queryParam.setIncorrectModalityWorklistEntryCode(
+                incorrectModalityWorklistEntryCode);
+        queryParam.setDataRetentionPeriodExpiredCode(
+                dataRetentionPeriodExpiredCode);
+        queryParam.setFuzzyStr(getFuzzyStr());
+        queryParam.setAttributeFilters(attributeFilters);
+        return queryParam;
     }
 }

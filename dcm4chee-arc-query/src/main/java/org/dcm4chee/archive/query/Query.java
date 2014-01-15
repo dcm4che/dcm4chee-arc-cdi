@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2013
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,17 +36,35 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.entity;
+package org.dcm4chee.archive.query;
+
+import java.sql.SQLException;
+
+import org.dcm4che.data.Attributes;
+
+import com.mysema.query.types.OrderSpecifier;
 
 /**
- * @author Damien Evans <damien.daddy@gmail.com>
- * @author Justin Falk <jfalkmu@gmail.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-public enum Availability {
-    ONLINE,
-    NEARLINE,
-    OFFLINE,
-    UNAVAILABLE;
+public interface Query {
 
+    void executeQuery();
+
+    long count();
+
+    void limit(long limit);
+
+    void offset(long offset);
+
+    void orderBy(OrderSpecifier<?>... orderSpecifiers);
+
+    boolean optionalKeyNotSupported();
+
+    boolean hasMoreMatches();
+
+    Attributes nextMatch();
+
+    void close() throws SQLException;
 }

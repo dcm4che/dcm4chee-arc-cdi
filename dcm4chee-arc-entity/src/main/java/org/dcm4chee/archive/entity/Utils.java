@@ -136,7 +136,7 @@ public class Utils {
     }
 
     public static void setAvailability(Attributes attrs, Availability availability) {
-        attrs.setString(Tag.InstanceAvailability, VR.CS, availability.toCodeString());
+        attrs.setString(Tag.InstanceAvailability, VR.CS, availability.toString());
     }
 
     public static String toFuzzy(FuzzyStr fuzzyStr, String s) {

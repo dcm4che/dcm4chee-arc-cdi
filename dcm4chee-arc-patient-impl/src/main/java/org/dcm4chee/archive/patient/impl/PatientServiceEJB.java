@@ -49,10 +49,10 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
 import org.dcm4che.data.Attributes;
+import org.dcm4che.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.IDWithIssuer;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.issuer.IssuerService;
@@ -94,13 +94,12 @@ public class PatientServiceEJB implements PatientService {
                     Patient.FIND_BY_PATIENT_ID, Patient.class)
                 .setParameter(1, pid.getID());
         List<Patient> list = query.getResultList();
-        Issuer issuer = pid.getIssuer();
-        if (issuer != null) {
+        if (pid.getIssuer() != null) {
             for (Iterator<Patient> it = list.iterator(); it.hasNext();) {
                 Patient pat = (Patient) it.next();
                 Issuer issuer2 = pat.getIssuerOfPatientID();
                 if (issuer2 != null) {
-                    if (issuer2.matches(issuer)) {
+                    if (issuer2.matches(pid.getIssuer())) {
                         list.clear();
                         list.add(pat);
                         break;
@@ -132,7 +131,7 @@ public class PatientServiceEJB implements PatientService {
         Patient patient = new Patient();
         if (pid != null && pid.getIssuer() != null)
             patient.setIssuerOfPatientID(
-                    issuerService.findOrCreate(pid.getIssuer()));
+                    issuerService.findOrCreate(new Issuer(pid.getIssuer())));
         patient.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Patient),
                 storeParam.getFuzzyStr());
@@ -150,7 +149,7 @@ public class PatientServiceEJB implements PatientService {
                 IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(attrs);
                 if (pid != null && pid.getIssuer() != null)
                     patient.setIssuerOfPatientID(
-                            issuerService.findOrCreate(pid.getIssuer()));
+                            issuerService.findOrCreate(new Issuer(pid.getIssuer())));
             }
             patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
         }

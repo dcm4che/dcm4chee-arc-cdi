@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2013
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,17 +36,34 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.entity;
+package org.dcm4chee.archive.query;
+
+import org.dcm4che.data.Attributes;
+import org.dcm4che.data.IDWithIssuer;
+import org.dcm4che.net.service.QueryRetrieveLevel;
+import org.dcm4chee.archive.conf.QueryParam;
 
 /**
- * @author Damien Evans <damien.daddy@gmail.com>
- * @author Justin Falk <jfalkmu@gmail.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-public enum Availability {
-    ONLINE,
-    NEARLINE,
-    OFFLINE,
-    UNAVAILABLE;
+public interface QueryService {
+
+    Query createQuery(QueryRetrieveLevel qrlevel, IDWithIssuer[] pids,
+            Attributes keys, QueryParam queryParam) throws Exception;
+
+    Query createPatientQuery(IDWithIssuer[] pids, Attributes keys,
+            QueryParam queryParam) throws Exception;
+
+    Query createStudyQuery(IDWithIssuer[] pids, Attributes keys,
+            QueryParam queryParam) throws Exception;
+
+    Query createSeriesQuery(IDWithIssuer[] pids, Attributes keys,
+            QueryParam queryParam) throws Exception;
+
+    Query createInstanceQuery(IDWithIssuer[] pids, Attributes keys,
+            QueryParam queryParam) throws Exception;
+
+    String[] getPatientNames(IDWithIssuer[] pids);
 
 }

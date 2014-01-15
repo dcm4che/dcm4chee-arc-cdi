@@ -82,13 +82,25 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     name="Study.findByStudyInstanceUID",
     query="SELECT s FROM Study s WHERE s.studyInstanceUID = ?1"),
 @NamedQuery(
+    name="Study.updateNumberOfSeries",
+    query="UPDATE Study s "
+        + "SET s.numberOfSeries = ?1 "
+        + "WHERE s.pk = ?2"),
+@NamedQuery(
+    name="Study.updateNumberOfSeriesA",
+    query="UPDATE Study s "
+        + "SET s.numberOfSeriesA = ?1 "
+        + "WHERE s.pk = ?2"),
+@NamedQuery(
     name="Study.updateNumberOfInstances",
     query="UPDATE Study s "
-        + "SET s.numberOfSeries = ?1, "
-            + "s.numberOfSeriesA = ?2, "
-            + "s.numberOfInstances = ?3, "
-            + "s.numberOfInstancesA = ?4 "
-        + "WHERE s.pk = ?5")
+        + "SET s.numberOfInstances = ?1 "
+        + "WHERE s.pk = ?2"),
+@NamedQuery(
+        name="Study.updateNumberOfInstancesA",
+        query="UPDATE Study s "
+        + "SET s.numberOfInstancesA = ?1 "
+        + "WHERE s.pk = ?2")
 })
 @Entity
 @Table(name = "study")
@@ -97,7 +109,10 @@ public class Study implements Serializable {
     private static final long serialVersionUID = -6358525535057418771L;
 
     public static final String FIND_BY_STUDY_INSTANCE_UID = "Study.findByStudyInstanceUID";
+    public static final String UPDATE_NUMBER_OF_SERIES = "Study.updateNumberOfSeries";
+    public static final String UPDATE_NUMBER_OF_SERIES_A = "Study.updateNumberOfSeriesA";
     public static final String UPDATE_NUMBER_OF_INSTANCES = "Study.updateNumberOfInstances";
+    public static final String UPDATE_NUMBER_OF_INSTANCES_A = "Study.updateNumberOfInstancesA";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

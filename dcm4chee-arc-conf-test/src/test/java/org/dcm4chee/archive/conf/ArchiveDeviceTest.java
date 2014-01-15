@@ -1067,7 +1067,7 @@ public class ArchiveDeviceTest {
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
-        aeExt.setShowRejectedInstances(true);
+        aeExt.setShowRejectedForQualityReasons(true);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
         addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
         addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);

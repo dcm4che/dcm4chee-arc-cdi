@@ -35,60 +35,52 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.entity;
+
+package org.dcm4chee.archive.query.impl;
+
+import org.dcm4che.data.Attributes;
+import org.dcm4che.data.IDWithIssuer;
+import org.dcm4chee.archive.entity.QPatient;
+import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.query.util.QueryBuilder;
+import org.hibernate.ScrollableResults;
+
+import com.mysema.query.BooleanBuilder;
+import com.mysema.query.jpa.hibernate.HibernateQuery;
+import com.mysema.query.types.Expression;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
  */
-public class QueryPatientStudySeriesAttributes extends PatientStudySeriesAttributes {
-    
-    private final Long studyPk;
-    private int numberOfStudyRelatedSeries;
-    private int numberOfStudyRelatedInstances;
-    private int numberOfSeriesRelatedInstances;
-    private String modalitiesInStudy;
-    private String sopClassesInStudy;
+class PatientQuery extends AbstractQuery {
 
-    public QueryPatientStudySeriesAttributes(Long studyPk,
-            int numberOfStudyRelatedSeries,
-            int numberOfStudyRelatedInstances,
-            int numberOfSeriesRelatedInstances,
-            String modalitiesInStudy,
-            String sopClassesInStudy,
-            byte[] seriesAttributes,
-            byte[] studyAttributes,
-            byte[] patientAttributes) {
-        super(seriesAttributes, studyAttributes, patientAttributes);
-        this.studyPk = studyPk;
-        this.numberOfStudyRelatedSeries = numberOfStudyRelatedSeries;
-        this.numberOfStudyRelatedInstances = numberOfStudyRelatedInstances;
-        this.numberOfSeriesRelatedInstances = numberOfSeriesRelatedInstances;
-        this.modalitiesInStudy = modalitiesInStudy;
-        this.sopClassesInStudy = sopClassesInStudy;
+    private static final Expression<?>[] SELECT = {
+        QPatient.patient.pk,
+        QPatient.patient.encodedAttributes
+    };
+
+    public PatientQuery(DefaultQueryService qsf) {
+        super(qsf);
     }
 
-    public final Long getStudyPk() {
-        return studyPk;
+    @Override
+    protected Expression<?>[] select() {
+        return SELECT;
     }
 
-    public int getNumberOfStudyRelatedSeries() {
-        return numberOfStudyRelatedSeries;
+    @Override
+    protected HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys) {
+        BooleanBuilder builder = new BooleanBuilder();
+        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, queryParam);
+        return new HibernateQuery(session)
+            .from(QPatient.patient)
+            .where(builder);
     }
 
-    public int getNumberOfStudyRelatedInstances() {
-        return numberOfStudyRelatedInstances;
-    }
-
-    public int getNumberOfSeriesRelatedInstances() {
-        return numberOfSeriesRelatedInstances;
-    }
-
-    public String getModalitiesInStudy() {
-        return modalitiesInStudy;
-    }
-
-    public String getSopClassesInStudy() {
-        return sopClassesInStudy;
+    @Override
+    public Attributes toAttributes(ScrollableResults results) {
+        Attributes attrs = new Attributes();
+        Utils.decodeAttributes(attrs, results.getBinary(1));
+        return attrs;
     }
 }

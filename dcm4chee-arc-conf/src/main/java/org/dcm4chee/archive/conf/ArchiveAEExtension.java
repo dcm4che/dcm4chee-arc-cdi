@@ -99,7 +99,7 @@ public class ArchiveAEExtension extends AEExtension {
     private final CompressionRules compressionRules = new CompressionRules();
     private boolean returnOtherPatientIDs;
     private boolean returnOtherPatientNames;
-    private boolean showRejectedInstances;
+    private boolean showRejectedForQualityReasons;
     private String pixManagerApplication;
     private String pixConsumerApplication;
     private int qidoMaxNumberOfResults;
@@ -381,12 +381,12 @@ public class ArchiveAEExtension extends AEExtension {
         this.returnOtherPatientNames = returnOtherPatientNames;
     }
 
-    public boolean isShowRejectedInstances() {
-        return showRejectedInstances;
+    public boolean isShowRejectedForQualityReasons() {
+        return showRejectedForQualityReasons;
     }
 
-    public void setShowRejectedInstances(boolean showRejectedInstances) {
-        this.showRejectedInstances = showRejectedInstances;
+    public void setShowRejectedForQualityReasons(boolean showRejectedForQualityReasons) {
+        this.showRejectedForQualityReasons = showRejectedForQualityReasons;
     }
 
     public String getRemotePIXManagerApplication() {
@@ -441,7 +441,7 @@ public class ArchiveAEExtension extends AEExtension {
         setIANRetryInterval(arcae.ianRetryInterval);
         setReturnOtherPatientIDs(arcae.returnOtherPatientIDs);
         setReturnOtherPatientNames(arcae.returnOtherPatientNames);
-        setShowRejectedInstances(arcae.showRejectedInstances);
+        setShowRejectedForQualityReasons(arcae.showRejectedForQualityReasons);
         setRemotePIXManagerApplication(arcae.pixManagerApplication);
         setLocalPIXConsumerApplication(arcae.pixConsumerApplication);
         setQIDOMaxNumberOfResults(arcae.qidoMaxNumberOfResults);
@@ -464,21 +464,18 @@ public class ArchiveAEExtension extends AEExtension {
 
     public QueryParam getQueryParam(EnumSet<QueryOption> queryOpts,
             String[] accessControlIDs) {
-        ArchiveDeviceExtension devExt = ae.getDevice()
-                .getDeviceExtension(ArchiveDeviceExtension.class);
-        QueryParam queryParam = new QueryParam();
-        queryParam.setFuzzyStr(devExt.getFuzzyStr());
-        queryParam.setAttributeFilters(devExt.getAttributeFilters());
+        QueryParam queryParam = ae.getDevice()
+                .getDeviceExtension(ArchiveDeviceExtension.class)
+                .getQueryParam();
         queryParam.setCombinedDatetimeMatching(queryOpts
                 .contains(QueryOption.DATETIME));
         queryParam.setFuzzySemanticMatching(queryOpts
                 .contains(QueryOption.FUZZY));
         queryParam.setMatchUnknown(matchUnknown);
         queryParam.setAccessControlIDs(accessControlIDs);
-        queryParam.setShowRejectedInstances(showRejectedInstances);
         queryParam.setReturnOtherPatientIDs(returnOtherPatientIDs);
         queryParam.setReturnOtherPatientNames(returnOtherPatientNames);
-
+        queryParam.setShowRejectedForQualityReasons(showRejectedForQualityReasons);
         return queryParam;
     }
 

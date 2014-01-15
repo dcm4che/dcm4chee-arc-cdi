@@ -196,7 +196,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                     ArchiveAEExtension.DEF_RETRY_INTERVAL);
         LdapUtils.storeNotDef(attrs, "dcmReturnOtherPatientIDs", arcAE.isReturnOtherPatientIDs(), false);
         LdapUtils.storeNotDef(attrs, "dcmReturnOtherPatientNames", arcAE.isReturnOtherPatientNames(), false);
-        LdapUtils.storeNotDef(attrs, "dcmShowRejectedInstances", arcAE.isShowRejectedInstances(), false);
+        LdapUtils.storeNotDef(attrs, "dcmShowRejectedInstances", arcAE.isShowRejectedForQualityReasons(), false);
         LdapUtils.storeNotNull(attrs, "hl7PIXConsumerApplication", arcAE.getLocalPIXConsumerApplication());
         LdapUtils.storeNotNull(attrs, "hl7PIXManagerApplication", arcAE.getRemotePIXManagerApplication());
         LdapUtils.storeNotDef(attrs, "dcmQidoMaxNumberOfResults", arcAE.getQIDOMaxNumberOfResults(), 0);
@@ -314,7 +314,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                LdapUtils.booleanValue(attrs.get("dcmReturnOtherPatientIDs"), false));
        arcae.setReturnOtherPatientNames(
                LdapUtils.booleanValue(attrs.get("dcmReturnOtherPatientNames"), false));
-       arcae.setShowRejectedInstances(
+       arcae.setShowRejectedForQualityReasons(
                LdapUtils.booleanValue(attrs.get("dcmShowRejectedInstances"), false));
        arcae.setLocalPIXConsumerApplication(LdapUtils.stringValue(attrs.get("hl7PIXConsumerApplication"), null));
        arcae.setRemotePIXManagerApplication(LdapUtils.stringValue(attrs.get("hl7PIXManagerApplication"), null));
@@ -487,8 +487,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 bb.isReturnOtherPatientNames(),
                 false);
         LdapUtils.storeDiff(mods, "dcmShowRejectedInstances",
-                aa.isShowRejectedInstances(),
-                bb.isShowRejectedInstances(),
+                aa.isShowRejectedForQualityReasons(),
+                bb.isShowRejectedForQualityReasons(),
                 false);
         LdapUtils.storeDiff(mods, "hl7PIXConsumerApplication",
                 aa.getLocalPIXConsumerApplication(),

@@ -38,8 +38,7 @@
 
 package org.dcm4chee.archive.patient;
 
-import org.dcm4chee.archive.entity.IDWithIssuer;
-
+import org.dcm4che.data.IDWithIssuer;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

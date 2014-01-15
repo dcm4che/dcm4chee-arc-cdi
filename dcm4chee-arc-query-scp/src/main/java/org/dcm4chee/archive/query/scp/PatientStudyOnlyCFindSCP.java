@@ -35,60 +35,23 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.entity;
+
+package org.dcm4chee.archive.query.scp;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Typed;
+
+import org.dcm4che.data.UID;
+import org.dcm4che.net.service.DicomService;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
  */
-public class QueryPatientStudySeriesAttributes extends PatientStudySeriesAttributes {
-    
-    private final Long studyPk;
-    private int numberOfStudyRelatedSeries;
-    private int numberOfStudyRelatedInstances;
-    private int numberOfSeriesRelatedInstances;
-    private String modalitiesInStudy;
-    private String sopClassesInStudy;
-
-    public QueryPatientStudySeriesAttributes(Long studyPk,
-            int numberOfStudyRelatedSeries,
-            int numberOfStudyRelatedInstances,
-            int numberOfSeriesRelatedInstances,
-            String modalitiesInStudy,
-            String sopClassesInStudy,
-            byte[] seriesAttributes,
-            byte[] studyAttributes,
-            byte[] patientAttributes) {
-        super(seriesAttributes, studyAttributes, patientAttributes);
-        this.studyPk = studyPk;
-        this.numberOfStudyRelatedSeries = numberOfStudyRelatedSeries;
-        this.numberOfStudyRelatedInstances = numberOfStudyRelatedInstances;
-        this.numberOfSeriesRelatedInstances = numberOfSeriesRelatedInstances;
-        this.modalitiesInStudy = modalitiesInStudy;
-        this.sopClassesInStudy = sopClassesInStudy;
-    }
-
-    public final Long getStudyPk() {
-        return studyPk;
-    }
-
-    public int getNumberOfStudyRelatedSeries() {
-        return numberOfStudyRelatedSeries;
-    }
-
-    public int getNumberOfStudyRelatedInstances() {
-        return numberOfStudyRelatedInstances;
-    }
-
-    public int getNumberOfSeriesRelatedInstances() {
-        return numberOfSeriesRelatedInstances;
-    }
-
-    public String getModalitiesInStudy() {
-        return modalitiesInStudy;
-    }
-
-    public String getSopClassesInStudy() {
-        return sopClassesInStudy;
+@ApplicationScoped
+@Typed(DicomService.class)
+public class PatientStudyOnlyCFindSCP  extends CFindSCP {
+    public PatientStudyOnlyCFindSCP () {
+        super(UID.PatientStudyOnlyQueryRetrieveInformationModelFINDRetired,
+                "PATIENT", "STUDY");
     }
 }
