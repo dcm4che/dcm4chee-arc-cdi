@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011-2013
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,75 +36,21 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store;
-
-import java.nio.file.Path;
+package org.dcm4chee.archive.stgcmt.scp;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Availability;
-import org.dcm4chee.archive.entity.FileRef;
-import org.dcm4chee.archive.entity.FileSystem;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface StoreContext {
+public interface StgCmtService {
 
-    /** GETTERS **/
-    
-    StoreSource getStoreSource();
+    Attributes calculateResult(Attributes actionInfo);
 
-    FileSystem getFileSystem();
+    void scheduleNEventReport(String localAET, String remoteAET,
+            Attributes eventInfo, int retries, long delay);
 
-    ArchiveAEExtension getArchiveAEExtension();
-
-    String getTransferSyntax();
-
-    Attributes getAttributes();
-
-    String getSOPClassUID();
-
-    String getSOPInstanceUID();
-
-    String getSeriesInstanceUID();
-
-    String getStudyInstanceUID();
-
-    Attributes getCoercedAttributes();
-
-    // path to the file to be processed/moved
-    Path getFile();
-
-    // path where the processed file will be moved
-    Path getStorePath();
-
-    String getSendingAETitle();
-
-    String getReceivingAETitle();
-
-    StoreParam getStoreParam();
-
-    Availability getAvailability();
-
-    FileRef getFileRef();
-    
-    StoreService getService();
-    
-    
-    /** SETTERS **/
-    
-    // digest
-    void setDigest(byte[] digest);
-
-    void setFile(Path file);
-    
-    void setTransferSyntax(String tsuid);
-
-    void setAttributes(Attributes attrs);
-    
-    void setService(StoreService service);
-    
+    void sendNEventReport(String localAET, String remoteAET,
+            Attributes eventInfo, int retries);
 }

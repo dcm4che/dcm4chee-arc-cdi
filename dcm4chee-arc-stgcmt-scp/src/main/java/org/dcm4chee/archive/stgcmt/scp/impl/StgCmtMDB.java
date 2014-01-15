@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,76 +35,48 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.stgcmt.scp.impl;
 
-package org.dcm4chee.archive.store;
-
-import java.nio.file.Path;
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.MessageDriven;
+import javax.inject.Inject;
+import javax.jms.Message;
+import javax.jms.MessageListener;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Availability;
-import org.dcm4chee.archive.entity.FileRef;
-import org.dcm4chee.archive.entity.FileSystem;
+import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface StoreContext {
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType",
+                                  propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination",
+                                  propertyValue = "queue/stgcmtscp"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode",
+                                  propertyValue = "Auto-acknowledge") })
+public class StgCmtMDB implements MessageListener {
 
-    /** GETTERS **/
-    
-    StoreSource getStoreSource();
+    private static final Logger LOG = LoggerFactory.getLogger(StgCmtMDB.class);
 
-    FileSystem getFileSystem();
+    @Inject
+    private StgCmtService stgCmtService;
 
-    ArchiveAEExtension getArchiveAEExtension();
+    @Override
+    public void onMessage(Message msg) {
+        try {
+            stgCmtService.sendNEventReport(msg.getStringProperty("LocalAET"),
+                msg.getStringProperty("RemoteAET"),
+                msg.getBody(Attributes.class),
+                msg.getIntProperty("Retries"));
+        } catch (Throwable th) {
+            LOG.warn("Failed to process " + msg, th);
+        }
+    }
 
-    String getTransferSyntax();
 
-    Attributes getAttributes();
-
-    String getSOPClassUID();
-
-    String getSOPInstanceUID();
-
-    String getSeriesInstanceUID();
-
-    String getStudyInstanceUID();
-
-    Attributes getCoercedAttributes();
-
-    // path to the file to be processed/moved
-    Path getFile();
-
-    // path where the processed file will be moved
-    Path getStorePath();
-
-    String getSendingAETitle();
-
-    String getReceivingAETitle();
-
-    StoreParam getStoreParam();
-
-    Availability getAvailability();
-
-    FileRef getFileRef();
-    
-    StoreService getService();
-    
-    
-    /** SETTERS **/
-    
-    // digest
-    void setDigest(byte[] digest);
-
-    void setFile(Path file);
-    
-    void setTransferSyntax(String tsuid);
-
-    void setAttributes(Attributes attrs);
-    
-    void setService(StoreService service);
-    
 }

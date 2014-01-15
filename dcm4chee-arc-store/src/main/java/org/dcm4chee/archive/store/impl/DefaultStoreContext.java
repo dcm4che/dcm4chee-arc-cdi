@@ -40,13 +40,12 @@ package org.dcm4chee.archive.store.impl;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.EnumSet;
 
 import org.dcm4che.data.Attributes;
+import org.dcm4che.data.Tag;
 import org.dcm4che.util.AttributesFormat;
 import org.dcm4che.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.FileRef;
@@ -71,6 +70,10 @@ public class DefaultStoreContext implements StoreContext {
     private String transferSyntax;
     private Attributes attributes;
     private Attributes coercedAttributes = new Attributes();
+    private String sopCUID;
+    private String sopIUID;
+    private String seriesIUID;
+    private String studyIUID;
 
     public DefaultStoreContext(StoreSource source, ArchiveAEExtension arcAE,
             FileSystem fs, Path file, byte[] digest) {
@@ -111,6 +114,30 @@ public class DefaultStoreContext implements StoreContext {
     @Override
     public void setAttributes(Attributes attrs) {
         this.attributes = attrs;
+        this.sopCUID = attrs.getString(Tag.SOPClassUID);
+        this.sopIUID = attrs.getString(Tag.SOPInstanceUID);
+        this.seriesIUID = attrs.getString(Tag.SeriesInstanceUID);
+        this.studyIUID = attrs.getString(Tag.StudyInstanceUID);
+    }
+
+    @Override
+    public String getSOPClassUID() {
+        return sopCUID;
+    }
+
+    @Override
+    public String getSOPInstanceUID() {
+        return sopIUID;
+    }
+
+    @Override
+    public String getSeriesInstanceUID() {
+        return seriesIUID;
+    }
+
+    @Override
+    public String getStudyInstanceUID() {
+        return studyIUID;
     }
 
     @Override

@@ -51,6 +51,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.xml.transform.Templates;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Sequence;
@@ -59,7 +60,10 @@ import org.dcm4che.data.UID;
 import org.dcm4che.data.VR;
 import org.dcm4che.io.DicomInputStream;
 import org.dcm4che.io.DicomInputStream.IncludeBulkData;
+import org.dcm4che.io.SAXTransformer;
+import org.dcm4che.net.Dimse;
 import org.dcm4che.net.Status;
+import org.dcm4che.net.TransferCapability;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4che.soundex.FuzzyStr;
 import org.dcm4che.util.TagUtils;
@@ -156,7 +160,22 @@ public class DefaultStoreService implements StoreService {
     @Override
     public void coerceAttributes(StoreContext storeContext)
             throws DicomServiceException {
-    }
+        try {
+            ArchiveAEExtension arcAE = storeContext.getArchiveAEExtension();
+            Attributes attrs = storeContext.getAttributes();
+            Attributes modified = storeContext.getCoercedAttributes();
+            StoreSource storeSource = storeContext.getStoreSource();
+            Templates tpl = arcAE.getAttributeCoercionTemplates(
+                    storeContext.getSOPClassUID(),
+                    Dimse.C_STORE_RQ, TransferCapability.Role.SCP, 
+                    storeSource.getSendingAETitle(arcAE));
+            if (tpl != null)
+                attrs.update(SAXTransformer.transform(attrs, tpl, false, false),
+                        modified);
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.ProcessingFailure);
+        }
+   }
 
     @Override
     public void moveFile(StoreContext storeContext)
@@ -190,13 +209,11 @@ public class DefaultStoreService implements StoreService {
     @Override
     public Instance findInstance(EntityManager em, StoreContext storeContext)
             throws DicomServiceException {
-        String iuid = storeContext.getAttributes()
-                .getString(Tag.SOPInstanceUID);
         try {
-            return em
-                    .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID,
-                            Instance.class).setParameter(1, iuid)
-                    .getSingleResult();
+            return em.createNamedQuery(
+                    Instance.FIND_BY_SOP_INSTANCE_UID, Instance.class)
+                 .setParameter(1, storeContext.getSOPInstanceUID())
+                 .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
@@ -207,13 +224,11 @@ public class DefaultStoreService implements StoreService {
     @Override
     public Series findSeries(EntityManager em, StoreContext storeContext)
             throws DicomServiceException {
-        String iuid = storeContext.getAttributes().getString(
-                Tag.SeriesInstanceUID);
         try {
-            return em
-                    .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID,
-                            Series.class).setParameter(1, iuid)
-                    .getSingleResult();
+            return em.createNamedQuery(
+                    Series.FIND_BY_SERIES_INSTANCE_UID, Series.class)
+                 .setParameter(1, storeContext.getSeriesInstanceUID())
+                 .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
@@ -224,13 +239,11 @@ public class DefaultStoreService implements StoreService {
     @Override
     public Study findStudy(EntityManager em, StoreContext storeContext)
             throws DicomServiceException {
-        String iuid = storeContext.getAttributes().getString(
-                Tag.StudyInstanceUID);
         try {
-            return em
-                    .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID,
-                            Study.class).setParameter(1, iuid)
-                    .getSingleResult();
+            return em.createNamedQuery(
+                    Study.FIND_BY_STUDY_INSTANCE_UID, Study.class)
+                 .setParameter(1, storeContext.getStudyInstanceUID())
+                 .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
