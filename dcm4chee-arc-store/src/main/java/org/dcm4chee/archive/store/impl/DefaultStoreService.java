@@ -49,6 +49,7 @@ import java.util.Date;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.xml.transform.Templates;
@@ -98,6 +99,7 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * 
  */
+@Named("DefaultStoreService")
 @ApplicationScoped
 public class DefaultStoreService implements StoreService {
 
@@ -180,6 +182,8 @@ public class DefaultStoreService implements StoreService {
     @Override
     public void moveFile(StoreContext storeContext)
             throws DicomServiceException {
+        
+        System.out.println("***********MOVE FILE! (STORE SERVICE)");
         try {
             storeContext.setFile(move(storeContext.getFile(),
                     storeContext.getStorePath()));

@@ -3,6 +3,6 @@
   xmlns="http://xmlns.jcp.org/xml/ns/javaee"
   bean-discovery-mode="all">
   <decorators>
-    <class>org.dcm4chee.archive.store.impl.StoreServiceCompressDecorator</class>
+    <class>org.dcm4chee.archive.compress.impl.StoreServiceCompressDecorator</class>
   </decorators>
 </beans>

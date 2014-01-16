@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.impl;
+package org.dcm4chee.archive.compress.impl;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
@@ -45,47 +45,39 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import javax.annotation.Priority;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
-import javax.enterprise.inject.Any;
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
+import javax.inject.Singleton;
 
 import org.dcm4che.data.BulkData;
 import org.dcm4che.data.Tag;
 import org.dcm4che.imageio.codec.CompressionRule;
 import org.dcm4che.net.Status;
 import org.dcm4che.net.service.DicomServiceException;
-import org.dcm4che.util.TagUtils;
 import org.dcm4chee.archive.compress.CompressionService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.entity.FileSystem;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
-import org.dcm4chee.archive.store.StoreSource;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
-@Decorator
+@Singleton @Decorator @Priority(3000) // Interceptor.Priority.APPLICATION = 2000
 public abstract class StoreServiceCompressDecorator implements StoreService{
 
     // injected StoreService to be decorated
-    @Inject @Delegate @Any StoreService storeService;
+    @Inject @Delegate StoreService storeService;
     
     //injected compression service
     @Inject
     private CompressionService compressionService;
-    
 
     public void moveFile(StoreContext storeContext)
             throws DicomServiceException {
-
+        
         // if possible, compress the file, store on file system and
         // update store context. Otherwise call the standard moveFile.
         if (!compress(storeContext)) {
