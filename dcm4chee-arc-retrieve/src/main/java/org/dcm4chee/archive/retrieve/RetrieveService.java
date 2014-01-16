@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2013
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,34 +36,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.query;
+package org.dcm4chee.archive.retrieve;
+
+import java.util.List;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.IDWithIssuer;
-import org.dcm4che.net.service.QueryRetrieveLevel;
+import org.dcm4che.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.QueryParam;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface QueryService {
+public interface RetrieveService {
 
-    Query createQuery(QueryRetrieveLevel qrlevel, IDWithIssuer[] pids,
-            Attributes keys, QueryParam queryParam) throws Exception;
-
-    Query createPatientQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
-
-    Query createStudyQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
-
-    Query createSeriesQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
-
-    Query createInstanceQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
-
-    String[] queryPatientNames(IDWithIssuer[] pids);
+    List<InstanceLocator> calculateMatches(IDWithIssuer[] pids,
+            Attributes keys, QueryParam queryParam);
 
 }

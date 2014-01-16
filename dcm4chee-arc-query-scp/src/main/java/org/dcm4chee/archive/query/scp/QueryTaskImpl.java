@@ -91,7 +91,7 @@ class QueryTaskImpl extends BasicQueryTask {
         this.returnOtherPatientNames = queryParam.isReturnOtherPatientNames()
                 && keys.contains(Tag.OtherPatientNames);
         this.patientNames = returnOtherPatientNames && pids.length > 1 
-                ? queryService.getPatientNames(pids)
+                ? queryService.queryPatientNames(pids)
                 : null;
         this.skipMatchesWithoutPatientID = skipMatchesWithoutPatientID;
      }

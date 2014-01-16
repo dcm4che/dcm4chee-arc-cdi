@@ -210,5 +210,7 @@
     <module>dcm4chee-arc-query-util</module>
     <module>dcm4chee-arc-query</module>
     <module>dcm4chee-arc-query-scp</module>
+    <module>dcm4chee-arc-retrieve</module>
+    <module>dcm4chee-arc-retrieve-scp</module>
   </modules>
 </project>
