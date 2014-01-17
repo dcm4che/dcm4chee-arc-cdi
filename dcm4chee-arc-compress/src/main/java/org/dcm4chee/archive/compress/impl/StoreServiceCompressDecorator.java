@@ -48,6 +48,7 @@ import java.security.NoSuchAlgorithmException;
 import javax.annotation.Priority;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
+import javax.enterprise.inject.Default;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -65,7 +66,7 @@ import org.dcm4chee.archive.store.StoreService;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
-@Singleton @Decorator @Priority(3000) // Interceptor.Priority.APPLICATION = 2000
+@Default @Decorator @Priority(3000) // Interceptor.Priority.APPLICATION = 2000
 public abstract class StoreServiceCompressDecorator implements StoreService{
 
     // injected StoreService to be decorated

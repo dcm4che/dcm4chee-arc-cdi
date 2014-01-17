@@ -182,8 +182,6 @@ public class DefaultStoreService implements StoreService {
     @Override
     public void moveFile(StoreContext storeContext)
             throws DicomServiceException {
-        
-        System.out.println("***********MOVE FILE! (STORE SERVICE)");
         try {
             storeContext.setFile(move(storeContext.getFile(),
                     storeContext.getStorePath()));
