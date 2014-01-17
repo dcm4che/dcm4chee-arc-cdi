@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import javax.ejb.Stateless;
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -59,6 +60,9 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PerformedProcedureStep;
 import org.dcm4chee.archive.entity.ScheduledProcedureStep;
 import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.mpps.event.Create;
+import org.dcm4chee.archive.mpps.event.MPPSEvent;
+import org.dcm4chee.archive.mpps.event.Update;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
@@ -83,6 +87,14 @@ public class MPPSServiceImpl implements MPPSService {
 
     @Inject
     private RequestService requestService;
+
+    @Inject
+    @Create
+    Event<MPPSEvent> createMPPSEvent;
+
+    @Inject
+    @Update
+    Event<MPPSEvent> updateMPPSEvent;    
 
     @Override
     public PerformedProcedureStep createPerformedProcedureStep(
@@ -110,6 +122,11 @@ public class MPPSServiceImpl implements MPPSService {
                         storeParam));
         mpps.setPatient(patient);
         em.persist(mpps);
+        
+        //fire create event
+        MPPSEvent event = new MPPSEvent(mpps);
+        createMPPSEvent.fire(event);
+        
         return mpps;
     }
 
@@ -136,6 +153,11 @@ public class MPPSServiceImpl implements MPPSService {
                 throw new DicomServiceException(Status.MissingAttributeValue)
                         .setAttributeIdentifierList(Tag.PerformedSeriesSequence);
         }
+
+        //fire update event
+        MPPSEvent event = new MPPSEvent(pps);
+        updateMPPSEvent.fire(event);
+
         return pps;
     }
 
