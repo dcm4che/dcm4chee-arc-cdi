@@ -38,71 +38,10 @@
 
 package org.dcm4chee.archive.store;
 
-import java.nio.file.Path;
-
-import org.dcm4che.data.Attributes;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Availability;
-import org.dcm4chee.archive.entity.FileRef;
-import org.dcm4chee.archive.entity.FileSystem;
-
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface StoreContext {
-
-    /** GETTERS **/
-    
-    StoreSource getStoreSource();
-
-    FileSystem getFileSystem();
-
-    ArchiveAEExtension getArchiveAEExtension();
-
-    String getTransferSyntax();
-
-    Attributes getAttributes();
-
-    String getSOPClassUID();
-
-    String getSOPInstanceUID();
-
-    String getSeriesInstanceUID();
-
-    String getStudyInstanceUID();
-
-    Attributes getCoercedAttributes();
-
-    // path to the file to be processed/moved
-    Path getFile();
-
-    // path where the processed file will be moved
-    Path getStorePath();
-
-    String getSendingAETitle();
-
-    String getReceivingAETitle();
-
-    StoreParam getStoreParam();
-
-    Availability getAvailability();
-
-    FileRef getFileRef();
-    
-    StoreService getService();
-    
-    
-    /** SETTERS **/
-    
-    // digest
-    void setDigest(byte[] digest);
-
-    void setFile(Path file);
-    
-    void setTransferSyntax(String tsuid);
-
-    void setAttributes(Attributes attrs);
-   
+public enum StoreAction {
+    IGNORE, STORE, REPLACE
 }

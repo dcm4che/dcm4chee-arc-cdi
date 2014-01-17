@@ -60,8 +60,8 @@ import org.dcm4chee.archive.store.StoreSource;
  */
 public class DefaultStoreContext implements StoreContext {
 
-    private StoreSource source;
     private StoreService service;
+    private StoreSource source;
     private ArchiveAEExtension arcAE;
     private FileSystem fs;
     private Path file;
@@ -75,8 +75,9 @@ public class DefaultStoreContext implements StoreContext {
     private String seriesIUID;
     private String studyIUID;
 
-    public DefaultStoreContext(StoreSource source, ArchiveAEExtension arcAE,
-            FileSystem fs, Path file, byte[] digest) {
+    public DefaultStoreContext(StoreService service, StoreSource source,
+            ArchiveAEExtension arcAE, FileSystem fs, Path file, byte[] digest) {
+        this.service = service;
         this.source = source;
         this.arcAE = arcAE;
         this.fs = fs;
@@ -216,11 +217,6 @@ public class DefaultStoreContext implements StoreContext {
     @Override
     public StoreService getService() {
         return service;
-    }
-
-    @Override
-    public void setService(StoreService service) {
-        this.service = service;
     }
     
 }

@@ -61,9 +61,8 @@ public interface StoreService {
     FileSystem selectFileSystem(StoreSource source, ArchiveAEExtension arcAE)
             throws DicomServiceException;
 
-    StoreContext createStoreContext(StoreSource source,
-            ArchiveAEExtension arcAE, FileSystem fs, Path file,
-            byte[] digest);
+    StoreContext createStoreContext(StoreService service, StoreSource source,
+            ArchiveAEExtension arcAE, FileSystem fs, Path file, byte[] digest);
 
     void parseAttributes(StoreContext storeContext)
             throws DicomServiceException;
@@ -75,11 +74,14 @@ public interface StoreService {
 
     void updateDB(StoreContext storeContext) throws DicomServiceException;
 
-    Instance findInstance(EntityManager em, StoreContext storeContext)
+    void updateDB(EntityManager em, StoreContext storeContext)
             throws DicomServiceException;
 
-    boolean replaceInstance(EntityManager em,
-            StoreContext storeContext, Instance instance);
+    StoreAction storeDuplicate(StoreContext storeContext,
+            Instance instance) throws DicomServiceException;
+
+    Instance findInstance(EntityManager em, StoreContext storeContext)
+            throws DicomServiceException;
 
     Series findSeries(EntityManager em, StoreContext storeContext)
             throws DicomServiceException;
@@ -112,5 +114,6 @@ public interface StoreService {
     void updateSeries(StoreContext storeContext, Series series);
 
     void updateInstance(StoreContext storeContext, Instance inst);
+
 
 }

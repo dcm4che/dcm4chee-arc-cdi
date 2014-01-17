@@ -72,6 +72,7 @@ import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.StoreDuplicate;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
@@ -90,6 +91,7 @@ import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.request.RequestService;
+import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSource;
@@ -138,9 +140,9 @@ public class DefaultStoreService implements StoreService {
     }
 
     @Override
-    public StoreContext createStoreContext(StoreSource source,
+    public StoreContext createStoreContext(StoreService service, StoreSource source,
             ArchiveAEExtension arcAE, FileSystem fs, Path file, byte[] digest) {
-        return new DefaultStoreContext(source, arcAE, fs, file, digest);
+        return new DefaultStoreContext(service, source, arcAE, fs, file, digest);
     }
 
     @Override
@@ -207,6 +209,70 @@ public class DefaultStoreService implements StoreService {
     public void updateDB(StoreContext storeContext)
             throws DicomServiceException {
         storeServiceEJB.updateDB(storeContext);
+    }
+
+
+    @Override
+    public void updateDB(EntityManager em, StoreContext storeContext)
+            throws DicomServiceException {
+        StoreService service = storeContext.getService();
+        Instance instance = service.findInstance(em, storeContext);
+        if (instance != null) {
+            switch (service.storeDuplicate(storeContext, instance)) {
+            case REPLACE:
+                instance.setReplaced(true);
+                instance = null;
+            case STORE:
+                break;
+            case IGNORE:
+                Attributes storedAttrs = storeContext.getAttributes();
+                Attributes coercedAtts = storeContext.getCoercedAttributes();
+                Series series = instance.getSeries();
+                Study study = series.getStudy();
+                Patient patient = study.getPatient();
+                storedAttrs.update(patient.getAttributes(), coercedAtts);
+                storedAttrs.update(study.getAttributes(), coercedAtts);
+                storedAttrs.update(series.getAttributes(), coercedAtts);
+                storedAttrs.update(instance.getAttributes(), coercedAtts);
+               return;
+            }
+        }
+        if (instance == null) {
+            Series series = service.findSeries(em, storeContext);
+            if (series == null) {
+                Study study = service.findStudy(em, storeContext);
+                if (study == null) {
+                    Patient patient = service.findPatient(em, storeContext);
+                    if (patient == null) {
+                        patient = service.createPatient(em, storeContext);
+                    } else {
+                        service.updatePatient(storeContext, patient);
+                    }
+                    study = service.createStudy(em, storeContext, patient);
+                } else {
+                    Patient patient = study.getPatient();
+                    service.updatePatient(storeContext, patient);
+                    service.updateStudy(storeContext, study);
+                }
+                series = service.createSeries(em, storeContext, study);
+            } else {
+                Study study = series.getStudy();
+                Patient patient = study.getPatient();
+                service.updatePatient(storeContext, patient);
+                service.updateStudy(storeContext, study);
+                service.updateSeries(storeContext, series);
+            }
+            instance = service.createInstance(em, storeContext, series);
+        } else {
+            Series series = instance.getSeries();
+            Study study = series.getStudy();
+            Patient patient = study.getPatient();
+            service.updatePatient(storeContext, patient);
+            service.updateStudy(storeContext, study);
+            service.updateSeries(storeContext, series);
+            service.updateInstance(storeContext, instance);
+        }
+        service.createFileRef(em, storeContext, instance);
     }
 
     @Override
@@ -461,40 +527,27 @@ public class DefaultStoreService implements StoreService {
     }
 
     @Override
-    public boolean replaceInstance(EntityManager em, StoreContext storeContext,
+    public StoreAction storeDuplicate(StoreContext storeContext,
             Instance inst) {
         String externalRetrieveAET = inst.getExternalRetrieveAET();
         String sendingAETitle = storeContext.getSendingAETitle();
-        if (externalRetrieveAET != null
-                && externalRetrieveAET.equals(sendingAETitle)) {
-            Series series = inst.getSeries();
-            Study study = series.getStudy();
-            Patient patient = study.getPatient();
-            Collection<FileRef> fileRefs = inst.getFileRefs();
-            if (fileRefs.isEmpty()) {
-                storeContext.getService().updatePatient(storeContext, patient);
-                storeContext.getService().updateStudy(storeContext, study);
-                storeContext.getService().updateSeries(storeContext, series);
-                storeContext.getService().updateInstance(storeContext, inst);
-                storeContext.getService().createFileRef(em, storeContext, inst);
-            }
-            Attributes storedAttrs = storeContext.getAttributes();
-            Attributes coercedAtts = storeContext.getCoercedAttributes();
-            storedAttrs.update(patient.getAttributes(), coercedAtts);
-            storedAttrs.update(study.getAttributes(), coercedAtts);
-            storedAttrs.update(series.getAttributes(), coercedAtts);
-            storedAttrs.update(inst.getAttributes(), coercedAtts);
-            return false;
+        if (externalRetrieveAET == null
+                || externalRetrieveAET.equals(sendingAETitle)) {
+            return StoreAction.REPLACE;
         }
-
-        inst.setReplaced(true);
-        return true;
+        if (inst.getFileRefs().isEmpty()) {
+            return StoreAction.STORE;
+        }
+        return StoreAction.IGNORE;
     }
 
     @Override
     public void updatePatient(StoreContext storeContext, Patient patient) {
+        Attributes data = storeContext.getAttributes();
         patientService.updatePatient(patient,
-                storeContext.getAttributes(), storeContext.getStoreParam());
+                data, storeContext.getStoreParam());
+        data.update(patient.getAttributes(),
+                storeContext.getCoercedAttributes());
     }
 
     @Override
@@ -511,6 +564,8 @@ public class DefaultStoreService implements StoreService {
             study.setAttributes(studyAttrs, studyFilter,
                     storeParam.getFuzzyStr());
         }
+        storeContext.getAttributes().update(data,
+                storeContext.getCoercedAttributes());
     }
 
     @Override
@@ -525,6 +580,8 @@ public class DefaultStoreService implements StoreService {
             series.setAttributes(seriesAttrs, seriesFilter,
                     storeParam.getFuzzyStr());
         }
+        storeContext.getAttributes().update(data,
+                storeContext.getCoercedAttributes());
     }
 
     @Override

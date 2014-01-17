@@ -366,7 +366,7 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
 
     private void storeDicomObject(Path file, byte[] digest) {
         StoreContext storeContext = storeService.createStoreContext(
-                source, arcAE, fileSystem, file, digest);
+                storeService, source, arcAE, fileSystem, file, digest);
         String iuid = NOT_PARSEABLE_IUID;
         String cuid = NOT_PARSEABLE_CUID;
         try {

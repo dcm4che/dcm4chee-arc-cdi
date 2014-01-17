@@ -102,9 +102,8 @@ public class CStoreSCP extends BasicCStoreSCP {
             Path file = spool(spoolDirectory, fmiOf(as, tsuid, rq), data, 
                     digest);
             StoreContext storeContext = storeService.createStoreContext(
-                    source, arcAE, fs, file,
+                    storeService, source, arcAE, fs, file,
                     digest != null ? digest.digest() : null);
-            storeContext.setService(storeService);
             storeService.parseAttributes(storeContext);
             storeService.coerceAttributes(storeContext);
             storeService.moveFile(storeContext);
