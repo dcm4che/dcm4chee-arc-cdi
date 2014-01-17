@@ -77,10 +77,10 @@ public class MPPSSCUMDB implements MessageListener {
                     msg.getIntProperty("Retries"));
             else
                 mppsscu.sendNSetRQ(msg.getStringProperty("LocalAET"),
-                        msg.getStringProperty("RemoteAET"),
-                        msg.getStringProperty("SOPInstancesUID"),
-                        msg.getBody(Attributes.class),
-                        msg.getIntProperty("Retries"));
+                    msg.getStringProperty("RemoteAET"),
+                    msg.getStringProperty("SOPInstancesUID"),
+                    msg.getBody(Attributes.class),
+                    msg.getIntProperty("Retries"));
         } catch (Throwable th) {
             LOG.warn("Failed to process " + msg, th);
         }
