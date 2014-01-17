@@ -85,6 +85,7 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.issuer.IssuerService;
+import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientService;
@@ -257,15 +258,10 @@ public class DefaultStoreService implements StoreService {
     public Patient findPatient(EntityManager em, StoreContext storeContext)
             throws DicomServiceException {
         try {
-            return patientService.findPatientOnStorage(storeContext
-                    .getAttributes());
+            return patientService.findPatientFollowMerged(storeContext
+                    .getAttributes(), new IDPatientSelector());
         } catch (NonUniquePatientException e) {
-            LOG.info("Could not find unique Patient Record for received Study - create new Patient Record");
-            return null;
-        } catch (PatientCircularMergedException e) {
-            LOG.warn(
-                    "Detect circular merged Patient Record for received Study - create new Patient Record",
-                    e);
+            LOG.info("Could not find unique Patient Record for received Study - create new Patient Record", e);
             return null;
         } catch (Exception e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);
@@ -274,7 +270,7 @@ public class DefaultStoreService implements StoreService {
 
     @Override
     public Patient createPatient(EntityManager em, StoreContext storeContext) {
-        return patientService.createPatientOnStorage(
+        return patientService.createPatient(
                 storeContext.getAttributes(), storeContext.getStoreParam());
     }
 
@@ -497,7 +493,7 @@ public class DefaultStoreService implements StoreService {
 
     @Override
     public void updatePatient(StoreContext storeContext, Patient patient) {
-        patientService.updatePatientOnStorage(patient,
+        patientService.updatePatient(patient,
                 storeContext.getAttributes(), storeContext.getStoreParam());
     }
 

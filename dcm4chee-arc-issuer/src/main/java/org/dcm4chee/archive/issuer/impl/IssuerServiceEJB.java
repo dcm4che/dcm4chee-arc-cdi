@@ -57,20 +57,21 @@ public class IssuerServiceEJB implements IssuerService {
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
 
-    public Issuer findOrCreate(Issuer issuer) {
+    public Issuer findOrCreate(org.dcm4che.data.Issuer issuer) {
         try {
             return find(issuer);
         } catch (NoResultException e) {
-            em.persist(issuer);
-            return issuer;
+            Issuer newIssuer = new Issuer(issuer);
+            em.persist(newIssuer);
+            return newIssuer;
         }
     }
 
-    private Issuer find(Issuer issuer) {
+    private Issuer find(org.dcm4che.data.Issuer issuer) {
         String entityID = issuer.getLocalNamespaceEntityID();
         String entityUID = issuer.getUniversalEntityID();
         String entityUIDType = issuer.getUniversalEntityIDType();
-        TypedQuery<Issuer> query;
+        TypedQuery<org.dcm4chee.archive.entity.Issuer> query;
         if (entityID == null) {
             query = em.createNamedQuery(Issuer.FIND_BY_ENTITY_UID, Issuer.class)
                     .setParameter(1, entityUID)

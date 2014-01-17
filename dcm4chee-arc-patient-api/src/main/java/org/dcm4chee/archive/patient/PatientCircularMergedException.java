@@ -44,7 +44,7 @@ import org.dcm4chee.archive.entity.Patient;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-public class PatientCircularMergedException extends RuntimeException {
+public class PatientCircularMergedException extends Exception {
 
     private static final long serialVersionUID = 3937535085752305999L;
     private final Patient patient;

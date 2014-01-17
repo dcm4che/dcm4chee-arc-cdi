@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,17 +36,32 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.patient;
+package org.dcm4chee.archive.mpps;
+
+import org.dcm4che.data.Attributes;
+import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.PerformedProcedureStep;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-public class NonUniquePatientException extends Exception {
+public interface MPPSService {
 
-    private static final long serialVersionUID = -770538934731527268L;
+    PerformedProcedureStep createPerformedProcedureStep(MPPSService service,
+            String sopInstanceUID, Attributes attrs, StoreParam storeParam)
+            throws DicomServiceException;
 
-    public NonUniquePatientException(String message) {
-        super(message);
-    }
+    PerformedProcedureStep updatePerformedProcedureStep(MPPSService service,
+            String iuid, Attributes rqAttrs, StoreParam storeParam)
+            throws DicomServiceException;
+
+    Patient findPatient(Attributes attrs) throws DicomServiceException;
+
+    void updatePatient(Patient patient, Attributes attrs, StoreParam storeParam);
+
+    Patient createPatient(Attributes attrs, StoreParam storeParam);
 
 }

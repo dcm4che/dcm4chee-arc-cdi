@@ -212,5 +212,6 @@
     <module>dcm4chee-arc-query-scp</module>
     <module>dcm4chee-arc-retrieve</module>
     <module>dcm4chee-arc-retrieve-scp</module>
+    <module>dcm4chee-arc-mpps-scp</module>
   </modules>
 </project>

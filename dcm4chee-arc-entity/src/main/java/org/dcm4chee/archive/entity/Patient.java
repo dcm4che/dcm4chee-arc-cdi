@@ -75,7 +75,11 @@ import org.dcm4chee.archive.conf.AttributeFilter;
 @NamedQuery(
     name="Patient.findByPatientID",
     query="SELECT p FROM Patient p LEFT JOIN FETCH p.issuerOfPatientID " +
-          "WHERE p.patientID = ?1" )
+          "WHERE p.patientID = ?1"),
+@NamedQuery(
+    name="Patient.findByPatientName",
+    query="SELECT p FROM Patient p LEFT JOIN FETCH p.issuerOfPatientID " +
+          "WHERE UPPER(p.patientName) = UPPER(?1)")
 })
 @Entity
 @Table(name = "patient")
@@ -85,6 +89,8 @@ public class Patient implements Serializable {
 
     public static final String FIND_BY_PATIENT_ID =
             "Patient.findByPatientID";
+    public static final String FIND_BY_PATIENT_NAME =
+            "Patient.findByPatientName";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

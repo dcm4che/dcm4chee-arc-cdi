@@ -39,8 +39,6 @@
 package org.dcm4chee.archive.patient.impl;
 
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -49,15 +47,18 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4che.data.IDWithIssuer;
+import org.dcm4che.data.Issuer;
+import org.dcm4che.data.PersonName;
+import org.dcm4che.data.Tag;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
+import org.dcm4chee.archive.patient.PatientMergedException;
+import org.dcm4chee.archive.patient.PatientSelector;
 import org.dcm4chee.archive.patient.PatientService;
 
 /**
@@ -74,44 +75,45 @@ public class PatientServiceEJB implements PatientService {
     private IssuerService issuerService;
 
     @Override
-    public Patient findPatientOnStorage(Attributes attrs) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(attrs);
-        if (pid == null)
-            throw new NonUniquePatientException(pid);
-
-        List<Patient> list = findPatients(pid);
-        if (list.isEmpty())
-            return null;
-
-        if (list.size() > 1) {
-            throw new NonUniquePatientException(pid);
-        }
-        return followMergedWith(list.get(0));
+    public Patient findPatient(Attributes attrs, PatientSelector selector)
+            throws NonUniquePatientException, PatientMergedException {
+        Patient patient = selector.select(createQuery(attrs).getResultList(), attrs);
+        if (patient != null && patient.getMergedWith() != null)
+            throw new PatientMergedException(patient);
+        return patient;
     }
 
-    private List<Patient> findPatients(IDWithIssuer pid) {
-        TypedQuery<Patient> query = em.createNamedQuery(
+    @Override
+    public Patient findPatientFollowMerged(Attributes attrs, PatientSelector selector)
+            throws NonUniquePatientException, PatientCircularMergedException {
+        Patient patient = selector.select(createQuery(attrs).getResultList(), attrs);
+        if (patient != null && patient.getMergedWith() != null)
+            followMergedWith(patient);
+        return patient;
+    }
+
+    private TypedQuery<Patient> createQuery(Attributes attrs)
+            throws NonUniquePatientException {
+        String pid = attrs.getString(Tag.PatientID);
+        if (pid != null)
+            return em.createNamedQuery(
                     Patient.FIND_BY_PATIENT_ID, Patient.class)
-                .setParameter(1, pid.getID());
-        List<Patient> list = query.getResultList();
-        if (pid.getIssuer() != null) {
-            for (Iterator<Patient> it = list.iterator(); it.hasNext();) {
-                Patient pat = (Patient) it.next();
-                Issuer issuer2 = pat.getIssuerOfPatientID();
-                if (issuer2 != null) {
-                    if (issuer2.matches(pid.getIssuer())) {
-                        list.clear();
-                        list.add(pat);
-                        break;
-                    } else
-                        it.remove();
-                }
-            }
-        }
-        return list;
+                .setParameter(1, pid);
+
+        String pn = attrs.getString(Tag.PatientName);
+        if (pn != null)
+            return em.createNamedQuery(
+                    Patient.FIND_BY_PATIENT_NAME, Patient.class)
+                    .setParameter(1, 
+                            new PersonName(pn, true)
+                    .toString(PersonName.Group.Alphabetic, false));
+
+        throw new NonUniquePatientException("No Patient ID and no Patient Name");
+
     }
 
-    private Patient followMergedWith(Patient patient) {
+    private Patient followMergedWith(Patient patient)
+            throws PatientCircularMergedException {
         HashSet<Long> pks = new HashSet<Long>();
         Patient mergedWith;
         pks.add(patient.getPk());
@@ -125,13 +127,13 @@ public class PatientServiceEJB implements PatientService {
     }
 
     @Override
-    public Patient createPatientOnStorage(Attributes attrs,
-            StoreParam storeParam) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(attrs);
+    public Patient createPatient(Attributes attrs, StoreParam storeParam) {
+        String pid = attrs.getString(Tag.PatientID);
+        Issuer issuer = Issuer.fromIssuerOfPatientID(attrs);
         Patient patient = new Patient();
-        if (pid != null && pid.getIssuer() != null)
+        if (pid != null && issuer != null) 
             patient.setIssuerOfPatientID(
-                    issuerService.findOrCreate(new Issuer(pid.getIssuer())));
+                    issuerService.findOrCreate(issuer));
         patient.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Patient),
                 storeParam.getFuzzyStr());
@@ -140,16 +142,17 @@ public class PatientServiceEJB implements PatientService {
     }
 
     @Override
-    public void updatePatientOnStorage(Patient patient, Attributes attrs,
+    public void updatePatient(Patient patient, Attributes attrs,
             StoreParam storeParam) {
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
         if (patientAttrs.mergeSelected(attrs, filter.getSelection())) {
             if (patient.getIssuerOfPatientID() == null) {
-                IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(attrs);
-                if (pid != null && pid.getIssuer() != null)
+                String pid = attrs.getString(Tag.PatientID);
+                Issuer issuer = Issuer.fromIssuerOfPatientID(attrs);
+                if (pid != null && issuer != null)
                     patient.setIssuerOfPatientID(
-                            issuerService.findOrCreate(new Issuer(pid.getIssuer())));
+                            issuerService.findOrCreate(issuer));
             }
             patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
         }

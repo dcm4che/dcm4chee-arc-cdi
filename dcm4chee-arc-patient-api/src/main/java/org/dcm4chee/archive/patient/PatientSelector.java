@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,15 +38,18 @@
 
 package org.dcm4chee.archive.patient;
 
+import java.util.List;
+
+import org.dcm4che.data.Attributes;
+import org.dcm4chee.archive.entity.Patient;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-public class NonUniquePatientException extends Exception {
+public interface PatientSelector {
 
-    private static final long serialVersionUID = -770538934731527268L;
-
-    public NonUniquePatientException(String message) {
-        super(message);
-    }
+    Patient select(List<Patient> patients, Attributes attrs)
+            throws NonUniquePatientException;
 
 }

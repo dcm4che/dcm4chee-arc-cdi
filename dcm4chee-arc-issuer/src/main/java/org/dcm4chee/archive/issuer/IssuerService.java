@@ -46,6 +46,6 @@ import org.dcm4chee.archive.entity.Issuer;
  */
 public interface IssuerService {
 
-    Issuer findOrCreate(Issuer issuer);
+    Issuer findOrCreate(org.dcm4che.data.Issuer issuer);
 
 }

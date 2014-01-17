@@ -48,11 +48,15 @@ import org.dcm4chee.archive.entity.Patient;
  */
 public interface PatientService {
 
-    Patient findPatientOnStorage(Attributes attrs);
+    Patient findPatient(Attributes attrs, PatientSelector selector)
+            throws NonUniquePatientException, PatientMergedException;
 
-    Patient createPatientOnStorage(Attributes attrs, StoreParam storeParam);
+    Patient findPatientFollowMerged(Attributes attrs, PatientSelector selector)
+            throws NonUniquePatientException, PatientCircularMergedException;
 
-    void updatePatientOnStorage(Patient patient, Attributes attrs,
+    Patient createPatient(Attributes attrs, StoreParam storeParam);
+
+    void updatePatient(Patient patient, Attributes attrs,
             StoreParam storeParam);
 
 }

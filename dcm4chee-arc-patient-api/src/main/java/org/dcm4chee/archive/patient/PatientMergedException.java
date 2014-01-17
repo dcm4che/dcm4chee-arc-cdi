@@ -38,15 +38,25 @@
 
 package org.dcm4chee.archive.patient;
 
+import org.dcm4chee.archive.entity.Patient;
+
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-public class NonUniquePatientException extends Exception {
+public class PatientMergedException extends Exception {
 
-    private static final long serialVersionUID = -770538934731527268L;
+    private static final long serialVersionUID = -8042420191455105703L;
 
-    public NonUniquePatientException(String message) {
-        super(message);
+    private final Patient patient;
+
+    public PatientMergedException(Patient patient) {
+        super(patient.toString());
+        this.patient = patient;
+    }
+
+    public Patient getPatient() {
+        return patient;
     }
 
 }

@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,15 +38,47 @@
 
 package org.dcm4chee.archive.patient;
 
+import java.util.Iterator;
+import java.util.List;
+
+import org.dcm4che.data.Attributes;
+import org.dcm4che.data.Issuer;
+import org.dcm4che.data.Tag;
+import org.dcm4chee.archive.entity.Patient;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-public class NonUniquePatientException extends Exception {
+public class IDPatientSelector implements PatientSelector {
 
-    private static final long serialVersionUID = -770538934731527268L;
+    @Override
+    public Patient select(List<Patient> list, Attributes attrs)
+            throws NonUniquePatientException {
+        String pid = attrs.getString(Tag.PatientID);
+        if (pid == null)
+            throw new NonUniquePatientException("No Patient ID");
 
-    public NonUniquePatientException(String message) {
-        super(message);
+        Issuer issuer = Issuer.fromIssuerOfPatientID(attrs);
+        if (issuer != null) {
+            for (Iterator<Patient> it = list.iterator(); it.hasNext();) {
+                Patient pat = (Patient) it.next();
+                Issuer issuer2 = pat.getIssuerOfPatientID();
+                if (issuer2 != null) {
+                    if (issuer2.matches(issuer)) {
+                        return pat;
+                    } else
+                        it.remove();
+                }
+            }
+        }
+        if (list.isEmpty())
+            return null;
+        
+        if (list.size() > 1)
+            throw new NonUniquePatientException("Nonunique Patient ID: " + pid);
+
+        return list.get(0);
     }
 
 }
