@@ -54,60 +54,77 @@ import org.dcm4chee.archive.store.StoreService;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * 
  */
 @Stateless
 public class StoreServiceEJB {
 
-    @PersistenceContext(unitName="dcm4chee-arc")
+    @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
-
-//    @Inject
-//    private StoreService storeService;
 
     public void updateDB(StoreContext storeContext)
             throws DicomServiceException {
-        
+
         StoreService storeService = storeContext.getService();
-        
+
         Instance instance = storeService.findInstance(em, storeContext);
-        if (instance != null && !storeService.replaceInstance(em, storeContext, instance))
+        if (instance != null
+                && !storeService.replaceInstance(em, storeContext, instance))
             return;
 
-        Attributes storedAttrs = storeContext.getAttributes();
-        Attributes coercedAtts = storeContext.getCoercedAttributes();
-        Series series = storeService.findSeries(em, storeContext);
-        if (series == null) {
-            Study study = storeService.findStudy(em, storeContext);
-            if (study == null) {
-                Patient patient = storeService.findPatient(em, storeContext);
-                if (patient == null) {
-                    patient = storeService.createPatient(em, storeContext);
-                } else {
-                    storeService.updatePatient(storeContext, patient);
-                    storedAttrs.update(patient.getAttributes(), coercedAtts);
-                }
-                study = storeService.createStudy(em, storeContext, patient);
-            } else {
-                Patient patient = study.getPatient();
-                storeService.updatePatient(storeContext, patient);
-                storeService.updateStudy(storeContext, study);
-                storedAttrs.update(patient.getAttributes(), coercedAtts);
-                storedAttrs.update(study.getAttributes(), coercedAtts);
-            }
-            series = storeService.createSeries(em, storeContext, study);
-        } else {
-            Study study = series.getStudy();
-            Patient patient = study.getPatient();
-            storeService.updatePatient(storeContext, patient);
-            storeService.updateStudy(storeContext, study);
-            storeService.updateSeries(storeContext, series);
-            storedAttrs.update(patient.getAttributes(), coercedAtts);
-            storedAttrs.update(study.getAttributes(), coercedAtts);
-            storedAttrs.update(series.getAttributes(), coercedAtts);
-        }
+        Patient patient = createOrUpdatePatient(storeContext);
+        Study study = createOrUpdateStudy(storeContext, patient);
+        Series series = createOrUpdateSeries(storeContext, study);
+
         instance = storeService.createInstance(em, storeContext, series);
         storeService.createFileRef(em, storeContext, instance);
-     }
+    }
 
+    private Patient createOrUpdatePatient(StoreContext storeContext)
+            throws DicomServiceException {
+        
+        Patient patient = storeContext.getService().findPatient(em,
+                storeContext);
+
+        if (patient == null) {
+            patient = storeContext.getService().createPatient(em, storeContext);
+        } else {
+            storeContext.getService().updatePatient(storeContext, patient);
+            storeContext.getAttributes().update(patient.getAttributes(),
+                    storeContext.getCoercedAttributes());
+        }
+
+        return patient;
+    }
+
+    private Study createOrUpdateStudy(StoreContext storeContext, Patient patient)
+            throws DicomServiceException {
+        
+        Study study = storeContext.getService().findStudy(em, storeContext);
+
+        if (study == null) {
+            study = storeContext.getService().createStudy(em, storeContext,patient);
+        } else {
+            storeContext.getService().updateStudy(storeContext, study);
+            storeContext.getAttributes().update(study.getAttributes(),
+                    storeContext.getCoercedAttributes());
+        }
+
+        return study;
+    }
+
+    private Series createOrUpdateSeries(StoreContext storeContext, Study study)
+            throws DicomServiceException {
+        
+        Series series = storeContext.getService().findSeries(em, storeContext);
+        
+        if (series == null) {
+            series = storeContext.getService().createSeries(em, storeContext,study);
+        } else {
+            storeContext.getService().updateSeries(storeContext, series);
+            storeContext.getAttributes().update(series.getAttributes(),
+                    storeContext.getCoercedAttributes());
+        }
+        return series;
+    }
 }
