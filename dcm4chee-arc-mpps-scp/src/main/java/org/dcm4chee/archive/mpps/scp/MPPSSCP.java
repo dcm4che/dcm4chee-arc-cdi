@@ -71,7 +71,7 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
         try {
             mppsService.createPerformedProcedureStep(mppsService, iuid , rqAttrs,
-                    aeExt.getStoreParam());
+                    aeExt);
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -88,7 +88,7 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
         try {
             mppsService.updatePerformedProcedureStep(mppsService, iuid, rqAttrs,
-                    aeExt.getStoreParam());
+                    aeExt);
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {

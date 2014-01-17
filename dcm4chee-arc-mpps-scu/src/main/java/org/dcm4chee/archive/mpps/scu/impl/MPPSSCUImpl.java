@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2012
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,12 +36,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.stgcmt.scp.impl;
+package org.dcm4chee.archive.mpps.scu.impl;
 
 import java.io.IOException;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSContext;
@@ -50,38 +51,34 @@ import javax.jms.Queue;
 
 import org.dcm4che.conf.api.IApplicationEntityCache;
 import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Tag;
 import org.dcm4che.data.UID;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Association;
 import org.dcm4che.net.Device;
 import org.dcm4che.net.DimseRSP;
-import org.dcm4che.net.TransferCapability;
 import org.dcm4che.net.pdu.AAssociateRQ;
 import org.dcm4che.net.pdu.PresentationContext;
-import org.dcm4che.net.pdu.RoleSelection;
 import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
+import org.dcm4chee.archive.mpps.event.MPPSEvent;
+import org.dcm4chee.archive.mpps.scu.MPPSSCU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
 @ApplicationScoped
-public class StgCmtServiceImpl implements StgCmtService {
+public class MPPSSCUImpl implements MPPSSCU {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StgCmtServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MPPSSCUImpl.class);
 
     @Resource(mappedName="java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
-    @Resource(mappedName="java:/queue/stgcmtscp")
-    private Queue stgcmtSCPQueue;
-
-    @Inject
-    private StgCmtEJB stgCmtEJB;
+    @Resource(mappedName="java:/queue/mppsscu")
+    private Queue mppsSCUQueue;
 
     @Inject
     private IApplicationEntityCache aeCache;
@@ -93,42 +90,70 @@ public class StgCmtServiceImpl implements StgCmtService {
         device = service.getDevice();
     }
 
-    private int eventTypeId(Attributes eventInfo) {
-        return eventInfo.containsValue(Tag.FailedSOPSequence) ? 2 : 1;
+    public void receiveCreatedMPPS(@Observes @MPPSEvent.Create MPPSEvent event) {
+        ArchiveAEExtension arcAE = event.getArchiveAEExtension();
+        String localAET = arcAE.getApplicationEntity().getAETitle();
+        String iuid = event.getPerformedProcedureStep().getSopInstanceUID();
+        Attributes attrs = event.getAttributes();
+        for (String remoteAET : arcAE.getForwardMPPSDestinations()) {
+            scheduleNCreateRQ(localAET, remoteAET, iuid, attrs, 0, 0);
+        }
+    }
+
+    public void receiveUpdatedMPPS(@Observes @MPPSEvent.Update MPPSEvent event) {
+        ArchiveAEExtension arcAE = event.getArchiveAEExtension();
+        String localAET = arcAE.getApplicationEntity().getAETitle();
+        String iuid = event.getPerformedProcedureStep().getSopInstanceUID();
+        Attributes attrs = event.getAttributes();
+        for (String remoteAET : arcAE.getForwardMPPSDestinations()) {
+            scheduleNSetRQ(localAET, remoteAET, iuid, attrs, 0, 0);
+        }
     }
 
     @Override
-    public Attributes calculateResult(Attributes actionInfo) {
-        return stgCmtEJB.calculateResult(actionInfo);
+    public void sendNCreateRQ(String localAET, String remoteAET, String iuid,
+            Attributes attrs, int retries) {
+        sendRQ(true, localAET, remoteAET, iuid, attrs, retries);
     }
 
-    public void scheduleNEventReport(String localAET, String remoteAET,
-            Attributes eventInfo, int retries, long delay) {
+    @Override
+    public void sendNSetRQ(String localAET, String remoteAET, String iuid,
+            Attributes attrs, int retries) {
+        sendRQ(false, localAET, remoteAET, iuid, attrs, retries);
+    }
+
+    @Override
+    public void scheduleNCreateRQ(String localAET, String remoteAET, String iuid,
+            Attributes attrs, int retries, long delay) {
+        scheduleRQ(true, localAET, remoteAET, iuid, attrs, retries, delay);
+    }
+
+    @Override
+    public void scheduleNSetRQ(String localAET, String remoteAET, String iuid,
+            Attributes attrs, int retries, long delay) {
+        scheduleRQ(false, localAET, remoteAET, iuid, attrs, retries, delay);
+    }
+
+    private void scheduleRQ(boolean ncreate, String localAET, String remoteAET,
+            String iuid, Attributes attrs, int retries, long delay) {
         try (JMSContext jmsContext = connFactory.createContext();) {
             JMSProducer producer = jmsContext.createProducer();
+            producer.setProperty("N_CREATE_RQ", ncreate);
+            producer.setProperty("SOPInstancesUID", iuid);
             producer.setProperty("LocalAET", localAET);
             producer.setProperty("RemoteAET", remoteAET);
             producer.setProperty("Retries", retries);
             producer.setDeliveryDelay(delay);
-            producer.send(stgcmtSCPQueue, eventInfo);
+            producer.send(mppsSCUQueue, attrs);
         }
     }
 
-    @Override
-    public void sendNEventReport(String localAET, String remoteAET,
-            Attributes eventInfo, int retries) {
+    private void sendRQ(boolean ncreate, String localAET, String remoteAET,
+            String iuid, Attributes attrs, int retries) {
         ApplicationEntity localAE = device
                 .getApplicationEntity(localAET);
         if (localAE == null) {
-            LOG.warn("Failed to return Storage Commitment Result to {} - no such local AE: {}",
-                    remoteAET, localAET);
-            return;
-        }
-        TransferCapability tc = localAE.getTransferCapabilityFor(
-                UID.StorageCommitmentPushModelSOPClass, TransferCapability.Role.SCP);
-        if (tc == null) {
-            LOG.warn("Failed to return Storage Commitment Result to {} - "
-                   + "local AE: {} does not support Storage Commitment Push Model in SCP Role",
+            LOG.warn("Failed to MMPS to {} - no such local AE: {}",
                     remoteAET, localAET);
             return;
         }
@@ -136,24 +161,25 @@ public class StgCmtServiceImpl implements StgCmtService {
         aarq.addPresentationContext(
                         new PresentationContext(
                                 1,
-                                UID.StorageCommitmentPushModelSOPClass,
-                                tc.getTransferSyntaxes()));
-        aarq.addRoleSelection(
-                new RoleSelection(UID.StorageCommitmentPushModelSOPClass, false, true));
+                                UID.ModalityPerformedProcedureStepSOPClass,
+                                UID.ExplicitVRLittleEndian,
+                                UID.ImplicitVRLittleEndian));
         try {
             ApplicationEntity remoteAE = aeCache
                     .findApplicationEntity(remoteAET);
             Association as = localAE.connect(remoteAE, aarq);
-            DimseRSP neventReport = as.neventReport(
-                    UID.StorageCommitmentPushModelSOPClass,
-                    UID.StorageCommitmentPushModelSOPInstance,
-                    eventTypeId(eventInfo),
-                    eventInfo, null);
-            neventReport.next();
+            DimseRSP rsp = ncreate
+                    ? as.ncreate(
+                        UID.ModalityPerformedProcedureStepSOPClass,
+                        iuid, attrs, null)
+                    : as.nset(
+                        UID.ModalityPerformedProcedureStepSOPClass,
+                        iuid, attrs, null);
+            rsp.next();
             try {
                 as.release();
             } catch (IOException e) {
-                LOG.info("{}: Failed to release association to {}", as, remoteAET);
+                LOG.info("{}: Failed forward MPPS to {}", as, remoteAET);
             }
         } catch (Exception e) {
             ArchiveAEExtension aeExt = localAE.getAEExtension(ArchiveAEExtension.class);
@@ -161,7 +187,7 @@ public class StgCmtServiceImpl implements StgCmtService {
                 int delay = aeExt.getStorageCommitmentRetryInterval();
                 LOG.info("Failed to return Storage Commitment Result to {} - retry in {}s: {}",
                         remoteAET, delay, e);
-                scheduleNEventReport(localAET, remoteAET, eventInfo, retries + 1, delay * 1000L);
+                scheduleRQ(ncreate, localAET, remoteAET, iuid, attrs, retries + 1, delay * 1000L);
             } else {
                 LOG.warn("Failed to return Storage Commitment Result to {}: {}",
                         remoteAET, e);

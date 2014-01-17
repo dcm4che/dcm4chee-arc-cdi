@@ -35,56 +35,56 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.mpps.scu.impl;
 
-package org.dcm4chee.archive.mpps.event;
-
-import static java.lang.annotation.ElementType.*;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import javax.inject.Qualifier;
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.MessageDriven;
+import javax.inject.Inject;
+import javax.jms.Message;
+import javax.jms.MessageListener;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
+import org.dcm4chee.archive.mpps.scu.MPPSSCU;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public class MPPSEvent {
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType",
+                                  propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination",
+                                  propertyValue = "queue/mppsscu"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode",
+                                  propertyValue = "Auto-acknowledge") })
+public class MPPSSCUMDB implements MessageListener {
 
-    @Qualifier
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({METHOD, FIELD, PARAMETER, TYPE})
-    public @interface Create {}
+    private static final Logger LOG = LoggerFactory.getLogger(MPPSSCUMDB.class);
 
-    @Qualifier
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({METHOD, FIELD, PARAMETER, TYPE})
-    public @interface Update {}
+    @Inject
+    private MPPSSCU mppsscu;
 
-    private final PerformedProcedureStep pps;
-    private final ArchiveAEExtension arcAE;
-    private final Attributes attrs;
-
-    public MPPSEvent(PerformedProcedureStep pps, ArchiveAEExtension arcAE, Attributes attrs) {
-        this.arcAE = arcAE;
-        this.pps = pps;
-        this.attrs = attrs;
+    @Override
+    public void onMessage(Message msg) {
+        try {
+            if (msg.getBooleanProperty("N_CREATE_RQ"))
+                mppsscu.sendNCreateRQ(msg.getStringProperty("LocalAET"),
+                    msg.getStringProperty("RemoteAET"),
+                    msg.getStringProperty("SOPInstancesUID"),
+                    msg.getBody(Attributes.class),
+                    msg.getIntProperty("Retries"));
+            else
+                mppsscu.sendNSetRQ(msg.getStringProperty("LocalAET"),
+                        msg.getStringProperty("RemoteAET"),
+                        msg.getStringProperty("SOPInstancesUID"),
+                        msg.getBody(Attributes.class),
+                        msg.getIntProperty("Retries"));
+        } catch (Throwable th) {
+            LOG.warn("Failed to process " + msg, th);
+        }
     }
 
-    public PerformedProcedureStep getPerformedProcedureStep() {
-        return pps;
-    }
 
-    public ArchiveAEExtension getArchiveAEExtension() {
-        return arcAE;
-    }
-
-    public Attributes getAttributes() {
-        return attrs;
-    }
 }

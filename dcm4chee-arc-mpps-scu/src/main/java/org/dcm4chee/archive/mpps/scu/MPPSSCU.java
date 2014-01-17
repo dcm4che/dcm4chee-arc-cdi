@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,25 +36,25 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.mpps.event;
+package org.dcm4chee.archive.mpps.scu;
 
-import static java.lang.annotation.ElementType.*;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import javax.inject.Qualifier;
+import org.dcm4che.data.Attributes;
 
 /**
- * Update Annotation.
- * Used to distinguish fired events.
- * 
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
+public interface MPPSSCU {
 
-@Qualifier
-@Retention(RetentionPolicy.RUNTIME)
-@Target({METHOD, FIELD, PARAMETER, TYPE})
-public @interface Update {}
+    void sendNCreateRQ(String localAET, String remoteAET, String iuid,
+            Attributes attrs, int retries);
+
+    void sendNSetRQ(String localAET, String remoteAET, String iuid,
+            Attributes attrs, int retries);
+
+    void scheduleNCreateRQ(String localAET, String remoteAET, String iuid,
+            Attributes attrs, int retries, long delay);
+
+    void scheduleNSetRQ(String localAET, String remoteAET, String iuid,
+            Attributes attrs, int retries, long delay);
+}

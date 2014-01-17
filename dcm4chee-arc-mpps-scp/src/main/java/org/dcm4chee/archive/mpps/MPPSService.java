@@ -40,6 +40,7 @@ package org.dcm4chee.archive.mpps;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PerformedProcedureStep;
@@ -51,11 +52,11 @@ import org.dcm4chee.archive.entity.PerformedProcedureStep;
 public interface MPPSService {
 
     PerformedProcedureStep createPerformedProcedureStep(MPPSService service,
-            String sopInstanceUID, Attributes attrs, StoreParam storeParam)
+            String sopInstanceUID, Attributes attrs, ArchiveAEExtension arcAE)
             throws DicomServiceException;
 
     PerformedProcedureStep updatePerformedProcedureStep(MPPSService service,
-            String iuid, Attributes rqAttrs, StoreParam storeParam)
+            String iuid, Attributes rqAttrs, ArchiveAEExtension arcAE)
             throws DicomServiceException;
 
     Patient findPatient(Attributes attrs) throws DicomServiceException;
