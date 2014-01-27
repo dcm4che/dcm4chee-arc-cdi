@@ -214,5 +214,6 @@
     <module>dcm4chee-arc-retrieve-scp</module>
     <module>dcm4chee-arc-mpps-scp</module>
     <module>dcm4chee-arc-mpps-scu</module>
+    <module>dcm4chee-arc-wado</module>
   </modules>
 </project>
