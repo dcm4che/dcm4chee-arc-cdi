@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2013
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,36 +35,55 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.wado;
 
-package org.dcm4chee.archive.query;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import javax.ws.rs.core.StreamingOutput;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4che.data.IDWithIssuer;
-import org.dcm4che.net.service.QueryRetrieveLevel;
-import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4che.data.UID;
+import org.dcm4che.imageio.codec.Decompressor;
+import org.dcm4che.io.DicomInputStream;
+import org.dcm4che.io.DicomInputStream.IncludeBulkData;
+import org.dcm4che.io.DicomOutputStream;
+import org.dcm4che.util.SafeClose;
+import org.dcm4chee.archive.entity.InstanceFileRef;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface QueryService {
+class DicomObjectOutput implements StreamingOutput {
 
-    Query createQuery(QueryRetrieveLevel qrlevel, IDWithIssuer[] pids,
-            Attributes keys, QueryParam queryParam) throws Exception;
+    private final InstanceFileRef fileRef;
+    private final Attributes attrs;
+    private final String tsuid;
 
-    Query createPatientQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
+    DicomObjectOutput(InstanceFileRef fileRef, Attributes attrs, String tsuid) {
+        this.fileRef = fileRef;
+        this.attrs = attrs;
+        this.tsuid = tsuid;
+    }
 
-    Query createStudyQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
+    public void write(OutputStream out) throws IOException {
+        DicomInputStream dis = new DicomInputStream(fileRef.getFile());
+        try {
+            dis.setIncludeBulkData(IncludeBulkData.URI);
+            Attributes dataset = dis.readDataset(-1, -1);
+            dataset.addAll(attrs);
+            if (tsuid != fileRef.transferSyntaxUID) {
+                Decompressor.decompress(dataset, fileRef.transferSyntaxUID);
+            }
+            Attributes fmi = dataset.createFileMetaInformation(tsuid);
+            @SuppressWarnings("resource")
+            DicomOutputStream dos =
+                new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
+            dos.writeDataset(fmi, dataset);
+        } finally {
+            SafeClose.close(dis);
+        }
+    }
 
-    Query createSeriesQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
-
-    Query createInstanceQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
-
-    String[] queryPatientNames(IDWithIssuer[] pids);
-    
-    Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
 }

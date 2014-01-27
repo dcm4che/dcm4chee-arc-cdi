@@ -57,6 +57,11 @@ public class MediaTypes {
 
     /**
      * "application/dicom"
+     * 
+     * Default. If the contentType parameter is not present in the
+     * request, the response shall contain a application/dicom
+     * MIME type
+     * 
      */
     public final static String APPLICATION_DICOM = "application/dicom";
 

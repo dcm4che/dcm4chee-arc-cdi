@@ -119,6 +119,12 @@
       </dependency>
       <dependency>
         <groupId>org.dcm4che</groupId>
+        <artifactId>dcm4che-image</artifactId>
+        <version>${dcm4che.version}</version>
+        <scope>provided</scope>
+      </dependency>            
+      <dependency>
+        <groupId>org.dcm4che</groupId>
         <artifactId>dcm4che-soundex</artifactId>
         <version>${dcm4che.version}</version>
         <scope>provided</scope>
@@ -155,7 +161,7 @@
       </dependency>
       <dependency>
         <groupId>org.jboss.spec</groupId>
-        <artifactId>jboss-javaee-7.0</artifactId>
+        <artifactId>jboss-javaee-all-7.0</artifactId>
         <version>1.0.0.Beta2</version>
         <type>pom</type>
         <scope>import</scope>
