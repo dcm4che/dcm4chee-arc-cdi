@@ -48,6 +48,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
@@ -196,6 +197,7 @@ public class ArchiveServiceImpl implements ArchiveService {
     }
 
     @Override
+    @Produces
     public Device getDevice() {
         return device;
     }

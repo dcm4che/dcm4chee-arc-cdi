@@ -38,15 +38,8 @@
 
 package org.dcm4chee.archive.mpps.event;
 
-import static java.lang.annotation.ElementType.*;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import javax.inject.Qualifier;
-
 import org.dcm4che.data.Attributes;
+import org.dcm4che.net.Dimse;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.PerformedProcedureStep;
 
@@ -56,21 +49,14 @@ import org.dcm4chee.archive.entity.PerformedProcedureStep;
  */
 public class MPPSEvent {
 
-    @Qualifier
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({METHOD, FIELD, PARAMETER, TYPE})
-    public @interface Create {}
-
-    @Qualifier
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({METHOD, FIELD, PARAMETER, TYPE})
-    public @interface Update {}
-
     private final PerformedProcedureStep pps;
     private final ArchiveAEExtension arcAE;
     private final Attributes attrs;
+    private final Dimse dimse;
 
-    public MPPSEvent(PerformedProcedureStep pps, ArchiveAEExtension arcAE, Attributes attrs) {
+    public MPPSEvent(Dimse dimse, PerformedProcedureStep pps, 
+            ArchiveAEExtension arcAE, Attributes attrs) {
+        this.dimse = dimse;
         this.arcAE = arcAE;
         this.pps = pps;
         this.attrs = attrs;
@@ -86,5 +72,9 @@ public class MPPSEvent {
 
     public Attributes getAttributes() {
         return attrs;
+    }
+
+    public Dimse getDIMSE() {
+        return dimse;
     }
 }

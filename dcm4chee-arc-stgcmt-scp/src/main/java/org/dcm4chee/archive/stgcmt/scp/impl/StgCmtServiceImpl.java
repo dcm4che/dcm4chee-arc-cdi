@@ -60,7 +60,6 @@ import org.dcm4che.net.TransferCapability;
 import org.dcm4che.net.pdu.AAssociateRQ;
 import org.dcm4che.net.pdu.PresentationContext;
 import org.dcm4che.net.pdu.RoleSelection;
-import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
 import org.slf4j.Logger;
@@ -86,12 +85,8 @@ public class StgCmtServiceImpl implements StgCmtService {
     @Inject
     private IApplicationEntityCache aeCache;
 
-    private Device device;
-
     @Inject
-    public void setArchiveService(ArchiveService service) {
-        device = service.getDevice();
-    }
+    private Device device;
 
     private int eventTypeId(Attributes eventInfo) {
         return eventInfo.containsValue(Tag.FailedSOPSequence) ? 2 : 1;

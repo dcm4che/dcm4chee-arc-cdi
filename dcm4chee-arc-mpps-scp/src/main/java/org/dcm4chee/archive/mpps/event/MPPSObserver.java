@@ -51,12 +51,12 @@ import javax.enterprise.event.Observes;
 //@ApplicationScoped
 public class MPPSObserver {
 
-    public void receiveCreatedMPPS(@Observes @MPPSEvent.Create MPPSEvent event) {
+    public void receiveCreatedMPPS(@Observes @MPPSCreate MPPSEvent event) {
 
         System.out.println("CREATED MPPS:" + event.toString());
     }
 
-    public void receiveUpdatedMPPS(@Observes @MPPSEvent.Update MPPSEvent event) {
+    public void receiveUpdatedMPPS(@Observes @MPPSUpdate MPPSEvent event) {
         System.out.println("UPDATED MPPS:" + event.toString());
     }
 }

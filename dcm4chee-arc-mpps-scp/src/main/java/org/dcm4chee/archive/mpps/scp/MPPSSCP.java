@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.mpps.scp;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
@@ -46,12 +47,17 @@ import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Tag;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Association;
+import org.dcm4che.net.Dimse;
 import org.dcm4che.net.Status;
 import org.dcm4che.net.service.BasicMPPSSCP;
 import org.dcm4che.net.service.DicomService;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.entity.PerformedProcedureStep;
 import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.mpps.event.MPPSCreate;
+import org.dcm4chee.archive.mpps.event.MPPSEvent;
+import org.dcm4chee.archive.mpps.event.MPPSUpdate;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -63,6 +69,14 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
     @Inject
     private MPPSService mppsService;
 
+    @Inject
+    @MPPSCreate
+    Event<MPPSEvent> createMPPSEvent;
+
+    @Inject
+    @MPPSUpdate
+    Event<MPPSEvent> updateMPPSEvent;
+
     @Override
     protected Attributes create(Association as, Attributes rq,
             Attributes rqAttrs, Attributes rsp) throws DicomServiceException {
@@ -70,8 +84,12 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         ApplicationEntity ae = as.getApplicationEntity();
         ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
         try {
-            mppsService.createPerformedProcedureStep(mppsService, iuid , rqAttrs,
-                    aeExt);
+            PerformedProcedureStep mpps =
+                    mppsService.createPerformedProcedureStep(
+                            mppsService, iuid , rqAttrs, aeExt);
+            
+            createMPPSEvent.fire(
+                    new MPPSEvent(Dimse.N_CREATE_RQ, mpps, aeExt, rqAttrs));
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -87,8 +105,12 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         ApplicationEntity ae = as.getApplicationEntity();
         ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
         try {
-            mppsService.updatePerformedProcedureStep(mppsService, iuid, rqAttrs,
-                    aeExt);
+            PerformedProcedureStep mpps =
+                    mppsService.updatePerformedProcedureStep(
+                            mppsService, iuid, rqAttrs, aeExt);
+
+            updateMPPSEvent.fire(
+                    new MPPSEvent(Dimse.N_SET_RQ, mpps, aeExt, rqAttrs));
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {

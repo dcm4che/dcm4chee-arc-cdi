@@ -44,6 +44,7 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 
 import org.dcm4che.data.Attributes;
+import org.dcm4che.net.Dimse;
 import org.dcm4chee.archive.mpps.scu.MPPSSCU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,18 +70,13 @@ public class MPPSSCUMDB implements MessageListener {
     @Override
     public void onMessage(Message msg) {
         try {
-            if (msg.getBooleanProperty("N_CREATE_RQ"))
-                mppsscu.sendNCreateRQ(msg.getStringProperty("LocalAET"),
-                    msg.getStringProperty("RemoteAET"),
-                    msg.getStringProperty("SOPInstancesUID"),
-                    msg.getBody(Attributes.class),
-                    msg.getIntProperty("Retries"));
-            else
-                mppsscu.sendNSetRQ(msg.getStringProperty("LocalAET"),
-                    msg.getStringProperty("RemoteAET"),
-                    msg.getStringProperty("SOPInstancesUID"),
-                    msg.getBody(Attributes.class),
-                    msg.getIntProperty("Retries"));
+            mppsscu.sendMPPS(
+                Dimse.valueOf(msg.getStringProperty("CommandField")),
+                msg.getStringProperty("LocalAET"),
+                msg.getStringProperty("RemoteAET"),
+                msg.getStringProperty("SOPInstancesUID"),
+                msg.getBody(Attributes.class),
+                msg.getIntProperty("Retries"));
         } catch (Throwable th) {
             LOG.warn("Failed to process " + msg, th);
         }

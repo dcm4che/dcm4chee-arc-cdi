@@ -88,7 +88,6 @@ import org.dcm4che.net.TransferCapability;
 import org.dcm4che.net.TransferCapability.Role;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4che.ws.rs.MediaTypes;
-import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.store.StoreContext;
@@ -118,6 +117,7 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
     @Context
     private UriInfo uriInfo;
 
+    @Inject
     private Device device;
 
     private ApplicationEntity ae;
@@ -152,11 +152,6 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
     private String wadoURL;
 
     private HttpServletRequestSource source;
-
-    @Inject
-    public void setArchiveService(ArchiveService service) {
-        device = service.getDevice();
-    }
 
     public void setAETitle(@PathParam("AETitle") String aet) {
         ae = device.getApplicationEntity(aet);

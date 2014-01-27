@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.mpps.scu;
 
 import org.dcm4che.data.Attributes;
+import org.dcm4che.net.Dimse;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -46,15 +47,7 @@ import org.dcm4che.data.Attributes;
  */
 public interface MPPSSCU {
 
-    void sendNCreateRQ(String localAET, String remoteAET, String iuid,
+    void sendMPPS(Dimse dimse, String localAET, String remoteAET, String iuid,
             Attributes attrs, int retries);
 
-    void sendNSetRQ(String localAET, String remoteAET, String iuid,
-            Attributes attrs, int retries);
-
-    void scheduleNCreateRQ(String localAET, String remoteAET, String iuid,
-            Attributes attrs, int retries, long delay);
-
-    void scheduleNSetRQ(String localAET, String remoteAET, String iuid,
-            Attributes attrs, int retries, long delay);
 }

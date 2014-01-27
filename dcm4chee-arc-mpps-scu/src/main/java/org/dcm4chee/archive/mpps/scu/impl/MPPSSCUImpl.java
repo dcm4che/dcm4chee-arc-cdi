@@ -55,10 +55,10 @@ import org.dcm4che.data.UID;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Association;
 import org.dcm4che.net.Device;
+import org.dcm4che.net.Dimse;
 import org.dcm4che.net.DimseRSP;
 import org.dcm4che.net.pdu.AAssociateRQ;
 import org.dcm4che.net.pdu.PresentationContext;
-import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.scu.MPPSSCU;
@@ -83,62 +83,26 @@ public class MPPSSCUImpl implements MPPSSCU {
     @Inject
     private IApplicationEntityCache aeCache;
 
+    @Inject
     private Device device;
 
-    @Inject
-    public void setArchiveService(ArchiveService service) {
-        device = service.getDevice();
-    }
-
-    public void receiveCreatedMPPS(@Observes @MPPSEvent.Create MPPSEvent event) {
+    @SuppressWarnings("unused")
+    private void onMPPSReceive(@Observes MPPSEvent event) {
         ArchiveAEExtension arcAE = event.getArchiveAEExtension();
         String localAET = arcAE.getApplicationEntity().getAETitle();
         String iuid = event.getPerformedProcedureStep().getSopInstanceUID();
         Attributes attrs = event.getAttributes();
         for (String remoteAET : arcAE.getForwardMPPSDestinations()) {
-            scheduleNCreateRQ(localAET, remoteAET, iuid, attrs, 0, 0);
+            scheduleForwardMPPS(event.getDIMSE(), localAET, remoteAET,
+                    iuid, attrs, 0, 0);
         }
     }
 
-    public void receiveUpdatedMPPS(@Observes @MPPSEvent.Update MPPSEvent event) {
-        ArchiveAEExtension arcAE = event.getArchiveAEExtension();
-        String localAET = arcAE.getApplicationEntity().getAETitle();
-        String iuid = event.getPerformedProcedureStep().getSopInstanceUID();
-        Attributes attrs = event.getAttributes();
-        for (String remoteAET : arcAE.getForwardMPPSDestinations()) {
-            scheduleNSetRQ(localAET, remoteAET, iuid, attrs, 0, 0);
-        }
-    }
-
-    @Override
-    public void sendNCreateRQ(String localAET, String remoteAET, String iuid,
-            Attributes attrs, int retries) {
-        sendRQ(true, localAET, remoteAET, iuid, attrs, retries);
-    }
-
-    @Override
-    public void sendNSetRQ(String localAET, String remoteAET, String iuid,
-            Attributes attrs, int retries) {
-        sendRQ(false, localAET, remoteAET, iuid, attrs, retries);
-    }
-
-    @Override
-    public void scheduleNCreateRQ(String localAET, String remoteAET, String iuid,
-            Attributes attrs, int retries, long delay) {
-        scheduleRQ(true, localAET, remoteAET, iuid, attrs, retries, delay);
-    }
-
-    @Override
-    public void scheduleNSetRQ(String localAET, String remoteAET, String iuid,
-            Attributes attrs, int retries, long delay) {
-        scheduleRQ(false, localAET, remoteAET, iuid, attrs, retries, delay);
-    }
-
-    private void scheduleRQ(boolean ncreate, String localAET, String remoteAET,
+    private void scheduleForwardMPPS(Dimse dimse, String localAET, String remoteAET,
             String iuid, Attributes attrs, int retries, long delay) {
         try (JMSContext jmsContext = connFactory.createContext();) {
             JMSProducer producer = jmsContext.createProducer();
-            producer.setProperty("N_CREATE_RQ", ncreate);
+            producer.setProperty("CommandField", dimse.name());
             producer.setProperty("SOPInstancesUID", iuid);
             producer.setProperty("LocalAET", localAET);
             producer.setProperty("RemoteAET", remoteAET);
@@ -148,7 +112,8 @@ public class MPPSSCUImpl implements MPPSSCU {
         }
     }
 
-    private void sendRQ(boolean ncreate, String localAET, String remoteAET,
+    @Override
+    public void sendMPPS(Dimse dimse, String localAET, String remoteAET,
             String iuid, Attributes attrs, int retries) {
         ApplicationEntity localAE = device
                 .getApplicationEntity(localAET);
@@ -168,13 +133,7 @@ public class MPPSSCUImpl implements MPPSSCU {
             ApplicationEntity remoteAE = aeCache
                     .findApplicationEntity(remoteAET);
             Association as = localAE.connect(remoteAE, aarq);
-            DimseRSP rsp = ncreate
-                    ? as.ncreate(
-                        UID.ModalityPerformedProcedureStepSOPClass,
-                        iuid, attrs, null)
-                    : as.nset(
-                        UID.ModalityPerformedProcedureStepSOPClass,
-                        iuid, attrs, null);
+            DimseRSP rsp = sendMPPS(as, dimse, iuid, attrs);
             rsp.next();
             try {
                 as.release();
@@ -187,12 +146,30 @@ public class MPPSSCUImpl implements MPPSSCU {
                 int delay = aeExt.getStorageCommitmentRetryInterval();
                 LOG.info("Failed to return Storage Commitment Result to {} - retry in {}s: {}",
                         remoteAET, delay, e);
-                scheduleRQ(ncreate, localAET, remoteAET, iuid, attrs, retries + 1, delay * 1000L);
+                scheduleForwardMPPS(dimse, localAET, remoteAET, iuid, attrs,
+                        retries + 1, delay * 1000L);
             } else {
                 LOG.warn("Failed to return Storage Commitment Result to {}: {}",
                         remoteAET, e);
             }
         }
+    }
+
+    private DimseRSP sendMPPS(Association as, Dimse dimse, String iuid,
+            Attributes attrs) throws IOException, InterruptedException {
+        switch(dimse) {
+        case N_CREATE_RQ:
+            return as.ncreate(
+                    UID.ModalityPerformedProcedureStepSOPClass,
+                    iuid, attrs, null);
+        case N_SET_RQ:
+            return as.nset(
+                    UID.ModalityPerformedProcedureStepSOPClass,
+                    iuid, attrs, null);
+        default:
+            throw new IllegalArgumentException("dimse: " + dimse);
+        }
+        
     }
 
 }
