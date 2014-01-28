@@ -52,11 +52,11 @@ import org.dcm4che.net.Status;
 import org.dcm4che.net.service.BasicMPPSSCP;
 import org.dcm4che.net.service.DicomService;
 import org.dcm4che.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.PerformedProcedureStep;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.event.MPPSCreate;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
+import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.mpps.event.MPPSUpdate;
 
 /**
@@ -77,19 +77,22 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
     @MPPSUpdate
     Event<MPPSEvent> updateMPPSEvent;
 
+    @Inject
+    @MPPSFinal
+    Event<MPPSEvent> finalMPPSEvent;
+
     @Override
-    protected Attributes create(Association as, Attributes rq,
-            Attributes rqAttrs, Attributes rsp) throws DicomServiceException {
-        String iuid = rq.getString(Tag.AffectedSOPInstanceUID);
+    protected Attributes create(Association as, Attributes cmd,
+            Attributes data, Attributes rsp) throws DicomServiceException {
+        String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
         ApplicationEntity ae = as.getApplicationEntity();
-        ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
         try {
             PerformedProcedureStep mpps =
                     mppsService.createPerformedProcedureStep(
-                            mppsService, iuid , rqAttrs, aeExt);
-            
+                            ae, iuid , data, mppsService);
+
             createMPPSEvent.fire(
-                    new MPPSEvent(Dimse.N_CREATE_RQ, mpps, aeExt, rqAttrs));
+                    new MPPSEvent(ae, Dimse.N_CREATE_RQ, data, mpps));
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -99,18 +102,19 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
     }
 
     @Override
-    protected Attributes set(Association as, Attributes rq, Attributes rqAttrs,
+    protected Attributes set(Association as, Attributes cmd, Attributes data,
             Attributes rsp) throws DicomServiceException {
-        String iuid = rq.getString(Tag.RequestedSOPInstanceUID);
+        String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
         ApplicationEntity ae = as.getApplicationEntity();
-        ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
         try {
             PerformedProcedureStep mpps =
                     mppsService.updatePerformedProcedureStep(
-                            mppsService, iuid, rqAttrs, aeExt);
+                            ae, iuid, data, mppsService);
 
-            updateMPPSEvent.fire(
-                    new MPPSEvent(Dimse.N_SET_RQ, mpps, aeExt, rqAttrs));
+            (mpps.getStatus() == PerformedProcedureStep.Status.IN_PROGRESS
+                    ? updateMPPSEvent
+                    : finalMPPSEvent)
+                    .fire(new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {

@@ -36,33 +36,17 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.mpps;
+package org.dcm4chee.archive.ian.scu;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4che.net.ApplicationEntity;
-import org.dcm4che.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface MPPSService {
+public interface IANSCU {
 
-    PerformedProcedureStep createPerformedProcedureStep(ApplicationEntity ae,
-            String sopInstanceUID, Attributes attrs, MPPSService service)
-            throws DicomServiceException;
-
-    PerformedProcedureStep updatePerformedProcedureStep(ApplicationEntity ae,
-            String iuid, Attributes attrs, MPPSService service)
-            throws DicomServiceException;
-
-    Patient findPatient(Attributes attrs) throws DicomServiceException;
-
-    void updatePatient(Patient patient, Attributes attrs, StoreParam storeParam);
-
-    Patient createPatient(Attributes attrs, StoreParam storeParam);
+    void sendIAN(String localAET, String remoteAET, String iuid,
+            Attributes attrs, int retries);
 
 }

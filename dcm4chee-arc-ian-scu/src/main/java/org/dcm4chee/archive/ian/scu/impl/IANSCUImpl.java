@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.mpps.scu.impl;
+package org.dcm4chee.archive.ian.scu.impl;
 
 import java.io.IOException;
 
@@ -48,6 +48,8 @@ import javax.jms.ConnectionFactory;
 import javax.jms.JMSContext;
 import javax.jms.JMSProducer;
 import javax.jms.Queue;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import org.dcm4che.conf.api.IApplicationEntityCache;
 import org.dcm4che.data.Attributes;
@@ -55,13 +57,16 @@ import org.dcm4che.data.UID;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Association;
 import org.dcm4che.net.Device;
-import org.dcm4che.net.Dimse;
 import org.dcm4che.net.DimseRSP;
 import org.dcm4che.net.pdu.AAssociateRQ;
 import org.dcm4che.net.pdu.PresentationContext;
+import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.SOPInstanceReference;
+import org.dcm4chee.archive.ian.scu.IANSCU;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
-import org.dcm4chee.archive.mpps.scu.MPPSSCU;
+import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,15 +75,18 @@ import org.slf4j.LoggerFactory;
  *
  */
 @ApplicationScoped
-public class MPPSSCUImpl implements MPPSSCU {
+public class IANSCUImpl implements IANSCU {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MPPSSCUImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(IANSCUImpl.class);
+
+    @PersistenceContext(unitName="dcm4chee-arc")
+    private EntityManager em;
 
     @Resource(mappedName="java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
-    @Resource(mappedName="java:/queue/mppsscu")
-    private Queue mppsSCUQueue;
+    @Resource(mappedName="java:/queue/ianscu")
+    private Queue ianSCUQueue;
 
     @Inject
     private IApplicationEntityCache aeCache;
@@ -87,41 +95,52 @@ public class MPPSSCUImpl implements MPPSSCU {
     private Device device;
 
     @SuppressWarnings("unused")
-    private void onMPPSReceive(@Observes MPPSEvent event) {
+    private void onMPPSReceive(@Observes @MPPSFinal MPPSEvent event) {
         ApplicationEntity ae = event.getApplicationEntity();
         ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-        if (arcAE == null)
+        if (arcAE == null || arcAE.getIANDestinations().length == 0)
             return;
 
-        String iuid = event.getPerformedProcedureStep().getSopInstanceUID();
-        Attributes attrs = event.getAttributes();
-        for (String remoteAET : arcAE.getForwardMPPSDestinations()) {
-            scheduleForwardMPPS(event.getDIMSE(), ae.getAETitle(), remoteAET,
-                    iuid, attrs, 0, 0);
+        IANBuilder builder = new IANBuilder(event.getPerformedProcedureStep());
+        for (String seriesiuid : builder.getPerformedSeriesInstanceUIDs()) {
+            for (SOPInstanceReference sopRef : em.createNamedQuery(
+                    Instance.SOP_INSTANCE_REFERENCE_BY_SERIES_INSTANCE_UID,
+                    SOPInstanceReference.class)
+              .setParameter(1, seriesiuid)
+              .getResultList()) {
+                builder.addSOPInstanceReference(sopRef);
+            }
+        }
+        if (!builder.allReceived())
+            return;
+
+        Attributes ian = builder.getIAN();
+        String iuid = UIDUtils.createUID();
+        for (String remoteAET : arcAE.getIANDestinations()) {
+            scheduleSendIAN(ae.getAETitle(), remoteAET, iuid, ian, 0, 0);
         }
     }
 
-    private void scheduleForwardMPPS(Dimse dimse, String localAET, String remoteAET,
+    private void scheduleSendIAN(String localAET, String remoteAET,
             String iuid, Attributes attrs, int retries, long delay) {
         try (JMSContext jmsContext = connFactory.createContext();) {
             JMSProducer producer = jmsContext.createProducer();
-            producer.setProperty("CommandField", dimse.name());
             producer.setProperty("SOPInstancesUID", iuid);
             producer.setProperty("LocalAET", localAET);
             producer.setProperty("RemoteAET", remoteAET);
             producer.setProperty("Retries", retries);
             producer.setDeliveryDelay(delay);
-            producer.send(mppsSCUQueue, attrs);
+            producer.send(ianSCUQueue, attrs);
         }
     }
 
     @Override
-    public void sendMPPS(Dimse dimse, String localAET, String remoteAET,
+    public void sendIAN(String localAET, String remoteAET,
             String iuid, Attributes attrs, int retries) {
         ApplicationEntity localAE = device
                 .getApplicationEntity(localAET);
         if (localAE == null) {
-            LOG.warn("Failed to forward MPPS to {} - no such local AE: {}",
+            LOG.warn("Failed to send IAN to {} - no such local AE: {}",
                     remoteAET, localAET);
             return;
         }
@@ -129,14 +148,16 @@ public class MPPSSCUImpl implements MPPSSCU {
         aarq.addPresentationContext(
                         new PresentationContext(
                                 1,
-                                UID.ModalityPerformedProcedureStepSOPClass,
+                                UID.InstanceAvailabilityNotificationSOPClass,
                                 UID.ExplicitVRLittleEndian,
                                 UID.ImplicitVRLittleEndian));
         try {
             ApplicationEntity remoteAE = aeCache
                     .findApplicationEntity(remoteAET);
             Association as = localAE.connect(remoteAE, aarq);
-            DimseRSP rsp = sendMPPS(as, dimse, iuid, attrs);
+            DimseRSP rsp = as.ncreate(
+                    UID.InstanceAvailabilityNotificationSOPClass,
+                    iuid, attrs, null);
             rsp.next();
             try {
                 as.release();
@@ -145,34 +166,17 @@ public class MPPSSCUImpl implements MPPSSCU {
             }
         } catch (Exception e) {
             ArchiveAEExtension aeExt = localAE.getAEExtension(ArchiveAEExtension.class);
-            if (aeExt != null && retries < aeExt.getForwardMPPSMaxRetries()) {
-                int delay = aeExt.getForwardMPPSRetryInterval();
-                LOG.info("Failed to forward MPPS to {} - retry in {}s: {}",
+            if (aeExt != null && retries < aeExt.getIANMaxRetries()) {
+                int delay = aeExt.getIANRetryInterval();
+                LOG.info("Failed to send IAN to {} - retry in {}s: {}",
                         remoteAET, delay, e);
-                scheduleForwardMPPS(dimse, localAET, remoteAET, iuid, attrs,
+                scheduleSendIAN(localAET, remoteAET, iuid, attrs,
                         retries + 1, delay * 1000L);
             } else {
-                LOG.warn("Failed to forward MPPS to {}: {}",
+                LOG.warn("Failed to send IAN to {}: {}",
                         remoteAET, e);
             }
         }
-    }
-
-    private DimseRSP sendMPPS(Association as, Dimse dimse, String iuid,
-            Attributes attrs) throws IOException, InterruptedException {
-        switch(dimse) {
-        case N_CREATE_RQ:
-            return as.ncreate(
-                    UID.ModalityPerformedProcedureStepSOPClass,
-                    iuid, attrs, null);
-        case N_SET_RQ:
-            return as.nset(
-                    UID.ModalityPerformedProcedureStepSOPClass,
-                    iuid, attrs, null);
-        default:
-            throw new IllegalArgumentException("dimse: " + dimse);
-        }
-        
     }
 
 }

@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,34 +35,50 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.ian.scu.impl;
 
-package org.dcm4chee.archive.mpps;
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.MessageDriven;
+import javax.inject.Inject;
+import javax.jms.Message;
+import javax.jms.MessageListener;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4che.net.ApplicationEntity;
-import org.dcm4che.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
+import org.dcm4chee.archive.ian.scu.IANSCU;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface MPPSService {
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType",
+                                  propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination",
+                                  propertyValue = "queue/ianscu"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode",
+                                  propertyValue = "Auto-acknowledge") })
+public class IANSCUMDB implements MessageListener {
 
-    PerformedProcedureStep createPerformedProcedureStep(ApplicationEntity ae,
-            String sopInstanceUID, Attributes attrs, MPPSService service)
-            throws DicomServiceException;
+    private static final Logger LOG = LoggerFactory.getLogger(IANSCUMDB.class);
 
-    PerformedProcedureStep updatePerformedProcedureStep(ApplicationEntity ae,
-            String iuid, Attributes attrs, MPPSService service)
-            throws DicomServiceException;
+    @Inject
+    private IANSCU ianscu;
 
-    Patient findPatient(Attributes attrs) throws DicomServiceException;
+    @Override
+    public void onMessage(Message msg) {
+        try {
+            ianscu.sendIAN(
+                msg.getStringProperty("LocalAET"),
+                msg.getStringProperty("RemoteAET"),
+                msg.getStringProperty("SOPInstancesUID"),
+                msg.getBody(Attributes.class),
+                msg.getIntProperty("Retries"));
+        } catch (Throwable th) {
+            LOG.warn("Failed to process " + msg, th);
+        }
+    }
 
-    void updatePatient(Patient patient, Attributes attrs, StoreParam storeParam);
-
-    Patient createPatient(Attributes attrs, StoreParam storeParam);
 
 }

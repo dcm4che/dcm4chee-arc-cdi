@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import javax.ejb.Stateless;
-import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -51,6 +50,7 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Sequence;
 import org.dcm4che.data.Tag;
+import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Status;
 import org.dcm4che.net.service.BasicMPPSSCP;
 import org.dcm4che.net.service.DicomServiceException;
@@ -61,9 +61,6 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PerformedProcedureStep;
 import org.dcm4chee.archive.entity.ScheduledProcedureStep;
 import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.mpps.event.MPPSCreate;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
-import org.dcm4chee.archive.mpps.event.MPPSUpdate;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
@@ -91,12 +88,14 @@ public class MPPSServiceImpl implements MPPSService {
 
     @Override
     public PerformedProcedureStep createPerformedProcedureStep(
-            MPPSService service, String sopInstanceUID, Attributes attrs,
-            ArchiveAEExtension arcAE) throws DicomServiceException {
+            ApplicationEntity ae, String iuid, Attributes attrs,
+            MPPSService service) throws DicomServiceException {
+        ArchiveAEExtension arcAE =
+                ae.getAEExtensionNotNull(ArchiveAEExtension.class);
         try {
-            find(sopInstanceUID);
+            find(iuid);
             throw new DicomServiceException(Status.DuplicateSOPinstance)
-                .setUID(Tag.AffectedSOPInstanceUID, sopInstanceUID);
+                .setUID(Tag.AffectedSOPInstanceUID, iuid);
         } catch (NoResultException e) {}
         Patient patient = service.findPatient(attrs);
         StoreParam storeParam = arcAE.getStoreParam();
@@ -106,7 +105,7 @@ public class MPPSServiceImpl implements MPPSService {
             service.updatePatient(patient, attrs, storeParam);
         }
         PerformedProcedureStep mpps = new PerformedProcedureStep();
-        mpps.setSopInstanceUID(sopInstanceUID);
+        mpps.setSopInstanceUID(iuid);
         mpps.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.PerformedProcedureStep));
         mpps.setScheduledProcedureSteps(
@@ -121,14 +120,16 @@ public class MPPSServiceImpl implements MPPSService {
 
     @Override
     public PerformedProcedureStep updatePerformedProcedureStep(
-            MPPSService service, String sopInstanceUID, Attributes modified,
-            ArchiveAEExtension arcAE) throws DicomServiceException {
+            ApplicationEntity ae, String iuid, Attributes modified,
+            MPPSService service) throws DicomServiceException {
+        ArchiveAEExtension arcAE =
+                ae.getAEExtensionNotNull(ArchiveAEExtension.class);
         PerformedProcedureStep pps;
         try {
-            pps = find(sopInstanceUID);
+            pps = find(iuid);
         } catch (NoResultException e) {
             throw new DicomServiceException(Status.NoSuchObjectInstance)
-                .setUID(Tag.AffectedSOPInstanceUID, sopInstanceUID);
+                .setUID(Tag.AffectedSOPInstanceUID, iuid);
         }
         if (pps.getStatus() != PerformedProcedureStep.Status.IN_PROGRESS)
             BasicMPPSSCP.mayNoLongerBeUpdated();

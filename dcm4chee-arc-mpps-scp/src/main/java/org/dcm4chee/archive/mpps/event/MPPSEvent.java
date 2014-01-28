@@ -39,8 +39,8 @@
 package org.dcm4chee.archive.mpps.event;
 
 import org.dcm4che.data.Attributes;
+import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Dimse;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.PerformedProcedureStep;
 
 /**
@@ -50,31 +50,32 @@ import org.dcm4chee.archive.entity.PerformedProcedureStep;
 public class MPPSEvent {
 
     private final PerformedProcedureStep pps;
-    private final ArchiveAEExtension arcAE;
+    private final ApplicationEntity ae;
     private final Attributes attrs;
     private final Dimse dimse;
 
-    public MPPSEvent(Dimse dimse, PerformedProcedureStep pps, 
-            ArchiveAEExtension arcAE, Attributes attrs) {
+    public MPPSEvent(ApplicationEntity ae, Dimse dimse, Attributes attrs,
+            PerformedProcedureStep pps) {
         this.dimse = dimse;
-        this.arcAE = arcAE;
+        this.ae = ae;
         this.pps = pps;
         this.attrs = attrs;
     }
 
-    public PerformedProcedureStep getPerformedProcedureStep() {
-        return pps;
+    public Dimse getDIMSE() {
+        return dimse;
     }
 
-    public ArchiveAEExtension getArchiveAEExtension() {
-        return arcAE;
+    public ApplicationEntity getApplicationEntity() {
+        return ae;
     }
 
     public Attributes getAttributes() {
         return attrs;
     }
 
-    public Dimse getDIMSE() {
-        return dimse;
+    public PerformedProcedureStep getPerformedProcedureStep() {
+        return pps;
     }
+
 }
