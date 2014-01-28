@@ -79,14 +79,19 @@ import org.dcm4che.imageio.stream.OutputStreamAdapter;
 import org.dcm4che.io.DicomInputStream;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Device;
+import org.dcm4che.net.service.InstanceLocator;
 import org.dcm4che.util.SafeClose;
 import org.dcm4che.util.StringUtils;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.InstanceFileRef;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.impl.QueryServiceEJB;
-import org.dcm4chee.archive.wado.dao.WadoService;
+import org.dcm4chee.archive.retrieve.RetrieveService;
 
 /**
+ * WADO service implementing DICOM PS 3.18-2009.
+ * @see ftp://medical.nema.org/medical/dicom/2009/09_18pu.pdf
+ * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
@@ -149,11 +154,11 @@ public class WadoURI extends Object  {
     private Device device;
     
     @Inject
-    private WadoService instanceService;
-    
-    @Inject
     private QueryService queryService;
 
+    @Inject
+    private RetrieveService retrieveService;
+    
     @Context
     private HttpServletRequest request;
 
@@ -220,16 +225,24 @@ public class WadoURI extends Object  {
     @GET
     public Response retrieve() throws WebApplicationException {
         checkRequest();
-        InstanceFileRef ref =
-                instanceService.locate(studyUID, seriesUID, objectUID);
+        
+        org.dcm4chee.archive.conf.QueryParam queryParam = device
+                .getDeviceExtension(ArchiveDeviceExtension.class)
+                .getQueryParam();
+        
+        List<InstanceLocator> ref =
+                retrieveService.calculateMatches(studyUID, seriesUID, objectUID, queryParam);
         if (ref == null)
             throw new WebApplicationException(Status.NOT_FOUND);
-
-        Attributes attrs = ref.getAttributes(WadoAttributesCache.INSTANCE
-                    .getAttributes(queryService, device, ref.seriesPk));
+        
+        if (ref.size() != 1)
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        
+        InstanceLocator instance = ref.get(0);
+        Attributes attrs = (Attributes)instance.getObject();
 
         MediaType mediaType = selectMediaType(
-                MediaTypes.supportedMediaTypesOf(ref, attrs));
+                MediaTypes.supportedMediaTypesOf(instance.tsuid, instance.cuid, attrs));
 
         if (!isAccepted(mediaType))
             throw new WebApplicationException(Status.NOT_ACCEPTABLE);
@@ -238,10 +251,10 @@ public class WadoURI extends Object  {
         //AuditUtils.logWADORetrieve(ref, attrs, request);
 
         if (mediaType == MediaTypes.APPLICATION_DICOM_TYPE)
-            return retrieveNativeDicomObject(ref, attrs);
+            return retrieveNativeDicomObject(instance, attrs);
 
         if (mediaType == MediaTypes.IMAGE_JPEG_TYPE)
-            return retrieveJPEG(ref, attrs);
+            return retrieveJPEG(instance, attrs);
 
         throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
 
@@ -295,9 +308,9 @@ public class WadoURI extends Object  {
         return supported.get(0);
     }
 
-    private Response retrieveNativeDicomObject(InstanceFileRef ref,
+    private Response retrieveNativeDicomObject(InstanceLocator ref,
             Attributes attrs) {
-        String tsuid = selectTransferSyntax(ref.transferSyntaxUID);
+        String tsuid = selectTransferSyntax(ref.tsuid);
         MediaType mediaType = MediaType.valueOf(
                 "application/dicom;transfer-syntax=" + tsuid);
         return Response.ok(new DicomObjectOutput(ref, attrs, tsuid),
@@ -312,7 +325,7 @@ public class WadoURI extends Object  {
                 : UID.ExplicitVRLittleEndian;
     }
 
-    private Response retrieveJPEG(final InstanceFileRef ref, 
+    private Response retrieveJPEG(final InstanceLocator ref, 
             final Attributes attrs) {
         final MediaType mediaType = MediaTypes.IMAGE_JPEG_TYPE;
         return Response.ok(new StreamingOutput() {
@@ -387,15 +400,23 @@ public class WadoURI extends Object  {
 
     private void init(DicomImageReadParam param)
             throws WebApplicationException, IOException {
+        
+        org.dcm4chee.archive.conf.QueryParam queryParam = device
+                .getDeviceExtension(ArchiveDeviceExtension.class)
+                .getQueryParam();
+        
         param.setWindowCenter(windowCenter);
         param.setWindowWidth(windowWidth);
         if (presentationUID != null) {
-            InstanceFileRef ref = instanceService.locate(
-                    studyUID, presentationSeriesUID, presentationUID);
-            if (ref == null)
+            List<InstanceLocator> ref = retrieveService.calculateMatches(
+                    studyUID, presentationSeriesUID, presentationUID,queryParam);
+            if (ref == null || ref.size()==0)
                 throw new WebApplicationException(Status.NOT_FOUND);
 
-            DicomInputStream dis = new DicomInputStream(ref.getFile());
+            if (ref.size() !=1)
+                throw new WebApplicationException(Status.BAD_REQUEST);
+                
+            DicomInputStream dis = new DicomInputStream(ref.get(0).getFile());
             try {
                 param.setPresentationState(dis.readDataset(-1, -1));
             } finally {

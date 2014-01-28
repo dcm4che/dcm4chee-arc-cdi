@@ -53,5 +53,8 @@ public interface RetrieveService {
 
     List<InstanceLocator> calculateMatches(IDWithIssuer[] pids,
             Attributes keys, QueryParam queryParam);
+    
+    List<InstanceLocator> calculateMatches(String studyUID, String seriesUID,
+            String objectUID,QueryParam queryParam);
 
 }

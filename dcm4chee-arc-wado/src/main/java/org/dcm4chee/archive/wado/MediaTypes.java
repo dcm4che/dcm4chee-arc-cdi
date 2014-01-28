@@ -217,21 +217,21 @@ public class MediaTypes {
                 || mediaType.getSubtype().equalsIgnoreCase("dicom+jpeg-jpx");
     }
 
-    public static List<MediaType> supportedMediaTypesOf(InstanceFileRef ref,
-            Attributes attrs) {
+    public static List<MediaType> supportedMediaTypesOf(String transferSyntaxUID,
+            String sopClassUID, Attributes attrs) {
         List<MediaType> list = new ArrayList<MediaType>(4);
         if (attrs.contains(Tag.BitsAllocated)) {
             if (attrs.getInt(Tag.NumberOfFrames, 1) > 1) {
                 list.add(APPLICATION_DICOM_TYPE);
                 MediaType mediaType;
-                if (UID.MPEG2.equals(ref.transferSyntaxUID)
+                if (UID.MPEG2.equals(transferSyntaxUID)
                         || UID.MPEG2MainProfileHighLevel
-                        .equals(ref.transferSyntaxUID))
+                        .equals(transferSyntaxUID))
                     mediaType = VIDEO_MPEG_TYPE;
                 else if (UID.MPEG4AVCH264HighProfileLevel41
-                        .equals(ref.transferSyntaxUID)
+                        .equals(transferSyntaxUID)
                         || UID.MPEG4AVCH264BDCompatibleHighProfileLevel41
-                        .equals(ref.transferSyntaxUID))
+                        .equals(transferSyntaxUID))
                     mediaType = VIDEO_MP4_TYPE;
                 else
                     mediaType= IMAGE_JPEG_TYPE;
@@ -247,9 +247,9 @@ public class MediaTypes {
             list.add(APPLICATION_DICOM_TYPE);
         } else {
             list.add(APPLICATION_DICOM_TYPE);
-            if (UID.EncapsulatedPDFStorage.equals(ref.sopClassUID))
+            if (UID.EncapsulatedPDFStorage.equals(sopClassUID))
                 list.add(APPLICATION_PDF_TYPE);
-            else if (UID.EncapsulatedCDAStorage.equals(ref.sopClassUID))
+            else if (UID.EncapsulatedCDAStorage.equals(sopClassUID))
                 list.add(MediaType.TEXT_XML_TYPE);
         }
         return list ;
