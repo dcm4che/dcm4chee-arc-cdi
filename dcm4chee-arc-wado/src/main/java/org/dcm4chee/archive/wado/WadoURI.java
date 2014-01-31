@@ -43,10 +43,12 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.ejb.EJB;
+import javax.enterprise.context.RequestScoped;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -69,6 +71,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
 import org.dcm4che.data.Attributes;
+import org.dcm4che.data.Tag;
 import org.dcm4che.data.UID;
 import org.dcm4che.image.PaletteColorModel;
 import org.dcm4che.image.PixelAspectRatio;
@@ -79,13 +82,13 @@ import org.dcm4che.imageio.stream.OutputStreamAdapter;
 import org.dcm4che.io.DicomInputStream;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Device;
+import org.dcm4che.net.QueryOption;
 import org.dcm4che.net.service.InstanceLocator;
 import org.dcm4che.util.SafeClose;
 import org.dcm4che.util.StringUtils;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4che.ws.rs.MediaTypes;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.InstanceFileRef;
-import org.dcm4chee.archive.query.QueryService;
-import org.dcm4chee.archive.query.impl.QueryServiceEJB;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 
 /**
@@ -95,6 +98,7 @@ import org.dcm4chee.archive.retrieve.RetrieveService;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
+@RequestScoped
 @Path("/wado/{AETitle}")
 public class WadoURI extends Object  {
 
@@ -150,11 +154,12 @@ public class WadoURI extends Object  {
         }
     }
 
-    @Inject
-    private Device device;
+    private String aetitle;
+    
+    private ArchiveAEExtension arcAE;
     
     @Inject
-    private QueryService queryService;
+    private Device device;
 
     @Inject
     private RetrieveService retrieveService;
@@ -164,9 +169,6 @@ public class WadoURI extends Object  {
 
     @Context
     private HttpHeaders headers;
-
-    @PathParam("AETitle")
-    private String aet;
 
     @QueryParam("requestType")
     private String requestType;
@@ -221,14 +223,28 @@ public class WadoURI extends Object  {
 
     @QueryParam("transferSyntax")
     private List<String> transferSyntax;
+    
+    /**
+     * Setter for the AETitle property, automatically invoked
+     * by the CDI container. The setter initializes the ArchiveAEExtension
+     * as well.
+     */
+    @PathParam("AETitle")
+    public void setAETitle(String aet) {
+        this.aetitle=aet;
+        ApplicationEntity ae = device.getApplicationEntity(aet);
+        if (ae == null || !ae.isInstalled()
+                || (arcAE = ae.getAEExtension(ArchiveAEExtension.class)) == null) {
+            throw new WebApplicationException(Response.Status.SERVICE_UNAVAILABLE);
+        }
+    }
 
     @GET
     public Response retrieve() throws WebApplicationException {
         checkRequest();
         
-        org.dcm4chee.archive.conf.QueryParam queryParam = device
-                .getDeviceExtension(ArchiveDeviceExtension.class)
-                .getQueryParam();
+        org.dcm4chee.archive.conf.QueryParam queryParam = arcAE.
+                getQueryParam(EnumSet.noneOf(QueryOption.class), getAccessControlIDs());
         
         List<InstanceLocator> ref =
                 retrieveService.calculateMatches(studyUID, seriesUID, objectUID, queryParam);
@@ -241,8 +257,7 @@ public class WadoURI extends Object  {
         InstanceLocator instance = ref.get(0);
         Attributes attrs = (Attributes)instance.getObject();
 
-        MediaType mediaType = selectMediaType(
-                MediaTypes.supportedMediaTypesOf(instance.tsuid, instance.cuid, attrs));
+        MediaType mediaType = selectMediaType(instance.tsuid, instance.cuid, attrs);
 
         if (!isAccepted(mediaType))
             throw new WebApplicationException(Status.NOT_ACCEPTABLE);
@@ -259,10 +274,10 @@ public class WadoURI extends Object  {
         throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
 
     }
-
+    
     private void checkRequest()
             throws WebApplicationException {
-        ApplicationEntity ae = device.getApplicationEntity(aet);
+        ApplicationEntity ae = device.getApplicationEntity(aetitle);
         if (ae == null || !ae.isInstalled())
             throw new WebApplicationException(Status.SERVICE_UNAVAILABLE);
 
@@ -299,14 +314,6 @@ public class WadoURI extends Object  {
         return false;
     }
 
-    private MediaType selectMediaType(List<MediaType> supported) {
-        if (contentType != null)
-            for (MediaType requestedType : contentType.values)
-                for (MediaType supportedType : supported)
-                    if (requestedType.isCompatible(supportedType))
-                        return supportedType;
-        return supported.get(0);
-    }
 
     private Response retrieveNativeDicomObject(InstanceLocator ref,
             Attributes attrs) {
@@ -401,9 +408,8 @@ public class WadoURI extends Object  {
     private void init(DicomImageReadParam param)
             throws WebApplicationException, IOException {
         
-        org.dcm4chee.archive.conf.QueryParam queryParam = device
-                .getDeviceExtension(ArchiveDeviceExtension.class)
-                .getQueryParam();
+        org.dcm4chee.archive.conf.QueryParam queryParam = arcAE.
+                getQueryParam(EnumSet.noneOf(QueryOption.class), getAccessControlIDs());
         
         param.setWindowCenter(windowCenter);
         param.setWindowWidth(windowWidth);
@@ -443,6 +449,65 @@ public class WadoURI extends Object  {
         } finally {
             imageWriter.dispose();
         }
+    }
+    
+    private String[] getAccessControlIDs()
+    {
+        //TODO Access Control to be implemented
+        
+        return new String[0];
+    }
+    
+    private MediaType selectMediaType(String transferSyntaxUID,
+            String sopClassUID, Attributes attrs) {
+        
+        List<MediaType> supportedMediaTypes =
+                supportedMediaTypesOf(transferSyntaxUID, sopClassUID, attrs);
+        
+        if (contentType != null)
+            for (MediaType requestedType : contentType.values)
+                for (MediaType supportedType : supportedMediaTypes)
+                    if (requestedType.isCompatible(supportedType))
+                        return supportedType;
+        return supportedMediaTypes.get(0);
+    }
+    
+    public static List<MediaType> supportedMediaTypesOf(String transferSyntaxUID,
+            String sopClassUID, Attributes attrs) {
+        List<MediaType> list = new ArrayList<MediaType>(4);
+        if (attrs.contains(Tag.BitsAllocated)) {
+            if (attrs.getInt(Tag.NumberOfFrames, 1) > 1) {
+                list.add(MediaTypes.APPLICATION_DICOM_TYPE);
+                MediaType mediaType;
+                if (UID.MPEG2.equals(transferSyntaxUID)
+                        || UID.MPEG2MainProfileHighLevel
+                        .equals(transferSyntaxUID))
+                    mediaType = MediaTypes.VIDEO_MPEG_TYPE;
+                else if (UID.MPEG4AVCH264HighProfileLevel41
+                        .equals(transferSyntaxUID)
+                        || UID.MPEG4AVCH264BDCompatibleHighProfileLevel41
+                        .equals(transferSyntaxUID))
+                    mediaType = MediaTypes.VIDEO_MP4_TYPE;
+                else
+                    mediaType= MediaTypes.IMAGE_JPEG_TYPE;
+                list.add(mediaType);
+            } else {
+                list.add(MediaTypes.IMAGE_JPEG_TYPE);
+                list.add(MediaTypes.APPLICATION_DICOM_TYPE);
+            }
+        } else if (attrs.contains(Tag.ContentSequence)) {
+            list.add(MediaType.TEXT_HTML_TYPE);
+            list.add(MediaType.TEXT_PLAIN_TYPE);
+//            list.add(APPLICATION_PDF_TYPE);
+            list.add(MediaTypes.APPLICATION_DICOM_TYPE);
+        } else {
+            list.add(MediaTypes.APPLICATION_DICOM_TYPE);
+            if (UID.EncapsulatedPDFStorage.equals(sopClassUID))
+                list.add(MediaTypes.APPLICATION_PDF_TYPE);
+            else if (UID.EncapsulatedCDAStorage.equals(sopClassUID))
+                list.add(MediaType.TEXT_XML_TYPE);
+        }
+        return list ;
     }
 
 }
