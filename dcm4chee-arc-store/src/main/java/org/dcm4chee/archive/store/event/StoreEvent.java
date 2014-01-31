@@ -36,30 +36,47 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.scp;
+package org.dcm4chee.archive.store.event;
 
-import org.dcm4che.net.Association;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.store.StoreSource;
+import org.dcm4che.data.Attributes;
+import org.dcm4che.net.ApplicationEntity;
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.store.StoreAction;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public class AssociationSource implements StoreSource {
+public class StoreEvent {
 
-    private final Association as;
+    private final Object source;
+    private final ApplicationEntity ae;
+    private final StoreAction action;
+    private final Instance inst;
+    private final Attributes attrs;
 
-    public AssociationSource(Association as) {
-        this.as = as;
+    public StoreEvent(Object source, ApplicationEntity ae,
+            StoreAction action, Instance inst, Attributes attrs) {
+        this.source = source;
+        this.ae = ae;
+        this.action = action;
+        this.inst = inst;
+        this.attrs = attrs;
     }
 
-    public Association getAssociation() {
-        return as;
+    public Object getStoreSource() {
+        return source;
     }
 
-    @Override
-    public String getSendingAETitle(ArchiveAEExtension arcAE) {
-        return as.getRemoteAET();
+    public ApplicationEntity getApplicationEntity() {
+        return ae;
+    }
+
+    public Instance getInstance() {
+        return inst;
+    }
+
+    public StoreAction getStoreAction() {
+        return action;
     }
 }

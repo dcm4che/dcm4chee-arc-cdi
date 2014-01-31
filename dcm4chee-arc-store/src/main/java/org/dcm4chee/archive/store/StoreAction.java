@@ -43,5 +43,8 @@ package org.dcm4chee.archive.store;
  *
  */
 public enum StoreAction {
-    IGNORE, STORE, REPLACE
+    STORE,
+    RESTORE,
+    REPLACE,
+    IGNORE
 }

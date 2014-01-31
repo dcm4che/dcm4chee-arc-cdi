@@ -353,6 +353,10 @@ public class Instance implements Serializable {
         return StringUtils.split(retrieveAETs, '\\');
     }
 
+    public String getRawRetrieveAETs() {
+        return retrieveAETs;
+    }
+
     public void setRetrieveAETs(String... retrieveAETs) {
         this.retrieveAETs = StringUtils.concat(retrieveAETs, '\\');
     }

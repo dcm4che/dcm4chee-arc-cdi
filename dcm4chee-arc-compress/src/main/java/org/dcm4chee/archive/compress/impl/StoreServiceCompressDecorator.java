@@ -91,7 +91,7 @@ public abstract class StoreServiceCompressDecorator implements StoreService{
         if (storeContext == null
                 || storeContext.getArchiveAEExtension() == null
                 || storeContext.getAttributes() == null
-                || storeContext.getSendingAETitle() == null
+                || storeContext.getSourceAET() == null
                 || storeContext.getTransferSyntax() == null
                 || storeContext.getStorePath() == null
                 || storeContext.getFile() == null) {
@@ -103,7 +103,7 @@ public abstract class StoreServiceCompressDecorator implements StoreService{
 
             CompressionRule compressionRule = storeContext
                     .getArchiveAEExtension().getCompressionRules()
-                    .findCompressionRule(storeContext.getSendingAETitle(), storeContext.getAttributes());
+                    .findCompressionRule(storeContext.getSourceAET(), storeContext.getAttributes());
             
             if (compressionRule == null)
                 return false;

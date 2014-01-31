@@ -151,9 +151,8 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
 
     private String wadoURL;
 
-    private HttpServletRequestSource source;
-
-    public void setAETitle(@PathParam("AETitle") String aet) {
+    @PathParam("AETitle")
+    public void setAETitle(String aet) {
         ae = device.getApplicationEntity(aet);
         if (ae == null || !ae.isInstalled()
                 || (arcAE = ae.getAEExtension(ArchiveAEExtension.class)) == null) {
@@ -184,8 +183,7 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
                     Response.Status.BAD_REQUEST);
 
         creator = Creator.valueOf(contentType);
-        source = new HttpServletRequestSource(request);
-        fileSystem = storeService.selectFileSystem(source, arcAE);
+        fileSystem = storeService.selectFileSystem(request, arcAE);
         spoolDirectory = Files.createTempDirectory(
                 fileSystem.getPath().resolve(arcAE.getSpoolDirectoryPath()),
                 null);
@@ -199,6 +197,7 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
             }
             return buildResponse();
         } finally {
+            storeService.fireStoreCompleteEvent(request, ae);
             deleteSpoolDirectory();
         }
     }
@@ -361,7 +360,7 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
 
     private void storeDicomObject(Path file, byte[] digest) {
         StoreContext storeContext = storeService.createStoreContext(
-                storeService, source, arcAE, fileSystem, file, digest);
+                storeService, request, sourceAET(), arcAE, fileSystem, file, digest);
         String iuid = NOT_PARSEABLE_IUID;
         String cuid = NOT_PARSEABLE_CUID;
         try {
@@ -371,10 +370,16 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
             storeService.coerceAttributes(storeContext);
             storeService.moveFile(storeContext);
             storeService.updateDB(storeContext);
+            storeService.fireStoreEvent(storeContext);
             sopSequence.add(sopRef(storeContext));
         } catch (DicomServiceException e) {
             storageFailed(iuid, cuid, e.getStatus());
         }
+    }
+
+    public String sourceAET() {
+        // use hostname as AET
+        return request.getRemoteHost();
     }
 
     private void storeMetadataAndBulkdata(PathWithObject<byte[]> file) {
@@ -412,11 +417,11 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
                 + ctx.getStudyInstanceUID() + "/series/"
                 + ctx.getSeriesInstanceUID() + "/instances/"
                 + ctx.getSOPInstanceUID());
-        if (!ctx.getCoercedAttributes().isEmpty()) {
+        if (!ctx.getCoercedAttributesAfterUpdateDB().isEmpty()) {
             sopRef.setInt(Tag.WarningReason, VR.US,
                           org.dcm4che.net.Status.CoercionOfDataElements);
             if (arcAE.isStoreOriginalAttributes()) {
-                Sequence seq = ctx.getAttributes()
+                Sequence seq = ctx.getAttributesAfterUpdateDB()
                         .getSequence(Tag.OriginalAttributesSequence);
                 sopRef.newSequence(Tag.OriginalAttributesSequence, 1)
                     .add(new Attributes(seq.get(seq.size()-1)));

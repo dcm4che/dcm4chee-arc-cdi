@@ -44,15 +44,15 @@ import java.nio.file.Path;
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Tag;
 import org.dcm4che.util.AttributesFormat;
-import org.dcm4che.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.FileSystem;
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
-import org.dcm4chee.archive.store.StoreSource;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -60,13 +60,14 @@ import org.dcm4chee.archive.store.StoreSource;
  */
 public class DefaultStoreContext implements StoreContext {
 
-    private StoreService service;
-    private StoreSource source;
-    private ArchiveAEExtension arcAE;
-    private FileSystem fs;
+    private final StoreService service;
+    private final Object source;
+    private final String sourceAET;
+    private final ArchiveAEExtension arcAE;
+    private final FileSystem fs;
     private Path file;
     private byte[] digest;
-    private StoreParam storeParam;
+    private final StoreParam storeParam;
     private String transferSyntax;
     private Attributes attributes;
     private Attributes coercedAttributes = new Attributes();
@@ -74,11 +75,18 @@ public class DefaultStoreContext implements StoreContext {
     private String sopIUID;
     private String seriesIUID;
     private String studyIUID;
+    private Attributes attributesAfterUpdateDB;
+    private Attributes coercedAttributesAfterUpdateDB;
+    private Instance instance;
+    private FileRef fileRef;
+    private StoreAction storeAction;
 
-    public DefaultStoreContext(StoreService service, StoreSource source,
-            ArchiveAEExtension arcAE, FileSystem fs, Path file, byte[] digest) {
+    public DefaultStoreContext(StoreService service, Object source,
+            String sourceAET, ArchiveAEExtension arcAE, FileSystem fs,
+            Path file, byte[] digest) {
         this.service = service;
         this.source = source;
+        this.sourceAET = sourceAET;
         this.arcAE = arcAE;
         this.fs = fs;
         this.file = file;
@@ -88,7 +96,7 @@ public class DefaultStoreContext implements StoreContext {
 
 
     @Override
-    public StoreSource getStoreSource() {
+    public Object getStoreSource() {
         return source;
     }
 
@@ -187,13 +195,13 @@ public class DefaultStoreContext implements StoreContext {
     }
 
     @Override
-    public StoreParam getStoreParam() {
-        return storeParam;
+    public String getSourceAET() {
+        return sourceAET;
     }
 
-    @Override
-    public String getSendingAETitle() {
-        return source.getSendingAETitle(arcAE);
+   @Override
+    public StoreParam getStoreParam() {
+        return storeParam;
     }
 
     @Override
@@ -203,20 +211,64 @@ public class DefaultStoreContext implements StoreContext {
 
 
     @Override
-    public FileRef getFileRef() {
-        return new FileRef(fs, unixFilePath(), 
-                transferSyntax, file.toFile().length(),
-                TagUtils.toHexString(digest));
-    }
-
-    private String unixFilePath() {
-        return fs.getPath().relativize(file).toString()
-            .replace(File.separatorChar, '/');
-    }
-
-    @Override
     public StoreService getService() {
         return service;
     }
-    
+
+    @Override
+    public byte[] getDigest() {
+        return digest;
+    }
+
+
+    public Attributes getAttributesAfterUpdateDB() {
+        return attributesAfterUpdateDB;
+    }
+
+
+    public void setAttributesAfterUpdateDB(Attributes attributesAfterUpdateDB) {
+        this.attributesAfterUpdateDB = attributesAfterUpdateDB;
+    }
+
+
+    public Attributes getCoercedAttributesAfterUpdateDB() {
+        return coercedAttributesAfterUpdateDB;
+    }
+
+
+    public void setCoercedAttributesAfterUpdateDB(
+            Attributes coercedAttributesAfterUpdateDB) {
+        this.coercedAttributesAfterUpdateDB = coercedAttributesAfterUpdateDB;
+    }
+
+
+    public Instance getInstance() {
+        return instance;
+    }
+
+
+    public void setInstance(Instance instance) {
+        this.instance = instance;
+    }
+
+
+    public FileRef getFileRef() {
+        return fileRef;
+    }
+
+
+    public void setFileRef(FileRef fileRef) {
+        this.fileRef = fileRef;
+    }
+
+
+    public StoreAction getStoreAction() {
+        return storeAction;
+    }
+
+
+    public void setStoreAction(StoreAction storeAction) {
+        this.storeAction = storeAction;
+    }
+
 }

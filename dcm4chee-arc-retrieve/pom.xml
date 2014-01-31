@@ -9,6 +9,13 @@
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-entity</artifactId>
+      <classifier>${db}</classifier>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-query-util</artifactId>
       <version>${project.version}</version>
     </dependency>

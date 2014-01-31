@@ -50,5 +50,5 @@ public enum Entity {
     ServiceRequest,
     RequestedProcedure,
     ScheduledProcedureStep,
-    PerformedProcedureStep
+    PerformedProcedureStep,
 }

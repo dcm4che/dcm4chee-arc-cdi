@@ -42,8 +42,11 @@ import java.nio.file.Path;
 
 import javax.persistence.EntityManager;
 
+import org.dcm4che.data.Attributes;
+import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
@@ -58,11 +61,12 @@ public interface StoreService {
 
     int DATA_SET_NOT_PARSEABLE = 0xC900;
 
-    FileSystem selectFileSystem(StoreSource source, ArchiveAEExtension arcAE)
+    FileSystem selectFileSystem(Object source, ArchiveAEExtension arcAE)
             throws DicomServiceException;
 
-    StoreContext createStoreContext(StoreService service, StoreSource source,
-            ArchiveAEExtension arcAE, FileSystem fs, Path file, byte[] digest);
+    StoreContext createStoreContext(StoreService service, Object source,
+            String sourceAET, ArchiveAEExtension arcAE, FileSystem fs,
+            Path file, byte[] digest);
 
     void parseAttributes(StoreContext storeContext)
             throws DicomServiceException;
@@ -72,13 +76,11 @@ public interface StoreService {
 
     void moveFile(StoreContext storeContext) throws DicomServiceException;
 
-    void updateDB(StoreContext storeContext) throws DicomServiceException;
+    void updateDB(StoreContext storeContext)
+            throws DicomServiceException;
 
     void updateDB(EntityManager em, StoreContext storeContext)
             throws DicomServiceException;
-
-    StoreAction storeDuplicate(StoreContext storeContext,
-            Instance instance) throws DicomServiceException;
 
     Instance findInstance(EntityManager em, StoreContext storeContext)
             throws DicomServiceException;
@@ -102,18 +104,25 @@ public interface StoreService {
             Study study) throws DicomServiceException;
 
     Instance createInstance(EntityManager em, StoreContext storeContext,
-            Series series) throws DicomServiceException;
+            Series series, Attributes coercedAttrs) throws DicomServiceException;
 
-    void createFileRef(EntityManager em, StoreContext storeContext,
+    FileRef createFileRef(EntityManager em, StoreContext storeContext,
             Instance instance);
 
-    void updatePatient(StoreContext storeContext, Patient patient);
+    void updatePatient(EntityManager em, StoreContext storeContext, Patient patient);
 
-    void updateStudy(StoreContext storeContext, Study study);
+    void updateStudy(EntityManager em, StoreContext storeContext, Study study);
 
-    void updateSeries(StoreContext storeContext, Series series);
+    void updateSeries(EntityManager em, StoreContext storeContext, Series series);
 
-    void updateInstance(StoreContext storeContext, Instance inst);
+    void updateInstance(EntityManager em, StoreContext storeContext, Instance inst);
 
+    boolean replaceInstance(EntityManager em, StoreContext storeContext, Instance prevInst);
+
+    boolean restoreInstance(EntityManager em, StoreContext storeContext, Instance prevInst);
+
+    void fireStoreEvent(StoreContext ctx);
+
+    void fireStoreCompleteEvent(Object source, ApplicationEntity ae);
 
 }

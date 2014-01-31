@@ -36,31 +36,29 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.stow;
+package org.dcm4chee.archive.store.event;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.store.StoreSource;
+import org.dcm4che.net.ApplicationEntity;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public class HttpServletRequestSource implements StoreSource {
+public class StoreCompletedEvent {
 
-    private final HttpServletRequest request;
+    private final Object source;
+    private final ApplicationEntity ae;
 
-    public HttpServletRequestSource(HttpServletRequest request) {
-        this.request = request;
+    public StoreCompletedEvent(Object source, ApplicationEntity ae) {
+        this.source = source;
+        this.ae = ae;
     }
 
-    public HttpServletRequest getRequest() {
-        return request;
+    public Object getStoreSource() {
+        return source;
     }
 
-    @Override
-    public String getSendingAETitle(ArchiveAEExtension arcAE) {
-        return null;
+    public ApplicationEntity getApplicationEntity() {
+        return ae;
     }
 }

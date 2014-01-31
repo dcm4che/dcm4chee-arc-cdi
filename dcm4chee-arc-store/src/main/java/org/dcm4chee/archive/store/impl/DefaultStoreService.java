@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.store.impl;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -48,6 +49,7 @@ import java.util.Collections;
 import java.util.Date;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
@@ -62,6 +64,7 @@ import org.dcm4che.data.VR;
 import org.dcm4che.io.DicomInputStream;
 import org.dcm4che.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che.io.SAXTransformer;
+import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Dimse;
 import org.dcm4che.net.Status;
 import org.dcm4che.net.TransferCapability;
@@ -72,7 +75,6 @@ import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.StoreDuplicate;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
@@ -88,13 +90,13 @@ import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
-import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.request.RequestService;
 import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
-import org.dcm4chee.archive.store.StoreSource;
+import org.dcm4chee.archive.store.event.StoreCompletedEvent;
+import org.dcm4chee.archive.store.event.StoreEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,8 +129,14 @@ public class DefaultStoreService implements StoreService {
     @Inject
     private StoreServiceEJB storeServiceEJB;
 
+    @Inject
+    Event<StoreEvent> storeEvent;
+
+    @Inject
+    Event<StoreCompletedEvent> storeCompletedEvent;
+
     @Override
-    public FileSystem selectFileSystem(StoreSource src, ArchiveAEExtension arcAE)
+    public FileSystem selectFileSystem(Object source, ArchiveAEExtension arcAE)
             throws DicomServiceException {
         String groupID = arcAE.getFileSystemGroupID();
         FileSystem fs = fileSystemEJB.findCurrentFileSystem(groupID,
@@ -140,9 +148,10 @@ public class DefaultStoreService implements StoreService {
     }
 
     @Override
-    public StoreContext createStoreContext(StoreService service, StoreSource source,
-            ArchiveAEExtension arcAE, FileSystem fs, Path file, byte[] digest) {
-        return new DefaultStoreContext(service, source, arcAE, fs, file, digest);
+    public StoreContext createStoreContext(StoreService service, Object source,
+            String sourceAET, ArchiveAEExtension arcAE, FileSystem fs,
+            Path file, byte[] digest) {
+        return new DefaultStoreContext(service, source, sourceAET, arcAE, fs, file, digest);
     }
 
     @Override
@@ -169,11 +178,10 @@ public class DefaultStoreService implements StoreService {
             ArchiveAEExtension arcAE = storeContext.getArchiveAEExtension();
             Attributes attrs = storeContext.getAttributes();
             Attributes modified = storeContext.getCoercedAttributes();
-            StoreSource storeSource = storeContext.getStoreSource();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     storeContext.getSOPClassUID(),
                     Dimse.C_STORE_RQ, TransferCapability.Role.SCP, 
-                    storeSource.getSendingAETitle(arcAE));
+                    storeContext.getSourceAET());
             if (tpl != null)
                 attrs.update(SAXTransformer.transform(attrs, tpl, false, false),
                         modified);
@@ -211,33 +219,19 @@ public class DefaultStoreService implements StoreService {
         storeServiceEJB.updateDB(storeContext);
     }
 
-
     @Override
     public void updateDB(EntityManager em, StoreContext storeContext)
             throws DicomServiceException {
         StoreService service = storeContext.getService();
         Instance instance = service.findInstance(em, storeContext);
-        if (instance != null) {
-            switch (service.storeDuplicate(storeContext, instance)) {
-            case REPLACE:
-                instance.setReplaced(true);
-                instance = null;
-            case STORE:
-                break;
-            case IGNORE:
-                Attributes storedAttrs = storeContext.getAttributes();
-                Attributes coercedAtts = storeContext.getCoercedAttributes();
-                Series series = instance.getSeries();
-                Study study = series.getStudy();
-                Patient patient = study.getPatient();
-                storedAttrs.update(patient.getAttributes(), coercedAtts);
-                storedAttrs.update(study.getAttributes(), coercedAtts);
-                storedAttrs.update(series.getAttributes(), coercedAtts);
-                storedAttrs.update(instance.getAttributes(), coercedAtts);
-               return;
-            }
-        }
-        if (instance == null) {
+        Attributes attrs = storeContext.getAttributes();
+        Attributes attrsAfterDBUpdate = new Attributes(attrs);
+        storeContext.setAttributesAfterUpdateDB(attrsAfterDBUpdate);
+        Attributes coercedAtts = 
+                new Attributes(storeContext.getCoercedAttributes());
+        storeContext.setCoercedAttributesAfterUpdateDB(coercedAtts);
+        storeContext.setStoreAction(StoreAction.STORE);
+        if (instance == null || service.replaceInstance(em, storeContext, instance)) {
             Series series = service.findSeries(em, storeContext);
             if (series == null) {
                 Study study = service.findStudy(em, storeContext);
@@ -246,33 +240,61 @@ public class DefaultStoreService implements StoreService {
                     if (patient == null) {
                         patient = service.createPatient(em, storeContext);
                     } else {
-                        service.updatePatient(storeContext, patient);
+                        service.updatePatient(em, storeContext, patient);
+                        coerceAttributes(attrsAfterDBUpdate, patient, coercedAtts);
                     }
                     study = service.createStudy(em, storeContext, patient);
                 } else {
                     Patient patient = study.getPatient();
-                    service.updatePatient(storeContext, patient);
-                    service.updateStudy(storeContext, study);
+                    service.updatePatient(em, storeContext, patient);
+                    service.updateStudy(em, storeContext, study);
+                    coerceAttributes(attrsAfterDBUpdate, study, coercedAtts);
                 }
                 series = service.createSeries(em, storeContext, study);
             } else {
                 Study study = series.getStudy();
                 Patient patient = study.getPatient();
-                service.updatePatient(storeContext, patient);
-                service.updateStudy(storeContext, study);
-                service.updateSeries(storeContext, series);
+                service.updatePatient(em, storeContext, patient);
+                service.updateStudy(em, storeContext, study);
+                service.updateSeries(em, storeContext, series);
+                coerceAttributes(attrsAfterDBUpdate, series, coercedAtts);
             }
-            instance = service.createInstance(em, storeContext, series);
+            instance = service.createInstance(em, storeContext, series, coercedAtts);
+            storeContext.setInstance(instance);
+        } else if (service.restoreInstance(em, storeContext, instance)) {
+            coerceAttributes(attrsAfterDBUpdate, instance, coercedAtts);
+            storeContext.setStoreAction(StoreAction.RESTORE);
         } else {
-            Series series = instance.getSeries();
-            Study study = series.getStudy();
-            Patient patient = study.getPatient();
-            service.updatePatient(storeContext, patient);
-            service.updateStudy(storeContext, study);
-            service.updateSeries(storeContext, series);
-            service.updateInstance(storeContext, instance);
+           storeContext.setStoreAction(StoreAction.IGNORE);
+           coerceAttributes(attrsAfterDBUpdate, instance, coercedAtts);
+           return;
         }
-        service.createFileRef(em, storeContext, instance);
+        FileRef fileRef = service.createFileRef(em, storeContext, instance);
+        storeContext.setFileRef(fileRef);
+    }
+
+    private void coerceAttributes(Attributes attrs, Patient patient,
+            Attributes result) {
+        attrs.update(patient.getAttributes(), result);
+    }
+
+    private void coerceAttributes(Attributes attrs, Study study,
+            Attributes result) {
+        coerceAttributes(attrs, study.getPatient(), result);
+        attrs.update(study.getAttributes(), result);
+    }
+
+    private void coerceAttributes(Attributes attrs, Series series,
+            Attributes result) {
+        coerceAttributes(attrs, series.getStudy(), result);
+        attrs.update(series.getAttributes(), result);
+    }
+
+    private void coerceAttributes(Attributes attrs, Instance inst,
+            Attributes result) {
+        coerceAttributes(attrs, inst.getSeries(), result);
+        attrs.update(inst.getAttributes(), result);
+        result.remove(Tag.OriginalAttributesSequence);
     }
 
     @Override
@@ -387,11 +409,10 @@ public class DefaultStoreService implements StoreService {
 
     @Override
     public Instance createInstance(EntityManager em, StoreContext storeContext,
-            Series series) {
+            Series series, Attributes coercedAttrs) {
         Attributes data = storeContext.getAttributes();
         StoreParam storeParam = storeContext.getStoreParam();
         FileSystem fs = storeContext.getFileSystem();
-        Attributes coercedAttrs = storeContext.getCoercedAttributes();
         if (!coercedAttrs.isEmpty() && storeParam.isStoreOriginalAttributes()) {
             Attributes item = new Attributes(4);
             Sequence origAttrsSeq = data.ensureSequence(
@@ -401,7 +422,7 @@ public class DefaultStoreService implements StoreService {
             item.setString(Tag.ModifyingSystem, VR.LO,
                     storeParam.getModifyingSystem());
             item.setString(Tag.SourceOfPreviousValues, VR.LO,
-                    storeContext.getSendingAETitle());
+                    storeContext.getSourceAET());
             item.newSequence(Tag.ModifiedAttributesSequence, 1).add(
                     coercedAttrs);
         }
@@ -424,11 +445,25 @@ public class DefaultStoreService implements StoreService {
     }
 
     @Override
-    public void createFileRef(EntityManager em, StoreContext storeContext,
+    public FileRef createFileRef(EntityManager em, StoreContext storeContext,
             Instance instance) {
-        FileRef fileRef = storeContext.getFileRef();
+        FileSystem fs = storeContext.getFileSystem();
+        Path filePath = storeContext.getFile();
+        FileRef fileRef = new FileRef(
+                fs,
+                unixFilePath(fs.getPath(), filePath),
+                storeContext.getTransferSyntax(),
+                filePath.toFile().length(),
+                TagUtils.toHexString(storeContext.getDigest()));
         fileRef.setInstance(instance);
         em.persist(fileRef);
+        return fileRef;
+    }
+
+
+    private String unixFilePath(Path fsPath, Path filePath) {
+        return fsPath.relativize(filePath).toString()
+            .replace(File.separatorChar, '/');
     }
 
     private Collection<ScheduledProcedureStep> getScheduledProcedureSteps(
@@ -527,31 +562,14 @@ public class DefaultStoreService implements StoreService {
     }
 
     @Override
-    public StoreAction storeDuplicate(StoreContext storeContext,
-            Instance inst) {
-        String externalRetrieveAET = inst.getExternalRetrieveAET();
-        String sendingAETitle = storeContext.getSendingAETitle();
-        if (externalRetrieveAET == null
-                || externalRetrieveAET.equals(sendingAETitle)) {
-            return StoreAction.REPLACE;
-        }
-        if (inst.getFileRefs().isEmpty()) {
-            return StoreAction.STORE;
-        }
-        return StoreAction.IGNORE;
-    }
-
-    @Override
-    public void updatePatient(StoreContext storeContext, Patient patient) {
-        Attributes data = storeContext.getAttributes();
+    public void updatePatient(EntityManager em, StoreContext storeContext, Patient patient) {
         patientService.updatePatient(patient,
-                data, storeContext.getStoreParam());
-        data.update(patient.getAttributes(),
-                storeContext.getCoercedAttributes());
+                storeContext.getAttributes(),
+                storeContext.getStoreParam());
     }
 
     @Override
-    public void updateStudy(StoreContext storeContext, Study study) {
+    public void updateStudy(EntityManager em, StoreContext storeContext, Study study) {
         Attributes data = storeContext.getAttributes();
         StoreParam storeParam = storeContext.getStoreParam();
         study.addModalityInStudy(data.getString(Tag.Modality, null));
@@ -564,12 +582,10 @@ public class DefaultStoreService implements StoreService {
             study.setAttributes(studyAttrs, studyFilter,
                     storeParam.getFuzzyStr());
         }
-        storeContext.getAttributes().update(data,
-                storeContext.getCoercedAttributes());
     }
 
     @Override
-    public void updateSeries(StoreContext storeContext, Series series) {
+    public void updateSeries(EntityManager em, StoreContext storeContext, Series series) {
         Attributes data = storeContext.getAttributes();
         StoreParam storeParam = storeContext.getStoreParam();
         series.resetNumberOfInstances();
@@ -580,12 +596,10 @@ public class DefaultStoreService implements StoreService {
             series.setAttributes(seriesAttrs, seriesFilter,
                     storeParam.getFuzzyStr());
         }
-        storeContext.getAttributes().update(data,
-                storeContext.getCoercedAttributes());
     }
 
     @Override
-    public void updateInstance(StoreContext storeContext, Instance inst) {
+    public void updateInstance(EntityManager em, StoreContext storeContext, Instance inst) {
         Attributes data = storeContext.getAttributes();
         StoreParam storeParam = storeContext.getStoreParam();
         Attributes instAttrs = inst.getAttributes();
@@ -597,4 +611,60 @@ public class DefaultStoreService implements StoreService {
         }
     }
 
+    @Override
+    public boolean replaceInstance(EntityManager em,
+            StoreContext storeContext, Instance prevInst) {
+        if (!equalsSource(storeContext, prevInst)) {
+            return false;
+        }
+
+        Series series = prevInst.getSeries();
+        Study study = series.getStudy();
+        prevInst.setReplaced(true);
+        series.resetNumberOfInstances();
+        study.resetNumberOfInstances();
+        storeContext.setStoreAction(StoreAction.REPLACE);
+        return true;
+    }
+
+    private boolean equalsSource(StoreContext storeContext, Instance prevInst) {
+        String sourceAET = storeContext.getSourceAET();
+        return sourceAET != null && sourceAET.equals(
+                prevInst.getSeries().getSourceAET());
+    }
+
+    @Override
+    public boolean restoreInstance(EntityManager em, StoreContext storeContext,
+            Instance prevInst) {
+        
+        // only restore if no file references
+        if (!prevInst.getFileRefs().isEmpty())
+            return false;
+
+        StoreService service = storeContext.getService();
+        Series series = prevInst.getSeries();
+        Study study = series.getStudy();
+        Patient patient = study.getPatient();
+        service.updatePatient(em, storeContext, patient);
+        service.updateStudy(em, storeContext, study);
+        service.updateSeries(em, storeContext, series);
+        service.updateInstance(em, storeContext, prevInst);
+        storeContext.setStoreAction(StoreAction.RESTORE);
+        return true;
+    }
+
+    @Override
+    public void fireStoreEvent(StoreContext ctx) {
+        storeEvent.fire(new StoreEvent(
+                ctx.getStoreSource(),
+                ctx.getArchiveAEExtension().getApplicationEntity(),
+                ctx.getStoreAction(),
+                ctx.getInstance(),
+                ctx.getAttributesAfterUpdateDB()));
+    }
+
+    @Override
+    public void fireStoreCompleteEvent(Object source, ApplicationEntity ae) {
+        storeCompletedEvent.fire(new StoreCompletedEvent(source, ae));
+    }
 }

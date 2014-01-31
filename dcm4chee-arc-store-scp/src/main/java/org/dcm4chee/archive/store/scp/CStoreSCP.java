@@ -86,11 +86,10 @@ public class CStoreSCP extends BasicCStoreSCP {
         try {
             ApplicationEntity ae = as.getApplicationEntity();
             ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
-            AssociationSource source = new AssociationSource(as);
             FileSystem fs = (FileSystem) as.getProperty("CStoreSCP.FileSystem");
             Path spoolDirectory = (Path) as.getProperty("CStoreSCP.SpoolDirectory");
             if (fs == null) {
-                fs = storeService.selectFileSystem(source, arcAE);
+                fs = storeService.selectFileSystem(as, arcAE);
                 spoolDirectory = Files.createTempDirectory(
                         fs.getPath().resolve(arcAE.getSpoolDirectoryPath()),
                         null);
@@ -102,13 +101,14 @@ public class CStoreSCP extends BasicCStoreSCP {
             Path file = spool(spoolDirectory, fmiOf(as, tsuid, rq), data, 
                     digest);
             StoreContext storeContext = storeService.createStoreContext(
-                    storeService, source, arcAE, fs, file,
+                    storeService, as, as.getRemoteAET(), arcAE, fs, file,
                     digest != null ? digest.digest() : null);
             storeService.parseAttributes(storeContext);
             storeService.coerceAttributes(storeContext);
             storeService.moveFile(storeContext);
             storeService.updateDB(storeContext);
-            Attributes coercedAttrs = storeContext.getCoercedAttributes();
+            storeService.fireStoreEvent(storeContext);
+            Attributes coercedAttrs = storeContext.getCoercedAttributesAfterUpdateDB();
             if (!coercedAttrs.isEmpty() 
                     && !arcAE.isSuppressWarningCoercionOfDataElements()) {
                 rsp.setInt(Tag.Status, VR.US, Status.CoercionOfDataElements);
@@ -153,6 +153,7 @@ public class CStoreSCP extends BasicCStoreSCP {
 
     @Override
     public void onClose(Association as) {
+        storeService.fireStoreCompleteEvent(as, as.getApplicationEntity());
         deleteDirectory((Path) as.getProperty("CStoreSCP.SpoolDirectory"));
     }
 

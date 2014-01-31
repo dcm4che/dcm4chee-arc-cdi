@@ -39,6 +39,8 @@
 package org.dcm4chee.archive.ian.scu.impl;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
@@ -49,6 +51,7 @@ import javax.jms.JMSContext;
 import javax.jms.JMSProducer;
 import javax.jms.Queue;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
 import org.dcm4che.conf.api.IApplicationEntityCache;
@@ -63,10 +66,16 @@ import org.dcm4che.net.pdu.PresentationContext;
 import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.PerformedProcedureStep;
 import org.dcm4chee.archive.entity.SOPInstanceReference;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.ian.scu.IANSCU;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.event.MPPSFinal;
+import org.dcm4chee.archive.store.StoreAction;
+import org.dcm4chee.archive.store.event.StoreCompletedEvent;
+import org.dcm4chee.archive.store.event.StoreEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,14 +103,31 @@ public class IANSCUImpl implements IANSCU {
     @Inject
     private Device device;
 
-    @SuppressWarnings("unused")
-    private void onMPPSReceive(@Observes @MPPSFinal MPPSEvent event) {
+    private IdentityHashMap<Object, HashMap<String, IANBuilder>> pendingStores =
+            new IdentityHashMap<Object, HashMap<String, IANBuilder>>();
+    
+    public void onMPPSReceive(@Observes @MPPSFinal MPPSEvent event) {
         ApplicationEntity ae = event.getApplicationEntity();
         ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
         if (arcAE == null || arcAE.getIANDestinations().length == 0)
             return;
 
-        IANBuilder builder = new IANBuilder(event.getPerformedProcedureStep());
+        IANBuilder builder = initIANBuilder(event.getPerformedProcedureStep());
+        if (builder.allReceived())
+            scheduleSendIAN(ae.getAETitle(), arcAE.getIANDestinations(),
+                    builder.getIAN());
+    }
+
+    private void scheduleSendIAN(String localAET, String[] remoteAETs,
+            Attributes ian) {
+        String iuid = UIDUtils.createUID();
+        for (String remoteAET : remoteAETs) {
+            scheduleSendIAN(localAET, remoteAET, iuid, ian, 0, 0);
+        }
+    }
+
+    private IANBuilder initIANBuilder(PerformedProcedureStep pps) {
+        IANBuilder builder = new IANBuilder(pps);
         for (String seriesiuid : builder.getPerformedSeriesInstanceUIDs()) {
             for (SOPInstanceReference sopRef : em.createNamedQuery(
                     Instance.SOP_INSTANCE_REFERENCE_BY_SERIES_INSTANCE_UID,
@@ -111,14 +137,74 @@ public class IANSCUImpl implements IANSCU {
                 builder.addSOPInstanceReference(sopRef);
             }
         }
-        if (!builder.allReceived())
+        return builder;
+    }
+
+    public void onStoreInstance(@Observes StoreEvent event) {
+        if (event.getStoreAction() == StoreAction.IGNORE)
             return;
 
-        Attributes ian = builder.getIAN();
-        String iuid = UIDUtils.createUID();
-        for (String remoteAET : arcAE.getIANDestinations()) {
-            scheduleSendIAN(ae.getAETitle(), remoteAET, iuid, ian, 0, 0);
+        ApplicationEntity ae = event.getApplicationEntity();
+        ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
+        if (arcAE == null || arcAE.getIANDestinations().length == 0)
+            return;
+
+        Instance inst = event.getInstance();
+        
+        IANBuilder builder = getIANBuilder(event.getStoreSource(),
+                inst.getSeries().getPerformedProcedureStepInstanceUID());
+        if (builder == null)
+            return;
+        
+        builder.addSOPInstanceReference(toSOPInstanceReference(inst));
+        if (builder.allReceived())
+            scheduleSendIAN(ae.getAETitle(), arcAE.getIANDestinations(),
+                    builder.getIAN());
+    }
+
+    private IANBuilder getIANBuilder(Object storeSource, String ppsiuid) {
+        if (ppsiuid == null)
+            return null;
+        
+        HashMap<String, IANBuilder> ianBuilders = pendingStores.get(storeSource);
+        if (ianBuilders == null)
+            pendingStores.put(storeSource,
+                    ianBuilders = new HashMap<String, IANBuilder>());
+        
+        IANBuilder ianBuilder = ianBuilders.get(ppsiuid);
+        if (ianBuilder != null || ianBuilders.containsKey(ppsiuid))
+            return ianBuilder;
+
+        try {
+            PerformedProcedureStep pps = em.createNamedQuery(
+                    PerformedProcedureStep.FIND_BY_SOP_INSTANCE_UID,
+                    PerformedProcedureStep.class)
+                .setParameter(1, ppsiuid)
+                .getSingleResult();
+            ianBuilder = initIANBuilder(pps);
+        } catch (NoResultException e) {
         }
+        ianBuilders.put(ppsiuid, ianBuilder);
+        return ianBuilder;
+    }
+
+    private SOPInstanceReference toSOPInstanceReference(Instance inst) {
+        Series series = inst.getSeries();
+        Study study = series.getStudy();
+        return new SOPInstanceReference(
+                study.getStudyInstanceUID(),
+                series.getPerformedProcedureStepClassUID(),
+                series.getPerformedProcedureStepInstanceUID(),
+                series.getSeriesInstanceUID(),
+                inst.getSopClassUID(),
+                inst.getSopInstanceUID(),
+                inst.getAvailability(),
+                inst.getRawRetrieveAETs(),
+                inst.getExternalRetrieveAET());
+    }
+
+    public void onStoreCompleted(@Observes StoreCompletedEvent event) {
+        pendingStores.remove(event.getStoreSource());
     }
 
     private void scheduleSendIAN(String localAET, String remoteAET,

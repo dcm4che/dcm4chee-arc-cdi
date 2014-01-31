@@ -46,6 +46,7 @@ import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.FileSystem;
+import org.dcm4chee.archive.entity.Instance;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -55,7 +56,7 @@ public interface StoreContext {
 
     /** GETTERS **/
     
-    StoreSource getStoreSource();
+    Object getStoreSource();
 
     FileSystem getFileSystem();
 
@@ -75,25 +76,32 @@ public interface StoreContext {
 
     Attributes getCoercedAttributes();
 
+    Attributes getCoercedAttributesAfterUpdateDB();
+
+    byte[] getDigest();
+
     // path to the file to be processed/moved
     Path getFile();
 
     // path where the processed file will be moved
     Path getStorePath();
 
-    String getSendingAETitle();
-
     String getReceivingAETitle();
+
+    String getSourceAET();
 
     StoreParam getStoreParam();
 
     Availability getAvailability();
 
-    FileRef getFileRef();
-    
     StoreService getService();
-    
-    
+
+    Attributes getAttributesAfterUpdateDB();
+
+    Instance getInstance();
+
+    StoreAction getStoreAction();
+
     /** SETTERS **/
     
     // digest
@@ -104,5 +112,15 @@ public interface StoreContext {
     void setTransferSyntax(String tsuid);
 
     void setAttributes(Attributes attrs);
+
+    void setStoreAction(StoreAction store);
+
+    void setInstance(Instance instance);
+
+    void setFileRef(FileRef fileRef);
+
+    void setCoercedAttributesAfterUpdateDB(Attributes coercedAtts);
+
+    void setAttributesAfterUpdateDB(Attributes attrsAfterDBUpdate);
    
 }
