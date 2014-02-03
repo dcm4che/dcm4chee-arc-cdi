@@ -46,8 +46,9 @@ import org.dcm4che.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.QueryParam;
 
 /**
+ * Retrieve service. Used to get list of references to dicom instances.
+ * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
  */
 public interface RetrieveService {
 
@@ -55,6 +56,6 @@ public interface RetrieveService {
             Attributes keys, QueryParam queryParam);
     
     List<InstanceLocator> calculateMatches(String studyUID, String seriesUID,
-            String objectUID,QueryParam queryParam);
+            String objectUID, QueryParam queryParam);
 
 }

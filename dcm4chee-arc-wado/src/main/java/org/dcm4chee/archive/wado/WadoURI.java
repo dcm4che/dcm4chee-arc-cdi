@@ -241,6 +241,7 @@ public class WadoURI extends Object  {
 
     @GET
     public Response retrieve() throws WebApplicationException {
+        
         checkRequest();
         
         org.dcm4chee.archive.conf.QueryParam queryParam = arcAE.
@@ -334,6 +335,7 @@ public class WadoURI extends Object  {
 
     private Response retrieveJPEG(final InstanceLocator ref, 
             final Attributes attrs) {
+        
         final MediaType mediaType = MediaTypes.IMAGE_JPEG_TYPE;
         return Response.ok(new StreamingOutput() {
             
@@ -458,6 +460,10 @@ public class WadoURI extends Object  {
         return new String[0];
     }
     
+    /**
+     * Returns the media type specified in the contentType request parameter if
+     * supported, otherwise returns the first of the supported media types.
+     */
     private MediaType selectMediaType(String transferSyntaxUID,
             String sopClassUID, Attributes attrs) {
         

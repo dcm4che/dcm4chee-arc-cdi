@@ -70,6 +70,7 @@ import com.mysema.query.jpa.hibernate.HibernateQuery;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
 @ApplicationScoped
 public class DefaultRetrieveService implements RetrieveService {
@@ -80,6 +81,7 @@ public class DefaultRetrieveService implements RetrieveService {
     @Override
     public List<InstanceLocator> calculateMatches(IDWithIssuer[] pids,
             Attributes keys, QueryParam queryParam) {
+        
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(QueryBuilder.pids(pids, false));
         builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
@@ -88,28 +90,11 @@ public class DefaultRetrieveService implements RetrieveService {
                 keys.getStrings(Tag.SeriesInstanceUID), false));
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                 keys.getStrings(Tag.SOPInstanceUID), false));
+        
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNotes(queryParam));
-        return locate(new HibernateQuery(em.unwrap(Session.class))
-            .from(QInstance.instance)
-            .leftJoin(QInstance.instance.fileRefs, QFileRef.fileRef)
-            .leftJoin(QFileRef.fileRef.fileSystem, QFileSystem.fileSystem)
-            .innerJoin(QInstance.instance.series, QSeries.series)
-            .innerJoin(QSeries.series.study, QStudy.study)
-            .innerJoin(QStudy.study.patient, QPatient.patient)
-            .where(builder)
-            .list(
-                QFileRef.fileRef.transferSyntaxUID,
-                QFileRef.fileRef.filePath,
-                QFileSystem.fileSystem.uri,
-                QSeries.series.pk,
-                QInstance.instance.pk,
-                QInstance.instance.sopClassUID,
-                QInstance.instance.sopInstanceUID,
-                QInstance.instance.retrieveAETs,
-                QInstance.instance.externalRetrieveAET,
-                QInstance.instance.encodedAttributes));
+        return query(builder);
     }
     
     public List<InstanceLocator> calculateMatches(String studyUID, String seriesUID,
@@ -126,27 +111,40 @@ public class DefaultRetrieveService implements RetrieveService {
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNotes(queryParam));
-        return locate(new HibernateQuery(em.unwrap(Session.class))
-            .from(QInstance.instance)
-            .leftJoin(QInstance.instance.fileRefs, QFileRef.fileRef)
-            .leftJoin(QFileRef.fileRef.fileSystem, QFileSystem.fileSystem)
-            .innerJoin(QInstance.instance.series, QSeries.series)
-            .innerJoin(QSeries.series.study, QStudy.study)
-            .innerJoin(QStudy.study.patient, QPatient.patient)
-            .where(builder)
-            .list(
-                QFileRef.fileRef.transferSyntaxUID,
-                QFileRef.fileRef.filePath,
-                QFileSystem.fileSystem.uri,
-                QSeries.series.pk,
-                QInstance.instance.pk,
-                QInstance.instance.sopClassUID,
-                QInstance.instance.sopInstanceUID,
-                QInstance.instance.retrieveAETs,
-                QInstance.instance.externalRetrieveAET,
-                QInstance.instance.encodedAttributes));
+        return query(builder);
+    }
+    
+    /**
+     * Executes the query.
+     */
+    private List<InstanceLocator> query (BooleanBuilder builder)
+    {
+        List<Tuple> query = new HibernateQuery(em.unwrap(Session.class))
+        .from(QInstance.instance)
+        .leftJoin(QInstance.instance.fileRefs, QFileRef.fileRef)
+        .leftJoin(QFileRef.fileRef.fileSystem, QFileSystem.fileSystem)
+        .innerJoin(QInstance.instance.series, QSeries.series)
+        .innerJoin(QSeries.series.study, QStudy.study)
+        .innerJoin(QStudy.study.patient, QPatient.patient)
+        .where(builder)
+        .list(
+            QFileRef.fileRef.transferSyntaxUID,
+            QFileRef.fileRef.filePath,
+            QFileSystem.fileSystem.uri,
+            QSeries.series.pk,
+            QInstance.instance.pk,
+            QInstance.instance.sopClassUID,
+            QInstance.instance.sopInstanceUID,
+            QInstance.instance.retrieveAETs,
+            QInstance.instance.externalRetrieveAET,
+            QInstance.instance.encodedAttributes);
+        
+        return locate (query);
     }
 
+    /**
+     * Given the query result, constructs response.
+     */
     private List<InstanceLocator> locate(List<Tuple> tuples) {
         List<InstanceLocator> locators = new ArrayList<InstanceLocator>(tuples.size());
         long instPk = -1;
