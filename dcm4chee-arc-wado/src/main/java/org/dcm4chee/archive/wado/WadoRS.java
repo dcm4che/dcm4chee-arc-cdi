@@ -608,12 +608,6 @@ public class WadoRS extends Wado{
                 null, ref.iuid);
     }
     
-    private String[] getAccessControlIDs()
-    {
-        //TODO Access Control to be implemented
-        
-        return new String[0];
-    }
 
     private boolean isMultiframeMediaType(MediaType mediaType) {
         return mediaType.getType().equalsIgnoreCase("video")
