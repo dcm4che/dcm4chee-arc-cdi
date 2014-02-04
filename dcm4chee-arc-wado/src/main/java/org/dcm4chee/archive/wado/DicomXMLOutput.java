@@ -40,61 +40,60 @@ package org.dcm4chee.archive.wado;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
+import javax.xml.transform.stream.StreamResult;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4che.data.UID;
-import org.dcm4che.imageio.codec.Decompressor;
+import org.dcm4che.data.BulkData;
+import org.dcm4che.data.Fragments;
+import org.dcm4che.data.Tag;
+import org.dcm4che.data.VR;
 import org.dcm4che.io.DicomInputStream;
 import org.dcm4che.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che.io.DicomOutputStream;
+import org.dcm4che.io.SAXTransformer;
 import org.dcm4che.net.service.InstanceLocator;
 import org.dcm4che.util.SafeClose;
 
 /**
- * Callback object used by the RESTful runtime when ready
- * to write the response (the method write is invoked).
- * 
- * The write method reads the referenced file in the file
- * system and eventually updates it with attributes than
- * in the meanwhile may have changed.
- * 
- * Bulk Data is not loaded in memory, but only an URI reference
- * to it. It is read only at stream time.
- * 
- * If the requested Transfer Syntax UID is different to 
- * the one used to store the file, the data is decompressed
- * and returned as is.
- * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-class DicomObjectOutput implements StreamingOutput {
+public class DicomXMLOutput implements StreamingOutput {
 
     private final InstanceLocator fileRef;
     private final Attributes attrs;
-    private final String tsuid;
+    private final String bulkDataURI;
 
-    DicomObjectOutput(InstanceLocator fileRef, Attributes attrs, String tsuid) {
+    public DicomXMLOutput(InstanceLocator fileRef, String bulkDataURI,
+            Attributes attrs) {
         this.fileRef = fileRef;
+        this.bulkDataURI = bulkDataURI;
         this.attrs = attrs;
-        this.tsuid = tsuid;
     }
 
-    public void write(OutputStream out) throws IOException {
+    @Override
+    public void write(OutputStream out) throws IOException,
+            WebApplicationException {
         DicomInputStream dis = new DicomInputStream(fileRef.getFile());
+        dis.setURI(bulkDataURI);
         try {
             dis.setIncludeBulkData(IncludeBulkData.URI);
             Attributes dataset = dis.readDataset(-1, -1);
             dataset.addAll(attrs);
-            if (tsuid != fileRef.tsuid) {
-                Decompressor.decompress(dataset, fileRef.tsuid);
+            Object pixelData = dataset.getValue(Tag.PixelData);
+            if (pixelData instanceof Fragments) {
+                Fragments frags = (Fragments) pixelData;
+                dataset.setValue(Tag.PixelData, VR.OB,
+                        new BulkData(((BulkData) frags.get(1))
+                                .uriWithoutOffsetAndLength(), 0, -1,
+                                dataset.bigEndian()));
             }
-            Attributes fmi = dataset.createFileMetaInformation(tsuid);
-            @SuppressWarnings("resource")
-            DicomOutputStream dos =
-                new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
-            dos.writeDataset(fmi, dataset);
+            SAXTransformer.getSAXWriter(new StreamResult(out)).write(dataset);
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new WebApplicationException(e);
         } finally {
             SafeClose.close(dis);
         }

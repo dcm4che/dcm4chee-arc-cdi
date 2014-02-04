@@ -97,16 +97,20 @@ public class DefaultRetrieveService implements RetrieveService {
         return query(builder);
     }
     
+    /**
+     * Given study and/or series and/or object uids, performs the query and
+     * returns references to the instances.
+     */
     public List<InstanceLocator> calculateMatches(String studyUID, String seriesUID,
             String objectUID,QueryParam queryParam) {
         
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
-                new String[]{studyUID}, false));
+                studyUID!=null?new String[]{studyUID}:null, false));
         builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,
-                new String[]{seriesUID}, false));
+                seriesUID!=null?new String[]{seriesUID}:null, false));
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
-                new String[]{objectUID}, false));
+                objectUID!=null?new String[]{objectUID}:null, false));
         
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));

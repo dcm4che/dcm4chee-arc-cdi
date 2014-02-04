@@ -44,7 +44,6 @@ import java.awt.image.ColorModel;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -56,11 +55,9 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
-import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
@@ -81,26 +78,21 @@ import org.dcm4che.imageio.plugins.dcm.DicomMetaData;
 import org.dcm4che.imageio.stream.OutputStreamAdapter;
 import org.dcm4che.io.DicomInputStream;
 import org.dcm4che.net.ApplicationEntity;
-import org.dcm4che.net.Device;
-import org.dcm4che.net.QueryOption;
 import org.dcm4che.net.service.InstanceLocator;
 import org.dcm4che.util.SafeClose;
 import org.dcm4che.util.StringUtils;
 import org.dcm4che.ws.rs.MediaTypes;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.entity.InstanceFileRef;
-import org.dcm4chee.archive.retrieve.RetrieveService;
 
 /**
- * WADO service implementing DICOM PS 3.18-2009.
- * @see ftp://medical.nema.org/medical/dicom/2009/09_18pu.pdf
+ * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.
+ * @see ftp://medical.nema.org/medical/dicom/2011/11_18pu.pdf
  * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
 @RequestScoped
 @Path("/wado/{AETitle}")
-public class WadoURI extends Object  {
+public class WadoURI extends Wado  {
 
     private static final int STATUS_NOT_IMPLEMENTED = 501;
 
@@ -153,16 +145,6 @@ public class WadoURI extends Object  {
                 throw new IllegalArgumentException(s);
         }
     }
-
-    private String aetitle;
-    
-    private ArchiveAEExtension arcAE;
-    
-    @Inject
-    private Device device;
-
-    @Inject
-    private RetrieveService retrieveService;
     
     @Context
     private HttpServletRequest request;
@@ -223,29 +205,11 @@ public class WadoURI extends Object  {
 
     @QueryParam("transferSyntax")
     private List<String> transferSyntax;
-    
-    /**
-     * Setter for the AETitle property, automatically invoked
-     * by the CDI container. The setter initializes the ArchiveAEExtension
-     * as well.
-     */
-    @PathParam("AETitle")
-    public void setAETitle(String aet) {
-        this.aetitle=aet;
-        ApplicationEntity ae = device.getApplicationEntity(aet);
-        if (ae == null || !ae.isInstalled()
-                || (arcAE = ae.getAEExtension(ArchiveAEExtension.class)) == null) {
-            throw new WebApplicationException(Response.Status.SERVICE_UNAVAILABLE);
-        }
-    }
 
     @GET
     public Response retrieve() throws WebApplicationException {
         
         checkRequest();
-        
-        org.dcm4chee.archive.conf.QueryParam queryParam = arcAE.
-                getQueryParam(EnumSet.noneOf(QueryOption.class), getAccessControlIDs());
         
         List<InstanceLocator> ref =
                 retrieveService.calculateMatches(studyUID, seriesUID, objectUID, queryParam);
@@ -410,9 +374,6 @@ public class WadoURI extends Object  {
     private void init(DicomImageReadParam param)
             throws WebApplicationException, IOException {
         
-        org.dcm4chee.archive.conf.QueryParam queryParam = arcAE.
-                getQueryParam(EnumSet.noneOf(QueryOption.class), getAccessControlIDs());
-        
         param.setWindowCenter(windowCenter);
         param.setWindowWidth(windowWidth);
         if (presentationUID != null) {
@@ -451,13 +412,6 @@ public class WadoURI extends Object  {
         } finally {
             imageWriter.dispose();
         }
-    }
-    
-    private String[] getAccessControlIDs()
-    {
-        //TODO Access Control to be implemented
-        
-        return new String[0];
     }
     
     /**

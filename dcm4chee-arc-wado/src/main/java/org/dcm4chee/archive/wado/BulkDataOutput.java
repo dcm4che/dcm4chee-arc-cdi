@@ -38,65 +38,37 @@
 package org.dcm4chee.archive.wado;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.UID;
-import org.dcm4che.imageio.codec.Decompressor;
-import org.dcm4che.io.DicomInputStream;
-import org.dcm4che.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che.io.DicomOutputStream;
-import org.dcm4che.net.service.InstanceLocator;
+import org.dcm4che.data.BulkData;
 import org.dcm4che.util.SafeClose;
+import org.dcm4che.util.StreamUtils;
 
 /**
- * Callback object used by the RESTful runtime when ready
- * to write the response (the method write is invoked).
- * 
- * The write method reads the referenced file in the file
- * system and eventually updates it with attributes than
- * in the meanwhile may have changed.
- * 
- * Bulk Data is not loaded in memory, but only an URI reference
- * to it. It is read only at stream time.
- * 
- * If the requested Transfer Syntax UID is different to 
- * the one used to store the file, the data is decompressed
- * and returned as is.
- * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-class DicomObjectOutput implements StreamingOutput {
+public class BulkDataOutput implements StreamingOutput {
 
-    private final InstanceLocator fileRef;
-    private final Attributes attrs;
-    private final String tsuid;
+    private final BulkData bulkData;
 
-    DicomObjectOutput(InstanceLocator fileRef, Attributes attrs, String tsuid) {
-        this.fileRef = fileRef;
-        this.attrs = attrs;
-        this.tsuid = tsuid;
+    public BulkDataOutput(BulkData bulkData) {
+        this.bulkData = bulkData;
     }
 
-    public void write(OutputStream out) throws IOException {
-        DicomInputStream dis = new DicomInputStream(fileRef.getFile());
+    @Override
+    public void write(OutputStream out) throws IOException,
+            WebApplicationException {
+        InputStream in = bulkData.openStream();
         try {
-            dis.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes dataset = dis.readDataset(-1, -1);
-            dataset.addAll(attrs);
-            if (tsuid != fileRef.tsuid) {
-                Decompressor.decompress(dataset, fileRef.tsuid);
-            }
-            Attributes fmi = dataset.createFileMetaInformation(tsuid);
-            @SuppressWarnings("resource")
-            DicomOutputStream dos =
-                new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
-            dos.writeDataset(fmi, dataset);
+            StreamUtils.skipFully(in, bulkData.offset);
+            StreamUtils.copy(in, out, bulkData.length);
         } finally {
-            SafeClose.close(dis);
+            SafeClose.close(in);
         }
     }
 
