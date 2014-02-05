@@ -222,5 +222,6 @@
     <module>dcm4chee-arc-mpps-scu</module>
     <module>dcm4chee-arc-wado</module>
     <module>dcm4chee-arc-ian-scu</module>
+    <module>dcm4chee-arc-hl7</module>
   </modules>
 </project>

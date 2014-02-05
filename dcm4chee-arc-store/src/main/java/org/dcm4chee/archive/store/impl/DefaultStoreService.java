@@ -565,7 +565,8 @@ public class DefaultStoreService implements StoreService {
     public void updatePatient(EntityManager em, StoreContext storeContext, Patient patient) {
         patientService.updatePatient(patient,
                 storeContext.getAttributes(),
-                storeContext.getStoreParam());
+                storeContext.getStoreParam(),
+                false);
     }
 
     @Override

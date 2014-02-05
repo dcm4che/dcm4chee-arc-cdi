@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.patient.impl;
 
+import java.util.Collection;
 import java.util.HashSet;
 
 import javax.ejb.Stateless;
@@ -54,7 +55,11 @@ import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.PerformedProcedureStep;
+import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.Visit;
 import org.dcm4chee.archive.issuer.IssuerService;
+import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientMergedException;
@@ -143,10 +148,12 @@ public class PatientServiceEJB implements PatientService {
 
     @Override
     public void updatePatient(Patient patient, Attributes attrs,
-            StoreParam storeParam) {
+            StoreParam storeParam, boolean overwriteValues) {
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (patientAttrs.mergeSelected(attrs, filter.getSelection())) {
+        if (overwriteValues
+                ? patientAttrs.updateSelected(attrs, null, filter.getSelection())
+                : patientAttrs.mergeSelected(attrs, filter.getSelection())) {
             if (patient.getIssuerOfPatientID() == null) {
                 String pid = attrs.getString(Tag.PatientID);
                 Issuer issuer = Issuer.fromIssuerOfPatientID(attrs);
@@ -156,5 +163,47 @@ public class PatientServiceEJB implements PatientService {
             }
             patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
         }
+    }
+
+    @Override
+    public Patient updateOrCreatePatient(Attributes attrs, StoreParam storeParam)
+            throws NonUniquePatientException, PatientMergedException {
+        //TODO make PatientSelector configurable
+        PatientSelector selector = new IDPatientSelector();
+        Patient patient = findPatient(attrs, selector);
+        if (patient == null) {
+            return createPatient(attrs, storeParam);
+        }
+        updatePatient(patient, attrs, storeParam, true);
+        return patient;
+    }
+
+    @Override
+    public void mergePatient(Attributes attrs, Attributes priorAttrs,
+            StoreParam storeParam) throws NonUniquePatientException,
+            PatientMergedException, PatientCircularMergedException {
+        Patient prior = updateOrCreatePatient(priorAttrs, storeParam);
+        Patient pat = updateOrCreatePatient(attrs, storeParam);
+        mergePatient(pat, prior);
+    }
+
+    private void mergePatient(Patient pat, Patient prior)
+            throws PatientCircularMergedException {
+        if (pat == prior)
+            throw new PatientCircularMergedException(pat);
+        Collection<Study> studies = prior.getStudies();
+        if (studies != null)
+            for (Study study : studies)
+                study.setPatient(pat);
+        Collection<Visit> visits = prior.getVisits();
+        if (visits != null)
+            for (Visit visit : visits)
+                visit.setPatient(pat);
+        Collection<PerformedProcedureStep> ppss =
+                prior.getPerformedProcedureSteps();
+        if (ppss != null)
+            for (PerformedProcedureStep pps : ppss)
+                pps.setPatient(pat);
+        prior.setMergedWith(pat);
     }
 }

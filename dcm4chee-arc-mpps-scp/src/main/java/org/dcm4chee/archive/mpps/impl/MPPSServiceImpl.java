@@ -188,7 +188,7 @@ public class MPPSServiceImpl implements MPPSService {
 
     @Override
     public void updatePatient(Patient patient, Attributes attrs, StoreParam storeParam) {
-        patientService.updatePatient(patient, attrs, storeParam);
+        patientService.updatePatient(patient, attrs, storeParam, false);
     }
 
     @Override

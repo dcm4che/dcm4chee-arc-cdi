@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2012
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,34 +36,47 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.patient;
+package org.dcm4chee.archive.hl7;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXResult;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Patient;
+import org.dcm4che.data.Tag;
+import org.dcm4che.data.VR;
+import org.dcm4che.hl7.HL7Charset;
+import org.dcm4che.hl7.HL7Parser;
+import org.dcm4che.io.ContentHandlerAdapter;
+import org.xml.sax.SAXException;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
  */
-public interface PatientService {
+abstract class HL7toDicom {
 
-    Patient findPatient(Attributes attrs, PatientSelector selector)
-            throws NonUniquePatientException, PatientMergedException;
+    private static SAXTransformerFactory factory =
+            (SAXTransformerFactory) TransformerFactory.newInstance();
 
-    Patient findPatientFollowMerged(Attributes attrs, PatientSelector selector)
-            throws NonUniquePatientException, PatientCircularMergedException;
-
-    Patient createPatient(Attributes attrs, StoreParam storeParam);
-
-    void updatePatient(Patient patient, Attributes attrs,
-            StoreParam storeParam, boolean overwriteValues);
-
-    Patient updateOrCreatePatient(Attributes attrs, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException;
-
-    void mergePatient(Attributes attrs, Attributes mrg, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException,
-            PatientCircularMergedException;
-
+    public static Attributes transform(Templates tpl,
+            byte[] msg, int off, int len, String hl7charset)
+            throws TransformerConfigurationException, IOException, SAXException {
+        Attributes attrs = new Attributes();
+        String dicomCharset = HL7Charset.toDicomCharacterSetCode(hl7charset);
+        if (dicomCharset != null)
+            attrs.setString(Tag.SpecificCharacterSet, VR.CS, dicomCharset);
+        TransformerHandler th = factory.newTransformerHandler(tpl);
+        th.setResult(new SAXResult(new ContentHandlerAdapter(attrs)));
+        new HL7Parser(th).parse(new InputStreamReader(
+                new ByteArrayInputStream(msg, off, len),
+                HL7Charset.toCharsetName(hl7charset)));
+        return attrs;
+    }
 }
