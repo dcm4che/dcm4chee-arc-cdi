@@ -105,12 +105,18 @@ public class DefaultRetrieveService implements RetrieveService {
             String objectUID,QueryParam queryParam) {
         
         BooleanBuilder builder = new BooleanBuilder();
-        builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
-                studyUID!=null?new String[]{studyUID}:null, false));
-        builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,
-                seriesUID!=null?new String[]{seriesUID}:null, false));
-        builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
-                objectUID!=null?new String[]{objectUID}:null, false));
+        
+        if (studyUID!=null)
+            builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
+                new String[]{studyUID}, false));
+        
+        if (seriesUID!=null)
+            builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,
+                new String[]{seriesUID}, false));
+        
+        if (objectUID!=null)
+            builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
+                new String[]{objectUID}, false));
         
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
