@@ -145,7 +145,7 @@ public class WadoRS extends Wado{
     private String method;
 
     private String toBulkDataURI(String uri) {
-        return uriInfo.getBaseUri() + "wado/" + aetitle + "/bulkdata/" + uri;
+        return uriInfo.getBaseUri() + "wado/" + aetitle + "/bulkdata/" + URI.create(uri).getPath();
     }
 
     private void init(String method) {
@@ -292,15 +292,21 @@ public class WadoRS extends Wado{
         return retrievePixelData(instances.get(0).uri, frameList.frames);
     }
 
+    /**
+     * BulkDataURI is expected to be a path to a file.
+     */
     @GET
-    @Path("/bulkdata/{BulkDataURI:.*}")
+    @Path("/bulkdata/{BulkDataPath:.*}")
     @Produces("multipart/related")
     public Response retrieveBulkdata(
-            @PathParam("BulkDataURI") String bulkDataURI,
+            @PathParam("BulkDataPath") String bulkDataPath,
             @QueryParam("offset") @DefaultValue("0") int offset,
             @QueryParam("length") @DefaultValue("-1") int length) {
 
         init("retrieveBulkdata");
+        
+        String bulkDataURI = "file://"+bulkDataPath;
+        
         return (length <= 0)
                 ? retrievePixelData(bulkDataURI)
                 : retrieveBulkData(
