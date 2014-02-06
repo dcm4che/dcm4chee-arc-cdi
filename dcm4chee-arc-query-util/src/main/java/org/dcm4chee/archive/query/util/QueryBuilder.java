@@ -58,11 +58,8 @@ import org.dcm4chee.archive.entity.QContentItem;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
-import org.dcm4chee.archive.entity.QRequestedProcedure;
-import org.dcm4chee.archive.entity.QScheduledProcedureStep;
-import org.dcm4chee.archive.entity.QScheduledStationAETitle;
+import org.dcm4chee.archive.entity.QRequestAttributes;
 import org.dcm4chee.archive.entity.QSeries;
-import org.dcm4chee.archive.entity.QServiceRequest;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.QVerifyingObserver;
 
@@ -574,21 +571,45 @@ public class QueryBuilder {
 
         boolean matchUnknown = queryParam.isMatchUnknown();
         BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addServiceRequestPredicates(builder, item, queryParam);
-        QueryBuilder.addRequestedProcedurePredicates(builder, item, queryParam);
-        QueryBuilder.addScheduledProcedureStepPredicates(builder, item, queryParam);
+        String accNo = item.getString(Tag.AccessionNumber, "*");
+        builder.and(wildCard(QRequestAttributes.requestAttributes.requestingService,
+                      item.getString(Tag.RequestingService, "*"),
+                      matchUnknown, true));
+        builder.and(MatchPersonName.match(
+                QRequestAttributes.requestAttributes.requestingPhysician,
+                QRequestAttributes.requestAttributes.requestingPhysicianIdeographicName,
+                QRequestAttributes.requestAttributes.requestingPhysicianPhoneticName,
+                QRequestAttributes.requestAttributes.requestingPhysicianFamilyNameSoundex,
+                QRequestAttributes.requestAttributes.requestingPhysicianGivenNameSoundex,
+                item.getString(Tag.ReferringPhysicianName, "*"),
+                queryParam));
+        builder.and(wildCard(QRequestAttributes.requestAttributes.accessionNumber,
+                accNo, matchUnknown, false));
+        if (!accNo.equals("*"))
+                builder.and(
+                        issuer(QRequestAttributes.requestAttributes.issuerOfAccessionNumber,
+                        item.getNestedDataset(Tag.IssuerOfAccessionNumberSequence),
+                        queryParam.getDefaultIssuerOfAccessionNumber(), matchUnknown));
+        builder.and(wildCard(QRequestAttributes.requestAttributes.requestedProcedureID,
+                item.getString(Tag.RequestedProcedureID, "*"),
+                matchUnknown, false));
+        builder.and(uids(QRequestAttributes.requestAttributes.studyInstanceUID,
+                item.getStrings(Tag.StudyInstanceUID), matchUnknown));
+        builder.and(wildCard(QRequestAttributes.requestAttributes.scheduledProcedureStepID,
+                item.getString(Tag.ScheduledProcedureStepID, "*"),
+                matchUnknown, false));
+
         if (!builder.hasValue())
             return null;
 
         return matchUnknown(
                 new HibernateSubQuery()
-                    .from(QScheduledProcedureStep.scheduledProcedureStep)
-                    .innerJoin(QScheduledProcedureStep.scheduledProcedureStep.requestedProcedure, QRequestedProcedure.requestedProcedure)
-                    .innerJoin(QRequestedProcedure.requestedProcedure.serviceRequest, QServiceRequest.serviceRequest)
-                    .where(QSeries.series.scheduledProcedureSteps.contains(QScheduledProcedureStep.scheduledProcedureStep),
+                    .from(QRequestAttributes.requestAttributes)
+                    .where(QSeries.series.requestAttributes.contains(
+                                QRequestAttributes.requestAttributes),
                             builder)
                     .exists(),
-                QSeries.series.scheduledProcedureSteps,
+                QSeries.series.requestAttributes,
                 matchUnknown);
     }
 
@@ -647,85 +668,85 @@ public class QueryBuilder {
             .exists();
     }
 
-    public static void addServiceRequestPredicates(BooleanBuilder builder,
-            Attributes item, QueryParam queryParam) {
-
-        boolean matchUnknown = queryParam.isMatchUnknown();
-        String accNo = item.getString(Tag.AccessionNumber, "*");
-        builder.and(wildCard(QServiceRequest.serviceRequest.requestingService,
-                    item.getString(Tag.RequestingService, "*"),
-                    matchUnknown, true));
-        builder.and(MatchPersonName.match(
-                QServiceRequest.serviceRequest.requestingPhysician,
-                QServiceRequest.serviceRequest.requestingPhysicianIdeographicName,
-                QServiceRequest.serviceRequest.requestingPhysicianPhoneticName,
-                QServiceRequest.serviceRequest.requestingPhysicianFamilyNameSoundex,
-                QServiceRequest.serviceRequest.requestingPhysicianGivenNameSoundex,
-                item.getString(Tag.ReferringPhysicianName, "*"),
-                queryParam));
-        builder.and(wildCard(QServiceRequest.serviceRequest.accessionNumber, accNo, matchUnknown, false));
-
-        if (!accNo.equals("*"))
-            builder.and(
-                    issuer(QServiceRequest.serviceRequest.issuerOfAccessionNumber,
-                        item.getNestedDataset(Tag.IssuerOfAccessionNumberSequence),
-                        queryParam.getDefaultIssuerOfAccessionNumber(), matchUnknown));
-
-    }
-
-    public static void addRequestedProcedurePredicates(BooleanBuilder builder,
-            Attributes keys, QueryParam queryParam) {
-        boolean matchUnknown = queryParam.isMatchUnknown();
-        builder.and(wildCard(QRequestedProcedure.requestedProcedure.requestedProcedureID,
-                keys.getString(Tag.RequestedProcedureID, "*"),
-                matchUnknown, false));
-        builder.and(uids(QRequestedProcedure.requestedProcedure.studyInstanceUID,
-                keys.getStrings(Tag.StudyInstanceUID), matchUnknown));
-    }
-
-    public static void addScheduledProcedureStepPredicates(BooleanBuilder builder,
-            Attributes item, QueryParam queryParam) {
-        if (item == null || item.isEmpty())
-            return;
-
-        boolean matchUnknown = queryParam.isMatchUnknown();
-        boolean combinedDatetimeMatching = queryParam.isCombinedDatetimeMatching();
-        builder.and(wildCard(QScheduledProcedureStep.scheduledProcedureStep.modality,
-                item.getString(Tag.Modality, "*").toUpperCase(), matchUnknown, false));
-        builder.and(scheduledStationAET(item.getString(Tag.ScheduledStationAETitle, "*"), matchUnknown));
-        builder.and(MatchPersonName.match(
-                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianName,
-                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianIdeographicName,
-                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianPhoneticName,
-                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianFamilyNameSoundex,
-                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianGivenNameSoundex,
-                item.getString(Tag.ScheduledPerformingPhysicianName, "*"),
-                queryParam));
-        builder.and(MatchDateTimeRange.rangeMatch(
-                QScheduledProcedureStep.scheduledProcedureStep.scheduledStartDate,
-                QScheduledProcedureStep.scheduledProcedureStep.scheduledStartTime,
-                Tag.ScheduledProcedureStepStartDate,
-                Tag.ScheduledProcedureStepStartTime,
-                Tag.ScheduledProcedureStepStartDateAndTime,
-                item, combinedDatetimeMatching, matchUnknown));
-        builder.and(wildCard(QScheduledProcedureStep.scheduledProcedureStep.scheduledProcedureStepID,
-                item.getString(Tag.ScheduledProcedureStepID, "*"),
-                matchUnknown, false));
-        builder.and(uids(QScheduledProcedureStep.scheduledProcedureStep.status,
-                item.getStrings(Tag.ScheduledProcedureStepStatus), matchUnknown));
-    }
-
-    private static Predicate scheduledStationAET(String aet, boolean matchUnknown) {
-        if (aet.equals("*"))
-            return null;
-
-        return new HibernateSubQuery()
-            .from(QScheduledStationAETitle.scheduledStationAETitle)
-            .where(QScheduledProcedureStep.scheduledProcedureStep.scheduledStationAETs.contains(
-                    QScheduledStationAETitle.scheduledStationAETitle),
-                    wildCard(QScheduledStationAETitle.scheduledStationAETitle.aeTitle,
-                            aet, matchUnknown, false))
-            .exists();
-    }
+//    public static void addServiceRequestPredicates(BooleanBuilder builder,
+//            Attributes item, QueryParam queryParam) {
+//
+//        boolean matchUnknown = queryParam.isMatchUnknown();
+//        String accNo = item.getString(Tag.AccessionNumber, "*");
+//        builder.and(wildCard(QServiceRequest.serviceRequest.requestingService,
+//                    item.getString(Tag.RequestingService, "*"),
+//                    matchUnknown, true));
+//        builder.and(MatchPersonName.match(
+//                QServiceRequest.serviceRequest.requestingPhysician,
+//                QServiceRequest.serviceRequest.requestingPhysicianIdeographicName,
+//                QServiceRequest.serviceRequest.requestingPhysicianPhoneticName,
+//                QServiceRequest.serviceRequest.requestingPhysicianFamilyNameSoundex,
+//                QServiceRequest.serviceRequest.requestingPhysicianGivenNameSoundex,
+//                item.getString(Tag.ReferringPhysicianName, "*"),
+//                queryParam));
+//        builder.and(wildCard(QServiceRequest.serviceRequest.accessionNumber, accNo, matchUnknown, false));
+//
+//        if (!accNo.equals("*"))
+//            builder.and(
+//                    issuer(QServiceRequest.serviceRequest.issuerOfAccessionNumber,
+//                        item.getNestedDataset(Tag.IssuerOfAccessionNumberSequence),
+//                        queryParam.getDefaultIssuerOfAccessionNumber(), matchUnknown));
+//
+//    }
+//
+//    public static void addRequestedProcedurePredicates(BooleanBuilder builder,
+//            Attributes keys, QueryParam queryParam) {
+//        boolean matchUnknown = queryParam.isMatchUnknown();
+//        builder.and(wildCard(QRequestedProcedure.requestedProcedure.requestedProcedureID,
+//                keys.getString(Tag.RequestedProcedureID, "*"),
+//                matchUnknown, false));
+//        builder.and(uids(QRequestedProcedure.requestedProcedure.studyInstanceUID,
+//                keys.getStrings(Tag.StudyInstanceUID), matchUnknown));
+//    }
+//
+//    public static void addScheduledProcedureStepPredicates(BooleanBuilder builder,
+//            Attributes item, QueryParam queryParam) {
+//        if (item == null || item.isEmpty())
+//            return;
+//
+//        boolean matchUnknown = queryParam.isMatchUnknown();
+//        boolean combinedDatetimeMatching = queryParam.isCombinedDatetimeMatching();
+//        builder.and(wildCard(QScheduledProcedureStep.scheduledProcedureStep.modality,
+//                item.getString(Tag.Modality, "*").toUpperCase(), matchUnknown, false));
+//        builder.and(scheduledStationAET(item.getString(Tag.ScheduledStationAETitle, "*"), matchUnknown));
+//        builder.and(MatchPersonName.match(
+//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianName,
+//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianIdeographicName,
+//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianPhoneticName,
+//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianFamilyNameSoundex,
+//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianGivenNameSoundex,
+//                item.getString(Tag.ScheduledPerformingPhysicianName, "*"),
+//                queryParam));
+//        builder.and(MatchDateTimeRange.rangeMatch(
+//                QScheduledProcedureStep.scheduledProcedureStep.scheduledStartDate,
+//                QScheduledProcedureStep.scheduledProcedureStep.scheduledStartTime,
+//                Tag.ScheduledProcedureStepStartDate,
+//                Tag.ScheduledProcedureStepStartTime,
+//                Tag.ScheduledProcedureStepStartDateAndTime,
+//                item, combinedDatetimeMatching, matchUnknown));
+//        builder.and(wildCard(QScheduledProcedureStep.scheduledProcedureStep.scheduledProcedureStepID,
+//                item.getString(Tag.ScheduledProcedureStepID, "*"),
+//                matchUnknown, false));
+//        builder.and(uids(QScheduledProcedureStep.scheduledProcedureStep.status,
+//                item.getStrings(Tag.ScheduledProcedureStepStatus), matchUnknown));
+//    }
+//
+//    private static Predicate scheduledStationAET(String aet, boolean matchUnknown) {
+//        if (aet.equals("*"))
+//            return null;
+//
+//        return new HibernateSubQuery()
+//            .from(QScheduledStationAETitle.scheduledStationAETitle)
+//            .where(QMWLItem.mWLItem.scheduledStationAETs.contains(
+//                    QScheduledStationAETitle.scheduledStationAETitle),
+//                    wildCard(QScheduledStationAETitle.scheduledStationAETitle.aeTitle,
+//                            aet, matchUnknown, false))
+//            .exists();
+//    }
 
 }

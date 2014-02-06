@@ -83,7 +83,7 @@ import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.ScheduledProcedureStep;
+import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
@@ -91,7 +91,6 @@ import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
-import org.dcm4chee.archive.request.RequestService;
 import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
@@ -119,9 +118,6 @@ public class DefaultStoreService implements StoreService {
 
     @Inject
     private CodeService codeService;
-
-    @Inject
-    private RequestService requestService;
 
     @Inject
     private FileSystemEJB fileSystemEJB;
@@ -393,9 +389,12 @@ public class DefaultStoreService implements StoreService {
         Series series = new Series();
         series.setStudy(study);
         series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
-        series.setScheduledProcedureSteps(getScheduledProcedureSteps(
-                data.getSequence(Tag.RequestAttributesSequence), data,
-                study.getPatient(), storeParam));
+//        series.setScheduledProcedureSteps(getScheduledProcedureSteps(
+//                data.getSequence(Tag.RequestAttributesSequence), data,
+//                study.getPatient(), storeParam));
+        series.setRequestAttributes(createRequestAttributes(
+                data.getSequence(Tag.RequestAttributesSequence),
+                storeParam.getFuzzyStr()));
         series.setSourceAET(storeContext.getReceivingAETitle());
         series.setRetrieveAETs(storeParam.getRetrieveAETs());
         series.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
@@ -466,28 +465,40 @@ public class DefaultStoreService implements StoreService {
             .replace(File.separatorChar, '/');
     }
 
-    private Collection<ScheduledProcedureStep> getScheduledProcedureSteps(
-            Sequence requestAttrsSeq, Attributes data, Patient patient,
-            StoreParam storeParam) {
-        if (requestAttrsSeq == null)
+//    private Collection<ScheduledProcedureStep> getScheduledProcedureSteps(
+//            Sequence requestAttrsSeq, Attributes data, Patient patient,
+//            StoreParam storeParam) {
+//        if (requestAttrsSeq == null)
+//            return null;
+//        ArrayList<ScheduledProcedureStep> list = new ArrayList<ScheduledProcedureStep>(
+//                requestAttrsSeq.size());
+//        for (Attributes requestAttrs : requestAttrsSeq) {
+//            if (requestAttrs.containsValue(Tag.ScheduledProcedureStepID)
+//                    && requestAttrs.containsValue(Tag.RequestedProcedureID)
+//                    && (requestAttrs.containsValue(Tag.AccessionNumber) || data
+//                            .contains(Tag.AccessionNumber))) {
+//                Attributes attrs = new Attributes(data.bigEndian(), data.size()
+//                        + requestAttrs.size());
+//                attrs.addAll(data);
+//                attrs.addAll(requestAttrs);
+//                ScheduledProcedureStep sps = requestService
+//                        .findOrCreateScheduledProcedureStep(attrs, patient,
+//                                storeParam);
+//                list.add(sps);
+//            }
+//        }
+//        return list;
+//    }
+
+    private Collection<RequestAttributes> createRequestAttributes(
+            Sequence seq, FuzzyStr fuzzyStr) {
+        if (seq == null || seq.isEmpty())
             return null;
-        ArrayList<ScheduledProcedureStep> list = new ArrayList<ScheduledProcedureStep>(
-                requestAttrsSeq.size());
-        for (Attributes requestAttrs : requestAttrsSeq) {
-            if (requestAttrs.containsValue(Tag.ScheduledProcedureStepID)
-                    && requestAttrs.containsValue(Tag.RequestedProcedureID)
-                    && (requestAttrs.containsValue(Tag.AccessionNumber) || data
-                            .contains(Tag.AccessionNumber))) {
-                Attributes attrs = new Attributes(data.bigEndian(), data.size()
-                        + requestAttrs.size());
-                attrs.addAll(data);
-                attrs.addAll(requestAttrs);
-                ScheduledProcedureStep sps = requestService
-                        .findOrCreateScheduledProcedureStep(attrs, patient,
-                                storeParam);
-                list.add(sps);
-            }
-        }
+
+        ArrayList<RequestAttributes> list = new ArrayList<RequestAttributes>(
+                seq.size());
+        for (Attributes item : seq)
+            list.add(new RequestAttributes(item, fuzzyStr));
         return list;
     }
 

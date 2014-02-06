@@ -66,7 +66,7 @@ import org.dcm4che.net.pdu.PresentationContext;
 import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
+import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.SOPInstanceReference;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
@@ -126,7 +126,7 @@ public class IANSCUImpl implements IANSCU {
         }
     }
 
-    private IANBuilder initIANBuilder(PerformedProcedureStep pps) {
+    private IANBuilder initIANBuilder(MPPS pps) {
         IANBuilder builder = new IANBuilder(pps);
         for (String seriesiuid : builder.getPerformedSeriesInstanceUIDs()) {
             for (SOPInstanceReference sopRef : em.createNamedQuery(
@@ -176,9 +176,9 @@ public class IANSCUImpl implements IANSCU {
             return ianBuilder;
 
         try {
-            PerformedProcedureStep pps = em.createNamedQuery(
-                    PerformedProcedureStep.FIND_BY_SOP_INSTANCE_UID,
-                    PerformedProcedureStep.class)
+            MPPS pps = em.createNamedQuery(
+                    MPPS.FIND_BY_SOP_INSTANCE_UID,
+                    MPPS.class)
                 .setParameter(1, ppsiuid)
                 .getSingleResult();
             ianBuilder = initIANBuilder(pps);

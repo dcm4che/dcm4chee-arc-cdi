@@ -46,9 +46,4 @@ public enum Entity {
     Study,
     Series,
     Instance,
-    Visit,
-    ServiceRequest,
-    RequestedProcedure,
-    ScheduledProcedureStep,
-    PerformedProcedureStep,
 }

@@ -12,15 +12,15 @@
  * License.
  *
  * The Original Code is part of dcm4che, an implementation of DICOM(TM) in
- * Java(TM), hosted at https://github.com/gunterze/dcm4che.
+ * Java(TM), hosted at http://sourceforge.net/projects/dcm4che.
  *
  * The Initial Developer of the Original Code is
- * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Accurate Software Design, LLC.
+ * Portions created by the Initial Developer are Copyright (C) 2006-2008
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * See @authors listed below
+ * See listed authors below.
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,7 +35,6 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
@@ -46,15 +45,15 @@ import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -66,42 +65,25 @@ import org.dcm4che.util.DateUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 
 /**
+ * @author Damien Evans <damien.daddy@gmail.com>
+ * @author Justin Falk <jfalkmu@gmail.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
- * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * @version $Revision$ $Date$
+ * @since Feb 29, 2008
  */
-@NamedQueries({
-    @NamedQuery(
-        name="ScheduledProcedureStep.findBySPSIDWithoutIssuer",
-        query="SELECT sps FROM ScheduledProcedureStep sps " +
-              "WHERE sps.scheduledProcedureStepID = ?1 " +
-                "AND sps.requestedProcedure.requestedProcedureID = ?2 " +
-                "AND sps.requestedProcedure.serviceRequest.accessionNumber = ?3 " +
-                "AND sps.requestedProcedure.serviceRequest.issuerOfAccessionNumber IS NULL"),
-    @NamedQuery(
-        name="ScheduledProcedureStep.findBySPSIDWithIssuer",
-        query="SELECT sps FROM ScheduledProcedureStep sps " +
-              "WHERE sps.scheduledProcedureStepID = ?1 " +
-                "AND sps.requestedProcedure.requestedProcedureID = ?2 " +
-                "AND sps.requestedProcedure.serviceRequest.accessionNumber = ?3 " +
-                "AND sps.requestedProcedure.serviceRequest.issuerOfAccessionNumber = ?4")
-})
 @Entity
-@Table(name = "sps")
-public class ScheduledProcedureStep implements Serializable {
-
-    private static final long serialVersionUID = 7056153659801553552L;
-
-    public static final String FIND_BY_SPS_ID_WITHOUT_ISSUER =
-        "ScheduledProcedureStep.findBySPSIDWithoutIssuer";
-
-    public static final String FIND_BY_SPS_ID_WITH_ISSUER =
-        "ScheduledProcedureStep.findBySPSIDWithIssuer";
+@Table(name = "mwl_item")
+public class MWLItem implements Serializable {
 
     public static final String SCHEDULED = "SCHEDULED";
     public static final String ARRIVED = "ARRIVED";
     public static final String READY = "READY";
     public static final String STARTED = "STARTED";
     public static final String DEPARTED = "DEPARTED";
+    public static final String COMPLETED = "COMPLETED";
+    public static final String DISCONTINUED = "DISCONTINUED";
+
+    private static final long serialVersionUID = 5655030469102270878L;
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -109,10 +91,30 @@ public class ScheduledProcedureStep implements Serializable {
     private long pk;
 
     @Basic(optional = false)
+    @Column(name = "created_time", updatable = false)
+    private Date createdTime;
+
+    @Basic(optional = false)
+    @Column(name = "updated_time")
+    private Date updatedTime;
+
+    @Basic(optional = false)
     @Column(name = "sps_id")
     private String scheduledProcedureStepID;
 
-    @Column(name = "modality", nullable = false)
+    @Basic(optional = false)
+    @Column(name = "req_proc_id")
+    private String requestedProcedureID;
+
+    @Basic(optional = false)
+    @Column(name = "study_iuid")
+    private String studyInstanceUID;
+
+    @Column(name = "accession_no")
+    private String accessionNumber;
+
+    @Basic(optional = false)
+    @Column(name = "modality")
     private String modality;
 
     @Basic(optional = false)
@@ -148,40 +150,46 @@ public class ScheduledProcedureStep implements Serializable {
     private String status;
 
     @Basic(optional = false)
-    @Column(name = "sps_attrs")
+    @Column(name = "item_attrs")
     private byte[] encodedAttributes;
 
     @Transient
     private Attributes cachedAttributes;
 
-    @ManyToOne
-    @JoinColumn(name = "req_proc_fk")
-    private RequestedProcedure requestedProcedure;
-
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "sps_fk")
+    @JoinColumn(name = "mwl_item_fk")
     private Collection<ScheduledStationAETitle> scheduledStationAETs;
 
-    @ManyToMany(mappedBy="scheduledProcedureSteps")
-    private Collection<Series> series;
-
-    @Override
-    public String toString() {
-        return "SPS[pk=" + pk
-                + ", id=" + scheduledProcedureStepID
-                + ", startDate=" + scheduledStartDate
-                + ", startTime=" + scheduledStartTime
-                + ", modality=" + modality
-                + ", status=" + status
-                + "]";
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patient_fk")
+    private Patient patient;
 
     public long getPk() {
         return pk;
     }
 
+    public Date getCreatedTime() {
+        return createdTime;
+    }
+
+    public Date getUpdatedTime() {
+        return updatedTime;
+    }
+
     public String getScheduledProcedureStepID() {
         return scheduledProcedureStepID;
+    }
+
+    public String getRequestedProcedureID() {
+        return requestedProcedureID;
+    }
+
+    public String getStudyInstanceUID() {
+        return studyInstanceUID;
+    }
+
+    public String getAccessionNumber() {
+        return accessionNumber;
     }
 
     public String getModality() {
@@ -220,25 +228,38 @@ public class ScheduledProcedureStep implements Serializable {
         return status;
     }
 
-    public RequestedProcedure getRequestedProcedure() {
-        return requestedProcedure;
+    public Patient getPatient() {
+        return patient;
     }
 
-    public void setRequestedProcedure(RequestedProcedure requestedProcedure) {
-        this.requestedProcedure = requestedProcedure;
+    public void setPatient(Patient patient) {
+        this.patient = patient;
     }
 
-    public Collection<ScheduledStationAETitle> getScheduledStationAETs() {
-        return scheduledStationAETs;
+    @Override
+    public String toString() {
+        return "MWLItem[pk=" + pk
+                + ", spsid=" + scheduledProcedureStepID
+                + ", rpid=" + requestedProcedureID
+                + ", suid=" + studyInstanceUID
+                + ", accno=" + accessionNumber
+                + ", modality=" + modality
+                + ", performer=" + scheduledPerformingPhysicianName
+                + ", start=" + scheduledStartDate + scheduledStartTime
+                + ", status=" + status
+                + "]";
     }
 
-    public void setScheduledStationAETs(
-            Collection<ScheduledStationAETitle> scheduledStationAETs) {
-        this.scheduledStationAETs = scheduledStationAETs;
+    @PrePersist
+    public void onPrePersist() {
+        Date now = new Date();
+        createdTime = now;
+        updatedTime = now;
     }
 
-    public Collection<Series> getSeries() {
-        return series;
+    @PreUpdate
+    public void onPreUpdate() {
+        updatedTime = new Date();
     }
 
     public byte[] getEncodedAttributes() {
@@ -251,34 +272,42 @@ public class ScheduledProcedureStep implements Serializable {
         return cachedAttributes;
     }
 
-    public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
-        scheduledProcedureStepID = attrs.getString(Tag.ScheduledProcedureStepID);
-        modality = attrs.getString(Tag.Modality, "*").toUpperCase();
-        Date dt = attrs.getDate(Tag.ScheduledProcedureStepStartDateAndTime);
+    public void setAttributes(Attributes attrs, FuzzyStr fuzzyStr) {
+        Attributes spsItem = attrs
+                .getNestedDataset(Tag.ScheduledProcedureStepSequence);
+        if (spsItem == null) {
+            throw new IllegalArgumentException(
+                    "Missing Scheduled Procedure Step Sequence (0040,0100) Item");
+        }
+        scheduledProcedureStepID = spsItem.getString(Tag.ScheduledProcedureStepID);
+        modality = spsItem.getString(Tag.Modality, "*").toUpperCase();
+        Date dt = spsItem.getDate(Tag.ScheduledProcedureStepStartDateAndTime);
         if (dt != null) {
             scheduledStartDate = DateUtils.formatDA(null, dt);
-            scheduledStartTime = attrs.containsValue(Tag.ScheduledProcedureStepStartTime)
+            scheduledStartTime = spsItem.containsValue(Tag.ScheduledProcedureStepStartTime)
                     ? DateUtils.formatTM(null, dt)
                     : "*";
         } else {
             scheduledStartDate = "*";
             scheduledStartTime = "*";
         }
-        PersonName pn = new PersonName(attrs.getString(Tag.ScheduledPerformingPhysicianName), true);
+        PersonName pn = new PersonName(spsItem.getString(Tag.ScheduledPerformingPhysicianName), true);
         scheduledPerformingPhysicianName = pn.contains(PersonName.Group.Alphabetic) 
                 ? pn.toString(PersonName.Group.Alphabetic, false) : "*";
         scheduledPerformingPhysicianIdeographicName = pn.contains(PersonName.Group.Ideographic)
                 ? pn.toString(PersonName.Group.Ideographic, false) : "*";
         scheduledPerformingPhysicianPhoneticName = pn.contains(PersonName.Group.Phonetic)
                 ? pn.toString(PersonName.Group.Phonetic, false) : "*";
-        scheduledPerformingPhysicianFamilyNameSoundex = Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.FamilyName));
-        scheduledPerformingPhysicianGivenNameSoundex = Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.GivenName));
-        status = attrs.getString(Tag.ScheduledProcedureStepStatus, "*");
+        scheduledPerformingPhysicianFamilyNameSoundex = 
+                Utils.toFuzzy(fuzzyStr, pn.get(PersonName.Component.FamilyName));
+        scheduledPerformingPhysicianGivenNameSoundex =
+                Utils.toFuzzy(fuzzyStr, pn.get(PersonName.Component.GivenName));
+        status = spsItem.getString(Tag.ScheduledProcedureStepStatus, SCHEDULED);
+        
+        requestedProcedureID = attrs.getString(Tag.RequestedProcedureID);
+        studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
+        accessionNumber = attrs.getString(Tag.AccessionNumber);
 
-        encodedAttributes = Utils.encodeAttributes(
-                cachedAttributes = new Attributes(attrs, filter.getSelection()));
+        encodedAttributes = Utils.encodeAttributes(cachedAttributes = attrs);
     }
-
 }

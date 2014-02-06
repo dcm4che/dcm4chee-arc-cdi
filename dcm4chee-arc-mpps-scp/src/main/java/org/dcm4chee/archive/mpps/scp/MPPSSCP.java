@@ -52,7 +52,7 @@ import org.dcm4che.net.Status;
 import org.dcm4che.net.service.BasicMPPSSCP;
 import org.dcm4che.net.service.DicomService;
 import org.dcm4che.net.service.DicomServiceException;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
+import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.event.MPPSCreate;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
@@ -87,7 +87,7 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
         ApplicationEntity ae = as.getApplicationEntity();
         try {
-            PerformedProcedureStep mpps =
+            MPPS mpps =
                     mppsService.createPerformedProcedureStep(
                             ae, iuid , data, mppsService);
 
@@ -107,11 +107,11 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
         ApplicationEntity ae = as.getApplicationEntity();
         try {
-            PerformedProcedureStep mpps =
+            MPPS mpps =
                     mppsService.updatePerformedProcedureStep(
                             ae, iuid, data, mppsService);
 
-            (mpps.getStatus() == PerformedProcedureStep.Status.IN_PROGRESS
+            (mpps.getStatus() == MPPS.Status.IN_PROGRESS
                     ? updateMPPSEvent
                     : finalMPPSEvent)
                     .fire(new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));

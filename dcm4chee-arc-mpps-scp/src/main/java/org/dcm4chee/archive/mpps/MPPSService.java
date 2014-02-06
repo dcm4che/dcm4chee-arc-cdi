@@ -43,7 +43,7 @@ import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
+import org.dcm4chee.archive.entity.MPPS;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -51,11 +51,11 @@ import org.dcm4chee.archive.entity.PerformedProcedureStep;
  */
 public interface MPPSService {
 
-    PerformedProcedureStep createPerformedProcedureStep(ApplicationEntity ae,
+    MPPS createPerformedProcedureStep(ApplicationEntity ae,
             String sopInstanceUID, Attributes attrs, MPPSService service)
             throws DicomServiceException;
 
-    PerformedProcedureStep updatePerformedProcedureStep(ApplicationEntity ae,
+    MPPS updatePerformedProcedureStep(ApplicationEntity ae,
             String iuid, Attributes attrs, MPPSService service)
             throws DicomServiceException;
 

@@ -46,30 +46,8 @@
     create index pat_custom3_idx on patient (pat_custom3);
     create index pat_merge_fk_idx on patient (merge_fk);
 
-    create index pps_sop_iuid_idx on pps (sop_iuid);
-    create index pps_patient_fk_idx on pps (patient_fk);
-
-    create index rel_pps_sps_pps_fk_idx on rel_pps_sps (pps_fk);
-    create index rel_pps_sps_sps_fk_idx on rel_pps_sps (sps_fk);
-
-    create index rel_series_sps_series_fk_idx on rel_series_sps (series_fk);
-    create index rel_series_sps_sps_fk_idx on rel_series_sps (sps_fk);
-
     create index rel_study_pcode_study_fk_idx on rel_study_pcode (study_fk);
     create index rel_study_pcode_pcode_fk_idx on rel_study_pcode (pcode_fk);
-
-    create index req_proc_study_iuid_idx on req_proc (study_iuid);
-    create index req_proc_request_fk_idx on req_proc (request_fk);
-
-    create index req_physician_idx on request (req_physician);
-    create index req_phys_i_name_idx on request (req_phys_i_name);
-    create index req_phys_p_name_idx on request (req_phys_p_name);
-    create index req_phys_gn_sx_idx on request (req_phys_gn_sx);
-    create index req_phys_fn_sx_idx on request (req_phys_fn_sx);
-    create index req_accession_no_idx on request (accession_no);
-    create index req_accno_issuer_fk_idx on request (accno_issuer_fk);
-    create index req_service_idx on request (req_service);
-    create index req_visit_fk_idx on request (visit_fk);
 
     create index series_study_fk_idx on series (study_fk);
     create unique index series_iuid_idx on series (series_iuid);
@@ -93,20 +71,18 @@
     create index series_custom2_idx on series (series_custom2);
     create index series_custom3_idx on series (series_custom3);
 
-    create index sps_id_idx on sps (sps_id);
-    create index sps_req_proc_fk_idx on sps (req_proc_fk);
-    create index sps_status_idx on sps (sps_status);
-    create index sps_start_date_idx on sps (sps_start_date);
-    create index sps_start_time_idx on sps (sps_start_time);
-    create index sps_modality_idx on sps (modality);
-    create index sps_perf_phys_name_idx on sps (perf_phys_name);
-    create index sps_perf_phys_p_name_idx on sps (perf_phys_p_name);
-    create index sps_perf_phys_i_name_idx on sps (perf_phys_i_name);
-    create index sps_perf_phys_fn_sx_idx on sps (perf_phys_fn_sx);
-    create index sps_perf_phys_gn_sx_idx on sps (perf_phys_gn_sx);
-
-    create index sps_station_aet_sps_fk_idx on sps_station_aet (sps_fk);
-    create index sps_station_aet_station_aet_idx on sps_station_aet (station_aet);
+    create index series_req_physician_idx on series_req (req_physician);
+    create index series_req_phys_i_name_idx on series_req (req_phys_i_name);
+    create index series_req_phys_p_name_idx on series_req (req_phys_p_name);
+    create index series_req_phys_gn_sx_idx on series_req (req_phys_gn_sx);
+    create index series_req_phys_fn_sx_idx on series_req (req_phys_fn_sx);
+    create index series_req_accession_no_idx on series_req (accession_no);
+    create index series_req_service_idx on series_req (req_service);
+    create index series_req_proc_id_idx on series_req (req_proc_id);
+    create index series_req_sps_id_idx on series_req (sps_id);
+    create index series_req_study_iuid_idx on series_req (study_iuid);
+    create index series_req_accno_issuer_fk_idx on series_req (accno_issuer_fk);
+    create index series_req_series_fk_idx on series_req (series_fk);
 
     create index study_patient_fk_idx on study (patient_fk);
     create unique index study_iuid_idx on study (study_iuid);
@@ -134,6 +110,23 @@
     create index vo_observer_fn_sx_idx on verify_observer (observer_fn_sx);
     create index vo_observer_gn_sx_idx on verify_observer (observer_gn_sx);
 
-    create index visit_patient_fk_idx on visit (patient_fk);
-    create index visit_admission_id_idx on visit (admission_id);
-    create index visit_admission_issuer_fk_idx on visit (admission_issuer_fk);
+    create index mpps_patient_fk_idx on mpps (patient_fk);
+    create index mpps_iuid_idx on mpps (mpps_iuid);
+
+    create index mwl_item_sps_id_idx on mwl_item (sps_id);
+    create index mwl_item_req_proc_id_idx on mwl_item (req_proc_id);
+    create index mwl_item_study_iuid_idx on mwl_item (study_iuid);
+    create index mwl_item_accession_no_idx on mwl_item (accession_no);
+    create index mwl_item_sps_status_idx on mwl_item (sps_status);
+    create index mwl_item_sps_start_date_idx on mwl_item (sps_start_date);
+    create index mwl_item_sps_start_time_idx on mwl_item (sps_start_time);
+    create index mwl_item_modality_idx on mwl_item (modality);
+    create index mwl_item_perf_phys_name_idx on mwl_item (perf_phys_name);
+    create index mwl_item_perf_phys_p_name_idx on mwl_item (perf_phys_p_name);
+    create index mwl_item_perf_phys_i_name_idx on mwl_item (perf_phys_i_name);
+    create index mwl_item_perf_phys_fn_sx_idx on mwl_item (perf_phys_fn_sx);
+    create index mwl_item_perf_phys_gn_sx_idx on mwl_item (perf_phys_gn_sx);
+    create index mwl_item_patient_fk_idx on mwl_item (patient_fk);
+
+    create index sps_station_aet_mwl_item_fk_idx on sps_station_aet (mwl_item_fk);
+    create index sps_station_aet_station_aet_idx on sps_station_aet (station_aet);

@@ -90,47 +90,20 @@
     </attributes>
   </entity>
 
-  <entity class="Visit">
-    <table name="visit" />
+  <entity class="MWLItem">
+    <table name="mwl_item" />
     <attributes>
-      <basic name="encodedAttributes">
-        <column name="visit_attrs" column-definition="longblob" />
+      <basic name="encodedAttributes" optional="false">
+        <column name="item_attrs" column-definition="longblob" />
       </basic>
     </attributes>
   </entity>
 
-  <entity class="ServiceRequest">
-    <table name="request" />
+  <entity class="MPPS">
+    <table name="mpps" />
     <attributes>
       <basic name="encodedAttributes" optional="false">
-        <column name="request_attrs" column-definition="longblob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="RequestedProcedure">
-    <table name="req_proc" />
-    <attributes>
-      <basic name="encodedAttributes" optional="false">
-        <column name="req_proc_attrs" column-definition="longblob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="ScheduledProcedureStep">
-    <table name="sps" />
-    <attributes>
-      <basic name="encodedAttributes" optional="false">
-        <column name="sps_attrs" column-definition="longblob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="PerformedProcedureStep">
-    <table name="pps" />
-    <attributes>
-      <basic name="encodedAttributes" optional="false">
-        <column name="pps_attrs" column-definition="longblob" />
+        <column name="mpps_attrs" column-definition="longblob" />
       </basic>
     </attributes>
   </entity>

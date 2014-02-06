@@ -46,7 +46,7 @@ import org.dcm4che.data.Sequence;
 import org.dcm4che.data.Tag;
 import org.dcm4che.data.UID;
 import org.dcm4che.data.VR;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
+import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.SOPInstanceReference;
 import org.dcm4chee.archive.entity.Utils;
 import org.slf4j.Logger;
@@ -72,7 +72,7 @@ public class IANBuilder {
     private final HashMap<String, HashMap<String,String>> perfSeries =
             new HashMap<String, HashMap<String,String>>();
 
-    public IANBuilder(PerformedProcedureStep pps) {
+    public IANBuilder(MPPS pps) {
         Attributes ppsAttrs = pps.getAttributes();
         for (Attributes series : 
             ppsAttrs.getSequence(Tag.PerformedSeriesSequence)) {

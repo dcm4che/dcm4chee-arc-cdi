@@ -38,9 +38,6 @@
 
 package org.dcm4chee.archive.mpps.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -48,23 +45,19 @@ import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Sequence;
 import org.dcm4che.data.Tag;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Status;
 import org.dcm4che.net.service.BasicMPPSSCP;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
-import org.dcm4chee.archive.entity.ScheduledProcedureStep;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
-import org.dcm4chee.archive.request.RequestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,11 +76,8 @@ public class MPPSServiceImpl implements MPPSService {
     @Inject
     private PatientService patientService;
 
-    @Inject
-    private RequestService requestService;
-
     @Override
-    public PerformedProcedureStep createPerformedProcedureStep(
+    public MPPS createPerformedProcedureStep(
             ApplicationEntity ae, String iuid, Attributes attrs,
             MPPSService service) throws DicomServiceException {
         ArchiveAEExtension arcAE =
@@ -104,42 +94,35 @@ public class MPPSServiceImpl implements MPPSService {
         } else {
             service.updatePatient(patient, attrs, storeParam);
         }
-        PerformedProcedureStep mpps = new PerformedProcedureStep();
+        MPPS mpps = new MPPS();
         mpps.setSopInstanceUID(iuid);
-        mpps.setAttributes(attrs,
-                storeParam.getAttributeFilter(Entity.PerformedProcedureStep));
-        mpps.setScheduledProcedureSteps(
-                getScheduledProcedureSteps(
-                        attrs.getSequence(Tag.ScheduledStepAttributesSequence),
-                        patient,
-                        storeParam));
+        mpps.setAttributes(attrs);
         mpps.setPatient(patient);
         em.persist(mpps);
         return mpps;
     }
 
     @Override
-    public PerformedProcedureStep updatePerformedProcedureStep(
+    public MPPS updatePerformedProcedureStep(
             ApplicationEntity ae, String iuid, Attributes modified,
             MPPSService service) throws DicomServiceException {
         ArchiveAEExtension arcAE =
                 ae.getAEExtensionNotNull(ArchiveAEExtension.class);
-        PerformedProcedureStep pps;
+        MPPS pps;
         try {
             pps = find(iuid);
         } catch (NoResultException e) {
             throw new DicomServiceException(Status.NoSuchObjectInstance)
                 .setUID(Tag.AffectedSOPInstanceUID, iuid);
         }
-        if (pps.getStatus() != PerformedProcedureStep.Status.IN_PROGRESS)
+        if (pps.getStatus() != MPPS.Status.IN_PROGRESS)
             BasicMPPSSCP.mayNoLongerBeUpdated();
 
-        StoreParam storeParam = arcAE.getStoreParam();
+//        StoreParam storeParam = arcAE.getStoreParam();
         Attributes attrs = pps.getAttributes();
         attrs.addAll(modified);
-        pps.setAttributes(attrs,
-                storeParam.getAttributeFilter(Entity.PerformedProcedureStep));
-        if (pps.getStatus() != PerformedProcedureStep.Status.IN_PROGRESS) {
+        pps.setAttributes(attrs);
+        if (pps.getStatus() != MPPS.Status.IN_PROGRESS) {
             if (!attrs.containsValue(Tag.PerformedSeriesSequence))
                 throw new DicomServiceException(Status.MissingAttributeValue)
                         .setAttributeIdentifierList(Tag.PerformedSeriesSequence);
@@ -148,30 +131,30 @@ public class MPPSServiceImpl implements MPPSService {
         return pps;
     }
 
-    private PerformedProcedureStep find(String sopInstanceUID) {
+    private MPPS find(String sopInstanceUID) {
         return em.createNamedQuery(
-                PerformedProcedureStep.FIND_BY_SOP_INSTANCE_UID,
-                PerformedProcedureStep.class)
+                MPPS.FIND_BY_SOP_INSTANCE_UID,
+                MPPS.class)
              .setParameter(1, sopInstanceUID)
              .getSingleResult();
     }
 
-    private Collection<ScheduledProcedureStep> getScheduledProcedureSteps(
-            Sequence ssaSeq, Patient patient, StoreParam storeParam) {
-        ArrayList<ScheduledProcedureStep> list =
-                new ArrayList<ScheduledProcedureStep>(ssaSeq.size());
-        for (Attributes ssa : ssaSeq) {
-            if (ssa.containsValue(Tag.ScheduledProcedureStepID)
-                    && ssa.containsValue(Tag.RequestedProcedureID)
-                    && ssa.containsValue(Tag.AccessionNumber)) {
-                ScheduledProcedureStep sps =
-                        requestService.findOrCreateScheduledProcedureStep(
-                                ssa, patient, storeParam);
-                list.add(sps);
-            }
-        }
-        return list;
-    }
+//    private Collection<ScheduledProcedureStep> getScheduledProcedureSteps(
+//            Sequence ssaSeq, Patient patient, StoreParam storeParam) {
+//        ArrayList<ScheduledProcedureStep> list =
+//                new ArrayList<ScheduledProcedureStep>(ssaSeq.size());
+//        for (Attributes ssa : ssaSeq) {
+//            if (ssa.containsValue(Tag.ScheduledProcedureStepID)
+//                    && ssa.containsValue(Tag.RequestedProcedureID)
+//                    && ssa.containsValue(Tag.AccessionNumber)) {
+//                ScheduledProcedureStep sps =
+//                        requestService.findOrCreateScheduledProcedureStep(
+//                                ssa, patient, storeParam);
+//                list.add(sps);
+//            }
+//        }
+//        return list;
+//    }
 
     @Override
     public Patient findPatient(Attributes attrs)

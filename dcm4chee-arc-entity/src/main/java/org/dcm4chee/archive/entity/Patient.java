@@ -171,10 +171,10 @@ public class Patient implements Serializable {
     private Collection<Study> studies;
 
     @OneToMany(mappedBy = "patient", orphanRemoval = true)
-    private Collection<Visit> visits;
+    private Collection<MPPS> modalityPerformedProcedureSteps;
 
     @OneToMany(mappedBy = "patient", orphanRemoval = true)
-    private Collection<PerformedProcedureStep> performedProcedureSteps;
+    private Collection<MWLItem> modalityWorklistItems;
 
     @Override
     public String toString() {
@@ -279,12 +279,12 @@ public class Patient implements Serializable {
         return studies;
     }
 
-    public Collection<Visit> getVisits() {
-        return visits;
+    public Collection<MPPS> getModalityPerformedProcedureSteps() {
+        return modalityPerformedProcedureSteps;
     }
 
-    public Collection<PerformedProcedureStep> getPerformedProcedureSteps() {
-        return performedProcedureSteps;
+    public Collection<MWLItem> getModalityWorklistItems() {
+        return modalityWorklistItems;
     }
 
     public byte[] getEncodedAttributes() {

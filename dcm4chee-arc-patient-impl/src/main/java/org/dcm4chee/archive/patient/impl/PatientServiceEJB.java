@@ -54,10 +54,10 @@ import org.dcm4che.data.Tag;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.entity.MWLItem;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
 import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.archive.entity.Visit;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
@@ -195,14 +195,13 @@ public class PatientServiceEJB implements PatientService {
         if (studies != null)
             for (Study study : studies)
                 study.setPatient(pat);
-        Collection<Visit> visits = prior.getVisits();
-        if (visits != null)
-            for (Visit visit : visits)
-                visit.setPatient(pat);
-        Collection<PerformedProcedureStep> ppss =
-                prior.getPerformedProcedureSteps();
-        if (ppss != null)
-            for (PerformedProcedureStep pps : ppss)
+        Collection<MWLItem> mwlItems = prior.getModalityWorklistItems();
+        if (mwlItems != null)
+            for (MWLItem mwlItem : mwlItems)
+                mwlItem.setPatient(pat);
+        Collection<MPPS> mpps = prior.getModalityPerformedProcedureSteps();
+        if (mpps != null)
+            for (MPPS pps : mpps)
                 pps.setPatient(pat);
         prior.setMergedWith(pat);
     }

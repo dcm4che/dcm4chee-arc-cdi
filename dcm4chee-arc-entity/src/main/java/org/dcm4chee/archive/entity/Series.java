@@ -44,6 +44,7 @@ import java.util.Collection;
 import java.util.Date;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -266,11 +267,15 @@ public class Series implements Serializable {
     @JoinColumn(name = "inst_code_fk")
     private Code institutionCode;
 
-    @ManyToMany
-    @JoinTable(name = "rel_series_sps", 
-        joinColumns = @JoinColumn(name = "series_fk", referencedColumnName = "pk"),
-        inverseJoinColumns = @JoinColumn(name = "sps_fk", referencedColumnName = "pk"))
-    private Collection<ScheduledProcedureStep> scheduledProcedureSteps;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "series_fk")
+    private Collection<RequestAttributes> requestAttributes;
+
+//    @ManyToMany
+//    @JoinTable(name = "rel_series_sps", 
+//        joinColumns = @JoinColumn(name = "series_fk", referencedColumnName = "pk"),
+//        inverseJoinColumns = @JoinColumn(name = "sps_fk", referencedColumnName = "pk"))
+//    private Collection<ScheduledProcedureStep> scheduledProcedureSteps;
 
     @ManyToOne
     @JoinColumn(name = "study_fk")
@@ -486,14 +491,22 @@ public class Series implements Serializable {
         this.institutionCode = institutionCode;
     }
 
-    public Collection<ScheduledProcedureStep> getScheduledProcedureSteps() {
-        return scheduledProcedureSteps;
+    public Collection<RequestAttributes> getRequestAttributes() {
+        return requestAttributes;
     }
 
-    public void setScheduledProcedureSteps(
-            Collection<ScheduledProcedureStep> scheduledProcedureSteps) {
-        this.scheduledProcedureSteps = scheduledProcedureSteps;
+    public void setRequestAttributes(Collection<RequestAttributes> requestAttributes) {
+        this.requestAttributes = requestAttributes;
     }
+
+//    public Collection<ScheduledProcedureStep> getScheduledProcedureSteps() {
+//        return scheduledProcedureSteps;
+//    }
+//
+//    public void setScheduledProcedureSteps(
+//            Collection<ScheduledProcedureStep> scheduledProcedureSteps) {
+//        this.scheduledProcedureSteps = scheduledProcedureSteps;
+//    }
 
     public Study getStudy() {
         return study;

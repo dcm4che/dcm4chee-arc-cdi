@@ -129,6 +129,17 @@
     </attributes>
   </entity>
 
+  <entity class="RequestAttributes">
+    <table name="series_req" />
+    <sequence-generator name="seq" sequence-name="series_req_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
   <entity class="Instance">
     <table name="instance" />
     <sequence-generator name="seq" sequence-name="instance_pk_seq" allocation-size="1" />
@@ -176,58 +187,16 @@
     </attributes>
   </entity>
 
-  <entity class="Visit">
-    <table name="visit" />
-    <sequence-generator name="seq" sequence-name="visit_pk_seq" allocation-size="1" />
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="SEQUENCE" generator="seq" />
-      </id>
-      <basic name="encodedAttributes">
-        <column name="visit_attrs" column-definition="blob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="ServiceRequest">
-    <table name="request" />
-    <sequence-generator name="seq" sequence-name="request_pk_seq" allocation-size="1" />
+  <entity class="MWLItem">
+    <table name="mwl_item" />
+    <sequence-generator name="seq" sequence-name="mwl_item_pk_seq" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
       <basic name="encodedAttributes" optional="false">
-        <column name="request_attrs" column-definition="blob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="RequestedProcedure">
-    <table name="req_proc" />
-    <sequence-generator name="seq" sequence-name="req_proc_pk_seq" allocation-size="1" />
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="SEQUENCE" generator="seq" />
-      </id>
-      <basic name="encodedAttributes" optional="false">
-        <column name="req_proc_attrs" column-definition="blob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="ScheduledProcedureStep">
-    <table name="sps" />
-    <sequence-generator name="seq" sequence-name="sps_pk_seq" allocation-size="1" />
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="SEQUENCE" generator="seq" />
-      </id>
-      <basic name="encodedAttributes" optional="false">
-        <column name="sps_attrs" column-definition="blob" />
+        <column name="item_attrs" column-definition="blob" />
       </basic>
     </attributes>
   </entity>
@@ -243,16 +212,16 @@
     </attributes>
   </entity>
 
-  <entity class="PerformedProcedureStep">
-    <table name="pps" />
-    <sequence-generator name="seq" sequence-name="pps_pk_seq" allocation-size="1" />
+  <entity class="MPPS">
+    <table name="mpps" />
+    <sequence-generator name="seq" sequence-name="mpps_pk_seq" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
       <basic name="encodedAttributes" optional="false">
-        <column name="pps_attrs" column-definition="blob" />
+        <column name="mpps_attrs" column-definition="blob" />
       </basic>
     </attributes>
   </entity>

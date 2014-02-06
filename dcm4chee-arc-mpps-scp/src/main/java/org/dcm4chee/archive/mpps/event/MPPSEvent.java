@@ -41,21 +41,22 @@ package org.dcm4chee.archive.mpps.event;
 import org.dcm4che.data.Attributes;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Dimse;
-import org.dcm4chee.archive.entity.PerformedProcedureStep;
+import org.dcm4chee.archive.entity.MPPS;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
 public class MPPSEvent {
 
-    private final PerformedProcedureStep pps;
+    private final MPPS pps;
     private final ApplicationEntity ae;
     private final Attributes attrs;
     private final Dimse dimse;
 
     public MPPSEvent(ApplicationEntity ae, Dimse dimse, Attributes attrs,
-            PerformedProcedureStep pps) {
+            MPPS pps) {
         this.dimse = dimse;
         this.ae = ae;
         this.pps = pps;
@@ -74,7 +75,7 @@ public class MPPSEvent {
         return attrs;
     }
 
-    public PerformedProcedureStep getPerformedProcedureStep() {
+    public MPPS getPerformedProcedureStep() {
         return pps;
     }
 
