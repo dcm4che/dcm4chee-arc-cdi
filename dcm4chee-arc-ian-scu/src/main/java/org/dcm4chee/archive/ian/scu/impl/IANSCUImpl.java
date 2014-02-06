@@ -150,42 +150,34 @@ public class IANSCUImpl implements IANSCU {
             return;
 
         Instance inst = event.getInstance();
-        
-        IANBuilder builder = getIANBuilder(event.getStoreSource(),
-                inst.getSeries().getPerformedProcedureStepInstanceUID());
-        if (builder == null)
-            return;
-        
-        builder.addSOPInstanceReference(toSOPInstanceReference(inst));
-        if (builder.allReceived())
-            scheduleSendIAN(ae.getAETitle(), arcAE.getIANDestinations(),
-                    builder.getIAN());
-    }
-
-    private IANBuilder getIANBuilder(Object storeSource, String ppsiuid) {
+        String ppsiuid = inst.getSeries().getPerformedProcedureStepInstanceUID();
         if (ppsiuid == null)
-            return null;
-        
+            return;
+
+        Object storeSource = event.getStoreSource();
         HashMap<String, IANBuilder> ianBuilders = pendingStores.get(storeSource);
         if (ianBuilders == null)
             pendingStores.put(storeSource,
                     ianBuilders = new HashMap<String, IANBuilder>());
-        
-        IANBuilder ianBuilder = ianBuilders.get(ppsiuid);
-        if (ianBuilder != null || ianBuilders.containsKey(ppsiuid))
-            return ianBuilder;
 
-        try {
-            MPPS pps = em.createNamedQuery(
-                    MPPS.FIND_BY_SOP_INSTANCE_UID,
-                    MPPS.class)
-                .setParameter(1, ppsiuid)
-                .getSingleResult();
-            ianBuilder = initIANBuilder(pps);
-        } catch (NoResultException e) {
+        IANBuilder builder = ianBuilders.get(ppsiuid);
+        if (builder != null) {
+            builder.addSOPInstanceReference(toSOPInstanceReference(inst));
+        } else if (!ianBuilders.containsKey(ppsiuid)) {
+            try {
+                MPPS pps = em.createNamedQuery(
+                        MPPS.FIND_BY_SOP_INSTANCE_UID,
+                        MPPS.class)
+                    .setParameter(1, ppsiuid)
+                    .getSingleResult();
+                builder = initIANBuilder(pps);
+            } catch (NoResultException e) {
+            }
+            ianBuilders.put(ppsiuid, builder);
         }
-        ianBuilders.put(ppsiuid, ianBuilder);
-        return ianBuilder;
+        if (builder != null && builder.allReceived())
+            scheduleSendIAN(ae.getAETitle(), arcAE.getIANDestinations(),
+                    builder.getIAN());
     }
 
     private SOPInstanceReference toSOPInstanceReference(Instance inst) {
