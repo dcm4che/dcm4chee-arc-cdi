@@ -81,13 +81,11 @@ import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
-import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
@@ -112,9 +110,6 @@ public class DefaultStoreService implements StoreService {
 
     @Inject
     private PatientService patientService;
-
-    @Inject
-    private IssuerService issuerService;
 
     @Inject
     private CodeService codeService;
@@ -367,8 +362,6 @@ public class DefaultStoreService implements StoreService {
         Study study = new Study();
         study.setPatient(patient);
         study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
-        study.setIssuerOfAccessionNumber(issuer(attrs
-                .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         study.setModalitiesInStudy(attrs.getString(Tag.Modality, null));
         study.setSOPClassesInStudy(attrs.getString(Tag.SOPClassUID, null));
         study.setRetrieveAETs(storeParam.getRetrieveAETs());
@@ -563,13 +556,6 @@ public class DefaultStoreService implements StoreService {
             }
         }
         return list;
-    }
-
-    private Issuer issuer(Attributes item) {
-        if (item == null)
-            return null;
-
-        return issuerService.findOrCreate(new Issuer(item));
     }
 
     @Override

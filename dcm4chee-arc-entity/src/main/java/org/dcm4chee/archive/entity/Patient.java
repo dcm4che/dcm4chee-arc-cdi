@@ -60,6 +60,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.dcm4che.data.Attributes;
+import org.dcm4che.data.Issuer;
 import org.dcm4che.data.PersonName;
 import org.dcm4che.data.Tag;
 import org.dcm4che.soundex.FuzzyStr;
@@ -74,12 +75,10 @@ import org.dcm4chee.archive.conf.AttributeFilter;
 @NamedQueries({
 @NamedQuery(
     name="Patient.findByPatientID",
-    query="SELECT p FROM Patient p LEFT JOIN FETCH p.issuerOfPatientID " +
-          "WHERE p.patientID = ?1"),
+    query="SELECT p FROM Patient p WHERE p.patientID = ?1"),
 @NamedQuery(
     name="Patient.findByPatientName",
-    query="SELECT p FROM Patient p LEFT JOIN FETCH p.issuerOfPatientID " +
-          "WHERE UPPER(p.patientName) = UPPER(?1)")
+    query="SELECT p FROM Patient p WHERE UPPER(p.patientName) = UPPER(?1)")
 })
 @Entity
 @Table(name = "patient")
@@ -109,9 +108,13 @@ public class Patient implements Serializable {
     @Column(name = "pat_id")
     private String patientID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pat_id_issuer_fk")
-    private Issuer issuerOfPatientID;
+    @Basic(optional = false)
+    @Column(name = "pat_id_issuer")
+    private String issuerOfPatientID;
+
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "pat_id_issuer_fk")
+//    private Issuer issuerOfPatientID;
 
     @Basic(optional = false)
     @Column(name = "pat_name")
@@ -215,12 +218,18 @@ public class Patient implements Serializable {
         return patientID;
     }
 
-    public void setIssuerOfPatientID(Issuer issuerOfPatientID) {
-        this.issuerOfPatientID = issuerOfPatientID;
+    public Issuer getIssuerOfPatientID() {
+        return (issuerOfPatientID == null 
+                || issuerOfPatientID.isEmpty()
+                || issuerOfPatientID.equals("*"))
+                ? null
+                : new Issuer(issuerOfPatientID);
     }
 
-    public Issuer getIssuerOfPatientID() {
-        return issuerOfPatientID;
+    public void setIssuerOfPatientID(org.dcm4che.data.Issuer issuerOfPatientID) {
+        this.issuerOfPatientID = issuerOfPatientID != null 
+                ? issuerOfPatientID.toString()
+                : "*";
     }
 
     public String getPatientName() {
@@ -299,6 +308,7 @@ public class Patient implements Serializable {
 
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
         patientID = attrs.getString(Tag.PatientID, "*");
+        setIssuerOfPatientID(Issuer.fromIssuerOfPatientID(attrs));
         PersonName pn = new PersonName(attrs.getString(Tag.PatientName), true);
         patientName = pn.contains(PersonName.Group.Alphabetic) 
                 ? pn.toString(PersonName.Group.Alphabetic, false) : "*";

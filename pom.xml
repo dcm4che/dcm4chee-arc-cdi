@@ -204,7 +204,6 @@
     <module>dcm4chee-arc-patient-api</module>
     <module>dcm4chee-arc-patient-impl</module>
     <module>dcm4chee-arc-code</module>
-    <module>dcm4chee-arc-issuer</module>
     <module>dcm4chee-arc-store</module>
     <module>dcm4chee-arc-store-scp</module>
     <module>dcm4chee-arc-stow</module>

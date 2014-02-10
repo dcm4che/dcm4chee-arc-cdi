@@ -63,6 +63,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.dcm4che.data.Attributes;
+import org.dcm4che.data.Issuer;
 import org.dcm4che.data.PersonName;
 import org.dcm4che.data.Tag;
 import org.dcm4che.soundex.FuzzyStr;
@@ -147,9 +148,9 @@ public class Study implements Serializable {
     @Column(name = "accession_no")
     private String accessionNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "accno_issuer_fk")
-    private Issuer issuerOfAccessionNumber;
+    @Basic(optional = false)
+    @Column(name = "accno_issuer")
+    private String issuerOfAccessionNumber;
 
     @Basic(optional = false)
     @Column(name = "ref_physician")
@@ -306,11 +307,17 @@ public class Study implements Serializable {
     }
 
     public Issuer getIssuerOfAccessionNumber() {
-        return issuerOfAccessionNumber;
+        return (issuerOfAccessionNumber == null 
+                || issuerOfAccessionNumber.isEmpty()
+                || issuerOfAccessionNumber.equals("*"))
+                ? null
+                : new Issuer(issuerOfAccessionNumber);
     }
 
     public void setIssuerOfAccessionNumber(Issuer issuerOfAccessionNumber) {
-        this.issuerOfAccessionNumber = issuerOfAccessionNumber;
+        this.issuerOfAccessionNumber = issuerOfAccessionNumber != null 
+                ? issuerOfAccessionNumber.toString()
+                : "*";
     }
 
     public String getReferringPhysicianName() {
@@ -502,6 +509,8 @@ public class Study implements Serializable {
             studyTime = "*";
         }
         accessionNumber = attrs.getString(Tag.AccessionNumber, "*");
+        setIssuerOfAccessionNumber(Issuer.valueOf(
+                attrs.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         PersonName pn = new PersonName(attrs.getString(Tag.ReferringPhysicianName), true);
         referringPhysicianName = pn.contains(PersonName.Group.Alphabetic) 
                 ? pn.toString(PersonName.Group.Alphabetic, false) : "*";

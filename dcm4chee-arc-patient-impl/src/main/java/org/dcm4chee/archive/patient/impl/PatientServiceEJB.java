@@ -42,13 +42,11 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import javax.ejb.Stateless;
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Issuer;
 import org.dcm4che.data.PersonName;
 import org.dcm4che.data.Tag;
 import org.dcm4chee.archive.conf.AttributeFilter;
@@ -58,7 +56,6 @@ import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.MWLItem;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
@@ -75,9 +72,6 @@ public class PatientServiceEJB implements PatientService {
 
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
-
-    @Inject
-    private IssuerService issuerService;
 
     @Override
     public Patient findPatient(Attributes attrs, PatientSelector selector)
@@ -133,12 +127,7 @@ public class PatientServiceEJB implements PatientService {
 
     @Override
     public Patient createPatient(Attributes attrs, StoreParam storeParam) {
-        String pid = attrs.getString(Tag.PatientID);
-        Issuer issuer = Issuer.fromIssuerOfPatientID(attrs);
         Patient patient = new Patient();
-        if (pid != null && issuer != null) 
-            patient.setIssuerOfPatientID(
-                    issuerService.findOrCreate(issuer));
         patient.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Patient),
                 storeParam.getFuzzyStr());
@@ -154,13 +143,6 @@ public class PatientServiceEJB implements PatientService {
         if (overwriteValues
                 ? patientAttrs.updateSelected(attrs, null, filter.getSelection())
                 : patientAttrs.mergeSelected(attrs, filter.getSelection())) {
-            if (patient.getIssuerOfPatientID() == null) {
-                String pid = attrs.getString(Tag.PatientID);
-                Issuer issuer = Issuer.fromIssuerOfPatientID(attrs);
-                if (pid != null && issuer != null)
-                    patient.setIssuerOfPatientID(
-                            issuerService.findOrCreate(issuer));
-            }
             patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
         }
     }

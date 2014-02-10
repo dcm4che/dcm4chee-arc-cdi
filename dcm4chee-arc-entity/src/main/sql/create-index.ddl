@@ -29,11 +29,8 @@
     create index inst_custom3_idx on instance (inst_custom3);
     create index inst_replaced_idx on instance (replaced);
 
-    create index issuer_entity_id_idx on issuer (entity_id);
-    create index issuer_entity_uid_idx on issuer (entity_uid, entity_uid_type);
-
     create index pat_id_idx on patient (pat_id);
-    create index pat_id_issuer_fk_idx on patient (pat_id_issuer_fk);
+    create index pat_id_issuer_idx on patient (pat_id_issuer);
     create index pat_name_idx on patient (pat_name);
     create index pat_p_name_idx on patient (pat_p_name);
     create index pat_i_name_idx on patient (pat_i_name);
@@ -77,11 +74,11 @@
     create index series_req_phys_gn_sx_idx on series_req (req_phys_gn_sx);
     create index series_req_phys_fn_sx_idx on series_req (req_phys_fn_sx);
     create index series_req_accession_no_idx on series_req (accession_no);
+    create index series_req_accno_issuer_idx on series_req (accno_issuer);
     create index series_req_service_idx on series_req (req_service);
     create index series_req_proc_id_idx on series_req (req_proc_id);
     create index series_req_sps_id_idx on series_req (sps_id);
     create index series_req_study_iuid_idx on series_req (study_iuid);
-    create index series_req_accno_issuer_fk_idx on series_req (accno_issuer_fk);
     create index series_req_series_fk_idx on series_req (series_fk);
 
     create index study_patient_fk_idx on study (patient_fk);
@@ -90,7 +87,7 @@
     create index study_date_idx on study (study_date);
     create index study_time_idx on study (study_time);
     create index study_accession_no_idx on study (accession_no);
-    create index study_accno_issuer_fk_idx on study (accno_issuer_fk);
+    create index study_accno_issuer_idx on study (accno_issuer);
     create index study_desc_idx on study (study_desc);
     create index study_ref_physician_idx on study (ref_physician);
     create index study_ref_phys_p_name_idx on study (ref_phys_p_name);

@@ -90,8 +90,11 @@ public class CStoreSCP extends BasicCStoreSCP {
             Path spoolDirectory = (Path) as.getProperty("CStoreSCP.SpoolDirectory");
             if (fs == null) {
                 fs = storeService.selectFileSystem(as, arcAE);
+                Path spoolRootDirectory = fs.getPath()
+                        .resolve(arcAE.getSpoolDirectoryPath());
+                Files.createDirectories(spoolRootDirectory);
                 spoolDirectory = Files.createTempDirectory(
-                        fs.getPath().resolve(arcAE.getSpoolDirectoryPath()),
+                        spoolRootDirectory,
                         null);
                 as.setProperty("CStoreSCP.FileSystem", fs);
                 as.setProperty("CStoreSCP.SpoolDirectory", spoolDirectory);

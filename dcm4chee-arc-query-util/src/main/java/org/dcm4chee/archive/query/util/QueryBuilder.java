@@ -56,7 +56,6 @@ import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.QCode;
 import org.dcm4chee.archive.entity.QContentItem;
 import org.dcm4chee.archive.entity.QInstance;
-import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QRequestAttributes;
 import org.dcm4chee.archive.entity.QSeries;
@@ -214,12 +213,15 @@ public class QueryBuilder {
             builder.and(wildCard(QStudy.study.studyDescription,
                     keys.getString(Tag.StudyDescription, "*"), matchUnknown, true));
             String accNo = keys.getString(Tag.AccessionNumber, "*");
-            builder.and(wildCard(QStudy.study.accessionNumber, accNo, matchUnknown, false));
-            if(!accNo.equals("*"))
-                builder.and(issuer(QStudy.study.issuerOfAccessionNumber,
-                        keys.getNestedDataset(Tag.IssuerOfAccessionNumberSequence),
-                        queryParam.getDefaultIssuerOfAccessionNumber(),
-                        matchUnknown));
+            if(!accNo.equals("*")) {
+                Issuer issuer = Issuer.valueOf(
+                        keys.getNestedDataset(Tag.IssuerOfAccessionNumberSequence));
+                if (issuer == null)
+                    issuer = queryParam.getDefaultIssuerOfAccessionNumber();
+                builder.and(idWithIssuer(accNo, issuer,
+                        QStudy.study.accessionNumber,
+                        QStudy.study.issuerOfAccessionNumber, matchUnknown));
+            }
             builder.and(modalitiesInStudy(
                     keys.getString(Tag.ModalitiesInStudy, "*").toUpperCase(), matchUnknown));
             builder.and(code(QStudy.study.procedureCodes,
@@ -380,10 +382,57 @@ public class QueryBuilder {
         return result;
     }
 
-    static Predicate pid(IDWithIssuer pid, boolean matchUnknown) {
-        return ExpressionUtils.allOf(
-                wildCard(QPatient.patient.patientID, pid.getID(), matchUnknown, false),
-                issuer(QPatient.patient.issuerOfPatientID, pid.getIssuer(), matchUnknown));
+    static Predicate pid(IDWithIssuer idWithIssuer, boolean matchUnknown) {
+        return idWithIssuer(idWithIssuer.getID(),
+                idWithIssuer.getIssuer(),
+                QPatient.patient.patientID, 
+                QPatient.patient.issuerOfPatientID,
+                matchUnknown);
+    }
+
+    private static Predicate idWithIssuer(String id, Issuer issuer,
+            StringPath idPath, StringPath issuerPath, boolean matchUnknown) {
+        if (id == null)
+            return null;
+            
+        Predicate p1;
+        if (containsWildcard(id)) {
+            String pattern = toLikePattern(id);
+            if (pattern.equals("%"))
+                return null;
+
+            p1 = idPath.like(pattern);
+        } else
+            p1 = idPath.eq(id);
+        Predicate p2 = issuer(issuerPath, issuer);
+        return matchUnknown(p2 != null ? ExpressionUtils.and(p1, p2) : p1, idPath, matchUnknown);
+    }
+
+    private static Predicate issuer(StringPath path, Issuer issuer) {
+        if (issuer == null)
+            return null;
+
+        BooleanExpression unknown = path.eq("*");
+        String localNamespaceEntityID = issuer.getLocalNamespaceEntityID();
+        String universalEntityID = issuer.getUniversalEntityID();
+        if (universalEntityID == null) {
+            return ExpressionUtils.anyOf(
+                    path.eq(localNamespaceEntityID),
+                    path.like(localNamespaceEntityID + "&%"),
+                    path.like("&%"),
+                    unknown);
+        }
+        String universalEntityIDType = issuer.getUniversalEntityIDType();
+        if (localNamespaceEntityID == null)
+            return ExpressionUtils.or(
+                    path.like("%&" + universalEntityID + '&' + universalEntityIDType),
+                    unknown);
+        return ExpressionUtils.anyOf(
+                path.eq(localNamespaceEntityID),
+                path.eq(localNamespaceEntityID + '&' + universalEntityID + '&' + universalEntityIDType),
+                path.eq('&' + universalEntityID + '&' + universalEntityIDType),
+                unknown);
+        
     }
 
     static Predicate wildCard(StringPath path, String value, boolean matchUnknown, boolean ignoreCase) {
@@ -514,57 +563,6 @@ public class QueryBuilder {
             builder.and(ExpressionUtils.or(code.isNull(), code.notIn(codes)));
     }
 
-    static Predicate issuer(QIssuer path, Attributes item, Issuer defaultIssuer,
-            boolean matchUnknown) {
-        Predicate issuer = issuer(path, item, matchUnknown);
-        return issuer != null 
-                ? issuer
-                : issuer(path, defaultIssuer, matchUnknown);
-    }
-
-    static Predicate issuer(QIssuer path, Attributes item, boolean matchUnknown) {
-        if (item == null || item.isEmpty())
-            return null;
-
-        return issuer(path,
-                item.getString(Tag.LocalNamespaceEntityID, "*"),
-                item.getString(Tag.UniversalEntityID, "*"),
-                item.getString(Tag.UniversalEntityIDType, "*"),
-                matchUnknown);
-    }
-
-    static Predicate issuer(QIssuer path, Issuer issuer, boolean matchUnknown) {
-        if (issuer == null)
-            return null;
-
-        return issuer(path,
-                issuer.getLocalNamespaceEntityID(),
-                issuer.getUniversalEntityID(),
-                issuer.getUniversalEntityIDType(),
-                matchUnknown);
-    }
-
-    private static Predicate issuer(QIssuer path, String entityID,
-            String entityUID, String entityUIDType, boolean matchUnknown) {
-        Predicate predicate = ExpressionUtils.anyOf(
-                wildCard(QIssuer.issuer.localNamespaceEntityID, entityID, false, false),
-                ExpressionUtils.allOf(
-                        wildCard(QIssuer.issuer.universalEntityID, entityUID, false, false),
-                        wildCard(QIssuer.issuer.universalEntityIDType, entityUIDType, false, false))
-                );
-
-        if (predicate == null)
-            return null;
-
-        return matchUnknown(
-                new HibernateSubQuery()
-                    .from(QIssuer.issuer)
-                    .where(QIssuer.issuer.eq(path), predicate)
-                    .exists(),
-                path,
-                matchUnknown);
-    }
-
     static Predicate requestAttributes(Attributes item, QueryParam queryParam) {
         if (item == null || item.isEmpty())
             return null;
@@ -572,6 +570,15 @@ public class QueryBuilder {
         boolean matchUnknown = queryParam.isMatchUnknown();
         BooleanBuilder builder = new BooleanBuilder();
         String accNo = item.getString(Tag.AccessionNumber, "*");
+        if(!accNo.equals("*")) {
+            Issuer issuer = Issuer.valueOf(
+                    item.getNestedDataset(Tag.IssuerOfAccessionNumberSequence));
+            if (issuer == null)
+                issuer = queryParam.getDefaultIssuerOfAccessionNumber();
+            builder.and(idWithIssuer(accNo, issuer,
+                    QRequestAttributes.requestAttributes.accessionNumber,
+                    QRequestAttributes.requestAttributes.issuerOfAccessionNumber, matchUnknown));
+        }
         builder.and(wildCard(QRequestAttributes.requestAttributes.requestingService,
                       item.getString(Tag.RequestingService, "*"),
                       matchUnknown, true));
@@ -583,13 +590,6 @@ public class QueryBuilder {
                 QRequestAttributes.requestAttributes.requestingPhysicianGivenNameSoundex,
                 item.getString(Tag.ReferringPhysicianName, "*"),
                 queryParam));
-        builder.and(wildCard(QRequestAttributes.requestAttributes.accessionNumber,
-                accNo, matchUnknown, false));
-        if (!accNo.equals("*"))
-                builder.and(
-                        issuer(QRequestAttributes.requestAttributes.issuerOfAccessionNumber,
-                        item.getNestedDataset(Tag.IssuerOfAccessionNumberSequence),
-                        queryParam.getDefaultIssuerOfAccessionNumber(), matchUnknown));
         builder.and(wildCard(QRequestAttributes.requestAttributes.requestedProcedureID,
                 item.getString(Tag.RequestedProcedureID, "*"),
                 matchUnknown, false));
