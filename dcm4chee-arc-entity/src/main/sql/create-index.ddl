@@ -43,6 +43,12 @@
     create index pat_custom3_idx on patient (pat_custom3);
     create index pat_merge_fk_idx on patient (merge_fk);
 
+    create index other_pid_pat_id_idx on other_pid (pat_id);
+    create index other_pid_pat_id_issuer_idx on other_pid (pat_id_issuer);
+
+    create index rel_pat_other_pid_other_pid_fk_idx on rel_pat_other_pid (other_pid_fk);
+    create index rel_pat_other_pid_patient_fk_idx on rel_pat_other_pid (patient_fk);
+
     create index rel_study_pcode_study_fk_idx on rel_study_pcode (study_fk);
     create index rel_study_pcode_pcode_fk_idx on rel_study_pcode (pcode_fk);
 

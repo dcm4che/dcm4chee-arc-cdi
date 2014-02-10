@@ -188,7 +188,35 @@
         drop accno_issuer_fk;
 
     create index accno_issuer_idx on study (accno_issuer);
-    
+
     drop table issuer;
 
+    create table other_pid (
+        pk bigint not null auto_increment,
+        pat_id_issuer varchar(255) not null,
+        pat_id varchar(255) not null,
+        primary key (pk)
+    ) ENGINE=InnoDB;
+
+    create table rel_pat_other_pid (
+        other_pid_fk bigint not null,
+        patient_fk bigint not null,
+        primary key (other_pid_fk, patient_fk)
+    ) ENGINE=InnoDB;
+
+    alter table rel_pat_other_pid 
+        add constraint FK929DDE1A23ED359E 
+        foreign key (other_pid_fk) 
+        references other_pid (pk);
+
+    alter table rel_pat_other_pid 
+        add constraint FK929DDE1AA511AE1E 
+        foreign key (patient_fk) 
+        references patient (pk);
+
+    create index other_pid_pat_id_idx on other_pid (pat_id);
+    create index other_pid_pat_id_issuer_idx on other_pid (pat_id_issuer);
+
+    create index rel_pat_other_pid_other_pid_fk_idx on rel_pat_other_pid (other_pid_fk);
+    create index rel_pat_other_pid_patient_fk_idx on rel_pat_other_pid (patient_fk);
 
