@@ -43,24 +43,25 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import javax.annotation.Priority;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.enterprise.inject.Default;
 import javax.inject.Inject;
-import javax.inject.Singleton;
 
+import org.dcm4che.data.Attributes;
 import org.dcm4che.data.BulkData;
 import org.dcm4che.data.Tag;
 import org.dcm4che.imageio.codec.CompressionRule;
-import org.dcm4che.net.Status;
+import org.dcm4che.imageio.codec.CompressionRules;
 import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4che.util.TagUtils;
 import org.dcm4chee.archive.compress.CompressionService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
+import org.dcm4chee.archive.store.StoreSession;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -76,84 +77,63 @@ public abstract class StoreServiceCompressDecorator implements StoreService{
     @Inject
     private CompressionService compressionService;
 
-    public void moveFile(StoreContext storeContext)
+    @Override
+    public void processSpoolFile(StoreContext context)
             throws DicomServiceException {
         
         // if possible, compress the file, store on file system and
         // update store context. Otherwise call the standard moveFile.
-        if (!compress(storeContext)) {
-            storeService.moveFile(storeContext);
+        if (!compress(context)) {
+            storeService.processSpoolFile(context);
         }
     }
 
-    private boolean compress(StoreContext storeContext) {
-
-        if (storeContext == null
-                || storeContext.getArchiveAEExtension() == null
-                || storeContext.getAttributes() == null
-                || storeContext.getSourceAET() == null
-                || storeContext.getTransferSyntax() == null
-                || storeContext.getStorePath() == null
-                || storeContext.getFile() == null) {
+    private boolean compress(StoreContext context) {
+        Attributes attrs = context.getAttributes();
+        Object pixelData = attrs.getValue(Tag.PixelData);
+        if (!(pixelData instanceof BulkData))
             return false;
-        } else {
+        
+        StoreSession session = context.getStoreSession();
+        ArchiveAEExtension arcAE = session.getArchiveAEExtension();
+        CompressionRules rules = arcAE.getCompressionRules();
+        CompressionRule rule = rules.findCompressionRule(session.getRemoteAET(), attrs);
+        if (rule == null)
+            return false;
 
-            if (!(storeContext.getAttributes().getValue(Tag.PixelData) instanceof BulkData))
-                return false;
-
-            CompressionRule compressionRule = storeContext
-                    .getArchiveAEExtension().getCompressionRules()
-                    .findCompressionRule(storeContext.getSourceAET(), storeContext.getAttributes());
-            
-            if (compressionRule == null)
-                return false;
-
-            try {
-                Path storePath = createFile(storeContext.getStorePath());
-                MessageDigest digest = messageDigestOf(storeContext.getArchiveAEExtension());
-                compressionService.compress(compressionRule,
-                        storeContext.getFile().toFile(), 
-                        storePath.toFile(), 
-                        digest, 
-                        storeContext.getTransferSyntax(), 
-                        storeContext.getAttributes());
-                if (digest != null) {
-                    //update store context after compression
-                    storeContext.setDigest(digest.digest());
-                    storeContext.setFile(storePath);
-                    storeContext.setTransferSyntax(compressionRule.getTransferSyntax());
-                }
-                return true;
-            } catch (IOException e) {
-                return false;
-            }
-        }
-    }
-    
-    private Path createFile(Path path) throws IOException {
-        for (;;) {
-            try {
-                return Files.createFile(path);
-            } catch (FileAlreadyExistsException e) {
-                path = path.resolveSibling(
-                        path.getFileName().toString() + '-');
-            }
-        }
-    }
-    
-    private MessageDigest messageDigestOf(ArchiveAEExtension aeExt)
-            throws DicomServiceException {
-        String algorithm = aeExt.getDigestAlgorithm();
+        MessageDigest digest = session.getMessageDigest();
+        Path source = context.getSpoolFile();
+        Path target = storeService.calcStorePath(context);
         try {
-            return algorithm != null
-                    ? MessageDigest.getInstance(algorithm)
-                    : null;
-        } catch (NoSuchAlgorithmException e) {
-            throw new DicomServiceException(
-                    Status.ProcessingFailure, e);
+            Files.createDirectories(target.getParent());
+            String fileName = target.getFileName().toString();
+            int copies = 1;
+            for (;;) {
+                try {
+                    Files.createFile(target);
+                    compressionService.compress(rule, source, target, digest,
+                            context.getTransferSyntax(), attrs);
+                    context.setTransferSyntax(rule.getTransferSyntax());
+                    context.setFinalFile(target);
+                    if (digest != null) {
+                        context.setFinalFileDigest(
+                                TagUtils.toHexString(digest.digest()));
+                    }
+                    return true;
+                } catch (FileAlreadyExistsException e) {
+                        target = target.resolveSibling(fileName + '.' + copies++);
+                }
+            }
+        } catch (IOException e) {
+            try {
+                Files.delete(target);
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+            return false;
         }
     }
-    
-    
+
    
 }

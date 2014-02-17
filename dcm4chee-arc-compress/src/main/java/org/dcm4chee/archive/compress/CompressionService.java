@@ -38,8 +38,8 @@
 
 package org.dcm4chee.archive.compress;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 
 import org.dcm4che.data.Attributes;
@@ -50,7 +50,7 @@ import org.dcm4che.imageio.codec.CompressionRule;
  *
  */
 public interface CompressionService {
-    void compress(CompressionRule rule, File src,
-            File dest, MessageDigest digest, String tsuid,
+    void compress(CompressionRule rule, Path src,
+            Path dest, MessageDigest digest, String tsuid,
             Attributes attrs) throws IOException;
 }

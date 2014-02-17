@@ -38,13 +38,7 @@
 
 package org.dcm4chee.archive.store.scp;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Typed;
@@ -52,10 +46,7 @@ import javax.inject.Inject;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Tag;
-import org.dcm4che.data.UID;
 import org.dcm4che.data.VR;
-import org.dcm4che.io.DicomOutputStream;
-import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Association;
 import org.dcm4che.net.PDVInputStream;
 import org.dcm4che.net.Status;
@@ -64,9 +55,9 @@ import org.dcm4che.net.service.BasicCStoreSCP;
 import org.dcm4che.net.service.DicomService;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
+import org.dcm4chee.archive.store.StoreSession;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -84,36 +75,26 @@ public class CStoreSCP extends BasicCStoreSCP {
             PDVInputStream data, Attributes rsp) throws IOException {
 
         try {
-            ApplicationEntity ae = as.getApplicationEntity();
-            ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
-            FileSystem fs = (FileSystem) as.getProperty("CStoreSCP.FileSystem");
-            Path spoolDirectory = (Path) as.getProperty("CStoreSCP.SpoolDirectory");
-            if (fs == null) {
-                fs = storeService.selectFileSystem(as, arcAE);
-                Path spoolRootDirectory = fs.getPath()
-                        .resolve(arcAE.getSpoolDirectoryPath());
-                Files.createDirectories(spoolRootDirectory);
-                spoolDirectory = Files.createTempDirectory(
-                        spoolRootDirectory,
-                        null);
-                as.setProperty("CStoreSCP.FileSystem", fs);
-                as.setProperty("CStoreSCP.SpoolDirectory", spoolDirectory);
+            StoreSession session =
+                    (StoreSession) as.getProperty(StoreSession.class.getName());
+            if (session == null) {
+                ArchiveAEExtension arcAE = as.getApplicationEntity()
+                        .getAEExtension(ArchiveAEExtension.class);
+                session = storeService.initStoreSession(as.toString(),
+                        storeService, as.getRemoteAET(), arcAE);
+                as.setProperty(StoreSession.class.getName(), session);
             }
-            String tsuid = pc.getTransferSyntax();
-            MessageDigest digest = arcAE.getMessageDigest();
-            Path file = spool(spoolDirectory, fmiOf(as, tsuid, rq), data, 
-                    digest);
-            StoreContext storeContext = storeService.createStoreContext(
-                    storeService, as, as.getRemoteAET(), arcAE, fs, file,
-                    digest != null ? digest.digest() : null);
-            storeService.parseAttributes(storeContext);
-            storeService.coerceAttributes(storeContext);
-            storeService.moveFile(storeContext);
-            storeService.updateDB(storeContext);
-            storeService.fireStoreEvent(storeContext);
-            Attributes coercedAttrs = storeContext.getCoercedAttributesAfterUpdateDB();
+            Attributes fmi = as.createFileMetaInformation(
+                  rq.getString(Tag.AffectedSOPInstanceUID),
+                  rq.getString(Tag.AffectedSOPClassUID),
+                  pc.getTransferSyntax());
+            StoreContext context =
+                    storeService.initStoreContext(session, fmi, data);
+            storeService.store(context);
+            Attributes coercedAttrs = context.getCoercedAttributes();
             if (!coercedAttrs.isEmpty() 
-                    && !arcAE.isSuppressWarningCoercionOfDataElements()) {
+                    && !session.getArchiveAEExtension()
+                        .isSuppressWarningCoercionOfDataElements()) {
                 rsp.setInt(Tag.Status, VR.US, Status.CoercionOfDataElements);
                 rsp.setInt(Tag.OffendingElement, VR.AT, coercedAttrs.tags());
             }
@@ -124,60 +105,11 @@ public class CStoreSCP extends BasicCStoreSCP {
         }
     }
 
-    private Path spool(Path spoolDirectory, Attributes fmi,
-            PDVInputStream data, MessageDigest digest) throws IOException {
-        Path path = Files.createTempFile(spoolDirectory, null, ".dcm");
-        try (
-            DicomOutputStream out = new DicomOutputStream(
-                    new BufferedOutputStream(newDigestOutputStream(path, digest)),
-                    UID.ExplicitVRLittleEndian)
-        ) {
-            out.writeFileMetaInformation(fmi);
-            data.copyTo(out);
-        }
-        return path;
-    }
-
-    private OutputStream newDigestOutputStream(Path path, MessageDigest digest)
-            throws IOException {
-        OutputStream out = Files.newOutputStream(path);
-        return digest != null
-                ? out
-                : new DigestOutputStream(out, digest);
-    }
-
-    private Attributes fmiOf(Association as, String tsuid,
-            Attributes rq) {
-        return as.createFileMetaInformation(
-                rq.getString(Tag.AffectedSOPInstanceUID),
-                rq.getString(Tag.AffectedSOPClassUID),
-                tsuid);
-    }
-
     @Override
     public void onClose(Association as) {
-        storeService.fireStoreCompleteEvent(as, as.getApplicationEntity());
-        deleteDirectory((Path) as.getProperty("CStoreSCP.SpoolDirectory"));
-    }
-
-    private void deleteDirectory(Path spoolDirectory) {
-        if (spoolDirectory == null)
-            return;
-
-        try {
-            for (Path path : Files.newDirectoryStream(spoolDirectory)) {
-                try {
-                    Files.delete(path);
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-            Files.delete(spoolDirectory);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        StoreSession session = as.getProperty(StoreSession.class);
+        if (session != null)
+            storeService.cleanup(session);
     }
 
 }

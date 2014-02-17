@@ -39,8 +39,6 @@
 package org.dcm4chee.archive.ian.scu.impl;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
@@ -51,11 +49,12 @@ import javax.jms.JMSContext;
 import javax.jms.JMSProducer;
 import javax.jms.Queue;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
 import org.dcm4che.conf.api.IApplicationEntityCache;
 import org.dcm4che.data.Attributes;
+import org.dcm4che.data.Sequence;
+import org.dcm4che.data.Tag;
 import org.dcm4che.data.UID;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Association;
@@ -65,6 +64,8 @@ import org.dcm4che.net.pdu.AAssociateRQ;
 import org.dcm4che.net.pdu.PresentationContext;
 import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.SOPInstanceReference;
@@ -74,8 +75,8 @@ import org.dcm4chee.archive.ian.scu.IANSCU;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.store.StoreAction;
-import org.dcm4chee.archive.store.event.StoreCompletedEvent;
-import org.dcm4chee.archive.store.event.StoreEvent;
+import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,19 +104,29 @@ public class IANSCUImpl implements IANSCU {
     @Inject
     private Device device;
 
-    private IdentityHashMap<Object, HashMap<String, IANBuilder>> pendingStores =
-            new IdentityHashMap<Object, HashMap<String, IANBuilder>>();
-    
     public void onMPPSReceive(@Observes @MPPSFinal MPPSEvent event) {
         ApplicationEntity ae = event.getApplicationEntity();
+        MPPS mpps = event.getPerformedProcedureStep();
         ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-        if (arcAE == null || arcAE.getIANDestinations().length == 0)
+        if (arcAE == null || arcAE.getIANDestinations().length == 0
+                || isIncorrectWorklistEntrySelected(mpps))
             return;
 
-        IANBuilder builder = initIANBuilder(event.getPerformedProcedureStep());
-        if (builder.allReceived())
+        IANBuilder builder = createIANBuilder(mpps);
+        if (builder.numberOfOutstandingInstances() == 0)
             scheduleSendIAN(ae.getAETitle(), arcAE.getIANDestinations(),
                     builder.getIAN());
+    }
+
+    private boolean isIncorrectWorklistEntrySelected(MPPS mpps) {
+        ArchiveDeviceExtension arcDev = 
+                device.getDeviceExtension(ArchiveDeviceExtension.class);
+        Code incorrectWorklistEntrySelected = arcDev != null
+                ? (Code) arcDev.getIncorrectWorklistEntrySelectedCode()
+                : null;
+        return incorrectWorklistEntrySelected != null
+                && incorrectWorklistEntrySelected.equals(
+                        mpps.getDiscontinuationReasonCode());
     }
 
     private void scheduleSendIAN(String localAET, String[] remoteAETs,
@@ -126,77 +137,66 @@ public class IANSCUImpl implements IANSCU {
         }
     }
 
-    private IANBuilder initIANBuilder(MPPS pps) {
-        IANBuilder builder = new IANBuilder(pps);
-        for (String seriesiuid : builder.getPerformedSeriesInstanceUIDs()) {
+    private IANBuilder createIANBuilder(MPPS pps) {
+        IANBuilder builder = new IANBuilder();
+        Attributes ppsattrs = pps.getAttributes();
+        builder.setReferencedMPPS(pps.getSopInstanceUID(), ppsattrs);
+        Sequence perfSeriesSeq = ppsattrs.getSequence(Tag.PerformedSeriesSequence);
+        for (Attributes series : perfSeriesSeq) {
+            if (!series.containsValue(Tag.SeriesInstanceUID))
+                throw new IllegalArgumentException(
+                        "Missing Series Instance UID");
             for (SOPInstanceReference sopRef : em.createNamedQuery(
                     Instance.SOP_INSTANCE_REFERENCE_BY_SERIES_INSTANCE_UID,
                     SOPInstanceReference.class)
-              .setParameter(1, seriesiuid)
+              .setParameter(1, series.getString(Tag.SeriesInstanceUID))
               .getResultList()) {
-                builder.addSOPInstanceReference(sopRef);
+                builder.addReferencedInstance(
+                        sopRef.studyInstanceUID, 
+                        sopRef.seriesInstanceUID,
+                        sopRef.sopInstanceUID,
+                        sopRef.sopClassUID,
+                        sopRef.availability,
+                        sopRef.getRetrieveAETs());
             }
         }
         return builder;
     }
 
-    public void onStoreInstance(@Observes StoreEvent event) {
-        if (event.getStoreAction() == StoreAction.IGNORE)
+    public void onStoreInstance(@Observes StoreContext storeContext) {
+        if (storeContext.getStoreAction() != StoreAction.STORE)
             return;
 
-        ApplicationEntity ae = event.getApplicationEntity();
-        ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-        if (arcAE == null || arcAE.getIANDestinations().length == 0)
+        StoreSession storeSession = storeContext.getStoreSession();
+        ArchiveAEExtension arcAE = storeSession.getArchiveAEExtension();
+        MPPS mpps = storeContext.getMPPS();
+        if (arcAE == null || arcAE.getIANDestinations().length == 0
+                || mpps == null || mpps.getStatus() == MPPS.Status.IN_PROGRESS
+                || isIncorrectWorklistEntrySelected(mpps))
             return;
 
-        Instance inst = event.getInstance();
-        String ppsiuid = inst.getSeries().getPerformedProcedureStepInstanceUID();
-        if (ppsiuid == null)
-            return;
-
-        Object storeSource = event.getStoreSource();
-        HashMap<String, IANBuilder> ianBuilders = pendingStores.get(storeSource);
-        if (ianBuilders == null)
-            pendingStores.put(storeSource,
-                    ianBuilders = new HashMap<String, IANBuilder>());
-
-        IANBuilder builder = ianBuilders.get(ppsiuid);
-        if (builder != null) {
-            builder.addSOPInstanceReference(toSOPInstanceReference(inst));
-        } else if (!ianBuilders.containsKey(ppsiuid)) {
-            try {
-                MPPS pps = em.createNamedQuery(
-                        MPPS.FIND_BY_SOP_INSTANCE_UID,
-                        MPPS.class)
-                    .setParameter(1, ppsiuid)
-                    .getSingleResult();
-                builder = initIANBuilder(pps);
-            } catch (NoResultException e) {
-            }
-            ianBuilders.put(ppsiuid, builder);
+        
+        IANBuilder builder = (IANBuilder) storeSession.getProperty(IANBuilder.class.getName());
+        if (builder == null
+                || !builder.getMPPSInstanceUID().equals(mpps.getSopInstanceUID())) {
+            builder = createIANBuilder(mpps);
+            storeSession.setProperty(IANBuilder.class.getName(), builder);
+        } else {
+            Instance inst = storeContext.getInstance();
+            Series series = inst.getSeries();
+            Study study = series.getStudy();
+            builder.addReferencedInstance(
+                    study.getStudyInstanceUID(),
+                    series.getSeriesInstanceUID(),
+                    inst.getSopInstanceUID(),
+                    inst.getSopClassUID(),
+                    inst.getAvailability(),
+                    inst.getAllRetrieveAETs());
         }
-        if (builder != null && builder.allReceived())
-            scheduleSendIAN(ae.getAETitle(), arcAE.getIANDestinations(),
+        if (builder.numberOfOutstandingInstances() == 0)
+            scheduleSendIAN(storeSession.getLocalAET(),
+                    arcAE.getIANDestinations(),
                     builder.getIAN());
-    }
-
-    private SOPInstanceReference toSOPInstanceReference(Instance inst) {
-        Series series = inst.getSeries();
-        Study study = series.getStudy();
-        return new SOPInstanceReference(
-                study.getStudyInstanceUID(),
-                series.getPerformedProcedureStepClassUID(),
-                series.getPerformedProcedureStepInstanceUID(),
-                series.getSeriesInstanceUID(),
-                inst.getSopClassUID(),
-                inst.getSopInstanceUID(),
-                inst.getAvailability(),
-                inst.getRawRetrieveAETs(),
-                inst.getExternalRetrieveAET());
-    }
-
-    public void onStoreCompleted(@Observes StoreCompletedEvent event) {
-        pendingStores.remove(event.getStoreSource());
     }
 
     private void scheduleSendIAN(String localAET, String remoteAET,

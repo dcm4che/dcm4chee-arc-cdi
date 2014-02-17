@@ -43,7 +43,6 @@ import java.util.Date;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -132,11 +131,11 @@ public class MPPS implements Serializable {
     @Column(name = "mpps_attrs")
     private byte[] encodedAttributes;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "drcode_fk")
     private Code discontinuationReasonCode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "patient_fk")
     private Patient patient;
 

@@ -104,4 +104,9 @@ public class Code extends org.dcm4che.data.Code {
     public long getPk() {
         return pk;
     }
+
+    public boolean equals(Code other) {
+        return other != null && other.pk == pk;
+    }
+
 }

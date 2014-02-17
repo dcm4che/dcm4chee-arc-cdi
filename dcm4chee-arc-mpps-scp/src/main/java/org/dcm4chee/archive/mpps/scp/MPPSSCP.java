@@ -88,7 +88,7 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         ApplicationEntity ae = as.getApplicationEntity();
         try {
             MPPS mpps =
-                    mppsService.createPerformedProcedureStep(
+                    mppsService.createPerformedProcedureStep(as.toString(),
                             ae, iuid , data, mppsService);
 
             createMPPSEvent.fire(
@@ -108,7 +108,7 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         ApplicationEntity ae = as.getApplicationEntity();
         try {
             MPPS mpps =
-                    mppsService.updatePerformedProcedureStep(
+                    mppsService.updatePerformedProcedureStep(as.toString(),
                             ae, iuid, data, mppsService);
 
             (mpps.getStatus() == MPPS.Status.IN_PROGRESS

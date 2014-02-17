@@ -38,26 +38,24 @@
 
 package org.dcm4chee.archive.stow;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
@@ -68,7 +66,6 @@ import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.log4j.lf5.util.StreamUtils;
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Attributes.Visitor;
 import org.dcm4che.data.BulkData;
@@ -77,7 +74,6 @@ import org.dcm4che.data.Sequence;
 import org.dcm4che.data.Tag;
 import org.dcm4che.data.UID;
 import org.dcm4che.data.VR;
-import org.dcm4che.io.DicomOutputStream;
 import org.dcm4che.io.SAXReader;
 import org.dcm4che.io.SAXTransformer;
 import org.dcm4che.mime.MultipartInputStream;
@@ -85,13 +81,12 @@ import org.dcm4che.mime.MultipartParser;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Device;
 import org.dcm4che.net.TransferCapability;
-import org.dcm4che.net.TransferCapability.Role;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4che.ws.rs.MediaTypes;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
+import org.dcm4chee.archive.store.StoreSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,10 +94,9 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@javax.ws.rs.Path("/stow/{AETitle}")
-public class StowRS implements MultipartParser.Handler, StreamingOutput {
-
-    static Logger LOG = LoggerFactory.getLogger(StowRS.class);
+@Path("/stow/{AETitle}")
+@RequestScoped
+public class StowRS {
 
     public static final int TRANSFER_SYNTAX_NOT_SUPPORTED = 0xC122;
     public static final int DIFF_STUDY_INSTANCE_UID = 0xC409;
@@ -111,11 +105,22 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
     public static final String NOT_PARSEABLE_CUID = "1.2.40.0.13.1.15.10.99";
     public static final String NOT_PARSEABLE_IUID = "1.2.40.0.13.1.15.10.99.1";
 
+    static Logger LOG = LoggerFactory.getLogger(StowRS.class);
+
     @Context
     private HttpServletRequest request;
 
     @Context
     private UriInfo uriInfo;
+
+    @HeaderParam("Content-Type")
+    private MediaType contentType;
+
+    @PathParam("AETitle")
+    private String aeTitle;
+
+    @Inject
+    private StoreService storeService;
 
     @Inject
     private Device device;
@@ -124,18 +129,17 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
 
     private ArchiveAEExtension arcAE;
 
-    @Inject
-    private StoreService storeService;
-
     private String studyInstanceUID;
 
-    private Creator creator;
-    
-    private FileSystem fileSystem;
+    private String boundary;
 
-    private Path spoolDirectory;
+    private CreatorType creatorType;
 
-    private MessageDigest digest;
+    private ArrayList<java.nio.file.Path> metadata;
+
+    private HashMap<String,BulkdataPath> bulkdata;
+
+    private String wadoURL;
 
     private final Attributes response = new Attributes();
 
@@ -143,95 +147,54 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
 
     private Sequence failedSOPSequence;
 
-    private ArrayList<PathWithObject<byte[]>> files =
-            new ArrayList<PathWithObject<byte[]>>();
- 
-    private HashMap<String,PathWithObject<String>> bulkdata =
-            new HashMap<String,PathWithObject<String>>();
-
-    private String wadoURL;
-
-    @PathParam("AETitle")
-    public void setAETitle(String aet) {
-        ae = device.getApplicationEntity(aet);
+    private void init() {
+        this.ae = device.getApplicationEntity(aeTitle);
         if (ae == null || !ae.isInstalled()
-                || (arcAE = ae.getAEExtension(ArchiveAEExtension.class)) == null) {
+                || (arcAE = ae.getAEExtension(ArchiveAEExtension.class)) == null)
             throw new WebApplicationException(Response.Status.SERVICE_UNAVAILABLE);
-        }
-    }
 
-    @POST
-    @javax.ws.rs.Path("/studies")
-    @Consumes({"multipart/related","multipart/form-data"})
-    public Response storeInstances(
-            @HeaderParam("Content-Type") MediaType contentType,
-            InputStream in) throws Exception {
-        return storeInstances(null, contentType, in);
-    }
-
-    @POST
-    @javax.ws.rs.Path("/studies/{StudyInstanceUID}")
-    @Consumes("multipart/related")
-    public Response storeInstances(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @HeaderParam("Content-Type") MediaType contentType,
-            InputStream in) throws Exception {
-        this.studyInstanceUID = studyInstanceUID;
-        String boundary = contentType.getParameters().get("boundary");
+        this.boundary = contentType.getParameters().get("boundary");
         if (boundary == null)
             throw new WebApplicationException("Missing Boundary Parameter",
                     Response.Status.BAD_REQUEST);
 
-        creator = Creator.valueOf(contentType);
-        fileSystem = storeService.selectFileSystem(request, arcAE);
-        spoolDirectory = Files.createTempDirectory(
-                fileSystem.getPath().resolve(arcAE.getSpoolDirectoryPath()),
-                null);
-        digest = arcAE.getMessageDigest();
-
-        try {
-            new MultipartParser(boundary).parse(in, this);
-            initResponse();
-            for (PathWithObject<byte[]> file : files) {
-                creator.store(this, file);
+        if (contentType.isCompatible(MediaTypes.MULTIPART_RELATED_TYPE)) {
+            String type = contentType.getParameters().get("type");
+            if (type == null)
+                throw new WebApplicationException("Missing Type Parameter",
+                        Response.Status.BAD_REQUEST);
+            try {
+                MediaType rootBodyMediaType = MediaType.valueOf(type);
+                if (rootBodyMediaType.isCompatible(MediaTypes.APPLICATION_DICOM_TYPE))
+                    creatorType = CreatorType.BINARY;
+                else if (rootBodyMediaType.isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE)) {
+                    creatorType = CreatorType.XML_BULKDATA;
+                    metadata = new ArrayList<java.nio.file.Path>();
+                    bulkdata = new HashMap<String,BulkdataPath>();
+                } else
+                    throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
+            } catch (IllegalArgumentException e) {
+                throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
             }
-            return buildResponse();
-        } finally {
-            storeService.fireStoreCompleteEvent(request, ae);
-            deleteSpoolDirectory();
+        } else {
+            creatorType = CreatorType.BINARY;
         }
+        wadoURL = uriInfo.getBaseUri() + "wado/" + ae.getAETitle() + "/studies/";
+        if (studyInstanceUID != null)
+            response.setString(Tag.RetrieveURL, VR.UT, wadoURL + studyInstanceUID);
+        else
+            response.setNull(Tag.RetrieveURL, VR.UT);
+        sopSequence = response.newSequence(Tag.ReferencedSOPSequence, 10);
     }
 
-    @Override
-    public void bodyPart(int partNumber, MultipartInputStream in)
-            throws IOException {
-        Map<String, List<String>> headerParams = in.readHeaderParams();
-        LOG.info("storeInstances: Extract Part #{}{}",
-                partNumber, headerParams);
-        String contentType = getHeaderParamValue(headerParams,
-                "content-type");
-        String contentLocation = getHeaderParamValue(headerParams,
-                "content-location");
-        try {
-            MediaType mediaType = contentType == null
-                    ? MediaType.TEXT_PLAIN_TYPE
-                    : MediaType.valueOf(contentType);
-            if (!creator.spool(this, mediaType, contentLocation, in)) {
-                LOG.info("storeInstances: Ignore Part with Content-Type={}",
-                        mediaType);
-                in.skipAll();
-            }
-        } catch (IllegalArgumentException e) {
-            LOG.info("storeInstances: Ignore Part with illegal Content-Type={}",
-                    contentType);
-            in.skipAll();
-        }
-    }
-
-    private void deleteSpoolDirectory() throws IOException {
-        for (Path path : Files.newDirectoryStream(spoolDirectory))
-            Files.delete(path);
-        Files.delete(spoolDirectory);
+    @POST
+    @Path("/studies/{StudyInstanceUID}")
+    @Consumes("multipart/related")
+    public Response storeInstances(
+            @PathParam("StudyInstanceUID") String studyInstanceUID,
+            InputStream in) throws Exception {
+        this.studyInstanceUID = studyInstanceUID;
+        return storeInstances(in);
     }
 
     private static String getHeaderParamValue(
@@ -240,192 +203,244 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
         return list != null && !list.isEmpty() ? list.get(0) : null;
     }
 
-    private enum Creator {
-        DICOM {
-            @Override
-            boolean spool(StowRS stowRS, MediaType mediaType,
-                    String contentLocation, MultipartInputStream in)
-                    throws IOException {
-                if (mediaType.getType().equalsIgnoreCase("application")) {
-                    if (in.isZIP()) {
-                        ZipInputStream zip = new ZipInputStream(in);
-                        ZipEntry zipEntry;
-                        while ((zipEntry = zip.getNextEntry()) != null) {
-                            if (!zipEntry.isDirectory())
-                                stowRS.spoolDicomObject(zip);
-                        }
-                    } else {
-                        stowRS.spoolDicomObject(in);
+    @POST
+    @Path("/studies")
+    @Consumes({"multipart/related","multipart/form-data"})
+    public Response storeInstances(InputStream in) throws Exception {
+        init();
+        final StoreSession session = storeService.initStoreSession(
+                request.toString(), storeService, request.getRemoteHost(), arcAE);
+        try {
+            new MultipartParser(boundary).parse(in, new MultipartParser.Handler() {
+                
+                @Override
+                public void bodyPart(int partNumber, MultipartInputStream in)
+                        throws IOException {
+                    Map<String, List<String>> headerParams = in.readHeaderParams();
+                    LOG.info("storeInstances: Extract Part #{}{}",
+                            partNumber, headerParams);
+                    String contentType = getHeaderParamValue(headerParams,
+                            "content-type");
+                    String contentLocation = getHeaderParamValue(headerParams,
+                            "content-location");
+                    MediaType mediaType;
+                    try {
+                        mediaType = contentType == null
+                                ? MediaType.TEXT_PLAIN_TYPE
+                                : MediaType.valueOf(contentType);
+                    } catch (IllegalArgumentException e) {
+                        LOG.info("storeInstances: Ignore Part with illegal Content-Type={}",
+                                contentType);
+                        in.skipAll();
+                        return;
                     }
-                    return true;
+                    if (!creatorType.readBodyPart(StowRS.this, session, in, 
+                            mediaType, contentLocation)) {
+                        LOG.info("storeInstances: Ignore Part with Content-Type={}",
+                                mediaType);
+                        in.skipAll();
+                    }
                 }
-                return false;
-            }
+            });
+            creatorType.storeMetadataAndBulkdata(this, session);
+        } finally {
+            storeService.cleanup(session);
+        }
+        return buildResponse();
+    }
 
+    private Response buildResponse() {
+        if (sopSequence.isEmpty())
+            throw new WebApplicationException(Status.CONFLICT);
+
+        return Response.status(
+                failedSOPSequence == null ? Status.OK : Status.ACCEPTED)
+                .entity(new StreamingOutput() {
+                    
+                    @Override
+                    public void write(OutputStream out) throws IOException,
+                            WebApplicationException {
+                        try {
+                            SAXTransformer.getSAXWriter(new StreamResult(out)).write(response);
+                        } catch (Exception e) {
+                            throw new WebApplicationException(e);
+                        }
+                    }
+                })
+                .type(MediaTypes.APPLICATION_DICOM_XML_TYPE)
+                .build();
+    }
+
+    private enum CreatorType {
+        BINARY {
             @Override
-            void store(StowRS stowRS, PathWithObject<byte[]> file) {
-                stowRS.storeDicomObject(file.path, file.object);
+            boolean readBodyPart(StowRS stowRS, StoreSession session,
+                    MultipartInputStream in, MediaType mediaType,
+                    String contentLocation) throws IOException {
+                if (!mediaType.getType().equalsIgnoreCase("application"))
+                    return false;
+
+                if (in.isZIP()) {
+                    ZipInputStream zip = new ZipInputStream(in);
+                    ZipEntry zipEntry;
+                    while ((zipEntry = zip.getNextEntry()) != null) {
+                        if (!zipEntry.isDirectory())
+                            stowRS.storeDicomObject(session, zip);
+                    }
+                } else {
+                    stowRS.storeDicomObject(session, in);
+                }
+                return true;
             }
-        },
-        METADATA_BULKDATA {
+        }, 
+        XML_BULKDATA {
             @Override
-            boolean spool(StowRS stowRS, MediaType mediaType,
-                    String contentLocation, MultipartInputStream in)
-                    throws IOException {
+            boolean readBodyPart(StowRS stowRS, StoreSession session,
+                    MultipartInputStream in, MediaType mediaType,
+                    String contentLocation) throws IOException {
                 if (mediaType.isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE)) {
-                    stowRS.spoolMetaData(in);
+                    stowRS.spoolMetaData(session, in);
                     return true;
                 }
                 if (contentLocation != null) {
-                    try {
-                        stowRS.spoolBulkdata(
-                                MediaTypes.transferSyntaxOf(mediaType), 
-                                contentLocation, in);
-                        return true;
-                    } catch (IllegalArgumentException e) {
-                        // skip unsupported MediaType
-                    }
+                    stowRS.spoolBulkdata(session, in, contentLocation, mediaType);
+                    return true;
                 }
                 return false;
             }
-
             @Override
-            void store(StowRS stowRS, PathWithObject<byte[]> file) {
-                stowRS.storeMetadataAndBulkdata(file);
+            void storeMetadataAndBulkdata(StowRS stowRS, StoreSession session) {
+                stowRS.storeMetadataAndBulkdata(session);
             }
+
         };
 
-        static Creator valueOf(MediaType contentType) {
-            String type = contentType.getParameters().get("type");
-            if (type == null)
-                throw new WebApplicationException("Missing Type Parameter",
-                        Response.Status.BAD_REQUEST);
+        abstract boolean readBodyPart(StowRS stowRS, StoreSession session,
+                MultipartInputStream in, MediaType mediaType, String contentLocation)
+                        throws IOException;
 
-            try {
-                MediaType rootBodyMediaType = MediaType.valueOf(type);
-                if (rootBodyMediaType.isCompatible(MediaTypes.APPLICATION_DICOM_TYPE))
-                    return DICOM;
-                if (rootBodyMediaType.isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE))
-                    return METADATA_BULKDATA;
-                throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
-            } catch (IllegalArgumentException e) {
-                throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
-            }
-         }
-
-        abstract boolean spool(StowRS stowRS, MediaType mediaType,
-                String contentLocation, MultipartInputStream in)
-                throws IOException;
-
-        abstract void store(StowRS stowRS, PathWithObject<byte[]> file);
+        void storeMetadataAndBulkdata(StowRS stowRS, StoreSession session) {}
     }
 
-    private void spoolDicomObject(InputStream in) throws IOException {
-        Path path = spool(in, ".dcm", digest);
-        files.add(new PathWithObject<byte[]>(path, digest()));
-    }
-
-    private byte[] digest() {
-        return digest == null ? digest.digest() : null;
-    }
-
-    private void spoolMetaData(InputStream in) throws IOException {
-        Path path = spool(in, ".xml", null);
-        files.add(new PathWithObject<byte[]>(path, null));
-    }
-
-    private void spoolBulkdata(String tsuid, String contentLocation,
-            InputStream in) throws IOException {
-        Path path = spool(in, ".blk", null);
-        bulkdata.put(contentLocation, new PathWithObject<String>(path, tsuid));
-    }
-
-    private Path spool(InputStream in, String suffix, MessageDigest digest)
-            throws IOException {
-        Path path = Files.createTempFile(spoolDirectory, null, suffix);
-        try (OutputStream out = newDigestOutputStream(path)) {
-            StreamUtils.copy(in, out);
-        }
-        return path;
-    }
-
-    private OutputStream newDigestOutputStream(Path path) throws IOException {
-        OutputStream out = Files.newOutputStream(path);
-        if (digest == null)
-            return out;
-
-        digest.reset();
-        return new DigestOutputStream(out, digest);
-    }
-
-    private void storeDicomObject(Path file, byte[] digest) {
-        StoreContext storeContext = storeService.createStoreContext(
-                storeService, request, sourceAET(), arcAE, fileSystem, file, digest);
-        String iuid = NOT_PARSEABLE_IUID;
-        String cuid = NOT_PARSEABLE_CUID;
+    private void storeDicomObject(StoreSession session, InputStream in)
+            throws DicomServiceException {
+        StoreContext context;
         try {
-            storeService.parseAttributes(storeContext);
-            checkStudyInstanceUID(storeContext);
-            checkTransferCapability(storeContext);
-            storeService.coerceAttributes(storeContext);
-            storeService.moveFile(storeContext);
-            storeService.updateDB(storeContext);
-            storeService.fireStoreEvent(storeContext);
-            sopSequence.add(sopRef(storeContext));
+            context = storeService.initStoreContext(session, null, in);
         } catch (DicomServiceException e) {
-            storageFailed(iuid, cuid, e.getStatus());
+            if (e.getStatus() == StoreService.DATA_SET_NOT_PARSEABLE) {
+                storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
+                        METADATA_NOT_PARSEABLE);
+                return;
+            }
+            throw e;
+        }
+        Attributes attrs = context.getAttributes();
+        try {
+            checkStudyInstanceUID(attrs.getString(Tag.StudyInstanceUID));
+            checkTransferCapability(attrs.getString(Tag.SOPClassUID),
+                    context.getTransferSyntax());
+            storeService.store(context);
+            sopSequence.add(sopRef(context));
+        } catch (DicomServiceException e) {
+            storageFailed(
+                    attrs.getString(Tag.SOPInstanceUID),
+                    attrs.getString(Tag.SOPClassUID),
+                    e.getStatus());
         }
     }
 
-    public String sourceAET() {
-        // use hostname as AET
-        return request.getRemoteHost();
+    private void checkStudyInstanceUID(String siuid) throws DicomServiceException {
+        if (studyInstanceUID != null
+                && !studyInstanceUID.equals(siuid))
+            throw new DicomServiceException(DIFF_STUDY_INSTANCE_UID);
     }
 
-    private void storeMetadataAndBulkdata(PathWithObject<byte[]> file) {
+    private void checkTransferCapability(String cuid, String tsuid) throws DicomServiceException {
+        TransferCapability tc = ae.getTransferCapabilityFor(cuid, TransferCapability.Role.SCP);
+        if (tc == null) {
+            throw new DicomServiceException(org.dcm4che.net.Status.SOPclassNotSupported);
+        }
+        if (!tc.containsTransferSyntax(tsuid)) {
+            throw new DicomServiceException(TRANSFER_SYNTAX_NOT_SUPPORTED);
+        }
+    }
+
+    private void spoolMetaData(StoreSession session, InputStream in) throws IOException {
+        metadata.add(storeService.spool(session, in, ".xml"));
+    }
+
+    private void spoolBulkdata(StoreSession session, InputStream in,
+            String contentLocation, MediaType mediaType) throws IOException {
+        bulkdata.put(contentLocation, 
+                new BulkdataPath(storeService.spool(session, in, ".blk"), mediaType));
+    }
+
+    private void storeMetadataAndBulkdata(StoreSession session) {
+        for (java.nio.file.Path path : metadata) {
+            storeMetadataAndBulkdata(session, path);
+        }
+    }
+
+
+    private void storeMetadataAndBulkdata(StoreSession session,
+            java.nio.file.Path path) {
         Attributes ds;
-        String iuid, cuid;
         try {
-            ds = SAXReader.parse(file.path.toUri().toString());
-            iuid = ds.getString(Tag.SOPInstanceUID);
-            cuid = ds.getString(Tag.SOPClassUID);
+            ds = SAXReader.parse(path.toUri().toString());
         } catch (Exception e) {
             storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
                     METADATA_NOT_PARSEABLE);
             return;
         }
-        String[] tsuids = { UID.ExplicitVRLittleEndian };
-        if (!resolveBulkdata(ds, tsuids)) {
+        String iuid = ds.getString(Tag.SOPInstanceUID);
+        String cuid = ds.getString(Tag.SOPClassUID);
+        Attributes fmi = ds.createFileMetaInformation(UID.ExplicitVRLittleEndian);
+        if (!resolveBulkdata(session, fmi, ds)) {
             storageFailed(iuid, cuid, MISSING_BULKDATA);
             return;
         }
-        Path path;
         try {
-            path = spool(ds.createFileMetaInformation(tsuids[0]), ds);
-        } catch (IOException e) {
-            storageFailed(iuid, cuid, org.dcm4che.net.Status.ProcessingFailure);
-            return;
+            checkStudyInstanceUID(ds.getString(Tag.StudyInstanceUID));
+            checkTransferCapability(cuid, fmi.getString(Tag.TransferSyntaxUID));
+            StoreContext context = storeService.initStoreContext(session, fmi, ds);
+            storeService.store(context);
+            sopSequence.add(sopRef(context));
+        } catch (DicomServiceException e) {
+            storageFailed(iuid, cuid, e.getStatus());
         }
-        storeDicomObject(path, digest());
     }
 
     private Attributes sopRef(StoreContext ctx) {
+        StoreSession session = ctx.getStoreSession();
+        Attributes attrs = ctx.getAttributes(); 
         Attributes sopRef = new Attributes(5);
-        sopRef.setString(Tag.ReferencedSOPClassUID, VR.UI, ctx.getSOPClassUID());
-        sopRef.setString(Tag.ReferencedSOPInstanceUID, VR.UI, ctx.getSOPInstanceUID());
+        String cuid = attrs.getString(Tag.SOPClassUID);
+        String iuid = attrs.getString(Tag.SOPInstanceUID);
+        String series_iuid = attrs.getString(Tag.SeriesInstanceUID);
+        String study_iuid = attrs.getString(Tag.StudyInstanceUID);
+        sopRef.setString(Tag.ReferencedSOPClassUID, VR.UI, cuid);
+        sopRef.setString(Tag.ReferencedSOPInstanceUID, VR.UI, iuid);
         sopRef.setString(Tag.RetrieveURL, VR.UT, wadoURL
-                + ctx.getStudyInstanceUID() + "/series/"
-                + ctx.getSeriesInstanceUID() + "/instances/"
-                + ctx.getSOPInstanceUID());
-        if (!ctx.getCoercedAttributesAfterUpdateDB().isEmpty()) {
+                + study_iuid + "/series/"
+                + series_iuid + "/instances/"
+                + iuid);
+        Attributes coercedAttrs = ctx.getCoercedAttributes();
+        if (!coercedAttrs.isEmpty()) {
             sopRef.setInt(Tag.WarningReason, VR.US,
                           org.dcm4che.net.Status.CoercionOfDataElements);
-            if (arcAE.isStoreOriginalAttributes()) {
-                Sequence seq = ctx.getAttributesAfterUpdateDB()
-                        .getSequence(Tag.OriginalAttributesSequence);
-                sopRef.newSequence(Tag.OriginalAttributesSequence, 1)
-                    .add(new Attributes(seq.get(seq.size()-1)));
-            }
+            Attributes item = new Attributes(4);
+            Sequence origAttrsSeq = sopRef.ensureSequence(
+                    Tag.OriginalAttributesSequence, 1);
+            origAttrsSeq.add(item);
+            item.setDate(Tag.AttributeModificationDateTime, VR.DT, new Date());
+            item.setString(Tag.ModifyingSystem, VR.LO,
+                    session.getStoreParam().getModifyingSystem());
+            item.setString(Tag.SourceOfPreviousValues, VR.LO,
+                    session.getRemoteAET());
+            item.newSequence(Tag.ModifiedAttributesSequence, 1).add(
+                    coercedAttrs);
+
         }
         return sopRef;
     }
@@ -437,114 +452,69 @@ public class StowRS implements MultipartParser.Handler, StreamingOutput {
         sopRef.setInt(Tag.FailureReason, VR.US, failureReason);
         if (failedSOPSequence == null)
             failedSOPSequence =
-                response.newSequence(Tag.FailedSOPSequence, files.size());
+                response.newSequence(Tag.FailedSOPSequence, 10);
 
         failedSOPSequence.add(sopRef);
     }
 
-    private void checkStudyInstanceUID(StoreContext ctx) throws DicomServiceException {
-        if (studyInstanceUID != null
-                && !studyInstanceUID.equals(ctx.getStudyInstanceUID()))
-            throw new DicomServiceException(DIFF_STUDY_INSTANCE_UID);
-    }
-
-    private void checkTransferCapability(StoreContext ctx) throws DicomServiceException {
-        TransferCapability tc = ae.getTransferCapabilityFor(ctx.getSOPClassUID(), Role.SCP);
-        if (tc == null) {
-            throw new DicomServiceException(org.dcm4che.net.Status.SOPclassNotSupported);
-        }
-        if (!tc.containsTransferSyntax(ctx.getTransferSyntax())) {
-            throw new DicomServiceException(TRANSFER_SYNTAX_NOT_SUPPORTED);
-        }
-    }
-
-    private Path spool(Attributes fmi, Attributes ds) throws IOException {
-        Path path = Files.createTempFile(spoolDirectory, null, ".dcm");
-        try (
-            DicomOutputStream out = new DicomOutputStream(
-                    new BufferedOutputStream(newDigestOutputStream(path)),
-                    UID.ExplicitVRLittleEndian)
-        ) {
-            out.writeDataset(fmi, ds);
-        }
-        return path;
-    }
-
-    private boolean resolveBulkdata(Attributes attrs, final String[] tsuids) {
-        final boolean[] resolved = { true };
-        attrs.accept(new Visitor() {
+    private boolean resolveBulkdata(final StoreSession session,
+            final Attributes fmi, Attributes attrs) {
+        return attrs.accept(new Visitor() {
             @Override
-            public void visit(Attributes attrs, int tag, VR vr, Object value) {
-                if (value instanceof Sequence) {
-                    Sequence sq = (Sequence) value;
-                    for (Attributes item : sq)
-                        resolveBulkdata(item, tsuids);
-                } else if (value instanceof BulkData) {
-                    PathWithObject<String> pathWithTS = bulkdata.get(((BulkData) value).uri);
-                    if (pathWithTS == null) {
-                        resolved[0] = false;
-                    } else {
-                        Path path = pathWithTS.path;
-                        String tsuid = pathWithTS.object;
-                        BulkData bd = new BulkData(
-                                path.toUri().toString(),
-                                0, (int) path.toFile().length(),
-                                attrs.bigEndian());
-                        if (tsuid.equals(UID.ExplicitVRLittleEndian)) {
-                            attrs.setValue(tag, vr, bd);
-                        } else {
-                            Fragments frags = attrs.newFragments(tag, vr, 2);
-                            frags.add(null);
-                            frags.add(bd);
-                            tsuids[0] = tsuid;
-                        }
-                    }
+            public boolean visit(Attributes attrs, int tag, VR vr, Object value) {
+                if (!(value instanceof BulkData))
+                    return true;
+
+                String uri = ((BulkData) value).uri;
+                BulkdataPath bulkdataPath = bulkdata.get(uri);
+                if (bulkdataPath == null) {
+                    LOG.info("{}: Missing Bulkdata {}", session, uri);
+                    return false;
                 }
+
+                java.nio.file.Path path = bulkdataPath.path;
+                BulkData bd = new BulkData(
+                        path.toUri().toString(),
+                        0, (int) path.toFile().length(),
+                        attrs.bigEndian());
+
+                MediaType mediaType = bulkdataPath.mediaType;
+                if (mediaType.isCompatible(
+                        MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
+                    attrs.setValue(tag, vr, bd);
+                    return true;
+                }
+
+                if (!(attrs.isRoot() && tag == Tag.PixelData)) {
+                    LOG.info("{}: Invalid Mediatype of Bulkdata - {}",
+                            session, mediaType);
+                    return false;
+                }
+
+                try {
+                    fmi.setString(Tag.TransferSyntaxUID, VR.UI,
+                            MediaTypes.transferSyntaxOf(mediaType));
+                } catch (IllegalArgumentException e) {
+                    LOG.info("{}: Invalid Mediatype of Bulkdata - {}",
+                            session, mediaType);
+                    return false;
+                }
+
+                Fragments frags = attrs.newFragments(Tag.PixelData, VR.OB, 2);
+                frags.add(null);
+                frags.add(bd);
+                return true;
             }
-        });
-        return resolved[0];
+        }, true);
     }
 
-    private void initResponse() {
-        wadoURL = uriInfo.getBaseUri() + "wado/" + ae.getAETitle() + "/studies/";
-        if (studyInstanceUID != null)
-            response.setString(Tag.RetrieveURL, VR.UT, wadoURL + studyInstanceUID);
-        else
-            response.setNull(Tag.RetrieveURL, VR.UT);
-        sopSequence = response.newSequence(Tag.ReferencedSOPSequence, files.size());
-    }
-
-    private Response buildResponse() {
-        if (sopSequence.isEmpty())
-            throw new WebApplicationException(Status.CONFLICT);
-
-        return Response.status(
-                failedSOPSequence == null ? Status.OK : Status.ACCEPTED)
-                .entity(this)
-                .type(MediaTypes.APPLICATION_DICOM_XML_TYPE)
-                .build();
-    }
-
-    @Override
-    public void write(OutputStream out) throws IOException,
-            WebApplicationException {
-        try {
-            SAXTransformer.getSAXWriter(new StreamResult(out)).write(response);
-        } catch (Exception e) {
-            throw new WebApplicationException(e);
-        }
-    }
-
-    private static final class PathWithObject<T> {
-
-        public final Path path;
-        public final T object;
-
-        public PathWithObject(Path path, T object) {
+    private static final class BulkdataPath {
+        final java.nio.file.Path path;
+        final MediaType mediaType;
+        BulkdataPath(java.nio.file.Path path, MediaType mediaType) {
+            super();
             this.path = path;
-            this.object = object;
+            this.mediaType = mediaType;
         }
-
     }
-
 }

@@ -39,16 +39,15 @@
 package org.dcm4chee.archive.ian.scu.impl;
 
 import java.util.HashMap;
-import java.util.Set;
+import java.util.HashSet;
+import java.util.ListIterator;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Sequence;
 import org.dcm4che.data.Tag;
 import org.dcm4che.data.UID;
 import org.dcm4che.data.VR;
-import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.entity.SOPInstanceReference;
-import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.entity.Availability;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,165 +59,169 @@ public class IANBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(IANBuilder.class);
 
-    private int outstanding;
-
-    private final String ppsiuid;
-    private final String studyiuid;
     private final Attributes ian;
     private final Sequence ianRefSeriesSeq;
-    private final HashMap<String, Sequence> ianRefSOPSeqOfSeries =
-            new HashMap<String, Sequence>();
+    private final Sequence ianRefPPSSeq;
+    private final HashSet<String> ianRefInstanceUIDs = new HashSet<String>();
+    private String ppsiuid;
+    private String studyiuid;
+    private HashMap<String,Attributes> ppsRefSOPs;
 
-    private final HashMap<String, HashMap<String,String>> perfSeries =
-            new HashMap<String, HashMap<String,String>>();
 
-    public IANBuilder(MPPS pps) {
-        Attributes ppsAttrs = pps.getAttributes();
-        for (Attributes series : 
-            ppsAttrs.getSequence(Tag.PerformedSeriesSequence)) {
-            HashMap<String,String> refInsts =
-                    perfSeriesOf(series.getString(Tag.SeriesInstanceUID));
-            addRefInstsTo(
-                    series.getSequence(Tag.ReferencedImageSequence), refInsts);
-            addRefInstsTo(
-                    series.getSequence(
-                            Tag.ReferencedNonImageCompositeSOPInstanceSequence),
-                            refInsts);
+    public IANBuilder() {
+        this.ian = new Attributes(3);
+        this.ianRefPPSSeq = ian.newSequence(Tag.ReferencedPerformedProcedureStepSequence, 1);
+        this.ianRefSeriesSeq = 
+                ian.newSequence(Tag.ReferencedSeriesSequence, 1);
+    }
+
+    public String getMPPSInstanceUID() {
+        return ppsiuid;
+    }
+
+    public void setReferencedMPPS(String ppsiuid, Attributes attrs) {
+        if (!ianRefInstanceUIDs.isEmpty())
+            throw new IllegalStateException("SOP Reference already added");
+
+        if (ppsiuid == null)
+            throw new NullPointerException("ppsiuid");
+
+        Attributes ssa = attrs.getNestedDataset(
+                Tag.ScheduledStepAttributesSequence);
+
+        if (ssa == null)
+            throw new IllegalArgumentException("Missing Scheduled Step Attributes");
+
+        String studyiuid = ssa.getString(Tag.StudyInstanceUID);
+        if (studyiuid == null)
+            throw new IllegalArgumentException(
+                    "Missing Study Instance UID");
+
+        Sequence perfSeriesSeq = attrs.getSequence(Tag.PerformedSeriesSequence);
+        if (perfSeriesSeq == null)
+            throw new IllegalArgumentException(
+                    "Missing Performed Series Sequence");
+
+        HashMap<String, Attributes> map = new HashMap<String,Attributes>();
+        for (Attributes series : perfSeriesSeq) {
+            if (!series.containsValue(Tag.SeriesInstanceUID))
+                throw new IllegalArgumentException(
+                        "Missing Series Instance UID");
+            addRefSOPSeq(ppsiuid, 
+                    series.getSequence(Tag.ReferencedImageSequence), map);
+            addRefSOPSeq(ppsiuid,
+                    series.getSequence(Tag.ReferencedNonImageCompositeSOPInstanceSequence), map);
         }
-        this.ppsiuid = pps.getSopInstanceUID();
-        Attributes ssa = ppsAttrs.getNestedDataset(Tag.ScheduledStepAttributesSequence);
-        this.studyiuid = ssa.getString(Tag.StudyInstanceUID);
-        this.ian = new Attributes();
-        ian.newSequence(Tag.ReferencedPerformedProcedureStepSequence, 1)
-            .add(mkRefPPS(ppsiuid));
-        this.ianRefSeriesSeq = ian.newSequence(Tag.ReferencedSeriesSequence, 1);
+        this.ppsRefSOPs = map;
+        this.ppsiuid =  ppsiuid;
+        this.studyiuid = studyiuid;
         ian.setString(Tag.StudyInstanceUID, VR.UI, studyiuid);
+        Attributes refPPS = new Attributes(3);
+        refPPS.setString(Tag.ReferencedSOPClassUID, VR.UI,
+                UID.ModalityPerformedProcedureStepSOPClass);
+        refPPS.setString(Tag.ReferencedSOPInstanceUID, VR.UI, ppsiuid);
+        refPPS.setNull(Tag.PerformedWorkitemCodeSequence, VR.SQ);
+        ianRefPPSSeq.add(refPPS);
     }
 
-    public Set<String> getPerformedSeriesInstanceUIDs() {
-        return perfSeries.keySet();
+    private void addRefSOPSeq(String ppsiuid, Sequence refSOPSeq, 
+            HashMap<String,Attributes> map) {
+        if (refSOPSeq != null)
+            for (Attributes refSOP : refSOPSeq) {
+                 String iuid = refSOP.getString(Tag.ReferencedSOPInstanceUID);
+                 if (iuid == null)
+                     throw new IllegalArgumentException("Missing Referenced SOP Instance UID");
+                 String cuid = refSOP.getString(Tag.ReferencedSOPClassUID);
+                 if (cuid == null)
+                     throw new IllegalArgumentException("Missing Referenced SOP Class UID");
+                 Attributes prev = map.put(iuid, refSOP);
+                 if (prev != null) {
+                     LOG.warn(
+                             "MPPS[iuid={}] contains multiple references of Instance[iuid={}, cuid={}]",
+                             ppsiuid, iuid, cuid);
+                 }
+            };
     }
 
-    public boolean allReceived() {
-        return outstanding == 0;
+    public int numberOfOutstandingInstances() {
+        return ppsRefSOPs != null ? ppsRefSOPs.size() : 0;
     }
 
     public Attributes getIAN() {
         return ian;
     }
 
-    private Attributes mkRefPPS(String iuid) {
-        Attributes refPPS = new Attributes(3);
-        refPPS.setString(Tag.ReferencedSOPClassUID, VR.UI,
-                UID.ModalityPerformedProcedureStepSOPClass);
-        refPPS.setString(Tag.ReferencedSOPInstanceUID, VR.UI, iuid);
-        refPPS.setNull(Tag.PerformedWorkitemCodeSequence, VR.SQ);
-        return refPPS ;
-    }
-
-    private HashMap<String, String> perfSeriesOf(String iuid) {
-        HashMap<String, String> refInsts = perfSeries.get(iuid);
-        if (refInsts == null) {
-            refInsts = new HashMap<String, String>();
-            perfSeries.put(iuid, refInsts);
+    public boolean addReferencedInstance(String studyiuid, String seriesiuid, 
+            String iuid, String cuid, Availability availability,
+            String... retrieveAETs) {
+        if (this.studyiuid == null) {
+            this.studyiuid = studyiuid;
+            ian.setString(Tag.StudyInstanceUID, VR.UI, studyiuid);
+        } else if (!this.studyiuid.equals(studyiuid)) {
+                throw new IllegalStateException(
+                    "Study[iuid=" + studyiuid 
+                    + "] of received Instance[iuid=" + iuid + ", cuid=" + cuid
+                    + "] of Series[iuid=" + seriesiuid
+                    + "] does not match Study[iuid=" + this.studyiuid
+                    + (ppsiuid != null
+                         ? ("] referenced by MPPS[iuid=" + ppsiuid + "]")
+                         : "] of previous added referenced Instance"));
         }
-        return refInsts;
-    }
+        if (!ianRefInstanceUIDs.add(iuid)) {
+            return false;
+        }
+        if (ppsRefSOPs != null) {
+            Attributes refSOP = ppsRefSOPs.remove(iuid);
+            if (refSOP == null)
+                return false;
 
-    private void addRefInstsTo(Sequence seq, HashMap<String, String> refInsts) {
-        if (seq != null)
-            for (Attributes refInst : seq) {
-                if (refInsts.put(refInst.getString(Tag.ReferencedSOPInstanceUID),
-                        refInst.getString(Tag.ReferencedSOPClassUID)) != null) {
-                    LOG.warn("MPPS[iuid="
-                            + ppsiuid
-                            + "] contains multiple references of Instance[iuid="
-                            + refInst.getString(Tag.ReferencedSOPInstanceUID)
-                            + ", cuid="
-                            + refInst.getString(Tag.ReferencedSOPClassUID)
-                            + "]");
-                } else {
-                    outstanding++;
-                }
+            String seriesiuidInPPS = refSOP.getParent().getString(Tag.SeriesInstanceUID);
+            String cuidInPPS = refSOP.getString(Tag.ReferencedSOPClassUID);
+            if (!seriesiuid.equals(seriesiuidInPPS)) {
+                LOG.warn("Series of received Instance[iuid={}, cuid={}] "
+                        + "of Series[iuid={}] of Study[iuid={}] differs from"
+                        + "Series[iuid={}] referenced by MPPS[iuid={}] - "
+                        + "no IAN will be emitted",
+                        iuid, cuid, seriesiuid, studyiuid, seriesiuidInPPS, ppsiuid);
+                ppsRefSOPs.put(iuid, refSOP);
+                return false;
             }
-    }
-
-    public boolean addSOPInstanceReference(SOPInstanceReference ref) {
-        if (!studyiuid.equals(ref.studyInstanceUID)) {
-            LOG.warn("Study[iuid="
-                    + ref.studyInstanceUID
-                    + "] of received Instance[iuid="
-                    + ref.sopInstanceUID
-                    + ", cuid="
-                    + ref.sopClassUID
-                    + "] mismatch Study[iuid="
-                    + studyiuid
-                    + "] referenced by MPPS[iuid="
-                    + ppsiuid
-                    + "] - no IAN may be emitted");
-            return false;
+            if (!cuid.equals(cuidInPPS)) {
+                LOG.warn("SOP Class of received Instance[iuid={}, cuid={}] "
+                        + "of Series[iuid={}] of Study[iuid={}] differs from"
+                        + "SOP Class[cuid={}] referenced by MPPS[iuid={}] - "
+                        + "emitted IAN will reference SOP Class of received Instance",
+                        iuid, cuid, seriesiuid, studyiuid, cuidInPPS, ppsiuid);
+            }
         }
-        HashMap<String, String> mppsRefSeries =
-                perfSeries.get(ref.seriesInstanceUID);
-        if (mppsRefSeries == null) {
-            LOG.warn("Series[iuid="
-                    + ref.seriesInstanceUID
-                    + "] of received Instance[iuid="
-                    + ref.sopInstanceUID
-                    + ", cuid="
-                    + ref.sopClassUID
-                    + "] is not referenced by MPPS[iuid="
-                    + ppsiuid
-                    + "] - no IAN may be emitted");
-            return false;
-        }
-        String cuid = mppsRefSeries.remove(ref.sopInstanceUID);
-        if (cuid == null) {
-            LOG.warn("Received Instance[iuid="
-                    + ref.sopInstanceUID
-                    + ", cuid="
-                    + ref.sopClassUID
-                    + "] in Series["
-                    + ref.seriesInstanceUID
-                    + "] is not referenced by MPPS[iuid="
-                    + ppsiuid
-                    + "] or was received multiple times - no IAN may be emitted");
-            return false;
-        }
-        if (!cuid.equals(ref.sopClassUID)) {
-            LOG.warn("SOP Class of received Instance[iuid="
-                    + ref.sopInstanceUID
-                    + ", cuid="
-                    + ref.sopClassUID
-                    + "] differs from SOP Class[cuid="
-                    + cuid
-                    + "] of the Instance referenced by MPPS[iuid="
-                    + ppsiuid
-                    + "] - emitted IAN will reference SOP Class of received Instance");
-        }
-        getIANRefSOPSeq(ref.seriesInstanceUID, mppsRefSeries.size()).add(mkRefSOP(ref));
-        outstanding--;
+        getIANRefSeries(seriesiuid).getSequence(Tag.ReferencedSOPSequence)
+                .add(mkRefSOP(iuid, cuid, availability, retrieveAETs));
         return true;
     }
 
-    private Sequence getIANRefSOPSeq(String iuid, int seriesSize) {
-        Sequence seq = ianRefSOPSeqOfSeries.get(iuid);
-        if (seq == null) {
-            Attributes seriesRef = new Attributes(2);
-            seq = seriesRef.newSequence(Tag.ReferencedSOPSequence, seriesSize);
-            seriesRef.setString(Tag.SeriesInstanceUID, VR.UI, iuid);
-            ianRefSeriesSeq.add(seriesRef);
-            ianRefSOPSeqOfSeries.put(iuid, seq);
+    private Attributes getIANRefSeries(String seriesiuid) {
+        for (ListIterator<Attributes> iter = 
+                ianRefSeriesSeq.listIterator(ianRefSeriesSeq.size());
+                        iter.hasPrevious();) {
+            Attributes refSeries = iter.previous();
+            if (refSeries.getString(Tag.SeriesInstanceUID).equals(seriesiuid)) {
+                return refSeries;
+            }
         }
-        return seq;
+        Attributes refSeries = new Attributes(2);
+        refSeries.newSequence(Tag.ReferencedSOPSequence, 10);
+        refSeries.setString(Tag.SeriesInstanceUID, VR.UI, seriesiuid);
+        ianRefSeriesSeq.add(refSeries);
+        return refSeries;
     }
 
-    private static Attributes mkRefSOP(SOPInstanceReference sopRef) {
+    private Attributes mkRefSOP(String iuid, String cuid,
+            Availability availability, String... retrieveAETs) {
         Attributes refSOP = new Attributes(4);
-        Utils.setRetrieveAET(refSOP, sopRef.retrieveAETs, sopRef.externalRetrieveAET);
-        refSOP.setString(Tag.InstanceAvailability, VR.CS, sopRef.availability.name());
-        refSOP.setString(Tag.ReferencedSOPClassUID, VR.UI, sopRef.sopClassUID);
-        refSOP.setString(Tag.ReferencedSOPInstanceUID, VR.UI, sopRef.sopInstanceUID);
+        refSOP.setString(Tag.RetrieveAETitle, VR.AE, retrieveAETs);
+        refSOP.setString(Tag.InstanceAvailability, VR.CS, availability.name());
+        refSOP.setString(Tag.ReferencedSOPClassUID, VR.UI, cuid);
+        refSOP.setString(Tag.ReferencedSOPInstanceUID, VR.UI, iuid);
         return refSOP;
     }
 

@@ -55,9 +55,9 @@ public class StoreServiceEJB {
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
 
-    public void updateDB(StoreContext storeContext)
+    public void updateDB(StoreContext context)
             throws DicomServiceException {
-        storeContext.getService().updateDB(em, storeContext);
+        context.getStoreSession().getStoreService().updateDB(em, context);
      }
 
 }

@@ -51,11 +51,11 @@ import org.dcm4chee.archive.entity.MPPS;
  */
 public interface MPPSService {
 
-    MPPS createPerformedProcedureStep(ApplicationEntity ae,
+    MPPS createPerformedProcedureStep(String prompt, ApplicationEntity ae,
             String sopInstanceUID, Attributes attrs, MPPSService service)
             throws DicomServiceException;
 
-    MPPS updatePerformedProcedureStep(ApplicationEntity ae,
+    MPPS updatePerformedProcedureStep(String prompt, ApplicationEntity ae,
             String iuid, Attributes attrs, MPPSService service)
             throws DicomServiceException;
 

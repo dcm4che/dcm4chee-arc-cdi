@@ -73,4 +73,7 @@ public class SOPInstanceReference {
         this.externalRetrieveAET = externalRetrieveAET;
     }
 
+    public String[] getRetrieveAETs() {
+        return Utils.decodeAETs(retrieveAETs, externalRetrieveAET);
+    }
 }

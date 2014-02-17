@@ -41,12 +41,9 @@ package org.dcm4chee.archive.store;
 import java.nio.file.Path;
 
 import org.dcm4che.data.Attributes;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.FileRef;
-import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.MPPS;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -54,73 +51,49 @@ import org.dcm4chee.archive.entity.Instance;
  */
 public interface StoreContext {
 
-    /** GETTERS **/
-    
-    Object getStoreSource();
+    StoreSession getStoreSession();
 
-    FileSystem getFileSystem();
+    Path getSpoolFile();
 
-    ArchiveAEExtension getArchiveAEExtension();
+    void setSpoolFile(Path spoolFile);
+
+    String getSpoolFileDigest();
+
+    void setSpoolFileDigest(String spoolFileDigest);
 
     String getTransferSyntax();
 
+    void setTransferSyntax(String transferSyntax);
+
     Attributes getAttributes();
 
-    String getSOPClassUID();
-
-    String getSOPInstanceUID();
-
-    String getSeriesInstanceUID();
-
-    String getStudyInstanceUID();
+    void setAttributes(Attributes attributes);
 
     Attributes getCoercedAttributes();
 
-    Attributes getCoercedAttributesAfterUpdateDB();
+    void setCoercedAttributes(Attributes attributes);
 
-    byte[] getDigest();
+    Path getFinalFile();
 
-    // path to the file to be processed/moved
-    Path getFile();
-
-    // path where the processed file will be moved
-    Path getStorePath();
-
-    String getReceivingAETitle();
-
-    String getSourceAET();
-
-    StoreParam getStoreParam();
-
-    Availability getAvailability();
-
-    StoreService getService();
-
-    Attributes getAttributesAfterUpdateDB();
-
-    Instance getInstance();
+    void setFinalFile(Path finalFile);
 
     StoreAction getStoreAction();
 
-    /** SETTERS **/
-    
-    // digest
-    void setDigest(byte[] digest);
+    void setStoreAction(StoreAction action);
 
-    void setFile(Path file);
-    
-    void setTransferSyntax(String tsuid);
+    FileRef getFileRef();
 
-    void setAttributes(Attributes attrs);
+    void setFileRef(FileRef createFileRef);
 
-    void setStoreAction(StoreAction store);
+    String getFinalFileDigest();
+
+    void setFinalFileDigest(String finalFileDigest);
+
+    Instance getInstance();
 
     void setInstance(Instance instance);
 
-    void setFileRef(FileRef fileRef);
+    void setMPPS(MPPS mpps);
 
-    void setCoercedAttributesAfterUpdateDB(Attributes coercedAtts);
-
-    void setAttributesAfterUpdateDB(Attributes attrsAfterDBUpdate);
-   
+    MPPS getMPPS();
 }

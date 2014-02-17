@@ -38,8 +38,6 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -477,12 +475,6 @@ public class ArchiveAEExtension extends AEExtension {
         queryParam.setReturnOtherPatientNames(returnOtherPatientNames);
         queryParam.setShowRejectedForQualityReasons(showRejectedForQualityReasons);
         return queryParam;
-    }
-
-    public MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
-        return digestAlgorithm != null
-                ? MessageDigest.getInstance(digestAlgorithm)
-                : null;
     }
 
 }

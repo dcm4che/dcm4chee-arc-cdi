@@ -449,6 +449,10 @@ public class Study implements Serializable {
             setExternalRetrieveAET(null);
     }
 
+    public String[] getAllRetrieveAETs() {
+        return Utils.decodeAETs(retrieveAETs, externalRetrieveAET);
+    }
+
     public Availability getAvailability() {
         return availability;
     }

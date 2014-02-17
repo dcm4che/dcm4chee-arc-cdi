@@ -36,47 +36,47 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.event;
+package org.dcm4chee.archive.store;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.net.ApplicationEntity;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.store.StoreAction;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.entity.FileSystem;
+import org.dcm4chee.archive.entity.MPPS;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public class StoreEvent {
+public interface StoreSession {
 
-    private final Object source;
-    private final ApplicationEntity ae;
-    private final StoreAction action;
-    private final Instance inst;
-    private final Attributes attrs;
+    StoreService getStoreService();
 
-    public StoreEvent(Object source, ApplicationEntity ae,
-            StoreAction action, Instance inst, Attributes attrs) {
-        this.source = source;
-        this.ae = ae;
-        this.action = action;
-        this.inst = inst;
-        this.attrs = attrs;
-    }
+    String getRemoteAET();
 
-    public Object getStoreSource() {
-        return source;
-    }
+    String getLocalAET();
 
-    public ApplicationEntity getApplicationEntity() {
-        return ae;
-    }
+    FileSystem getStorageFileSystem();
 
-    public Instance getInstance() {
-        return inst;
-    }
+    void setStorageFileSystem(FileSystem fs);
 
-    public StoreAction getStoreAction() {
-        return action;
-    }
+    Path getSpoolDirectory();
+
+    void setSpoolDirectory(Path spoolDirectory);
+
+    ArchiveAEExtension getArchiveAEExtension();
+
+    MessageDigest getMessageDigest();
+
+    StoreParam getStoreParam();
+
+    MPPS getCachedMPPS();
+
+    void setCachedMPPS(MPPS mpps);
+
+    Object getProperty(String key);
+
+    void setProperty(String key, Object value);
 }

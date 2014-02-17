@@ -39,9 +39,10 @@
 package org.dcm4chee.archive.compress.impl;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 
@@ -54,6 +55,7 @@ import org.dcm4che.data.VR;
 import org.dcm4che.imageio.codec.CompressionRule;
 import org.dcm4che.imageio.codec.Compressor;
 import org.dcm4che.io.DicomOutputStream;
+import org.dcm4che.util.SafeClose;
 import org.dcm4chee.archive.compress.CompressionService;
 
 /**
@@ -64,32 +66,29 @@ import org.dcm4chee.archive.compress.CompressionService;
 public class CompressionServiceImpl implements CompressionService {
 
     @Override
-    public void compress(CompressionRule rule, File src, File dest,
+    public void compress(CompressionRule rule, Path src, Path dest,
             MessageDigest digest, String tsuid, Attributes attrs)
             throws IOException {
-        try (  Compressor compressor = new Compressor(attrs,tsuid);
-               DicomOutputStream out = dicomOutputStream(dest, digest)
-            ) {
-
+        OutputStream out = Files.newOutputStream(dest);
+        Compressor compressor = new Compressor(attrs, tsuid);
+        try {
+            if (digest != null) {
+                digest.reset();
+                out = new DigestOutputStream(out, digest);
+            }
+            DicomOutputStream dout = new DicomOutputStream(
+                    new BufferedOutputStream(out), 
+                    UID.ExplicitVRLittleEndian);
+            out = dout;
             String ts = rule.getTransferSyntax();
             compressor.compress(ts, rule.getImageWriteParams());
-            Attributes fmi = attrs.createFileMetaInformation(tsuid);
+            Attributes fmi = attrs.createFileMetaInformation(ts);
             fmi.setString(Tag.TransferSyntaxUID, VR.UI, ts);
-            out.writeDataset(fmi, attrs);
+            dout.writeDataset(fmi, attrs);
+        } finally {
+            SafeClose.close(out);
+            SafeClose.close(compressor);
         }
-    }
-
-    private DicomOutputStream dicomOutputStream(File dest, MessageDigest digest)
-            throws IOException {
-        dest.getParentFile().mkdirs();
-        if (digest == null)
-            return new DicomOutputStream(dest);
-        else
-            return new DicomOutputStream(
-                    new BufferedOutputStream(
-                        new DigestOutputStream(
-                                new FileOutputStream(dest), digest)),
-                    UID.ExplicitVRLittleEndian);
     }
 
 }

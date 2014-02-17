@@ -38,6 +38,9 @@
 
 package org.dcm4chee.archive.mpps.impl;
 
+import java.util.HashMap;
+import java.util.List;
+
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -47,13 +50,21 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Tag;
 import org.dcm4che.net.ApplicationEntity;
+import org.dcm4che.net.Device;
 import org.dcm4che.net.Status;
 import org.dcm4che.net.service.BasicMPPSSCP;
 import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.entity.Availability;
+import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
@@ -76,8 +87,11 @@ public class MPPSServiceImpl implements MPPSService {
     @Inject
     private PatientService patientService;
 
+    @Inject
+    private CodeService codeService;
+
     @Override
-    public MPPS createPerformedProcedureStep(
+    public MPPS createPerformedProcedureStep(String prompt,
             ApplicationEntity ae, String iuid, Attributes attrs,
             MPPSService service) throws DicomServiceException {
         ArchiveAEExtension arcAE =
@@ -103,11 +117,9 @@ public class MPPSServiceImpl implements MPPSService {
     }
 
     @Override
-    public MPPS updatePerformedProcedureStep(
+    public MPPS updatePerformedProcedureStep(String prompt,
             ApplicationEntity ae, String iuid, Attributes modified,
             MPPSService service) throws DicomServiceException {
-        ArchiveAEExtension arcAE =
-                ae.getAEExtensionNotNull(ArchiveAEExtension.class);
         MPPS pps;
         try {
             pps = find(iuid);
@@ -118,7 +130,6 @@ public class MPPSServiceImpl implements MPPSService {
         if (pps.getStatus() != MPPS.Status.IN_PROGRESS)
             BasicMPPSSCP.mayNoLongerBeUpdated();
 
-//        StoreParam storeParam = arcAE.getStoreParam();
         Attributes attrs = pps.getAttributes();
         attrs.addAll(modified);
         pps.setAttributes(attrs);
@@ -128,7 +139,71 @@ public class MPPSServiceImpl implements MPPSService {
                         .setAttributeIdentifierList(Tag.PerformedSeriesSequence);
         }
 
+        if (pps.getStatus() == MPPS.Status.DISCONTINUED) {
+            Attributes codeItem = attrs.getNestedDataset(
+                    Tag.PerformedProcedureStepDiscontinuationReasonCodeSequence);
+            if (codeItem != null) {
+                Code code = codeService.findOrCreate(new Code(codeItem));
+                pps.setDiscontinuationReasonCode(code);
+                checkIncorrectWorklistEntrySelected(prompt, pps, ae.getDevice());
+            }
+        }
         return pps;
+    }
+
+    private void checkIncorrectWorklistEntrySelected(String prompt, 
+            MPPS pps, Device device) {
+        ArchiveDeviceExtension arcDev = 
+                device.getDeviceExtension(ArchiveDeviceExtension.class);
+        Code code = arcDev != null
+                ? (Code) arcDev.getIncorrectWorklistEntrySelectedCode()
+                : null;
+        if (code == null || !code.equals(pps.getDiscontinuationReasonCode()))
+            return;
+
+        HashMap<String,Attributes> map = new HashMap<String,Attributes>();
+        for (Attributes seriesRef : pps.getAttributes()
+                .getSequence(Tag.PerformedSeriesSequence)) {
+            for (Attributes ref : seriesRef
+                    .getSequence(Tag.ReferencedImageSequence)) {
+                map.put(ref.getString(Tag.ReferencedSOPInstanceUID), ref);
+            }
+            for (Attributes ref : seriesRef
+                    .getSequence(Tag.ReferencedNonImageCompositeSOPInstanceSequence)) {
+                map.put(ref.getString(Tag.ReferencedSOPInstanceUID), ref);
+            }
+            List<Instance> insts = em
+                    .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID,
+                            Instance.class)
+                    .setParameter(1, seriesRef.getString(Tag.SeriesInstanceUID))
+                    .getResultList();
+            for (Instance inst : insts) {
+                String iuid = inst.getSopInstanceUID();
+                Attributes ref = map.get(iuid);
+                if (ref != null) {
+                    String cuid = inst.getSopClassUID();
+                    String cuidInPPS = ref.getString(Tag.ReferencedSOPClassUID);
+                    Series series = inst.getSeries();
+                    Study study = series.getStudy();
+                    if (!cuid.equals(cuidInPPS)) {
+                        LOG.warn("{}: SOP Class of received Instance[iuid={}, cuid={}] "
+                                + "of Series[iuid={}] of Study[iuid={}] differs from"
+                                + "SOP Class[cuid={}] referenced by MPPS[iuid={}]",
+                                prompt, iuid, cuid, series.getSeriesInstanceUID(), 
+                                study.getStudyInstanceUID(), cuidInPPS,
+                                pps.getSopInstanceUID());
+                    }
+                    inst.setRejectionNoteCode(code);
+                    inst.setAvailability(Availability.UNAVAILABLE);
+                    series.resetNumberOfInstances();
+                    study.resetNumberOfInstances();
+                    LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
+                            prompt, inst.getPk(), iuid,
+                            code);
+                }
+            }
+            map.clear();
+        }
     }
 
     private MPPS find(String sopInstanceUID) {
@@ -138,23 +213,6 @@ public class MPPSServiceImpl implements MPPSService {
              .setParameter(1, sopInstanceUID)
              .getSingleResult();
     }
-
-//    private Collection<ScheduledProcedureStep> getScheduledProcedureSteps(
-//            Sequence ssaSeq, Patient patient, StoreParam storeParam) {
-//        ArrayList<ScheduledProcedureStep> list =
-//                new ArrayList<ScheduledProcedureStep>(ssaSeq.size());
-//        for (Attributes ssa : ssaSeq) {
-//            if (ssa.containsValue(Tag.ScheduledProcedureStepID)
-//                    && ssa.containsValue(Tag.RequestedProcedureID)
-//                    && ssa.containsValue(Tag.AccessionNumber)) {
-//                ScheduledProcedureStep sps =
-//                        requestService.findOrCreateScheduledProcedureStep(
-//                                ssa, patient, storeParam);
-//                list.add(sps);
-//            }
-//        }
-//        return list;
-//    }
 
     @Override
     public Patient findPatient(Attributes attrs)

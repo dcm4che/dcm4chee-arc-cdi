@@ -118,6 +118,12 @@ public class Utils {
                 numberOfSeriesRelatedInstances);
     }
 
+    public static String[] decodeAETs(String s1, String s2) {
+        return StringUtils.split(
+                s1 == null ? s2 : s2 == null ? s1 : s1 + '\\' + s2,
+                '\\');
+    }
+
     public static void setRetrieveAET(Attributes attrs, String retrieveAETs,
             String externalRetrieveAET) {
         if (retrieveAETs != null)
