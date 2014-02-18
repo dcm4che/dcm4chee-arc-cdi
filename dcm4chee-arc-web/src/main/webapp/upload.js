@@ -4,7 +4,7 @@ Dropzone.autoDiscover = false;
         clear = document.getElementById("clear"),
         aetField = document.getElementById("aet"),
         dropzone = new Dropzone(".dropzone", {
-            url: "/dcm4chee-arc/stow/DCM4CHEE/studies",
+            url: "/dcm4chee-arc/stow/" + aetField.value + "/studies",
             uploadMultiple: true,
             autoProcessQueue: false,
             addRemoveLinks: true,
@@ -13,7 +13,7 @@ Dropzone.autoDiscover = false;
         });
     
     upload.onclick = function () {
-        dropzone.options.url = "rs/stow/" + aetField.value + "/studies";
+        dropzone.options.url = "/dcm4chee-arc/stow/" + aetField.value + "/studies";
         dropzone.processQueue();
     };
     clear.onclick = function () {
