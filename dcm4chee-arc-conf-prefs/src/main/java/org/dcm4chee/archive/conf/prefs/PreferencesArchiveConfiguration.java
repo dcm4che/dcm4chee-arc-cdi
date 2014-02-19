@@ -40,8 +40,6 @@ package org.dcm4chee.archive.conf.prefs;
 
 import java.security.cert.CertificateException;
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -59,7 +57,6 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.StoreDuplicate;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -115,19 +112,6 @@ public class PreferencesArchiveConfiguration
         config.store(arcAE.getAttributeCoercions(), aeNode);
         PreferencesCompressionRulesConfiguration
                 .store(arcAE.getCompressionRules(), aeNode);
-        storeStoreDuplicates(arcAE.getStoreDuplicates(), aeNode);
-    }
-
-    private void storeStoreDuplicates(List<StoreDuplicate> sds, Preferences aeNode) {
-        Preferences sdsNode = aeNode.node("dcmStoreDuplicate");
-        int index = 1;
-        for (StoreDuplicate sd : sds)
-            storeTo(sd, sdsNode.node("" + index ++));
-    }
-
-    private void storeTo(StoreDuplicate sd, Preferences prefs) {
-        PreferencesUtils.storeNotNull(prefs, "dcmStoreDuplicateCondition", sd.getCondition());
-        PreferencesUtils.storeNotNull(prefs, "dcmStoreDuplicateAction", sd.getAction());
     }
 
     private static void storeTo(AttributeFilter filter, Preferences prefs) {
@@ -165,8 +149,6 @@ public class PreferencesArchiveConfiguration
         PreferencesUtils.storeNotDef(prefs, "dcmSendPendingCMoveInterval", arcAE.getSendPendingCMoveInterval(), 0);
         PreferencesUtils.storeNotDef(prefs, "dcmSuppressWarningCoercionOfDataElements",
                 arcAE.isSuppressWarningCoercionOfDataElements(), false);
-        PreferencesUtils.storeNotDef(prefs, "dcmStoreOriginalAttributes",
-                arcAE.isStoreOriginalAttributes(), false);
         PreferencesUtils.storeNotDef(prefs, "dcmPreserveSpoolFileOnFailure",
                 arcAE.isPreserveSpoolFileOnFailure(), false);
         PreferencesUtils.storeNotNull(prefs, "dcmModifyingSystem", arcAE.getModifyingSystem());
@@ -250,8 +232,6 @@ public class PreferencesArchiveConfiguration
                 prefs.getBoolean("dcmSuppressWarningCoercionOfDataElements", false));
         arcae.setPreserveSpoolFileOnFailure(
                 prefs.getBoolean("dcmPreserveSpoolFileOnFailure", false));
-        arcae.setStoreOriginalAttributes(
-                prefs.getBoolean("dcmStoreOriginalAttributes", false));
         arcae.setModifyingSystem(prefs.get("dcmModifyingSystem", null));
         arcae.setStorageCommitmentDelay(prefs.getInt("dcmStgCmtDelay", 0));
         arcae.setStorageCommitmentMaxRetries(prefs.getInt("dcmStgCmtMaxRetries", 0));
@@ -286,20 +266,6 @@ public class PreferencesArchiveConfiguration
         config.load(arcae.getAttributeCoercions(), aeNode);
         PreferencesCompressionRulesConfiguration
                 .load(arcae.getCompressionRules(), aeNode);
-        loadStoreDuplicates(arcae.getStoreDuplicates(), aeNode);
-    }
-
-    private void loadStoreDuplicates(List<StoreDuplicate> sds, Preferences aeNode)
-            throws BackingStoreException {
-        Preferences sdsNode = aeNode.node("dcmStoreDuplicate");
-        for (String index : sdsNode.childrenNames())
-            sds.add(storeDuplicate(sdsNode.node(index)));
-    }
-
-    private StoreDuplicate storeDuplicate(Preferences prefs) {
-        return new StoreDuplicate(
-                StoreDuplicate.Condition.valueOf(prefs.get("dcmStoreDuplicateCondition", null)),
-                StoreDuplicate.Action.valueOf(prefs.get("dcmStoreDuplicateAction", null)));
     }
 
     private static void loadAttributeFilters(ArchiveDeviceExtension device, Preferences deviceNode)
@@ -411,10 +377,6 @@ public class PreferencesArchiveConfiguration
          PreferencesUtils.storeDiff(prefs, "dcmSuppressWarningCoercionOfDataElements",
                  aa.isSuppressWarningCoercionOfDataElements(),
                  bb.isSuppressWarningCoercionOfDataElements(),
-                 false);
-         PreferencesUtils.storeDiff(prefs, "dcmStoreOriginalAttributes",
-                 aa.isStoreOriginalAttributes(),
-                 bb.isStoreOriginalAttributes(),
                  false);
          PreferencesUtils.storeDiff(prefs, "dcmPreserveSpoolFileOnFailure",
                  aa.isPreserveSpoolFileOnFailure(),
@@ -532,32 +494,6 @@ public class PreferencesArchiveConfiguration
         PreferencesCompressionRulesConfiguration
             .merge(aa.getCompressionRules(), bb.getCompressionRules(), aePrefs);
 
-        mergeStoreDuplicates(aa.getStoreDuplicates(), bb.getStoreDuplicates(), aePrefs);
-    }
-
-    private void mergeStoreDuplicates(List<StoreDuplicate> prevs, List<StoreDuplicate> sds,
-            Preferences aePrefs) throws BackingStoreException {
-        Preferences sdsNode = aePrefs.node("dcmStoreDuplicate");
-        int index = 1;
-        Iterator<StoreDuplicate> prevIter = prevs.iterator();
-        for (StoreDuplicate sd : sds) {
-            Preferences sdNode = sdsNode.node("" + index++);
-            if (prevIter.hasNext())
-                storeDiffs(sdNode, prevIter.next(), sd);
-            else
-                storeTo(sd, sdNode);
-        }
-        while (prevIter.hasNext()) {
-            prevIter.next();
-            sdsNode.node("" + index++).removeNode();
-        }
-    }
-
-    private void storeDiffs(Preferences prefs, StoreDuplicate a, StoreDuplicate b) {
-        PreferencesUtils.storeDiff(prefs, "dcmStoreDuplicateCondition",
-                a.getCondition(), b.getCondition());
-        PreferencesUtils.storeDiff(prefs, "dcmStoreDuplicateAction",
-                a.getAction(), b.getAction());
     }
 
 }

@@ -38,9 +38,6 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.util.List;
-
-import org.dcm4che.data.Code;
 import org.dcm4che.soundex.FuzzyStr;
 
 /**
@@ -48,18 +45,12 @@ import org.dcm4che.soundex.FuzzyStr;
  */
 public class StoreParam {
 
-    private Code incorrectWorklistEntrySelectedCode;
-    private Code rejectedForQualityReasonsCode;
-    private Code rejectedForPatientSafetyReasonsCode;
-    private Code incorrectModalityWorklistEntryCode;
-    private Code dataRetentionPeriodExpiredCode;
     private FuzzyStr fuzzyStr;
     private AttributeFilter[] attributeFilters;
     private boolean storeOriginalAttributes;
     private String modifyingSystem;
     private String[] retrieveAETs;
     private String externalRetrieveAET;
-    private List<StoreDuplicate> storeDuplicates;
 
     public final boolean isStoreOriginalAttributes() {
         return storeOriginalAttributes;
@@ -75,14 +66,6 @@ public class StoreParam {
 
     public final void setModifyingSystem(String modifyingSystem) {
         this.modifyingSystem = modifyingSystem;
-    }
-
-    public final List<StoreDuplicate> getStoreDuplicates() {
-        return storeDuplicates;
-    }
-
-    public final void setStoreDuplicates(List<StoreDuplicate> storeDuplicates) {
-        this.storeDuplicates = storeDuplicates;
     }
 
     public final String[] getRetrieveAETs() {
@@ -101,46 +84,6 @@ public class StoreParam {
         this.externalRetrieveAET = externalRetrieveAET;
     }
 
-    public Code getIncorrectWorklistEntrySelectedCode() {
-        return incorrectWorklistEntrySelectedCode;
-    }
-
-    public void setIncorrectWorklistEntrySelectedCode(Code code) {
-        this.incorrectWorklistEntrySelectedCode = code;
-    }
-
-    public final Code getRejectedForQualityReasonsCode() {
-        return rejectedForQualityReasonsCode;
-    }
-
-    public final void setRejectedForQualityReasonsCode(Code code) {
-        this.rejectedForQualityReasonsCode = code;
-    }
-
-    public final Code getRejectedForPatientSafetyReasonsCode() {
-        return rejectedForPatientSafetyReasonsCode;
-    }
-
-    public final void setRejectedForPatientSafetyReasonsCode(Code code) {
-        this.rejectedForPatientSafetyReasonsCode = code;
-    }
-
-    public final Code getIncorrectModalityWorklistEntryCode() {
-        return incorrectModalityWorklistEntryCode;
-    }
-
-    public final void setIncorrectModalityWorklistEntryCode(Code code) {
-        this.incorrectModalityWorklistEntryCode = code;
-    }
-
-    public final Code getDataRetentionPeriodExpiredCode() {
-        return dataRetentionPeriodExpiredCode;
-    }
-
-    public final void setDataRetentionPeriodExpiredCode(Code code) {
-        this.dataRetentionPeriodExpiredCode = code;
-    }
-
     public final void setFuzzyStr(FuzzyStr fuzzyStr) {
         this.fuzzyStr = fuzzyStr;
     }
@@ -156,48 +99,5 @@ public class StoreParam {
     public AttributeFilter getAttributeFilter(Entity entity) {
         return attributeFilters[entity.ordinal()];
     }
-
-    public StoreDuplicate.Action getStoreDuplicate(boolean noFiles,
-            boolean eqChecksum, boolean eqFsGroup) {
-        for (StoreDuplicate sd : storeDuplicates)
-            if (sd.getCondition().matches(noFiles, eqChecksum, eqFsGroup))
-                return sd.getAction();
-        return StoreDuplicate.Action.IGNORE;
-    }
-
-//    public boolean isRejectedByMPPS(PerformedProcedureStep mpps) {
-//        if (mpps == null || mpps.getStatus() != PerformedProcedureStep.Status.DISCONTINUED)
-//            return false;
-//
-//        Attributes reasonCode = mpps.getAttributes().getNestedDataset(
-//                Tag.PerformedProcedureStepDiscontinuationReasonCodeSequence);
-//        return reasonCode != null && new Code(reasonCode)
-//                .equalsIgnoreMeaning(incorrectWorklistEntrySelectedCode);
-//    }
-//
-//    public Availability getRejectionNoteAvailability(Attributes attrs) {
-//        if (!attrs.getString(Tag.SOPClassUID)
-//                .equals(UID.KeyObjectSelectionDocumentStorage))
-//            return null;
-//
-//        Attributes item = attrs.getNestedDataset(Tag.ConceptNameCodeSequence);
-//        if (item == null)
-//            return null;
-//
-//        Code code = new Code(item);
-//        if (code.equalsIgnoreMeaning(rejectedForQualityReasonsCode))
-//            return Availability.REJECTED_FOR_QUALITY_REASONS_REJECTION_NOTE;
-//        
-//        if (code.equalsIgnoreMeaning(rejectedForPatientSafetyReasonsCode))
-//            return Availability.REJECTED_FOR_PATIENT_SAFETY_REASONS_REJECTION_NOTE;
-//        
-//        if (code.equalsIgnoreMeaning(incorrectModalityWorklistEntryCode))
-//            return Availability.INCORRECT_MODALITY_WORKLIST_ENTRY_REJECTION_NOTE;
-//
-//        if (code.equalsIgnoreMeaning(dataRetentionPeriodExpiredCode))
-//            return Availability.DATA_RETENTION_PERIOD_EXPIRED_REJECTION_NOTE;
-//
-//        return null;
-//    }
 
 }

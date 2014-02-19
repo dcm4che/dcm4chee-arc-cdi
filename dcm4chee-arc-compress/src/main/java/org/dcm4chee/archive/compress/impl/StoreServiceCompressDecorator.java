@@ -47,8 +47,8 @@ import java.security.MessageDigest;
 import javax.annotation.Priority;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
-import javax.enterprise.inject.Default;
 import javax.inject.Inject;
+import javax.interceptor.Interceptor;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.BulkData;
@@ -70,7 +70,7 @@ import org.slf4j.LoggerFactory;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
-@Decorator @Priority(3000) // Interceptor.Priority.APPLICATION = 2000
+@Decorator @Priority(Interceptor.Priority.APPLICATION)
 public abstract class StoreServiceCompressDecorator implements StoreService {
 
     static Logger LOG = LoggerFactory.getLogger(StoreServiceCompressDecorator.class);

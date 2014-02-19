@@ -38,10 +38,7 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.EnumSet;
-import java.util.List;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
@@ -77,7 +74,6 @@ public class ArchiveAEExtension extends AEExtension {
     private String digestAlgorithm;
     private String spoolDirectoryPath;
     private AttributesFormat storageFilePathFormat;
-    private boolean storeOriginalAttributes;
     private boolean suppressWarningCoercionOfDataElements;
     private boolean preserveSpoolFileOnFailure;
     private boolean matchUnknown;
@@ -92,7 +88,6 @@ public class ArchiveAEExtension extends AEExtension {
     private String[] ianDestinations = {};
     private int ianMaxRetries;
     private int ianRetryInterval = DEF_RETRY_INTERVAL;
-    private final List<StoreDuplicate> storeDuplicates  = new ArrayList<StoreDuplicate>();
     private final AttributeCoercions attributeCoercions = new AttributeCoercions();
     private final CompressionRules compressionRules = new CompressionRules();
     private boolean returnOtherPatientIDs;
@@ -139,23 +134,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     public boolean removeCompressionRule(CompressionRule ac) {
         return compressionRules.remove(ac);
-    }
-
-    public List<StoreDuplicate> getStoreDuplicates() {
-        return storeDuplicates;
-    }
-
-    public void addStoreDuplicate(StoreDuplicate storeDuplicate) {
-        storeDuplicates.add(storeDuplicate);
-    }
-
-    public void setStoreDuplicates(Collection<StoreDuplicate> storeDuplicates) {
-        storeDuplicates.clear();
-        storeDuplicates.addAll(storeDuplicates);
-    }
-
-    public boolean removeStoreDuplicate(StoreDuplicate storeDuplicate) {
-        return storeDuplicates.remove(storeDuplicate);
     }
 
     public String getModifyingSystem() {
@@ -235,14 +213,6 @@ public class ArchiveAEExtension extends AEExtension {
                 ? TemplatesCache.getDefault().get(
                         StringUtils.replaceSystemProperties(ac.getURI()))
                 : null;
-    }
-
-    public boolean isStoreOriginalAttributes() {
-        return storeOriginalAttributes;
-    }
-
-    public void setStoreOriginalAttributes(boolean storeOriginalAttributes) {
-        this.storeOriginalAttributes = storeOriginalAttributes;
     }
 
     public boolean isSuppressWarningCoercionOfDataElements() {
@@ -422,7 +392,6 @@ public class ArchiveAEExtension extends AEExtension {
         setDigestAlgorithm(arcae.digestAlgorithm);
         setSpoolDirectoryPath(arcae.spoolDirectoryPath);
         setStorageFilePathFormat(arcae.storageFilePathFormat);
-        setStoreOriginalAttributes(arcae.storeOriginalAttributes);
         setPreserveSpoolFileOnFailure(arcae.preserveSpoolFileOnFailure);
         setSuppressWarningCoercionOfDataElements(arcae.suppressWarningCoercionOfDataElements);
         setMatchUnknown(arcae.matchUnknown);
@@ -443,7 +412,6 @@ public class ArchiveAEExtension extends AEExtension {
         setRemotePIXManagerApplication(arcae.pixManagerApplication);
         setLocalPIXConsumerApplication(arcae.pixConsumerApplication);
         setQIDOMaxNumberOfResults(arcae.qidoMaxNumberOfResults);
-        setStoreDuplicates(arcae.getStoreDuplicates());
         setAttributeCoercions(arcae.getAttributeCoercions());
         setCompressionRules(arcae.getCompressionRules());
     }
@@ -452,11 +420,9 @@ public class ArchiveAEExtension extends AEExtension {
         StoreParam storeParam = ae.getDevice()
                 .getDeviceExtension(ArchiveDeviceExtension.class)
                 .getStoreParam();
-        storeParam.setStoreOriginalAttributes(storeOriginalAttributes);
         storeParam.setModifyingSystem(getEffectiveModifyingSystem());
         storeParam.setRetrieveAETs(retrieveAETs);
         storeParam.setExternalRetrieveAET(externalRetrieveAET);
-        storeParam.setStoreDuplicates(storeDuplicates);
         return storeParam;
     }
 

@@ -398,7 +398,7 @@ public class ArchiveDeviceTest {
             new Code("113037", "DCM", null, "Rejected for Patient Safety Reasons");
     private static final Code INCORRECT_MODALITY_WORKLIST_ENTRY =
             new Code("113038", "DCM", null, "Incorrect Modality Worklist Entry");
-    private static final Code DATA_RETENTION_PERIOD_EXPIRED =
+    private static final Code DATA_RETENTION_POLICY_EXPIRED =
             new Code("113038", "DCM", null, "Data Retention Policy Expired");
 
     private static final String[] OTHER_DEVICES = {
@@ -685,7 +685,7 @@ public class ArchiveDeviceTest {
         arcDevExt.setRejectedForQualityReasonsCode(REJECTED_FOR_QUALITY_REASONS);
         arcDevExt.setRejectedForPatientSafetyReasonsCode(REJECT_FOR_PATIENT_SAFETY_REASONS);
         arcDevExt.setIncorrectModalityWorklistEntryCode(INCORRECT_MODALITY_WORKLIST_ENTRY);
-        arcDevExt.setDataRetentionPeriodExpiredCode(DATA_RETENTION_PERIOD_EXPIRED);
+        arcDevExt.setDataRetentionPeriodExpiredCode(DATA_RETENTION_POLICY_EXPIRED);
         arcDevExt.setFuzzyAlgorithmClass("org.dcm4che.soundex.ESoundex");
         arcDevExt.setConfigurationStaleTimeout(CONFIGURATION_STALE_TIMEOUT);
         arcDevExt.setWadoAttributesStaleTimeout(WADO_ATTRIBUTES_STALE_TIMEOUT);
@@ -786,25 +786,12 @@ public class ArchiveDeviceTest {
                 "archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
         aeExt.setDigestAlgorithm("MD5");
         aeExt.setRetrieveAETs(aet);
-        aeExt.setStoreOriginalAttributes(true);
         aeExt.setPreserveSpoolFileOnFailure(true);
         aeExt.setSuppressWarningCoercionOfDataElements(false);
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
-        aeExt.addStoreDuplicate(
-                new StoreDuplicate(
-                        StoreDuplicate.Condition.NO_FILE,
-                        StoreDuplicate.Action.STORE));
-        aeExt.addStoreDuplicate(
-                new StoreDuplicate(
-                        StoreDuplicate.Condition.EQ_CHECKSUM,
-                        StoreDuplicate.Action.IGNORE));
-        aeExt.addStoreDuplicate(
-                new StoreDuplicate(
-                        StoreDuplicate.Condition.NE_CHECKSUM,
-                        StoreDuplicate.Action.REPLACE));
         aeExt.addAttributeCoercion(new AttributeCoercion(
                 "Supplement missing PID",
                 null, 

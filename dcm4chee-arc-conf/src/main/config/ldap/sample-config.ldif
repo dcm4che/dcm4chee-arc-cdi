@@ -966,7 +966,6 @@ dcmSpoolDirectoryPath: archive/spool
 dcmQidoMaxNumberOfResults: 1000
 hl7PIXManagerApplication: HL7RCV^DCM4CHEE
 dcmReturnOtherPatientNames: TRUE
-dcmStoreOriginalAttributes: TRUE
 dcmMatchUnknown: TRUE
 dcmSendPendingCGet: TRUE
 dicomAETitle: DCM4CHEE
@@ -4390,21 +4389,6 @@ dcmImageWriteParam: maxPixelValueError=10.0
 dcmImageWriteParam: avgPixelValueBlockSize=8.0
 dcmBitsStored: 8
 cn: JPEG 8-bit Lossy
-
-dn: dcmStoreDuplicateCondition=NO_FILE,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmStoreDuplicateAction: STORE
-objectClass: dcmStoreDuplicate
-dcmStoreDuplicateCondition: NO_FILE
-
-dn: dcmStoreDuplicateCondition=EQ_CHECKSUM,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmStoreDuplicateAction: IGNORE
-objectClass: dcmStoreDuplicate
-dcmStoreDuplicateCondition: EQ_CHECKSUM
-
-dn: dcmStoreDuplicateCondition=NE_CHECKSUM,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmStoreDuplicateAction: REPLACE
-objectClass: dcmStoreDuplicate
-dcmStoreDuplicateCondition: NE_CHECKSUM
 
 dn: dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com

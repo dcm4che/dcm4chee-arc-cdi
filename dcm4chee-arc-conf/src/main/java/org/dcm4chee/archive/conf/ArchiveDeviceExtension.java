@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.conf;
 
+import java.util.EnumMap;
+
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 
@@ -193,16 +195,6 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     public StoreParam getStoreParam() {
         StoreParam storeParam = new StoreParam();
-        storeParam.setIncorrectWorklistEntrySelectedCode(
-                incorrectWorklistEntrySelectedCode);
-        storeParam.setRejectedForQualityReasonsCode(
-                rejectedForQualityReasonsCode);
-        storeParam.setRejectedForPatientSafetyReasonsCode(
-                rejectedForPatientSafetyReasonsCode);
-        storeParam.setIncorrectModalityWorklistEntryCode(
-                incorrectModalityWorklistEntryCode);
-        storeParam.setDataRetentionPeriodExpiredCode(
-                dataRetentionPeriodExpiredCode);
         storeParam.setFuzzyStr(getFuzzyStr());
         storeParam.setAttributeFilters(attributeFilters);
         return storeParam;

@@ -470,7 +470,6 @@
                 <entry key="dcmSendPendingCMoveInterval" value="5000"/>
                 <entry key="dcmSpoolDirectoryPath" value="archive/spool"/>
                 <entry key="dcmStorageFilePathFormat" value="archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}"/>
-                <entry key="dcmStoreOriginalAttributes" value="true"/>
                 <entry key="dicomAssociationAcceptor" value="true"/>
                 <entry key="dicomAssociationInitiator" value="true"/>
                 <entry key="dicomNetworkConnectionReference.#" value="2"/>
@@ -615,27 +614,6 @@
                     <entry key="dcmPhotometricInterpretation.2" value="MONOCHROME2"/>
                     <entry key="dcmPhotometricInterpretation.3" value="RGB"/>
                     <entry key="dicomTransferSyntax" value="1.2.840.10008.1.2.4.50"/>
-                  </map>
-                </node>
-              </node>
-              <node name="dcmStoreDuplicate">
-                <map/>
-                <node name="1">
-                  <map>
-                    <entry key="dcmStoreDuplicateAction" value="STORE"/>
-                    <entry key="dcmStoreDuplicateCondition" value="NO_FILE"/>
-                  </map>
-                </node>
-                <node name="2">
-                  <map>
-                    <entry key="dcmStoreDuplicateAction" value="IGNORE"/>
-                    <entry key="dcmStoreDuplicateCondition" value="EQ_CHECKSUM"/>
-                  </map>
-                </node>
-                <node name="3">
-                  <map>
-                    <entry key="dcmStoreDuplicateAction" value="REPLACE"/>
-                    <entry key="dcmStoreDuplicateCondition" value="NE_CHECKSUM"/>
                   </map>
                 </node>
               </node>

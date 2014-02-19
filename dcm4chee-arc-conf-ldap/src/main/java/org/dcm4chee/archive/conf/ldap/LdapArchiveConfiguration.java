@@ -67,8 +67,6 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.StoreDuplicate;
-import org.dcm4chee.archive.conf.StoreDuplicate.Condition;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -122,23 +120,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         config.store(arcAE.getAttributeCoercions(), aeDN);
         new LdapCompressionRulesConfiguration(config)
                 .store(arcAE.getCompressionRules(), aeDN);
-        for (StoreDuplicate sd : arcAE.getStoreDuplicates())
-            config.createSubcontext(dnOf(sd, aeDN),
-                    storeTo(sd, new BasicAttributes(true)));
-    }
-
-    private String dnOf(StoreDuplicate sd, String aeDN) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("dcmStoreDuplicateCondition=").append(sd.getCondition());
-        sb.append(',').append(aeDN);
-        return sb.toString();
-    }
-
-    private Attributes storeTo(StoreDuplicate sd, BasicAttributes attrs) {
-        attrs.put("objectclass", "dcmStoreDuplicate");
-        LdapUtils.storeNotNull(attrs, "dcmStoreDuplicateCondition", sd.getCondition());
-        LdapUtils.storeNotNull(attrs, "dcmStoreDuplicateAction", sd.getAction());
-        return attrs;
     }
 
     private static Attributes storeTo(AttributeFilter filter, Entity entity, BasicAttributes attrs) {
@@ -177,8 +158,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         LdapUtils.storeNotDef(attrs, "dcmSendPendingCMoveInterval", arcAE.getSendPendingCMoveInterval(), 0);
         LdapUtils.storeNotDef(attrs, "dcmSuppressWarningCoercionOfDataElements",
                 arcAE.isSuppressWarningCoercionOfDataElements(), false);
-        LdapUtils.storeNotDef(attrs, "dcmStoreOriginalAttributes",
-                arcAE.isStoreOriginalAttributes(), false);
         LdapUtils.storeNotDef(attrs, "dcmPreserveSpoolFileOnFailure",
                 arcAE.isPreserveSpoolFileOnFailure(), false);
         LdapUtils.storeNotNull(attrs, "dcmModifyingSystem", arcAE.getModifyingSystem());
@@ -293,8 +272,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
        arcae.setSendPendingCMoveInterval(LdapUtils.intValue(attrs.get("dcmSendPendingCMoveInterval"), 0));
        arcae.setSuppressWarningCoercionOfDataElements(
                LdapUtils.booleanValue(attrs.get("dcmSuppressWarningCoercionOfDataElements"), false));
-       arcae.setStoreOriginalAttributes(
-               LdapUtils.booleanValue(attrs.get("dcmStoreOriginalAttributes"), false));
        arcae.setPreserveSpoolFileOnFailure(
                LdapUtils.booleanValue(attrs.get("dcmPreserveSpoolFileOnFailure"), false));
        arcae.setModifyingSystem(LdapUtils.stringValue(attrs.get("dcmModifyingSystem"), null));
@@ -330,27 +307,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         config.load(arcae.getAttributeCoercions(), aeDN);
         new LdapCompressionRulesConfiguration(config)
                 .load(arcae.getCompressionRules(), aeDN);
-        loadStoreDuplicates(arcae.getStoreDuplicates(), aeDN);
-    }
-
-    private void loadStoreDuplicates(List<StoreDuplicate> sds, String aeDN)
-            throws NamingException {
-        NamingEnumeration<SearchResult> ne =
-                config.search(aeDN, "(objectclass=dcmStoreDuplicate)");
-        try {
-            while (ne.hasMore())
-                sds.add(storeDuplicate(ne.next().getAttributes()));
-        } finally {
-           LdapUtils.safeClose(ne);
-        }
-    }
-
-    private StoreDuplicate storeDuplicate(Attributes attrs) throws NamingException {
-        return new StoreDuplicate(
-                StoreDuplicate.Condition.valueOf(
-                        LdapUtils.stringValue(attrs.get("dcmStoreDuplicateCondition"), null)),
-                StoreDuplicate.Action.valueOf(
-                        LdapUtils.stringValue(attrs.get("dcmStoreDuplicateAction"), null)));
     }
 
     @Override
@@ -432,10 +388,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         LdapUtils.storeDiff(mods, "dcmSuppressWarningCoercionOfDataElements",
                 aa.isSuppressWarningCoercionOfDataElements(),
                 bb.isSuppressWarningCoercionOfDataElements(),
-                false);
-        LdapUtils.storeDiff(mods, "dcmStoreOriginalAttributes",
-                aa.isStoreOriginalAttributes(),
-                bb.isStoreOriginalAttributes(),
                 false);
         LdapUtils.storeDiff(mods, "dcmPreserveSpoolFileOnFailure",
                 aa.isPreserveSpoolFileOnFailure(),
@@ -530,37 +482,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         config.merge(aa.getAttributeCoercions(), bb.getAttributeCoercions(), aeDN);
         new LdapCompressionRulesConfiguration(config)
                 .merge(aa.getCompressionRules(), bb.getCompressionRules(), aeDN);
-        mergeStoreDuplicates(aa.getStoreDuplicates(), bb.getStoreDuplicates(), aeDN);
-    }
-
-    private void mergeStoreDuplicates(List<StoreDuplicate> prevs, List<StoreDuplicate> acs, String parentDN)
-            throws NamingException {
-        for (StoreDuplicate prev : prevs)
-            if (findByCondition(acs, prev.getCondition()) == null)
-                config.destroySubcontext(dnOf(prev, parentDN));
-        for (StoreDuplicate rn : acs) {
-            String dn = dnOf(rn, parentDN);
-            StoreDuplicate prev = findByCondition(prevs, rn.getCondition());
-            if (prev == null)
-                config.createSubcontext(dn, storeTo(rn, new BasicAttributes(true)));
-            else
-                config.modifyAttributes(dn, storeDiffs(prev, rn, new ArrayList<ModificationItem>()));
-        }
-    }
-
-    private List<ModificationItem> storeDiffs(StoreDuplicate prev,
-            StoreDuplicate sd, ArrayList<ModificationItem> mods) {
-        LdapUtils.storeDiff(mods, "dcmRejectionAction",
-                prev.getAction(),
-                sd.getAction());
-        return mods;
-    }
-
-    private StoreDuplicate findByCondition(List<StoreDuplicate> sds, Condition condition) {
-       for (StoreDuplicate other : sds)
-           if (other.getCondition() == condition)
-               return other;
-       return null;
     }
 
     private List<ModificationItem> storeDiffs(AttributeFilter prev,
