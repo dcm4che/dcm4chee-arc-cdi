@@ -244,7 +244,7 @@ public class StowRS {
             });
             creatorType.storeMetadataAndBulkdata(this, session);
         } finally {
-            storeService.cleanup(session);
+            storeService.onClose(session);
         }
         return buildResponse();
     }

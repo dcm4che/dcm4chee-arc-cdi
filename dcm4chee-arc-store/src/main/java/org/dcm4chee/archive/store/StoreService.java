@@ -48,7 +48,6 @@ import org.dcm4che.data.Attributes;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
@@ -70,7 +69,7 @@ public interface StoreService {
     StoreContext initStoreContext(StoreSession session, Attributes fmi,
             Attributes attrs) throws DicomServiceException;
 
-    void cleanup(StoreSession session);
+    void onClose(StoreSession session);
 
     void store(StoreContext context) throws DicomServiceException;
 

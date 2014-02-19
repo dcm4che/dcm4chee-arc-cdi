@@ -109,7 +109,7 @@ public class CStoreSCP extends BasicCStoreSCP {
     public void onClose(Association as) {
         StoreSession session = as.getProperty(StoreSession.class);
         if (session != null)
-            storeService.cleanup(session);
+            storeService.onClose(session);
     }
 
 }

@@ -99,6 +99,7 @@ import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.store.StoreSessionClosed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +126,9 @@ public class StoreServiceImpl implements StoreService {
 
     @Inject
     private Event<StoreContext> storeEvent;
+
+    @Inject @StoreSessionClosed
+    private Event<StoreSession> storeSessionClosed;
 
     @Override
     public StoreSession initStoreSession(String name, StoreService storeService,
@@ -181,8 +185,9 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void cleanup(StoreSession session) {
+    public void onClose(StoreSession session) {
         deleteSpoolDirectory(session);
+        storeSessionClosed.fire(session);
     }
 
     @Override
