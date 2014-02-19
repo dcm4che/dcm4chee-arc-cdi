@@ -242,8 +242,10 @@ public class MPPSServiceImpl implements MPPSService {
             throws DicomServiceException {
         try {
             Patient patient = patientService.findPatientOnStore(attrs, new IDPatientSelector());
-            patientService.updatePatientOnStore(patient, attrs, storeParam);
-            return patient;
+            if (patient != null) {
+                patientService.updatePatientOnStore(patient, attrs, storeParam);
+                return patient;
+            }
         } catch (NonUniquePatientException e) {
             LOG.info("Could not find unique Patient Record for received MPPS - create new Patient Record", e);
         } catch (Exception e) {
