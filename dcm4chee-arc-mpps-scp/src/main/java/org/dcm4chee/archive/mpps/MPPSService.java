@@ -42,8 +42,10 @@ import org.dcm4che.data.Attributes;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.store.StoreContext;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -59,10 +61,10 @@ public interface MPPSService {
             String iuid, Attributes attrs, MPPSService service)
             throws DicomServiceException;
 
-    Patient findPatient(Attributes attrs) throws DicomServiceException;
+    Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)
+            throws DicomServiceException;
 
-    void updatePatient(Patient patient, Attributes attrs, StoreParam storeParam);
-
-    Patient createPatient(Attributes attrs, StoreParam storeParam);
+    void checkIncorrectWorklistEntrySelected(StoreContext context, MPPS mpps,
+            Instance inst);
 
 }

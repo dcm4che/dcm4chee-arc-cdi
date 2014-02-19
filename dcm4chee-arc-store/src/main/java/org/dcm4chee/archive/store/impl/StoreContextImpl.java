@@ -39,11 +39,11 @@
 package org.dcm4chee.archive.store.impl;
 
 import java.nio.file.Path;
+import java.util.HashMap;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
@@ -65,7 +65,7 @@ public class StoreContextImpl implements StoreContext {
     private StoreAction storeAction;
     private Instance instance;
     private FileRef fileRef;
-    private MPPS mpps;
+    private HashMap<String,Object> properties = new HashMap<String,Object>();
 
     public StoreContextImpl(StoreSession session) {
         this.session = session;
@@ -177,12 +177,12 @@ public class StoreContextImpl implements StoreContext {
     }
 
     @Override
-    public MPPS getMPPS() {
-        return mpps;
+    public Object getProperty(String key) {
+        return properties .get(key);
     }
 
     @Override
-    public void setMPPS(MPPS mpps) {
-        this.mpps = mpps;
+    public void setProperty(String key, Object value) {
+        properties.put(key, value);
     }
 }

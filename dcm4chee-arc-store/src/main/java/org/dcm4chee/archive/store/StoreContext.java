@@ -43,7 +43,6 @@ import java.nio.file.Path;
 import org.dcm4che.data.Attributes;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.MPPS;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -93,7 +92,8 @@ public interface StoreContext {
 
     void setInstance(Instance instance);
 
-    void setMPPS(MPPS mpps);
+    Object getProperty(String key);
 
-    MPPS getMPPS();
+    void setProperty(String key, Object value);
+
 }

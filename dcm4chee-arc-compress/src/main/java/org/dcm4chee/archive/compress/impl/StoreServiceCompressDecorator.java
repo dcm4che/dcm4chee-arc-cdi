@@ -55,6 +55,7 @@ import org.dcm4che.data.BulkData;
 import org.dcm4che.data.Tag;
 import org.dcm4che.imageio.codec.CompressionRule;
 import org.dcm4che.imageio.codec.CompressionRules;
+import org.dcm4che.net.Status;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4che.util.TagUtils;
 import org.dcm4chee.archive.compress.CompressionService;
@@ -62,13 +63,17 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
-@Default @Decorator @Priority(3000) // Interceptor.Priority.APPLICATION = 2000
-public abstract class StoreServiceCompressDecorator implements StoreService{
+@Decorator @Priority(3000) // Interceptor.Priority.APPLICATION = 2000
+public abstract class StoreServiceCompressDecorator implements StoreService {
+
+    static Logger LOG = LoggerFactory.getLogger(StoreServiceCompressDecorator.class);
 
     // injected StoreService to be decorated
     @Inject @Delegate StoreService storeService;
@@ -78,17 +83,17 @@ public abstract class StoreServiceCompressDecorator implements StoreService{
     private CompressionService compressionService;
 
     @Override
-    public void processSpoolFile(StoreContext context)
+    public void processFile(StoreContext context)
             throws DicomServiceException {
         
         // if possible, compress the file, store on file system and
         // update store context. Otherwise call the standard moveFile.
         if (!compress(context)) {
-            storeService.processSpoolFile(context);
+            storeService.processFile(context);
         }
     }
 
-    private boolean compress(StoreContext context) {
+    private boolean compress(StoreContext context) throws DicomServiceException {
         Attributes attrs = context.getAttributes();
         Object pixelData = attrs.getValue(Tag.PixelData);
         if (!(pixelData instanceof BulkData))
@@ -119,19 +124,18 @@ public abstract class StoreServiceCompressDecorator implements StoreService{
                         context.setFinalFileDigest(
                                 TagUtils.toHexString(digest.digest()));
                     }
+                    LOG.info("{}: M-WRITE compressed file - {}", session, target);
                     return true;
                 } catch (FileAlreadyExistsException e) {
                         target = target.resolveSibling(fileName + '.' + copies++);
+                } catch (IOException e) {
+                    LOG.info("{}: Compression failed - {}", session, e);
+                    Files.delete(target);
+                    return false;
                 }
             }
-        } catch (IOException e) {
-            try {
-                Files.delete(target);
-            } catch (IOException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
-            return false;
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
 

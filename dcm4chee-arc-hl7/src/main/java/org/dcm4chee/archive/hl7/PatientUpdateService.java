@@ -88,9 +88,9 @@ public class PatientUpdateService extends DefaultHL7Service {
                     ArchiveDeviceExtension.class);
             StoreParam storeParam = arcDev.getStoreParam();
             if (mrg == null) {
-                patientService.updateOrCreatePatient(attrs, storeParam);
+                patientService.updateOrCreatePatientByHL7(attrs, storeParam);
             } else {
-                patientService.mergePatient(attrs, mrg, storeParam);
+                patientService.mergePatientByHL7(attrs, mrg, storeParam);
             }
             return super.onMessage(hl7App, conn, s, msh, msg, off, len, mshlen);
         } catch (Exception e) {

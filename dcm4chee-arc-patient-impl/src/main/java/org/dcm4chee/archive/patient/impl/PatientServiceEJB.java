@@ -73,7 +73,6 @@ public class PatientServiceEJB implements PatientService {
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
 
-    @Override
     public Patient findPatient(Attributes attrs, PatientSelector selector)
             throws NonUniquePatientException, PatientMergedException {
         Patient patient = selector.select(createQuery(attrs).getResultList(), attrs);
@@ -83,7 +82,7 @@ public class PatientServiceEJB implements PatientService {
     }
 
     @Override
-    public Patient findPatientFollowMerged(Attributes attrs, PatientSelector selector)
+    public Patient findPatientOnStore(Attributes attrs, PatientSelector selector)
             throws NonUniquePatientException, PatientCircularMergedException {
         Patient patient = selector.select(createQuery(attrs).getResultList(), attrs);
         if (patient != null && patient.getMergedWith() != null)
@@ -126,7 +125,7 @@ public class PatientServiceEJB implements PatientService {
     }
 
     @Override
-    public Patient createPatient(Attributes attrs, StoreParam storeParam) {
+    public Patient createPatientOnStore(Attributes attrs, StoreParam storeParam) {
         Patient patient = new Patient();
         patient.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Patient),
@@ -135,8 +134,14 @@ public class PatientServiceEJB implements PatientService {
         return patient;
     }
 
+
     @Override
-    public void updatePatient(Patient patient, Attributes attrs,
+    public void updatePatientOnStore(Patient patient, Attributes attrs,
+            StoreParam storeParam) {
+        updatePatient(patient, attrs, storeParam, false);
+    }
+
+    private void updatePatient(Patient patient, Attributes attrs,
             StoreParam storeParam, boolean overwriteValues) {
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
@@ -148,24 +153,24 @@ public class PatientServiceEJB implements PatientService {
     }
 
     @Override
-    public Patient updateOrCreatePatient(Attributes attrs, StoreParam storeParam)
+    public Patient updateOrCreatePatientByHL7(Attributes attrs, StoreParam storeParam)
             throws NonUniquePatientException, PatientMergedException {
         //TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Patient patient = findPatient(attrs, selector);
         if (patient == null) {
-            return createPatient(attrs, storeParam);
+            return createPatientOnStore(attrs, storeParam);
         }
         updatePatient(patient, attrs, storeParam, true);
         return patient;
     }
 
     @Override
-    public void mergePatient(Attributes attrs, Attributes priorAttrs,
+    public void mergePatientByHL7(Attributes attrs, Attributes priorAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
             PatientMergedException, PatientCircularMergedException {
-        Patient prior = updateOrCreatePatient(priorAttrs, storeParam);
-        Patient pat = updateOrCreatePatient(attrs, storeParam);
+        Patient prior = updateOrCreatePatientByHL7(priorAttrs, storeParam);
+        Patient pat = updateOrCreatePatientByHL7(attrs, storeParam);
         mergePatient(pat, prior);
     }
 

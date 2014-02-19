@@ -47,7 +47,6 @@ import javax.persistence.EntityManager;
 import org.dcm4che.data.Attributes;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
@@ -80,61 +79,57 @@ public interface StoreService {
 
     void coerceAttributes(StoreContext context) throws DicomServiceException;
 
-    void processSpoolFile(StoreContext context) throws DicomServiceException;
+    void processFile(StoreContext context) throws DicomServiceException;
+
+    Path calcStorePath(StoreContext context);
 
     void updateDB(StoreContext context) throws DicomServiceException;
 
     void updateDB(EntityManager em, StoreContext context)
             throws DicomServiceException;
 
-    Instance findInstance(EntityManager em, StoreContext context)
+    Instance findOrCreateInstance(EntityManager em, StoreContext context)
             throws DicomServiceException;
 
-    Series findSeries(EntityManager em, StoreContext context)
+    Series findOrCreateSeries(EntityManager em, StoreContext context)
             throws DicomServiceException;
 
-    Study findStudy(EntityManager em, StoreContext context)
+    Study findOrCreateStudy(EntityManager em, StoreContext context)
             throws DicomServiceException;
 
-    Patient findPatient(EntityManager em, StoreContext context)
+    Patient findOrCreatePatient(EntityManager em, StoreContext context)
+            throws DicomServiceException;
+
+    StoreAction instanceExists(EntityManager em, StoreContext context,
+            Instance instance) throws DicomServiceException;
+
+    Instance createInstance(EntityManager em, StoreContext context)
+            throws DicomServiceException;
+
+    Series createSeries(EntityManager em, StoreContext context)
+            throws DicomServiceException;
+
+    Study createStudy(EntityManager em, StoreContext context)
             throws DicomServiceException;
 
     Patient createPatient(EntityManager em, StoreContext context)
             throws DicomServiceException;
 
-    Study createStudy(EntityManager em, StoreContext context, Patient patient)
+    void updateInstance(EntityManager em, StoreContext context, Instance inst)
             throws DicomServiceException;
 
-    Series createSeries(EntityManager em, StoreContext context, Study study)
+    void updateSeries(EntityManager em, StoreContext context, Series series)
             throws DicomServiceException;
 
-    Instance createInstance(EntityManager em, StoreContext context2,
-            Series series) throws DicomServiceException;
-
-    FileRef createFileRef(EntityManager em, StoreContext context,
-            Instance instance);
+    void updateStudy(EntityManager em, StoreContext context, Study study)
+            throws DicomServiceException;
 
     void updatePatient(EntityManager em, StoreContext context, Patient patient);
-
-    void updateStudy(EntityManager em, StoreContext context, Study study);
-
-    void updateSeries(EntityManager em, StoreContext context, Series series);
-
-    void updateInstance(EntityManager em, StoreContext context, Instance inst);
-
-    StoreAction instanceExists(EntityManager em, StoreContext context,
-            Instance prevInst) throws DicomServiceException;
 
     void updateCoercedAttributes(StoreContext context);
 
     void cleanup(StoreContext context);
 
-    void checkIncorrectWorklistEntrySelected(EntityManager em,
-            StoreContext context, Instance inst, MPPS mpps);
-
-    MPPS findMPPS(EntityManager em, StoreContext context, Instance instance);
-
     void fireStoreEvent(StoreContext context);
 
-    Path calcStorePath(StoreContext context);
 }

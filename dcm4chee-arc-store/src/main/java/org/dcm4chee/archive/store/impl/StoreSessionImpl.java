@@ -43,6 +43,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 
+import org.dcm4che.net.Device;
 import org.dcm4che.net.Status;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -66,7 +67,6 @@ public class StoreSessionImpl implements StoreSession {
     private final MessageDigest messageDigest;
     private FileSystem storageFileSystem;
     private Path spoolDirectory;
-    private MPPS cachedMPPS;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
 
     public StoreSessionImpl(String name, StoreService storeService,
@@ -85,6 +85,11 @@ public class StoreSessionImpl implements StoreSession {
         } catch (NoSuchAlgorithmException e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
+    }
+
+    @Override
+    public Device getDevice() {
+        return arcAE.getApplicationEntity().getDevice();
     }
 
     @Override
@@ -140,16 +145,6 @@ public class StoreSessionImpl implements StoreSession {
     @Override
     public MessageDigest getMessageDigest() {
         return messageDigest;
-    }
-
-    @Override
-    public MPPS getCachedMPPS() {
-        return cachedMPPS;
-    }
-
-    @Override
-    public void setCachedMPPS(MPPS mpps) {
-        this.cachedMPPS = mpps;
     }
 
     @Override

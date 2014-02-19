@@ -108,14 +108,13 @@ public class IANSCUImpl implements IANSCU {
         ApplicationEntity ae = event.getApplicationEntity();
         MPPS mpps = event.getPerformedProcedureStep();
         ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-        if (arcAE == null || arcAE.getIANDestinations().length == 0
-                || isIncorrectWorklistEntrySelected(mpps))
-            return;
-
-        IANBuilder builder = createIANBuilder(mpps);
-        if (builder.numberOfOutstandingInstances() == 0)
-            scheduleSendIAN(ae.getAETitle(), arcAE.getIANDestinations(),
-                    builder.getIAN());
+        if (arcAE != null && arcAE.getIANDestinations().length > 0
+                && !isIncorrectWorklistEntrySelected(mpps)) {
+            IANBuilder builder = createIANBuilder(mpps);
+            if (builder.numberOfOutstandingInstances() == 0)
+                scheduleSendIAN(ae.getAETitle(), arcAE.getIANDestinations(),
+                        builder.getIAN());
+        }
     }
 
     private boolean isIncorrectWorklistEntrySelected(MPPS mpps) {
@@ -169,7 +168,7 @@ public class IANSCUImpl implements IANSCU {
 
         StoreSession storeSession = storeContext.getStoreSession();
         ArchiveAEExtension arcAE = storeSession.getArchiveAEExtension();
-        MPPS mpps = storeContext.getMPPS();
+        MPPS mpps = (MPPS) storeContext.getProperty(MPPS.class.getName());
         if (arcAE == null || arcAE.getIANDestinations().length == 0
                 || mpps == null || mpps.getStatus() == MPPS.Status.IN_PROGRESS
                 || isIncorrectWorklistEntrySelected(mpps))

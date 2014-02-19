@@ -82,13 +82,11 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
@@ -301,7 +299,7 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         try {
             service.coerceAttributes(context);
-            service.processSpoolFile(context);
+            service.processFile(context);
             service.updateDB(context);
             service.updateCoercedAttributes(context);
             service.fireStoreEvent(context);
@@ -337,7 +335,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void processSpoolFile(StoreContext context) throws DicomServiceException {
+    public void processFile(StoreContext context) throws DicomServiceException {
         try {
             StoreSession session = context.getStoreSession();
             StoreService service = session.getStoreService();
@@ -390,78 +388,11 @@ public class StoreServiceImpl implements StoreService {
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
-        Instance instance = service.findInstance(em, context);
-        StoreAction action;
-        if (instance != null) {
-            action = service.instanceExists(em, context, instance);
-            LOG.info("{}: Instance[pk={},iuid={}] already exists - {}",
-                    session, instance.getPk(), instance.getSopInstanceUID(), action);
-        } else {
-            action = StoreAction.STORE;
-        }
-        switch (action) {
-        case IGNORE:
-            break;
-        case REPLACE:
-            instance.setReplaced(true);
-        case STORE:
-            instance = createInstance(em, context);
-            MPPS mpps = service.findMPPS(em, context, instance);
-            service.checkIncorrectWorklistEntrySelected(em, context, instance, mpps);
-            context.setMPPS(mpps);
-            context.setFileRef(service.createFileRef(em, context, instance));
-            break;
-        case RESTORE:
-            updatePatientStudySeriesInstance(em, context, instance);
-            context.setFileRef(service.createFileRef(em, context, instance));
-            break;
-        }
+        Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
-        context.setStoreAction(action);
-    }
-
-    @Override
-    public MPPS findMPPS(EntityManager em, StoreContext context,
-            Instance inst) {
-        StoreSession session = context.getStoreSession();
-        Series series = inst.getSeries();
-        String ppsiuid = series.getPerformedProcedureStepInstanceUID();
-        String ppscuid = series.getPerformedProcedureStepClassUID();
-        if (!UID.ModalityPerformedProcedureStepSOPClass.equals(ppscuid)
-                 || ppsiuid == null) {
-            return null;
+        if (context.getStoreAction() != StoreAction.IGNORE) {
+            context.setFileRef(createFileRef(em, context, instance));
         }
-
-        MPPS mpps = session.getCachedMPPS();
-        if (mpps == null || !mpps.getSopInstanceUID().equals(ppsiuid)) {
-            try {
-                mpps = em.createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UID, MPPS.class)
-                        .setParameter(1, ppsiuid)
-                        .getSingleResult();
-                session.setCachedMPPS(mpps);
-            } catch (NoResultException e) {
-                return null;
-            }
-        }
-        return mpps;
-    }
-
-    @Override
-    public void checkIncorrectWorklistEntrySelected(EntityManager em,
-            StoreContext context, Instance instance, MPPS mpps) {
-        StoreSession session = context.getStoreSession();
-        StoreParam storeParam = session.getStoreParam();
-        Code code = (Code) storeParam.getIncorrectWorklistEntrySelectedCode();
-        if (mpps == null
-                || mpps.getStatus() != MPPS.Status.DISCONTINUED
-                || code == null
-                || !code.equals(mpps.getDiscontinuationReasonCode()))
-            return;
-
-        instance.setRejectionNoteCode(code);
-        instance.setAvailability(Availability.UNAVAILABLE);
-        LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
-                session, instance.getPk(), instance.getSopInstanceUID(), code);
     }
 
     @Override
@@ -523,119 +454,103 @@ public class StoreServiceImpl implements StoreService {
         return false;
     }
 
-    private Instance createInstance(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Series series = service.findSeries(em, context);
-        if (series == null) {
-            Study study = service.findStudy(em, context);
-            if (study == null) {
-                Patient patient = service.findPatient(em, context);
-                if (patient == null) {
-                    patient = service.createPatient(em, context);
-                } else {
-                    service.updatePatient(em, context, patient);
-                }
-                study = service.createStudy(em, context, patient);
-            } else {
-                Patient patient = study.getPatient();
-                service.updatePatient(em, context, patient);
-                service.updateStudy(em, context, study);
-            }
-            series = service.createSeries(em, context, study);
-        } else {
-            Study study = series.getStudy();
-            Patient patient = study.getPatient();
-            service.updatePatient(em, context, patient);
-            service.updateStudy(em, context, study);
-            service.updateSeries(em, context, series);
-        }
-        return service.createInstance(em, context, series);
-    }
-
-    private void updatePatientStudySeriesInstance(EntityManager em,
-            StoreContext context, Instance inst) {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Series series = inst.getSeries();
-        Study study = series.getStudy();
-        Patient patient = study.getPatient();
-        service.updatePatient(em, context, patient);
-        service.updateStudy(em, context, study);
-        service.updateSeries(em, context, series);
-        service.updateInstance(em, context, inst);
-    }
-
     @Override
-    public Instance findInstance(EntityManager em, StoreContext context)
+    public Instance findOrCreateInstance(EntityManager em, StoreContext context)
             throws DicomServiceException {
+        StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         try {
             Attributes attrs = context.getAttributes();
-            return em.createNamedQuery(
+            Instance inst = em.createNamedQuery(
                     Instance.FIND_BY_SOP_INSTANCE_UID, Instance.class)
                  .setParameter(1, attrs.getString(Tag.SOPInstanceUID))
                  .getSingleResult();
+            StoreAction action = service.instanceExists(em, context, inst);
+            LOG.info("{}: Instance[pk={},iuid={}] already exists - {}",
+                    session, inst.getPk(), inst.getSopInstanceUID(), action);
+            context.setStoreAction(action);
+            switch (action) {
+            case RESTORE:
+                service.updateInstance(em, context, inst);
+            case IGNORE:
+                return inst;
+            case REPLACE:
+                inst.setReplaced(true);
+           }
         } catch (NoResultException e) {
-            return null;
+            context.setStoreAction(StoreAction.STORE);
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
+        return service.createInstance(em, context);
     }
 
     @Override
-    public Series findSeries(EntityManager em, StoreContext context)
+    public Series findOrCreateSeries(EntityManager em, StoreContext context)
             throws DicomServiceException {
+        StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         try {
-            return em.createNamedQuery(
+            Series series = em.createNamedQuery(
                     Series.FIND_BY_SERIES_INSTANCE_UID, Series.class)
                  .setParameter(1, attrs.getString(Tag.SeriesInstanceUID))
                  .getSingleResult();
+            service.updateSeries(em, context, series);
+            return series;
         } catch (NoResultException e) {
-            return null;
+            return service.createSeries(em, context);
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
 
     @Override
-    public Study findStudy(EntityManager em, StoreContext context)
+    public Study findOrCreateStudy(EntityManager em, StoreContext context)
             throws DicomServiceException {
+        StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         try {
-            return em.createNamedQuery(
+            Study study = em.createNamedQuery(
                     Study.FIND_BY_STUDY_INSTANCE_UID, Study.class)
                  .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
                  .getSingleResult();
+            service.updateStudy(em, context, study);
+            return study;
         } catch (NoResultException e) {
-            return null;
+            return service.createStudy(em, context);
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
 
     @Override
-    public Patient findPatient(EntityManager em, StoreContext context)
+    public Patient findOrCreatePatient(EntityManager em, StoreContext context)
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         try {
-            return patientService.findPatientFollowMerged(
+            Patient patient = patientService.findPatientOnStore(
                     context.getAttributes(), new IDPatientSelector());
+            if (patient != null) {
+                service.updatePatient(em, context, patient);
+                return patient;
+            }
         } catch (NonUniquePatientException e) {
             LOG.info("{}: Could not find unique Patient Record for received Study",
                     session, e);
-            return null;
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
+        return service.createPatient(em, context);
     }
 
     @Override
     public Patient createPatient(EntityManager em, StoreContext context)
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Patient patient = patientService.createPatient(
+        Patient patient = patientService.createPatientOnStore(
                 context.getAttributes(), context.getStoreSession().getStoreParam());
         LOG.info("{}: Create Patient[pk={},id={},issuer={}]", session,
                 patient.getPk(), patient.getPatientID(), patient.getIssuerOfPatientID());
@@ -643,14 +558,15 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public Study createStudy(EntityManager em, StoreContext context,
-            Patient patient) throws DicomServiceException {
+    public Study createStudy(EntityManager em, StoreContext context)
+            throws DicomServiceException {
         StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         FileSystem fs = session.getStorageFileSystem();
         Study study = new Study();
-        study.setPatient(patient);
+        study.setPatient(service.findOrCreatePatient(em, context));
         study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
         study.setModalitiesInStudy(attrs.getString(Tag.Modality, null));
         study.setSOPClassesInStudy(attrs.getString(Tag.SOPClassUID, null));
@@ -666,14 +582,15 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public Series createSeries(EntityManager em, StoreContext context,
-            Study study) throws DicomServiceException {
+    public Series createSeries(EntityManager em, StoreContext context)
+            throws DicomServiceException {
         StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         FileSystem fs = session.getStorageFileSystem();
         Series series = new Series();
-        series.setStudy(study);
+        series.setStudy(service.findOrCreateStudy(em, context));
         series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
         series.setRequestAttributes(createRequestAttributes(
                 data.getSequence(Tag.RequestAttributesSequence),
@@ -692,14 +609,15 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public Instance createInstance(EntityManager em, StoreContext context,
-            Series series) throws DicomServiceException {
+    public Instance createInstance(EntityManager em, StoreContext context)
+            throws DicomServiceException {
         StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         FileSystem fs = session.getStorageFileSystem();
         Instance inst = new Instance();
-        inst.setSeries(series);
+        inst.setSeries(service.findOrCreateSeries(em, context));
         inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
         inst.setVerifyingObservers(createVerifyingObservers(
                 data.getSequence(Tag.VerifyingObserverSequence),
@@ -718,8 +636,7 @@ public class StoreServiceImpl implements StoreService {
         return inst;
     }
 
-    @Override
-    public FileRef createFileRef(EntityManager em, StoreContext context,
+    private FileRef createFileRef(EntityManager em, StoreContext context,
             Instance instance) {
         StoreSession session = context.getStoreSession();
         FileSystem fs = session.getStorageFileSystem();
@@ -745,15 +662,15 @@ public class StoreServiceImpl implements StoreService {
     public void updatePatient(EntityManager em, StoreContext context,
             Patient patient) {
         StoreSession session = context.getStoreSession();
-        patientService.updatePatient(patient,
+        patientService.updatePatientOnStore(patient,
                 context.getAttributes(),
-                session.getStoreParam(),
-                false);
+                session.getStoreParam());
     }
 
     @Override
     public void updateStudy(EntityManager em, StoreContext context, Study study) {
         StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         study.addModalityInStudy(data.getString(Tag.Modality, null));
@@ -770,12 +687,14 @@ public class StoreServiceImpl implements StoreService {
                     session, study.getPk(), study.getStudyInstanceUID(),
                     studyAttrs, modified);
         }
+        service.updatePatient(em, context, study.getPatient());
     }
 
     @Override
     public void updateSeries(EntityManager em, StoreContext context,
-            Series series) {
+            Series series) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         series.resetNumberOfInstances();
@@ -790,12 +709,14 @@ public class StoreServiceImpl implements StoreService {
                     session, series.getPk(), series.getSeriesInstanceUID(),
                     seriesAttrs, modified);
         }
+        service.updateStudy(em, context, series.getStudy());
     }
 
     @Override
     public void updateInstance(EntityManager em, StoreContext context,
-            Instance inst) {
+            Instance inst) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         Attributes instAttrs = inst.getAttributes();
@@ -808,6 +729,7 @@ public class StoreServiceImpl implements StoreService {
                     session, inst.getPk(), inst.getSopInstanceUID(),
                     instAttrs, modified);
         }
+        service.updateSeries(em, context, inst.getSeries());
     }
 
     private Collection<RequestAttributes> createRequestAttributes(

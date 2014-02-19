@@ -41,10 +41,10 @@ package org.dcm4chee.archive.store;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 
+import org.dcm4che.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.FileSystem;
-import org.dcm4chee.archive.entity.MPPS;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -72,11 +72,9 @@ public interface StoreSession {
 
     StoreParam getStoreParam();
 
-    MPPS getCachedMPPS();
-
-    void setCachedMPPS(MPPS mpps);
-
     Object getProperty(String key);
 
     void setProperty(String key, Object value);
+
+    Device getDevice();
 }

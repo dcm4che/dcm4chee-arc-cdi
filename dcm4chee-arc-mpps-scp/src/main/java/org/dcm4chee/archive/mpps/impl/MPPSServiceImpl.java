@@ -69,6 +69,9 @@ import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
+import org.dcm4chee.archive.store.StoreAction;
+import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,13 +104,7 @@ public class MPPSServiceImpl implements MPPSService {
             throw new DicomServiceException(Status.DuplicateSOPinstance)
                 .setUID(Tag.AffectedSOPInstanceUID, iuid);
         } catch (NoResultException e) {}
-        Patient patient = service.findPatient(attrs);
-        StoreParam storeParam = arcAE.getStoreParam();
-        if (patient == null) {
-            patient = service.createPatient(attrs, storeParam);
-        } else {
-            service.updatePatient(patient, attrs, storeParam);
-        }
+        Patient patient = service.findOrCreatePatient(attrs, arcAE.getStoreParam());
         MPPS mpps = new MPPS();
         mpps.setSopInstanceUID(iuid);
         mpps.setAttributes(attrs);
@@ -151,14 +148,40 @@ public class MPPSServiceImpl implements MPPSService {
         return pps;
     }
 
-    private void checkIncorrectWorklistEntrySelected(String prompt, 
-            MPPS pps, Device device) {
+    private boolean isIncorrectWorklistEntrySelected(MPPS mpps, Device device) {
+        if (mpps == null || mpps.getStatus() != MPPS.Status.DISCONTINUED)
+            return false;
+        
+        Code reasonCode = mpps.getDiscontinuationReasonCode();
+        if (reasonCode == null)
+            return false;
+
         ArchiveDeviceExtension arcDev = 
                 device.getDeviceExtension(ArchiveDeviceExtension.class);
-        Code code = arcDev != null
-                ? (Code) arcDev.getIncorrectWorklistEntrySelectedCode()
-                : null;
-        if (code == null || !code.equals(pps.getDiscontinuationReasonCode()))
+        if (arcDev == null)
+            return false;
+
+        return reasonCode.equals((Code) arcDev.getIncorrectWorklistEntrySelectedCode());
+    }
+
+    @Override
+    public void checkIncorrectWorklistEntrySelected(StoreContext context,
+            MPPS mpps, Instance inst) {
+        StoreSession session = context.getStoreSession();
+        if (context.getStoreAction() == StoreAction.IGNORE
+                 || !isIncorrectWorklistEntrySelected(mpps, session.getDevice()))
+            return;
+
+        inst.setRejectionNoteCode(mpps.getDiscontinuationReasonCode());
+        inst.setAvailability(Availability.UNAVAILABLE);
+        LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
+                session, inst.getPk(), inst.getSopInstanceUID(),
+                mpps.getDiscontinuationReasonCode());
+    }
+
+    private void checkIncorrectWorklistEntrySelected(String prompt, 
+            MPPS pps, Device device) {
+        if (!isIncorrectWorklistEntrySelected(pps, device))
             return;
 
         HashMap<String,Attributes> map = new HashMap<String,Attributes>();
@@ -193,13 +216,13 @@ public class MPPSServiceImpl implements MPPSService {
                                 study.getStudyInstanceUID(), cuidInPPS,
                                 pps.getSopInstanceUID());
                     }
-                    inst.setRejectionNoteCode(code);
+                    inst.setRejectionNoteCode(pps.getDiscontinuationReasonCode());
                     inst.setAvailability(Availability.UNAVAILABLE);
                     series.resetNumberOfInstances();
                     study.resetNumberOfInstances();
                     LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
                             prompt, inst.getPk(), iuid,
-                            code);
+                            pps.getDiscontinuationReasonCode());
                 }
             }
             map.clear();
@@ -215,25 +238,17 @@ public class MPPSServiceImpl implements MPPSService {
     }
 
     @Override
-    public Patient findPatient(Attributes attrs)
+    public Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)
             throws DicomServiceException {
         try {
-            return patientService.findPatientFollowMerged(attrs, new IDPatientSelector());
+            Patient patient = patientService.findPatientOnStore(attrs, new IDPatientSelector());
+            patientService.updatePatientOnStore(patient, attrs, storeParam);
+            return patient;
         } catch (NonUniquePatientException e) {
             LOG.info("Could not find unique Patient Record for received MPPS - create new Patient Record", e);
-            return null;
         } catch (Exception e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }
-    }
-
-    @Override
-    public void updatePatient(Patient patient, Attributes attrs, StoreParam storeParam) {
-        patientService.updatePatient(patient, attrs, storeParam, false);
-    }
-
-    @Override
-    public Patient createPatient(Attributes attrs, StoreParam storeParam) {
-        return patientService.createPatient(attrs, storeParam);
+        return patientService.createPatientOnStore(attrs, storeParam);
     }
 }
