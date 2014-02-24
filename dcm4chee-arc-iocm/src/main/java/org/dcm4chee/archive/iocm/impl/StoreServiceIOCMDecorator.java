@@ -41,7 +41,7 @@ package org.dcm4chee.archive.iocm.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map.Entry;
+import java.util.HashSet;
 
 import javax.annotation.Priority;
 import javax.decorator.Decorator;
@@ -50,18 +50,15 @@ import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Tag;
-import org.dcm4che.data.UID;
 import org.dcm4che.net.Status;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.iocm.RejectionEvent;
@@ -85,10 +82,6 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
     public static int CLASS_INSTANCE_CONFLICT = Status.CannotUnderstand + 0x803;
     public static int NO_SUCH_OBJECT_INSTANCE = Status.CannotUnderstand + 0x804;
     public static int DUPLICATE_REJECTION = Status.CannotUnderstand + 0x805;
-    public static int NO_MPPS_REF = Status.CannotUnderstand + 0x806;
-    public static int NO_SUCH_MPPS = Status.CannotUnderstand + 0x807;
-    public static int MPPS_IN_PROGRESS = Status.CannotUnderstand + 0x808;
-    public static int MPPS_REMAINING_INSTANCES = Status.CannotUnderstand + 0x809;
 
     static Logger LOG = LoggerFactory.getLogger(StoreServiceIOCMDecorator.class);
 
@@ -139,23 +132,25 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
         RejectionType rejectionType = rejectionTypeOf(
                 inst.getConceptNameCode(), arcDev);
         if (rejectionType != null) {
-            reject(em, context, inst, rejectionType);
-            inst.setAvailability(Availability.UNAVAILABLE);
+            context.setProperty("org.dcm4chee.archive.iocm.ppsiuids",
+                    applyRejectionNote(em, context, inst, rejectionType));
             context.setProperty(RejectionType.class.getName(), rejectionType);
+            inst.setAvailability(Availability.UNAVAILABLE);
         }
         return inst;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void fireStoreEvent(StoreContext context) {
         storeService.fireStoreEvent(context);
         RejectionType rejectionType =
                 (RejectionType) context.getProperty(RejectionType.class.getName());
-        if (rejectionType != null)
-            event.fire(new RejectionEvent(context, rejectionType,
-                    (Collection<MPPS>) context.getProperty(
-                            "org.dcm4chee.archive.iocm.RejectedMPPS")));
+        if (rejectionType != null) {
+            @SuppressWarnings("unchecked")
+            Collection<String> ppsIUIDs = (Collection<String>)
+                    context.getProperty("org.dcm4chee.archive.iocm.ppsiuids");
+            event.fire(new RejectionEvent(context, rejectionType, ppsIUIDs));
+        }
     }
 
     private RejectionType rejectionTypeOf(Code code,
@@ -175,8 +170,10 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
         return null;
     }
 
-    private void reject(EntityManager em, StoreContext context, Instance rejectionNote,
-            RejectionType rejectionType) throws DicomServiceException {
+    private Collection<String> applyRejectionNote(EntityManager em, StoreContext context,
+            Instance rejectionNote, RejectionType rejectionType)
+                    throws DicomServiceException {
+        HashSet<String> ppsIUIDs = new HashSet<String>();
         Code rejectionCode = rejectionNote.getConceptNameCode();
         LOG.info("{}: Process Rejection Note[pk={}, iuid={}, code={}]",
                 context.getStoreSession(),
@@ -184,14 +181,13 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
                 rejectionNote.getSopInstanceUID(),
                 rejectionCode);
         Collection<Instance> rejectedInstances = queryRejectedInstances(em, context);
-        if (rejectionType == RejectionType.IncorrectModalityWorklistEntry)
-            context.setProperty("org.dcm4chee.archive.iocm.RejectedMPPS",
-                    queryRejectedMPPS(em, context, rejectedInstances));
         for (Instance rejectedInst : rejectedInstances) {
             rejectedInst.setRejectionNoteCode(rejectionCode);
             rejectedInst.setAvailability(Availability.UNAVAILABLE);
             Series series = rejectedInst.getSeries();
             Study study = series.getStudy();
+            if (series.getPerformedProcedureStepInstanceUID() != null)
+                ppsIUIDs.add(series.getPerformedProcedureStepInstanceUID());
             series.resetNumberOfInstances();
             study.resetNumberOfInstances();
             LOG.info("{}: Reject Instance[pk={}, iuid={}] for {}]",
@@ -200,6 +196,7 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
                     rejectedInst.getSopInstanceUID(),
                     rejectionCode);
         }
+        return ppsIUIDs;
     }
 
     private Collection<Instance> queryRejectedInstances(EntityManager em,
@@ -212,7 +209,7 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
                 .getSequence(Tag.CurrentRequestedProcedureEvidenceSequence)) {
             if (!studyIUID.equals(refStudy.getString(Tag.StudyInstanceUID))) {
                 LOG.info("{}: Study[iuid={}] of Rejection Note does not match "
-                        + "Study[iuid={}] of referenced Instances - rejection fails",
+                        + "Study[iuid={}] of referenced Instances - Rejection Note not applied",
                         context.getStoreSession(),
                         studyIUID, refStudy.getString(Tag.StudyInstanceUID));
                 throw new DicomServiceException(STUDY_MISMATCH,
@@ -233,7 +230,7 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
                         if (!inst.getSopClassUID().equals(
                                 refSOP.getString(Tag.ReferencedSOPClassUID))) {
                             LOG.info("{}: SOP Class of referenced Instance[iuid={}, cuid={}] "
-                                    + "does not match referenced SOP Class[cuid={}] - rejection fails",
+                                    + "does not match referenced SOP Class[cuid={}] - Rejection Note not applied",
                                     context.getStoreSession(),
                                     inst.getSopInstanceUID(), inst.getSopClassUID(),
                                     refSOP.getString(Tag.ReferencedSOPClassUID)
@@ -255,7 +252,7 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
                     }
                 }
                 if (!refSOPs.isEmpty()) {
-                    LOG.info("{}: {} referenced Instance(s) not found - rejection fails",
+                    LOG.info("{}: {} referenced Instance(s) not found - Rejection Note not applied",
                             context.getStoreSession(), refSOPs.size());
                     throw new DicomServiceException(NO_SUCH_OBJECT_INSTANCE,
                             "referenced SOP instance does not exists");
@@ -263,71 +260,6 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
             }
         }
         return result;
-    }
-
-    private Collection<MPPS> queryRejectedMPPS(EntityManager em, StoreContext context,
-            Collection<Instance> c) throws DicomServiceException {
-        ArrayList<MPPS> mppsList = new ArrayList<MPPS>();
-        HashMap<String,HashMap<String,Attributes>> refSOPsByMPPS =
-                new HashMap<String,HashMap<String,Attributes>>();
-        for (Instance inst : c) {
-            Series series = inst.getSeries();
-            String ppsiuid = series.getPerformedProcedureStepInstanceUID();
-            String ppscuid = series.getPerformedProcedureStepClassUID();
-            if (ppsiuid == null 
-                    || !UID.ModalityPerformedProcedureStepSOPClass.equals(ppscuid)) {
-                LOG.info("{}: referenced Instance[iuid={}, cuid={}] "
-                        + "does not reference MPPS - rejection fails",
-                        context.getStoreSession(),
-                        inst.getSopInstanceUID(), inst.getSopClassUID());
-                throw new DicomServiceException(NO_MPPS_REF,
-                        "referenced SOP instance does not reference MPPS");
-            }
-            HashMap<String, Attributes> refSOPs = refSOPsByMPPS.get(ppsiuid);
-            if (refSOPs == null) {
-                MPPS mpps;
-                try {
-                    mpps = em.createNamedQuery(
-                            MPPS.FIND_BY_SOP_INSTANCE_UID, MPPS.class)
-                        .setParameter(1, ppsiuid)
-                        .getSingleResult();
-                } catch (NoResultException e) {
-                    LOG.info("{}: MPPS[uid={}] of referenced Instance[iuid={}, cuid={}] "
-                            + "does not exists - rejection fails",
-                            context.getStoreSession(), ppsiuid,
-                            inst.getSopInstanceUID(), inst.getSopClassUID());
-                    throw new DicomServiceException(NO_SUCH_MPPS,
-                            "MPPS of rejected SOP instance does not exists");
-                }
-                if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
-                    throw new DicomServiceException(MPPS_IN_PROGRESS,
-                            "MPPS of rejected SOP instance still in progress");
-                refSOPs = new HashMap<String, Attributes>();
-                for (Attributes refSeries : mpps.getAttributes()
-                        .getSequence(Tag.PerformedSeriesSequence)) {
-                    for (Attributes refSOP
-                            : refSeries.getSequence(Tag.ReferencedImageSequence)) {
-                        refSOPs.put(refSOP.getString(Tag.ReferencedSOPInstanceUID), refSOP);
-                    }
-                    for (Attributes refSOP
-                            : refSeries.getSequence(Tag.ReferencedNonImageCompositeSOPInstanceSequence)) {
-                        refSOPs.put(refSOP.getString(Tag.ReferencedSOPInstanceUID), refSOP);
-                    }
-                }
-                refSOPsByMPPS.put(ppsiuid, refSOPs);
-                mppsList.add(mpps);
-            }
-            refSOPs.remove(inst.getSopInstanceUID());
-        }
-        for (Entry<String, HashMap<String, Attributes>> entry : refSOPsByMPPS.entrySet()) {
-            if (!entry.getValue().isEmpty()) {
-                LOG.info("{}: {} Instances referenced by MPPS[uid={}] not rejected - rejection fails",
-                        context.getStoreSession(), entry.getValue().size(), entry.getKey());
-                throw new DicomServiceException(MPPS_REMAINING_INSTANCES,
-                        "Not all Instances referenced by MPPS rejected");
-            }
-        }
-        return mppsList;
     }
 
 }
