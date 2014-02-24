@@ -222,6 +222,7 @@
     <module>dcm4chee-arc-ian-scu</module>
     <module>dcm4chee-arc-hl7</module>
     <module>dcm4chee-arc-qido</module>
+    <module>dcm4chee-arc-iocm</module>
     <module>dcm4chee-arc-web</module>
   </modules>
 </project>

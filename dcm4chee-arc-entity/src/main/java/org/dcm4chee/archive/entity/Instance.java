@@ -97,6 +97,20 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "FROM Instance i "
             + "WHERE i.series.seriesInstanceUID = ?1 AND i.replaced = FALSE"),
 @NamedQuery(
+    name="Instance.sopInstanceReferenceByStudyInstanceUID",
+    query="SELECT NEW org.dcm4chee.archive.entity.SOPInstanceReference("
+            + "i.series.study.studyInstanceUID, "
+            + "i.series.performedProcedureStepClassUID, "
+            + "i.series.performedProcedureStepInstanceUID, "
+            + "i.series.seriesInstanceUID, "
+            + "i.sopClassUID, "
+            + "i.sopInstanceUID, "
+            + "i.availability,"
+            + "i.retrieveAETs,"
+            + "i.externalRetrieveAET) "
+            + "FROM Instance i "
+            + "WHERE i.series.study.studyInstanceUID = ?1 AND i.replaced = FALSE"),
+@NamedQuery(
     name="Instance.instanceFileRefBySOPInstanceUID",
     query="SELECT NEW org.dcm4chee.archive.entity.InstanceFileRef("
             + "i.series.pk, "

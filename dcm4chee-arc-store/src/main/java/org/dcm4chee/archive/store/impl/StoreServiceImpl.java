@@ -484,6 +484,8 @@ public class StoreServiceImpl implements StoreService {
            }
         } catch (NoResultException e) {
             context.setStoreAction(StoreAction.STORE);
+        } catch (DicomServiceException e) {
+            throw e;
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }

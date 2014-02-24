@@ -38,8 +38,6 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.util.EnumMap;
-
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 

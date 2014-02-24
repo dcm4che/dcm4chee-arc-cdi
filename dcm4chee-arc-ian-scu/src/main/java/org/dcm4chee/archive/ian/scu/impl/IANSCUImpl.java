@@ -72,6 +72,8 @@ import org.dcm4chee.archive.entity.SOPInstanceReference;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.ian.scu.IANSCU;
+import org.dcm4chee.archive.iocm.RejectionEvent;
+import org.dcm4chee.archive.iocm.RejectionType;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.store.StoreAction;
@@ -168,13 +170,17 @@ public class IANSCUImpl implements IANSCU {
 
         StoreSession storeSession = storeContext.getStoreSession();
         ArchiveAEExtension arcAE = storeSession.getArchiveAEExtension();
-        MPPS mpps = (MPPS) storeContext.getProperty(MPPS.class.getName());
-        if (arcAE == null || arcAE.getIANDestinations().length == 0
-                || mpps == null || mpps.getStatus() == MPPS.Status.IN_PROGRESS
-                || isIncorrectWorklistEntrySelected(mpps))
+        if (arcAE == null || arcAE.getIANDestinations().length == 0)
             return;
 
-        
+        MPPS mpps = (MPPS) storeContext.getProperty(MPPS.class.getName());
+        if (mpps != null && mpps.getStatus() != MPPS.Status.IN_PROGRESS
+                && !isIncorrectWorklistEntrySelected(mpps))
+            scheduleIANForMPPS(storeContext, mpps);
+    }
+
+    private void scheduleIANForMPPS(StoreContext storeContext, MPPS mpps) {
+        StoreSession storeSession = storeContext.getStoreSession();
         IANBuilder builder = (IANBuilder) storeSession.getProperty(IANBuilder.class.getName());
         if (builder == null
                 || !builder.getMPPSInstanceUID().equals(mpps.getSopInstanceUID())) {
@@ -194,8 +200,43 @@ public class IANSCUImpl implements IANSCU {
         }
         if (builder.numberOfOutstandingInstances() == 0)
             scheduleSendIAN(storeSession.getLocalAET(),
-                    arcAE.getIANDestinations(),
+                    storeSession.getArchiveAEExtension().getIANDestinations(),
                     builder.getIAN());
+    }
+
+    public void onRejectInstances(@Observes RejectionEvent event) {
+        StoreContext storeContext = event.getStoreContext();
+        StoreSession storeSession = storeContext.getStoreSession();
+        ArchiveAEExtension arcAE = storeSession.getArchiveAEExtension();
+        if (arcAE == null || arcAE.getIANDestinations().length == 0)
+            return;
+
+        Attributes attrs = storeContext.getAttributes();
+        if (event.getRejectionType() == RejectionType.IncorrectModalityWorklistEntry) {
+            for (MPPS mpps : event.getRejectedMPPS()) {
+                scheduleSendIAN(storeSession.getLocalAET(),
+                        storeSession.getArchiveAEExtension().getIANDestinations(),
+                        createIANBuilder(mpps).getIAN());
+            }
+        } else {
+            IANBuilder builder = new IANBuilder();
+            for (SOPInstanceReference sopRef : em.createNamedQuery(
+                            Instance.SOP_INSTANCE_REFERENCE_BY_STUDY_INSTANCE_UID,
+                            SOPInstanceReference.class)
+                        .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
+                        .getResultList()) {
+                builder.addReferencedInstance(
+                        sopRef.studyInstanceUID, 
+                        sopRef.seriesInstanceUID,
+                        sopRef.sopInstanceUID,
+                        sopRef.sopClassUID,
+                        sopRef.availability,
+                        sopRef.getRetrieveAETs());
+            }
+            scheduleSendIAN(storeSession.getLocalAET(),
+                    storeSession.getArchiveAEExtension().getIANDestinations(),
+                    builder.getIAN());
+        }
     }
 
     private void scheduleSendIAN(String localAET, String remoteAET,
