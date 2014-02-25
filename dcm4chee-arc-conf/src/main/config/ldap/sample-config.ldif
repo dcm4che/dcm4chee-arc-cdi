@@ -1,27 +1,5 @@
 version: 1
 
-dn: dc=example,dc=com
-objectClass: dcObject
-objectClass: organization
-o: example
-dc: example
-
-dn: cn=admin,dc=example,dc=com
-objectClass: organizationalRole
-cn: admin
-
-dn: cn=DICOM Configuration,dc=example,dc=com
-objectClass: dicomConfigurationRoot
-cn: DICOM Configuration
-
-dn: cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-objectClass: dicomDevicesRoot
-cn: Devices
-
-dn: cn=Unique AE Titles Registry,cn=DICOM Configuration,dc=example,dc=com
-objectClass: dicomUniqueAETitlesRegistryRoot
-cn: Unique AE Titles Registry
-
 dn: dicomAETitle=DCMQRSCP,cn=Unique AE Titles Registry,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dicomUniqueAETitle
 dicomAETitle: DCMQRSCP
