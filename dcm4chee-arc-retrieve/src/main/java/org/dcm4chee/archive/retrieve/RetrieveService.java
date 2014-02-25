@@ -40,9 +40,9 @@ package org.dcm4chee.archive.retrieve;
 
 import java.util.List;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.IDWithIssuer;
-import org.dcm4che.net.service.InstanceLocator;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.QueryParam;
 
 /**

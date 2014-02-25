@@ -44,8 +44,8 @@ import javax.imageio.stream.ImageInputStream;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
 
-import org.dcm4che.imageio.codec.Decompressor;
-import org.dcm4che.util.SafeClose;
+import org.dcm4che3.imageio.codec.Decompressor;
+import org.dcm4che3.util.SafeClose;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

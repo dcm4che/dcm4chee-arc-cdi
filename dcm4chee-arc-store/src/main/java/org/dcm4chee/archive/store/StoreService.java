@@ -44,8 +44,8 @@ import java.nio.file.Path;
 
 import javax.persistence.EntityManager;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;

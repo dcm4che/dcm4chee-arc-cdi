@@ -51,9 +51,9 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Issuer;
-import org.dcm4che.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Issuer;
+import org.dcm4che3.data.Tag;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -108,7 +108,7 @@ public class OtherPatientID implements Serializable {
                 : new Issuer(issuerOfPatientID);
     }
 
-    public void setIssuerOfPatientID(org.dcm4che.data.Issuer issuerOfPatientID) {
+    public void setIssuerOfPatientID(org.dcm4che3.data.Issuer issuerOfPatientID) {
         this.issuerOfPatientID = issuerOfPatientID != null 
                 ? issuerOfPatientID.toString()
                 : "*";

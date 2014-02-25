@@ -59,11 +59,11 @@ import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Issuer;
-import org.dcm4che.data.PersonName;
-import org.dcm4che.data.Tag;
-import org.dcm4che.soundex.FuzzyStr;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Issuer;
+import org.dcm4che3.data.PersonName;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.AttributeFilter;
 
 /**
@@ -226,7 +226,7 @@ public class Patient implements Serializable {
                 : new Issuer(issuerOfPatientID);
     }
 
-    public void setIssuerOfPatientID(org.dcm4che.data.Issuer issuerOfPatientID) {
+    public void setIssuerOfPatientID(org.dcm4che3.data.Issuer issuerOfPatientID) {
         this.issuerOfPatientID = issuerOfPatientID != null 
                 ? issuerOfPatientID.toString()
                 : "*";

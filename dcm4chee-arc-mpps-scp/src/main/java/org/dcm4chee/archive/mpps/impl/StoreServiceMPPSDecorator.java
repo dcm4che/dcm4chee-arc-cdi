@@ -46,8 +46,8 @@ import javax.interceptor.Interceptor;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 
-import org.dcm4che.data.UID;
-import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Series;

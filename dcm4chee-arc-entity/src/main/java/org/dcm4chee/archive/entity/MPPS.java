@@ -55,8 +55,8 @@ import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>

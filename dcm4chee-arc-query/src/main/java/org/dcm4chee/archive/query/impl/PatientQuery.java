@@ -38,8 +38,8 @@
 
 package org.dcm4chee.archive.query.impl;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.IDWithIssuer;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;

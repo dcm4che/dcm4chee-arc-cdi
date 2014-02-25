@@ -48,14 +48,14 @@ import java.security.MessageDigest;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Tag;
-import org.dcm4che.data.UID;
-import org.dcm4che.data.VR;
-import org.dcm4che.imageio.codec.CompressionRule;
-import org.dcm4che.imageio.codec.Compressor;
-import org.dcm4che.io.DicomOutputStream;
-import org.dcm4che.util.SafeClose;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.imageio.codec.CompressionRule;
+import org.dcm4che3.imageio.codec.Compressor;
+import org.dcm4che3.io.DicomOutputStream;
+import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.compress.CompressionService;
 
 /**

@@ -47,7 +47,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
-import org.dcm4che.data.Attributes;
+import org.dcm4che3.data.Attributes;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -71,7 +71,7 @@ import org.dcm4che.data.Attributes;
 })
 @Entity
 @Table(name = "code")
-public class Code extends org.dcm4che.data.Code {
+public class Code extends org.dcm4che3.data.Code {
 
     private static final long serialVersionUID = -130090842318534124L;
 
@@ -87,7 +87,7 @@ public class Code extends org.dcm4che.data.Code {
 
     public Code() {}
 
-    public Code(org.dcm4che.data.Code code) {
+    public Code(org.dcm4che3.data.Code code) {
         super(code.getCodeValue(), code.getCodingSchemeDesignator(),
                 code.getCodingSchemeVersion(), code.getCodeMeaning());
     }

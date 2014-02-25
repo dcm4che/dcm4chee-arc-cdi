@@ -41,8 +41,8 @@ package org.dcm4chee.archive.conf;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.ValueSelector;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.ValueSelector;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

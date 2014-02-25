@@ -41,7 +41,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.dcm4che.data.Attributes;
+import org.dcm4che3.data.Attributes;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

@@ -51,11 +51,11 @@ import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 import javax.persistence.EntityManager;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Tag;
-import org.dcm4che.data.UID;
-import org.dcm4che.net.Status;
-import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.Code;

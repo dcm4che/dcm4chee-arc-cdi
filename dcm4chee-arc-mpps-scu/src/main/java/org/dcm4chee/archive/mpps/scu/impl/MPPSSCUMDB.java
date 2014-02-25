@@ -43,8 +43,8 @@ import javax.inject.Inject;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.net.Dimse;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.Dimse;
 import org.dcm4chee.archive.mpps.scu.MPPSSCU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

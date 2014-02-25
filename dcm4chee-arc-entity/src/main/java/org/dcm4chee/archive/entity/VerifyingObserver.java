@@ -49,11 +49,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.PersonName;
-import org.dcm4che.data.Tag;
-import org.dcm4che.soundex.FuzzyStr;
-import org.dcm4che.util.DateUtils;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.PersonName;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.soundex.FuzzyStr;
+import org.dcm4che3.util.DateUtils;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>

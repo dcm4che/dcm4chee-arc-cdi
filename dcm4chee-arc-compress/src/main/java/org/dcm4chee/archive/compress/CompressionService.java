@@ -42,8 +42,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.imageio.codec.CompressionRule;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.imageio.codec.CompressionRule;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

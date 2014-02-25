@@ -44,16 +44,16 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
 import javax.xml.transform.stream.StreamResult;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.BulkData;
-import org.dcm4che.data.Fragments;
-import org.dcm4che.data.Tag;
-import org.dcm4che.data.VR;
-import org.dcm4che.io.DicomInputStream;
-import org.dcm4che.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che.io.SAXTransformer;
-import org.dcm4che.net.service.InstanceLocator;
-import org.dcm4che.util.SafeClose;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.BulkData;
+import org.dcm4che3.data.Fragments;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
+import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.util.SafeClose;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

@@ -37,7 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive;
 
-import org.dcm4che.net.DeviceServiceInterface;
+import org.dcm4che3.net.DeviceServiceInterface;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

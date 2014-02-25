@@ -45,7 +45,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.util.StringUtils;
+import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.FileSystemStatus;

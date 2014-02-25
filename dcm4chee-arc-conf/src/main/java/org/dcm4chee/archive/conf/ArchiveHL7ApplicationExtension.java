@@ -44,9 +44,9 @@ import java.util.Map;
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 
-import org.dcm4che.io.TemplatesCache;
-import org.dcm4che.net.hl7.HL7ApplicationExtension;
-import org.dcm4che.util.StringUtils;
+import org.dcm4che3.io.TemplatesCache;
+import org.dcm4che3.net.hl7.HL7ApplicationExtension;
+import org.dcm4che3.util.StringUtils;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

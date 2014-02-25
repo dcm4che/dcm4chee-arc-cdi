@@ -41,11 +41,11 @@ package org.dcm4chee.archive.conf;
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 
-import org.dcm4che.data.Code;
-import org.dcm4che.io.TemplatesCache;
-import org.dcm4che.net.DeviceExtension;
-import org.dcm4che.soundex.FuzzyStr;
-import org.dcm4che.util.StringUtils;
+import org.dcm4che3.data.Code;
+import org.dcm4che3.io.TemplatesCache;
+import org.dcm4che3.net.DeviceExtension;
+import org.dcm4che3.soundex.FuzzyStr;
+import org.dcm4che3.util.StringUtils;
 
 
 /**

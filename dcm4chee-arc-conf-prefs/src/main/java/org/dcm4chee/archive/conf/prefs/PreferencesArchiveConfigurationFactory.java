@@ -43,21 +43,21 @@ import javax.enterprise.inject.Disposes;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 
-import org.dcm4che.conf.api.ApplicationEntityCache;
-import org.dcm4che.conf.api.ConfigurationException;
-import org.dcm4che.conf.api.DicomConfiguration;
-import org.dcm4che.conf.api.IApplicationEntityCache;
-import org.dcm4che.conf.api.hl7.HL7ApplicationCache;
-import org.dcm4che.conf.api.hl7.HL7Configuration;
-import org.dcm4che.conf.api.hl7.IHL7ApplicationCache;
-import org.dcm4che.conf.prefs.PreferencesDicomConfiguration;
-import org.dcm4che.conf.prefs.PreferencesDicomConfigurationExtension;
-import org.dcm4che.conf.prefs.audit.PreferencesAuditLoggerConfiguration;
-import org.dcm4che.conf.prefs.audit.PreferencesAuditRecordRepositoryConfiguration;
-import org.dcm4che.conf.prefs.hl7.PreferencesHL7Configuration;
-import org.dcm4che.conf.prefs.hl7.PreferencesHL7ConfigurationExtension;
-import org.dcm4che.conf.prefs.imageio.PreferencesImageReaderConfiguration;
-import org.dcm4che.conf.prefs.imageio.PreferencesImageWriterConfiguration;
+import org.dcm4che3.conf.api.ApplicationEntityCache;
+import org.dcm4che3.conf.api.ConfigurationException;
+import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.api.hl7.HL7ApplicationCache;
+import org.dcm4che3.conf.api.hl7.HL7Configuration;
+import org.dcm4che3.conf.api.hl7.IHL7ApplicationCache;
+import org.dcm4che3.conf.prefs.PreferencesDicomConfiguration;
+import org.dcm4che3.conf.prefs.PreferencesDicomConfigurationExtension;
+import org.dcm4che3.conf.prefs.audit.PreferencesAuditLoggerConfiguration;
+import org.dcm4che3.conf.prefs.audit.PreferencesAuditRecordRepositoryConfiguration;
+import org.dcm4che3.conf.prefs.hl7.PreferencesHL7Configuration;
+import org.dcm4che3.conf.prefs.hl7.PreferencesHL7ConfigurationExtension;
+import org.dcm4che3.conf.prefs.imageio.PreferencesImageReaderConfiguration;
+import org.dcm4che3.conf.prefs.imageio.PreferencesImageWriterConfiguration;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

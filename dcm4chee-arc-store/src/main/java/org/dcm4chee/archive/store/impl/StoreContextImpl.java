@@ -41,7 +41,7 @@ package org.dcm4chee.archive.store.impl;
 import java.nio.file.Path;
 import java.util.HashMap;
 
-import org.dcm4che.data.Attributes;
+import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.store.StoreAction;

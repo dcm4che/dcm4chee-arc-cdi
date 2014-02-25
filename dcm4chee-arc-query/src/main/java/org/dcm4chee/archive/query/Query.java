@@ -40,7 +40,7 @@ package org.dcm4chee.archive.query;
 
 import java.sql.SQLException;
 
-import org.dcm4che.data.Attributes;
+import org.dcm4che3.data.Attributes;
 
 import com.mysema.query.types.OrderSpecifier;
 

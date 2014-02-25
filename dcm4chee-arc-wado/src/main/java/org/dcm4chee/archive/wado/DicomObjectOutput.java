@@ -42,14 +42,14 @@ import java.io.OutputStream;
 
 import javax.ws.rs.core.StreamingOutput;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.UID;
-import org.dcm4che.imageio.codec.Decompressor;
-import org.dcm4che.io.DicomInputStream;
-import org.dcm4che.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che.io.DicomOutputStream;
-import org.dcm4che.net.service.InstanceLocator;
-import org.dcm4che.util.SafeClose;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.imageio.codec.Decompressor;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
+import org.dcm4che3.io.DicomOutputStream;
+import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.util.SafeClose;
 
 /**
  * Callback object used by the RESTful runtime when ready

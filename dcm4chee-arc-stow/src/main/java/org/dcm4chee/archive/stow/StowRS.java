@@ -66,23 +66,23 @@ import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.transform.stream.StreamResult;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Attributes.Visitor;
-import org.dcm4che.data.BulkData;
-import org.dcm4che.data.Fragments;
-import org.dcm4che.data.Sequence;
-import org.dcm4che.data.Tag;
-import org.dcm4che.data.UID;
-import org.dcm4che.data.VR;
-import org.dcm4che.io.SAXReader;
-import org.dcm4che.io.SAXTransformer;
-import org.dcm4che.mime.MultipartInputStream;
-import org.dcm4che.mime.MultipartParser;
-import org.dcm4che.net.ApplicationEntity;
-import org.dcm4che.net.Device;
-import org.dcm4che.net.TransferCapability;
-import org.dcm4che.net.service.DicomServiceException;
-import org.dcm4che.ws.rs.MediaTypes;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Attributes.Visitor;
+import org.dcm4che3.data.BulkData;
+import org.dcm4che3.data.Fragments;
+import org.dcm4che3.data.Sequence;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.io.SAXReader;
+import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.mime.MultipartInputStream;
+import org.dcm4che3.mime.MultipartParser;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
@@ -359,7 +359,7 @@ public class StowRS {
     private void checkTransferCapability(String cuid, String tsuid) throws DicomServiceException {
         TransferCapability tc = ae.getTransferCapabilityFor(cuid, TransferCapability.Role.SCP);
         if (tc == null) {
-            throw new DicomServiceException(org.dcm4che.net.Status.SOPclassNotSupported);
+            throw new DicomServiceException(org.dcm4che3.net.Status.SOPclassNotSupported);
         }
         if (!tc.containsTransferSyntax(tsuid)) {
             throw new DicomServiceException(TRANSFER_SYNTAX_NOT_SUPPORTED);
@@ -428,7 +428,7 @@ public class StowRS {
         Attributes coercedAttrs = ctx.getCoercedAttributes();
         if (!coercedAttrs.isEmpty()) {
             sopRef.setInt(Tag.WarningReason, VR.US,
-                          org.dcm4che.net.Status.CoercionOfDataElements);
+                          org.dcm4che3.net.Status.CoercionOfDataElements);
             Attributes item = new Attributes(4);
             Sequence origAttrsSeq = sopRef.ensureSequence(
                     Tag.OriginalAttributesSequence, 1);

@@ -50,11 +50,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Issuer;
-import org.dcm4che.data.PersonName;
-import org.dcm4che.data.Tag;
-import org.dcm4che.soundex.FuzzyStr;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Issuer;
+import org.dcm4che3.data.PersonName;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.soundex.FuzzyStr;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>

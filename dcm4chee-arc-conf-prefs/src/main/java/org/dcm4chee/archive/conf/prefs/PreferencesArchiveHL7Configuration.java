@@ -40,9 +40,9 @@ package org.dcm4chee.archive.conf.prefs;
 
 import java.util.prefs.Preferences;
 
-import org.dcm4che.conf.prefs.PreferencesUtils;
-import org.dcm4che.conf.prefs.hl7.PreferencesHL7ConfigurationExtension;
-import org.dcm4che.net.hl7.HL7Application;
+import org.dcm4che3.conf.prefs.PreferencesUtils;
+import org.dcm4che3.conf.prefs.hl7.PreferencesHL7ConfigurationExtension;
+import org.dcm4che3.net.hl7.HL7Application;
 import org.dcm4chee.archive.conf.ArchiveHL7ApplicationExtension;
 
 /**

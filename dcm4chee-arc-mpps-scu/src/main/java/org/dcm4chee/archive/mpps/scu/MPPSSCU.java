@@ -38,8 +38,8 @@
 
 package org.dcm4chee.archive.mpps.scu;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.net.Dimse;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.Dimse;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

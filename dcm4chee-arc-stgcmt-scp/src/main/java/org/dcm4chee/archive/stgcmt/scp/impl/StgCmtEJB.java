@@ -46,11 +46,11 @@ import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Sequence;
-import org.dcm4che.data.Tag;
-import org.dcm4che.data.VR;
-import org.dcm4che.net.Status;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.net.Status;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.entity.QInstance;
 import org.hibernate.Session;

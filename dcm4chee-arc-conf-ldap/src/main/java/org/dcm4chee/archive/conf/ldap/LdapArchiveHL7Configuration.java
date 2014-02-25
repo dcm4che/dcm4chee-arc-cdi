@@ -44,9 +44,9 @@ import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.ModificationItem;
 
-import org.dcm4che.conf.ldap.LdapUtils;
-import org.dcm4che.conf.ldap.hl7.LdapHL7ConfigurationExtension;
-import org.dcm4che.net.hl7.HL7Application;
+import org.dcm4che3.conf.ldap.LdapUtils;
+import org.dcm4che3.conf.ldap.hl7.LdapHL7ConfigurationExtension;
+import org.dcm4che3.net.hl7.HL7Application;
 import org.dcm4chee.archive.conf.ArchiveHL7ApplicationExtension;
 
 /**

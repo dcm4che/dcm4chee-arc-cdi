@@ -43,18 +43,18 @@ import java.util.EnumSet;
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 
-import org.dcm4che.conf.api.AttributeCoercion;
-import org.dcm4che.conf.api.AttributeCoercions;
-import org.dcm4che.imageio.codec.CompressionRule;
-import org.dcm4che.imageio.codec.CompressionRules;
-import org.dcm4che.io.TemplatesCache;
-import org.dcm4che.net.AEExtension;
-import org.dcm4che.net.Dimse;
-import org.dcm4che.net.QueryOption;
-import org.dcm4che.net.TransferCapability;
-import org.dcm4che.net.TransferCapability.Role;
-import org.dcm4che.util.AttributesFormat;
-import org.dcm4che.util.StringUtils;
+import org.dcm4che3.conf.api.AttributeCoercion;
+import org.dcm4che3.conf.api.AttributeCoercions;
+import org.dcm4che3.imageio.codec.CompressionRule;
+import org.dcm4che3.imageio.codec.CompressionRules;
+import org.dcm4che3.io.TemplatesCache;
+import org.dcm4che3.net.AEExtension;
+import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.QueryOption;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.TransferCapability.Role;
+import org.dcm4che3.util.AttributesFormat;
+import org.dcm4che3.util.StringUtils;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

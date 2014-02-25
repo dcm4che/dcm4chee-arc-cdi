@@ -38,10 +38,10 @@
 
 package org.dcm4chee.archive.conf;
 
-import org.dcm4che.data.Code;
-import org.dcm4che.data.Issuer;
-import org.dcm4che.net.Device;
-import org.dcm4che.soundex.FuzzyStr;
+import org.dcm4che3.data.Code;
+import org.dcm4che3.data.Issuer;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.soundex.FuzzyStr;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

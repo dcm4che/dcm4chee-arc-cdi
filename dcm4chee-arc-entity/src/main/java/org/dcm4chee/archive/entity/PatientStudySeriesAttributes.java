@@ -37,7 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.entity;
 
-import org.dcm4che.data.Attributes;
+import org.dcm4che3.data.Attributes;
 
 
 /**

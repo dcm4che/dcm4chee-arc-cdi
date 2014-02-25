@@ -38,7 +38,7 @@
 
 package org.dcm4chee.archive.retrieve.scp;
 
-import static org.dcm4che.net.service.BasicRetrieveTask.Service.C_MOVE;
+import static org.dcm4che3.net.service.BasicRetrieveTask.Service.C_MOVE;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -47,23 +47,23 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.dcm4che.conf.api.ConfigurationNotFoundException;
-import org.dcm4che.conf.api.IApplicationEntityCache;
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.IDWithIssuer;
-import org.dcm4che.data.Tag;
-import org.dcm4che.net.ApplicationEntity;
-import org.dcm4che.net.Association;
-import org.dcm4che.net.IncompatibleConnectionException;
-import org.dcm4che.net.QueryOption;
-import org.dcm4che.net.Status;
-import org.dcm4che.net.pdu.ExtendedNegotiation;
-import org.dcm4che.net.pdu.PresentationContext;
-import org.dcm4che.net.service.BasicCMoveSCP;
-import org.dcm4che.net.service.DicomServiceException;
-import org.dcm4che.net.service.InstanceLocator;
-import org.dcm4che.net.service.QueryRetrieveLevel;
-import org.dcm4che.net.service.RetrieveTask;
+import org.dcm4che3.conf.api.ConfigurationNotFoundException;
+import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Association;
+import org.dcm4che3.net.IncompatibleConnectionException;
+import org.dcm4che3.net.QueryOption;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.pdu.ExtendedNegotiation;
+import org.dcm4che3.net.pdu.PresentationContext;
+import org.dcm4che3.net.service.BasicCMoveSCP;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.net.service.QueryRetrieveLevel;
+import org.dcm4che3.net.service.RetrieveTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.QueryService;

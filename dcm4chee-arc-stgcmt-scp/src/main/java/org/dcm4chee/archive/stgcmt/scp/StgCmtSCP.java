@@ -44,21 +44,21 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
-import org.dcm4che.conf.api.ConfigurationNotFoundException;
-import org.dcm4che.conf.api.IApplicationEntityCache;
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Tag;
-import org.dcm4che.data.UID;
-import org.dcm4che.net.ApplicationEntity;
-import org.dcm4che.net.Association;
-import org.dcm4che.net.Commands;
-import org.dcm4che.net.Dimse;
-import org.dcm4che.net.IncompatibleConnectionException;
-import org.dcm4che.net.Status;
-import org.dcm4che.net.pdu.PresentationContext;
-import org.dcm4che.net.service.AbstractDicomService;
-import org.dcm4che.net.service.DicomService;
-import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4che3.conf.api.ConfigurationNotFoundException;
+import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Association;
+import org.dcm4che3.net.Commands;
+import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.IncompatibleConnectionException;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.pdu.PresentationContext;
+import org.dcm4che3.net.service.AbstractDicomService;
+import org.dcm4che3.net.service.DicomService;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 
 /**

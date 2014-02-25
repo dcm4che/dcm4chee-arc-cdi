@@ -44,9 +44,9 @@ import java.io.OutputStream;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
 
-import org.dcm4che.data.BulkData;
-import org.dcm4che.util.SafeClose;
-import org.dcm4che.util.StreamUtils;
+import org.dcm4che3.data.BulkData;
+import org.dcm4che3.util.SafeClose;
+import org.dcm4che3.util.StreamUtils;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

@@ -40,9 +40,9 @@ package org.dcm4chee.archive.query.util;
 
 import java.util.Date;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.DateRange;
-import org.dcm4che.util.DateUtils;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DateRange;
+import org.dcm4che3.util.DateUtils;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.types.ExpressionUtils;

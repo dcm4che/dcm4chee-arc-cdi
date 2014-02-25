@@ -1,5 +1,27 @@
 version: 1
 
+dn: dc=example,dc=com
+objectClass: dcObject
+objectClass: organization
+o: example
+dc: example
+
+dn: cn=admin,dc=example,dc=com
+objectClass: organizationalRole
+cn: admin
+
+dn: cn=DICOM Configuration,dc=example,dc=com
+objectClass: dicomConfigurationRoot
+cn: DICOM Configuration
+
+dn: cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dicomDevicesRoot
+cn: Devices
+
+dn: cn=Unique AE Titles Registry,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dicomUniqueAETitlesRegistryRoot
+cn: Unique AE Titles Registry
+
 dn: dicomAETitle=DCMQRSCP,cn=Unique AE Titles Registry,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dicomUniqueAETitle
 dicomAETitle: DCMQRSCP
@@ -370,6 +392,10 @@ dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=getscu,cn=Devices,
 dicomAETitle: GETSCU
 dicomAssociationAcceptor: TRUE
 
+dn: cn=Unique HL7 Application Names Registry,cn=DICOM Configuration,dc=example,dc=com
+objectClass: hl7UniqueApplicationNamesRegistryRoot
+cn: Unique HL7 Application Names Registry
+
 dn: hl7ApplicationName=HL7RCV^DCM4CHEE,cn=Unique HL7 Application Names Registry,cn=DICOM Configuration,dc=example,dc=com
 objectClass: hl7UniqueApplicationName
 hl7ApplicationName: HL7RCV^DCM4CHEE
@@ -482,7 +508,7 @@ dicomInstalled: TRUE
 dcmConfigurationStaleTimeout: 60
 dicomManufacturer: dcm4che.org
 dicomDeviceName: dcm4chee-arc
-dcmFuzzyAlgorithmClass: org.dcm4che.soundex.ESoundex
+dcmFuzzyAlgorithmClass: org.dcm4che3.soundex.ESoundex
 dcmIncorrectModalityWorklistEntryCode: (113038, DCM, "Incorrect Modality Worklist Entry")
 dcmKeyStoreURL: ${jboss.server.config.url}/dcm4chee-arc/key.jks
 dicomThisNodeCertificateReference: dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -694,142 +720,6 @@ dcmTag: 00700083
 dcmTag: 00700084
 dcmTag: 04000561
 dcmEntity: Instance
-objectClass: dcmAttributeFilter
-
-dn: dcmEntity=Visit,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmTag: 00080005
-dcmTag: 00080080
-dcmTag: 00080081
-dcmTag: 00080082
-dcmTag: 00080090
-dcmTag: 00080092
-dcmTag: 00080094
-dcmTag: 00080096
-dcmTag: 00081080
-dcmTag: 00081084
-dcmTag: 00380008
-dcmTag: 00380010
-dcmTag: 00380014
-dcmTag: 00380016
-dcmTag: 00380020
-dcmTag: 00380021
-dcmTag: 00380060
-dcmTag: 00380062
-dcmTag: 00380064
-dcmTag: 00380300
-dcmTag: 00380400
-dcmTag: 00384000
-dcmEntity: Visit
-objectClass: dcmAttributeFilter
-
-dn: dcmEntity=ServiceRequest,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmTag: 00080005
-dcmTag: 00080050
-dcmTag: 00080051
-dcmTag: 00321031
-dcmTag: 00321032
-dcmTag: 00321033
-dcmTag: 00321034
-dcmTag: 00400026
-dcmTag: 00400027
-dcmTag: 00402004
-dcmTag: 00402005
-dcmTag: 00402008
-dcmTag: 00402009
-dcmTag: 00402010
-dcmTag: 00402016
-dcmTag: 00402017
-dcmTag: 00402400
-dcmEntity: ServiceRequest
-objectClass: dcmAttributeFilter
-
-dn: dcmEntity=RequestedProcedure,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmTag: 00080005
-dcmTag: 00080020
-dcmTag: 00080030
-dcmTag: 0020000D
-dcmTag: 00321060
-dcmTag: 00321064
-dcmTag: 00401001
-dcmTag: 00401002
-dcmTag: 00401003
-dcmTag: 00401004
-dcmTag: 00401005
-dcmTag: 00401008
-dcmTag: 00401009
-dcmTag: 0040100A
-dcmTag: 00401010
-dcmTag: 00401011
-dcmTag: 00401400
-dcmEntity: RequestedProcedure
-objectClass: dcmAttributeFilter
-
-dn: dcmEntity=ScheduledProcedureStep,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmTag: 00080005
-dcmTag: 00080060
-dcmTag: 00102210
-dcmTag: 00321070
-dcmTag: 00400001
-dcmTag: 00400002
-dcmTag: 00400003
-dcmTag: 00400004
-dcmTag: 00400005
-dcmTag: 00400006
-dcmTag: 00400007
-dcmTag: 00400008
-dcmTag: 00400009
-dcmTag: 0040000B
-dcmTag: 00400010
-dcmTag: 00400011
-dcmTag: 00400012
-dcmTag: 00400020
-dcmTag: 00400400
-dcmTag: 00400500
-dcmEntity: ScheduledProcedureStep
-objectClass: dcmAttributeFilter
-
-dn: dcmEntity=PerformedProcedureStep,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmTag: 00080005
-dcmTag: 00080060
-dcmTag: 00081032
-dcmTag: 00082229
-dcmTag: 00181110
-dcmTag: 0018115E
-dcmTag: 00200010
-dcmTag: 00380010
-dcmTag: 00380014
-dcmTag: 00380060
-dcmTag: 00380062
-dcmTag: 00380064
-dcmTag: 00400241
-dcmTag: 00400242
-dcmTag: 00400243
-dcmTag: 00400244
-dcmTag: 00400245
-dcmTag: 00400250
-dcmTag: 00400251
-dcmTag: 00400252
-dcmTag: 00400253
-dcmTag: 00400254
-dcmTag: 00400255
-dcmTag: 00400260
-dcmTag: 00400270
-dcmTag: 00400280
-dcmTag: 00400281
-dcmTag: 00400300
-dcmTag: 00400301
-dcmTag: 00400302
-dcmTag: 00400303
-dcmTag: 00400306
-dcmTag: 0040030E
-dcmTag: 00400310
-dcmTag: 00400320
-dcmTag: 00400321
-dcmTag: 00400324
-dcmTag: 00400340
-dcmTag: 00401012
-dcmTag: 00408302
-dcmEntity: PerformedProcedureStep
 objectClass: dcmAttributeFilter
 
 dn: cn=Audit Logger,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com

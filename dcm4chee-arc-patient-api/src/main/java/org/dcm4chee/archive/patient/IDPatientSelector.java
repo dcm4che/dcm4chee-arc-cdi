@@ -41,9 +41,9 @@ package org.dcm4chee.archive.patient;
 import java.util.Iterator;
 import java.util.List;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Issuer;
-import org.dcm4che.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Issuer;
+import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.entity.Patient;
 
 /**

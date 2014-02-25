@@ -43,9 +43,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 
-import org.dcm4che.net.Device;
-import org.dcm4che.net.Status;
-import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.FileSystem;

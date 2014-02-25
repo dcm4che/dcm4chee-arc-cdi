@@ -47,22 +47,22 @@ import javax.enterprise.inject.Disposes;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 
-import org.dcm4che.conf.api.ApplicationEntityCache;
-import org.dcm4che.conf.api.ConfigurationException;
-import org.dcm4che.conf.api.DicomConfiguration;
-import org.dcm4che.conf.api.IApplicationEntityCache;
-import org.dcm4che.conf.api.hl7.HL7ApplicationCache;
-import org.dcm4che.conf.api.hl7.HL7Configuration;
-import org.dcm4che.conf.api.hl7.IHL7ApplicationCache;
-import org.dcm4che.conf.ldap.LdapDicomConfiguration;
-import org.dcm4che.conf.ldap.LdapDicomConfigurationExtension;
-import org.dcm4che.conf.ldap.audit.LdapAuditLoggerConfiguration;
-import org.dcm4che.conf.ldap.audit.LdapAuditRecordRepositoryConfiguration;
-import org.dcm4che.conf.ldap.hl7.LdapHL7Configuration;
-import org.dcm4che.conf.ldap.hl7.LdapHL7ConfigurationExtension;
-import org.dcm4che.conf.ldap.imageio.LdapImageReaderConfiguration;
-import org.dcm4che.conf.ldap.imageio.LdapImageWriterConfiguration;
-import org.dcm4che.util.StreamUtils;
+import org.dcm4che3.conf.api.ApplicationEntityCache;
+import org.dcm4che3.conf.api.ConfigurationException;
+import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.api.hl7.HL7ApplicationCache;
+import org.dcm4che3.conf.api.hl7.HL7Configuration;
+import org.dcm4che3.conf.api.hl7.IHL7ApplicationCache;
+import org.dcm4che3.conf.ldap.LdapDicomConfiguration;
+import org.dcm4che3.conf.ldap.LdapDicomConfigurationExtension;
+import org.dcm4che3.conf.ldap.audit.LdapAuditLoggerConfiguration;
+import org.dcm4che3.conf.ldap.audit.LdapAuditRecordRepositoryConfiguration;
+import org.dcm4che3.conf.ldap.hl7.LdapHL7Configuration;
+import org.dcm4che3.conf.ldap.hl7.LdapHL7ConfigurationExtension;
+import org.dcm4che3.conf.ldap.imageio.LdapImageReaderConfiguration;
+import org.dcm4che3.conf.ldap.imageio.LdapImageWriterConfiguration;
+import org.dcm4che3.util.StreamUtils;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

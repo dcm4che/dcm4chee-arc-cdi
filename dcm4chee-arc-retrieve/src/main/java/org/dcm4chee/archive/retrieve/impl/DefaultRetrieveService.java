@@ -45,10 +45,10 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.IDWithIssuer;
-import org.dcm4che.data.Tag;
-import org.dcm4che.net.service.InstanceLocator;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.PatientStudySeriesAttributes;
 import org.dcm4chee.archive.entity.QFileRef;

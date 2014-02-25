@@ -38,9 +38,9 @@
 
 package org.dcm4chee.archive.query;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.IDWithIssuer;
-import org.dcm4che.net.service.QueryRetrieveLevel;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.QueryParam;
 
 /**

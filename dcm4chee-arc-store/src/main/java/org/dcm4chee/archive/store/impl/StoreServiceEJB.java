@@ -42,7 +42,7 @@ import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.net.service.DicomServiceException;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.store.StoreContext;
 
 /**

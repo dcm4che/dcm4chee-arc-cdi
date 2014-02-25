@@ -49,12 +49,12 @@ import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Tag;
-import org.dcm4che.data.VR;
-import org.dcm4che.hl7.HL7Charset;
-import org.dcm4che.hl7.HL7Parser;
-import org.dcm4che.io.ContentHandlerAdapter;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.hl7.HL7Charset;
+import org.dcm4che3.hl7.HL7Parser;
+import org.dcm4che3.io.ContentHandlerAdapter;
 import org.xml.sax.SAXException;
 
 /**

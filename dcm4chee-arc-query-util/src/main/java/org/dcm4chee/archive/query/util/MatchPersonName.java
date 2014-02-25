@@ -38,8 +38,8 @@
 
 package org.dcm4chee.archive.query.util;
 
-import org.dcm4che.data.PersonName;
-import org.dcm4che.soundex.FuzzyStr;
+import org.dcm4che3.data.PersonName;
+import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.QueryParam;
 
 import com.mysema.query.BooleanBuilder;

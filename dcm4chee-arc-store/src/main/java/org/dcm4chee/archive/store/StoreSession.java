@@ -41,7 +41,7 @@ package org.dcm4chee.archive.store;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 
-import org.dcm4che.net.Device;
+import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.FileSystem;

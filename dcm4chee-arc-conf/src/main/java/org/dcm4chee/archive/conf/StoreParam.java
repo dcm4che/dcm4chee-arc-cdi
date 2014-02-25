@@ -38,7 +38,7 @@
 
 package org.dcm4chee.archive.conf;
 
-import org.dcm4che.soundex.FuzzyStr;
+import org.dcm4che3.soundex.FuzzyStr;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

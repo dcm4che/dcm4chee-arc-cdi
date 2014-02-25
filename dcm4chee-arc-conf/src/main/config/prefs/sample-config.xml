@@ -12,7 +12,7 @@
             <entry key="dcmArchiveDevice" value="true"/>
             <entry key="dcmConfigurationStaleTimeout" value="60"/>
             <entry key="dcmDataRetentionPeriodExpiredCode" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
-            <entry key="dcmFuzzyAlgorithmClass" value="org.dcm4che.soundex.ESoundex"/>
+            <entry key="dcmFuzzyAlgorithmClass" value="org.dcm4che3.soundex.ESoundex"/>
             <entry key="dcmIncorrectModalityWorklistEntryCode" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
             <entry key="dcmIncorrectWorklistEntrySelectedCode" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
             <entry key="dcmKeyStorePin" value="secret"/>
@@ -142,98 +142,6 @@
                 <entry key="dcmTag.9" value="00100050"/>
               </map>
             </node>
-            <node name="PerformedProcedureStep">
-              <map>
-                <entry key="dcmTag.#" value="40"/>
-                <entry key="dcmTag.1" value="00080005"/>
-                <entry key="dcmTag.10" value="00380060"/>
-                <entry key="dcmTag.11" value="00380062"/>
-                <entry key="dcmTag.12" value="00380064"/>
-                <entry key="dcmTag.13" value="00400241"/>
-                <entry key="dcmTag.14" value="00400242"/>
-                <entry key="dcmTag.15" value="00400243"/>
-                <entry key="dcmTag.16" value="00400244"/>
-                <entry key="dcmTag.17" value="00400245"/>
-                <entry key="dcmTag.18" value="00400250"/>
-                <entry key="dcmTag.19" value="00400251"/>
-                <entry key="dcmTag.2" value="00080060"/>
-                <entry key="dcmTag.20" value="00400252"/>
-                <entry key="dcmTag.21" value="00400253"/>
-                <entry key="dcmTag.22" value="00400254"/>
-                <entry key="dcmTag.23" value="00400255"/>
-                <entry key="dcmTag.24" value="00400260"/>
-                <entry key="dcmTag.25" value="00400270"/>
-                <entry key="dcmTag.26" value="00400280"/>
-                <entry key="dcmTag.27" value="00400281"/>
-                <entry key="dcmTag.28" value="00400300"/>
-                <entry key="dcmTag.29" value="00400301"/>
-                <entry key="dcmTag.3" value="00081032"/>
-                <entry key="dcmTag.30" value="00400302"/>
-                <entry key="dcmTag.31" value="00400303"/>
-                <entry key="dcmTag.32" value="00400306"/>
-                <entry key="dcmTag.33" value="0040030E"/>
-                <entry key="dcmTag.34" value="00400310"/>
-                <entry key="dcmTag.35" value="00400320"/>
-                <entry key="dcmTag.36" value="00400321"/>
-                <entry key="dcmTag.37" value="00400324"/>
-                <entry key="dcmTag.38" value="00400340"/>
-                <entry key="dcmTag.39" value="00401012"/>
-                <entry key="dcmTag.4" value="00082229"/>
-                <entry key="dcmTag.40" value="00408302"/>
-                <entry key="dcmTag.5" value="00181110"/>
-                <entry key="dcmTag.6" value="0018115E"/>
-                <entry key="dcmTag.7" value="00200010"/>
-                <entry key="dcmTag.8" value="00380010"/>
-                <entry key="dcmTag.9" value="00380014"/>
-              </map>
-            </node>
-            <node name="RequestedProcedure">
-              <map>
-                <entry key="dcmTag.#" value="17"/>
-                <entry key="dcmTag.1" value="00080005"/>
-                <entry key="dcmTag.10" value="00401004"/>
-                <entry key="dcmTag.11" value="00401005"/>
-                <entry key="dcmTag.12" value="00401008"/>
-                <entry key="dcmTag.13" value="00401009"/>
-                <entry key="dcmTag.14" value="0040100A"/>
-                <entry key="dcmTag.15" value="00401010"/>
-                <entry key="dcmTag.16" value="00401011"/>
-                <entry key="dcmTag.17" value="00401400"/>
-                <entry key="dcmTag.2" value="00080020"/>
-                <entry key="dcmTag.3" value="00080030"/>
-                <entry key="dcmTag.4" value="0020000D"/>
-                <entry key="dcmTag.5" value="00321060"/>
-                <entry key="dcmTag.6" value="00321064"/>
-                <entry key="dcmTag.7" value="00401001"/>
-                <entry key="dcmTag.8" value="00401002"/>
-                <entry key="dcmTag.9" value="00401003"/>
-              </map>
-            </node>
-            <node name="ScheduledProcedureStep">
-              <map>
-                <entry key="dcmTag.#" value="20"/>
-                <entry key="dcmTag.1" value="00080005"/>
-                <entry key="dcmTag.10" value="00400006"/>
-                <entry key="dcmTag.11" value="00400007"/>
-                <entry key="dcmTag.12" value="00400008"/>
-                <entry key="dcmTag.13" value="00400009"/>
-                <entry key="dcmTag.14" value="0040000B"/>
-                <entry key="dcmTag.15" value="00400010"/>
-                <entry key="dcmTag.16" value="00400011"/>
-                <entry key="dcmTag.17" value="00400012"/>
-                <entry key="dcmTag.18" value="00400020"/>
-                <entry key="dcmTag.19" value="00400400"/>
-                <entry key="dcmTag.2" value="00080060"/>
-                <entry key="dcmTag.20" value="00400500"/>
-                <entry key="dcmTag.3" value="00102210"/>
-                <entry key="dcmTag.4" value="00321070"/>
-                <entry key="dcmTag.5" value="00400001"/>
-                <entry key="dcmTag.6" value="00400002"/>
-                <entry key="dcmTag.7" value="00400003"/>
-                <entry key="dcmTag.8" value="00400004"/>
-                <entry key="dcmTag.9" value="00400005"/>
-              </map>
-            </node>
             <node name="Series">
               <map>
                 <entry key="dcmTag.#" value="18"/>
@@ -257,28 +165,6 @@
                 <entry key="dcmTag.9" value="00081050"/>
               </map>
             </node>
-            <node name="ServiceRequest">
-              <map>
-                <entry key="dcmTag.#" value="17"/>
-                <entry key="dcmTag.1" value="00080005"/>
-                <entry key="dcmTag.10" value="00402004"/>
-                <entry key="dcmTag.11" value="00402005"/>
-                <entry key="dcmTag.12" value="00402008"/>
-                <entry key="dcmTag.13" value="00402009"/>
-                <entry key="dcmTag.14" value="00402010"/>
-                <entry key="dcmTag.15" value="00402016"/>
-                <entry key="dcmTag.16" value="00402017"/>
-                <entry key="dcmTag.17" value="00402400"/>
-                <entry key="dcmTag.2" value="00080050"/>
-                <entry key="dcmTag.3" value="00080051"/>
-                <entry key="dcmTag.4" value="00321031"/>
-                <entry key="dcmTag.5" value="00321032"/>
-                <entry key="dcmTag.6" value="00321033"/>
-                <entry key="dcmTag.7" value="00321034"/>
-                <entry key="dcmTag.8" value="00400026"/>
-                <entry key="dcmTag.9" value="00400027"/>
-              </map>
-            </node>
             <node name="Study">
               <map>
                 <entry key="dcmTag.#" value="17"/>
@@ -299,33 +185,6 @@
                 <entry key="dcmTag.7" value="00081030"/>
                 <entry key="dcmTag.8" value="00081032"/>
                 <entry key="dcmTag.9" value="00101010"/>
-              </map>
-            </node>
-            <node name="Visit">
-              <map>
-                <entry key="dcmTag.#" value="22"/>
-                <entry key="dcmTag.1" value="00080005"/>
-                <entry key="dcmTag.10" value="00081084"/>
-                <entry key="dcmTag.11" value="00380008"/>
-                <entry key="dcmTag.12" value="00380010"/>
-                <entry key="dcmTag.13" value="00380014"/>
-                <entry key="dcmTag.14" value="00380016"/>
-                <entry key="dcmTag.15" value="00380020"/>
-                <entry key="dcmTag.16" value="00380021"/>
-                <entry key="dcmTag.17" value="00380060"/>
-                <entry key="dcmTag.18" value="00380062"/>
-                <entry key="dcmTag.19" value="00380064"/>
-                <entry key="dcmTag.2" value="00080080"/>
-                <entry key="dcmTag.20" value="00380300"/>
-                <entry key="dcmTag.21" value="00380400"/>
-                <entry key="dcmTag.22" value="00384000"/>
-                <entry key="dcmTag.3" value="00080081"/>
-                <entry key="dcmTag.4" value="00080082"/>
-                <entry key="dcmTag.5" value="00080090"/>
-                <entry key="dcmTag.6" value="00080092"/>
-                <entry key="dcmTag.7" value="00080094"/>
-                <entry key="dcmTag.8" value="00080096"/>
-                <entry key="dcmTag.9" value="00081080"/>
               </map>
             </node>
           </node>
@@ -3727,9 +3586,6 @@
                 <map/>
               </node>
               <node name="dcmCompressionRule">
-                <map/>
-              </node>
-              <node name="dcmStoreDuplicate">
                 <map/>
               </node>
               <node name="dicomTransferCapability">

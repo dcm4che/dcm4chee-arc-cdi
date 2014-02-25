@@ -67,21 +67,21 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Tag;
-import org.dcm4che.data.UID;
-import org.dcm4che.image.PaletteColorModel;
-import org.dcm4che.image.PixelAspectRatio;
-import org.dcm4che.imageio.codec.ImageReaderFactory;
-import org.dcm4che.imageio.plugins.dcm.DicomImageReadParam;
-import org.dcm4che.imageio.plugins.dcm.DicomMetaData;
-import org.dcm4che.imageio.stream.OutputStreamAdapter;
-import org.dcm4che.io.DicomInputStream;
-import org.dcm4che.net.ApplicationEntity;
-import org.dcm4che.net.service.InstanceLocator;
-import org.dcm4che.util.SafeClose;
-import org.dcm4che.util.StringUtils;
-import org.dcm4che.ws.rs.MediaTypes;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.image.PaletteColorModel;
+import org.dcm4che3.image.PixelAspectRatio;
+import org.dcm4che3.imageio.codec.ImageReaderFactory;
+import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
+import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
+import org.dcm4che3.imageio.stream.OutputStreamAdapter;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.util.SafeClose;
+import org.dcm4che3.util.StringUtils;
+import org.dcm4che3.ws.rs.MediaTypes;
 
 /**
  * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.

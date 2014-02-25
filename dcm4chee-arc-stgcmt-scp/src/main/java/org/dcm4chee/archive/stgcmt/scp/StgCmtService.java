@@ -38,7 +38,7 @@
 
 package org.dcm4chee.archive.stgcmt.scp;
 
-import org.dcm4che.data.Attributes;
+import org.dcm4che3.data.Attributes;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

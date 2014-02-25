@@ -40,7 +40,7 @@ package org.dcm4chee.archive.store;
 
 import java.nio.file.Path;
 
-import org.dcm4che.data.Attributes;
+import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
 

@@ -23,7 +23,7 @@
   
   <access>FIELD</access>
 
-  <mapped-superclass class="org.dcm4che.data.Code">
+  <mapped-superclass class="org.dcm4che3.data.Code">
     <attributes>
       <basic name="codeValue" optional="false">
         <column name="code_value"/>
@@ -40,7 +40,7 @@
     </attributes>
   </mapped-superclass>
 
-  <mapped-superclass class="org.dcm4che.data.Issuer">
+  <mapped-superclass class="org.dcm4che3.data.Issuer">
     <attributes>
       <basic name="localNamespaceEntityID" optional="true">
         <column name="entity_id"/>

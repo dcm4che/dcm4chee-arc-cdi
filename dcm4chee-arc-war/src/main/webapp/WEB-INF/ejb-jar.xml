@@ -5,7 +5,7 @@
   version="3.1">
   <assembly-descriptor>
     <application-exception>
-      <exception-class>org.dcm4che.net.service.DicomServiceException</exception-class>
+      <exception-class>org.dcm4che3.net.service.DicomServiceException</exception-class>
       <rollback>true</rollback>
     </application-exception>
   </assembly-descriptor>
