@@ -211,34 +211,43 @@ public class IANSCUImpl implements IANSCU {
         if (arcAE == null || arcAE.getIANDestinations().length == 0)
             return;
 
-        Attributes attrs = storeContext.getAttributes();
-        if (event.getRejectionType() == RejectionType.IncorrectModalityWorklistEntry) {
-            for (String mppsIUID : event.getPerformedProcedureStepIUIDs()) {
-                MPPS mpps = em.createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UID, MPPS.class)
-                        .setParameter(1, mppsIUID)
-                        .getSingleResult();
+        try {
+            Attributes attrs = storeContext.getAttributes();
+            if (event.getRejectionType() == RejectionType.IncorrectModalityWorklistEntry) {
+                for (String mppsIUID : event.getPerformedProcedureStepIUIDs()) {
+                    MPPS mpps = em.createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UID, MPPS.class)
+                            .setParameter(1, mppsIUID)
+                            .getSingleResult();
+                    scheduleSendIAN(storeSession.getLocalAET(),
+                            storeSession.getArchiveAEExtension().getIANDestinations(),
+                            createIANBuilder(mpps).getIAN());
+                }
+            } else {
+                IANBuilder builder = new IANBuilder();
+                for (SOPInstanceReference sopRef : em.createNamedQuery(
+                                Instance.SOP_INSTANCE_REFERENCE_BY_STUDY_INSTANCE_UID,
+                                SOPInstanceReference.class)
+                            .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
+                            .getResultList()) {
+                    builder.addReferencedInstance(
+                            sopRef.studyInstanceUID, 
+                            sopRef.seriesInstanceUID,
+                            sopRef.sopInstanceUID,
+                            sopRef.sopClassUID,
+                            sopRef.availability,
+                            sopRef.getRetrieveAETs());
+                }
                 scheduleSendIAN(storeSession.getLocalAET(),
                         storeSession.getArchiveAEExtension().getIANDestinations(),
-                        createIANBuilder(mpps).getIAN());
+                        builder.getIAN());
             }
-        } else {
-            IANBuilder builder = new IANBuilder();
-            for (SOPInstanceReference sopRef : em.createNamedQuery(
-                            Instance.SOP_INSTANCE_REFERENCE_BY_STUDY_INSTANCE_UID,
-                            SOPInstanceReference.class)
-                        .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
-                        .getResultList()) {
-                builder.addReferencedInstance(
-                        sopRef.studyInstanceUID, 
-                        sopRef.seriesInstanceUID,
-                        sopRef.sopInstanceUID,
-                        sopRef.sopClassUID,
-                        sopRef.availability,
-                        sopRef.getRetrieveAETs());
-            }
-            scheduleSendIAN(storeSession.getLocalAET(),
-                    storeSession.getArchiveAEExtension().getIANDestinations(),
-                    builder.getIAN());
+        } catch (Exception e) {
+            Instance inst = storeContext.getInstance();
+            LOG.warn("{}: Failed to schedule IAN for Rejection Note[iuid={}, code={}]",
+                    storeSession,
+                    inst.getSopInstanceUID(),
+                    inst.getConceptNameCode(),
+                    e);
         }
     }
 
