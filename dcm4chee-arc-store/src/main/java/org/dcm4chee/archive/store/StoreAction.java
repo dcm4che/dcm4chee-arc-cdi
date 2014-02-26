@@ -46,5 +46,6 @@ public enum StoreAction {
     STORE,
     RESTORE,
     REPLACE,
-    IGNORE
+    IGNORE,
+    FAIL
 }

@@ -95,5 +95,10 @@ public interface StoreContext {
     Object getProperty(String key);
 
     void setProperty(String key, Object value);
+    
+    Throwable getThrowable();
+    
+    void setThrowable(Throwable t);
+    
 
 }

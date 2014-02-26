@@ -65,6 +65,7 @@ public class StoreContextImpl implements StoreContext {
     private StoreAction storeAction;
     private Instance instance;
     private FileRef fileRef;
+    private Throwable throwable;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
 
     public StoreContextImpl(StoreSession session) {
@@ -184,5 +185,15 @@ public class StoreContextImpl implements StoreContext {
     @Override
     public void setProperty(String key, Object value) {
         properties.put(key, value);
+    }
+
+    @Override
+    public Throwable getThrowable() {
+        return throwable;
+    }
+
+    @Override
+    public void setThrowable(Throwable throwable) {
+        this.throwable = throwable;
     }
 }

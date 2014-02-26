@@ -307,8 +307,13 @@ public class StoreServiceImpl implements StoreService {
             service.processFile(context);
             service.updateDB(context);
             service.updateCoercedAttributes(context);
-            service.fireStoreEvent(context);
+        }    
+        catch (DicomServiceException e) {
+            context.setStoreAction(StoreAction.FAIL);
+            context.setThrowable(e);
+            throw e;
         } finally {
+            service.fireStoreEvent(context);
             service.cleanup(context);
         }
     }
