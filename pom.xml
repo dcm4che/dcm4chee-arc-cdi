@@ -239,10 +239,7 @@
     <module>dcm4chee-arc-qido</module>
     <module>dcm4chee-arc-iocm</module>
     <module>dcm4chee-arc-web</module>
-<<<<<<< Updated upstream
     <module>dcm4chee-arc-mima</module>
-=======
     <module>dcm4chee-arc-audit</module>
->>>>>>> Stashed changes
   </modules>
 </project>
