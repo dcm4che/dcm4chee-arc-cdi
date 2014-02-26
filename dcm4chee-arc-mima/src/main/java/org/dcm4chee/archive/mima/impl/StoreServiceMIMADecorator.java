@@ -36,39 +36,50 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.mpps;
+package org.dcm4chee.archive.mima.impl;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Dimse;
+import javax.annotation.Priority;
+import javax.decorator.Decorator;
+import javax.decorator.Delegate;
+import javax.inject.Inject;
+import javax.interceptor.Interceptor;
+
+import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreService;
+import org.dcm4chee.archive.store.StoreSession;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface MPPSService {
+@Decorator @Priority(Interceptor.Priority.APPLICATION)
+public abstract class StoreServiceMIMADecorator implements StoreService {
 
-    MPPS createPerformedProcedureStep(Association as, String sopInstanceUID,
-            Attributes attrs, MPPSService service)
-            throws DicomServiceException;
+    @Inject @Delegate
+    private StoreService storeService;
 
-    MPPS updatePerformedProcedureStep(Association as, String iuid,
-            Attributes attrs, MPPSService service)
-            throws DicomServiceException;
+    @Inject
+    private IApplicationEntityCache aeCache;
 
-    Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)
-            throws DicomServiceException;
+    @Override
+    public void coerceAttributes(StoreContext context)
+            throws DicomServiceException {
+        storeService.coerceAttributes(context);
 
-    void checkIncorrectWorklistEntrySelected(StoreContext context, MPPS mpps,
-            Instance inst);
-
-    void coerceAttributes(Association as, Dimse dimse, Attributes attrs)
-            throws DicomServiceException;
+        StoreSession session = context.getStoreSession();
+        try {
+            ApplicationEntity remoteAE = aeCache.get(session.getRemoteAET());
+            if (remoteAE != null) {
+                Supplements.supplementComposite(session, context.getAttributes(),
+                        remoteAE.getDevice());
+            }
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.UnableToProcess, e);
+        }
+    }
 
 }

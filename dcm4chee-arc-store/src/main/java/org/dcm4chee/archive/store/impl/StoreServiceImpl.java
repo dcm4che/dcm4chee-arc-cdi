@@ -471,8 +471,7 @@ public class StoreServiceImpl implements StoreService {
                  .setParameter(1, attrs.getString(Tag.SOPInstanceUID))
                  .getSingleResult();
             StoreAction action = service.instanceExists(em, context, inst);
-            LOG.info("{}: Instance[pk={},iuid={}] already exists - {}",
-                    session, inst.getPk(), inst.getSopInstanceUID(), action);
+            LOG.info("{}: {} already exists - {}", session, inst, action);
             context.setStoreAction(action);
             switch (action) {
             case RESTORE:
@@ -559,8 +558,7 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         Patient patient = patientService.createPatientOnStore(
                 context.getAttributes(), context.getStoreSession().getStoreParam());
-        LOG.info("{}: Create Patient[pk={},id={},issuer={}]", session,
-                patient.getPk(), patient.getPatientID(), patient.getIssuerOfPatientID());
+        LOG.info("{}: Create {}", session, patient);
         return patient;
     }
 
@@ -583,8 +581,7 @@ public class StoreServiceImpl implements StoreService {
         study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
                 storeParam.getFuzzyStr());
         em.persist(study);
-        LOG.info("{}: Create Study[pk={},iuid={}]", session,
-                study.getPk(), study.getStudyInstanceUID());
+        LOG.info("{}: Create {}", session, study);
         return study;
     }
 
@@ -610,8 +607,7 @@ public class StoreServiceImpl implements StoreService {
                 storeParam.getAttributeFilter(Entity.Series),
                 storeParam.getFuzzyStr());
         em.persist(series);
-        LOG.info("{}: Create Series[pk={},iuid={}]", session,
-                series.getPk(), series.getSeriesInstanceUID());
+        LOG.info("{}: Create {}", session, series);
         return series;
     }
 
@@ -638,8 +634,7 @@ public class StoreServiceImpl implements StoreService {
                 storeParam.getAttributeFilter(Entity.Instance),
                 storeParam.getFuzzyStr());
         em.persist(inst);
-        LOG.info("{}: Create Instance[pk={},iuid={}]", session,
-                inst.getPk(), inst.getSopInstanceUID());
+        LOG.info("{}: Create {}", session, inst);
         return inst;
     }
 
@@ -655,8 +650,7 @@ public class StoreServiceImpl implements StoreService {
                 context.getFinalFileDigest());
         fileRef.setInstance(instance);
         em.persist(fileRef);
-        LOG.info("{}: Create FileRef[pk={},uri={}/{}]", session,
-                fileRef.getPk(), fs.getURI(), fileRef.getFilePath());
+        LOG.info("{}: Create {}", session, fileRef);
         return fileRef;
     }
 
@@ -690,9 +684,8 @@ public class StoreServiceImpl implements StoreService {
         if (studyAttrs.updateSelected(data, modified, studyFilter.getSelection())) {
             study.setAttributes(studyAttrs, studyFilter,
                     storeParam.getFuzzyStr());
-            LOG.info("{}: Update Study[pk={},iuid={}]:\n{}\nmodified:\n{}",
-                    session, study.getPk(), study.getStudyInstanceUID(),
-                    studyAttrs, modified);
+            LOG.info("{}: Update {}:\n{}\nmodified:\n{}",
+                    session, study, studyAttrs, modified);
         }
         service.updatePatient(em, context, study.getPatient());
     }
@@ -712,9 +705,8 @@ public class StoreServiceImpl implements StoreService {
         if (seriesAttrs.updateSelected(data, modified, seriesFilter.getSelection())) {
             series.setAttributes(seriesAttrs, seriesFilter,
                     storeParam.getFuzzyStr());
-            LOG.info("{}: Update Series[pk={},iuid={}]:\n{}\nmodified:\n{}",
-                    session, series.getPk(), series.getSeriesInstanceUID(),
-                    seriesAttrs, modified);
+            LOG.info("{}: Update {}:\n{}\nmodified:\n{}",
+                    session, series, seriesAttrs, modified);
         }
         service.updateStudy(em, context, series.getStudy());
     }
@@ -732,9 +724,8 @@ public class StoreServiceImpl implements StoreService {
         Attributes modified = new Attributes();
         if (instAttrs.updateSelected(data, modified, instFilter.getSelection())) {
             inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
-            LOG.info("{}: Update Instance[pk={},iuid={}]:\n{}\nmodified:\n{}",
-                    session, inst.getPk(), inst.getSopInstanceUID(),
-                    instAttrs, modified);
+            LOG.info("{}: {}:\n{}\nmodified:\n{}",
+                    session, inst, instAttrs, modified);
         }
         service.updateSeries(em, context, inst.getSeries());
     }

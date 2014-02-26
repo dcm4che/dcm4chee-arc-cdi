@@ -46,12 +46,18 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
+import javax.xml.transform.Templates;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.code.CodeService;
@@ -94,16 +100,15 @@ public class MPPSServiceImpl implements MPPSService {
     private CodeService codeService;
 
     @Override
-    public MPPS createPerformedProcedureStep(String prompt,
-            ApplicationEntity ae, String iuid, Attributes attrs,
-            MPPSService service) throws DicomServiceException {
-        ArchiveAEExtension arcAE =
-                ae.getAEExtensionNotNull(ArchiveAEExtension.class);
+    public MPPS createPerformedProcedureStep(Association as, String iuid,
+            Attributes attrs, MPPSService service) throws DicomServiceException {
         try {
             find(iuid);
             throw new DicomServiceException(Status.DuplicateSOPinstance)
                 .setUID(Tag.AffectedSOPInstanceUID, iuid);
         } catch (NoResultException e) {}
+        ApplicationEntity ae = as.getApplicationEntity();
+        ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
         Patient patient = service.findOrCreatePatient(attrs, arcAE.getStoreParam());
         MPPS mpps = new MPPS();
         mpps.setSopInstanceUID(iuid);
@@ -114,9 +119,8 @@ public class MPPSServiceImpl implements MPPSService {
     }
 
     @Override
-    public MPPS updatePerformedProcedureStep(String prompt,
-            ApplicationEntity ae, String iuid, Attributes modified,
-            MPPSService service) throws DicomServiceException {
+    public MPPS updatePerformedProcedureStep(Association as, String iuid,
+            Attributes modified, MPPSService service) throws DicomServiceException {
         MPPS pps;
         try {
             pps = find(iuid);
@@ -142,7 +146,8 @@ public class MPPSServiceImpl implements MPPSService {
             if (codeItem != null) {
                 Code code = codeService.findOrCreate(new Code(codeItem));
                 pps.setDiscontinuationReasonCode(code);
-                checkIncorrectWorklistEntrySelected(prompt, pps, ae.getDevice());
+                checkIncorrectWorklistEntrySelected(as, pps,
+                        as.getApplicationEntity().getDevice());
             }
         }
         return pps;
@@ -179,7 +184,7 @@ public class MPPSServiceImpl implements MPPSService {
                 mpps.getDiscontinuationReasonCode());
     }
 
-    private void checkIncorrectWorklistEntrySelected(String prompt, 
+    private void checkIncorrectWorklistEntrySelected(Association as, 
             MPPS pps, Device device) {
         if (!isIncorrectWorklistEntrySelected(pps, device))
             return;
@@ -212,7 +217,7 @@ public class MPPSServiceImpl implements MPPSService {
                         LOG.warn("{}: SOP Class of received Instance[iuid={}, cuid={}] "
                                 + "of Series[iuid={}] of Study[iuid={}] differs from"
                                 + "SOP Class[cuid={}] referenced by MPPS[iuid={}]",
-                                prompt, iuid, cuid, series.getSeriesInstanceUID(), 
+                                as, iuid, cuid, series.getSeriesInstanceUID(), 
                                 study.getStudyInstanceUID(), cuidInPPS,
                                 pps.getSopInstanceUID());
                     }
@@ -221,7 +226,7 @@ public class MPPSServiceImpl implements MPPSService {
                     series.resetNumberOfInstances();
                     study.resetNumberOfInstances();
                     LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
-                            prompt, inst.getPk(), iuid,
+                            as, inst.getPk(), iuid,
                             pps.getDiscontinuationReasonCode());
                 }
             }
@@ -252,5 +257,25 @@ public class MPPSServiceImpl implements MPPSService {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }
         return patientService.createPatientOnStore(attrs, storeParam);
+    }
+
+    @Override
+    public void coerceAttributes(Association as, Dimse dimse,
+            Attributes attrs) throws DicomServiceException {
+        try {
+            ApplicationEntity ae = as.getApplicationEntity();
+            ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
+            Templates tpl = arcAE.getAttributeCoercionTemplates(
+                    UID.ModalityPerformedProcedureStepSOPClass,
+                    dimse, TransferCapability.Role.SCP, 
+                    as.getRemoteAET());
+            if (tpl != null) {
+                Attributes modified = new Attributes();
+                attrs.update(SAXTransformer.transform(attrs, tpl, false, false),
+                        modified);
+            }
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.ProcessingFailure, e);
+        }
     }
 }

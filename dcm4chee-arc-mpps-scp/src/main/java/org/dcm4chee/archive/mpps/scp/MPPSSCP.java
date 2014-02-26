@@ -84,12 +84,13 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
     @Override
     protected Attributes create(Association as, Attributes cmd,
             Attributes data, Attributes rsp) throws DicomServiceException {
-        String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
-        ApplicationEntity ae = as.getApplicationEntity();
         try {
-            MPPS mpps =
-                    mppsService.createPerformedProcedureStep(as.toString(),
-                            ae, iuid , data, mppsService);
+            String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
+            ApplicationEntity ae = as.getApplicationEntity();
+            Attributes copy = new Attributes(data);
+            mppsService.coerceAttributes(as, Dimse.N_CREATE_RQ, copy);
+            MPPS mpps = mppsService.createPerformedProcedureStep(as,
+                    iuid, copy, mppsService);
 
             createMPPSEvent.fire(
                     new MPPSEvent(ae, Dimse.N_CREATE_RQ, data, mpps));
@@ -104,12 +105,13 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
     @Override
     protected Attributes set(Association as, Attributes cmd, Attributes data,
             Attributes rsp) throws DicomServiceException {
-        String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
-        ApplicationEntity ae = as.getApplicationEntity();
         try {
-            MPPS mpps =
-                    mppsService.updatePerformedProcedureStep(as.toString(),
-                            ae, iuid, data, mppsService);
+            String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
+            ApplicationEntity ae = as.getApplicationEntity();
+            Attributes copy = new Attributes(data);
+            mppsService.coerceAttributes(as, Dimse.N_SET_RQ, copy);
+            MPPS mpps = mppsService.updatePerformedProcedureStep(as,
+                    iuid, copy, mppsService);
 
             (mpps.getStatus() == MPPS.Status.IN_PROGRESS
                     ? updateMPPSEvent
