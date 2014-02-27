@@ -80,8 +80,8 @@ public class CStoreSCP extends BasicCStoreSCP {
             if (session == null) {
                 ArchiveAEExtension arcAE = as.getApplicationEntity()
                         .getAEExtension(ArchiveAEExtension.class);
-                session = storeService.initStoreSession(as.toString(),
-                        storeService, as.getRemoteAET(), arcAE);
+                session = storeService.initStoreSession(storeService, as,
+                        as.getRemoteAET(), arcAE);
                 as.setProperty(StoreSession.class.getName(), session);
             }
             Attributes fmi = as.createFileMetaInformation(

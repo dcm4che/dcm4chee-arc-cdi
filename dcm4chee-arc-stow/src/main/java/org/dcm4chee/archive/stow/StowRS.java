@@ -209,7 +209,7 @@ public class StowRS {
     public Response storeInstances(InputStream in) throws Exception {
         init();
         final StoreSession session = storeService.initStoreSession(
-                request.toString(), storeService, request.getRemoteHost(), arcAE);
+                storeService, request, request.getRemoteHost(), arcAE);
         try {
             new MultipartParser(boundary).parse(in, new MultipartParser.Handler() {
                 

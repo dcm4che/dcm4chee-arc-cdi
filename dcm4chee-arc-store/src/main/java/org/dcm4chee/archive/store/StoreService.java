@@ -60,8 +60,9 @@ public interface StoreService {
 
     int DATA_SET_NOT_PARSEABLE = 0xC900;
 
-    StoreSession initStoreSession(String name, StoreService storeService,
-            String sourceAET, ArchiveAEExtension arcAE) throws DicomServiceException;
+    StoreSession initStoreSession(StoreService storeService, Object source,
+            String sourceAET, ArchiveAEExtension arcAE)
+                    throws DicomServiceException;
 
     StoreContext initStoreContext(StoreSession session, Attributes fmi,
             InputStream data) throws DicomServiceException;

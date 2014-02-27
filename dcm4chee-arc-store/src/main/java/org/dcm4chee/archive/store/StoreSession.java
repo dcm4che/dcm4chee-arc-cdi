@@ -52,6 +52,8 @@ import org.dcm4chee.archive.entity.FileSystem;
  */
 public interface StoreSession {
 
+    Object getSource();
+
     StoreService getStoreService();
 
     String getRemoteAET();

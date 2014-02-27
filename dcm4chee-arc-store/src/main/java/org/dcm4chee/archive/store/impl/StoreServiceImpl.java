@@ -131,9 +131,10 @@ public class StoreServiceImpl implements StoreService {
     private Event<StoreSession> storeSessionClosed;
 
     @Override
-    public StoreSession initStoreSession(String name, StoreService storeService,
+    public StoreSession initStoreSession(StoreService storeService, Object source,
             String sourceAET, ArchiveAEExtension arcAE) throws DicomServiceException {
-        StoreSession session = new StoreSessionImpl(name, storeService, sourceAET, arcAE);
+        StoreSession session = new StoreSessionImpl(storeService, source,
+                sourceAET, arcAE);
         initStorageFileSystem(session);
         initSpoolDirectory(session);
         return session;
