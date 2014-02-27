@@ -96,6 +96,8 @@ public interface StoreContext {
 
     void setProperty(String key, Object value);
     
+    boolean isFail();
+    
     Throwable getThrowable();
     
     void setThrowable(Throwable t);

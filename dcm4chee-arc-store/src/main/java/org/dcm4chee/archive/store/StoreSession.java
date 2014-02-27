@@ -52,6 +52,11 @@ import org.dcm4chee.archive.entity.FileSystem;
  */
 public interface StoreSession {
 
+    /**
+     * Returns the source of this store session.
+     * Could be a org.dcm4che3.net.Association
+     * or a javax.servlet.http.HttpServletRequest
+     */
     Object getSource();
 
     StoreService getStoreService();

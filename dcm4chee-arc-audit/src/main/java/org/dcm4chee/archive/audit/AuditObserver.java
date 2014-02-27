@@ -38,10 +38,18 @@
 
 package org.dcm4chee.archive.audit;
 
+import java.util.Calendar;
+import java.util.HashMap;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
+import org.dcm4che3.audit.AuditMessages;
+import org.dcm4che3.audit.AuditMessages.*;
+import org.dcm4che3.audit.AuditMessage;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4chee.archive.store.StoreContext;
@@ -50,56 +58,106 @@ import org.dcm4chee.archive.store.StoreSessionClosed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
-
 /**
- * Observer receiving events (like store, query, association) to
- * be audited. Implements the ITI-20 transaction of IHE actor 
- * Secure Node (see IHE ITI Technical Framework, Vol. 2 - 
- * Section 3.20).
+ * Observer receiving events (like store, query, association) to be audited.
+ * Implements the ITI-20 transaction of IHE actor Secure Node (see IHE ITI
+ * Technical Framework, Vol. 2 - Section 3.20).
  * 
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
+ * 
  */
 @ApplicationScoped
 public class AuditObserver {
-    
-    protected static final Logger LOG = LoggerFactory.getLogger(AuditObserver.class);
-    
-    private static final String AUDIT_MESSAGE_SUCCESS = "InstanceStoredSuccess";
-    private static final String AUDIT_MESSAGE_FAILURE = "InstanceStoredFailed";
-    
+
+    private static final String AUDIT_MESSAGES_SUCCESS = "SuccessAudits";
+    private static final String AUDIT_MESSAGES_FAILURE = "FailedAudits";
+
+    protected static final Logger LOG = LoggerFactory
+            .getLogger(AuditObserver.class);
+
     public void receiveStoreContext(@Observes StoreContext context) {
 
         StoreSession session = context.getStoreSession();
-        AuditLogger logger = getLogger(session.getDevice());
-        
-        if (session.getProperty(AUDIT_MESSAGE_SUCCESS)==null)
-        {
-            session.setProperty(AUDIT_MESSAGE_SUCCESS, new StoreAudit());
-        }
-        
-        StoreAudit audit = (StoreAudit)session.getProperty(AUDIT_MESSAGE_SUCCESS);
-        
-    }
-    
-    public void receiveStoreSessionClosed(@Observes @StoreSessionClosed StoreSession session) {
+        AuditLogger logger = getLogger(session);
+        String studyID = context.getAttributes()
+                .getString(Tag.StudyInstanceUID);
 
-        System.out.println("STORE SESSION AET:" + session.getLocalAET());
+        HashMap<String, StoreAudit> auditMap = getOrCreateAuditsMap(session,
+                context.isFail());
+
+        if (auditMap.get(studyID) == null)
+            auditMap.put(
+                    studyID,
+                    new StoreAudit(session, context.getAttributes(), context
+                            .isFail() ? EventOutcomeIndicator.SeriousFailure
+                            : EventOutcomeIndicator.Success, logger));
+        else {
+            StoreAudit existingAudit = auditMap.get(studyID);
+            existingAudit.addInstance(context.getAttributes(), logger);
+        }
     }
-    
-    private AuditLogger getLogger(Device device)
-    {
-        
-        if (device.getDeviceExtension(AuditLogger.class) == null)
-        {
+
+    public void receiveStoreSessionClosed(
+            @Observes @StoreSessionClosed StoreSession session) {
+
+        // send all the audits at once
+        HashMap<String, StoreAudit> success = (HashMap<String, StoreAudit>) session
+                .getProperty(AUDIT_MESSAGES_SUCCESS);
+        if (success != null)
+            for (String studyUID : success.keySet())
+                sendAuditMessage(success.get(studyUID), session);
+
+        HashMap<String, StoreAudit> failures = (HashMap<String, StoreAudit>) session
+                .getProperty(AUDIT_MESSAGES_FAILURE);
+        if (failures != null)
+            for (String studyUID : failures.keySet())
+                sendAuditMessage(failures.get(studyUID), session);
+    }
+
+    private HashMap<String, StoreAudit> getOrCreateAuditsMap(
+            StoreSession session, boolean fail) {
+        String mapType = fail ? AUDIT_MESSAGES_FAILURE : AUDIT_MESSAGES_SUCCESS;
+
+        // if not existing, create a new map for audits (failed or success)
+        if (session.getProperty(mapType) == null)
+            session.setProperty(mapType, new HashMap<String, StoreAudit>());
+
+        return (HashMap<String, StoreAudit>) session.getProperty(mapType);
+    }
+
+    private AuditLogger getLogger(StoreSession session) {
+
+        if (session.getDevice().getDeviceExtension(AuditLogger.class) == null) {
             AuditLogger auditLogger = new AuditLogger();
-            device.addDeviceExtension(auditLogger);
+            session.getDevice().addDeviceExtension(auditLogger);
         }
-        
-        return device.getDeviceExtension(AuditLogger.class);
+
+        return session.getDevice().getDeviceExtension(AuditLogger.class);
     }
 
+    private void sendAuditMessage(AuditMessage msg, StoreSession session) {
+
+        if (msg == null)
+            return;
+
+        AuditLogger logger = getLogger(session);
+
+        if (logger == null || !logger.isInstalled())
+            return;
+
+        try {
+            
+            if (LOG.isDebugEnabled())
+                LOG.debug("Send Audit Log message: {}",
+                        AuditMessages.toXML(msg));
+
+            logger.write(logger.timeStamp(), msg);
+
+        } catch (Exception e) {
+            
+            LOG.error("Failed to write audit log message: {}", e.getMessage());
+            LOG.debug(e.getMessage(), e);
+        }
+    }
 
 }

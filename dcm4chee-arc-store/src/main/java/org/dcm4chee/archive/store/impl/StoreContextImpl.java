@@ -196,4 +196,10 @@ public class StoreContextImpl implements StoreContext {
     public void setThrowable(Throwable throwable) {
         this.throwable = throwable;
     }
+    
+    @Override
+    public boolean isFail() {
+        return getStoreAction()!=null && getStoreAction().equals(StoreAction.FAIL);
+    }
+    
 }
