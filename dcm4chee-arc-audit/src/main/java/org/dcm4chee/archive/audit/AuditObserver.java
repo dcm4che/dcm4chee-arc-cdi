@@ -93,7 +93,7 @@ public class AuditObserver {
                             : EventOutcomeIndicator.Success, logger));
         else {
             StoreAudit existingAudit = auditMap.get(studyID);
-            existingAudit.addInstance(context.getAttributes(), logger);
+            existingAudit.addInstance(context.getAttributes());
         }
     }
 
@@ -148,7 +148,10 @@ public class AuditObserver {
         try {
             
             if (LOG.isDebugEnabled())
-                LOG.debug("Send Audit Log message: {}",
+                LOG.debug("Send Audit Log message to [" + 
+                        logger.getRemoteActiveConnection().getHostname() +
+                        ":" +
+                        logger.getRemoteActiveConnection().getPort() +"]: {}",
                         AuditMessages.toXML(msg));
 
             logger.write(logger.timeStamp(), msg);

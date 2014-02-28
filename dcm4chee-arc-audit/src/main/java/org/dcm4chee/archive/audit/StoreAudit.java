@@ -105,7 +105,7 @@ public class StoreAudit extends AuditMessage {
                         AuditMessages.ParticipantObjectTypeCode.SystemObject,
                         AuditMessages.ParticipantObjectTypeCodeRole.Report,
                         null, null,
-                        createPODescription(createSOPClass(attributes, logger))));
+                        createPODescription(createSOPClass(attributes))));
 
         // Participating Object: Patient
         this.getParticipantObjectIdentification()
@@ -140,7 +140,7 @@ public class StoreAudit extends AuditMessage {
         return "UNKNOWN";
     }
 
-    private static String getPatientID(Attributes attrs) {
+    private String getPatientID(Attributes attrs) {
         String patID = attrs.getString(Tag.PatientID);
         if (patID == null)
             return "UNKNOWN";
@@ -149,14 +149,13 @@ public class StoreAudit extends AuditMessage {
                 + issuer;
     }
 
-    private static ParticipantObjectDescription createPODescription(SOPClass sop) {
+    private ParticipantObjectDescription createPODescription(SOPClass sop) {
         ParticipantObjectDescription desc = new ParticipantObjectDescription();
         desc.getSOPClass().add(sop);
         return desc;
     }
 
-    private static SOPClass createSOPClass(Attributes attributes,
-            AuditLogger logger) {
+    private SOPClass createSOPClass(Attributes attributes) {
         SOPClass sop = new SOPClass();
         sop.setUID(attributes.getString(Tag.SOPClassUID));
         sop.setNumberOfInstances(1);
@@ -172,7 +171,7 @@ public class StoreAudit extends AuditMessage {
     /**
      * Add a new instance to the existing store audit
      */
-    public void addInstance(Attributes attributes, AuditLogger logger) {
+    public void addInstance(Attributes attributes) {
         String sopclassuid = attributes.getString(Tag.SOPClassUID);
 
         ParticipantObjectDescription desc = this
@@ -186,7 +185,7 @@ public class StoreAudit extends AuditMessage {
                 sop = existingsop;
 
         if (sop == null) { // sop class were not found
-            desc.getSOPClass().add(createSOPClass(attributes, logger));
+            desc.getSOPClass().add(createSOPClass(attributes));
         } else { // sop class already existed
 
             Integer numberOfInstances = sop.getNumberOfInstances();
