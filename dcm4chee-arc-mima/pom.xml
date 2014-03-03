@@ -21,12 +21,21 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-query</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-mpps-scp</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-conf-api</artifactId>
+      <artifactId>dcm4che-conf-api-hl7</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-net-hl7</artifactId>
     </dependency>
     <dependency>
       <groupId>javax.enterprise</groupId>
@@ -57,7 +66,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.conf.api</Dependencies>
+              <Dependencies>org.dcm4che.conf.api-hl7</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

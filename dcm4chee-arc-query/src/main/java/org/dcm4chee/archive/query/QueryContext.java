@@ -38,9 +38,10 @@
 
 package org.dcm4chee.archive.query;
 
-import java.sql.SQLException;
-
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.QueryParam;
 
 import com.mysema.query.types.OrderSpecifier;
 
@@ -48,7 +49,27 @@ import com.mysema.query.types.OrderSpecifier;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface Query {
+public interface QueryContext {
+
+    QueryService getQueryService();
+
+    ArchiveAEExtension getArchiveAEExtension();
+
+    void setArchiveAEExtension(ArchiveAEExtension arcAE);
+
+    QueryParam getQueryParam();
+
+    void setQueryParam(QueryParam queryParam);
+
+    Attributes getKeys();
+
+    void setKeys(Attributes keys);
+
+    IDWithIssuer[] getPatientIDs();
+
+    void setPatientIDs(IDWithIssuer[] pids);
+
+    void initQuery();
 
     void executeQuery();
 
@@ -60,11 +81,17 @@ public interface Query {
 
     void orderBy(OrderSpecifier<?>... orderSpecifiers);
 
-    boolean optionalKeyNotSupported();
+    boolean optionalKeysNotSupported();
 
     boolean hasMoreMatches();
 
     Attributes nextMatch();
 
-    void close() throws SQLException;
+    void close();
+
+    Object getProperty(String key);
+
+    Object removeProperty(String key);
+
+    void setProperty(String key, Object value);
 }

@@ -44,8 +44,10 @@ import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.hibernate.ScrollableResults;
+import org.hibernate.StatelessSession;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
@@ -54,15 +56,15 @@ import com.mysema.query.types.Expression;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-class StudyQuery extends AbstractQuery {
+class StudyQueryContext extends AbstractQueryContext {
 
-    public StudyQuery(DefaultQueryService qsf) {
-        super(qsf);
+    public StudyQueryContext(QueryService service, StatelessSession session) {
+        super(service, session);
     }
 
     @Override
     protected Expression<?>[] select() {
-        return queryParam.isShowRejectedForQualityReasons()
+        return getQueryParam().isShowRejectedForQualityReasons()
                 ? new Expression<?>[] {
                     QStudy.study.pk,                        // (0)
                     QStudy.study.numberOfSeriesA,           // (1)
@@ -92,8 +94,8 @@ class StudyQuery extends AbstractQuery {
     @Override
     protected HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys) {
         BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, queryParam);
-        QueryBuilder.addStudyLevelPredicates(builder, keys, queryParam);
+        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, getQueryParam());
+        QueryBuilder.addStudyLevelPredicates(builder, keys, getQueryParam());
         return new HibernateQuery(session)
             .from(QStudy.study)
             .innerJoin(QStudy.study.patient, QPatient.patient)
@@ -106,7 +108,7 @@ class StudyQuery extends AbstractQuery {
         int numberOfStudyRelatedSeries = results.getInteger(1);
         if (numberOfStudyRelatedSeries < 0)
             numberOfStudyRelatedSeries =
-                service.calculateNumberOfStudyRelatedSeries(studyPk, queryParam);
+                service.calculateNumberOfStudyRelatedSeries(studyPk, getQueryParam());
         // skip match for empty Study
         if (numberOfStudyRelatedSeries == 0)
             return null;
@@ -114,7 +116,7 @@ class StudyQuery extends AbstractQuery {
         int numberOfStudyRelatedInstances = results.getInteger(2);
         if (numberOfStudyRelatedInstances < 0)
             numberOfStudyRelatedInstances = 
-                service.calculateNumberOfStudyRelatedInstance(studyPk, queryParam);
+                service.calculateNumberOfStudyRelatedInstance(studyPk, getQueryParam());
 
         String modalitiesInStudy = results.getString(3);
         String sopClassesInStudy = results.getString(4);

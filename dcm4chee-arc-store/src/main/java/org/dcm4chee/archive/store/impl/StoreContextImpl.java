@@ -183,6 +183,11 @@ public class StoreContextImpl implements StoreContext {
     }
 
     @Override
+    public Object removeProperty(String key) {
+        return properties .remove(key);
+    }
+
+    @Override
     public void setProperty(String key, Object value) {
         properties.put(key, value);
     }

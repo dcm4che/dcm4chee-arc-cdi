@@ -40,14 +40,12 @@ package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4chee.archive.entity.Availability;
-import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QPatient;
-import org.dcm4chee.archive.entity.QSeries;
-import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.hibernate.ScrollableResults;
+import org.hibernate.StatelessSession;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
@@ -56,21 +54,15 @@ import com.mysema.query.types.Expression;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-class InstanceQuery extends AbstractQuery {
+class PatientQueryContext extends AbstractQueryContext {
 
     private static final Expression<?>[] SELECT = {
-        QSeries.series.pk,
-        QInstance.instance.retrieveAETs,
-        QInstance.instance.externalRetrieveAET,
-        QInstance.instance.availability,
-        QInstance.instance.encodedAttributes
+        QPatient.patient.pk,
+        QPatient.patient.encodedAttributes
     };
 
-    private Long seriesPk;
-    private Attributes seriesAttrs;
-
-    public InstanceQuery(DefaultQueryService qsf) {
-        super(qsf);
+    public PatientQueryContext(QueryService service, StatelessSession session) {
+        super(service, session);
     }
 
     @Override
@@ -81,34 +73,16 @@ class InstanceQuery extends AbstractQuery {
     @Override
     protected HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys) {
         BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, queryParam);
-        QueryBuilder.addStudyLevelPredicates(builder, keys, queryParam);
-        QueryBuilder.addSeriesLevelPredicates(builder, keys, queryParam);
-        QueryBuilder.addInstanceLevelPredicates(builder, keys, queryParam);
+        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, getQueryParam());
         return new HibernateQuery(session)
-            .from(QInstance.instance)
-            .innerJoin(QInstance.instance.series, QSeries.series)
-            .innerJoin(QSeries.series.study, QStudy.study)
-            .innerJoin(QStudy.study.patient, QPatient.patient)
+            .from(QPatient.patient)
             .where(builder);
     }
 
     @Override
     public Attributes toAttributes(ScrollableResults results) {
-        Long seriesPk = results.getLong(0);
-        String retrieveAETs = results.getString(1);
-        String externalRetrieveAET = results.getString(2);
-        Availability availability = (Availability) results.get(3);
-        byte[] instAttributes = results.getBinary(4);
-        if (!seriesPk.equals(this.seriesPk)) {
-            this.seriesAttrs = service.getSeriesAttributes(seriesPk, queryParam);
-            this.seriesPk = seriesPk;
-        }
-        Attributes attrs = new Attributes(seriesAttrs);
-        Utils.decodeAttributes(attrs, instAttributes);
-        Utils.setRetrieveAET(attrs, retrieveAETs, externalRetrieveAET);
-        Utils.setAvailability(attrs, availability);
+        Attributes attrs = new Attributes();
+        Utils.decodeAttributes(attrs, results.getBinary(1));
         return attrs;
     }
-
 }

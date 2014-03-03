@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,51 +36,41 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.query.impl;
+package org.dcm4chee.archive.mima.impl;
 
-import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4chee.archive.entity.QPatient;
-import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.query.util.QueryBuilder;
-import org.hibernate.ScrollableResults;
-
-import com.mysema.query.BooleanBuilder;
-import com.mysema.query.jpa.hibernate.HibernateQuery;
-import com.mysema.query.types.Expression;
+import org.dcm4che3.data.Issuer;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-class PatientQuery extends AbstractQuery {
+class PatientIDsWithPatientNames {
+    private final IDWithIssuer[] patientIDs;
+    private String[] patientNames;
 
-    private static final Expression<?>[] SELECT = {
-        QPatient.patient.pk,
-        QPatient.patient.encodedAttributes
-    };
-
-    public PatientQuery(DefaultQueryService qsf) {
-        super(qsf);
+    PatientIDsWithPatientNames(IDWithIssuer[] patientIDs) {
+        this.patientIDs = patientIDs;
     }
 
-    @Override
-    protected Expression<?>[] select() {
-        return SELECT;
+    public IDWithIssuer getPatientIDByIssuer(Issuer issuer) {
+        for (IDWithIssuer pid : patientIDs)
+            if (issuer.matches(pid.getIssuer()))
+                return pid;
+
+        return null;
     }
 
-    @Override
-    protected HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys) {
-        BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, queryParam);
-        return new HibernateQuery(session)
-            .from(QPatient.patient)
-            .where(builder);
+    public IDWithIssuer[] getPatientIDs() {
+        return patientIDs;
     }
 
-    @Override
-    public Attributes toAttributes(ScrollableResults results) {
-        Attributes attrs = new Attributes();
-        Utils.decodeAttributes(attrs, results.getBinary(1));
-        return attrs;
+    public String[] getPatientNames() {
+        return patientNames;
     }
+
+    public void setPatientNames(String[] patientNames) {
+        this.patientNames = patientNames;
+    }
+
 }

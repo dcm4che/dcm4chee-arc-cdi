@@ -437,8 +437,6 @@ public class ArchiveAEExtension extends AEExtension {
                 .contains(QueryOption.FUZZY));
         queryParam.setMatchUnknown(matchUnknown);
         queryParam.setAccessControlIDs(accessControlIDs);
-        queryParam.setReturnOtherPatientIDs(returnOtherPatientIDs);
-        queryParam.setReturnOtherPatientNames(returnOtherPatientNames);
         queryParam.setShowRejectedForQualityReasons(showRejectedForQualityReasons);
         return queryParam;
     }

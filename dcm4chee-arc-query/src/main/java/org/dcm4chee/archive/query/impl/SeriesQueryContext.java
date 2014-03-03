@@ -40,14 +40,15 @@ package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.hibernate.ScrollableResults;
+import org.hibernate.StatelessSession;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
@@ -56,18 +57,18 @@ import com.mysema.query.types.Expression;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-class SeriesQuery extends AbstractQuery {
+class SeriesQueryContext extends AbstractQueryContext {
 
     private Long studyPk;
     private Attributes studyAttrs;
 
-    public SeriesQuery(DefaultQueryService qsf) {
-        super(qsf);
+    public SeriesQueryContext(QueryService service, StatelessSession session) {
+        super(service, session);
     }
 
     @Override
     protected Expression<?>[] select() {
-        return queryParam.isShowRejectedForQualityReasons()
+        return getQueryParam().isShowRejectedForQualityReasons()
             ? new Expression<?>[] {
                     QStudy.study.pk,                         // (0)
                     QSeries.series.pk,                       // (1)
@@ -103,9 +104,9 @@ class SeriesQuery extends AbstractQuery {
     @Override
     protected HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys) {
         BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, queryParam);
-        QueryBuilder.addStudyLevelPredicates(builder, keys, queryParam);
-        QueryBuilder.addSeriesLevelPredicates(builder, keys, queryParam);
+        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, getQueryParam());
+        QueryBuilder.addStudyLevelPredicates(builder, keys, getQueryParam());
+        QueryBuilder.addSeriesLevelPredicates(builder, keys, getQueryParam());
         return new HibernateQuery(session)
             .from(QSeries.series)
             .innerJoin(QSeries.series.study, QStudy.study)

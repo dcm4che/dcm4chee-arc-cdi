@@ -109,12 +109,12 @@ public class CMoveSCP extends BasicCMoveSCP {
             ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
             QueryParam queryParam = aeExt.getQueryParam(queryOpts,
                     accessControlIDs());
-            ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
-            if (sourceAE != null)
-                queryParam.setDefaultIssuer(sourceAE.getDevice());
+//            ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
+//            if (sourceAE != null)
+//                queryParam.setDefaultIssuer(sourceAE.getDevice());
             IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
-            if (pid != null && pid.getIssuer() == null)
-                pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
+//            if (pid != null && pid.getIssuer() == null)
+//                pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
 //            IDWithIssuer[] pids = Archive.getInstance().pixQuery(ae, pid);
             IDWithIssuer[] pids = pid != null 
                     ? new IDWithIssuer[]{ pid }

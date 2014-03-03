@@ -38,13 +38,15 @@
 
 package org.dcm4chee.archive.query.impl;
 
-import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.NoSuchElementException;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.query.Query;
+import org.dcm4chee.archive.query.QueryContext;
+import org.dcm4chee.archive.query.QueryService;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.StatelessSession;
@@ -56,38 +58,88 @@ import com.mysema.query.types.OrderSpecifier;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-public abstract class AbstractQuery implements Query {
+public abstract class AbstractQueryContext implements QueryContext {
 
-    protected final DefaultQueryService service;
+    protected final QueryService service;
 
-    protected StatelessSession session;
+    protected final StatelessSession session;
 
     protected ScrollableResults results;
 
-    private boolean hasMoreMatches;
+    protected ArchiveAEExtension arcAE;
+
+    protected IDWithIssuer[] pids;
+
+    protected Attributes keys;
 
     protected QueryParam queryParam;
 
-    private  HibernateQuery query;
+    protected  HibernateQuery query;
 
+    private boolean hasMoreMatches;
+ 
     private boolean optionalKeyNotSupported;
 
-    public AbstractQuery(DefaultQueryService service) {
+    private final HashMap<String,Object> properties = new HashMap<String,Object>();
+    
+    public AbstractQueryContext(QueryService service, StatelessSession session) {
         this.service = service;
+        this.session = session;
     }
 
-    Query init(IDWithIssuer[] pids, Attributes keys, QueryParam queryParam)
-            throws SQLException {
-        this.queryParam = queryParam;
-//        connection = service.getConnection();
-        session = service.openStatelessSession();
-        query = createQuery(pids, keys);
-        return this;
+    @Override
+    public QueryService getQueryService() {
+        return service;
     }
+
+    @Override
+    public ArchiveAEExtension getArchiveAEExtension() {
+        return arcAE;
+    }
+
+    @Override
+    public void setArchiveAEExtension(ArchiveAEExtension arcAE) {
+        this.arcAE = arcAE;
+    }
+
+    @Override
+    public Attributes getKeys() {
+        return keys;
+    }
+
+    @Override
+    public void setKeys(Attributes keys) {
+        this.keys = keys;
+    }
+
+    @Override
+    public IDWithIssuer[] getPatientIDs() {
+        return pids;
+    }
+
+    @Override
+    public void setPatientIDs(IDWithIssuer[] pids) {
+        this.pids = pids;
+    }
+
+    @Override
+    public QueryParam getQueryParam() {
+        return queryParam;
+    }
+
+    @Override
+    public void setQueryParam(QueryParam queryParam) {
+        this.queryParam = queryParam;
+    }
+
+    @Override
+    public void initQuery() {
+        query = createQuery(pids, keys);
+    }
+    
+    protected abstract HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys);
 
     protected abstract Expression<?>[] select();
-
-    protected abstract HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys);
 
     protected abstract Attributes toAttributes(ScrollableResults results);
 
@@ -122,7 +174,7 @@ public abstract class AbstractQuery implements Query {
     }
 
     @Override
-    public boolean optionalKeyNotSupported() {
+    public boolean optionalKeysNotSupported() {
         return optionalKeyNotSupported;
     }
 
@@ -147,12 +199,22 @@ public abstract class AbstractQuery implements Query {
 
     @Override
     public void close() {
-        StatelessSession s = session;
-        session = null;
-        query = null;
-        results = null;
-        if (s != null)
-            s.close();
+        session.close();
+    }
+
+    @Override
+    public Object getProperty(String key) {
+        return properties.get(key);
+    }
+
+    @Override
+    public Object removeProperty(String key) {
+        return properties.remove(key);
+    }
+
+    @Override
+    public void setProperty(String key, Object value) {
+        properties.put(key, value);
     }
 
 }

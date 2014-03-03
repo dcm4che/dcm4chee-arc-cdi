@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -79,7 +80,7 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.query.Query;
+import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
@@ -143,12 +144,15 @@ public class QidoRS {
     private ArchiveAEExtension arcAE;
     
     private org.dcm4chee.archive.conf.QueryParam queryParam;
-    
+
     @Inject
     private Device device;
-    
+
     @Inject
     protected QueryService queryService;
+
+    @Context
+    private HttpServletRequest request;
 
     @Context
     private UriInfo uriInfo;
@@ -181,9 +185,9 @@ public class QidoRS {
 
     private final Attributes keys = new Attributes(64);
 
-    private boolean includeAll;
-
     private String method;
+
+    private boolean includeAll;
 
     private IDWithIssuer[] pids;
 
@@ -210,19 +214,8 @@ public class QidoRS {
                 || (arcAE = ae.getAEExtension(ArchiveAEExtension.class)) == null) {
             throw new WebApplicationException(Response.Status.SERVICE_UNAVAILABLE);
         }
-        else
-        {
-            queryParam = arcAE.
-                    getQueryParam(EnumSet.noneOf(QueryOption.class), getAccessControlIDs());
-        }
     }
-    
-    private String[] getAccessControlIDs()
-    {
-        //TODO Access Control to be implemented
-        return new String[0];
-    }
-    
+
     @GET
     @Path("/studies")
     @Produces("multipart/related;type=application/dicom+xml")
@@ -323,9 +316,15 @@ public class QidoRS {
         init(method, qrlevel, relational, studyInstanceUID, seriesInstanceUID,
                 includetags);
         
-        Query query = queryService.createQuery(qrlevel, pids, keys, queryParam);
-        
+        org.dcm4chee.archive.conf.QueryParam queryParam = queryService.getQueryParam(
+                request, request.getRemoteHost(), arcAE, mkQueryOpts());
+        QueryContext query = queryService.createQueryContext(qrlevel, queryService);
         try {
+            query.setArchiveAEExtension(arcAE);
+            query.setQueryParam(queryParam);
+            query.setPatientIDs(pids);
+            query.setKeys(keys);
+            query.initQuery();
             int status = STATUS_OK;
             int maxResults = arcAE.getQIDOMaxNumberOfResults();
             int offset = Math.max(this.offset, 0);
@@ -356,9 +355,17 @@ public class QidoRS {
             return Response.status(status).entity(
                     output.entity(this, query, qrlevel)).build();
         } finally {
-            if (query != null)
-                query.close();
+            query.close();
         }
+    }
+
+    private EnumSet<QueryOption> mkQueryOpts() {
+        EnumSet<QueryOption> queryOpts = EnumSet.noneOf(QueryOption.class);
+        if (fuzzymatching)
+            queryOpts.add(QueryOption.FUZZY);
+        if (datetimematching)
+            queryOpts.add(QueryOption.DATETIME);
+        return queryOpts;
     }
 
     /**
@@ -417,16 +424,9 @@ public class QidoRS {
             throw new WebApplicationException(e, Status.BAD_REQUEST);
         }
 
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
-        if (pid != null && pid.getIssuer() == null)
-            pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
-        
-        IDWithIssuer[] pids = pid != null 
-                ? new IDWithIssuer[]{ pid }
-                : IDWithIssuer.EMPTY;
-        
-        //TODO Missing PIX Query
-        //this.pids = Archive.getInstance().pixQuery(ae, pid);
+        queryParam = queryService.getQueryParam(
+                request, request.getRemoteHost(), arcAE, queryOpts);
+        pids = queryService.queryPatientIDs(arcAE, keys, queryParam);
     }
 
     private void initDefaultIncludefields(int[] defIncludefields) {
@@ -452,11 +452,6 @@ public class QidoRS {
             return !name.equals("timezoneadjustment");
         }
         return true;
-    }
-
-    private String[] accessControlIDs() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     private void parseIncludefield() {
@@ -543,21 +538,21 @@ public class QidoRS {
     private enum Output {
         DICOM_XML {
             @Override
-            Object entity(QidoRS service, Query query, QueryRetrieveLevel qrlevel) {
+            Object entity(QidoRS service, QueryContext query, QueryRetrieveLevel qrlevel) {
                 return service.writeXML(query, qrlevel);
             }
         },
         JSON {
             @Override
-            Object entity(QidoRS service, Query query, QueryRetrieveLevel qrlevel) {
+            Object entity(QidoRS service, QueryContext query, QueryRetrieveLevel qrlevel) {
                 return service.writeJSON(query, qrlevel);
             }
         };
         
-        abstract Object entity(QidoRS service, Query query, QueryRetrieveLevel qrlevel);
+        abstract Object entity(QidoRS service, QueryContext query, QueryRetrieveLevel qrlevel);
     }
 
-    private Object writeXML(Query query,QueryRetrieveLevel qrlevel) {
+    private Object writeXML(QueryContext query,QueryRetrieveLevel qrlevel) {
         MultipartRelatedOutput output = new MultipartRelatedOutput();
         int count = 0;
         while (query.hasMoreMatches()) {
@@ -580,7 +575,7 @@ public class QidoRS {
         return output;
     }
 
-    private Object writeJSON(Query query, QueryRetrieveLevel qrlevel) {
+    private Object writeJSON(QueryContext query, QueryRetrieveLevel qrlevel) {
         final ArrayList<Attributes> matches = new ArrayList<Attributes>();
         int count = 0;
         while (query.hasMoreMatches()) {

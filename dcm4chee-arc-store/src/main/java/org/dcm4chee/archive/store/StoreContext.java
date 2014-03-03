@@ -94,6 +94,8 @@ public interface StoreContext {
 
     Object getProperty(String key);
 
+    Object removeProperty(String key);
+
     void setProperty(String key, Object value);
     
     boolean isFail();

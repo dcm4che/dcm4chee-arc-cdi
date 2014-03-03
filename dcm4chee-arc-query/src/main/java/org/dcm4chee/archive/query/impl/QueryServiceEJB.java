@@ -38,19 +38,13 @@
 
 package org.dcm4chee.archive.query.impl;
 
-import java.util.HashSet;
-import java.util.List;
-
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.QInstance;
-import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.entity.QueryPatientStudySeriesAttributes;
 import org.dcm4chee.archive.entity.Series;
@@ -60,7 +54,6 @@ import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.hibernate.Session;
 
 import com.mysema.query.BooleanBuilder;
-import com.mysema.query.Tuple;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
 import com.mysema.query.jpa.hibernate.HibernateSubQuery;
 import com.mysema.query.types.ExpressionUtils;

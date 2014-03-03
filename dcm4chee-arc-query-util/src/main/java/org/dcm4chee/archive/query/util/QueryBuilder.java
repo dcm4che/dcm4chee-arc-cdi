@@ -181,7 +181,7 @@ public class QueryBuilder {
                 keys.getString(Tag.PatientSex, "*").toUpperCase(), matchUnknown, false));
         builder.and(MatchDateTimeRange.rangeMatch(QPatient.patient.patientBirthDate, 
                 keys, Tag.PatientBirthDate, MatchDateTimeRange.FormatDate.DA, matchUnknown));
-        AttributeFilter attrFilter = queryParam.getAttributeFilters()[Entity.Patient.ordinal()];
+        AttributeFilter attrFilter = queryParam.getAttributeFilter(Entity.Patient);
         builder.and(wildCard(QPatient.patient.patientCustomAttribute1,
                 AttributeFilter.selectStringValue(keys, attrFilter.getCustomAttribute1(), "*"),
                 matchUnknown, true));
@@ -226,7 +226,7 @@ public class QueryBuilder {
                     keys.getString(Tag.ModalitiesInStudy, "*").toUpperCase(), matchUnknown));
             builder.and(code(QStudy.study.procedureCodes,
                     keys.getNestedDataset(Tag.ProcedureCodeSequence), matchUnknown));
-            AttributeFilter attrFilter = queryParam.getAttributeFilters()[Entity.Study.ordinal()];
+            AttributeFilter attrFilter = queryParam.getAttributeFilter(Entity.Study);
             builder.and(wildCard(QStudy.study.studyCustomAttribute1,
                     AttributeFilter.selectStringValue(keys, attrFilter.getCustomAttribute1(), "*"),
                     matchUnknown, true));
@@ -290,7 +290,7 @@ public class QueryBuilder {
                 queryParam));
         builder.and(code(QSeries.series.institutionCode,
                 keys.getNestedDataset(Tag.InstitutionCodeSequence), matchUnknown));
-        AttributeFilter attrFilter = queryParam.getAttributeFilters()[Entity.Series.ordinal()];
+        AttributeFilter attrFilter = queryParam.getAttributeFilter(Entity.Series);
         builder.and(wildCard(QSeries.series.seriesCustomAttribute1,
                 AttributeFilter.selectStringValue(keys, attrFilter.getCustomAttribute1(), "*"),
                 matchUnknown, true));
@@ -330,7 +330,7 @@ public class QueryBuilder {
         if (contentSeq != null)
             for (Attributes item : contentSeq)
                 builder.and(contentItem(item));
-        AttributeFilter attrFilter = queryParam.getAttributeFilters()[Entity.Instance.ordinal()];
+        AttributeFilter attrFilter = queryParam.getAttributeFilter(Entity.Instance);
         builder.and(wildCard(QInstance.instance.instanceCustomAttribute1,
                 AttributeFilter.selectStringValue(keys, attrFilter.getCustomAttribute1(), "*"),
                 matchUnknown, true));

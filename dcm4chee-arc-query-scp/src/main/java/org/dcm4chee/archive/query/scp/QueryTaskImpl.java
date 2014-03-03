@@ -41,9 +41,6 @@ package org.dcm4chee.archive.query.scp;
 import java.sql.SQLException;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.data.Issuer;
-import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Association;
@@ -51,9 +48,9 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicQueryTask;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.util.StringUtils;
+import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.query.Query;
+import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 
 /**
@@ -62,38 +59,20 @@ import org.dcm4chee.archive.query.QueryService;
  */
 class QueryTaskImpl extends BasicQueryTask {
 
-    private final Query query;
-    private final IDWithIssuer[] pids;
-    private final String[] patientNames;
-    private final Issuer requestedIssuerOfPatientID;
-    private final Issuer requestedIssuerOfAccessionNumber;
-    private final boolean returnOtherPatientIDs;
-    private final boolean returnOtherPatientNames;
-    private final boolean skipMatchesWithoutPatientID;
+    private final QueryContext query;
+    private final QueryRetrieveLevel modelRootLevel;
+    private final QueryService queryService;
 
     public QueryTaskImpl(Association as, PresentationContext pc, Attributes rq,
-            Attributes keys, IDWithIssuer[] pids, QueryParam queryParam,
-            boolean skipMatchesWithoutPatientID, Query query, 
+            Attributes keys, QueryParam queryParam,
+            QueryRetrieveLevel modelRootLevel, QueryContext query,
             QueryService queryService)
             throws Exception {
         super(as, pc, rq, keys);
+        setOptionalKeysNotSupported(query.optionalKeysNotSupported());
         this.query = query;
-        this.pids = pids;
-        this.requestedIssuerOfPatientID = StringUtils.maskNull(
-                Issuer.fromIssuerOfPatientID(keys),
-                queryParam.getDefaultIssuerOfPatientID());
-        this.requestedIssuerOfAccessionNumber = StringUtils.maskNull(
-                Issuer.valueOf(keys.getNestedDataset(
-                        Tag.IssuerOfAccessionNumberSequence)),
-                queryParam.getDefaultIssuerOfAccessionNumber());
-        this.returnOtherPatientIDs = queryParam.isReturnOtherPatientIDs()
-                && keys.contains(Tag.OtherPatientIDsSequence);
-        this.returnOtherPatientNames = queryParam.isReturnOtherPatientNames()
-                && keys.contains(Tag.OtherPatientNames);
-        this.patientNames = returnOtherPatientNames && pids.length > 1 
-                ? queryService.queryPatientNames(pids)
-                : null;
-        this.skipMatchesWithoutPatientID = skipMatchesWithoutPatientID;
+        this.modelRootLevel = modelRootLevel;
+        this.queryService = queryService;
      }
 
     @Override
@@ -101,76 +80,28 @@ class QueryTaskImpl extends BasicQueryTask {
         if (match == null)
             return null;
 
-        adjustPatientID(match);
-        if (skipMatchesWithoutPatientID && !match.containsValue(Tag.PatientID))
+        queryService.adjustMatch(query, match);
+        if (modelRootLevel == QueryRetrieveLevel.PATIENT
+                && !match.containsValue(Tag.PatientID))
             return null;
 
-        adjustAccessionNumber(match);
         Attributes filtered = new Attributes(match.size());
         filtered.setString(Tag.QueryRetrieveLevel, VR.CS,
-                keys.getString(Tag.QueryRetrieveLevel, null));
-        filtered.addSelected(match, Tag.SpecificCharacterSet,
-                Tag.RetrieveAETitle, Tag.InstanceAvailability);
+                keys.getString(Tag.QueryRetrieveLevel));
+        copyAttributes(match, filtered,
+                Tag.SpecificCharacterSet,
+                Tag.RetrieveAETitle,
+                Tag.InstanceAvailability);
         filtered.addSelected(match, keys);
         return filtered;
      }
 
-    private void adjustPatientID(Attributes match) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(match);
-        if (pid == null)
-            return;
-
-        if (pids.length > 1) {
-            pids[0].toPatientIDWithIssuer(match);
-        } else if (requestedIssuerOfPatientID != null
-                && !requestedIssuerOfPatientID.matches(pid.getIssuer())) {
-            match.setNull(Tag.PatientID, VR.LO);
-            requestedIssuerOfPatientID.toIssuerOfPatientID(match);
-        }
-        if (returnOtherPatientIDs)
-            if (pids.length > 0)
-                addOtherPatientIDs(match, pids);
-            else
-                addOtherPatientIDs(match, pid);
-        if (returnOtherPatientNames)
-            if (patientNames != null)
-                match.setString(Tag.OtherPatientNames, VR.PN, patientNames);
-            else
-                match.setString(Tag.OtherPatientNames, VR.PN,
-                        match.getString(Tag.PatientName));
-    }
-
-    private static void addOtherPatientIDs(Attributes attrs, IDWithIssuer... pids) {
-        Sequence seq = attrs.newSequence(Tag.OtherPatientIDsSequence, pids.length);
-        for (IDWithIssuer pid : pids)
-            if (pid.getIssuer() != null)
-                seq.add(pid.toPatientIDWithIssuer(null));
-        if (seq.isEmpty())
-            attrs.remove(Tag.OtherPatientIDsSequence);
-    }
-
-    private void adjustAccessionNumber(Attributes match) {
-        adjustAccessionNumber(match, keys);
-        Sequence rqAttrsSeq = match.getSequence(Tag.RequestAttributesSequence);
-        if (rqAttrsSeq != null) {
-            Attributes rqAttrsKeys = keys.getNestedDataset(Tag.RequestAttributesSequence);
-            if (rqAttrsKeys != null && rqAttrsKeys.isEmpty())
-                rqAttrsKeys = null;
-            for (Attributes rqAttrs : rqAttrsSeq)
-                adjustAccessionNumber(rqAttrs, rqAttrsKeys);
-        }
-    }
-
-    private void adjustAccessionNumber(Attributes match, Attributes keys) {
-        if (requestedIssuerOfAccessionNumber == null
-                || keys != null && !keys.contains(Tag.AccessionNumber)
-                || !match.containsValue(Tag.AccessionNumber))
-            return;
-
-        if (!requestedIssuerOfAccessionNumber.matches(Issuer.valueOf(
-                match.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)))) {
-            match.setNull(Tag.AccessionNumber, VR.SH);
-            match.remove(Tag.IssuerOfAccessionNumberSequence);
+    private void copyAttributes(Attributes src, Attributes dest, int... tags) {
+        VR.Holder vr = new VR.Holder();
+        for (int tag : tags) {
+            Object value = src.getValue(tag, vr);
+            if (value != null)
+                dest.setValue(tag, vr.vr, value);
         }
     }
 
@@ -190,7 +121,7 @@ class QueryTaskImpl extends BasicQueryTask {
         try {
             return query.hasMoreMatches();
         }  catch (Exception e) {
-            throw wrapException(Status.UnableToProcess, e);
+            throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
 
@@ -199,12 +130,7 @@ class QueryTaskImpl extends BasicQueryTask {
         try {
             return query.nextMatch();
         }  catch (Exception e) {
-            throw wrapException(Status.UnableToProcess, e);
+            throw new DicomServiceException(Status.UnableToProcess, e);
         }
-    }
-
-    @Override
-    protected boolean optionalKeyNotSupported(Attributes match) {
-        return query.optionalKeyNotSupported();
     }
 }

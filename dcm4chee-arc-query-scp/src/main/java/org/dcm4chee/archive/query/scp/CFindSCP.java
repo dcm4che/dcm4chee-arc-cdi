@@ -43,7 +43,6 @@ import java.util.EnumSet;
 
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
@@ -59,7 +58,7 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.net.service.QueryTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.query.Query;
+import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 
 /**
@@ -72,9 +71,6 @@ public class CFindSCP extends BasicCFindSCP {
 
     @Inject
     private QueryService queryService;
-
-    @Inject
-    private IApplicationEntityCache aeCache;
 
     public CFindSCP(String sopClass, String... qrLevels) {
         super(sopClass);
@@ -93,40 +89,30 @@ public class CFindSCP extends BasicCFindSCP {
         qrlevel.validateQueryKeys(keys, rootLevel, relational);
 
         ApplicationEntity ae = as.getApplicationEntity();
-        ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
+        ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
         try {
-            QueryParam queryParam = aeExt.getQueryParam(queryOpts,
-                    accessControlID(as));
-            ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
-            if (sourceAE != null)
-                queryParam.setDefaultIssuer(sourceAE.getDevice());
-            IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
-            if (pid != null && pid.getIssuer() == null)
-                pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
-//            IDWithIssuer[] pids = Archive.getInstance().pixQuery(ae, pid);
-            IDWithIssuer[] pids = pid != null 
-                    ? new IDWithIssuer[]{ pid }
-                    : IDWithIssuer.EMPTY;
-            Query query = queryService.createQuery(qrlevel, pids, keys, queryParam);
+            QueryParam queryParam =  queryService.getQueryParam(
+                    as, as.getRemoteAET(), arcAE, queryOpts);
+            IDWithIssuer[] pids = queryService.queryPatientIDs(arcAE, keys, queryParam);
+            QueryContext query = queryService.createQueryContext(qrlevel, queryService);
             try {
+                query.setArchiveAEExtension(arcAE);
+                query.setQueryParam(queryParam);
+                query.setPatientIDs(pids);
+                query.setKeys(keys);
+                query.initQuery();
                 query.executeQuery();
             } catch (Exception e) {
                 query.close();
                 throw e;
             }
-            return new QueryTaskImpl(as, pc, rq, keys, pids, queryParam,
-                    rootLevel == QueryRetrieveLevel.PATIENT, query,
-                    queryService);
+            return new QueryTaskImpl(as, pc, rq, keys, queryParam,
+                    rootLevel, query, queryService);
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-    }
-
-    private String[] accessControlID(Association as) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
 }

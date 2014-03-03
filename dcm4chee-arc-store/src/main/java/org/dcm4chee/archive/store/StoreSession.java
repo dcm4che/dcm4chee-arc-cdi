@@ -81,6 +81,8 @@ public interface StoreSession {
 
     Object getProperty(String key);
 
+    Object removeProperty(String key);
+
     void setProperty(String key, Object value);
 
     Device getDevice();

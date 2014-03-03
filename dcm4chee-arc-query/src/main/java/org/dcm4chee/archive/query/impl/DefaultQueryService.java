@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.query.impl;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 
@@ -49,11 +50,14 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
+import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.query.Query;
+import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.hibernate.Session;
@@ -80,45 +84,40 @@ public class DefaultQueryService implements QueryService {
     }
 
     @Override
-    public Query createQuery(QueryRetrieveLevel qrlevel,
-            IDWithIssuer[] pids, Attributes keys, QueryParam queryParam)
-                    throws Exception {
+    public QueryContext createQueryContext(QueryRetrieveLevel qrlevel,
+            QueryService queryService){
         switch (qrlevel) {
         case PATIENT:
-            return createPatientQuery(pids, keys, queryParam);
+            return queryService.createPatientQueryContext(queryService);
         case STUDY:
-            return createStudyQuery(pids, keys, queryParam);
+            return queryService.createStudyQueryContext(queryService);
         case SERIES:
-            return createSeriesQuery(pids, keys, queryParam);
+            return queryService.createSeriesQueryContext(queryService);
         case IMAGE:
-            return createInstanceQuery(pids, keys, queryParam);
+            return queryService.createInstanceQueryContext(queryService);
         default:
             throw new IllegalArgumentException("qrlevel: " + qrlevel);
         }
     }
 
     @Override
-    public Query createPatientQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception {
-        return new PatientQuery(this).init(pids, keys, queryParam);
+    public QueryContext createPatientQueryContext(QueryService queryService) {
+        return new PatientQueryContext(queryService, openStatelessSession());
     }
 
     @Override
-    public Query createStudyQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception {
-        return new StudyQuery(this).init(pids, keys, queryParam);
+    public QueryContext createStudyQueryContext(QueryService queryService) {
+        return new StudyQueryContext(queryService, openStatelessSession());
     }
 
     @Override
-    public Query createSeriesQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception {
-        return new SeriesQuery(this).init(pids, keys, queryParam);
+    public QueryContext createSeriesQueryContext(QueryService queryService) {
+        return new SeriesQueryContext(queryService, openStatelessSession());
     }
 
     @Override
-    public Query createInstanceQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception {
-        return new InstanceQuery(this).init(pids, keys, queryParam);
+    public QueryContext createInstanceQueryContext(QueryService queryService) {
+        return new InstanceQueryContext(queryService, openStatelessSession());
     }
 
     @Override
@@ -157,6 +156,28 @@ public class DefaultQueryService implements QueryService {
     public int calculateNumberOfStudyRelatedInstance(Long studyPk,
             QueryParam queryParam) {
         return ejb.calculateNumberOfStudyRelatedInstance(studyPk, queryParam);
+    }
+
+    @Override
+    public QueryParam getQueryParam(Object source, String sourceAET,
+            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts) {
+        return aeExt.getQueryParam(queryOpts, accessControlIDs(source));
+    }
+
+    @Override
+    public IDWithIssuer[] queryPatientIDs(
+            ArchiveAEExtension aeExt, Attributes keys, QueryParam queryParam) {
+        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
+        return pid == null ? IDWithIssuer.EMPTY : new IDWithIssuer[] { pid };
+    }
+
+    private String[] accessControlIDs(Object source) {
+        return StringUtils.EMPTY_STRING;
+    }
+
+    @Override
+    public void adjustMatch(QueryContext query, Attributes match) {
+        
     }
 
 }

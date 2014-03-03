@@ -40,7 +40,6 @@ package org.dcm4chee.archive.conf;
 
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Issuer;
-import org.dcm4che3.net.Device;
 import org.dcm4che3.soundex.FuzzyStr;
 
 /**
@@ -60,8 +59,6 @@ public class QueryParam {
     private boolean fuzzySemanticMatching;
     private boolean matchUnknown;
     private String[] accessControlIDs;
-    private boolean returnOtherPatientIDs;
-    private boolean returnOtherPatientNames;
     private Issuer defaultIssuerOfPatientID;
     private Issuer defaultIssuerOfAccessionNumber;
     private boolean showRejectedForQualityReasons;
@@ -150,24 +147,8 @@ public class QueryParam {
         this.attributeFilters = attributeFilters;
     }
 
-    public final AttributeFilter[] getAttributeFilters() {
-        return attributeFilters;
-    }
-
-    public final boolean isReturnOtherPatientIDs() {
-        return returnOtherPatientIDs;
-    }
-
-    public final void setReturnOtherPatientIDs(boolean returnOtherPatientIDs) {
-        this.returnOtherPatientIDs = returnOtherPatientIDs;
-    }
-
-    public final boolean isReturnOtherPatientNames() {
-        return returnOtherPatientNames;
-    }
-
-    public final void setReturnOtherPatientNames(boolean returnOtherPatientNames) {
-        this.returnOtherPatientNames = returnOtherPatientNames;
+    public final AttributeFilter getAttributeFilter(Entity entity) {
+        return attributeFilters[entity.ordinal()];
     }
 
     public final boolean isShowRejectedForQualityReasons() {
@@ -193,12 +174,5 @@ public class QueryParam {
 
     public void setDefaultIssuerOfAccessionNumber(Issuer issuer) {
         this.defaultIssuerOfAccessionNumber = issuer;
-    }
-
-    public void setDefaultIssuer(Device sourceDevice) {
-        setDefaultIssuerOfPatientID(sourceDevice
-                .getIssuerOfPatientID());
-        setDefaultIssuerOfAccessionNumber(sourceDevice
-                .getIssuerOfAccessionNumber());
     }
 }

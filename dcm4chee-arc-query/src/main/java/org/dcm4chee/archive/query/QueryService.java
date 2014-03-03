@@ -38,9 +38,13 @@
 
 package org.dcm4chee.archive.query;
 
+import java.util.EnumSet;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 
 /**
@@ -49,22 +53,36 @@ import org.dcm4chee.archive.conf.QueryParam;
  */
 public interface QueryService {
 
-    Query createQuery(QueryRetrieveLevel qrlevel, IDWithIssuer[] pids,
-            Attributes keys, QueryParam queryParam) throws Exception;
+    QueryContext createQueryContext(QueryRetrieveLevel qrlevel,
+            QueryService queryService);
 
-    Query createPatientQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
+    QueryContext createPatientQueryContext(QueryService queryService);
 
-    Query createStudyQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
+    QueryContext createStudyQueryContext(QueryService queryService);
 
-    Query createSeriesQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
+    QueryContext createSeriesQueryContext(QueryService queryService);
 
-    Query createInstanceQuery(IDWithIssuer[] pids, Attributes keys,
-            QueryParam queryParam) throws Exception;
+    QueryContext createInstanceQueryContext(QueryService queryService);
 
     String[] queryPatientNames(IDWithIssuer[] pids);
     
     Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
+
+    QueryParam getQueryParam(Object source, String sourceAET,
+            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts);
+
+    IDWithIssuer[] queryPatientIDs(ArchiveAEExtension aeExt,
+            Attributes keys, QueryParam queryParam);
+
+    void adjustMatch(QueryContext query, Attributes match);
+
+    int calculateNumberOfSeriesRelatedInstance(Long seriesPk,
+            QueryParam queryParam);
+
+    int calculateNumberOfStudyRelatedSeries(Long studyPk,
+            QueryParam queryParam);
+
+    int calculateNumberOfStudyRelatedInstance(Long studyPk,
+            QueryParam queryParam);
+
 }
