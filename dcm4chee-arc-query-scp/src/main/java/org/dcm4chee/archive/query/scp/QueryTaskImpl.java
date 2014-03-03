@@ -38,8 +38,6 @@
 
 package org.dcm4chee.archive.query.scp;
 
-import java.sql.SQLException;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
