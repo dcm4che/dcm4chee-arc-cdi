@@ -107,13 +107,7 @@ class QueryTaskImpl extends BasicQueryTask {
 
     @Override
     protected void close() {
-         try {
-            query.close();
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-//         AuditUtils.logQuery(as, rq, keys);
+        query.close();
     }
 
     @Override
