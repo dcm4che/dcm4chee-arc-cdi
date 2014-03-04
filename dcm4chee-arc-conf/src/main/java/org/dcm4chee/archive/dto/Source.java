@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2013
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,54 +36,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.ctrl;
-
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-
-import org.dcm4chee.archive.ArchiveService;
-import org.dcm4chee.archive.rs.HttpSource;
+package org.dcm4chee.archive.dto;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-@Path("/ctrl")
-@RequestScoped
-public class ArchiveCtrl {
-
-    @Inject
-    private ArchiveService service;
-
-    @Context
-    private HttpServletRequest request;
-    
-    @GET
-    @Path("running")
-    public String isRunning() {
-        return String.valueOf(service.isRunning());
-    }
-
-    @GET
-    @Path("start")
-    public void start() throws Exception {
-        service.start(new HttpSource(request));
-    }
-
-    @GET
-    @Path("stop")
-    public void stop() {
-        service.stop(new HttpSource(request));
-    }
-
-    @GET
-    @Path("reload")
-    public void reload() throws Exception {
-        service.reload();
-    }
+public interface Source extends Participant {
 
 }

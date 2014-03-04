@@ -84,6 +84,7 @@ import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.rs.HttpSource;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -209,7 +210,7 @@ public class StowRS {
     public Response storeInstances(InputStream in) throws Exception {
         init();
         final StoreSession session = storeService.initStoreSession(
-                storeService, request, request.getRemoteHost(), arcAE);
+                storeService, new HttpSource(request), request.getRemoteHost(), arcAE);
         try {
             new MultipartParser(boundary).parse(in, new MultipartParser.Handler() {
                 

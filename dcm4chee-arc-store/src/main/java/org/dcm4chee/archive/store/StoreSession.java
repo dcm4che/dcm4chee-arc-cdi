@@ -44,6 +44,7 @@ import java.security.MessageDigest;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.dto.Source;
 import org.dcm4chee.archive.entity.FileSystem;
 
 /**
@@ -52,12 +53,7 @@ import org.dcm4chee.archive.entity.FileSystem;
  */
 public interface StoreSession {
 
-    /**
-     * Returns the source of this store session.
-     * Could be a org.dcm4che3.net.Association
-     * or a javax.servlet.http.HttpServletRequest
-     */
-    Object getSource();
+    Source getSource();
 
     StoreService getStoreService();
 

@@ -35,26 +35,60 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive;
 
+package org.dcm4chee.archive.audit;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.dcm4che3.audit.AuditMessages;
+import org.dcm4che3.audit.AuditMessages.EventTypeCode;
+import org.dcm4che3.audit.ParticipantObjectDescription;
+import org.dcm4che3.audit.AuditMessages.EventActionCode;
+import org.dcm4che3.audit.AuditMessages.EventID;
+import org.dcm4che3.audit.AuditMessages.RoleIDCode;
+import org.dcm4che3.audit.Instance;
+import org.dcm4che3.audit.ParticipantObjectIdentification;
+import org.dcm4che3.audit.SOPClass;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4che3.net.audit.AuditLogger;
+import org.dcm4che3.audit.AuditMessage;
+import org.dcm4chee.archive.store.StoreSession;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
+ * 
  */
-public interface ArchiveService {
+public class StartStopAudit extends AuditMessage {
 
-    Device getDevice();
-    
-    void reload() throws Exception;
+    private boolean start;
+    private AuditLogger logger;
 
-    boolean isRunning();
+    /**
+     */
+    public StartStopAudit(boolean start, AuditLogger logger) {
+        super();
+        this.start = start;
+        this.logger = logger;
+        init();
+    }
 
-    void start(Source source) throws Exception;
+    private void init() {
+        
+        // Event
+        this.setEventIdentification(AuditMessages.createEventIdentification(
+                EventID.ApplicationActivity, EventActionCode.Execute,
+                logger.timeStamp(), null, null, 
+                start ? EventTypeCode.ApplicationStart : EventTypeCode.ApplicationStop));
 
-    void stop(Source source);
-    
+        // Active Participant 1: Application started (1)
+        this.getActiveParticipant().add(
+                logger.createActiveParticipant(false, RoleIDCode.Application));
+
+        // Active Participant 2: Persons and or processes that started the Application
+        this.getActiveParticipant().add(
+                logger.createActiveParticipant(false, RoleIDCode.ApplicationLauncher));
+    }
 }

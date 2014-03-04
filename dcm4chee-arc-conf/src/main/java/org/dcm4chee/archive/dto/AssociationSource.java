@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2013
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,54 +36,52 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.ctrl;
+package org.dcm4chee.archive.dto;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-
-import org.dcm4chee.archive.ArchiveService;
-import org.dcm4chee.archive.rs.HttpSource;
+import org.dcm4che3.net.Association;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-@Path("/ctrl")
-@RequestScoped
-public class ArchiveCtrl {
+public class AssociationSource implements Source {
 
-    @Inject
-    private ArchiveService service;
-
-    @Context
-    private HttpServletRequest request;
+    private String identity;
+    private String host;
     
-    @GET
-    @Path("running")
-    public String isRunning() {
-        return String.valueOf(service.isRunning());
+    public AssociationSource(Association association) {
+
+        if (association != null) {
+
+            if (association.getSocket() != null
+                    && association.getSocket().getInetAddress() != null)
+                host = unknownIfNull(association.getSocket().getInetAddress()
+                        .getCanonicalHostName());
+            else
+                host = UNKNOWN;
+
+            identity = unknownIfNull(association.getCallingAET());
+
+          
+        } else {
+         
+            host = UNKNOWN;
+            identity = UNKNOWN;
+        }
     }
 
-    @GET
-    @Path("start")
-    public void start() throws Exception {
-        service.start(new HttpSource(request));
+    @Override
+    public String getIdentity() {
+        return identity;
     }
 
-    @GET
-    @Path("stop")
-    public void stop() {
-        service.stop(new HttpSource(request));
+    @Override
+    public String getHost() {
+        return host;
     }
 
-    @GET
-    @Path("reload")
-    public void reload() throws Exception {
-        service.reload();
+    private static String unknownIfNull(String value) {
+        return value != null ? value : Source.UNKNOWN;
     }
 
 }

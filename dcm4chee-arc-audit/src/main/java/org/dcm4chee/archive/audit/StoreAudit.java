@@ -79,6 +79,8 @@ public class StoreAudit extends AuditMessage {
     }
 
     private void init() {
+        
+        // Event
         this.setEventIdentification(AuditMessages.createEventIdentification(
                 EventID.DICOMInstancesTransferred, EventActionCode.Create,
                 logger.timeStamp(), eventOutcomeIndicator, null));
@@ -92,7 +94,7 @@ public class StoreAudit extends AuditMessage {
                 AuditMessages.createActiveParticipant(session.getRemoteAET(),
                         AuditMessages.alternativeUserIDForAETitle(session
                                 .getRemoteAET()), null, true,
-                        getRemoteHost(session),
+                        session.getSource().getHost(),
                         AuditMessages.NetworkAccessPointTypeCode.MachineName,
                         null, AuditMessages.RoleIDCode.Destination));
 
@@ -121,23 +123,6 @@ public class StoreAudit extends AuditMessage {
 
         this.getAuditSourceIdentification().add(
                 logger.createAuditSourceIdentification());
-    }
-
-    private static String getRemoteHost(StoreSession session) {
-
-        if (session.getSource() != null) {
-
-            if (session.getSource() instanceof Association
-                    && ((Association) session.getSource()).getSocket() != null)
-                return ((Association) session.getSource()).getSocket()
-                        .getInetAddress().getCanonicalHostName();
-
-            if (session.getSource() instanceof HttpServletRequest)
-                return ((HttpServletRequest) session.getSource())
-                        .getRemoteHost();
-        }
-
-        return "UNKNOWN";
     }
 
     private String getPatientID(Attributes attrs) {

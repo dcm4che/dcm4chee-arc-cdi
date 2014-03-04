@@ -52,6 +52,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
+import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
@@ -78,7 +79,7 @@ public class AuditObserver {
     public void receiveStoreContext(@Observes StoreContext context) {
 
         StoreSession session = context.getStoreSession();
-        AuditLogger logger = getLogger(session);
+        AuditLogger logger = getLogger(session.getDevice());
         String studyID = context.getAttributes()
                 .getString(Tag.StudyInstanceUID);
 
@@ -113,7 +114,18 @@ public class AuditObserver {
             for (String studyUID : failures.keySet())
                 sendAuditMessage(failures.get(studyUID), session);
     }
+    
+    public void receiveArchiveServiceStarted(
+            @Observes @ArchiveServiceStarted Device device) {        
+        AuditLogger logger = getLogger(device);
+    }
 
+    public void receiveArchiveServiceStopped(
+            @Observes @ArchiveServiceStarted Device device) {
+        AuditLogger logger = getLogger(device);
+
+    }
+    
     private HashMap<String, StoreAudit> getOrCreateAuditsMap(
             StoreSession session, boolean fail) {
         String mapType = fail ? AUDIT_MESSAGES_FAILURE : AUDIT_MESSAGES_SUCCESS;
@@ -125,14 +137,14 @@ public class AuditObserver {
         return (HashMap<String, StoreAudit>) session.getProperty(mapType);
     }
 
-    private AuditLogger getLogger(StoreSession session) {
+    private AuditLogger getLogger(Device device) {
 
-        if (session.getDevice().getDeviceExtension(AuditLogger.class) == null) {
+        if (device.getDeviceExtension(AuditLogger.class) == null) {
             AuditLogger auditLogger = new AuditLogger();
-            session.getDevice().addDeviceExtension(auditLogger);
+            device.addDeviceExtension(auditLogger);
         }
 
-        return session.getDevice().getDeviceExtension(AuditLogger.class);
+        return device.getDeviceExtension(AuditLogger.class);
     }
 
     private void sendAuditMessage(AuditMessage msg, StoreSession session) {
@@ -140,7 +152,7 @@ public class AuditObserver {
         if (msg == null)
             return;
 
-        AuditLogger logger = getLogger(session);
+        AuditLogger logger = getLogger(session.getDevice());
 
         if (logger == null || !logger.isInstalled())
             return;

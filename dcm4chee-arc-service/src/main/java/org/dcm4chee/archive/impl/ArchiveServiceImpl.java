@@ -65,6 +65,7 @@ import org.dcm4che3.net.service.DicomServiceRegistry;
 import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.dto.Source;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -156,7 +157,7 @@ public class ArchiveServiceImpl implements ArchiveService {
             if (hl7Extension != null) {
                 hl7Extension.setHL7MessageListener(hl7ServiceRegistry);
             }
-            start();
+            start(new LocalSource());
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {
@@ -166,7 +167,7 @@ public class ArchiveServiceImpl implements ArchiveService {
 
     @PreDestroy
     public void destroy() {
-        stop();
+        stop(new LocalSource());
 
         serviceRegistry.removeDicomService(echoscp);
         for (DicomService service : dicomServices) {
@@ -178,13 +179,13 @@ public class ArchiveServiceImpl implements ArchiveService {
     }
 
     @Override
-    public void start() throws Exception {
+    public void start(Source source) throws Exception {
         device.bindConnections();
         running = true;
     }
 
     @Override
-    public void stop() {
+    public void stop(Source source) {
         device.unbindConnections();
         running = false;
     }
