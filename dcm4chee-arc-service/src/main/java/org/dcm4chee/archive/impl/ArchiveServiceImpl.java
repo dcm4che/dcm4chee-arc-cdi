@@ -46,6 +46,7 @@ import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.enterprise.concurrent.ManagedScheduledExecutorService;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
@@ -63,6 +64,8 @@ import org.dcm4che3.net.service.BasicCEchoSCP;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceRegistry;
 import org.dcm4chee.archive.ArchiveService;
+import org.dcm4chee.archive.ArchiveServiceStarted;
+import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.Source;
@@ -107,6 +110,12 @@ public class ArchiveServiceImpl implements ArchiveService {
 
     @Inject
     private CodeService codeService;
+    
+    @Inject @ArchiveServiceStarted
+    private Event<StartStopEvent> archiveServiceStarted;
+    
+    @Inject @ArchiveServiceStopped
+    private Event<StartStopEvent> archiveServiceStopped;
 
     private Device device;
 
@@ -180,14 +189,18 @@ public class ArchiveServiceImpl implements ArchiveService {
 
     @Override
     public void start(Source source) throws Exception {
+        
         device.bindConnections();
         running = true;
+        archiveServiceStarted.fire(new StartStopEvent(device,source));
     }
 
     @Override
     public void stop(Source source) {
+        
         device.unbindConnections();
         running = false;
+        archiveServiceStopped.fire(new StartStopEvent(device,source));
     }
 
     @Override

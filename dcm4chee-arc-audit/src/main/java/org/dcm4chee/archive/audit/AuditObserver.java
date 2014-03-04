@@ -53,6 +53,8 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4chee.archive.ArchiveServiceStarted;
+import org.dcm4chee.archive.ArchiveServiceStopped;
+import org.dcm4chee.archive.impl.StartStopEvent;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
@@ -101,29 +103,32 @@ public class AuditObserver {
     public void receiveStoreSessionClosed(
             @Observes @StoreSessionClosed StoreSession session) {
 
+        AuditLogger logger = getLogger(session.getDevice());
+        
         // send all the audits at once
         HashMap<String, StoreAudit> success = (HashMap<String, StoreAudit>) session
                 .getProperty(AUDIT_MESSAGES_SUCCESS);
         if (success != null)
             for (String studyUID : success.keySet())
-                sendAuditMessage(success.get(studyUID), session);
+                sendAuditMessage(success.get(studyUID), logger);
 
         HashMap<String, StoreAudit> failures = (HashMap<String, StoreAudit>) session
                 .getProperty(AUDIT_MESSAGES_FAILURE);
         if (failures != null)
             for (String studyUID : failures.keySet())
-                sendAuditMessage(failures.get(studyUID), session);
+                sendAuditMessage(failures.get(studyUID), logger);
     }
     
     public void receiveArchiveServiceStarted(
-            @Observes @ArchiveServiceStarted Device device) {        
-        AuditLogger logger = getLogger(device);
+            @Observes @ArchiveServiceStarted StartStopEvent event) {        
+        AuditLogger logger = getLogger(event.getDevice());
+        sendAuditMessage (new StartStopAudit(true, logger, event.getSource()),logger);
     }
 
     public void receiveArchiveServiceStopped(
-            @Observes @ArchiveServiceStarted Device device) {
-        AuditLogger logger = getLogger(device);
-
+            @Observes @ArchiveServiceStopped StartStopEvent event) {
+        AuditLogger logger = getLogger(event.getDevice());
+        sendAuditMessage (new StartStopAudit(false, logger, event.getSource()), logger);
     }
     
     private HashMap<String, StoreAudit> getOrCreateAuditsMap(
@@ -147,12 +152,10 @@ public class AuditObserver {
         return device.getDeviceExtension(AuditLogger.class);
     }
 
-    private void sendAuditMessage(AuditMessage msg, StoreSession session) {
+    private void sendAuditMessage(AuditMessage msg, AuditLogger logger) {
 
         if (msg == null)
             return;
-
-        AuditLogger logger = getLogger(session.getDevice());
 
         if (logger == null || !logger.isInstalled())
             return;

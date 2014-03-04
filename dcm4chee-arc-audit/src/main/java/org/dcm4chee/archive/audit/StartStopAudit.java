@@ -41,10 +41,12 @@ package org.dcm4chee.archive.audit;
 import javax.servlet.http.HttpServletRequest;
 
 import org.dcm4che3.audit.AuditMessages;
+import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
 import org.dcm4che3.audit.AuditMessages.EventTypeCode;
 import org.dcm4che3.audit.ParticipantObjectDescription;
 import org.dcm4che3.audit.AuditMessages.EventActionCode;
 import org.dcm4che3.audit.AuditMessages.EventID;
+import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
 import org.dcm4che3.audit.AuditMessages.RoleIDCode;
 import org.dcm4che3.audit.Instance;
 import org.dcm4che3.audit.ParticipantObjectIdentification;
@@ -55,6 +57,7 @@ import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.audit.AuditMessage;
+import org.dcm4chee.archive.dto.Source;
 import org.dcm4chee.archive.store.StoreSession;
 
 /**
@@ -65,30 +68,39 @@ public class StartStopAudit extends AuditMessage {
 
     private boolean start;
     private AuditLogger logger;
+    private Source source;
 
     /**
      */
-    public StartStopAudit(boolean start, AuditLogger logger) {
+    public StartStopAudit(boolean start, AuditLogger logger, Source source) {
         super();
         this.start = start;
         this.logger = logger;
+        this.source = source;
         init();
     }
 
     private void init() {
-        
+
         // Event
         this.setEventIdentification(AuditMessages.createEventIdentification(
-                EventID.ApplicationActivity, EventActionCode.Execute,
-                logger.timeStamp(), null, null, 
-                start ? EventTypeCode.ApplicationStart : EventTypeCode.ApplicationStop));
+                EventID.ApplicationActivity, EventActionCode.Execute, logger
+                        .timeStamp(), EventOutcomeIndicator.Success, null,
+                start ? EventTypeCode.ApplicationStart
+                        : EventTypeCode.ApplicationStop));
 
         // Active Participant 1: Application started (1)
         this.getActiveParticipant().add(
                 logger.createActiveParticipant(false, RoleIDCode.Application));
 
-        // Active Participant 2: Persons and or processes that started the Application
+        // Active Participant 2: Persons and or processes that started the
+        // Application
         this.getActiveParticipant().add(
-                logger.createActiveParticipant(false, RoleIDCode.ApplicationLauncher));
+                logger.createActiveParticipant(
+                        true, source.getIdentity(), null, null,
+                        source.getHost(), RoleIDCode.ApplicationLauncher));
+        
+        this.getAuditSourceIdentification().add(
+                logger.createAuditSourceIdentification());
     }
 }
