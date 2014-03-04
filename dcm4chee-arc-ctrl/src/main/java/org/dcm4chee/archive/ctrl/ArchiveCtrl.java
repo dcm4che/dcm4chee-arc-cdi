@@ -40,10 +40,12 @@ package org.dcm4chee.archive.ctrl;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.Response.Status;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
 import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.rs.HttpSource;
@@ -70,20 +72,23 @@ public class ArchiveCtrl {
 
     @GET
     @Path("start")
-    public void start() throws Exception {
+    public Response start() throws Exception {
         service.start(new HttpSource(request));
+        return Response.status(Status.OK).build();
     }
 
     @GET
     @Path("stop")
-    public void stop() {
+    public Response stop() {
         service.stop(new HttpSource(request));
+        return Response.status(Status.OK).build();
     }
 
     @GET
     @Path("reload")
-    public void reload() throws Exception {
+    public Response reload() throws Exception {
         service.reload();
+        return Response.status(Status.OK).build();
     }
 
 }
