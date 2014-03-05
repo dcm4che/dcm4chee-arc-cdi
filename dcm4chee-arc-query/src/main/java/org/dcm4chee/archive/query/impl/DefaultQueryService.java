@@ -39,8 +39,6 @@
 package org.dcm4chee.archive.query.impl;
 
 import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -49,23 +47,15 @@ import javax.persistence.PersistenceContext;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.QPatient;
-import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
-import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.hibernate.Session;
 import org.hibernate.StatelessSession;
-
-import com.mysema.query.BooleanBuilder;
-import com.mysema.query.Tuple;
-import com.mysema.query.jpa.hibernate.HibernateQuery;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -118,25 +108,6 @@ public class DefaultQueryService implements QueryService {
     @Override
     public QueryContext createInstanceQueryContext(QueryService queryService) {
         return new InstanceQueryContext(queryService, openStatelessSession());
-    }
-
-    @Override
-    public String[] queryPatientNames(IDWithIssuer[] pids) {
-        HashSet<String> c = new HashSet<String>(pids.length * 4 / 3 + 1);
-        BooleanBuilder builder = new BooleanBuilder();
-        builder.and(QueryBuilder.pids(pids, false));
-        builder.and(QPatient.patient.mergedWith.isNull());
-        List<Tuple> tuples = new HibernateQuery(em.unwrap(Session.class))
-            .from(QPatient.patient)
-            .where(builder)
-            .list(
-                QPatient.patient.pk,
-                QPatient.patient.encodedAttributes);
-        for (Tuple tuple : tuples)
-            c.add(Utils.decodeAttributes(tuple.get(1, byte[].class))
-                    .getString(Tag.PatientName));
-        c.remove(null);
-        return c.toArray(new String[c.size()]);
     }
 
     public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {

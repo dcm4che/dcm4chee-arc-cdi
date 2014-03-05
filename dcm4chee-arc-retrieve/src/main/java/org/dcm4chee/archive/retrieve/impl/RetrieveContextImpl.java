@@ -36,36 +36,90 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.retrieve;
+package org.dcm4chee.archive.retrieve.impl;
 
-import java.util.List;
+import java.util.HashMap;
 
-import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.retrieve.RetrieveContext;
+import org.dcm4chee.archive.retrieve.RetrieveService;
 
 /**
- * Retrieve service. Used to get list of references to dicom instances.
- * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-public interface RetrieveService {
+public class RetrieveContextImpl implements RetrieveContext {
 
-    RetrieveContext createRetrieveContext(RetrieveService service,
-            String sourceAET, ArchiveAEExtension arcAE);
+    private final RetrieveService service;
 
-    IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys);
+    private final String sourceAET;
 
-    List<InstanceLocator> calculateMatches(IDWithIssuer[] pids,
-            Attributes keys, QueryParam queryParam);
-    
-    List<InstanceLocator> calculateMatches(String studyUID, String seriesUID,
-            String objectUID, QueryParam queryParam);
+    private final ArchiveAEExtension arcAE;
 
-    void coerceRetrievedObject(RetrieveContext retrieveContext,
-            String remoteAET, Attributes attrs) throws DicomServiceException;
+    private ApplicationEntity destinationAE;
+
+    private IDWithIssuer[] pids;
+
+    private final HashMap<String,Object> properties =
+            new HashMap<String,Object>();
+
+    public RetrieveContextImpl(RetrieveService service,
+            String sourceAET, ArchiveAEExtension aeExt) {
+        this.service = service;
+        this.sourceAET = sourceAET;
+        this.arcAE = aeExt;
+    }
+
+    @Override
+    public RetrieveService getRetrieveService() {
+        return service;
+    }
+
+    @Override
+    public String getSourceAET() {
+        return sourceAET;
+    }
+
+    @Override
+    public ArchiveAEExtension getArchiveAEExtension() {
+        return arcAE;
+    }
+
+    @Override
+    public ApplicationEntity getDestinationAE() {
+        return destinationAE;
+    }
+
+    @Override
+    public void setDestinationAE(ApplicationEntity destinationAE) {
+        this.destinationAE = destinationAE;
+    }
+
+    @Override
+    public IDWithIssuer[] getPatientIDs() {
+        return pids;
+    }
+
+    @Override
+    public void setPatientIDs(IDWithIssuer[] pids) {
+        this.pids = pids;
+    }
+
+    @Override
+    public Object getProperty(String key) {
+        return properties.get(key);
+    }
+
+    @Override
+    public Object removeProperty(String key) {
+        return properties.remove(key);
+    }
+
+    @Override
+    public void setProperty(String key, Object value) {
+        properties .put(key, value);
+    }
 
 }

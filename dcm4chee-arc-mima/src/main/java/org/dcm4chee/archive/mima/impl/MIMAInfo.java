@@ -40,86 +40,58 @@ package org.dcm4chee.archive.mima.impl;
 
 import java.util.ArrayList;
 
-import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Issuer;
-import org.dcm4che3.data.Tag;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.query.QueryContext;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-class QueryInfo {
+class MIMAInfo {
 
-    private final boolean returnOtherPatientIDs;
-    private final boolean returnOtherPatientNames;
-    private final Issuer requestedIssuerOfPatientID;
-    private final Issuer requestedIssuerOfAccessionNumber;
-    private final ArrayList<PatientIDsWithPatientNames> cachedPidsWithNames =
+    private boolean returnOtherPatientIDs;
+    private boolean returnOtherPatientNames;
+    private Issuer requestedIssuerOfPatientID;
+    private Issuer requestedIssuerOfAccessionNumber;
+    private final ArrayList<PatientIDsWithPatientNames> pidsWithNames =
             new ArrayList<PatientIDsWithPatientNames>(1);
-
-    public QueryInfo(QueryContext queryContext) {
-        ArchiveAEExtension arcAE = queryContext.getArchiveAEExtension();
-        Attributes keys = queryContext.getKeys();
-        QueryParam queryParam = queryContext.getQueryParam();
-        returnOtherPatientIDs = arcAE.isReturnOtherPatientIDs()
-                && keys.contains(Tag.OtherPatientIDsSequence);
-        returnOtherPatientNames = arcAE.isReturnOtherPatientNames()
-                && keys.contains(Tag.OtherPatientNames);
-        requestedIssuerOfPatientID = keys.contains(Tag.PatientID)
-                ? keys.contains(Tag.IssuerOfPatientID)
-                    ? Issuer.fromIssuerOfPatientID(keys)
-                    : queryParam.getDefaultIssuerOfPatientID()
-                : null;
-        requestedIssuerOfAccessionNumber = (keys.contains(Tag.AccessionNumber)
-                || keys.contains(Tag.RequestAttributesSequence))
-                    ?  keys.contains(Tag.IssuerOfAccessionNumberSequence)
-                        ? Issuer.valueOf(keys.getNestedDataset(Tag.IssuerOfAccessionNumberSequence))
-                        : queryParam.getDefaultIssuerOfAccessionNumber()
-                    : null;
-        IDWithIssuer[] pids = queryContext.getPatientIDs();
-        if (pixQueryAlreadyPerformed(pids)) {
-            cachedPidsWithNames.add(new PatientIDsWithPatientNames(pids));
-        }
-    }
-
-    private boolean pixQueryAlreadyPerformed(IDWithIssuer[] pids) {
-        switch (pids.length) {
-        case 0:
-            return false;
-        case 1:
-            return !(containsWildcard(pids[0].getID()) || pids[0].getIssuer() == null);
-        default:
-            return true;
-        }
-    }
-
-    private boolean containsWildcard(String s) {
-        return s.indexOf('*') >= 0 || s.indexOf('?') >= 0;
-    }
 
     public boolean isReturnOtherPatientIDs() {
         return returnOtherPatientIDs;
+    }
+
+    public void setReturnOtherPatientIDs(boolean returnOtherPatientIDs) {
+        this.returnOtherPatientIDs = returnOtherPatientIDs;
     }
 
     public boolean isReturnOtherPatientNames() {
         return returnOtherPatientNames;
     }
 
+    public void setReturnOtherPatientNames(boolean returnOtherPatientNames) {
+        this.returnOtherPatientNames = returnOtherPatientNames;
+    }
+
     public Issuer getRequestedIssuerOfPatientID() {
         return requestedIssuerOfPatientID;
+    }
+
+    public void setRequestedIssuerOfPatientID(Issuer requestedIssuerOfPatientID) {
+        this.requestedIssuerOfPatientID = requestedIssuerOfPatientID;
     }
 
     public Issuer getRequestedIssuerOfAccessionNumber() {
         return requestedIssuerOfAccessionNumber;
     }
 
+    public void setRequestedIssuerOfAccessionNumber(
+            Issuer requestedIssuerOfAccessionNumber) {
+        this.requestedIssuerOfAccessionNumber = requestedIssuerOfAccessionNumber;
+    }
+
     public PatientIDsWithPatientNames getPatientIDsWithPatientNames(
             IDWithIssuer pid) {
-        for (PatientIDsWithPatientNames entry : cachedPidsWithNames) {
+        for (PatientIDsWithPatientNames entry : pidsWithNames) {
             IDWithIssuer pid2 = entry.getPatientIDByIssuer(pid.getIssuer());
             if (pid2 != null && pid2.getID().equals(pid.getID()))
                 return entry;
@@ -127,9 +99,9 @@ class QueryInfo {
         return null;
     }
 
-    public void addPatientIDsWithPatientNames(
-            PatientIDsWithPatientNames pidsWithNames) {
-        cachedPidsWithNames.add(pidsWithNames);
+    public PatientIDsWithPatientNames addPatientIDs(IDWithIssuer[] pids) {
+        PatientIDsWithPatientNames entry = new PatientIDsWithPatientNames(pids);
+        pidsWithNames.add(entry);
+        return entry;
     }
- 
 }

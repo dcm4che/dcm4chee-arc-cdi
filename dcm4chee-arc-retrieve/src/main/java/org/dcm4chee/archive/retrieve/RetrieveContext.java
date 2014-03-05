@@ -38,34 +38,33 @@
 
 package org.dcm4chee.archive.retrieve;
 
-import java.util.List;
-
-import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
 
 /**
- * Retrieve service. Used to get list of references to dicom instances.
- * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-public interface RetrieveService {
+public interface RetrieveContext {
 
-    RetrieveContext createRetrieveContext(RetrieveService service,
-            String sourceAET, ArchiveAEExtension arcAE);
+    RetrieveService getRetrieveService();
 
-    IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys);
+    String getSourceAET();
 
-    List<InstanceLocator> calculateMatches(IDWithIssuer[] pids,
-            Attributes keys, QueryParam queryParam);
-    
-    List<InstanceLocator> calculateMatches(String studyUID, String seriesUID,
-            String objectUID, QueryParam queryParam);
+    ArchiveAEExtension getArchiveAEExtension();
 
-    void coerceRetrievedObject(RetrieveContext retrieveContext,
-            String remoteAET, Attributes attrs) throws DicomServiceException;
+    IDWithIssuer[] getPatientIDs();
 
+    void setPatientIDs(IDWithIssuer[] pids);
+
+    Object getProperty(String key);
+
+    Object removeProperty(String key);
+
+    void setProperty(String key, Object value);
+
+    ApplicationEntity getDestinationAE();
+
+    void setDestinationAE(ApplicationEntity destinationAE);
 }

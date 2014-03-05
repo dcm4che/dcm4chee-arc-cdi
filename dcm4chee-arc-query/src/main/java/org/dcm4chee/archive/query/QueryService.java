@@ -64,8 +64,6 @@ public interface QueryService {
 
     QueryContext createInstanceQueryContext(QueryService queryService);
 
-    String[] queryPatientNames(IDWithIssuer[] pids);
-    
     Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
 
     QueryParam getQueryParam(Object source, String sourceAET,

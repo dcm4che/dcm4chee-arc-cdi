@@ -2,6 +2,7 @@
 <beans xmlns="http://xmlns.jcp.org/xml/ns/javaee" bean-discovery-mode="all">
  <decorators>
   <class>org.dcm4chee.archive.mima.impl.QueryServiceMIMADecorator</class>
+  <class>org.dcm4chee.archive.mima.impl.RetrieveServiceMIMADecorator</class>
   <class>org.dcm4chee.archive.mima.impl.StoreServiceMIMADecorator</class>
   <class>org.dcm4chee.archive.mima.impl.MPPSServiceMIMADecorator</class>
  </decorators>

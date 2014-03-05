@@ -67,6 +67,7 @@ import org.dcm4che3.net.service.RetrieveTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 
 /**
@@ -106,23 +107,27 @@ public class CMoveSCP extends BasicCMoveSCP {
             final ApplicationEntity destAE =
                     aeCache.findApplicationEntity(dest);
             ApplicationEntity ae = as.getApplicationEntity();
-            ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
-            QueryParam queryParam = aeExt.getQueryParam(queryOpts,
+            ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
+            QueryParam queryParam = arcAE.getQueryParam(queryOpts,
                     accessControlIDs());
 //            ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
 //            if (sourceAE != null)
 //                queryParam.setDefaultIssuer(sourceAE.getDevice());
-            IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
+//            IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
 //            if (pid != null && pid.getIssuer() == null)
 //                pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
 //            IDWithIssuer[] pids = Archive.getInstance().pixQuery(ae, pid);
-            IDWithIssuer[] pids = pid != null 
-                    ? new IDWithIssuer[]{ pid }
-                    : IDWithIssuer.EMPTY;
+//            IDWithIssuer[] pids = pid != null 
+//                    ? new IDWithIssuer[]{ pid }
+//                    : IDWithIssuer.EMPTY;
+            RetrieveContext context = retrieveService.createRetrieveContext(
+                    retrieveService, as.getRemoteAET(), arcAE);
+            context.setDestinationAE(destAE);
+            IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
             List<InstanceLocator> matches =
                     retrieveService.calculateMatches(pids, keys, queryParam);
             RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(C_MOVE, as,
-                    pc, rq, matches, pids, queryService, false) {
+                    pc, rq, matches, context, false) {
     
                 @Override
                 protected Association getStoreAssociation() throws DicomServiceException {
@@ -140,10 +145,10 @@ public class CMoveSCP extends BasicCMoveSCP {
                 }
     
             };
-            retrieveTask.setDestinationDevice(destAE.getDevice());
-            retrieveTask.setSendPendingRSPInterval(aeExt.getSendPendingCMoveInterval());
-            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
-            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
+//            retrieveTask.setDestinationDevice(destAE.getDevice());
+            retrieveTask.setSendPendingRSPInterval(arcAE.getSendPendingCMoveInterval());
+//            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
+//            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
             return retrieveTask;
         } catch (ConfigurationNotFoundException e) {
             throw new DicomServiceException(Status.MoveDestinationUnknown,

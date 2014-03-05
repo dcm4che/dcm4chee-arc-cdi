@@ -44,11 +44,18 @@ import java.util.List;
 import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.xml.transform.Templates;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability.Role;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.PatientStudySeriesAttributes;
 import org.dcm4chee.archive.entity.QFileRef;
@@ -60,6 +67,7 @@ import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
+import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.hibernate.Session;
 
@@ -77,6 +85,18 @@ public class DefaultRetrieveService implements RetrieveService {
 
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
+
+    @Override
+    public RetrieveContext createRetrieveContext(RetrieveService service,
+            String sourceAET, ArchiveAEExtension arcAE) {
+        return new RetrieveContextImpl(service, sourceAET, arcAE);
+    }
+
+    @Override
+    public IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys) {
+        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
+        return pid == null ? IDWithIssuer.EMPTY : new IDWithIssuer[] { pid };
+    }
 
     @Override
     public List<InstanceLocator> calculateMatches(IDWithIssuer[] pids,
@@ -209,5 +229,19 @@ public class DefaultRetrieveService implements RetrieveService {
                   .setParameter(1, seriesPk)
                   .getSingleResult();
         return result.getAttributes();
+    }
+
+    @Override
+    public void coerceRetrievedObject(RetrieveContext retrieveContext,
+            String remoteAET, Attributes attrs) throws DicomServiceException {
+        ArchiveAEExtension aeExt = retrieveContext.getArchiveAEExtension();
+        try {
+            Templates tpl = aeExt.getAttributeCoercionTemplates(
+                    attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ, Role.SCU, remoteAET);
+            if (tpl != null)
+                attrs.update(SAXTransformer.transform(attrs, tpl, false, false), null);
+        } catch (Exception e) {
+            throw new  DicomServiceException(Status.UnableToProcess, e);
+        }
     }
 }

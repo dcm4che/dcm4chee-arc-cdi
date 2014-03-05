@@ -41,33 +41,20 @@ package org.dcm4chee.archive.retrieve.scp;
 import java.io.IOException;
 import java.util.List;
 
-import javax.xml.transform.Templates;
-
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.data.Issuer;
-import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
-import org.dcm4che3.data.VR;
 import org.dcm4che3.imageio.codec.Decompressor;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.DataWriter;
 import org.dcm4che3.net.DataWriterAdapter;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicRetrieveTask;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.StringUtils;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.retrieve.RetrieveContext;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -75,36 +62,15 @@ import org.dcm4chee.archive.query.QueryService;
  */
 class RetrieveTaskImpl extends BasicRetrieveTask {
 
-    private final QueryService queryService;
+    private final RetrieveContext retrieveContext;
     private final boolean withoutBulkData;
-    private IDWithIssuer[] pids;
-    private String[] patientNames;
-    private boolean returnOtherPatientIDs;
-    private boolean returnOtherPatientNames;
-    private Issuer requestedIssuerOfPatientID;
-    private Issuer requestedIssuerOfAccessionNumber;
 
     public RetrieveTaskImpl(BasicRetrieveTask.Service service, Association as,
             PresentationContext pc, Attributes rq, List<InstanceLocator> matches,
-            IDWithIssuer[] pids, QueryService queryService,
-            boolean withoutBulkData) {
+            RetrieveContext retrieveContext, boolean withoutBulkData) {
         super(service, as, pc, rq, matches);
-        this.pids = pids;
-        this.queryService = queryService;
+        this.retrieveContext = retrieveContext;
         this.withoutBulkData = withoutBulkData;
-    }
-
-    public void setDestinationDevice(Device destDevice) {
-        this.requestedIssuerOfPatientID = destDevice.getIssuerOfPatientID();
-        this.requestedIssuerOfAccessionNumber = destDevice.getIssuerOfAccessionNumber();
-    }
-
-    public void setReturnOtherPatientIDs(boolean returnOtherPatientIDs) {
-        this.returnOtherPatientIDs = returnOtherPatientIDs;
-    }
-
-    public void setReturnOtherPatientNames(boolean returnOtherPatientNames) {
-        this.returnOtherPatientNames = returnOtherPatientNames;
     }
 
     @Override
@@ -135,108 +101,14 @@ class RetrieveTaskImpl extends BasicRetrieveTask {
         if (!tsuid.equals(inst.tsuid))
             Decompressor.decompress(attrs, inst.tsuid);
 
-        adjustPatientID(attrs);
-        adjustAccessionNumber(attrs);
-        ApplicationEntity ae = as.getApplicationEntity();
-        ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
-        try {
-            Templates tpl = aeExt.getAttributeCoercionTemplates(
-                    inst.cuid, Dimse.C_STORE_RQ, Role.SCU, as.getRemoteAET());
-            if (tpl != null)
-                attrs.update(SAXTransformer.transform(attrs, tpl, false, false), null);
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
+        retrieveContext.getRetrieveService().coerceRetrievedObject(
+                retrieveContext, as.getRemoteAET(), attrs);
         return new DataWriterAdapter(attrs);
-    }
-
-    private void adjustPatientID(Attributes attrs) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(attrs);
-        if (pid == null)
-            return;
-
-        if (pids.length == 0) {
-//            pids = Archive.getInstance().pixQuery(as.getApplicationEntity(), pid);
-            pids = new IDWithIssuer[] { pid };
-        }
-
-        IDWithIssuer issuer = pidWithMatchingIssuer(pids, requestedIssuerOfPatientID);
-        if (issuer != null) {
-            issuer.toPatientIDWithIssuer(attrs);
-        } else {
-            attrs.setNull(Tag.PatientID, VR.LO);
-            requestedIssuerOfPatientID.toIssuerOfPatientID(attrs);
-        }
-        if (returnOtherPatientIDs && pids.length > 0)
-            addOtherPatientIDs(attrs, pids);
-        if (returnOtherPatientNames && hasPatientNames(attrs))
-            attrs.setString(Tag.OtherPatientNames, VR.PN, patientNames);
-    }
-
-    private static void addOtherPatientIDs(Attributes attrs, IDWithIssuer... pids) {
-        Sequence seq = attrs.newSequence(Tag.OtherPatientIDsSequence, pids.length);
-        for (IDWithIssuer pid : pids)
-            if (pid.getIssuer() != null)
-                seq.add(pid.toPatientIDWithIssuer(null));
-        if (seq.isEmpty())
-            attrs.remove(Tag.OtherPatientIDsSequence);
-    }
-
-    private boolean hasPatientNames(Attributes attrs) {
-        if (patientNames == null) {
-            if (pids.length > 1)
-                patientNames = queryService.queryPatientNames(pids);
-            else {
-                String patientName = attrs.getString(Tag.PatientName);
-                patientNames = patientName != null
-                        ? new String[] { patientName }
-                        : StringUtils.EMPTY_STRING;
-            }
-        }
-        return patientNames.length > 0;
-    }
-
-    private IDWithIssuer pidWithMatchingIssuer(IDWithIssuer[] pids, Issuer issuer) {
-        if (issuer == null)
-            return pids[0];
-
-        for (IDWithIssuer pid : pids)
-            if (issuer.matches(pid.getIssuer()))
-                return pid;
-
-        return null;
-    }
-
-    private void adjustAccessionNumber(Attributes attrs) {
-        if (requestedIssuerOfAccessionNumber == null)
-            return;
-
-        adjustAccessionNumber(attrs, requestedIssuerOfAccessionNumber);
-        Sequence rqAttrsSeq = attrs.getSequence(Tag.RequestAttributesSequence);
-        if (rqAttrsSeq != null)
-            for (Attributes rqAttrs : rqAttrsSeq)
-                adjustAccessionNumber(rqAttrs, requestedIssuerOfAccessionNumber);
-    }
-
-    private void adjustAccessionNumber(Attributes attrs, Issuer destIssuer) {
-        if (!attrs.containsValue(Tag.AccessionNumber))
-            return;
-
-        Issuer issuer = Issuer.valueOf(
-                attrs.getNestedDataset(Tag.IssuerOfAccessionNumberSequence));
-        if (issuer == null)
-            return;
-        
-        if (!issuer.matches(destIssuer)) {
-            attrs.setNull(Tag.AccessionNumber, VR.SH);
-            attrs.remove(Tag.IssuerOfAccessionNumberSequence);
-        }
     }
 
     @Override
     protected void close() {
         super.close();
-//        AuditUtils.logRetrieve(as, insts, failed);
     }
 
  }

@@ -38,7 +38,6 @@
 
 package org.dcm4chee.archive.mima.impl;
 
-import java.util.Arrays;
 import java.util.EnumSet;
 
 import javax.annotation.Priority;
@@ -52,9 +51,7 @@ import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Issuer;
-import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.QueryOption;
@@ -83,6 +80,9 @@ public abstract class QueryServiceMIMADecorator implements QueryService {
 
     @Inject
     private PIXConsumer pixConsumer;
+
+    @Inject
+    private MIMAAttributeCoercion coercion;
 
     @Override
     public QueryParam getQueryParam(Object source, String sourceAET,
@@ -121,119 +121,54 @@ public abstract class QueryServiceMIMADecorator implements QueryService {
     }
 
     @Override
-    public void adjustMatch(QueryContext query, Attributes match) {
-        QueryInfo info = (QueryInfo) query.getProperty(
-                QueryInfo.class.getName());
+    public void adjustMatch(QueryContext context, Attributes match) {
+        MIMAInfo info = (MIMAInfo) context.getProperty(
+                MIMAInfo.class.getName());
         if (info == null) {
-            info = new QueryInfo(query);
-            query.setProperty(QueryInfo.class.getName(), info);
+            info = new MIMAInfo();
+            init(context, info);
+            context.setProperty(MIMAInfo.class.getName(), info);
         }
-        adjustPatientID(query.getArchiveAEExtension(), info, match);
-        adjustAccessionNumbers(info, match);
+        coercion.coerce(context.getArchiveAEExtension(), info, match);
     }
 
-    private void adjustPatientID(ArchiveAEExtension arcAE, QueryInfo info,
-            Attributes match) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(match);
-        if (pid == null)
-            return;
-
-        Issuer requestedIssuer = info.getRequestedIssuerOfPatientID();
-        if (requestedIssuer == null
-                && !info.isReturnOtherPatientIDs()
-                && !info.isReturnOtherPatientNames())
-            return;
-
-        Issuer issuer = pid.getIssuer();
-        if (issuer == null) {
-            if (requestedIssuer != null) {
-                match.setNull(Tag.PatientID, VR.LO);
-                requestedIssuer.toIssuerOfPatientID(match);
-                LOG.info("Nullify Patient ID for requested Issuer: {}",
-                        requestedIssuer);
-            }
-            return;
-        }
-
-        PatientIDsWithPatientNames pidsWithNames =
-                info.getPatientIDsWithPatientNames(pid);
-        if (pidsWithNames == null) {
-            pidsWithNames = new PatientIDsWithPatientNames(
-                    pixConsumer.pixQuery(arcAE, pid));
-            info.addPatientIDsWithPatientNames(pidsWithNames);
-        }
-        if (requestedIssuer != null && !requestedIssuer.matches(issuer)) {
-            IDWithIssuer requestedPID = pidsWithNames.getPatientIDByIssuer(requestedIssuer);
-            if (requestedPID != null) {
-                match.setString(Tag.PatientID, VR.LO, requestedPID.getID());
-                LOG.info("Adjust Patient ID to {}", requestedPID);
-            } else {
-                match.setNull(Tag.PatientID, VR.LO);
-                LOG.info("Nullify Patient ID for requested Issuer: {}", 
-                        requestedIssuer);
-            }
-            requestedIssuer.toIssuerOfPatientID(match);
-        }
-        if (info.isReturnOtherPatientIDs()) {
-            addOtherPatientIDs(match, pidsWithNames.getPatientIDs());
-        }
-        if (info.isReturnOtherPatientNames()) {
-            addOtherPatientNames(match, pidsWithNames);
+    private void init(QueryContext context, MIMAInfo info) {
+        ArchiveAEExtension arcAE = context.getArchiveAEExtension();
+        Attributes keys = context.getKeys();
+        QueryParam queryParam = context.getQueryParam();
+        info.setReturnOtherPatientIDs(arcAE.isReturnOtherPatientIDs()
+                && keys.contains(Tag.OtherPatientIDsSequence));
+        info.setReturnOtherPatientNames(arcAE.isReturnOtherPatientNames()
+                && keys.contains(Tag.OtherPatientNames));
+        info.setRequestedIssuerOfPatientID(keys.contains(Tag.PatientID)
+                ? keys.contains(Tag.IssuerOfPatientID)
+                    ? Issuer.fromIssuerOfPatientID(keys)
+                    : queryParam.getDefaultIssuerOfPatientID()
+                : null);
+        info.setRequestedIssuerOfAccessionNumber((keys.contains(Tag.AccessionNumber)
+                || keys.contains(Tag.RequestAttributesSequence))
+                    ?  keys.contains(Tag.IssuerOfAccessionNumberSequence)
+                        ? Issuer.valueOf(keys.getNestedDataset(Tag.IssuerOfAccessionNumberSequence))
+                        : queryParam.getDefaultIssuerOfAccessionNumber()
+                    : null);
+        IDWithIssuer[] pids = context.getPatientIDs();
+        if (pixQueryAlreadyPerformed(pids)) {
+            info.addPatientIDs(pids);
         }
     }
 
-    private static void addOtherPatientIDs(Attributes attrs,
-            IDWithIssuer... pids) {
-        Sequence seq = attrs.newSequence(Tag.OtherPatientIDsSequence,
-                pids.length);
-        for (IDWithIssuer pid : pids)
-            seq.add(pid.toPatientIDWithIssuer(null));
-        LOG.info("Add Other Patient IDs: {}", Arrays.toString(pids));
-    }
-    
-    private void addOtherPatientNames(Attributes match,
-            PatientIDsWithPatientNames pidsWithNames) {
-        if (pidsWithNames.getPatientIDs().length == 1) {
-            String patientName = match.getString(Tag.PatientName);
-            if (patientName != null) {
-                match.setString(Tag.OtherPatientNames, VR.PN, patientName);
-                LOG.info("Add Other Patient Name: {}", patientName);
-            }
-            return;
-        }
-        String[] patientNames = pidsWithNames.getPatientNames();
-        if (patientNames == null) {
-            patientNames = queryService.queryPatientNames(pidsWithNames.getPatientIDs());
-            pidsWithNames.setPatientNames(patientNames);
-        }
-        match.setString(Tag.OtherPatientNames, VR.PN, patientNames);
-        LOG.info("Add Other Patient Names: {}", Arrays.toString(patientNames));
-    }
-
-    private void adjustAccessionNumbers(QueryInfo info, Attributes match) {
-        Issuer requestedIssuer = info.getRequestedIssuerOfAccessionNumber();
-        if (requestedIssuer != null) {
-            adjustAccessionNumber(requestedIssuer, match);
-            Sequence rqAttrsSeq = match.getSequence(Tag.RequestAttributesSequence);
-            if (rqAttrsSeq != null) {
-                for (Attributes rqAttrs : rqAttrsSeq)
-                    adjustAccessionNumber(requestedIssuer, rqAttrs);
-            }
+    private boolean pixQueryAlreadyPerformed(IDWithIssuer[] pids) {
+        switch (pids.length) {
+        case 0:
+            return false;
+        case 1:
+            return !(containsWildcard(pids[0].getID()) || pids[0].getIssuer() == null);
+        default:
+            return true;
         }
     }
 
-    private void adjustAccessionNumber(Issuer requestedIssuer, Attributes match) {
-        if (!match.containsValue(Tag.AccessionNumber))
-            return;
-
-        Issuer issuer = Issuer.valueOf(
-                match.getNestedDataset(Tag.IssuerOfAccessionNumberSequence));
-        if (issuer == null || !requestedIssuer.matches(issuer)) {
-            match.setNull(Tag.AccessionNumber, VR.SH);
-            LOG.info("Nullify Accession Number for requested Issuer: {}",
-                    requestedIssuer);
-        }
-        match.newSequence(Tag.IssuerOfAccessionNumberSequence, 1)
-            .add(requestedIssuer.toItem());
+    private boolean containsWildcard(String s) {
+        return s.indexOf('*') >= 0 || s.indexOf('?') >= 0;
     }
 }

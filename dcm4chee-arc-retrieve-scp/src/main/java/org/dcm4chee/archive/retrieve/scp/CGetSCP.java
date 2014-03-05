@@ -64,6 +64,7 @@ import org.dcm4che3.net.service.RetrieveTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 
 /**
@@ -80,9 +81,6 @@ public class CGetSCP extends BasicCGetSCP {
 
     @Inject
     private RetrieveService retrieveService;
-
-    @Inject
-    private IApplicationEntityCache aeCache;
 
     public CGetSCP(String sopClass, String... qrLevels) {
         super(sopClass);
@@ -107,26 +105,28 @@ public class CGetSCP extends BasicCGetSCP {
         try {
             QueryParam queryParam = aeExt.getQueryParam(queryOpts,
                     accessControlIDs());
-            ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
+//            ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
 //            if (sourceAE != null)
 //                queryParam.setDefaultIssuer(sourceAE.getDevice());
-            IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
+//            IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
 //            if (pid != null && pid.getIssuer() == null)
 //                pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
 //            IDWithIssuer[] pids = Archive.getInstance().pixQuery(ae, pid);
-            IDWithIssuer[] pids = pid != null 
-                    ? new IDWithIssuer[]{ pid }
-                    : IDWithIssuer.EMPTY;
+//            IDWithIssuer[] pids = pid != null 
+//                    ? new IDWithIssuer[]{ pid }
+//                    : IDWithIssuer.EMPTY;
+            RetrieveContext context = retrieveService.createRetrieveContext(
+                    retrieveService, as.getRemoteAET(), aeExt);
+            IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
             List<InstanceLocator> matches = 
                     retrieveService.calculateMatches(pids, keys, queryParam);
             RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(
-                    C_GET, as, pc, rq, matches, pids,
-                    queryService, withoutBulkData);
-            if (sourceAE != null)
-                retrieveTask.setDestinationDevice(sourceAE.getDevice());
+                    C_GET, as, pc, rq, matches, context, withoutBulkData);
+//            if (sourceAE != null)
+//                retrieveTask.setDestinationDevice(sourceAE.getDevice());
             retrieveTask.setSendPendingRSP(aeExt.isSendPendingCGet());
-            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
-            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
+//            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
+//            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
             return retrieveTask;
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToCalculateNumberOfMatches, e);
