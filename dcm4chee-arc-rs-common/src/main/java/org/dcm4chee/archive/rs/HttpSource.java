@@ -48,29 +48,31 @@ import org.dcm4chee.archive.dto.Source;
  */
 public class HttpSource implements Source {
 
-    private String identity;
-    private String host;
+    private HttpServletRequest request;
     
     public HttpSource(HttpServletRequest request) {
         super();
-        
-        if (request != null) {
-            identity = unknownIfNull(request.getRemoteUser());
-            host = unknownIfNull(request.getRemoteHost());
-        } else {
-            identity = Source.UNKNOWN;
-            host = Source.UNKNOWN;
-        }
+        this.request = request;
     }
 
     @Override
     public String getIdentity() {
-        return identity;
+        if (request != null)
+            return unknownIfNull(request.getRemoteUser());
+        else
+            return Source.UNKNOWN;
     }
 
     @Override
     public String getHost() {
-        return host;
+        if (request != null)
+            return unknownIfNull(request.getRemoteHost());
+        else
+            return Source.UNKNOWN;
+    }
+    
+    @Override public String toString() {
+        return request!=null ? request.toString():null;
     }
 
     private static String unknownIfNull(String value) {

@@ -46,34 +46,20 @@ import org.dcm4chee.archive.dto.Source;
  *
  */
 public class LocalSource implements Source {
-
-    private String identity;
-    private String host;
     
-    public LocalSource() {
-        
-        super();
-        
-        identity = unknownIfNull(System.getProperty("user.name"));
-
-        try {
-            java.net.InetAddress localMachine = java.net.InetAddress
-                    .getLocalHost();
-            host = unknownIfNull(localMachine.getHostName());
-        } catch (UnknownHostException e) {
-            
-            host = UNKNOWN;
-        }
-    }
-
     @Override
     public String getIdentity() {
-        return identity;
+        return unknownIfNull(System.getProperty("user.name"));
     }
 
     @Override
     public String getHost() {
-        return host;
+        try {
+            return unknownIfNull(java.net.InetAddress
+                    .getLocalHost().getHostName());
+        } catch (UnknownHostException e) {
+           return Source.UNKNOWN;
+        }
     }
 
     private static String unknownIfNull(String value) {

@@ -46,40 +46,37 @@ import org.dcm4che3.net.Association;
  */
 public class AssociationSource implements Source {
 
-    private String identity;
-    private String host;
+    private Association association;
     
     public AssociationSource(Association association) {
 
-        if (association != null) {
-
-            if (association.getSocket() != null
-                    && association.getSocket().getInetAddress() != null)
-                host = unknownIfNull(association.getSocket().getInetAddress()
-                        .getCanonicalHostName());
-            else
-                host = UNKNOWN;
-
-            identity = unknownIfNull(association.getCallingAET());
-
-          
-        } else {
-         
-            host = UNKNOWN;
-            identity = UNKNOWN;
-        }
+        this.association = association;
     }
 
     @Override
     public String getIdentity() {
-        return identity;
+        
+        if (association != null)
+            return unknownIfNull(association.getCallingAET());
+        else
+            return UNKNOWN;
     }
 
     @Override
     public String getHost() {
-        return host;
+        
+        if (association != null && association.getSocket() != null
+            && association.getSocket().getInetAddress() != null)
+                return unknownIfNull(association.getSocket().getInetAddress()
+                        .getCanonicalHostName());
+        else
+            return UNKNOWN;
     }
 
+    @Override public String toString() {
+        return association!=null ? association.toString():null;
+    }
+    
     private static String unknownIfNull(String value) {
         return value != null ? value : Source.UNKNOWN;
     }
