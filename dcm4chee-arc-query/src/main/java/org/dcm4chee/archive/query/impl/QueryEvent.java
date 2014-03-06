@@ -36,14 +36,54 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.audit;
+package org.dcm4chee.archive.query.impl;
 
-import org.dcm4che3.audit.AuditMessage;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.query.QueryContext;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class QueryAudit extends AuditMessage {
+public class QueryEvent {
+    
+    private Attributes queryKeys;
+    IDWithIssuer[] patientIDs;
+    private String sopClassUID;
+    private Device device;
+    private Source source;
 
+    /**
+     */
+    public QueryEvent(Attributes queryKeys, IDWithIssuer[] patientIDs,
+            String sopClassUID, Device device, Source source) {
+        super();
+        this.queryKeys = queryKeys;
+        this.patientIDs = patientIDs;
+        this.sopClassUID = sopClassUID;
+        this.device = device;
+        this.source = source;
+    }
+    
+    public Attributes getQueryKeys() {
+        return queryKeys;
+    }
+    public IDWithIssuer[] getPatientIDs() {
+        return patientIDs;
+    }
+    public String getSopClassUID() {
+        return sopClassUID;
+    }
+    public Device getDevice() {
+        return device;
+    }
+    public Source getSource() {
+        return source;
+    }
+
+
+    
 }

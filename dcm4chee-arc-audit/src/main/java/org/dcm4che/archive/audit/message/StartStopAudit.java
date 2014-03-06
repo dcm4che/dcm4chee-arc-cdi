@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.audit;
+package org.dcm4che.archive.audit.message;
 
 import javax.servlet.http.HttpServletRequest;
 

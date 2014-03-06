@@ -36,90 +36,91 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.audit;
+package org.dcm4che.archive.audit.message;
 
-import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
+import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.audit.AuditMessages;
+import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
+import org.dcm4che3.audit.AuditMessages.ParticipantObjectIDTypeCode;
+import org.dcm4che3.audit.AuditMessages.ParticipantObjectTypeCode;
+import org.dcm4che3.audit.AuditMessages.ParticipantObjectTypeCodeRole;
+import org.dcm4che3.audit.Instance;
 import org.dcm4che3.audit.ParticipantObjectDescription;
+import org.dcm4che3.audit.ParticipantObjectDetail;
+import org.dcm4che3.audit.SOPClass;
 import org.dcm4che3.audit.AuditMessages.EventActionCode;
 import org.dcm4che3.audit.AuditMessages.EventID;
 import org.dcm4che3.audit.AuditMessages.RoleIDCode;
-import org.dcm4che3.audit.Instance;
-import org.dcm4che3.audit.ParticipantObjectIdentification;
-import org.dcm4che3.audit.SOPClass;
-import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.Association;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4che3.audit.AuditMessage;
-import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.query.impl.QueryEvent;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
-public class StoreAudit extends AuditMessage {
+public class QueryAudit extends AuditMessage {
 
-    private StoreSession session;
-    private Attributes attributes;
-    private String eventOutcomeIndicator;
+    private QueryEvent event;
     private AuditLogger logger;
 
     /**
      */
-    public StoreAudit(StoreSession session, Attributes attributes,
-            String eventOutcomeIndicator, AuditLogger logger) {
+    public QueryAudit(QueryEvent event, AuditLogger logger) {
         super();
-        this.session = session;
-        this.attributes = attributes;
-        this.eventOutcomeIndicator = eventOutcomeIndicator;
+        this.event = event;
         this.logger = logger;
         init();
     }
 
     private void init() {
-        
+
         // Event
         this.setEventIdentification(AuditMessages.createEventIdentification(
-                EventID.DICOMInstancesTransferred, EventActionCode.Create,
-                logger.timeStamp(), eventOutcomeIndicator, null));
+                EventID.Query, EventActionCode.Execute, logger.timeStamp(),
+                EventOutcomeIndicator.Success, null));
 
-        // Active Participant 1: The process that received the data.
+        // Active Participant 1: The requestor
         this.getActiveParticipant().add(
-                logger.createActiveParticipant(false, RoleIDCode.Source));
-
-        // Active Participant 2: The requestor
-        this.getActiveParticipant().add(
-                AuditMessages.createActiveParticipant(session.getRemoteAET(),
-                        AuditMessages.alternativeUserIDForAETitle(session
-                                .getRemoteAET()), null, true,
-                        session.getSource().getHost(),
+                AuditMessages.createActiveParticipant(event.getSource()
+                        .getIdentity(), AuditMessages
+                        .alternativeUserIDForAETitle(event.getSource()
+                                .getIdentity()), null, true, event.getSource()
+                        .getHost(),
                         AuditMessages.NetworkAccessPointTypeCode.MachineName,
-                        null, AuditMessages.RoleIDCode.Destination));
+                        null, AuditMessages.RoleIDCode.Source));
 
-        // Participating Object: Studies being transferred
-        this.getParticipantObjectIdentification()
-                .add(AuditMessages.createParticipantObjectIdentification(
-                        attributes.getString(Tag.StudyInstanceUID),
-                        AuditMessages.ParticipantObjectIDTypeCode.StudyInstanceUID,
-                        null, null,
-                        AuditMessages.ParticipantObjectTypeCode.SystemObject,
-                        AuditMessages.ParticipantObjectTypeCodeRole.Report,
-                        null, null,
-                        createPODescription(createSOPClass(attributes))));
+        // Active Participant 2: The process that received the data.
+        this.getActiveParticipant().add(
+                logger.createActiveParticipant(false, RoleIDCode.Destination));
 
-        // Participating Object: Patient
-        this.getParticipantObjectIdentification()
-                .add(AuditMessages
-                        .createParticipantObjectIdentification(
-                                getPatientID(attributes),
-                                AuditMessages.ParticipantObjectIDTypeCode.PatientNumber,
-                                null,
-                                null,
-                                AuditMessages.ParticipantObjectTypeCode.Person,
-                                AuditMessages.ParticipantObjectTypeCodeRole.Patient,
-                                null, null, null));
+        // Participating Object: SOP Queried and the Query 
+        ParticipantObjectDetail pod = new ParticipantObjectDetail();
+        pod.setType("TransferSyntax");
+        pod.setValue(UID.ExplicitVRLittleEndian.getBytes());
+        DicomOutputStream dout = null;
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        try {
+            dout = new DicomOutputStream(bout, UID.ExplicitVRLittleEndian);
+            dout.writeDataset(null, event.getQueryKeys());
+        } catch (IOException ignore) {}
+        this.getParticipantObjectIdentification().add(AuditMessages.createParticipantObjectIdentification(
+                event.getSopClassUID(), 
+                ParticipantObjectIDTypeCode.SOPClassUID, 
+                null, 
+                bout.toByteArray(), 
+                ParticipantObjectTypeCode.SystemObject, 
+                ParticipantObjectTypeCodeRole.Report, 
+                null, 
+                null, 
+                null, 
+                pod));
 
         this.getAuditSourceIdentification().add(
                 logger.createAuditSourceIdentification());
@@ -185,4 +186,5 @@ public class StoreAudit extends AuditMessage {
         }
 
     }
+
 }

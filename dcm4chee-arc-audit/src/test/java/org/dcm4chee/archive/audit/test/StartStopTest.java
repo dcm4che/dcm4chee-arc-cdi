@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.audit.test;
 
+import org.dcm4che.archive.audit.message.StartStopAudit;
 import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.audit.AuditMessages;
 import org.dcm4che3.net.ApplicationEntity;
@@ -46,7 +47,6 @@ import org.dcm4che3.net.Connection.Protocol;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
-import org.dcm4chee.archive.audit.StartStopAudit;
 import org.dcm4chee.archive.dto.Source;
 import org.dcm4chee.archive.impl.LocalSource;
 import org.junit.Test;

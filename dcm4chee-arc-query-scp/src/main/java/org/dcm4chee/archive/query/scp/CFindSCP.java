@@ -41,6 +41,7 @@ package org.dcm4chee.archive.query.scp;
 
 import java.util.EnumSet;
 
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
@@ -58,8 +59,10 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.net.service.QueryTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.dto.AssociationSource;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.impl.QueryEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -72,6 +75,9 @@ public class CFindSCP extends BasicCFindSCP {
     @Inject
     private QueryService queryService;
 
+    @Inject
+    private Event<QueryEvent> queryEvent;
+    
     public CFindSCP(String sopClass, String... qrLevels) {
         super(sopClass);
         this.qrLevels = qrLevels;
@@ -105,7 +111,13 @@ public class CFindSCP extends BasicCFindSCP {
             } catch (Exception e) {
                 query.close();
                 throw e;
+            } finally {
+                queryEvent.fire(new QueryEvent(keys, pids, 
+                        rq.getString(Tag.AffectedSOPClassUID),
+                        arcAE.getApplicationEntity().getDevice(),
+                        new AssociationSource(as)));
             }
+            
             return new QueryTaskImpl(as, pc, rq, keys, queryParam,
                     rootLevel, query, queryService);
         } catch (DicomServiceException e) {
