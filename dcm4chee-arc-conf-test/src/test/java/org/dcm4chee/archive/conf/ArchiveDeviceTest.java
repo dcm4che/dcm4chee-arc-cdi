@@ -86,6 +86,7 @@ import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.util.AttributesFormat;
+import org.dcm4che3.util.ResourceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveConfiguration;
@@ -490,7 +491,7 @@ public class ArchiveDeviceTest {
     @Before
     public void setUp() throws Exception {
         keystore = SSLManagerFactory.loadKeyStore("JKS", 
-                StringUtils.resourceURL("cacerts.jks"), "secret");
+                ResourceLocator.resourceURL("cacerts.jks"), "secret");
         config = System.getProperty("ldap") == null
                 ? newPreferencesArchiveConfiguration()
                 : newLdapArchiveConfiguration();
