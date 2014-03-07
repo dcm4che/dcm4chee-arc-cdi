@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.audit.test;
 
+import java.nio.file.Paths;
+
 import org.dcm4che.archive.audit.message.StartStopAudit;
 import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.audit.AuditMessages;
@@ -58,30 +60,57 @@ import org.junit.Test;
 public class StartStopTest {
     
     private static String ARR_HOST =  "10.231.161.39";
-    private static int ARR_PORT =  4000;
+    private static int ARR_PORT_UNSECURE =  4000;
+    private static int ARR_PORT_SECURE =  6514;
+    private boolean TLS = true;
     
     
     @Test
     public void testStartStopSampleSend () throws Exception {
 
+        
+        // AUDIT RECORD REPOSITORY Device
         Device arr = new Device("testARR");
         arr.addApplicationEntity(new ApplicationEntity("ARR"));
         arr.setInstalled(true);
-        Connection c = new Connection("testARR", ARR_HOST, ARR_PORT);
-        c.setProtocol(Protocol.SYSLOG_UDP);
+        Connection c;
+
+        if (TLS) {
+            c = new Connection("testARR", ARR_HOST, ARR_PORT_SECURE);
+            c.setProtocol(Protocol.SYSLOG_TLS);
+            c.setTlsCipherSuites("TLS_RSA_WITH_AES_128_CBC_SHA");
+        }
+        else {
+            c = new Connection("testARR", ARR_HOST, ARR_PORT_UNSECURE);
+            c.setProtocol(Protocol.SYSLOG_UDP);
+        }
         c.setInstalled(true);
         AuditRecordRepository arrExt = new AuditRecordRepository();
         arrExt.getConnections().add(c);
         arr.addDeviceExtension(arrExt);
         arr.addConnection(c);
         
+        
+        // TEST Device sending audits
         Device test = new Device("testSendingDevice");
         test.addApplicationEntity(new ApplicationEntity("TEST"));
         test.setInstalled(true);
         AuditLogger auditLogger = new AuditLogger();
         auditLogger.setAuditRecordRepositoryDevice(arr);
         Connection clientconn = new Connection("testARRClient", "localhost");
-        clientconn.setProtocol(Protocol.SYSLOG_UDP);
+        if (TLS) {
+            test.setTrustStoreURL(Paths.get(getClass().getResource("/keystore.jks").toURI()).toString());
+            test.setTrustStoreType("JKS");
+            test.setTrustStorePin("changeit");
+            test.setKeyStoreURL(Paths.get(getClass().getResource("/keystore.jks").toURI()).toString());
+            test.setKeyStorePin("changeit");
+            test.setKeyStoreType("JKS");
+            clientconn.setProtocol(Protocol.SYSLOG_TLS);
+            clientconn.setTlsCipherSuites("TLS_RSA_WITH_AES_128_CBC_SHA");
+        }
+        else {
+            clientconn.setProtocol(Protocol.SYSLOG_UDP);
+        }
         clientconn.setInstalled(true);
         auditLogger.getConnections().add(clientconn);
         test.addDeviceExtension(auditLogger);
