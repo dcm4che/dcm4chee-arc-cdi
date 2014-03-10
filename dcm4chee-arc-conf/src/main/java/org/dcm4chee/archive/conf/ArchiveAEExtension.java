@@ -47,6 +47,7 @@ import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.generic.ConfigClass;
 import org.dcm4che3.conf.api.generic.ConfigField;
+import org.dcm4che3.conf.api.generic.ReflectiveConfig;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.io.TemplatesCache;
@@ -475,34 +476,7 @@ public class ArchiveAEExtension extends AEExtension {
     public void reconfigure(AEExtension from) {
         ArchiveAEExtension arcae = (ArchiveAEExtension) from;
         
-        setModifyingSystem(arcae.modifyingSystem);
-        setRetrieveAETs(arcae.retrieveAETs);
-        setExternalRetrieveAET(arcae.externalRetrieveAET);
-        setFileSystemGroupID(arcae.fileSystemGroupID);
-        setInitFileSystemURI(arcae.initFileSystemURI);
-        setDigestAlgorithm(arcae.digestAlgorithm);
-        setSpoolDirectoryPath(arcae.spoolDirectoryPath);
-        setStorageFilePathFormat(arcae.storageFilePathFormat);
-        setPreserveSpoolFileOnFailure(arcae.preserveSpoolFileOnFailure);
-        setSuppressWarningCoercionOfDataElements(arcae.suppressWarningCoercionOfDataElements);
-        setMatchUnknown(arcae.matchUnknown);
-        setSendPendingCGet(arcae.sendPendingCGet);
-        setSendPendingCMoveInterval(arcae.sendPendingCMoveInterval);
-        setStorageCommitmentDelay(arcae.storageCommitmentDelay);
-        setStorageCommitmentMaxRetries(arcae.storageCommitmentMaxRetries);
-        setStorageCommitmentRetryInterval(arcae.storageCommitmentRetryInterval);
-        setForwardMPPSDestinations(arcae.forwardMPPSDestinations);
-        setForwardMPPSMaxRetries(arcae.forwardMPPSMaxRetries);
-        setForwardMPPSRetryInterval(arcae.forwardMPPSRetryInterval);
-        setIANDestinations(arcae.IANDestinations);
-        setIANMaxRetries(arcae.IANMaxRetries);
-        setIANRetryInterval(arcae.IANRetryInterval);
-        setReturnOtherPatientIDs(arcae.returnOtherPatientIDs);
-        setReturnOtherPatientNames(arcae.returnOtherPatientNames);
-        setShowRejectedForQualityReasons(arcae.showRejectedForQualityReasons);
-        setRemotePIXManagerApplication(arcae.remotePIXManagerApplication);
-        setLocalPIXConsumerApplication(arcae.localPIXConsumerApplication);
-        setQIDOMaxNumberOfResults(arcae.QIDOMaxNumberOfResults);
+        ReflectiveConfig.reconfigure(arcae, this);
         
         setAttributeCoercions(arcae.getAttributeCoercions());
         setCompressionRules(arcae.getCompressionRules());
