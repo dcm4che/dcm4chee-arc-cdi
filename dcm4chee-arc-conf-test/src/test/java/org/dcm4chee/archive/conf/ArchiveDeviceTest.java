@@ -40,14 +40,19 @@ package org.dcm4chee.archive.conf;
 
 import static org.dcm4che3.net.TransferCapability.Role.SCP;
 import static org.dcm4che3.net.TransferCapability.Role.SCU;
+import static org.junit.Assert.assertTrue;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Iterator;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.dcm4che3.conf.api.AttributeCoercion;
+import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.api.DicomConfiguration;
@@ -69,6 +74,7 @@ import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.imageio.codec.CompressionRule;
+import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.net.ApplicationEntity;
@@ -89,11 +95,13 @@ import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.ResourceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.archive.conf.DeepEquals.CustomDeepEquals;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveConfiguration;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveHL7Configuration;
 import org.dcm4chee.archive.conf.prefs.PreferencesArchiveConfiguration;
 import org.dcm4chee.archive.conf.prefs.PreferencesArchiveHL7Configuration;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -492,6 +500,7 @@ public class ArchiveDeviceTest {
     public void setUp() throws Exception {
         keystore = SSLManagerFactory.loadKeyStore("JKS", 
                 ResourceLocator.resourceURL("cacerts.jks"), "secret");
+        
         config = System.getProperty("ldap") == null
                 ? newPreferencesArchiveConfiguration()
                 : newLdapArchiveConfiguration();
@@ -546,6 +555,55 @@ public class ArchiveDeviceTest {
         config.close();
     }
 
+    
+   private class CompressionRulesDeepEquals implements CustomDeepEquals {
+    	
+    	@Override
+    	public boolean deepEquals(Object first, Object second) {
+    		return deepEquals((CompressionRules) first, (CompressionRules) second);
+    	}
+    	
+    	public boolean deepEquals(CompressionRules first,
+    			CompressionRules second) {
+    		
+    		Iterator<CompressionRule> i = first.iterator();
+    		
+    		while (i.hasNext()) {
+    			CompressionRule left = i.next();
+    			CompressionRule right = second.findByCommonName(left.getCommonName());
+    			
+    			if (!DeepEquals.deepEquals(left, right)) return false ;
+    		}
+    		
+    		return true;
+    	}
+    }
+   
+   private class AttributeCoercionsDeepEquals implements CustomDeepEquals {
+	   
+   	@Override
+   	public boolean deepEquals(Object first, Object second) {
+   		return deepEquals((AttributeCoercions) first, (AttributeCoercions) second);
+   	}
+   	
+   	public boolean deepEquals(AttributeCoercions first,
+   			AttributeCoercions second) {
+   		
+   		Iterator<AttributeCoercion> i = first.iterator();
+   		
+   		while (i.hasNext()) {
+   			AttributeCoercion left = i.next();
+   			AttributeCoercion right = second.findByCommonName(left.getCommonName());
+   			
+   			if (!DeepEquals.deepEquals(left, right)) return false ;
+   		}
+   		
+   		return true;
+   	}
+   }
+   
+   
+    
     @Test
     public void test() throws Exception {
         for (int i = 0; i < OTHER_AES.length; i++) {
@@ -563,10 +621,30 @@ public class ArchiveDeviceTest {
         config.persist(arrDevice);
         config.registerAETitle("DCM4CHEE");
         config.registerAETitle("DCM4CHEE_ADMIN");
-        config.persist(createArchiveDevice("dcm4chee-arc", arrDevice ));
-        config.findApplicationEntity("DCM4CHEE");
+        
+        Device arc = createArchiveDevice("dcm4chee-arc", arrDevice );
+        config.persist(arc);
+        ApplicationEntity ae = config.findApplicationEntity("DCM4CHEE");
+
+        Device arcLoaded = ae.getDevice();
+        
         if (config instanceof PreferencesDicomConfiguration)
             export(System.getProperty("export"));
+        
+        // register custom deep equals methods
+        DeepEquals.customDeepEquals = new HashMap<Class<?>, CustomDeepEquals>();
+        DeepEquals.customDeepEquals.put(CompressionRules.class, new CompressionRulesDeepEquals());
+        DeepEquals.customDeepEquals.put(AttributeCoercions.class, new AttributeCoercionsDeepEquals());
+        
+        boolean res = DeepEquals.deepEquals(arc, arcLoaded); 
+
+        if (!res) {
+        	System.out.println(DeepEquals.lastClass);
+        	System.out.println(DeepEquals.lastDualKey);
+        }
+        
+        assertTrue(res);
+        
     }
 
     private Device createARRDevice(String name, Protocol protocol, int port) {
