@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.conf.ldap;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,8 +55,16 @@ import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchResult;
 
 import org.dcm4che3.conf.api.ConfigurationException;
+import org.dcm4che3.conf.api.generic.ReflectiveConfig;
+import org.dcm4che3.conf.api.generic.ReflectiveConfig.ConfigReader;
+import org.dcm4che3.conf.api.generic.ReflectiveConfig.ConfigWriter;
+import org.dcm4che3.conf.api.generic.ReflectiveConfig.DiffWriter;
 import org.dcm4che3.conf.ldap.LdapDicomConfigurationExtension;
 import org.dcm4che3.conf.ldap.LdapUtils;
+import org.dcm4che3.conf.ldap.generic.LdapConfigReader;
+import org.dcm4che3.conf.ldap.generic.LdapConfigWriter;
+import org.dcm4che3.conf.ldap.generic.LdapDiffWriter;
+import org.dcm4che3.conf.ldap.generic.LdapGenericConfigExtension;
 import org.dcm4che3.conf.ldap.imageio.LdapCompressionRulesConfiguration;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.ValueSelector;
@@ -144,41 +153,18 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
         if (arcAE == null)
             return;
-
+        
         attrs.get("objectclass").add("dcmArchiveNetworkAE");
-        LdapUtils.storeNotNull(attrs, "dcmFileSystemGroupID", arcAE.getFileSystemGroupID());
-        LdapUtils.storeNotNull(attrs, "dcmInitFileSystemURI", arcAE.getInitFileSystemURI());
-        LdapUtils.storeNotNull(attrs, "dcmSpoolDirectoryPath", arcAE.getSpoolDirectoryPath());
-        LdapUtils.storeNotNull(attrs, "dcmStorageFilePathFormat", arcAE.getStorageFilePathFormat());
-        LdapUtils.storeNotNull(attrs, "dcmDigestAlgorithm", arcAE.getDigestAlgorithm());
-        LdapUtils.storeNotNull(attrs, "dcmExternalRetrieveAET", arcAE.getExternalRetrieveAET());
-        LdapUtils.storeNotEmpty(attrs, "dcmRetrieveAET", arcAE.getRetrieveAETs());
-        LdapUtils.storeNotDef(attrs, "dcmMatchUnknown", arcAE.isMatchUnknown(), false);
-        LdapUtils.storeNotDef(attrs, "dcmSendPendingCGet", arcAE.isSendPendingCGet(), false);
-        LdapUtils.storeNotDef(attrs, "dcmSendPendingCMoveInterval", arcAE.getSendPendingCMoveInterval(), 0);
-        LdapUtils.storeNotDef(attrs, "dcmSuppressWarningCoercionOfDataElements",
-                arcAE.isSuppressWarningCoercionOfDataElements(), false);
-        LdapUtils.storeNotDef(attrs, "dcmPreserveSpoolFileOnFailure",
-                arcAE.isPreserveSpoolFileOnFailure(), false);
-        LdapUtils.storeNotNull(attrs, "dcmModifyingSystem", arcAE.getModifyingSystem());
-        LdapUtils.storeNotDef(attrs, "dcmStgCmtDelay", arcAE.getStorageCommitmentDelay(), 0);
-        LdapUtils.storeNotDef(attrs, "dcmStgCmtMaxRetries", arcAE.getStorageCommitmentMaxRetries(), 0);
-        LdapUtils.storeNotDef(attrs, "dcmStgCmtRetryInterval", arcAE.getStorageCommitmentRetryInterval(),
-                    ArchiveAEExtension.DEF_RETRY_INTERVAL);
-        LdapUtils.storeNotEmpty(attrs, "dcmFwdMppsDestination", arcAE.getForwardMPPSDestinations());
-        LdapUtils.storeNotDef(attrs, "dcmFwdMppsMaxRetries", arcAE.getForwardMPPSMaxRetries(), 0);
-        LdapUtils.storeNotDef(attrs, "dcmFwdMppsRetryInterval", arcAE.getForwardMPPSRetryInterval(),
-                    ArchiveAEExtension.DEF_RETRY_INTERVAL);
-        LdapUtils.storeNotEmpty(attrs, "dcmIanDestination", arcAE.getIANDestinations());
-        LdapUtils.storeNotDef(attrs, "dcmIanMaxRetries", arcAE.getIANMaxRetries(), 0);
-        LdapUtils.storeNotDef(attrs, "dcmIanRetryInterval", arcAE.getIANRetryInterval(),
-                    ArchiveAEExtension.DEF_RETRY_INTERVAL);
-        LdapUtils.storeNotDef(attrs, "dcmReturnOtherPatientIDs", arcAE.isReturnOtherPatientIDs(), false);
-        LdapUtils.storeNotDef(attrs, "dcmReturnOtherPatientNames", arcAE.isReturnOtherPatientNames(), false);
-        LdapUtils.storeNotDef(attrs, "dcmShowRejectedInstances", arcAE.isShowRejectedForQualityReasons(), false);
-        LdapUtils.storeNotNull(attrs, "hl7PIXConsumerApplication", arcAE.getLocalPIXConsumerApplication());
-        LdapUtils.storeNotNull(attrs, "hl7PIXManagerApplication", arcAE.getRemotePIXManagerApplication());
-        LdapUtils.storeNotDef(attrs, "dcmQidoMaxNumberOfResults", arcAE.getQIDOMaxNumberOfResults(), 0);
+        
+        try {
+            
+            ConfigWriter ldapWriter = new LdapConfigWriter(attrs);   
+            ReflectiveConfig.store(arcAE, ldapWriter);
+            
+	} catch (Exception e) {
+	    throw new RuntimeException(e);
+	}
+        
     }
 
     @Override
@@ -260,42 +246,16 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
 
        ArchiveAEExtension arcae = new ArchiveAEExtension();
        ae.addAEExtension(arcae);
-       arcae.setFileSystemGroupID(LdapUtils.stringValue(attrs.get("dcmFileSystemGroupID"), null));
-       arcae.setInitFileSystemURI(LdapUtils.stringValue(attrs.get("dcmInitFileSystemURI"), null));
-       arcae.setSpoolDirectoryPath(LdapUtils.stringValue(attrs.get("dcmSpoolDirectoryPath"), null));
-       arcae.setStorageFilePathFormat(attributesFormat(attrs.get("dcmStorageFilePathFormat")));
-       arcae.setDigestAlgorithm(LdapUtils.stringValue(attrs.get("dcmDigestAlgorithm"), null));
-       arcae.setExternalRetrieveAET(LdapUtils.stringValue(attrs.get("dcmExternalRetrieveAET"), null));
-       arcae.setRetrieveAETs(LdapUtils.stringArray(attrs.get("dcmRetrieveAET")));
-       arcae.setMatchUnknown(LdapUtils.booleanValue(attrs.get("dcmMatchUnknown"), false));
-       arcae.setSendPendingCGet(LdapUtils.booleanValue(attrs.get("dcmSendPendingCGet"), false));
-       arcae.setSendPendingCMoveInterval(LdapUtils.intValue(attrs.get("dcmSendPendingCMoveInterval"), 0));
-       arcae.setSuppressWarningCoercionOfDataElements(
-               LdapUtils.booleanValue(attrs.get("dcmSuppressWarningCoercionOfDataElements"), false));
-       arcae.setPreserveSpoolFileOnFailure(
-               LdapUtils.booleanValue(attrs.get("dcmPreserveSpoolFileOnFailure"), false));
-       arcae.setModifyingSystem(LdapUtils.stringValue(attrs.get("dcmModifyingSystem"), null));
-       arcae.setStorageCommitmentDelay(LdapUtils.intValue(attrs.get("dcmStgCmtDelay"), 0));
-       arcae.setStorageCommitmentMaxRetries(LdapUtils.intValue(attrs.get("dcmStgCmtMaxRetries"), 0));
-       arcae.setStorageCommitmentRetryInterval(LdapUtils.intValue(attrs.get("dcmStgCmtRetryInterval"),
-               ArchiveAEExtension.DEF_RETRY_INTERVAL));
-       arcae.setForwardMPPSDestinations(LdapUtils.stringArray(attrs.get("dcmFwdMppsDestination")));
-       arcae.setForwardMPPSMaxRetries(LdapUtils.intValue(attrs.get("dcmFwdMppsMaxRetries"), 0));
-       arcae.setForwardMPPSRetryInterval(LdapUtils.intValue(attrs.get("dcmFwdMppsRetryInterval"),
-               ArchiveAEExtension.DEF_RETRY_INTERVAL));
-       arcae.setIANDestinations(LdapUtils.stringArray(attrs.get("dcmIanDestination")));
-       arcae.setIANMaxRetries(LdapUtils.intValue(attrs.get("dcmIanMaxRetries"), 0));
-       arcae.setIANRetryInterval(LdapUtils.intValue(attrs.get("dcmIanRetryInterval"),
-               ArchiveAEExtension.DEF_RETRY_INTERVAL));
-       arcae.setReturnOtherPatientIDs(
-               LdapUtils.booleanValue(attrs.get("dcmReturnOtherPatientIDs"), false));
-       arcae.setReturnOtherPatientNames(
-               LdapUtils.booleanValue(attrs.get("dcmReturnOtherPatientNames"), false));
-       arcae.setShowRejectedForQualityReasons(
-               LdapUtils.booleanValue(attrs.get("dcmShowRejectedInstances"), false));
-       arcae.setLocalPIXConsumerApplication(LdapUtils.stringValue(attrs.get("hl7PIXConsumerApplication"), null));
-       arcae.setRemotePIXManagerApplication(LdapUtils.stringValue(attrs.get("hl7PIXManagerApplication"), null));
-       arcae.setQIDOMaxNumberOfResults(LdapUtils.intValue(attrs.get("dcmQidoMaxNumberOfResults"), 0));
+
+	try {
+		ConfigReader ldapReader = new LdapConfigReader(attrs);
+		ReflectiveConfig.read(arcae, ldapReader);
+
+	} catch (Exception e) {
+	    throw new RuntimeException(e);
+
+	}      
+       
     }
 
     @Override
@@ -352,106 +312,16 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         if (aa == null || bb == null)
             return;
         
-        LdapUtils.storeDiff(mods, "dcmFileSystemGroupID",
-                aa.getFileSystemGroupID(),
-                bb.getFileSystemGroupID());
-        LdapUtils.storeDiff(mods, "dcmInitFileSystemURI",
-                aa.getInitFileSystemURI(),
-                bb.getInitFileSystemURI());
-        LdapUtils.storeDiff(mods, "dcmSpoolDirectoryPath",
-                aa.getSpoolDirectoryPath(),
-                bb.getSpoolDirectoryPath());
-        LdapUtils.storeDiff(mods, "dcmStorageFilePathFormat",
-                aa.getStorageFilePathFormat(),
-                bb.getStorageFilePathFormat());
-        LdapUtils.storeDiff(mods, "dcmDigestAlgorithm",
-                aa.getDigestAlgorithm(),
-                bb.getDigestAlgorithm());
-        LdapUtils.storeDiff(mods, "dcmExternalRetrieveAET",
-                aa.getExternalRetrieveAET(),
-                bb.getExternalRetrieveAET());
-        LdapUtils.storeDiff(mods, "dcmRetrieveAET",
-                aa.getRetrieveAETs(),
-                bb.getRetrieveAETs());
-        LdapUtils.storeDiff(mods, "dcmMatchUnknown",
-                aa.isMatchUnknown(),
-                bb.isMatchUnknown(),
-                false);
-        LdapUtils.storeDiff(mods, "dcmSendPendingCGet",
-                aa.isSendPendingCGet(),
-                bb.isSendPendingCGet(),
-                false);
-        LdapUtils.storeDiff(mods, "dcmSendPendingCMoveInterval",
-                aa.getSendPendingCMoveInterval(),
-                bb.getSendPendingCMoveInterval(),
-                0);
-        LdapUtils.storeDiff(mods, "dcmSuppressWarningCoercionOfDataElements",
-                aa.isSuppressWarningCoercionOfDataElements(),
-                bb.isSuppressWarningCoercionOfDataElements(),
-                false);
-        LdapUtils.storeDiff(mods, "dcmPreserveSpoolFileOnFailure",
-                aa.isPreserveSpoolFileOnFailure(),
-                bb.isPreserveSpoolFileOnFailure(),
-                false);
-        LdapUtils.storeDiff(mods, "dcmModifyingSystem",
-                aa.getModifyingSystem(),
-                bb.getModifyingSystem());
-        LdapUtils.storeDiff(mods, "dcmStgCmtDelay",
-                aa.getStorageCommitmentDelay(),
-                bb.getStorageCommitmentDelay(),
-                0);
-        LdapUtils.storeDiff(mods, "dcmStgCmtMaxRetries",
-                aa.getStorageCommitmentMaxRetries(),
-                bb.getStorageCommitmentMaxRetries(),
-                0);
-        LdapUtils.storeDiff(mods, "dcmStgCmtRetryInterval",
-                aa.getStorageCommitmentRetryInterval(),
-                bb.getStorageCommitmentRetryInterval(),
-                ArchiveAEExtension.DEF_RETRY_INTERVAL);
-        LdapUtils.storeDiff(mods, "dcmFwdMppsDestination",
-                aa.getForwardMPPSDestinations(),
-                bb.getForwardMPPSDestinations());
-        LdapUtils.storeDiff(mods, "dcmFwdMppsMaxRetries",
-                aa.getForwardMPPSMaxRetries(),
-                bb.getForwardMPPSMaxRetries(),
-                0);
-        LdapUtils.storeDiff(mods, "dcmFwdMppsRetryInterval",
-                aa.getForwardMPPSRetryInterval(),
-                bb.getForwardMPPSRetryInterval(),
-                ArchiveAEExtension.DEF_RETRY_INTERVAL);
-        LdapUtils.storeDiff(mods, "dcmIanDestination",
-                aa.getIANDestinations(),
-                bb.getIANDestinations());
-        LdapUtils.storeDiff(mods, "dcmIanMaxRetries",
-                aa.getIANMaxRetries(),
-                bb.getIANMaxRetries(),
-                0);
-        LdapUtils.storeDiff(mods, "dcmIanRetryInterval",
-                aa.getIANRetryInterval(),
-                bb.getIANRetryInterval(),
-                ArchiveAEExtension.DEF_RETRY_INTERVAL);
-        LdapUtils.storeDiff(mods, "dcmReturnOtherPatientIDs",
-                aa.isReturnOtherPatientIDs(),
-                bb.isReturnOtherPatientIDs(),
-                false);
-        LdapUtils.storeDiff(mods, "dcmReturnOtherPatientNames",
-                aa.isReturnOtherPatientNames(),
-                bb.isReturnOtherPatientNames(),
-                false);
-        LdapUtils.storeDiff(mods, "dcmShowRejectedInstances",
-                aa.isShowRejectedForQualityReasons(),
-                bb.isShowRejectedForQualityReasons(),
-                false);
-        LdapUtils.storeDiff(mods, "hl7PIXConsumerApplication",
-                aa.getLocalPIXConsumerApplication(),
-                bb.getLocalPIXConsumerApplication());
-        LdapUtils.storeDiff(mods, "hl7PIXManagerApplication",
-                aa.getRemotePIXManagerApplication(),
-                bb.getRemotePIXManagerApplication());
-        LdapUtils.storeDiff(mods, "dcmQidoMaxNumberOfResults",
-                aa.getQIDOMaxNumberOfResults(),
-                bb.getQIDOMaxNumberOfResults(),
-                0);
+	try {
+
+	    	DiffWriter ldapDiffWriter = new LdapDiffWriter(mods);
+		ReflectiveConfig.storeAllDiffs(a, b, ldapDiffWriter);
+
+	} catch (Exception e) {
+	    throw new RuntimeException(e);
+
+	}
+        
     }
 
     @Override
