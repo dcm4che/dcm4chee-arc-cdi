@@ -46,6 +46,7 @@ import org.dcm4che3.audit.AuditMessages.EventActionCode;
 import org.dcm4che3.audit.AuditMessages.EventID;
 import org.dcm4che3.audit.AuditMessages.RoleIDCode;
 import org.dcm4che3.audit.Instance;
+import org.dcm4che3.audit.ParticipantObjectDetail;
 import org.dcm4che3.audit.ParticipantObjectIdentification;
 import org.dcm4che3.audit.SOPClass;
 import org.dcm4che3.data.Tag;
@@ -53,6 +54,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.audit.AuditMessage;
+import org.dcm4chee.archive.dto.Source;
 import org.dcm4chee.archive.store.StoreSession;
 
 /**
@@ -61,17 +63,19 @@ import org.dcm4chee.archive.store.StoreSession;
  */
 public class StoreAudit extends AuditMessage {
 
-    private StoreSession session;
+    private String remoteAET;
+    private Source source;
     private Attributes attributes;
     private String eventOutcomeIndicator;
     private AuditLogger logger;
 
     /**
      */
-    public StoreAudit(StoreSession session, Attributes attributes,
+    public StoreAudit(String remoteAET, Source source, Attributes attributes,
             String eventOutcomeIndicator, AuditLogger logger) {
         super();
-        this.session = session;
+        this.remoteAET = remoteAET;
+        this.source= source; 
         this.attributes = attributes;
         this.eventOutcomeIndicator = eventOutcomeIndicator;
         this.logger = logger;
@@ -87,10 +91,9 @@ public class StoreAudit extends AuditMessage {
 
         // Active Participant 1: The requestor
         this.getActiveParticipant().add(
-                AuditMessages.createActiveParticipant(session.getRemoteAET(),
-                        AuditMessages.alternativeUserIDForAETitle(session
-                                .getRemoteAET()), null, true,
-                        session.getSource().getHost(),
+                AuditMessages.createActiveParticipant(remoteAET,
+                        AuditMessages.alternativeUserIDForAETitle(remoteAET), null, 
+                        true, source.getHost(),
                         AuditMessages.NetworkAccessPointTypeCode.MachineName,
                         null, AuditMessages.RoleIDCode.Source));
 
@@ -103,7 +106,7 @@ public class StoreAudit extends AuditMessage {
                 .add(AuditMessages.createParticipantObjectIdentification(
                         attributes.getString(Tag.StudyInstanceUID),
                         AuditMessages.ParticipantObjectIDTypeCode.StudyInstanceUID,
-                        null, null,
+                        "Study being transferred", null,
                         AuditMessages.ParticipantObjectTypeCode.SystemObject,
                         AuditMessages.ParticipantObjectTypeCodeRole.Report,
                         null, null,
@@ -139,6 +142,14 @@ public class StoreAudit extends AuditMessage {
         desc.getSOPClass().add(sop);
         return desc;
     }
+    
+    private ParticipantObjectDetail createPODetail(String studyuid) {
+        ParticipantObjectDetail det = new ParticipantObjectDetail();
+        det.setType("StudyInstanceUID");
+        det.setValue(studyuid.getBytes());
+        return det;
+    }
+
 
     private SOPClass createSOPClass(Attributes attributes) {
         SOPClass sop = new SOPClass();

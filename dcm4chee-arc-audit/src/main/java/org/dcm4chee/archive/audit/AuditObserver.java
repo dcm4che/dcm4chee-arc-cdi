@@ -96,7 +96,8 @@ public class AuditObserver {
         if (auditMap.get(studyID) == null)
             auditMap.put(
                     studyID,
-                    new StoreAudit(session, context.getAttributes(), context
+                    new StoreAudit(session.getRemoteAET(), session.getSource(), 
+                            context.getAttributes(), context
                             .isFail() ? EventOutcomeIndicator.SeriousFailure
                             : EventOutcomeIndicator.Success, logger));
         else {
