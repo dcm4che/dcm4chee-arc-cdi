@@ -40,14 +40,18 @@ package org.dcm4chee.archive.conf;
 
 import static org.dcm4che3.net.TransferCapability.Role.SCP;
 import static org.dcm4che3.net.TransferCapability.Role.SCU;
+import static org.junit.Assert.assertTrue;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
+import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.api.DicomConfiguration;
@@ -69,6 +73,7 @@ import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.imageio.codec.CompressionRule;
+import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.net.ApplicationEntity;
@@ -88,7 +93,7 @@ import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.ResourceLocator;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.archive.conf.DeepEquals.CustomDeepEquals;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveConfiguration;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveHL7Configuration;
 import org.dcm4chee.archive.conf.prefs.PreferencesArchiveConfiguration;
@@ -492,6 +497,7 @@ public class ArchiveDeviceTest {
     public void setUp() throws Exception {
         keystore = SSLManagerFactory.loadKeyStore("JKS", 
                 ResourceLocator.resourceURL("cacerts.jks"), "secret");
+        
         config = System.getProperty("ldap") == null
                 ? newPreferencesArchiveConfiguration()
                 : newLdapArchiveConfiguration();
@@ -546,6 +552,55 @@ public class ArchiveDeviceTest {
         config.close();
     }
 
+    
+   private class CompressionRulesDeepEquals implements CustomDeepEquals {
+    	
+    	@Override
+    	public boolean deepEquals(Object first, Object second) {
+    		return deepEquals((CompressionRules) first, (CompressionRules) second);
+    	}
+    	
+    	public boolean deepEquals(CompressionRules first,
+    			CompressionRules second) {
+    		
+    		Iterator<CompressionRule> i = first.iterator();
+    		
+    		while (i.hasNext()) {
+    			CompressionRule left = i.next();
+    			CompressionRule right = second.findByCommonName(left.getCommonName());
+    			
+    			if (!DeepEquals.deepEquals(left, right)) return false ;
+    		}
+    		
+    		return true;
+    	}
+    }
+   
+   private class AttributeCoercionsDeepEquals implements CustomDeepEquals {
+	   
+   	@Override
+   	public boolean deepEquals(Object first, Object second) {
+   		return deepEquals((AttributeCoercions) first, (AttributeCoercions) second);
+   	}
+   	
+   	public boolean deepEquals(AttributeCoercions first,
+   			AttributeCoercions second) {
+   		
+   		Iterator<AttributeCoercion> i = first.iterator();
+   		
+   		while (i.hasNext()) {
+   			AttributeCoercion left = i.next();
+   			AttributeCoercion right = second.findByCommonName(left.getCommonName());
+   			
+   			if (!DeepEquals.deepEquals(left, right)) return false ;
+   		}
+   		
+   		return true;
+   	}
+   }
+   
+   
+    
     @Test
     public void test() throws Exception {
         for (int i = 0; i < OTHER_AES.length; i++) {
@@ -563,10 +618,47 @@ public class ArchiveDeviceTest {
         config.persist(arrDevice);
         config.registerAETitle("DCM4CHEE");
         config.registerAETitle("DCM4CHEE_ADMIN");
-        config.persist(createArchiveDevice("dcm4chee-arc", arrDevice ));
-        config.findApplicationEntity("DCM4CHEE");
+        
+        Device arc = createArchiveDevice("dcm4chee-arc", arrDevice );
+        config.persist(arc);
+        ApplicationEntity ae = config.findApplicationEntity("DCM4CHEE");
+
+        Device arcLoaded = ae.getDevice();
+        
+        
         if (config instanceof PreferencesDicomConfiguration)
             export(System.getProperty("export"));
+        
+        // register custom deep equals methods
+        DeepEquals.customDeepEquals = new HashMap<Class<?>, CustomDeepEquals>();
+        DeepEquals.customDeepEquals.put(CompressionRules.class, new CompressionRulesDeepEquals());
+        DeepEquals.customDeepEquals.put(AttributeCoercions.class, new AttributeCoercionsDeepEquals());
+        
+        boolean res = DeepEquals.deepEquals(arc, arcLoaded); 
+
+        if (!res) {
+        	System.out.println(DeepEquals.lastClass);
+        	System.out.println(DeepEquals.lastDualKey);
+        }
+        
+        assertTrue("Store/read", res);
+        
+        // Reconfiguration test
+        Device anotherArc = createArchiveDevice("dcm4chee-arc", arrDevice );
+        anotherArc.removeApplicationEntity("DCM4CHEE");
+        
+        ApplicationEntity anotherAe = createAnotherAE("DCM4CHEE",
+                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS, null, PIX_MANAGER);
+        anotherArc.addApplicationEntity(anotherAe);
+
+        //anotherAe.getAEExtension(ArchiveAEExtension.class).reconfigure(from);
+        
+        arcLoaded.reconfigure(anotherArc);
+        
+        res = DeepEquals.deepEquals(anotherArc, arcLoaded); 
+        
+        assertTrue("Reconfigure",res);        
+        
     }
 
     private Device createARRDevice(String name, Protocol protocol, int port) {
@@ -908,6 +1000,112 @@ public class ArchiveDeviceTest {
         return ae;
     }
 
+    private ApplicationEntity createAnotherAE(String aet,
+            String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
+            String pixConsumer, String pixManager) {
+        ApplicationEntity ae = new ApplicationEntity(aet);
+        ArchiveAEExtension aeExt = new ArchiveAEExtension();
+        ae.addAEExtension(aeExt);
+        ae.setAssociationAcceptor(true);
+        ae.setAssociationInitiator(true);
+        aeExt.setFileSystemGroupID("notDEFAULT");
+        aeExt.setInitFileSystemURI("${jboss.server.data.url}");
+        aeExt.setSpoolDirectoryPath("archive/anotherspool");
+        aeExt.setStorageFilePathFormat(new AttributesFormat(
+                "archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
+        aeExt.setDigestAlgorithm("MD6");
+        aeExt.setRetrieveAETs(aet);
+        aeExt.setPreserveSpoolFileOnFailure(true);
+        aeExt.setSuppressWarningCoercionOfDataElements(false);
+        aeExt.setMatchUnknown(true);
+        aeExt.setSendPendingCGet(true);
+        aeExt.setSendPendingCMoveInterval(4000);
+        aeExt.setQIDOMaxNumberOfResults(500);
+        aeExt.addAttributeCoercion(new AttributeCoercion(
+                "Supplement missing PID",
+                null, 
+                Dimse.C_ECHO_RQ, 
+                SCU,
+                new String[]{"ENSURE_PID"},
+                "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl"));
+        aeExt.addAttributeCoercion(new AttributeCoercion(
+                "Remove person names",
+                null,
+                Dimse.C_STORE_RQ, 
+                SCP,
+                new String[]{"WITHOUT_PN"},
+                "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl"));
+        aeExt.addCompressionRule(new CompressionRule(
+                "JPEG Lossless",
+                new String[] {
+                    "MONOCHROME1",
+                    "MONOCHROME2",
+                    "PALETTE COLOR",
+                    "RGB",
+                    "YBR_FULL" },
+                new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
+                -1,                              // Pixel Representation
+                new String[] { "JPEG_LOSSLESS" },  // Source AETs
+                null,                           // SOP Classes
+                null,                           // Body Parts
+                UID.JPEGLossless,
+                "maxPixelValueError=0"
+                ));
+        aeExt.addCompressionRule(new CompressionRule(
+                "JPEG LS Lossless",
+                new String[] {
+                    "MONOCHROME1",
+                    "MONOCHROME2",
+                    "PALETTE COLOR",
+                    "RGB",
+                    "YBR_FULL" },
+                new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
+                -1,                             // Pixel Representation
+                new String[] { "JPEG_LS" },     // Source AETs
+                null,                           // SOP Classes
+                null,                           // Body Parts
+                UID.JPEGLSLossless,
+                "maxPixelValueError=0"
+                ));
+        aeExt.addCompressionRule(new CompressionRule(
+                "JPEG 2000 Lossless",
+                new String[] {
+                    "MONOCHROME1",
+                    "MONOCHROME2",
+                    "PALETTE COLOR",
+                    "RGB",
+                    "YBR_FULL" },
+                new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },  // Bits Stored
+                -1,                             // Pixel Representation
+                new String[] { "JPEG_2000" },   // Source AETs
+                null,                           // SOP Classes
+                null,                           // Body Parts
+                UID.JPEG2000LosslessOnly,
+                "maxPixelValueError=0"
+                ));
+        addTCs(ae, null, SCP, IMAGE_CUIDS, image_tsuids);
+        addTCs(ae, null, SCP, VIDEO_CUIDS, video_tsuids);
+        addTCs(ae, null, SCP, OTHER_CUIDS, other_tsuids);
+        addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
+        addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);
+        addTCs(ae, null, SCU, OTHER_CUIDS, other_tsuids);
+        addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, QUERY_CUIDS, UID.ImplicitVRLittleEndian);
+        addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+        addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
+        addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
+        addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
+        addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        aeExt.setReturnOtherPatientIDs(false);
+        aeExt.setReturnOtherPatientNames(true);
+        aeExt.setLocalPIXConsumerApplication(pixConsumer);
+        aeExt.setRemotePIXManagerApplication(pixManager);
+        return ae;
+    }
+    
+    
     private ApplicationEntity createAdminAE(String aet,
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
             String pixConsumer, String pixManager) {

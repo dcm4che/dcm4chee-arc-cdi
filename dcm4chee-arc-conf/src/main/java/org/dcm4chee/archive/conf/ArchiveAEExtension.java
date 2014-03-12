@@ -45,6 +45,9 @@ import javax.xml.transform.TransformerConfigurationException;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
+import org.dcm4che3.conf.api.generic.ConfigClass;
+import org.dcm4che3.conf.api.generic.ConfigField;
+import org.dcm4che3.conf.api.generic.ReflectiveConfig;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.io.TemplatesCache;
@@ -60,42 +63,130 @@ import org.dcm4che3.util.StringUtils;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
+
+
+@ConfigClass(objectClass = "dcmArchiveNetworkAE", nodeName = "xdsRegistry")
 public class ArchiveAEExtension extends AEExtension {
 
     private static final long serialVersionUID = -2390448404282661045L;
 
-    public static final int DEF_RETRY_INTERVAL = 60;
+    public static final String DEF_RETRY_INTERVAL = "60";
 
+    
+    @ConfigField(name = "dcmModifyingSystem")
     private String modifyingSystem;
+    
+    
+    @ConfigField(name = "dcmRetrieveAET")
     private String[] retrieveAETs;
+    
+
+    @ConfigField(name = "dcmExternalRetrieveAET")
     private String externalRetrieveAET;
+    
+    
+    @ConfigField(name = "dcmFileSystemGroupID")
     private String fileSystemGroupID;
+    
+    
+    @ConfigField(name = "dcmInitFileSystemURI")
     private String initFileSystemURI;
+    
+    
+    @ConfigField(name = "dcmDigestAlgorithm")
     private String digestAlgorithm;
+    
+    
+    @ConfigField(name = "dcmSpoolDirectoryPath")
     private String spoolDirectoryPath;
+    
+    
+    @ConfigField(name = "dcmStorageFilePathFormat")
     private AttributesFormat storageFilePathFormat;
+    
+    
+    @ConfigField(name = "dcmSuppressWarningCoercionOfDataElements", def="false")
     private boolean suppressWarningCoercionOfDataElements;
+
+    
+    @ConfigField(name = "dcmPreserveSpoolFileOnFailure", def="false")
     private boolean preserveSpoolFileOnFailure;
+    
+    
+    @ConfigField(name = "dcmMatchUnknown", def="false")
     private boolean matchUnknown;
+    
+    
+    @ConfigField(name = "dcmSendPendingCGet", def="false")
     private boolean sendPendingCGet;
+
+
+    @ConfigField(name = "dcmSendPendingCMoveInterval", def="0")
     private int sendPendingCMoveInterval;
+    
+    
+    @ConfigField(name = "dcmStgCmtDelay", def="0")
     private int storageCommitmentDelay;
+    
+    
+    @ConfigField(name = "dcmStgCmtMaxRetries", def="0")
     private int storageCommitmentMaxRetries;
-    private int storageCommitmentRetryInterval = DEF_RETRY_INTERVAL;
+    
+    
+    @ConfigField(name = "dcmStgCmtMaxRetries", def=DEF_RETRY_INTERVAL)
+    private int storageCommitmentRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
+
+    
+    @ConfigField(name = "dcmFwdMppsDestination")
     private String[] forwardMPPSDestinations = {};
+
+    
+    @ConfigField(name = "dcmFwdMppsMaxRetries", def="0")
     private int forwardMPPSMaxRetries;
-    private int forwardMPPSRetryInterval = DEF_RETRY_INTERVAL;
-    private String[] ianDestinations = {};
-    private int ianMaxRetries;
-    private int ianRetryInterval = DEF_RETRY_INTERVAL;
+    
+    
+    @ConfigField(name = "dcmFwdMppsRetryInterval", def=DEF_RETRY_INTERVAL)
+    private int forwardMPPSRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
+    
+    
+    @ConfigField(name = "dcmIanDestination")
+    private String[] IANDestinations = {};
+    
+    
+    @ConfigField(name = "dcmIanMaxRetries", def="0")
+    private int IANMaxRetries;
+    
+    
+    @ConfigField(name = "dcmIanRetryInterval", def=DEF_RETRY_INTERVAL)
+    private int IANRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
+    
+    
     private final AttributeCoercions attributeCoercions = new AttributeCoercions();
     private final CompressionRules compressionRules = new CompressionRules();
+    
+    
+    @ConfigField(name = "dcmReturnOtherPatientIDs", def="false")
     private boolean returnOtherPatientIDs;
+
+    
+    @ConfigField(name = "dcmReturnOtherPatientNames", def="false")
     private boolean returnOtherPatientNames;
+
+    
+    @ConfigField(name = "dcmShowRejectedInstances", def="false")
     private boolean showRejectedForQualityReasons;
-    private String pixManagerApplication;
-    private String pixConsumerApplication;
-    private int qidoMaxNumberOfResults;
+    
+    
+    @ConfigField(name = "hl7PIXManagerApplication")
+    private String remotePIXManagerApplication;
+    
+    
+    @ConfigField(name = "hl7PIXConsumerApplication")
+    private String localPIXConsumerApplication;
+    
+    
+    @ConfigField(name = "dcmQidoMaxNumberOfResults", def="0")
+    private int QIDOMaxNumberOfResults;
 
     public AttributeCoercion getAttributeCoercion(String sopClass,
             Dimse dimse, Role role, String aeTitle) {
@@ -306,31 +397,31 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public String[] getIANDestinations() {
-        return ianDestinations;
+        return IANDestinations;
     }
 
     public void setIANDestinations(String[] ianDestinations) {
-        this.ianDestinations = ianDestinations;
+        this.IANDestinations = ianDestinations;
     }
 
     public boolean hasIANDestinations() {
-        return ianDestinations.length > 0;
+        return IANDestinations.length > 0;
     }
 
     public int getIANMaxRetries() {
-        return ianMaxRetries;
+        return IANMaxRetries;
     }
 
     public void setIANMaxRetries(int ianMaxRetries) {
-        this.ianMaxRetries = ianMaxRetries;
+        this.IANMaxRetries = ianMaxRetries;
     }
 
     public int getIANRetryInterval() {
-        return ianRetryInterval;
+        return IANRetryInterval;
     }
 
     public void setIANRetryInterval(int ianRetryInterval) {
-        this.ianRetryInterval = ianRetryInterval;
+        this.IANRetryInterval = ianRetryInterval;
     }
 
     public boolean isReturnOtherPatientIDs() {
@@ -358,60 +449,35 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public String getRemotePIXManagerApplication() {
-        return pixManagerApplication;
+        return remotePIXManagerApplication;
     }
 
     public void setRemotePIXManagerApplication(String appName) {
-        this.pixManagerApplication = appName;
+        this.remotePIXManagerApplication = appName;
     }
 
     public String getLocalPIXConsumerApplication() {
-        return pixConsumerApplication;
+        return localPIXConsumerApplication;
     }
 
     public void setLocalPIXConsumerApplication(String appName) {
-        this.pixConsumerApplication = appName;
+        this.localPIXConsumerApplication = appName;
     }
 
     public int getQIDOMaxNumberOfResults() {
-        return qidoMaxNumberOfResults;
+        return QIDOMaxNumberOfResults;
     }
 
     public void setQIDOMaxNumberOfResults(int qidoMaxNumberOfResults) {
-        this.qidoMaxNumberOfResults = qidoMaxNumberOfResults;
+        this.QIDOMaxNumberOfResults = qidoMaxNumberOfResults;
     }
 
     @Override
     public void reconfigure(AEExtension from) {
         ArchiveAEExtension arcae = (ArchiveAEExtension) from;
-        setModifyingSystem(arcae.modifyingSystem);
-        setRetrieveAETs(arcae.retrieveAETs);
-        setExternalRetrieveAET(arcae.externalRetrieveAET);
-        setFileSystemGroupID(arcae.fileSystemGroupID);
-        setInitFileSystemURI(arcae.initFileSystemURI);
-        setDigestAlgorithm(arcae.digestAlgorithm);
-        setSpoolDirectoryPath(arcae.spoolDirectoryPath);
-        setStorageFilePathFormat(arcae.storageFilePathFormat);
-        setPreserveSpoolFileOnFailure(arcae.preserveSpoolFileOnFailure);
-        setSuppressWarningCoercionOfDataElements(arcae.suppressWarningCoercionOfDataElements);
-        setMatchUnknown(arcae.matchUnknown);
-        setSendPendingCGet(arcae.sendPendingCGet);
-        setSendPendingCMoveInterval(arcae.sendPendingCMoveInterval);
-        setStorageCommitmentDelay(arcae.storageCommitmentDelay);
-        setStorageCommitmentMaxRetries(arcae.storageCommitmentMaxRetries);
-        setStorageCommitmentRetryInterval(arcae.storageCommitmentRetryInterval);
-        setForwardMPPSDestinations(arcae.forwardMPPSDestinations);
-        setForwardMPPSMaxRetries(arcae.forwardMPPSMaxRetries);
-        setForwardMPPSRetryInterval(arcae.forwardMPPSRetryInterval);
-        setIANDestinations(arcae.ianDestinations);
-        setIANMaxRetries(arcae.ianMaxRetries);
-        setIANRetryInterval(arcae.ianRetryInterval);
-        setReturnOtherPatientIDs(arcae.returnOtherPatientIDs);
-        setReturnOtherPatientNames(arcae.returnOtherPatientNames);
-        setShowRejectedForQualityReasons(arcae.showRejectedForQualityReasons);
-        setRemotePIXManagerApplication(arcae.pixManagerApplication);
-        setLocalPIXConsumerApplication(arcae.pixConsumerApplication);
-        setQIDOMaxNumberOfResults(arcae.qidoMaxNumberOfResults);
+        
+        ReflectiveConfig.reconfigure(arcae, this);
+        
         setAttributeCoercions(arcae.getAttributeCoercions());
         setCompressionRules(arcae.getCompressionRules());
     }
