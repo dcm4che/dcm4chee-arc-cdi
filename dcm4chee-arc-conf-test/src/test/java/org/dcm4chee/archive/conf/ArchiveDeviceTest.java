@@ -50,7 +50,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.ConfigurationException;
@@ -94,14 +93,12 @@ import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.ResourceLocator;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.DeepEquals.CustomDeepEquals;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveConfiguration;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveHL7Configuration;
 import org.dcm4chee.archive.conf.prefs.PreferencesArchiveConfiguration;
 import org.dcm4chee.archive.conf.prefs.PreferencesArchiveHL7Configuration;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
