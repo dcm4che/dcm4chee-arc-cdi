@@ -57,7 +57,7 @@ import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.audit.AuditMessage;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.store.StoreSession;
 
 /**
@@ -68,11 +68,11 @@ public class StartStopAudit extends AuditMessage {
 
     private boolean start;
     private AuditLogger logger;
-    private Source source;
+    private Participant source;
 
     /**
      */
-    public StartStopAudit(boolean start, AuditLogger logger, Source source) {
+    public StartStopAudit(boolean start, AuditLogger logger, Participant source) {
         super();
         this.start = start;
         this.logger = logger;

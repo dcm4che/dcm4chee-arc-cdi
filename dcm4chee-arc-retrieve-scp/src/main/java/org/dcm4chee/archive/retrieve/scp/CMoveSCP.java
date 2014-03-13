@@ -45,6 +45,7 @@ import java.security.GeneralSecurityException;
 import java.util.EnumSet;
 import java.util.List;
 
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
@@ -54,6 +55,7 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.IncompatibleConnectionException;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
@@ -66,9 +68,14 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.net.service.RetrieveTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.dto.LocalAssociationParticipant;
+import org.dcm4chee.archive.dto.Participant;
+import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.retrieve.impl.RetrieveEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -86,6 +93,9 @@ public class CMoveSCP extends BasicCMoveSCP {
 
     @Inject
     private IApplicationEntityCache aeCache;
+    
+    @Inject
+    private Event<RetrieveEvent> retrieveEvent;
 
     public CMoveSCP(String sopClass, String... qrLevels) {
         super(sopClass);
@@ -149,6 +159,14 @@ public class CMoveSCP extends BasicCMoveSCP {
             retrieveTask.setSendPendingRSPInterval(arcAE.getSendPendingCMoveInterval());
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
 //            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
+            
+            retrieveEvent.fire(new RetrieveEvent(
+                    new RemoteAssociationParticipant(as),
+                    new LocalAssociationParticipant(as), 
+                    new GenericParticipant(Participant.UNKNOWN,destAE.getAETitle()),
+                    ae.getDevice(),
+                    matches));
+            
             return retrieveTask;
         } catch (ConfigurationNotFoundException e) {
             throw new DicomServiceException(Status.MoveDestinationUnknown,

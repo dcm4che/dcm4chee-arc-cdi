@@ -38,8 +38,7 @@
 package org.dcm4chee.archive;
 
 import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.dto.Source;
-
+import org.dcm4chee.archive.dto.Participant;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -53,8 +52,8 @@ public interface ArchiveService {
 
     boolean isRunning();
 
-    void start(Source source) throws Exception;
+    void start(Participant source) throws Exception;
 
-    void stop(Source source);
+    void stop(Participant source);
     
 }

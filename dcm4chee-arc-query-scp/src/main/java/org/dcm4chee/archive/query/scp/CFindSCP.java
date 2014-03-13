@@ -49,6 +49,7 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.ExtendedNegotiation;
@@ -59,7 +60,7 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.net.service.QueryTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.dto.AssociationSource;
+import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.impl.QueryEvent;
@@ -74,7 +75,7 @@ public class CFindSCP extends BasicCFindSCP {
 
     @Inject
     private QueryService queryService;
-
+    
     @Inject
     private Event<QueryEvent> queryEvent;
     
@@ -114,8 +115,8 @@ public class CFindSCP extends BasicCFindSCP {
             } finally {
                 queryEvent.fire(new QueryEvent(keys, pids, 
                         rq.getString(Tag.AffectedSOPClassUID),
-                        arcAE.getApplicationEntity().getDevice(),
-                        new AssociationSource(as)));
+                        ae.getDevice(),
+                        new LocalAssociationParticipant(as)));
             }
             
             return new QueryTaskImpl(as, pc, rq, keys, queryParam,

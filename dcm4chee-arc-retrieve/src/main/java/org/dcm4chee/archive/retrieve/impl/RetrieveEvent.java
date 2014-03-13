@@ -36,49 +36,60 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.dto;
+package org.dcm4chee.archive.retrieve.impl;
 
-import org.dcm4che3.net.Association;
+import java.util.List;
+
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4chee.archive.dto.Participant;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class AssociationSource implements Source {
-
-    private Association association;
+public class RetrieveEvent {
     
-    public AssociationSource(Association association) {
-
-        this.association = association;
-    }
-
-    @Override
-    public String getIdentity() {
-        
-        if (association != null)
-            return unknownIfNull(association.getCallingAET());
-        else
-            return UNKNOWN;
-    }
-
-    @Override
-    public String getHost() {
-        
-        if (association != null && association.getSocket() != null
-            && association.getSocket().getInetAddress() != null)
-                return unknownIfNull(association.getSocket().getInetAddress()
-                        .getCanonicalHostName());
-        else
-            return UNKNOWN;
-    }
-
-    @Override public String toString() {
-        return association!=null ? association.toString():null;
+    private Participant source, destination, requestor;
+    private Device device;
+    List<InstanceLocator> instances;
+    
+    /**
+     * @param source
+     * @param destination
+     * @param remoteAET
+     * @param instances
+     */
+    public RetrieveEvent(Participant requestor, Participant source, 
+            Participant destination,
+            Device device,
+           List<InstanceLocator> instances) {
+        super();
+        this.source = source;
+        this.destination = destination;
+        this.requestor = requestor;
+        this.device = device;
+        this.instances = instances;
     }
     
-    private static String unknownIfNull(String value) {
-        return value != null ? value : Source.UNKNOWN;
+    public Participant getRequestor() {
+        return requestor;
     }
 
+    public Participant getSource() {
+        return source;
+    }
+
+    public Participant getDestination() {
+        return destination;
+    }
+    
+    public Device getDevice() {
+        return device;
+    }
+    
+    public List<InstanceLocator> getInstances() {
+        return instances;
+    }
+    
 }

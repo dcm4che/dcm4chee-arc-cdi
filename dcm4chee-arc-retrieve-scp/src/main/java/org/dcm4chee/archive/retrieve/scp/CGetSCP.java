@@ -43,6 +43,7 @@ import static org.dcm4che3.net.service.BasicRetrieveTask.Service.C_GET;
 import java.util.EnumSet;
 import java.util.List;
 
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.IApplicationEntityCache;
@@ -52,6 +53,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.ExtendedNegotiation;
@@ -63,9 +65,13 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.net.service.RetrieveTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.dto.LocalAssociationParticipant;
+import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.impl.QueryEvent;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.retrieve.impl.RetrieveEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -81,7 +87,10 @@ public class CGetSCP extends BasicCGetSCP {
 
     @Inject
     private RetrieveService retrieveService;
-
+   
+    @Inject
+    private Event<RetrieveEvent> retrieveEvent;
+    
     public CGetSCP(String sopClass, String... qrLevels) {
         super(sopClass);
         this.qrLevels = qrLevels;
@@ -127,6 +136,14 @@ public class CGetSCP extends BasicCGetSCP {
             retrieveTask.setSendPendingRSP(aeExt.isSendPendingCGet());
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
 //            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
+            
+            retrieveEvent.fire(new RetrieveEvent(
+                    new RemoteAssociationParticipant(as),
+                    new LocalAssociationParticipant(as), 
+                    new RemoteAssociationParticipant(as),
+                    ae.getDevice(),
+                    matches));
+            
             return retrieveTask;
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToCalculateNumberOfMatches, e);

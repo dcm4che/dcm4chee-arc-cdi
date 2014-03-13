@@ -68,7 +68,7 @@ import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -188,7 +188,7 @@ public class ArchiveServiceImpl implements ArchiveService {
     }
 
     @Override
-    public void start(Source source) throws Exception {
+    public void start(Participant source) throws Exception {
         
         device.bindConnections();
         running = true;
@@ -196,7 +196,7 @@ public class ArchiveServiceImpl implements ArchiveService {
     }
 
     @Override
-    public void stop(Source source) {
+    public void stop(Participant source) {
         
         device.unbindConnections();
         running = false;

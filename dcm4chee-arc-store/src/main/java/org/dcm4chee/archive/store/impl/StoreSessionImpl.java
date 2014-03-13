@@ -48,7 +48,7 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -60,7 +60,7 @@ import org.dcm4chee.archive.store.StoreSession;
 public class StoreSessionImpl implements StoreSession {
 
     private final StoreService storeService;
-    private final Source source;
+    private final Participant source;
     private final String remoteAET;
     private final ArchiveAEExtension arcAE;
     private final StoreParam storeParam;
@@ -69,7 +69,7 @@ public class StoreSessionImpl implements StoreSession {
     private Path spoolDirectory;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
 
-    public StoreSessionImpl(StoreService storeService, Source source,
+    public StoreSessionImpl(StoreService storeService, Participant source,
             String remoteAET, ArchiveAEExtension arcAE)
                     throws DicomServiceException {
         this.storeService = storeService;
@@ -92,7 +92,7 @@ public class StoreSessionImpl implements StoreSession {
         return arcAE.getApplicationEntity().getDevice();
     }
 
-    public Source getSource() {
+    public Participant getSource() {
         return source;
     }
 

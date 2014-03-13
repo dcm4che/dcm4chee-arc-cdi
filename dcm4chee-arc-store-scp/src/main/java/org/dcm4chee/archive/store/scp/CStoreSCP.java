@@ -55,7 +55,7 @@ import org.dcm4che3.net.service.BasicCStoreSCP;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.dto.AssociationSource;
+import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -81,7 +81,7 @@ public class CStoreSCP extends BasicCStoreSCP {
             if (session == null) {
                 ArchiveAEExtension arcAE = as.getApplicationEntity()
                         .getAEExtension(ArchiveAEExtension.class);
-                session = storeService.initStoreSession(storeService, new AssociationSource(as),
+                session = storeService.initStoreSession(storeService, new LocalAssociationParticipant(as),
                         as.getRemoteAET(), arcAE);
                 as.setProperty(StoreSession.class.getName(), session);
             }

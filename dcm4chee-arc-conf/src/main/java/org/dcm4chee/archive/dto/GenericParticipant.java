@@ -36,37 +36,32 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.audit.test;
-
-import org.dcm4che.archive.audit.message.StartStopAudit;
-import org.dcm4che3.audit.AuditMessage;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.impl.LocalSource;
-import org.junit.Test;
+package org.dcm4chee.archive.dto;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class StartStopTest extends GenericAuditTest{
-    
-    @Test
-    public void testStartStopSampleSend () throws Exception {
+public class GenericParticipant implements Participant {
 
-        Device arr = getARRDevice();
+    String host, identity;
 
-        AuditLogger auditLogger = new AuditLogger();
-        auditLogger.setAuditRecordRepositoryDevice(arr);
-        
-        Device test = getLocalTestDevice();
-        auditLogger.getConnections().add(test.listConnections().get(0));
-        test.addDeviceExtension(auditLogger);
-            
-        Participant source = new LocalSource();
-        AuditMessage auditMessage = new StartStopAudit(true, auditLogger, source);
-        sendAuditMessage(auditMessage, auditLogger);
+    /**
+     * @param host
+     * @param idnetity
+     */
+    public GenericParticipant(String host, String identity) {
+        super();
+        this.host = host;
+        this.identity = identity;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public String getIdentity() {
+        return identity;
     }
 
     

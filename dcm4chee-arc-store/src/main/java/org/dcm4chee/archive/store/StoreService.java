@@ -47,7 +47,7 @@ import javax.persistence.EntityManager;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Series;
@@ -61,7 +61,7 @@ public interface StoreService {
 
     int DATA_SET_NOT_PARSEABLE = 0xC900;
 
-    StoreSession initStoreSession(StoreService storeService, Source source,
+    StoreSession initStoreSession(StoreService storeService, Participant source,
             String sourceAET, ArchiveAEExtension arcAE)
                     throws DicomServiceException;
 

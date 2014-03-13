@@ -38,12 +38,46 @@
 
 package org.dcm4chee.archive.dto;
 
+import org.dcm4che3.net.Association;
+
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
  */
-public interface Destination extends Participant {
+public class RemoteAssociationParticipant implements Participant {
+
+    private Association association;
     
-    public int getPort();
+    public RemoteAssociationParticipant(Association association) {
+
+        this.association = association;
+    }
+
+    @Override
+    public String getIdentity() {
+        
+        if (association != null)
+            return unknownIfNull(association.getRemoteAET());
+        else
+            return UNKNOWN;
+    }
+
+    @Override
+    public String getHost() {
+        
+        if (association != null && association.getSocket() != null
+            && association.getSocket().getInetAddress() != null)
+                return unknownIfNull(association.getSocket().getInetAddress()
+                        .getCanonicalHostName());
+        else
+            return UNKNOWN;
+    }
+
+    @Override public String toString() {
+        return association!=null ? association.toString():null;
+    }
+    
+    private static String unknownIfNull(String value) {
+        return value != null ? value : Participant.UNKNOWN;
+    }
 
 }

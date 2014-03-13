@@ -54,7 +54,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.audit.AuditMessage;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.store.StoreSession;
 
 /**
@@ -64,14 +64,14 @@ import org.dcm4chee.archive.store.StoreSession;
 public class StoreAudit extends AuditMessage {
 
     private String remoteAET;
-    private Source source;
+    private Participant source;
     private Attributes attributes;
     private String eventOutcomeIndicator;
     private AuditLogger logger;
 
     /**
      */
-    public StoreAudit(String remoteAET, Source source, Attributes attributes,
+    public StoreAudit(String remoteAET, Participant source, Attributes attributes,
             String eventOutcomeIndicator, AuditLogger logger) {
         super();
         this.remoteAET = remoteAET;

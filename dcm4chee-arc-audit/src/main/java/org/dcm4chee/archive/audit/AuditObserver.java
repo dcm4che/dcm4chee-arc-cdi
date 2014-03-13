@@ -47,6 +47,7 @@ import javax.inject.Inject;
 import javax.management.Query;
 
 import org.dcm4che.archive.audit.message.QueryAudit;
+import org.dcm4che.archive.audit.message.RetrieveAudit;
 import org.dcm4che.archive.audit.message.StartStopAudit;
 import org.dcm4che.archive.audit.message.StoreAudit;
 import org.dcm4che3.audit.AuditMessages;
@@ -60,6 +61,7 @@ import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.impl.StartStopEvent;
 import org.dcm4chee.archive.query.impl.QueryEvent;
+import org.dcm4chee.archive.retrieve.impl.RetrieveEvent;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
@@ -142,6 +144,12 @@ public class AuditObserver {
         AuditLogger logger = getLogger(event.getDevice());
         sendAuditMessage (new QueryAudit(event, logger), logger);
     }
+    
+    public void receiveRetrieve(
+            @Observes RetrieveEvent event) {
+        AuditLogger logger = getLogger(event.getDevice());
+        sendAuditMessage (new RetrieveAudit(event, logger), logger);
+    }    
     
     private HashMap<String, StoreAudit> getOrCreateAuditsMap(
             StoreSession session, boolean fail) {

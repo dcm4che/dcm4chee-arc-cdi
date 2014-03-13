@@ -39,7 +39,7 @@
 package org.dcm4chee.archive.impl;
 
 import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 
 /**
  * Event to be fired when the device is started or stopped.
@@ -51,13 +51,13 @@ import org.dcm4chee.archive.dto.Source;
 public class StartStopEvent {
     
     private Device device;
-    private Source source;
+    private Participant source;
     
     /**
      * @param device
      * @param source
      */
-    public StartStopEvent(Device device, Source source) {
+    public StartStopEvent(Device device, Participant source) {
         super();
         this.device = device;
         this.source = source;
@@ -66,7 +66,7 @@ public class StartStopEvent {
     public Device getDevice() {
         return device;
     }
-    public Source getSource() {
+    public Participant getSource() {
         return source;
     }
     

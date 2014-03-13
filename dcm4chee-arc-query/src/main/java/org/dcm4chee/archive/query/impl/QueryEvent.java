@@ -41,8 +41,7 @@ package org.dcm4chee.archive.query.impl;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.dto.Source;
-import org.dcm4chee.archive.query.QueryContext;
+import org.dcm4chee.archive.dto.Participant;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -54,12 +53,12 @@ public class QueryEvent {
     IDWithIssuer[] patientIDs;
     private String sopClassUID;
     private Device device;
-    private Source source;
+    private Participant source;
 
     /**
      */
     public QueryEvent(Attributes queryKeys, IDWithIssuer[] patientIDs,
-            String sopClassUID, Device device, Source source) {
+            String sopClassUID, Device device, Participant source) {
         super();
         this.queryKeys = queryKeys;
         this.patientIDs = patientIDs;
@@ -80,7 +79,7 @@ public class QueryEvent {
     public Device getDevice() {
         return device;
     }
-    public Source getSource() {
+    public Participant getSource() {
         return source;
     }
 

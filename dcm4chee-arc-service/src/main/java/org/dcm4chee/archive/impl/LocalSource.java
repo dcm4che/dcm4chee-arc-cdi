@@ -39,13 +39,13 @@
 package org.dcm4chee.archive.impl;
 
 import java.net.UnknownHostException;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class LocalSource implements Source {
+public class LocalSource implements Participant {
     
     @Override
     public String getIdentity() {
@@ -58,11 +58,11 @@ public class LocalSource implements Source {
             return unknownIfNull(java.net.InetAddress
                     .getLocalHost().getHostName());
         } catch (UnknownHostException e) {
-           return Source.UNKNOWN;
+           return Participant.UNKNOWN;
         }
     }
 
     private static String unknownIfNull(String value) {
-        return value != null ? value : Source.UNKNOWN;
+        return value != null ? value : Participant.UNKNOWN;
     }
 }

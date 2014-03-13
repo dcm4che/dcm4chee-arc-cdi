@@ -44,7 +44,7 @@ import java.security.MessageDigest;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.entity.FileSystem;
 
 /**
@@ -53,7 +53,7 @@ import org.dcm4chee.archive.entity.FileSystem;
  */
 public interface StoreSession {
 
-    Source getSource();
+    Participant getSource();
 
     StoreService getStoreService();
 

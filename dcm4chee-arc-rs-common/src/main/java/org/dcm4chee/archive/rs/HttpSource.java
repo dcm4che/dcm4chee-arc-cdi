@@ -40,13 +40,13 @@ package org.dcm4chee.archive.rs;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class HttpSource implements Source {
+public class HttpSource implements Participant {
 
     private HttpServletRequest request;
     
@@ -60,7 +60,7 @@ public class HttpSource implements Source {
         if (request != null)
             return unknownIfNull(request.getRemoteUser());
         else
-            return Source.UNKNOWN;
+            return Participant.UNKNOWN;
     }
 
     @Override
@@ -68,7 +68,7 @@ public class HttpSource implements Source {
         if (request != null)
             return unknownIfNull(request.getRemoteHost());
         else
-            return Source.UNKNOWN;
+            return Participant.UNKNOWN;
     }
     
     @Override public String toString() {
@@ -76,6 +76,6 @@ public class HttpSource implements Source {
     }
 
     private static String unknownIfNull(String value) {
-        return value != null ? value : Source.UNKNOWN;
+        return value != null ? value : Participant.UNKNOWN;
     }
 }

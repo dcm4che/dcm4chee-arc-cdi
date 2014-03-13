@@ -82,7 +82,7 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
@@ -132,7 +132,7 @@ public class StoreServiceImpl implements StoreService {
     private Event<StoreSession> storeSessionClosed;
 
     @Override
-    public StoreSession initStoreSession(StoreService storeService, Source source,
+    public StoreSession initStoreSession(StoreService storeService, Participant source,
             String sourceAET, ArchiveAEExtension arcAE) throws DicomServiceException {
         StoreSession session = new StoreSessionImpl(storeService, source,
                 sourceAET, arcAE);

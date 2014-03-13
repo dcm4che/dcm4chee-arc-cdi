@@ -50,7 +50,7 @@ import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.dto.Source;
+import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.impl.LocalSource;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.impl.StoreSessionImpl;
@@ -74,7 +74,7 @@ public class StoreTest extends GenericAuditTest{
         auditLogger.getConnections().add(test.listConnections().get(0));
         test.addDeviceExtension(auditLogger);
             
-        Source source = new LocalSource();
+        Participant source = new LocalSource();
         String remoteAET = "remoteAET";
         
         Attributes testDicomObj = new Attributes();
