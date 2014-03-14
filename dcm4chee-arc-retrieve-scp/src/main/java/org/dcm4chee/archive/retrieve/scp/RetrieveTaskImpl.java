@@ -72,16 +72,17 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
  */
 class RetrieveTaskImpl extends BasicRetrieveTask {
 
-    @Inject
-    private Event<RetrieveAfterSendEvent> retrieveEvent;
-    
+
     private final RetrieveContext retrieveContext;
     private final boolean withoutBulkData;
+    private Event<RetrieveAfterSendEvent> retrieveEvent;
 
     public RetrieveTaskImpl(Dimse rq, Association rqas,
             PresentationContext pc, Attributes rqCmd, List<InstanceLocator> matches,
-            Association storeas, RetrieveContext retrieveContext, boolean withoutBulkData) {
+            Association storeas, RetrieveContext retrieveContext, boolean withoutBulkData,
+            Event<RetrieveAfterSendEvent> retrieveEvent) {
         super(rq, rqas, pc, rqCmd, matches, storeas);
+        this.retrieveEvent = retrieveEvent;
         this.retrieveContext = retrieveContext;
         this.withoutBulkData = withoutBulkData;
     }

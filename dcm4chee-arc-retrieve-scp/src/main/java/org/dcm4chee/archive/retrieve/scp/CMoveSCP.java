@@ -72,6 +72,7 @@ import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 
 /**
@@ -92,8 +93,11 @@ public class CMoveSCP extends BasicCMoveSCP {
     private IApplicationEntityCache aeCache;
     
     @Inject
-    private Event<RetrieveBeforeSendEvent> retrieveEvent;
-
+    private Event<RetrieveBeforeSendEvent> retrieveBeforeEvent;
+    
+    @Inject
+    private Event<RetrieveAfterSendEvent> retrieveAfterEvent;
+    
     public CMoveSCP(String sopClass, String... qrLevels) {
         super(sopClass);
         this.qrLevels = qrLevels;
@@ -139,13 +143,13 @@ public class CMoveSCP extends BasicCMoveSCP {
             AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, matches);
             Association storeas = openStoreAssociation(as, destAE, aarq);
             RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(
-                    Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, context, false);
+                    Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, context, false, retrieveAfterEvent);
 //            retrieveTask.setDestinationDevice(destAE.getDevice());
             retrieveTask.setSendPendingRSPInterval(arcAE.getSendPendingCMoveInterval());
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
 //            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
             
-            retrieveEvent.fire(new RetrieveBeforeSendEvent(
+            retrieveBeforeEvent.fire(new RetrieveBeforeSendEvent(
                     new RemoteAssociationParticipant(as),
                     new LocalAssociationParticipant(as), 
                     new GenericParticipant(Participant.UNKNOWN,destAE.getAETitle()),

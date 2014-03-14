@@ -71,6 +71,7 @@ import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.impl.QueryEvent;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 
 /**
@@ -89,7 +90,10 @@ public class CGetSCP extends BasicCGetSCP {
     private RetrieveService retrieveService;
    
     @Inject
-    private Event<RetrieveBeforeSendEvent> retrieveEvent;
+    private Event<RetrieveBeforeSendEvent> retrieveBeforeEvent;
+    
+    @Inject
+    private Event<RetrieveAfterSendEvent> retrieveAfterEvent;
     
     public CGetSCP(String sopClass, String... qrLevels) {
         super(sopClass);
@@ -133,14 +137,14 @@ public class CGetSCP extends BasicCGetSCP {
                 return null;
 
             RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(
-                    Dimse.C_GET_RQ, as, pc, rq, matches, as, context, withoutBulkData);
+                    Dimse.C_GET_RQ, as, pc, rq, matches, as, context, withoutBulkData, retrieveAfterEvent);
 //            if (sourceAE != null)
 //                retrieveTask.setDestinationDevice(sourceAE.getDevice());
             retrieveTask.setSendPendingRSP(aeExt.isSendPendingCGet());
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
 //            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
             
-            retrieveEvent.fire(new RetrieveBeforeSendEvent(
+            retrieveBeforeEvent.fire(new RetrieveBeforeSendEvent(
                     new RemoteAssociationParticipant(as),
                     new LocalAssociationParticipant(as), 
                     new RemoteAssociationParticipant(as),
