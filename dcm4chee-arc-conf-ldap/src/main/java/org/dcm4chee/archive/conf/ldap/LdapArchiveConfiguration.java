@@ -38,7 +38,6 @@
 
 package org.dcm4chee.archive.conf.ldap;
 
-import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,7 +63,6 @@ import org.dcm4che3.conf.ldap.LdapUtils;
 import org.dcm4che3.conf.ldap.generic.LdapConfigReader;
 import org.dcm4che3.conf.ldap.generic.LdapConfigWriter;
 import org.dcm4che3.conf.ldap.generic.LdapDiffWriter;
-import org.dcm4che3.conf.ldap.generic.LdapGenericConfigExtension;
 import org.dcm4che3.conf.ldap.imageio.LdapCompressionRulesConfiguration;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.ValueSelector;

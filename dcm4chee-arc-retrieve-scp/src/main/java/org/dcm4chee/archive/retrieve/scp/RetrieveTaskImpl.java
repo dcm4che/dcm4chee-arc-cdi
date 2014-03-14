@@ -50,6 +50,7 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.DataWriter;
 import org.dcm4che3.net.DataWriterAdapter;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicRetrieveTask;
 import org.dcm4che3.net.service.InstanceLocator;
@@ -65,10 +66,10 @@ class RetrieveTaskImpl extends BasicRetrieveTask {
     private final RetrieveContext retrieveContext;
     private final boolean withoutBulkData;
 
-    public RetrieveTaskImpl(BasicRetrieveTask.Service service, Association as,
-            PresentationContext pc, Attributes rq, List<InstanceLocator> matches,
-            RetrieveContext retrieveContext, boolean withoutBulkData) {
-        super(service, as, pc, rq, matches);
+    public RetrieveTaskImpl(Dimse rq, Association rqas,
+            PresentationContext pc, Attributes rqCmd, List<InstanceLocator> matches,
+            Association storeas, RetrieveContext retrieveContext, boolean withoutBulkData) {
+        super(rq, rqas, pc, rqCmd, matches, storeas);
         this.retrieveContext = retrieveContext;
         this.withoutBulkData = withoutBulkData;
     }
@@ -102,7 +103,7 @@ class RetrieveTaskImpl extends BasicRetrieveTask {
             Decompressor.decompress(attrs, inst.tsuid);
 
         retrieveContext.getRetrieveService().coerceRetrievedObject(
-                retrieveContext, as.getRemoteAET(), attrs);
+                retrieveContext, storeas.getRemoteAET(), attrs);
         return new DataWriterAdapter(attrs);
     }
 

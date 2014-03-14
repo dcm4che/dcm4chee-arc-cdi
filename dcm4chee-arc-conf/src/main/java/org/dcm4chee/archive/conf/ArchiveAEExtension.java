@@ -45,7 +45,6 @@ import javax.xml.transform.TransformerConfigurationException;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
-import org.dcm4che3.conf.api.generic.ConfigClass;
 import org.dcm4che3.conf.api.generic.ConfigField;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
 import org.dcm4che3.imageio.codec.CompressionRule;
@@ -65,7 +64,6 @@ import org.dcm4che3.util.StringUtils;
  */
 
 
-@ConfigClass(objectClass = "dcmArchiveNetworkAE", nodeName = "xdsRegistry")
 public class ArchiveAEExtension extends AEExtension {
 
     private static final long serialVersionUID = -2390448404282661045L;

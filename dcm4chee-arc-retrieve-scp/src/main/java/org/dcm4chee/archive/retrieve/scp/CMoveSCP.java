@@ -38,10 +38,6 @@
 
 package org.dcm4chee.archive.retrieve.scp;
 
-import static org.dcm4che3.net.service.BasicRetrieveTask.Service.C_MOVE;
-
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -53,12 +49,13 @@ import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.IncompatibleConnectionException;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
+import org.dcm4che3.net.pdu.AAssociateRQ;
 import org.dcm4che3.net.pdu.ExtendedNegotiation;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicCMoveSCP;
@@ -136,25 +133,13 @@ public class CMoveSCP extends BasicCMoveSCP {
             IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
             List<InstanceLocator> matches =
                     retrieveService.calculateMatches(pids, keys, queryParam);
-            RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(C_MOVE, as,
-                    pc, rq, matches, context, false) {
-    
-                @Override
-                protected Association getStoreAssociation() throws DicomServiceException {
-                    try {
-                        return as.getApplicationEntity().connect(destAE, makeAAssociateRQ());
-                    } catch (IOException e) {
-                        throw new DicomServiceException(Status.UnableToPerformSubOperations, e);
-                    } catch (InterruptedException e) {
-                        throw new DicomServiceException(Status.UnableToPerformSubOperations, e);
-                    } catch (IncompatibleConnectionException e) {
-                        throw new DicomServiceException(Status.UnableToPerformSubOperations, e);
-                    } catch (GeneralSecurityException e) {
-                        throw new DicomServiceException(Status.UnableToPerformSubOperations, e);
-                    }
-                }
-    
-            };
+            if (matches.isEmpty())
+                return null;
+            
+            AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, matches);
+            Association storeas = openStoreAssociation(as, destAE, aarq);
+            RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(
+                    Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, context, false);
 //            retrieveTask.setDestinationDevice(destAE.getDevice());
             retrieveTask.setSendPendingRSPInterval(arcAE.getSendPendingCMoveInterval());
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
@@ -174,6 +159,32 @@ public class CMoveSCP extends BasicCMoveSCP {
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToCalculateNumberOfMatches, e);
         }
+    }
+
+    private Association openStoreAssociation(Association as,
+            ApplicationEntity destAE, AAssociateRQ aarq) throws DicomServiceException {
+        try {
+            return as.getApplicationEntity().connect(destAE, aarq);
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.UnableToPerformSubOperations, e);
+        }
+
+    }
+
+    private AAssociateRQ makeAAssociateRQ(String callingAET, String calledAET,
+            List<InstanceLocator> matches) {
+        AAssociateRQ aarq = new AAssociateRQ();
+        aarq.setCalledAET(callingAET);
+        aarq.setCallingAET(calledAET);
+        for (InstanceLocator match : matches) {
+            if (aarq.addPresentationContextFor(match.cuid, match.tsuid)) {
+                if (!UID.ExplicitVRLittleEndian.equals(match.tsuid))
+                    aarq.addPresentationContextFor(match.cuid, UID.ExplicitVRLittleEndian);
+                if (!UID.ImplicitVRLittleEndian.equals(match.tsuid))
+                    aarq.addPresentationContextFor(match.cuid, UID.ImplicitVRLittleEndian);
+            }
+        }
+        return aarq;
     }
 
     private String[] accessControlIDs() {

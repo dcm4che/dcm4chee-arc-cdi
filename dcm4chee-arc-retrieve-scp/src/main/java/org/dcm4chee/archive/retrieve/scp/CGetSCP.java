@@ -38,8 +38,6 @@
 
 package org.dcm4chee.archive.retrieve.scp;
 
-import static org.dcm4che3.net.service.BasicRetrieveTask.Service.C_GET;
-
 import java.util.EnumSet;
 import java.util.List;
 
@@ -54,6 +52,7 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.ExtendedNegotiation;
@@ -129,8 +128,11 @@ public class CGetSCP extends BasicCGetSCP {
             IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
             List<InstanceLocator> matches = 
                     retrieveService.calculateMatches(pids, keys, queryParam);
+            if (matches.isEmpty())
+                return null;
+
             RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(
-                    C_GET, as, pc, rq, matches, context, withoutBulkData);
+                    Dimse.C_GET_RQ, as, pc, rq, matches, as, context, withoutBulkData);
 //            if (sourceAE != null)
 //                retrieveTask.setDestinationDevice(sourceAE.getDevice());
             retrieveTask.setSendPendingRSP(aeExt.isSendPendingCGet());
