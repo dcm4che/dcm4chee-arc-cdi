@@ -56,12 +56,12 @@ import org.dcm4che3.net.audit.AuditRecordRepository;
  */
 public class GenericAuditTest {
     
-    protected static String ARR_HOST =  "128.252.175.39";
-    protected static int ARR_PORT_UNSECURE =  4000;
-    protected static int ARR_PORT_SECURE =  3201;
+    protected static String ARR_HOST =  "10.231.163.243";
+    protected static int ARR_PORT_UNSECURE =  514;
+    protected static int ARR_PORT_SECURE =  6514;
     protected static String PROXY = "localhost:3128";
-    protected boolean TLS = true;
-    protected String KEYSTORE = "/keystore_wustl_edu.jks";
+    protected boolean TLS = false;
+    protected String KEYSTORE = "/keystore_ihe_europe.jks";
     protected String KEYSTORE_PASSWORD = "changeit";
     
     protected Device getARRDevice() {
