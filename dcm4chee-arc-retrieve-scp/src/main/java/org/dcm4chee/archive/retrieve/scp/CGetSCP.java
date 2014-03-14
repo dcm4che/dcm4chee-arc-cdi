@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.retrieve.scp;
 
 import java.util.EnumSet;
+import java.util.EventObject;
 import java.util.List;
 
 import javax.enterprise.event.Event;
@@ -70,7 +71,7 @@ import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.impl.QueryEvent;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.dcm4chee.archive.retrieve.impl.RetrieveEvent;
+import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -88,7 +89,7 @@ public class CGetSCP extends BasicCGetSCP {
     private RetrieveService retrieveService;
    
     @Inject
-    private Event<RetrieveEvent> retrieveEvent;
+    private Event<RetrieveBeforeSendEvent> retrieveEvent;
     
     public CGetSCP(String sopClass, String... qrLevels) {
         super(sopClass);
@@ -139,7 +140,7 @@ public class CGetSCP extends BasicCGetSCP {
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
 //            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
             
-            retrieveEvent.fire(new RetrieveEvent(
+            retrieveEvent.fire(new RetrieveBeforeSendEvent(
                     new RemoteAssociationParticipant(as),
                     new LocalAssociationParticipant(as), 
                     new RemoteAssociationParticipant(as),

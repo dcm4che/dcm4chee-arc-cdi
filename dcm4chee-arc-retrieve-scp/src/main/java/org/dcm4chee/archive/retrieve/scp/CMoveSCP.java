@@ -72,7 +72,7 @@ import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.dcm4chee.archive.retrieve.impl.RetrieveEvent;
+import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -92,7 +92,7 @@ public class CMoveSCP extends BasicCMoveSCP {
     private IApplicationEntityCache aeCache;
     
     @Inject
-    private Event<RetrieveEvent> retrieveEvent;
+    private Event<RetrieveBeforeSendEvent> retrieveEvent;
 
     public CMoveSCP(String sopClass, String... qrLevels) {
         super(sopClass);
@@ -145,7 +145,7 @@ public class CMoveSCP extends BasicCMoveSCP {
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
 //            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
             
-            retrieveEvent.fire(new RetrieveEvent(
+            retrieveEvent.fire(new RetrieveBeforeSendEvent(
                     new RemoteAssociationParticipant(as),
                     new LocalAssociationParticipant(as), 
                     new GenericParticipant(Participant.UNKNOWN,destAE.getAETitle()),

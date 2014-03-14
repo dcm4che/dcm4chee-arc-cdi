@@ -41,6 +41,9 @@ package org.dcm4chee.archive.retrieve.scp;
 import java.io.IOException;
 import java.util.List;
 
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -55,7 +58,13 @@ import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicRetrieveTask;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
+import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.dto.LocalAssociationParticipant;
+import org.dcm4chee.archive.dto.Participant;
+import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
+import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
+import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -63,6 +72,9 @@ import org.dcm4chee.archive.retrieve.RetrieveContext;
  */
 class RetrieveTaskImpl extends BasicRetrieveTask {
 
+    @Inject
+    private Event<RetrieveAfterSendEvent> retrieveEvent;
+    
     private final RetrieveContext retrieveContext;
     private final boolean withoutBulkData;
 
@@ -110,6 +122,16 @@ class RetrieveTaskImpl extends BasicRetrieveTask {
     @Override
     protected void close() {
         super.close();
+        
+        retrieveEvent.fire(new RetrieveAfterSendEvent(
+                new RemoteAssociationParticipant(rqas),
+                new LocalAssociationParticipant(rqas), 
+                new RemoteAssociationParticipant(storeas),
+                rqas.getApplicationEntity().getDevice(),
+                insts,
+                completed,
+                warning,
+                failed));
     }
 
  }

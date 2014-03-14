@@ -46,8 +46,6 @@ import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.audit.AuditMessages;
 import org.dcm4che3.audit.AuditMessages.EventActionCode;
 import org.dcm4che3.audit.AuditMessages.EventID;
-import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
-import org.dcm4che3.audit.AuditMessages.RoleIDCode;
 import org.dcm4che3.audit.Instance;
 import org.dcm4che3.audit.ParticipantObjectDescription;
 import org.dcm4che3.audit.SOPClass;
@@ -56,7 +54,6 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.retrieve.impl.RetrieveEvent;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -64,16 +61,31 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveEvent;
  */
 public class RetrieveAudit extends AuditMessage {
 
-    private RetrieveEvent event;
+    private Participant source;
+    private Participant destination;
+    private Participant requestor;
+    private List<InstanceLocator> instances;
+    private EventID eventID; 
+    private String eventOutcomeIndicator;
     private AuditLogger logger;
 
     /**
      */
     public RetrieveAudit(
-            RetrieveEvent event,
+            Participant source,
+            Participant destination,
+            Participant requestor,
+            List<InstanceLocator> instances,
+            EventID eventID,
+            String eventOutcomeIndicator,
             AuditLogger logger) {
         super();
-        this.event = event;
+        this.source = source;
+        this.destination = destination;
+        this.requestor = requestor;
+        this.instances = instances;
+        this.eventID = eventID;
+        this.eventOutcomeIndicator = eventOutcomeIndicator;
         this.logger = logger;
         init();
     }
@@ -82,37 +94,37 @@ public class RetrieveAudit extends AuditMessage {
 
         // Event
         this.setEventIdentification(AuditMessages.createEventIdentification(
-                EventID.DICOMInstancesTransferred, EventActionCode.Read,
-                logger.timeStamp(), EventOutcomeIndicator.Success, null));
+                eventID, EventActionCode.Read,
+                logger.timeStamp(), eventOutcomeIndicator, null));
 
         // Active Participant 1: Process that sent the data
         this.getActiveParticipant().add(
-                AuditMessages.createActiveParticipant((event.getSource()
-                        .getIdentity() != null) ? event.getSource().getIdentity()
-                        : "ANONYMOUS", null, null, true, event.getSource().getHost(),
+                AuditMessages.createActiveParticipant((source
+                        .getIdentity() != null) ? source.getIdentity()
+                        : "ANONYMOUS", null, null, true, source.getHost(),
                         AuditMessages.NetworkAccessPointTypeCode.MachineName,
                         null, AuditMessages.RoleIDCode.Destination));
 
         // Active Participant 2: The process that received the data.
         this.getActiveParticipant().add(
-                AuditMessages.createActiveParticipant((event.getDestination()
-                        .getIdentity() != null) ? event.getDestination().getIdentity()
-                        : "ANONYMOUS", null, null, true, event.getDestination().getHost(),
+                AuditMessages.createActiveParticipant((destination
+                        .getIdentity() != null) ? destination.getIdentity()
+                        : "ANONYMOUS", null, null, true, destination.getHost(),
                         AuditMessages.NetworkAccessPointTypeCode.MachineName,
                         null, AuditMessages.RoleIDCode.Destination));
 
         // Active Participant 3: The process that requested the operation.
-        if (event.getRequestor()!=null)
+        if (requestor!=null)
         this.getActiveParticipant().add(
-                AuditMessages.createActiveParticipant((event.getRequestor()
-                        .getIdentity() != null) ? event.getRequestor().getIdentity()
-                        : "ANONYMOUS", null, null, true, event.getRequestor().getHost(),
+                AuditMessages.createActiveParticipant((requestor
+                        .getIdentity() != null) ? requestor.getIdentity()
+                        : "ANONYMOUS", null, null, true, requestor.getHost(),
                         AuditMessages.NetworkAccessPointTypeCode.MachineName,
                         null, AuditMessages.RoleIDCode.ApplicationLauncher));
 
         
         // Participating Object: one for each Study being transferred
-        HashMap<String, List<InstanceLocator>> map = groupInstancePerStudy(event.getInstances());
+        HashMap<String, List<InstanceLocator>> map = groupInstancePerStudy(instances);
         for (String studyuid : map.keySet()) {
             ParticipantObjectDescription pod = createRetrieveObjectPOD(logger,
                     map.get(studyuid));
@@ -129,7 +141,7 @@ public class RetrieveAudit extends AuditMessage {
         }
 
         // Participating Object: Patient
-        String patientID = getPatientID(event.getInstances());
+        String patientID = getPatientID(instances);
         if (patientID!=null) {
         this.getParticipantObjectIdentification()
                 .add(AuditMessages

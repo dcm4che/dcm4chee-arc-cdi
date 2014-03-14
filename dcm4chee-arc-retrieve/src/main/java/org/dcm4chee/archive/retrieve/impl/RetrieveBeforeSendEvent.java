@@ -48,49 +48,19 @@ import org.dcm4chee.archive.dto.Participant;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class RetrieveEvent {
-    
-    private Participant source, destination, requestor;
-    private Device device;
-    List<InstanceLocator> instances;
+public class RetrieveBeforeSendEvent extends RetrieveEvent {
 
-    
     /**
+     * @param requestor
      * @param source
      * @param destination
-     * @param remoteAET
+     * @param device
      * @param instances
      */
-    public RetrieveEvent(Participant requestor, Participant source, 
-            Participant destination,
-            Device device,
-           List<InstanceLocator> instances) {
-        super();
-        this.source = source;
-        this.destination = destination;
-        this.requestor = requestor;
-        this.device = device;
-        this.instances = instances;
-    }
-    
-    public Participant getRequestor() {
-        return requestor;
-    }
-
-    public Participant getSource() {
-        return source;
-    }
-
-    public Participant getDestination() {
-        return destination;
-    }
-    
-    public Device getDevice() {
-        return device;
-    }
-    
-    public List<InstanceLocator> getInstances() {
-        return instances;
-    }
-    
+    public RetrieveBeforeSendEvent(Participant requestor, Participant source,
+            Participant destination, Device device,
+            List<InstanceLocator> instances) {
+        super(requestor, source, destination, device, instances);
+        // TODO Auto-generated constructor stub
+    }    
 }

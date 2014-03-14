@@ -38,8 +38,10 @@
 
 package org.dcm4chee.archive.audit;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -57,11 +59,13 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
+import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.impl.StartStopEvent;
 import org.dcm4chee.archive.query.impl.QueryEvent;
-import org.dcm4chee.archive.retrieve.impl.RetrieveEvent;
+import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
+import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
@@ -145,11 +149,56 @@ public class AuditObserver {
         sendAuditMessage (new QueryAudit(event, logger), logger);
     }
     
-    public void receiveRetrieve(
-            @Observes RetrieveEvent event) {
+    public void receiveRetrieveBeforeSend(
+            @Observes RetrieveBeforeSendEvent event) {
         AuditLogger logger = getLogger(event.getDevice());
-        sendAuditMessage (new RetrieveAudit(event, logger), logger);
-    }    
+        sendAuditMessage (new RetrieveAudit(event.getSource(),
+                event.getDestination(), event.getRequestor(),
+                event.getInstances(),
+                EventID.BeginTransferringDICOMInstances,
+                EventOutcomeIndicator.Success, logger), logger);
+    }
+    
+    public void receiveRetrieveAfterSend(
+            @Observes RetrieveAfterSendEvent event) {
+        
+        AuditLogger logger = getLogger(event.getDevice());
+        
+        List<InstanceLocator> success = new ArrayList<InstanceLocator>();
+        
+        //completed and warning instances are considered as "success"
+        //failed instances are considered "minor failures", unless all the instances
+        //are failed, in that case is a "major failure".
+        if (event.getCompleted()!= null && event.getCompleted().size()>0)
+            success.addAll(event.getCompleted());
+        
+        if (event.getWarning()!= null && event.getCompleted().size()>0)
+            success.addAll(event.getWarning());
+        
+
+        if (success.size()>0)
+            sendAuditMessage (new RetrieveAudit(event.getSource(),
+                    event.getDestination(), event.getRequestor(),
+                    success,
+                    EventID.DICOMInstancesTransferred,
+                    EventOutcomeIndicator.Success, logger), logger);
+        
+        if (event.getFailed()!=null && event.getFailed().size()>0) {
+            
+            if (success.size()>0) //there are failures and successes
+                sendAuditMessage (new RetrieveAudit(event.getSource(),
+                        event.getDestination(), event.getRequestor(),
+                        event.getFailed(),
+                        EventID.DICOMInstancesTransferred,
+                        EventOutcomeIndicator.MinorFailure, logger), logger);
+            else //all the instance are failed: major failure
+                sendAuditMessage (new RetrieveAudit(event.getSource(),
+                        event.getDestination(), event.getRequestor(),
+                        event.getFailed(),
+                        EventID.DICOMInstancesTransferred,
+                        EventOutcomeIndicator.MajorFailure, logger), logger);
+        }
+    } 
     
     private HashMap<String, StoreAudit> getOrCreateAuditsMap(
             StoreSession session, boolean fail) {

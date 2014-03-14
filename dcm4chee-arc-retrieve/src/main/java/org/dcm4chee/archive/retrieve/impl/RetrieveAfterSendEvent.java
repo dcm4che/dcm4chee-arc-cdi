@@ -48,49 +48,41 @@ import org.dcm4chee.archive.dto.Participant;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class RetrieveEvent {
-    
-    private Participant source, destination, requestor;
-    private Device device;
-    List<InstanceLocator> instances;
+public class RetrieveAfterSendEvent extends RetrieveEvent {
 
+    protected final List<InstanceLocator> completed;
+    protected final List<InstanceLocator> warning;
+    protected final List<InstanceLocator> failed;
     
     /**
+     * @param requestor
      * @param source
      * @param destination
-     * @param remoteAET
+     * @param device
      * @param instances
      */
-    public RetrieveEvent(Participant requestor, Participant source, 
-            Participant destination,
-            Device device,
-           List<InstanceLocator> instances) {
-        super();
-        this.source = source;
-        this.destination = destination;
-        this.requestor = requestor;
-        this.device = device;
-        this.instances = instances;
+    public RetrieveAfterSendEvent(Participant requestor, Participant source,
+            Participant destination, Device device,
+            List<InstanceLocator> instances, 
+            List<InstanceLocator> completed,
+            List<InstanceLocator> warning,
+            List<InstanceLocator> failed) {
+        super(requestor, source, destination, device, instances);
+        this.completed = completed;
+        this.warning = warning;
+        this.failed = failed;
     }
     
-    public Participant getRequestor() {
-        return requestor;
+    public List<InstanceLocator> getCompleted() {
+        return completed;
     }
 
-    public Participant getSource() {
-        return source;
+    public List<InstanceLocator> getWarning() {
+        return warning;
     }
 
-    public Participant getDestination() {
-        return destination;
+    public List<InstanceLocator> getFailed() {
+        return failed;
     }
-    
-    public Device getDevice() {
-        return device;
-    }
-    
-    public List<InstanceLocator> getInstances() {
-        return instances;
-    }
-    
+
 }
