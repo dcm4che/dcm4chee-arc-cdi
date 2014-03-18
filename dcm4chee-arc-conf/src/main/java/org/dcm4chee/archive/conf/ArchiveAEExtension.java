@@ -131,7 +131,7 @@ public class ArchiveAEExtension extends AEExtension {
     private int storageCommitmentMaxRetries;
     
     
-    @ConfigField(name = "dcmStgCmtMaxRetries", def=DEF_RETRY_INTERVAL)
+    @ConfigField(name = "dcmStgCmtRetryInterval", def=DEF_RETRY_INTERVAL)
     private int storageCommitmentRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
 
     
