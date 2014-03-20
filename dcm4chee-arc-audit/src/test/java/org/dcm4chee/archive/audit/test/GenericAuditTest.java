@@ -127,12 +127,6 @@ public class GenericAuditTest {
             return;
 
         try {
-            
-                System.out.println("Send Audit Log message to [" + 
-                        logger.getRemoteActiveConnection().getHostname() +
-                        ":" +
-                        logger.getRemoteActiveConnection().getPort() +"]:" +
-                        AuditMessages.toXML(msg));
 
             logger.write(logger.timeStamp(), msg);
 
