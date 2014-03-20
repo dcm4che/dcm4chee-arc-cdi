@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.impl;
+package org.dcm4chee.archive.event;
 
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.dto.Participant;

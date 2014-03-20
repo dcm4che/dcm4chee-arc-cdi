@@ -36,38 +36,33 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.audit.test;
+package org.dcm4chee.archive.event;
 
-import org.dcm4che.archive.audit.message.StartStopAudit;
-import org.dcm4che3.audit.AuditMessage;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.audit.AuditLogger;
+import java.net.UnknownHostException;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.event.LocalSource;
-import org.junit.Test;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class StartStopTest extends GenericAuditTest{
+public class LocalSource implements Participant {
     
-    @Test
-    public void testStartStopSampleSend () throws Exception {
-
-        Device arr = getARRDevice();
-
-        AuditLogger auditLogger = new AuditLogger();
-        auditLogger.setAuditRecordRepositoryDevice(arr);
-        
-        Device test = getLocalTestDevice();
-        auditLogger.getConnections().add(test.listConnections().get(0));
-        test.addDeviceExtension(auditLogger);
-            
-        Participant source = new LocalSource();
-        AuditMessage auditMessage = new StartStopAudit(true, auditLogger, source);
-        sendAuditMessage(auditMessage, auditLogger);
+    @Override
+    public String getIdentity() {
+        return unknownIfNull(System.getProperty("user.name"));
     }
 
-    
+    @Override
+    public String getHost() {
+        try {
+            return unknownIfNull(java.net.InetAddress
+                    .getLocalHost().getHostName());
+        } catch (UnknownHostException e) {
+           return Participant.UNKNOWN;
+        }
+    }
+
+    private static String unknownIfNull(String value) {
+        return value != null ? value : Participant.UNKNOWN;
+    }
 }

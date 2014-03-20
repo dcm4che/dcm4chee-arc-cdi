@@ -50,6 +50,7 @@ import javax.management.Query;
 
 import org.dcm4che.archive.audit.message.QueryAudit;
 import org.dcm4che.archive.audit.message.RetrieveAudit;
+import org.dcm4che.archive.audit.message.SecurityAlertAudit;
 import org.dcm4che.archive.audit.message.StartStopAudit;
 import org.dcm4che.archive.audit.message.StoreAudit;
 import org.dcm4che3.audit.AuditMessages;
@@ -62,7 +63,8 @@ import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
-import org.dcm4chee.archive.impl.StartStopEvent;
+import org.dcm4chee.archive.event.ConnectionEvent;
+import org.dcm4chee.archive.event.StartStopEvent;
 import org.dcm4chee.archive.query.impl.QueryEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
@@ -199,6 +201,16 @@ public class AuditObserver {
                         EventOutcomeIndicator.MajorFailure, logger), logger);
         }
     } 
+    
+    public void receiveConnectionEvent(
+            @Observes ConnectionEvent event) {
+        AuditLogger logger = getLogger(event.getDevice());
+        sendAuditMessage (new SecurityAlertAudit(event.getNode(),
+                event.isFail() ? EventOutcomeIndicator.MinorFailure : EventOutcomeIndicator.Success,
+                event.getException(),        
+                logger,
+                event.getSource()), logger);
+    }
     
     private HashMap<String, StoreAudit> getOrCreateAuditsMap(
             StoreSession session, boolean fail) {

@@ -74,7 +74,7 @@ import org.dcm4chee.archive.store.StoreSession;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
-public class SecurtyAlertAudit extends AuditMessage {
+public class SecurityAlertAudit extends AuditMessage {
 
     private String node, eventOutcomeIndicator;
     private Exception exception;
@@ -83,7 +83,7 @@ public class SecurtyAlertAudit extends AuditMessage {
 
     /**
      */
-    public SecurtyAlertAudit(String node, 
+    public SecurityAlertAudit(String node, 
             String eventOutcomeIndicator, 
             Exception exception, 
             AuditLogger logger, 
@@ -110,7 +110,7 @@ public class SecurtyAlertAudit extends AuditMessage {
                 logger.createActiveParticipant(false, RoleIDCode.Application));
 
         // Participating Object: Alert Subject
-        byte[] exceptionBytes = toBytes(exception);
+        byte[] exceptionBytes = (exception.getClass().getCanonicalName() + ":" + exception.getMessage()).getBytes();
         ParticipantObjectDetail poid = null;
         if (exceptionBytes!=null)
         {
@@ -137,9 +137,9 @@ public class SecurtyAlertAudit extends AuditMessage {
                 logger.createAuditSourceIdentification());
     }
     
-    private static byte[] toBytes (Exception e)
+    private static byte[] toBytes (String s)
     {
-        if (e == null)
+        if (s == null)
             return null;
         else
         {
@@ -147,7 +147,7 @@ public class SecurtyAlertAudit extends AuditMessage {
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 ObjectOutput out = null;
                 out = new ObjectOutputStream(bos);   
-                out.writeObject(e);
+                out.writeObject(s);
                 byte[] ret = bos.toByteArray();
                 out.close();
                 bos.close();

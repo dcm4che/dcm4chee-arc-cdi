@@ -51,7 +51,7 @@ import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.impl.LocalSource;
+import org.dcm4chee.archive.event.LocalSource;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.impl.StoreSessionImpl;
 import org.junit.Test;

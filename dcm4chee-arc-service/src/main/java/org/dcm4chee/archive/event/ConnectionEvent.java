@@ -36,38 +36,62 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.audit.test;
+package org.dcm4chee.archive.event;
 
-import org.dcm4che.archive.audit.message.StartStopAudit;
-import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.event.LocalSource;
-import org.junit.Test;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class StartStopTest extends GenericAuditTest{
+public class ConnectionEvent {
+
+    String node;
+    boolean fail; 
+    Exception exception;
+    Participant source;
+    Device device;
     
-    @Test
-    public void testStartStopSampleSend () throws Exception {
-
-        Device arr = getARRDevice();
-
-        AuditLogger auditLogger = new AuditLogger();
-        auditLogger.setAuditRecordRepositoryDevice(arr);
-        
-        Device test = getLocalTestDevice();
-        auditLogger.getConnections().add(test.listConnections().get(0));
-        test.addDeviceExtension(auditLogger);
-            
-        Participant source = new LocalSource();
-        AuditMessage auditMessage = new StartStopAudit(true, auditLogger, source);
-        sendAuditMessage(auditMessage, auditLogger);
+    /**
+     * @param node
+     * @param fail
+     * @param exception
+     * @param source
+     * @param device
+     */
+    public ConnectionEvent(String node, boolean fail, Exception exception,
+            Participant source, Device device) {
+        super();
+        this.node = node;
+        this.fail = fail;
+        this.exception = exception;
+        this.source = source;
+        this.device = device;
     }
 
+    public String getNode() {
+        return node;
+    }
+
+    public boolean isFail() {
+        return fail;
+    }    
+    
+    
+    
+
+
+    public Exception getException() {
+        return exception;
+    }
+
+    public Participant getSource() {
+        return source;
+    }
+
+    public Device getDevice() {
+        return device;
+    }
     
 }

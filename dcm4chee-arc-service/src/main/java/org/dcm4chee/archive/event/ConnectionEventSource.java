@@ -36,33 +36,78 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.impl;
+package org.dcm4chee.archive.event;
 
-import java.net.UnknownHostException;
+import java.net.Socket;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+
+import org.dcm4che3.net.Connection;
+import org.dcm4che3.net.ConnectionMonitor;
+import org.dcm4chee.archive.ArchiveServiceStarted;
+import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.Participant;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class LocalSource implements Participant {
+@ApplicationScoped
+public class ConnectionEventSource implements ConnectionMonitor {
+
+    @Inject
+    private Event<ConnectionEvent> connectionEvent;
     
-    @Override
-    public String getIdentity() {
-        return unknownIfNull(System.getProperty("user.name"));
+    /**
+     * 
+     */
+    public ConnectionEventSource() {
+        // TODO Auto-generated constructor stub
     }
 
     @Override
-    public String getHost() {
-        try {
-            return unknownIfNull(java.net.InetAddress
-                    .getLocalHost().getHostName());
-        } catch (UnknownHostException e) {
-           return Participant.UNKNOWN;
-        }
+    public void onConnectionEstablished(Connection conn, Connection remoteConn,
+            Socket s) {
+        // TODO Auto-generated method stub
+
     }
 
-    private static String unknownIfNull(String value) {
-        return value != null ? value : Participant.UNKNOWN;
+    @Override
+    public void onConnectionFailed(Connection conn, Connection remoteConn,
+            Socket s, Exception e) {
+        // TODO Auto-generated method stub
+
     }
+
+    @Override
+    public void onConnectionRejectedBlacklisted(Connection conn, Socket s) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onConnectionRejected(Connection conn, Socket s, Exception e) {
+        
+        ConnectionEvent connEv = new ConnectionEvent(
+                s.getLocalAddress()+":"+s.getLocalPort(), 
+                true, 
+                e, 
+                new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
+                conn.getDevice());
+        connectionEvent.fire(connEv);
+    }
+
+    @Override
+    public void onConnectionAccepted(Connection conn, Socket s) {
+        ConnectionEvent connEv = new ConnectionEvent(
+                s.getLocalAddress()+":"+s.getLocalPort(), 
+                false, 
+                null, 
+                new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
+                conn.getDevice());
+        connectionEvent.fire(connEv);
+    }
+
 }

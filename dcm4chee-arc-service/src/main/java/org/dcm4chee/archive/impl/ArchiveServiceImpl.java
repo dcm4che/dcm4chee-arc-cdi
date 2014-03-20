@@ -69,6 +69,9 @@ import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.Participant;
+import org.dcm4chee.archive.event.ConnectionEventSource;
+import org.dcm4chee.archive.event.LocalSource;
+import org.dcm4chee.archive.event.StartStopEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -116,6 +119,9 @@ public class ArchiveServiceImpl implements ArchiveService {
     
     @Inject @ArchiveServiceStopped
     private Event<StartStopEvent> archiveServiceStopped;
+    
+    @Inject
+    private ConnectionEventSource connectionEventSource;
 
     private Device device;
 
@@ -150,6 +156,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         addJBossDirURLSystemProperties();
         try {
             device = findDevice();
+            device.setConnectionMonitor(connectionEventSource);
             findOrCreateRejectionCodes(device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class));
             device.setExecutor(executor);
             device.setScheduledExecutor(scheduledExecutor);
