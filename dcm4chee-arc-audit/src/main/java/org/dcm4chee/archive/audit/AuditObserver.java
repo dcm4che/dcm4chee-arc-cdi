@@ -230,14 +230,6 @@ public class AuditObserver {
             return;
 
         try {
-            
-            if (LOG.isDebugEnabled())
-                LOG.debug("Send Audit Log message to [" + 
-                        logger.getRemoteActiveConnection().getHostname() +
-                        ":" +
-                        logger.getRemoteActiveConnection().getPort() +"]: {}",
-                        AuditMessages.toXML(msg));
-
             logger.write(logger.timeStamp(), msg);
 
         } catch (Exception e) {
