@@ -87,10 +87,9 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         try {
             String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
             ApplicationEntity ae = as.getApplicationEntity();
-            Attributes copy = new Attributes(data);
-            mppsService.coerceAttributes(as, Dimse.N_CREATE_RQ, copy);
+            mppsService.coerceAttributes(as, Dimse.N_CREATE_RQ, data);
             MPPS mpps = mppsService.createPerformedProcedureStep(as,
-                    iuid, copy, mppsService);
+                    iuid, data, mppsService);
 
             createMPPSEvent.fire(
                     new MPPSEvent(ae, Dimse.N_CREATE_RQ, data, mpps));
@@ -108,10 +107,9 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         try {
             String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
             ApplicationEntity ae = as.getApplicationEntity();
-            Attributes copy = new Attributes(data);
-            mppsService.coerceAttributes(as, Dimse.N_SET_RQ, copy);
+            mppsService.coerceAttributes(as, Dimse.N_SET_RQ, data);
             MPPS mpps = mppsService.updatePerformedProcedureStep(as,
-                    iuid, copy, mppsService);
+                    iuid, data, mppsService);
 
             (mpps.getStatus() == MPPS.Status.IN_PROGRESS
                     ? updateMPPSEvent
