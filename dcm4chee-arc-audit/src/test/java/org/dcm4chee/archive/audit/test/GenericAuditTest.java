@@ -63,6 +63,7 @@ public class GenericAuditTest {
     protected boolean TLS = false;
     protected String KEYSTORE = "/keystore_ihe_europe.jks";
     protected String KEYSTORE_PASSWORD = "changeit";
+    protected boolean SEND_MESSAGE = false;
     
     protected Device getARRDevice() {
         
@@ -120,19 +121,22 @@ public class GenericAuditTest {
     
     protected void sendAuditMessage(AuditMessage msg, AuditLogger logger) {
 
-        if (msg == null)
-            return;
-
-        if (logger == null || !logger.isInstalled())
-            return;
-
-        try {
-
-            logger.write(logger.timeStamp(), msg);
-
-        } catch (Exception e) {
-            
-            System.out.println("Failed to write audit log message:" + e.getMessage());
+        if (SEND_MESSAGE)
+        {
+            if (msg == null)
+                return;
+    
+            if (logger == null || !logger.isInstalled())
+                return;
+    
+            try {
+    
+                logger.write(logger.timeStamp(), msg);
+    
+            } catch (Exception e) {
+                
+                System.out.println("Failed to write audit log message:" + e.getMessage());
+            }
         }
     }
 
