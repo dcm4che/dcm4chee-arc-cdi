@@ -39,10 +39,12 @@
 package org.dcm4chee.archive.mima.impl;
 
 import java.io.IOException;
+import java.lang.reflect.GenericSignatureFormatError;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.ConfigurationException;
@@ -58,6 +60,9 @@ import org.dcm4che3.net.IncompatibleConnectionException;
 import org.dcm4che3.net.hl7.HL7Application;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.store.StoreSessionClosed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,6 +76,9 @@ public class PIXConsumer {
     
     @Inject
     private IHL7ApplicationCache hl7ApplicationCache; 
+    
+    @Inject
+    private Event<PixQueryEvent> pixQueryEvent;
     
     public IDWithIssuer[] pixQuery(ArchiveAEExtension aeExt, IDWithIssuer pid) {
         if (pid == null)
@@ -98,7 +106,7 @@ public class PIXConsumer {
             msh.setSendingApplicationWithFacility(pixConsumer);
             msh.setReceivingApplicationWithFacility(pixManagerApp.getApplicationName());
             msh.setField(17, pixConsumerApp.getHL7DefaultCharacterSet());
-            HL7Message rsp = pixQuery(pixConsumerApp, pixManagerApp, qbp);
+            HL7Message rsp = pixQuery(pixConsumerApp, pixManagerApp, qbp, pid);
             HL7Segment pidSeg = rsp.getSegment("PID");
             if (pidSeg != null) {
                 String[] pidCXs = HL7Segment.split(pidSeg.getField(3, ""),
@@ -109,6 +117,7 @@ public class PIXConsumer {
         } catch (Exception e) {
             LOG.info("PIX Query failed: ", e);
         }
+        
         return pids.toArray(new IDWithIssuer[pids.size()]);
     }
 
@@ -117,18 +126,25 @@ public class PIXConsumer {
     }
 
     private HL7Message pixQuery(HL7Application pixConsumerApp,
-            HL7Application pixManagerApp, HL7Message qbp)
+            HL7Application pixManagerApp, HL7Message qbp, IDWithIssuer pid)
             throws IncompatibleConnectionException, IOException, GeneralSecurityException {
         CompatibleConnection cc = pixConsumerApp.findCompatibelConnection(pixManagerApp);
         Connection conn = cc.getLocalConnection();
         MLLPConnection mllpConn = pixConsumerApp.connect(conn, cc.getRemoteConnection());
+        String charset = pixConsumerApp.getHL7DefaultCharacterSet();
         try {
-            String charset = pixConsumerApp.getHL7DefaultCharacterSet();
             mllpConn.writeMessage(qbp.getBytes(charset));
             HL7Message rsp = HL7Message.parse(mllpConn.readMessage(), charset);
             return rsp;
         } finally {
             conn.close(mllpConn.getSocket());
+            pixQueryEvent.fire(new PixQueryEvent(
+                    new GenericParticipant(cc.getRemoteConnection().getHostname(), 
+                            qbp.getSegment("MSH").getReceivingApplicationWithFacility()),
+                            pid, 
+                            qbp.getSegment("MSH").getField(9, ""), //message control id
+                            qbp.getBytes(charset),
+                            pixConsumerApp.getDevice()));
         }
     }
 }

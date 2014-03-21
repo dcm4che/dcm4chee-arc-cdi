@@ -48,6 +48,7 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.management.Query;
 
+import org.dcm4che.archive.audit.message.PixQueryAudit;
 import org.dcm4che.archive.audit.message.QueryAudit;
 import org.dcm4che.archive.audit.message.RetrieveAudit;
 import org.dcm4che.archive.audit.message.SecurityAlertAudit;
@@ -65,6 +66,7 @@ import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.event.ConnectionEvent;
 import org.dcm4chee.archive.event.StartStopEvent;
+import org.dcm4chee.archive.mima.impl.PixQueryEvent;
 import org.dcm4chee.archive.query.impl.QueryEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
@@ -210,6 +212,14 @@ public class AuditObserver {
                 event.getException(),        
                 logger,
                 event.getSource()), logger);
+    }
+    
+    public void receivePixQueryEvent(
+            @Observes PixQueryEvent event) {
+        AuditLogger logger = getLogger(event.getDevice());
+        sendAuditMessage (new PixQueryAudit(event.getDestination(), 
+                event.getPatId(), event.getMessageControlId(), 
+                event.getQuery(), logger), logger);
     }
     
     private HashMap<String, StoreAudit> getOrCreateAuditsMap(

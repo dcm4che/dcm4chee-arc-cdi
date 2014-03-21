@@ -110,10 +110,10 @@ public class SecurityAlertAudit extends AuditMessage {
                 logger.createActiveParticipant(false, RoleIDCode.Application));
 
         // Participating Object: Alert Subject
-        byte[] exceptionBytes = (exception.getClass().getCanonicalName() + ":" + exception.getMessage()).getBytes();
         ParticipantObjectDetail poid = null;
-        if (exceptionBytes!=null)
+        if (exception!=null)
         {
+            byte[] exceptionBytes = (exception.getClass().getCanonicalName() + ":" + exception.getMessage()).getBytes();
             poid = new ParticipantObjectDetail();
             poid.setType("Alert Description");
             poid.setValue(exceptionBytes);

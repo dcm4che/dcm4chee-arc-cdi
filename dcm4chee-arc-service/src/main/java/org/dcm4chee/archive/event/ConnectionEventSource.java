@@ -59,31 +59,43 @@ public class ConnectionEventSource implements ConnectionMonitor {
 
     @Inject
     private Event<ConnectionEvent> connectionEvent;
-    
-    /**
-     * 
-     */
-    public ConnectionEventSource() {
-        // TODO Auto-generated constructor stub
-    }
 
     @Override
     public void onConnectionEstablished(Connection conn, Connection remoteConn,
             Socket s) {
-        // TODO Auto-generated method stub
-
+        
+        ConnectionEvent connEv = new ConnectionEvent(
+                remoteConn.getHostname()+":"+remoteConn.getPort(), 
+                false, 
+                null, 
+                new GenericParticipant(conn.getHostname(), Participant.UNKNOWN),
+                conn.getDevice());
+        connectionEvent.fire(connEv);
     }
 
     @Override
     public void onConnectionFailed(Connection conn, Connection remoteConn,
             Socket s, Exception e) {
-        // TODO Auto-generated method stub
-
+        
+        ConnectionEvent connEv = new ConnectionEvent(
+                remoteConn.getHostname()+":"+remoteConn.getPort(), 
+                true, 
+                e, 
+                new GenericParticipant(conn.getHostname(), Participant.UNKNOWN),
+                conn.getDevice());
+        connectionEvent.fire(connEv);
     }
 
     @Override
     public void onConnectionRejectedBlacklisted(Connection conn, Socket s) {
-        // TODO Auto-generated method stub
+        
+        ConnectionEvent connEv = new ConnectionEvent(
+                conn.getHostname()+":"+conn.getPort(), 
+                true, 
+                new Exception("Connection Rejected:Blacklisted"), 
+                new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
+                conn.getDevice());
+        connectionEvent.fire(connEv);
 
     }
 
@@ -91,7 +103,7 @@ public class ConnectionEventSource implements ConnectionMonitor {
     public void onConnectionRejected(Connection conn, Socket s, Exception e) {
         
         ConnectionEvent connEv = new ConnectionEvent(
-                s.getLocalAddress()+":"+s.getLocalPort(), 
+                conn.getHostname()+":"+conn.getPort(),  
                 true, 
                 e, 
                 new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
@@ -102,7 +114,7 @@ public class ConnectionEventSource implements ConnectionMonitor {
     @Override
     public void onConnectionAccepted(Connection conn, Socket s) {
         ConnectionEvent connEv = new ConnectionEvent(
-                s.getLocalAddress()+":"+s.getLocalPort(), 
+                conn.getHostname()+":"+conn.getPort(), 
                 false, 
                 null, 
                 new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
