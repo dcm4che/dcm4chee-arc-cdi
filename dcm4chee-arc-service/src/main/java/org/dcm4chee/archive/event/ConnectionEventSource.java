@@ -63,14 +63,14 @@ public class ConnectionEventSource implements ConnectionMonitor {
     @Override
     public void onConnectionEstablished(Connection conn, Connection remoteConn,
             Socket s) {
-        
-        ConnectionEvent connEv = new ConnectionEvent(
-                remoteConn.getHostname()+":"+remoteConn.getPort(), 
-                false, 
-                null, 
-                new GenericParticipant(conn.getHostname(), Participant.UNKNOWN),
-                conn.getDevice());
-        connectionEvent.fire(connEv);
+// Eventually Audit Connection Established
+//        ConnectionEvent connEv = new ConnectionEvent(
+//                remoteConn.getHostname()+":"+remoteConn.getPort(), 
+//                false, 
+//                null, 
+//                new GenericParticipant(conn.getHostname(), Participant.UNKNOWN),
+//                conn.getDevice());
+//        connectionEvent.fire(connEv);
     }
 
     @Override
@@ -113,13 +113,14 @@ public class ConnectionEventSource implements ConnectionMonitor {
 
     @Override
     public void onConnectionAccepted(Connection conn, Socket s) {
-        ConnectionEvent connEv = new ConnectionEvent(
-                conn.getHostname()+":"+conn.getPort(), 
-                false, 
-                null, 
-                new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
-                conn.getDevice());
-        connectionEvent.fire(connEv);
+// Eventually Audit Connection Accepted
+//        ConnectionEvent connEv = new ConnectionEvent(
+//                conn.getHostname()+":"+conn.getPort(), 
+//                false, 
+//                null, 
+//                new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
+//                conn.getDevice());
+//        connectionEvent.fire(connEv);
     }
 
 }
