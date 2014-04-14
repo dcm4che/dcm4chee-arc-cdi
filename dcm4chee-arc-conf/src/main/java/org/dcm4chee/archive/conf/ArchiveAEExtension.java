@@ -185,6 +185,17 @@ public class ArchiveAEExtension extends AEExtension {
     
     @ConfigField(name = "dcmQidoMaxNumberOfResults", def="0")
     private int QIDOMaxNumberOfResults;
+    
+    @ConfigField(name = "dcmIsTimeZoneSupported", def="FALSE")    
+    private boolean IsTimeZoneSupported;
+
+    public boolean isIsTimeZoneSupported() {
+        return IsTimeZoneSupported;
+    }
+
+    public void setIsTimeZoneSupported(boolean isTimeZoneSupported) {
+        IsTimeZoneSupported = isTimeZoneSupported;
+    }
 
     public AttributeCoercion getAttributeCoercion(String sopClass,
             Dimse dimse, Role role, String aeTitle) {
