@@ -10,6 +10,9 @@
   </parent>
   <artifactId>dcm4chee-arc-war</artifactId>
   <packaging>war</packaging>
+  <properties>
+
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -141,7 +144,7 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-mima</artifactId>
       <version>${project.version}</version>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-hl7</artifactId>
@@ -153,6 +156,25 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
+  <profiles>
+    <profile>
+      <id>do-not-deploy</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <wildfly-skip>true</wildfly-skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>wildfly-deploy</id>
+      <properties>
+        <wildfly-skip>false</wildfly-skip>
+        <wildfly-hostname>127.0.0.1</wildfly-hostname>
+        <wildfly-port>9990</wildfly-port>
+      </properties>
+    </profile>
+  </profiles>
   <build>
     <plugins>
       <plugin>
@@ -161,6 +183,25 @@
         <configuration>
           <classifier>${db}</classifier>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.wildfly.plugins</groupId>
+        <artifactId>wildfly-maven-plugin</artifactId>
+        <version>1.0.1.Final</version>
+        <configuration>
+          <hostname>${wildfly-hostname}</hostname>
+          <port>${wildfly-port}</port>
+          <filename>${project.build.finalName}-${db}.${project.packaging}</filename>
+          <skip>${wildfly-skip}</skip>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>install</phase>
+            <goals>
+              <goal>deploy</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
