@@ -85,6 +85,17 @@
     </attributes>
   </entity>
 
+  <entity class="OtherPatientID">
+    <table name="other_pid" />
+    <sequence-generator name="seq" sequence-name="other_pid_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
   <entity class="Study">
     <table name="study" />
     <sequence-generator name="seq" sequence-name="study_pk_seq" allocation-size="1" />
