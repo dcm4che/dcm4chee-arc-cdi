@@ -13,7 +13,7 @@
     <slf4j.version>1.7.5</slf4j.version>
     <hibernate.version>4.2.7.Final</hibernate.version>
     <querydsl.version>3.2.3</querydsl.version>
-    <db>oracle</db>
+    <db>mysql</db>
     <ds>java:/PacsDS</ds>
   </properties>
   <dependencyManagement>
