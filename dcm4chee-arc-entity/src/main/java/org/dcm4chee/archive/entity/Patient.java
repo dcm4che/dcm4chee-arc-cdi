@@ -81,7 +81,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     query="SELECT p FROM Patient p WHERE UPPER(p.patientName) = UPPER(?1)")
 })
 @Entity
-@Table(name = "patient")
+@Table(name = "patient4")
 public class Patient implements Serializable {
 
     private static final long serialVersionUID = 6430339764844147679L;

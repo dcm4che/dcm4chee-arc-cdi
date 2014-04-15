@@ -56,7 +56,7 @@ import javax.persistence.Table;
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
 @Entity
-@Table(name = "content_item")
+@Table(name = "content_item4")
 public class ContentItem implements Serializable {
 
     private static final long serialVersionUID = 4317415218436166278L;

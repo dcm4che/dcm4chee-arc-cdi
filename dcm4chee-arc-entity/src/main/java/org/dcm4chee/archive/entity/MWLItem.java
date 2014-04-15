@@ -72,7 +72,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
  * @since Feb 29, 2008
  */
 @Entity
-@Table(name = "mwl_item")
+@Table(name = "mwl_item4")
 public class MWLItem implements Serializable {
 
     public static final String SCHEDULED = "SCHEDULED";

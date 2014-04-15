@@ -85,6 +85,19 @@
                     <ignore></ignore>
                   </action>
                 </pluginExecution>
+                <pluginExecution>
+                	<pluginExecutionFilter>
+                		<groupId>com.mysema.maven</groupId>
+                		<artifactId>apt-maven-plugin</artifactId>
+                		<versionRange>[1.0.9,)</versionRange>
+                		<goals>
+                			<goal>process</goal>
+                		</goals>
+                	</pluginExecutionFilter>
+                	<action>
+                		<ignore></ignore>
+                	</action>
+                </pluginExecution>
               </pluginExecutions>
             </lifecycleMappingMetadata>
           </configuration>

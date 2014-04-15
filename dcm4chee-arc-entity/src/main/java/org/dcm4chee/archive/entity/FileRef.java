@@ -59,7 +59,7 @@ import javax.persistence.Table;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
 @Entity
-@Table(name = "file_ref")
+@Table(name = "file_ref4")
 public class FileRef implements Serializable {
 
     private static final long serialVersionUID = 1735835006678974580L;

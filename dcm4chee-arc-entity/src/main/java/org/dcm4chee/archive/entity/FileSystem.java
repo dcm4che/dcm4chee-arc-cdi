@@ -63,7 +63,7 @@ import javax.persistence.Table;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
 @Entity
-@Table(name = "filesystem")
+@Table(name = "filesystem4")
 @NamedQueries({
 @NamedQuery(
     name = "FileSystem.findByGroupID",
