@@ -38,19 +38,17 @@
 package org.dcm4chee.archive.impl;
 
 import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.enterprise.concurrent.ManagedScheduledExecutorService;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Initialized;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
 import javax.enterprise.event.Event;
-import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.ConfigurationException;
@@ -77,8 +75,8 @@ import org.dcm4chee.archive.event.StartStopEvent;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@ApplicationScoped
-@Typed(ArchiveService.class)
+@Singleton
+@Startup
 public class ArchiveServiceImpl implements ArchiveService {
 
     private static final String DEVICE_NAME_PROPERTY =
@@ -96,11 +94,9 @@ public class ArchiveServiceImpl implements ArchiveService {
         "jboss.server.temp",
     };
 
-    @Resource
-    private ManagedExecutorService executor;
+    private ExecutorService executor;
 
-    @Resource
-    private ManagedScheduledExecutorService scheduledExecutor;
+    private ScheduledExecutorService scheduledExecutor;
 
     @Inject
     private Instance<DicomService> dicomServices;
@@ -133,10 +129,6 @@ public class ArchiveServiceImpl implements ArchiveService {
 
     private final HL7ServiceRegistry hl7ServiceRegistry = new HL7ServiceRegistry();
 
-    // force eager initialisation (only works in WAR in EAR with contains WAR)
-    void startup(@Observes @Initialized(ApplicationScoped.class) Object o) {
-    }
-
     private static void addJBossDirURLSystemProperties() {
         for (String key : JBOSS_PROPERITIES) {
             String url = new File(System.getProperty(key + ".dir"))
@@ -155,6 +147,8 @@ public class ArchiveServiceImpl implements ArchiveService {
     public void init() {
         addJBossDirURLSystemProperties();
         try {
+            executor = Executors.newCachedThreadPool();
+            scheduledExecutor = Executors.newScheduledThreadPool(10);
             device = findDevice();
             device.setConnectionMonitor(connectionEventSource);
             findOrCreateRejectionCodes(device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class));
@@ -175,10 +169,19 @@ public class ArchiveServiceImpl implements ArchiveService {
             }
             start(new LocalSource());
         } catch (RuntimeException re) {
+            shutdown(executor);
+            shutdown(scheduledExecutor);
             throw re;
         } catch (Exception e) {
+            shutdown(executor);
+            shutdown(scheduledExecutor);
             throw new RuntimeException(e);
         }
+    }
+
+    private void shutdown(ExecutorService executor) {
+        if (executor != null)
+            executor.shutdown();
     }
 
     @PreDestroy
@@ -192,6 +195,8 @@ public class ArchiveServiceImpl implements ArchiveService {
         for (HL7Service service : hl7Services) {
             hl7ServiceRegistry.removeHL7Service(service);
         }
+        shutdown(executor);
+        shutdown(scheduledExecutor);
     }
 
     @Override
