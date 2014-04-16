@@ -75,6 +75,7 @@ class QueryTaskImpl extends BasicQueryTask {
 
     @Override
     protected Attributes adjust(Attributes match) {
+	//response keys coercion is done here
         if (match == null)
             return null;
 

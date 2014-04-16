@@ -106,6 +106,7 @@ public class CFindSCP extends BasicCFindSCP {
                 query.setArchiveAEExtension(arcAE);
                 query.setQueryParam(queryParam);
                 query.setPatientIDs(pids);
+                //set key cache and coercie attributes
                 query.setKeys(keys);
                 query.initQuery();
                 query.executeQuery();
@@ -118,7 +119,7 @@ public class CFindSCP extends BasicCFindSCP {
                         ae.getDevice(),
                         new LocalAssociationParticipant(as)));
             }
-            
+            //return the cached keys
             return new QueryTaskImpl(as, pc, rq, keys, queryParam,
                     rootLevel, query, queryService);
         } catch (DicomServiceException e) {

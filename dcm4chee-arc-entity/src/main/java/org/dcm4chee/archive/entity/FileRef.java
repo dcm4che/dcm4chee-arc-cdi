@@ -40,6 +40,7 @@ package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.TimeZone;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -81,6 +82,10 @@ public class FileRef implements Serializable {
     @Column(name = "file_tsuid", updatable = false)
     private String transferSyntaxUID;
 
+    @Basic(optional = false)
+    @Column(name = "file_time_zone", updatable = false)
+    private String fileTimeZone;
+    
     @Basic(optional = false)
     @Column(name = "file_size", updatable = false)
     private long fileSize;
@@ -157,5 +162,13 @@ public class FileRef implements Serializable {
                 + ", tsuid=" + transferSyntaxUID
                 + ", size=" + fileSize
                 + "]";
+    }
+
+    public void setSourceTimeZone(String sourceTimeZone) {
+	this.fileTimeZone=sourceTimeZone;
+	
+    }
+    public String getSourceTimeZone(){
+	return this.fileTimeZone;
     }
 }

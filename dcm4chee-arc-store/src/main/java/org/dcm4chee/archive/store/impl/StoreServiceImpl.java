@@ -51,6 +51,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.TimeZone;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
@@ -59,6 +60,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.xml.transform.Templates;
 
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
@@ -67,6 +69,7 @@ import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.PDVInputStream;
 import org.dcm4che3.net.Status;
@@ -131,6 +134,10 @@ public class StoreServiceImpl implements StoreService {
     @Inject @StoreSessionClosed
     private Event<StoreSession> storeSessionClosed;
 
+    @Inject
+    private IApplicationEntityCache aeCache;
+    
+    private TimeZone sourceTimeZoneCache;
     @Override
     public StoreSession initStoreSession(StoreService storeService, Participant source,
             String sourceAET, ArchiveAEExtension arcAE) throws DicomServiceException {
@@ -332,6 +339,38 @@ public class StoreServiceImpl implements StoreService {
             StoreSession session = context.getStoreSession();
             ArchiveAEExtension arcAE = session.getArchiveAEExtension();
             Attributes attrs = context.getAttributes();
+            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
+            
+            //Time zone store adjustments
+            if(archiveTimeZone!=null){
+        	
+                if(attrs.contains(Tag.TimezoneOffsetFromUTC))
+                {
+            	String offset = attrs.getString(Tag.TimezoneOffsetFromUTC);
+            	sourceTimeZoneCache = TimeZone.getTimeZone("UTC"+offset);
+            	attrs.setTimezone(archiveTimeZone);
+                }
+                else
+                {
+            	
+            	ApplicationEntity remoteAE = aeCache.findApplicationEntity(session.getRemoteAET());
+            	sourceTimeZoneCache = remoteAE.getDevice().getTimeZoneOfDevice();
+            	
+            	if(sourceTimeZoneCache==null)
+            	{
+            	    sourceTimeZoneCache=archiveTimeZone;
+            	}
+            	
+            	attrs.setDefaultTimeZone(sourceTimeZoneCache);
+            	attrs.setTimezone(archiveTimeZone);
+                }
+            
+            }
+            else
+            {
+        	sourceTimeZoneCache = TimeZone.getDefault();
+            }
+            
             Attributes modified = context.getCoercedAttributes();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID),
@@ -647,6 +686,7 @@ public class StoreServiceImpl implements StoreService {
 
     private FileRef createFileRef(EntityManager em, StoreContext context,
             Instance instance) {
+
         StoreSession session = context.getStoreSession();
         FileSystem fs = session.getStorageFileSystem();
         Path filePath = context.getFinalFile();
@@ -655,6 +695,8 @@ public class StoreServiceImpl implements StoreService {
                 context.getTransferSyntax(),
                 filePath.toFile().length(),
                 context.getFinalFileDigest());
+        //Time zone store adjustments
+        fileRef.setSourceTimeZone(sourceTimeZoneCache.getID());
         fileRef.setInstance(instance);
         em.persist(fileRef);
         LOG.info("{}: Create {}", session, fileRef);
