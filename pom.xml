@@ -211,8 +211,8 @@
   </build>
   <modules>
     <module>dcm4chee-arc-conf</module>
-    <module>dcm4chee-arc-conf-prefs</module>
     <module>dcm4chee-arc-conf-ldap</module>
+    <module>dcm4chee-arc-conf-prefs</module>
     <module>dcm4chee-arc-conf-test</module>
     <module>dcm4chee-arc-service</module>
     <module>dcm4chee-arc-entity</module>
