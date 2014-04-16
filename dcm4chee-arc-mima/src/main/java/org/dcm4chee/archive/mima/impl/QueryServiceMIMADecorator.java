@@ -40,11 +40,9 @@ package org.dcm4chee.archive.mima.impl;
 
 import java.util.EnumSet;
 
-import javax.annotation.Priority;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 
 import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
@@ -66,7 +64,7 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Decorator @Priority(Interceptor.Priority.APPLICATION)
+@Decorator
 public abstract class QueryServiceMIMADecorator implements QueryService {
 
     private static Logger LOG =

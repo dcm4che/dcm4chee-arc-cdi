@@ -38,11 +38,9 @@
 
 package org.dcm4chee.archive.mpps.impl;
 
-import javax.annotation.Priority;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 
@@ -60,7 +58,7 @@ import org.dcm4chee.archive.store.StoreSession;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Decorator @Priority(Interceptor.Priority.APPLICATION)
+@Decorator
 public abstract class StoreServiceMPPSDecorator implements StoreService {
 
     @Inject @Delegate StoreService storeService;

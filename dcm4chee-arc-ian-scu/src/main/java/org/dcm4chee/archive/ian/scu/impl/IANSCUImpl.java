@@ -44,10 +44,13 @@ import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-import javax.jms.JMSContext;
-import javax.jms.JMSProducer;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
 import javax.jms.Queue;
+import javax.jms.Session;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -253,14 +256,25 @@ public class IANSCUImpl implements IANSCU {
 
     private void scheduleSendIAN(String localAET, String remoteAET,
             String iuid, Attributes attrs, int retries, long delay) {
-        try (JMSContext jmsContext = connFactory.createContext();) {
-            JMSProducer producer = jmsContext.createProducer();
-            producer.setProperty("SOPInstancesUID", iuid);
-            producer.setProperty("LocalAET", localAET);
-            producer.setProperty("RemoteAET", remoteAET);
-            producer.setProperty("Retries", retries);
-            producer.setDeliveryDelay(delay);
-            producer.send(ianSCUQueue, attrs);
+        try {
+            Connection conn = connFactory.createConnection();
+            try {
+                Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                MessageProducer producer = session.createProducer(ianSCUQueue);
+                ObjectMessage msg = session.createObjectMessage(attrs);
+                msg.setStringProperty("SOPInstancesUID", iuid);
+                msg.setStringProperty("LocalAET", localAET);
+                msg.setStringProperty("RemoteAET", remoteAET);
+                msg.setIntProperty("Retries", retries);
+                if (delay > 0)
+                    msg.setLongProperty("_HQ_SCHED_DELIVERY",
+                            System.currentTimeMillis() + delay);
+                producer.send(msg);
+            } finally {
+                conn.close();
+            }
+        } catch (JMSException e) {
+            throw new RuntimeException(e);
         }
     }
 
