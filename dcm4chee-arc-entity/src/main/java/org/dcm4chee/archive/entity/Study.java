@@ -404,7 +404,7 @@ public class Study implements Serializable {
     }
 
     public void addModalityInStudy(String modality) {
-        if (!Utils.contains(getModalitiesInStudy(), modality))
+        if (modality != null && !Utils.contains(getModalitiesInStudy(), modality))
             this.modalitiesInStudy = this.modalitiesInStudy + '\\' + modality;
     }
 

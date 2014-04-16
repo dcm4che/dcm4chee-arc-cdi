@@ -106,13 +106,20 @@ public class PIXConsumer {
             msh.setSendingApplicationWithFacility(pixConsumer);
             msh.setReceivingApplicationWithFacility(pixManagerApp.getApplicationName());
             msh.setField(17, pixConsumerApp.getHL7DefaultCharacterSet());
+            LOG.info("Perform PIX Query for PID: {}", pid);
             HL7Message rsp = pixQuery(pixConsumerApp, pixManagerApp, qbp, pid);
             HL7Segment pidSeg = rsp.getSegment("PID");
             if (pidSeg != null) {
                 String[] pidCXs = HL7Segment.split(pidSeg.getField(3, ""),
                         pidSeg.getRepetitionSeparator());
-                for (String pidCX : pidCXs)
+                if (pidCXs.length == 0)
+                    LOG.info("No other PIDs found for PID: {}", pid);
+                for (String pidCX : pidCXs) {
+                    LOG.info("Found other PID {} for PID: {}", pidCX, pid);
                     pids.add(new IDWithIssuer(pidCX));
+                }
+            } else {
+                LOG.info("No other PIDs found for PID: {}", pid);
             }
         } catch (Exception e) {
             LOG.info("PIX Query failed: ", e);

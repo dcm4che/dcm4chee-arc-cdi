@@ -139,16 +139,19 @@ public class StgCmtServiceImpl implements StgCmtService {
             ApplicationEntity remoteAE = aeCache
                     .findApplicationEntity(remoteAET);
             Association as = localAE.connect(remoteAE, aarq);
-            DimseRSP neventReport = as.neventReport(
-                    UID.StorageCommitmentPushModelSOPClass,
-                    UID.StorageCommitmentPushModelSOPInstance,
-                    eventTypeId(eventInfo),
-                    eventInfo, null);
-            neventReport.next();
             try {
-                as.release();
-            } catch (IOException e) {
-                LOG.info("{}: Failed to release association to {}", as, remoteAET);
+                DimseRSP neventReport = as.neventReport(
+                        UID.StorageCommitmentPushModelSOPClass,
+                        UID.StorageCommitmentPushModelSOPInstance,
+                        eventTypeId(eventInfo),
+                        eventInfo, null);
+                neventReport.next();
+            } finally {
+                try {
+                    as.release();
+                } catch (IOException e) {
+                    LOG.info("{}: Failed to release association to {}", as, remoteAET);
+                }
             }
         } catch (Exception e) {
             ArchiveAEExtension aeExt = localAE.getAEExtension(ArchiveAEExtension.class);

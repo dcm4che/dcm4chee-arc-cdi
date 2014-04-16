@@ -556,7 +556,10 @@ public class QidoRS {
         MultipartRelatedOutput output = new MultipartRelatedOutput();
         int count = 0;
         while (query.hasMoreMatches()) {
-            final Attributes match = filter(addRetrieveURL(query.nextMatch(), qrlevel));
+            Attributes tmp = query.nextMatch();
+            if (tmp == null)
+                continue;
+            final Attributes match = filter(addRetrieveURL(tmp, qrlevel));
             LOG.debug("{}: Match #{}:\n{}", new Object[]{method, ++count, match});
             output.addPart(new StreamingOutput() {
 
@@ -579,7 +582,10 @@ public class QidoRS {
         final ArrayList<Attributes> matches = new ArrayList<Attributes>();
         int count = 0;
         while (query.hasMoreMatches()) {
-            Attributes match = filter(addRetrieveURL(query.nextMatch(), qrlevel));
+            Attributes tmp = query.nextMatch();
+            if (tmp == null)
+                continue;
+            Attributes match = filter(addRetrieveURL(tmp, qrlevel));
             LOG.debug("{}: Match #{}:\n{}", new Object[]{method, ++count, match});
             matches.add(match);
         }
