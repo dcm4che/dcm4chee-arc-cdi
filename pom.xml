@@ -242,5 +242,6 @@
     <module>dcm4chee-arc-mima</module>
     <module>dcm4chee-arc-audit</module>
     <module>dcm4chee-arc-rs-common</module>
+    <module>dcm4chee-arc-war-eap6</module>
   </modules>
 </project>
