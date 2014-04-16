@@ -13,7 +13,7 @@
     <slf4j.version>1.7.5</slf4j.version>
     <hibernate.version>4.2.7.Final</hibernate.version>
     <querydsl.version>3.2.3</querydsl.version>
-    <db>mysql</db>
+    <db>oracle</db>
     <ds>java:/PacsDS</ds>
   </properties>
   <dependencyManagement>
@@ -216,8 +216,8 @@
     <module>dcm4chee-arc-conf-test</module>
     <module>dcm4chee-arc-service</module>
     <module>dcm4chee-arc-entity</module>
-    <module>dcm4chee-arc-patient-api</module>
     <module>dcm4chee-arc-patient-impl</module>
+    <module>dcm4chee-arc-patient-api</module>
     <module>dcm4chee-arc-code</module>
     <module>dcm4chee-arc-store</module>
     <module>dcm4chee-arc-store-scp</module>
@@ -242,5 +242,6 @@
     <module>dcm4chee-arc-mima</module>
     <module>dcm4chee-arc-audit</module>
     <module>dcm4chee-arc-rs-common</module>
+    <module>dcm4chee-arc-war-eap6</module>
   </modules>
 </project>
