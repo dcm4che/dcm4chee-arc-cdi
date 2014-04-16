@@ -1,0 +1,33 @@
+version: 1
+
+#!RESULT OK
+#!CONNECTION ldap://localhost:389
+#!DATE 2014-04-01T15:16:55.811
+dn: cn=DICOM Configuration,dc=example,dc=com
+objectClass: dicomConfigurationRoot
+objectClass: top
+cn: DICOM Configuration
+
+#!RESULT OK
+#!CONNECTION ldap://localhost:389
+#!DATE 2014-04-01T15:16:55.856
+dn: cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dicomDevicesRoot
+objectClass: top
+cn: Devices
+
+#!RESULT OK
+#!CONNECTION ldap://localhost:389
+#!DATE 2014-04-01T15:16:55.885
+dn: cn=Unique AE Titles Registry,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dicomUniqueAETitlesRegistryRoot
+objectClass: top
+cn: Unique AE Titles Registry
+
+#!RESULT OK
+#!CONNECTION ldap://localhost:389
+#!DATE 2014-04-01T15:16:55.893
+dn: cn=Unique HL7 Application Names Registry,cn=DICOM Configuration,dc=examp
+ le,dc=com
+objectClass: hl7UniqueApplicationNamesRegistryRoot
+cn: Unique HL7 Application Names Registry
