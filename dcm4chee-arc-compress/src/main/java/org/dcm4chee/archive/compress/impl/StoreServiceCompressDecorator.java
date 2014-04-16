@@ -46,6 +46,7 @@ import java.security.MessageDigest;
 
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
@@ -74,7 +75,7 @@ public abstract class StoreServiceCompressDecorator implements StoreService {
     static Logger LOG = LoggerFactory.getLogger(StoreServiceCompressDecorator.class);
 
     // injected StoreService to be decorated
-    @Inject @Delegate StoreService storeService;
+    @Inject @Delegate @Any StoreService storeService;
     
     //injected compression service
     @Inject
@@ -83,6 +84,8 @@ public abstract class StoreServiceCompressDecorator implements StoreService {
     @Override
     public void processFile(StoreContext context)
             throws DicomServiceException {
+    	
+    	System.out.println("DECORATOR!!!!!!!!!!!!!!!");
         
         // if possible, compress the file, store on file system and
         // update store context. Otherwise call the standard moveFile.
