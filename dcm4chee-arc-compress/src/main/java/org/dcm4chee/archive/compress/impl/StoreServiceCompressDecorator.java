@@ -75,7 +75,7 @@ public abstract class StoreServiceCompressDecorator implements StoreService {
     static Logger LOG = LoggerFactory.getLogger(StoreServiceCompressDecorator.class);
 
     // injected StoreService to be decorated
-    @Inject @Delegate @Any StoreService storeService;
+    @Inject @Delegate StoreService storeService;
     
     //injected compression service
     @Inject
@@ -84,8 +84,6 @@ public abstract class StoreServiceCompressDecorator implements StoreService {
     @Override
     public void processFile(StoreContext context)
             throws DicomServiceException {
-    	
-    	System.out.println("DECORATOR!!!!!!!!!!!!!!!");
         
         // if possible, compress the file, store on file system and
         // update store context. Otherwise call the standard moveFile.
