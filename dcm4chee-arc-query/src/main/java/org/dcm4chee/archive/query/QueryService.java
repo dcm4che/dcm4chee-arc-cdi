@@ -86,5 +86,5 @@ public interface QueryService {
             QueryParam queryParam);
     
     void coerceAttributesForRequest(QueryContext context, String sourceAET) throws DicomServiceException;
-    void coerceAttributesForResponse(QueryContext context, String sourceAET) throws DicomServiceException;
+    void coerceAttributesForResponse(Attributes match, QueryContext context, String sourceAET) throws DicomServiceException;
 }

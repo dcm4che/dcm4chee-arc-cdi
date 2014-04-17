@@ -77,12 +77,12 @@ class QueryTaskImpl extends BasicQueryTask {
 
     @Override
     protected Attributes adjust(Attributes match) {
-//	//timezone response adjustment
-//	try {
-//	    queryService.coerceAttributesForResponse(query, remoteAET);
-//	} catch (DicomServiceException e) {
-//	    e.printStackTrace();
-//	}
+	//timezone response adjustment
+	try {
+	    queryService.coerceAttributesForResponse(match,query, remoteAET);
+	} catch (DicomServiceException e) {
+	    e.printStackTrace();
+	}
         if (match == null)
             return null;
 
@@ -97,8 +97,8 @@ class QueryTaskImpl extends BasicQueryTask {
         copyAttributes(match, filtered,
                 Tag.SpecificCharacterSet,
                 Tag.RetrieveAETitle,
-                Tag.InstanceAvailability);
-        //tz offset add here
+                Tag.InstanceAvailability,
+                Tag.TimezoneOffsetFromUTC);
         filtered.addSelected(match, keys);
         return filtered;
      }

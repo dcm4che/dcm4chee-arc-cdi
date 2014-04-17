@@ -98,4 +98,7 @@ public interface QueryContext {
     Object removeProperty(String key);
 
     void setProperty(String key, Object value);
+
+    void setCachedTimeZoneFromTag(String string);
+    String getCachedTimeZoneFromTag();
 }

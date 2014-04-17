@@ -82,6 +82,8 @@ public abstract class AbstractQueryContext implements QueryContext {
 
     private Attributes keysOriginal;
     
+    private String CachedTimeZoneFromTag;
+    
     private final HashMap<String,Object> properties = new HashMap<String,Object>();
     
     public AbstractQueryContext(QueryService service, StatelessSession session) {
@@ -229,5 +231,15 @@ public abstract class AbstractQueryContext implements QueryContext {
     public void setProperty(String key, Object value) {
         properties.put(key, value);
     }
+    
+    @Override
+    public void setCachedTimeZoneFromTag(String tagValue)
+    {
+	this.CachedTimeZoneFromTag=tagValue;
+    }
 
+    @Override
+    public String getCachedTimeZoneFromTag() {
+        return CachedTimeZoneFromTag;
+    }
 }
