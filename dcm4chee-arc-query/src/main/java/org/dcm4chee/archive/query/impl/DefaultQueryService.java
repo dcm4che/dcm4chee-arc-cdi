@@ -172,6 +172,7 @@ public class DefaultQueryService implements QueryService {
     @Override
     public void coerceAttributesForRequest(QueryContext context, String sourceAET)
 	    throws DicomServiceException {
+	
 	 ApplicationEntity sourceAE = null;
 	try {
 	    sourceAE = aeCache.findApplicationEntity(sourceAET);
@@ -223,7 +224,45 @@ public class DefaultQueryService implements QueryService {
     @Override
     public void coerceAttributesForResponse(QueryContext context, String sourceAET)
 	    throws DicomServiceException {
-	// TODO time zone coercion and template coercion
+	
+	 ApplicationEntity sourceAE = null;
+		try {
+		    sourceAE = aeCache.findApplicationEntity(sourceAET);
+		} catch (ConfigurationException e1) {
+		    e1.printStackTrace();
+		}
+		try {
+	            
+	            ArchiveAEExtension arcAE = context.getArchiveAEExtension();
+	            Attributes attrs = context.getKeys();
+	            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
+	            TimeZone sourceTimeZone = sourceAE.getDevice().getTimeZoneOfDevice();
+	            Templates tpl = arcAE.getAttributeCoercionTemplates(
+	                    attrs.getString(Tag.SOPClassUID),
+	                    Dimse.C_FIND_RSP, TransferCapability.Role.SCU, 
+	                    sourceAET);
+	            if (tpl != null) {
+			attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false));
+	            }
+	            //Time zone query req adjustments
+	            if(archiveTimeZone!=null){
+	                if(attrs.contains(Tag.TimezoneOffsetFromUTC))
+	                {
+	            	attrs.setTimezone(archiveTimeZone);
+	                }
+	                else if(sourceTimeZone!=null)
+	                {            	
+	            	attrs.setDefaultTimeZone(archiveTimeZone);
+	            	attrs.setTimezone(archiveTimeZone);
+	            	attrs.setTimezone(sourceTimeZone);
+	                }
+	                //else assumed in archive time
+	            }
+	            
+	           
+	        } catch (Exception e) {
+	            throw new DicomServiceException(Status.UnableToProcess, e);
+	        }
     }
 
 }

@@ -343,6 +343,8 @@ public class StoreServiceImpl implements StoreService {
             ArchiveAEExtension arcAE = session.getArchiveAEExtension();
             Attributes attrs = context.getAttributes();
             TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
+            ApplicationEntity remoteAE = aeCache.findApplicationEntity(session.getRemoteAET());
+        	sourceTimeZoneCache = remoteAE.getDevice().getTimeZoneOfDevice();
             //Time zone store adjustments
             if(archiveTimeZone!=null){
         	
@@ -352,10 +354,8 @@ public class StoreServiceImpl implements StoreService {
             	sourceTimeZoneCache = TimeZone.getTimeZone("UTC"+offset);
             	attrs.setTimezone(archiveTimeZone);
                 }
-                else
+                else if(sourceTimeZoneCache != null)
                 {
-            	ApplicationEntity remoteAE = aeCache.findApplicationEntity(session.getRemoteAET());
-            	sourceTimeZoneCache = remoteAE.getDevice().getTimeZoneOfDevice();
             	
             	if(sourceTimeZoneCache==null)
             	{
@@ -365,6 +365,7 @@ public class StoreServiceImpl implements StoreService {
             	attrs.setTimezone(sourceTimeZoneCache);
             	attrs.setTimezone(archiveTimeZone);
                 }
+                 //else assumed in archive time    
             }
             else
             {

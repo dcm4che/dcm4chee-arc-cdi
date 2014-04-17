@@ -60,6 +60,7 @@ class QueryTaskImpl extends BasicQueryTask {
     private final QueryContext query;
     private final QueryRetrieveLevel modelRootLevel;
     private final QueryService queryService;
+    private final String remoteAET;
 
     public QueryTaskImpl(Association as, PresentationContext pc, Attributes rq,
             Attributes keys, QueryParam queryParam,
@@ -71,11 +72,17 @@ class QueryTaskImpl extends BasicQueryTask {
         this.query = query;
         this.modelRootLevel = modelRootLevel;
         this.queryService = queryService;
+        this.remoteAET = as.getRemoteAET();
      }
 
     @Override
     protected Attributes adjust(Attributes match) {
-	//response keys coercion is done here
+//	//timezone response adjustment
+//	try {
+//	    queryService.coerceAttributesForResponse(query, remoteAET);
+//	} catch (DicomServiceException e) {
+//	    e.printStackTrace();
+//	}
         if (match == null)
             return null;
 
@@ -91,6 +98,7 @@ class QueryTaskImpl extends BasicQueryTask {
                 Tag.SpecificCharacterSet,
                 Tag.RetrieveAETitle,
                 Tag.InstanceAvailability);
+        //tz offset add here
         filtered.addSelected(match, keys);
         return filtered;
      }
