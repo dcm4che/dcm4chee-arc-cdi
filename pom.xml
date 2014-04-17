@@ -243,5 +243,7 @@
     <module>dcm4chee-arc-audit</module>
     <module>dcm4chee-arc-rs-common</module>
     <module>dcm4chee-arc-ear</module>
+    <module>dcm4chee-arc-war-skinny</module>
+    <module>dcm4chee-arc-ear-skinny</module>
   </modules>
 </project>

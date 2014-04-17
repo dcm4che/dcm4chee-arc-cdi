@@ -10,23 +10,10 @@
   </parent>
   <artifactId>dcm4chee-arc-war</artifactId>
   <packaging>war</packaging>
-  <properties>
-
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-conf</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-conf-ldap</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-conf-prefs</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -158,21 +145,24 @@
   </dependencies>
   <profiles>
     <profile>
-      <id>do-not-deploy</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <wildfly-skip>true</wildfly-skip>
-      </properties>
+      <id>prefs</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-arc</groupId>
+          <artifactId>dcm4chee-arc-conf-prefs</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
-      <id>wildfly-deploy</id>
-      <properties>
-        <wildfly-skip>false</wildfly-skip>
-        <wildfly-hostname>127.0.0.1</wildfly-hostname>
-        <wildfly-port>9990</wildfly-port>
-      </properties>
+      <id>ldap</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-arc</groupId>
+          <artifactId>dcm4chee-arc-conf-ldap</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
   <build>
@@ -183,25 +173,6 @@
         <configuration>
           <classifier>${db}</classifier>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.wildfly.plugins</groupId>
-        <artifactId>wildfly-maven-plugin</artifactId>
-        <version>1.0.1.Final</version>
-        <configuration>
-          <hostname>${wildfly-hostname}</hostname>
-          <port>${wildfly-port}</port>
-          <filename>${project.build.finalName}-${db}.${project.packaging}</filename>
-          <skip>${wildfly-skip}</skip>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>install</phase>
-            <goals>
-              <goal>deploy</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

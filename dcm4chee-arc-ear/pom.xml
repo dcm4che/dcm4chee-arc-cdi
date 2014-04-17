@@ -57,6 +57,7 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-stgcmt-scp</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -94,11 +95,13 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-mpps-scu</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-ian-scu</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -127,18 +130,14 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-war</artifactId>
+      <artifactId>dcm4chee-arc-war-skinny</artifactId>
       <version>${project.version}</version>
-      <classifier>${db}</classifier>
       <type>war</type>
     </dependency>
   </dependencies>
   <profiles>
     <profile>
       <id>prefs</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <dependencies>
         <dependency>
           <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -149,11 +148,6 @@
     </profile>
     <profile>
       <id>ldap</id>
-      <activation>
-        <property>
-          <name>ldap</name>
-        </property>
-      </activation>
       <dependencies>
         <dependency>
           <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -171,13 +165,11 @@
         <configuration>
           <classifier>${db}</classifier>
           <defaultLibBundleDir>lib</defaultLibBundleDir>
-          <skinnyWars>true</skinnyWars>
           <modules>
             <webModule>
               <groupId>org.dcm4che.dcm4chee-arc</groupId>
-              <artifactId>dcm4chee-arc-war</artifactId>
+              <artifactId>dcm4chee-arc-war-skinny</artifactId>
               <contextRoot>dcm4chee-arc</contextRoot>
-              <bundleFileName>dcm4chee-arc-war-${project.version}.jar</bundleFileName>
             </webModule>
           </modules>
         </configuration>
