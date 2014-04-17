@@ -38,18 +38,14 @@
 
 package org.dcm4chee.archive.query.scp;
 
-
 import java.util.EnumSet;
-
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.ExtendedNegotiation;
@@ -77,7 +73,7 @@ public class CFindSCP extends BasicCFindSCP {
     private QueryService queryService;
     
     @Inject
-    private Event<QueryEvent> queryEvent;
+    private Event<QueryEvent> queryEvent; 
     
     public CFindSCP(String sopClass, String... qrLevels) {
         super(sopClass);
@@ -94,33 +90,37 @@ public class CFindSCP extends BasicCFindSCP {
         EnumSet<QueryOption> queryOpts = QueryOption.toOptions(extNeg);
         boolean relational = queryOpts.contains(QueryOption.RELATIONAL);
         qrlevel.validateQueryKeys(keys, rootLevel, relational);
-
+        
         ApplicationEntity ae = as.getApplicationEntity();
         ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
         try {
             QueryParam queryParam =  queryService.getQueryParam(
                     as, as.getRemoteAET(), arcAE, queryOpts);
-            IDWithIssuer[] pids = queryService.queryPatientIDs(arcAE, keys, queryParam);
+            Attributes tempCache = new Attributes();
+            tempCache.addAll(keys);
             QueryContext query = queryService.createQueryContext(qrlevel, queryService);
+            query.setKeysOriginal(tempCache);
+            IDWithIssuer[] pids=null;
             try {
                 query.setArchiveAEExtension(arcAE);
+                query.setKeys(keys);
+                queryService.coerceAttributesForRequest(query,as.getRemoteAET());
+                pids= queryService.queryPatientIDs(arcAE, keys, queryParam);
                 query.setQueryParam(queryParam);
                 query.setPatientIDs(pids);
-                //set key cache and coercie attributes
-                query.setKeys(keys);
                 query.initQuery();
                 query.executeQuery();
             } catch (Exception e) {
                 query.close();
                 throw e;
             } finally {
-                queryEvent.fire(new QueryEvent(keys, pids, 
+                queryEvent.fire(new QueryEvent(query.getKeysOriginal(), pids, 
                         rq.getString(Tag.AffectedSOPClassUID),
                         ae.getDevice(),
                         new LocalAssociationParticipant(as)));
             }
             //return the cached keys
-            return new QueryTaskImpl(as, pc, rq, keys, queryParam,
+            return new QueryTaskImpl(as, pc, rq, query.getKeysOriginal(), queryParam,
                     rootLevel, query, queryService);
         } catch (DicomServiceException e) {
             throw e;

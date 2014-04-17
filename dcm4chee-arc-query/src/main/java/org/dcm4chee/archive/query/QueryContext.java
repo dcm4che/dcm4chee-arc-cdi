@@ -62,8 +62,12 @@ public interface QueryContext {
     void setQueryParam(QueryParam queryParam);
 
     Attributes getKeys();
+    
+    Attributes getKeysOriginal();
 
     void setKeys(Attributes keys);
+    
+    void setKeysOriginal(Attributes keys);
 
     IDWithIssuer[] getPatientIDs();
 

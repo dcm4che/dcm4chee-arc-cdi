@@ -66,7 +66,7 @@ class QueryTaskImpl extends BasicQueryTask {
             QueryRetrieveLevel modelRootLevel, QueryContext query,
             QueryService queryService)
             throws Exception {
-        super(as, pc, rq, keys);
+        super(as, pc, rq, keys); 
         setOptionalKeysNotSupported(query.optionalKeysNotSupported());
         this.query = query;
         this.modelRootLevel = modelRootLevel;

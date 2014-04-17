@@ -80,7 +80,7 @@ public abstract class AbstractQueryContext implements QueryContext {
  
     private boolean optionalKeyNotSupported;
 
-    //TODO-add keys cache 
+    private Attributes keysOriginal;
     
     private final HashMap<String,Object> properties = new HashMap<String,Object>();
     
@@ -103,12 +103,23 @@ public abstract class AbstractQueryContext implements QueryContext {
     public void setArchiveAEExtension(ArchiveAEExtension arcAE) {
         this.arcAE = arcAE;
     }
-    //TODO-add keys cache getter
+    
+    @Override
+    public Attributes getKeysOriginal() {
+        return keysOriginal;
+    }
+    
     @Override
     public Attributes getKeys() {
         return keys;
     }
-    //TODO-add keys cache setter
+    
+    @Override
+    public void setKeysOriginal(Attributes keys)
+    {
+	this.keysOriginal = keys;
+    }
+    
     @Override
     public void setKeys(Attributes keys) {
         this.keys = keys;

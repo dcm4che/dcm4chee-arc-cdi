@@ -331,7 +331,10 @@ public class StoreServiceImpl implements StoreService {
     public void fireStoreEvent(StoreContext context) {
         storeEvent.fire(context);
     }
-
+    /* coerceAttributes
+     * applies a loaded XSL stylesheet on the keys if given
+     *  currently 15/4/2014 modifies date and time attributes in the keys per request
+     */
     @Override
     public void coerceAttributes(StoreContext context)
             throws DicomServiceException {
@@ -340,7 +343,6 @@ public class StoreServiceImpl implements StoreService {
             ArchiveAEExtension arcAE = session.getArchiveAEExtension();
             Attributes attrs = context.getAttributes();
             TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
-            
             //Time zone store adjustments
             if(archiveTimeZone!=null){
         	
@@ -352,7 +354,6 @@ public class StoreServiceImpl implements StoreService {
                 }
                 else
                 {
-            	
             	ApplicationEntity remoteAE = aeCache.findApplicationEntity(session.getRemoteAET());
             	sourceTimeZoneCache = remoteAE.getDevice().getTimeZoneOfDevice();
             	
@@ -360,17 +361,15 @@ public class StoreServiceImpl implements StoreService {
             	{
             	    sourceTimeZoneCache=archiveTimeZone;
             	}
-            	
             	attrs.setDefaultTimeZone(sourceTimeZoneCache);
+            	attrs.setTimezone(sourceTimeZoneCache);
             	attrs.setTimezone(archiveTimeZone);
                 }
-            
             }
             else
             {
         	sourceTimeZoneCache = TimeZone.getDefault();
             }
-            
             Attributes modified = context.getCoercedAttributes();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID),

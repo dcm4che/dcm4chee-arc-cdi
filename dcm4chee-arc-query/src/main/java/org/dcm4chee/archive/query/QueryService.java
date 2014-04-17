@@ -42,7 +42,9 @@ import java.util.EnumSet;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.QueryOption;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
@@ -82,5 +84,7 @@ public interface QueryService {
 
     int calculateNumberOfStudyRelatedInstance(Long studyPk,
             QueryParam queryParam);
-
+    
+    void coerceAttributesForRequest(QueryContext context, String sourceAET) throws DicomServiceException;
+    void coerceAttributesForResponse(QueryContext context, String sourceAET) throws DicomServiceException;
 }
