@@ -70,7 +70,7 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
-class RetrieveTaskImpl extends BasicRetrieveTask {
+class RetrieveTaskImpl extends BasicRetrieveTask<InstanceLocator> {
 
 
     private final RetrieveContext retrieveContext;
