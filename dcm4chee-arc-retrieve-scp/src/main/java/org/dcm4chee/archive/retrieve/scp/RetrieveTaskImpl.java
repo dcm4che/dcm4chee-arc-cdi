@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.util.List;
 
 import javax.enterprise.event.Event;
-import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -58,19 +57,16 @@ import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicRetrieveTask;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
-import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
-import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
-class RetrieveTaskImpl extends BasicRetrieveTask {
+class RetrieveTaskImpl extends BasicRetrieveTask<InstanceLocator> {
 
 
     private final RetrieveContext retrieveContext;
