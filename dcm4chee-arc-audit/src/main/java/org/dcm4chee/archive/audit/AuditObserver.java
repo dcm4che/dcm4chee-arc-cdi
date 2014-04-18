@@ -68,6 +68,7 @@ import org.dcm4chee.archive.event.ConnectionEvent;
 import org.dcm4chee.archive.event.StartStopEvent;
 import org.dcm4chee.archive.mima.impl.PixQueryEvent;
 import org.dcm4chee.archive.query.impl.QueryEvent;
+import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 import org.dcm4chee.archive.store.StoreContext;
@@ -168,7 +169,7 @@ public class AuditObserver {
         
         AuditLogger logger = getLogger(event.getDevice());
         
-        List<InstanceLocator> success = new ArrayList<InstanceLocator>();
+        List<ArchiveInstanceLocator> success = new ArrayList<ArchiveInstanceLocator>();
         
         //completed and warning instances are considered as "success"
         //failed instances are considered "minor failures", unless all the instances

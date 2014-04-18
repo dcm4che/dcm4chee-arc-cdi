@@ -41,7 +41,6 @@ package org.dcm4chee.archive.retrieve.impl;
 import java.util.List;
 
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.dto.Participant;
 
 /**
@@ -55,12 +54,12 @@ public class RetrieveBeforeSendEvent extends RetrieveEvent {
      * @param source
      * @param destination
      * @param device
-     * @param instances
+     * @param matches
      */
     public RetrieveBeforeSendEvent(Participant requestor, Participant source,
             Participant destination, Device device,
-            List<InstanceLocator> instances) {
-        super(requestor, source, destination, device, instances);
+            List<ArchiveInstanceLocator> matches) {
+        super(requestor, source, destination, device, matches);
         // TODO Auto-generated constructor stub
     }    
 }

@@ -76,6 +76,7 @@ import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
+import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.jboss.resteasy.plugins.providers.multipart.ContentIDUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.jboss.resteasy.plugins.providers.multipart.OutputPart;
@@ -240,7 +241,7 @@ public class WadoRS extends Wado{
             @PathParam("StudyInstanceUID") String studyInstanceUID) {
         init("retrieveStudy");
         
-        List<InstanceLocator> instances =
+        List<ArchiveInstanceLocator> instances =
                 retrieveService.calculateMatches(studyInstanceUID, null, null, queryParam);
         
         return retrieve(instances);
@@ -253,7 +254,7 @@ public class WadoRS extends Wado{
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
         init("retrieveSeries");
         
-        List<InstanceLocator> instances =
+        List<ArchiveInstanceLocator> instances =
                 retrieveService.calculateMatches(studyInstanceUID, seriesInstanceUID, null, queryParam);
         
         return retrieve(instances);
@@ -267,7 +268,7 @@ public class WadoRS extends Wado{
             @PathParam("SOPInstanceUID") String sopInstanceUID) {
         init("retrieveInstance");
         
-        List<InstanceLocator> instances =
+        List<ArchiveInstanceLocator> instances =
                 retrieveService.calculateMatches(studyInstanceUID, seriesInstanceUID, sopInstanceUID, queryParam);
         
         return retrieve(instances);
@@ -283,7 +284,7 @@ public class WadoRS extends Wado{
             @PathParam("FrameList") FrameList frameList) {
         init("retrieveFrame");
                 
-        List<InstanceLocator> instances =
+        List<ArchiveInstanceLocator> instances =
                 retrieveService.calculateMatches(studyInstanceUID, seriesInstanceUID, sopInstanceUID, queryParam);
         
         if (instances == null || instances.size()==0)
@@ -321,13 +322,13 @@ public class WadoRS extends Wado{
             @PathParam("StudyInstanceUID") String studyInstanceUID) {
         init("retrieveMetadata");
                 
-        List<InstanceLocator> instances =
+        List<ArchiveInstanceLocator> instances =
                 retrieveService.calculateMatches(studyInstanceUID, null, null, queryParam);
         
         return retrieveMetadata(instances);
     }
 
-    private Response retrieve(List<InstanceLocator> refs) {
+    private Response retrieve(List<ArchiveInstanceLocator> refs) {
         if (refs.isEmpty())
             throw new WebApplicationException(Status.NOT_FOUND);
 
@@ -389,7 +390,7 @@ public class WadoRS extends Wado{
     }
 
 
-    private Response retrieveMetadata(List<InstanceLocator> refs) {
+    private Response retrieveMetadata(List<ArchiveInstanceLocator> refs) {
         if (refs.isEmpty())
             throw new WebApplicationException(Status.NOT_FOUND);
 

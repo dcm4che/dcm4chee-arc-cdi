@@ -60,7 +60,7 @@ import org.junit.Test;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class StoreTest extends GenericAuditTest{
+public class StoreTest extends GenericAuditTest{ 
     
     @Test
     public void testStoreSampleSend () throws Exception {

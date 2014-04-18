@@ -71,26 +71,28 @@ import org.hibernate.StatelessSession;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @ApplicationScoped
 public class DefaultQueryService implements QueryService {
 
-    @PersistenceContext(unitName="dcm4chee-arc")
+    @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
     @Inject
     QueryServiceEJB ejb;
-    
+
     @Inject
     private IApplicationEntityCache aeCache;
-	
+
     StatelessSession openStatelessSession() {
-        return em.unwrap(Session.class).getSessionFactory().openStatelessSession();
+        return em.unwrap(Session.class).getSessionFactory()
+                .openStatelessSession();
     }
 
     @Override
     public QueryContext createQueryContext(QueryRetrieveLevel qrlevel,
-            QueryService queryService){
+            QueryService queryService) {
         switch (qrlevel) {
         case PATIENT:
             return queryService.createPatientQueryContext(queryService);
@@ -151,8 +153,8 @@ public class DefaultQueryService implements QueryService {
     }
 
     @Override
-    public IDWithIssuer[] queryPatientIDs(
-            ArchiveAEExtension aeExt, Attributes keys, QueryParam queryParam) {
+    public IDWithIssuer[] queryPatientIDs(ArchiveAEExtension aeExt,
+            Attributes keys, QueryParam queryParam) {
         IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
         return pid == null ? IDWithIssuer.EMPTY : new IDWithIssuer[] { pid };
     }
@@ -163,141 +165,145 @@ public class DefaultQueryService implements QueryService {
 
     @Override
     public void adjustMatch(QueryContext query, Attributes match) {
-        
+
     }
 
-    /* coerceAttributesForRequest
-     * applies a loaded XSL stylesheet on the keys per request if given
-     *  currently 17/4/2014 modifies date and time attributes in the keys per request
+    /*
+     * coerceAttributesForRequest applies a loaded XSL stylesheet on the keys
+     * per request if given currently 17/4/2014 modifies date and time
+     * attributes in the keys per request
      */
     @Override
-    public void coerceAttributesForRequest(QueryContext context, String sourceAET)
-	    throws DicomServiceException {
-	
-	 ApplicationEntity sourceAE = null;
-	try {
-	    sourceAE = aeCache.findApplicationEntity(sourceAET);
-	} catch (ConfigurationException e1) {
-	    e1.printStackTrace();
-	}
-	
-	try {
-            
+    public void coerceAttributesForRequest(QueryContext context,
+            String sourceAET) throws DicomServiceException {
+
+        ApplicationEntity sourceAE = null;
+        try {
+            sourceAE = aeCache.findApplicationEntity(sourceAET);
+        } catch (ConfigurationException e1) {
+            e1.printStackTrace();
+        }
+
+        try {
+
             ArchiveAEExtension arcAE = context.getArchiveAEExtension();
             Attributes attrs = context.getKeys();
-            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
-            TimeZone sourceTimeZone = sourceAE.getDevice().getTimeZoneOfDevice();
+            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                    .getTimeZoneOfDevice();
+            TimeZone sourceTimeZone = sourceAE.getDevice()
+                    .getTimeZoneOfDevice();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
-                    attrs.getString(Tag.SOPClassUID),
-                    Dimse.C_FIND_RQ, TransferCapability.Role.SCP, 
-                    sourceAET);
+                    attrs.getString(Tag.SOPClassUID), Dimse.C_FIND_RQ,
+                    TransferCapability.Role.SCP, sourceAET);
             if (tpl != null) {
-		attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false));
+                attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false));
             }
-            //Time zone query req adjustments
-            if(archiveTimeZone!=null){
-                if(attrs.contains(Tag.TimezoneOffsetFromUTC))
-                {
-            	attrs.setTimezone(archiveTimeZone);
-            	context.setCachedTimeZoneFromTag(attrs.getString(Tag.TimezoneOffsetFromUTC));
+            // Time zone query req adjustments
+            if (archiveTimeZone != null) {
+                if (attrs.contains(Tag.TimezoneOffsetFromUTC)) {
+                    attrs.setTimezone(archiveTimeZone);
+                    context.setCachedTimeZoneFromTag(attrs
+                            .getString(Tag.TimezoneOffsetFromUTC));
+                } else if (sourceTimeZone != null) {
+                    attrs.setDefaultTimeZone(sourceTimeZone);
+                    attrs.setTimezone(sourceTimeZone);
+                    attrs.setTimezone(archiveTimeZone);
                 }
-                else if(sourceTimeZone!=null)
-                {            	
-            	attrs.setDefaultTimeZone(sourceTimeZone);
-            	attrs.setTimezone(sourceTimeZone);
-            	attrs.setTimezone(archiveTimeZone);
-                }
-                //else assume archive time
+                // else assume archive time
             }
-            
-           
+
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-	
+
     }
-    /* coerceAttributesForResponse
-     * applies a loaded XSL stylesheet on the keys per response if given
-     *  currently 17/4/2014 modifies date and time attributes in the keys per response
+
+    /*
+     * coerceAttributesForResponse applies a loaded XSL stylesheet on the keys
+     * per response if given currently 17/4/2014 modifies date and time
+     * attributes in the keys per response
      */
     @Override
-    public void coerceAttributesForResponse(Attributes match,QueryContext context, String sourceAET)
-	    throws DicomServiceException {
-	 
-	 ApplicationEntity sourceAE = null;
-		try {
-		    sourceAE = aeCache.findApplicationEntity(sourceAET);
-		} catch (ConfigurationException e1) {
-		    e1.printStackTrace();
-		}
-		try {
-	            
-	            ArchiveAEExtension arcAE = context.getArchiveAEExtension();
-	            Attributes attrs = match;
-	            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
-	            TimeZone sourceTimeZone = sourceAE.getDevice().getTimeZoneOfDevice();
-	            Templates tpl = arcAE.getAttributeCoercionTemplates(
-	                    attrs.getString(Tag.SOPClassUID),
-	                    Dimse.C_FIND_RSP, TransferCapability.Role.SCU, 
-	                    sourceAET);
-	            if (tpl != null) {
-			attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false));
-	            }
-	            //Time zone query req adjustments
-	            if(archiveTimeZone!=null){
-	        	String tmpTagValue=context.getCachedTimeZoneFromTag();
-	                if(tmpTagValue!=null)
-	                {
-	                attrs.setDefaultTimeZone(archiveTimeZone);
-	            	attrs.setTimezoneOffsetFromUTC(context.getCachedTimeZoneFromTag());
-	                }
-	                else if(sourceTimeZone!=null)
-	                {    
-	                    int offsetFromUTC = sourceTimeZone.getRawOffset();
-	                    if(attrs.contains(Tag.StudyDate))
-	                    {
-	                	offsetFromUTC = sourceTimeZone.getOffset(attrs.getDate(Tag.StudyDate).getTime());
-	                    }
-	            	attrs.setDefaultTimeZone(archiveTimeZone);
-	            	attrs.setTimezone(archiveTimeZone);
-	            	attrs.setTimezone(sourceTimeZone);
-	                String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
-	            	attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""+offsetString);
-	                }
-	                else //assumed in archive time
-	                {
-	                    int offsetFromUTC = archiveTimeZone.getRawOffset();
-	                    if(attrs.contains(Tag.StudyDate))
-	                    {
-	                	offsetFromUTC = archiveTimeZone.getOffset(attrs.getDate(Tag.StudyDate).getTime());
-	                    }
-	                    String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
-	                    attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""+offsetString);
-	                }
-	            }
-	            
-	           
-	        } catch (Exception e) {
-	            throw new DicomServiceException(Status.UnableToProcess, e);
-	        }
+    public void coerceAttributesForResponse(Attributes match,
+            QueryContext context, String sourceAET)
+            throws DicomServiceException {
+
+        ApplicationEntity sourceAE = null;
+        try {
+            sourceAE = aeCache.findApplicationEntity(sourceAET);
+        } catch (ConfigurationException e1) {
+            e1.printStackTrace();
+        }
+        try {
+
+            ArchiveAEExtension arcAE = context.getArchiveAEExtension();
+            Attributes attrs = match;
+            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                    .getTimeZoneOfDevice();
+            TimeZone sourceTimeZone = sourceAE.getDevice()
+                    .getTimeZoneOfDevice();
+            Templates tpl = arcAE.getAttributeCoercionTemplates(
+                    attrs.getString(Tag.SOPClassUID), Dimse.C_FIND_RSP,
+                    TransferCapability.Role.SCU, sourceAET);
+            if (tpl != null) {
+                attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false));
+            }
+            // Time zone query req adjustments
+            if (archiveTimeZone != null) {
+                String tmpTagValue = context.getCachedTimeZoneFromTag();
+                if (tmpTagValue != null) {
+                    attrs.setDefaultTimeZone(archiveTimeZone);
+                    attrs.setTimezoneOffsetFromUTC(context
+                            .getCachedTimeZoneFromTag());
+                } else if (sourceTimeZone != null) {
+                    int offsetFromUTC = sourceTimeZone.getRawOffset();
+                    if (attrs.contains(Tag.StudyDate)) {
+                        offsetFromUTC = sourceTimeZone.getOffset(attrs.getDate(
+                                Tag.StudyDate).getTime());
+                    }
+                    attrs.setDefaultTimeZone(archiveTimeZone);
+                    attrs.setTimezone(archiveTimeZone);
+                    attrs.setTimezone(sourceTimeZone);
+                    String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
+                    attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""
+                            + offsetString);
+                } else // assumed in archive time
+                {
+                    int offsetFromUTC = archiveTimeZone.getRawOffset();
+                    if (attrs.contains(Tag.StudyDate)) {
+                        offsetFromUTC = archiveTimeZone.getOffset(attrs
+                                .getDate(Tag.StudyDate).getTime());
+                    }
+                    else if(attrs.contains(Tag.ContentDate))
+                    {
+                        offsetFromUTC = archiveTimeZone.getOffset(attrs
+                                .getDate(Tag.ContentDate).getTime());
+                    }
+                    String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
+                    attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""
+                            + offsetString);
+                }
+            }
+
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.UnableToProcess, e);
+        }
     }
-    public String timeOffsetInMillisToDICOMTimeOffset(int millis)
-    {
-    int mns = millis/(1000*60) ;
-    String h = ""+(int) mns/60;
-    if(h.length()==1)
-    {
-        String tmp = h;
-        h="0"+tmp;
-    }
-    String m = ""+(int) (mns%60); 
-    if(m.length()==1)
-    {
-        String tmp = m;
-        m="0"+tmp;
-    }
-    String sign = (int) Math.signum(mns)>0?"+":"-";
-	return sign+h+m;
+
+    public String timeOffsetInMillisToDICOMTimeOffset(int millis) {
+        int mns = millis / (1000 * 60);
+        String h = "" + (int) mns / 60;
+        if (h.length() == 1) {
+            String tmp = h;
+            h = "0" + tmp;
+        }
+        String m = "" + (int) (mns % 60);
+        if (m.length() == 1) {
+            String tmp = m;
+            m = "0" + tmp;
+        }
+        String sign = (int) Math.signum(mns) > 0 ? "+" : "-";
+        return sign + h + m;
     }
 
 }

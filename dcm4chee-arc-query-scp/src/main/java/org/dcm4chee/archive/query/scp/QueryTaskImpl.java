@@ -54,6 +54,7 @@ import org.dcm4chee.archive.query.QueryService;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 class QueryTaskImpl extends BasicQueryTask {
 

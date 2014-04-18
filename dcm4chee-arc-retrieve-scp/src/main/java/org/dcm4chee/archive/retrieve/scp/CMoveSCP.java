@@ -72,6 +72,7 @@ import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 
@@ -135,8 +136,8 @@ public class CMoveSCP extends BasicCMoveSCP {
                     retrieveService, as.getRemoteAET(), arcAE);
             context.setDestinationAE(destAE);
             IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
-            List<InstanceLocator> matches =
-                    retrieveService.calculateMatches(pids, keys, queryParam);
+            List<ArchiveInstanceLocator> matches =
+                     retrieveService.calculateMatches(pids, keys, queryParam);
             if (matches.isEmpty())
                 return null;
             
@@ -176,7 +177,7 @@ public class CMoveSCP extends BasicCMoveSCP {
     }
 
     private AAssociateRQ makeAAssociateRQ(String callingAET, String calledAET,
-            List<InstanceLocator> matches) {
+            List<ArchiveInstanceLocator> matches) {
         AAssociateRQ aarq = new AAssociateRQ();
         aarq.setCalledAET(calledAET);
         aarq.setCallingAET(callingAET);

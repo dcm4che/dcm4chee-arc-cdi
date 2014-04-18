@@ -82,6 +82,7 @@ import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
+import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 
 /**
  * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.
@@ -211,7 +212,7 @@ public class WadoURI extends Wado  {
         
         checkRequest();
         
-        List<InstanceLocator> ref =
+        List<ArchiveInstanceLocator> ref =
                 retrieveService.calculateMatches(studyUID, seriesUID, objectUID, queryParam);
         if (ref == null)
             throw new WebApplicationException(Status.NOT_FOUND);
@@ -377,7 +378,7 @@ public class WadoURI extends Wado  {
         param.setWindowCenter(windowCenter);
         param.setWindowWidth(windowWidth);
         if (presentationUID != null) {
-            List<InstanceLocator> ref = retrieveService.calculateMatches(
+            List<ArchiveInstanceLocator> ref = retrieveService.calculateMatches(
                     studyUID, presentationSeriesUID, presentationUID,queryParam);
             if (ref == null || ref.size()==0)
                 throw new WebApplicationException(Status.NOT_FOUND);

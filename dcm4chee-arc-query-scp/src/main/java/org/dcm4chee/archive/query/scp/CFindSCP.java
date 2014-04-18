@@ -63,6 +63,7 @@ import org.dcm4chee.archive.query.impl.QueryEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 public class CFindSCP extends BasicCFindSCP {
 

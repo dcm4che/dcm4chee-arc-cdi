@@ -40,9 +40,9 @@ package org.dcm4chee.archive.retrieve.scp;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.enterprise.event.Event;
-import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -58,29 +58,28 @@ import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicRetrieveTask;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
-import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
+import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
-import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-class RetrieveTaskImpl extends BasicRetrieveTask<InstanceLocator> {
-
+class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
 
     private final RetrieveContext retrieveContext;
     private final boolean withoutBulkData;
     private Event<RetrieveAfterSendEvent> retrieveEvent;
 
-    public RetrieveTaskImpl(Dimse rq, Association rqas,
-            PresentationContext pc, Attributes rqCmd, List<InstanceLocator> matches,
-            Association storeas, RetrieveContext retrieveContext, boolean withoutBulkData,
-            Event<RetrieveAfterSendEvent> retrieveEvent) {
+    public RetrieveTaskImpl(Dimse rq, Association rqas, PresentationContext pc,
+            Attributes rqCmd, List<ArchiveInstanceLocator> matches,
+            Association storeas, RetrieveContext retrieveContext,
+            boolean withoutBulkData, Event<RetrieveAfterSendEvent> retrieveEvent) {
         super(rq, rqas, pc, rqCmd, matches, storeas);
         this.retrieveEvent = retrieveEvent;
         this.retrieveContext = retrieveContext;
@@ -88,16 +87,20 @@ class RetrieveTaskImpl extends BasicRetrieveTask<InstanceLocator> {
     }
 
     @Override
-    protected String selectTransferSyntaxFor(Association storeas, InstanceLocator inst) {
+    protected String selectTransferSyntaxFor(Association storeas,
+            ArchiveInstanceLocator inst) {
         if (storeas.getTransferSyntaxesFor(inst.cuid).contains(inst.tsuid))
             return inst.tsuid;
-        
+
         return UID.ExplicitVRLittleEndian;
     }
 
     @Override
-    protected DataWriter createDataWriter(InstanceLocator inst, String tsuid)
-            throws IOException {
+    protected DataWriter createDataWriter(ArchiveInstanceLocator inst,
+            String tsuid) throws IOException {
+        ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
+        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                .getTimeZoneOfDevice();
         Attributes attrs;
         DicomInputStream in = new DicomInputStream(inst.getFile());
         try {
@@ -108,8 +111,15 @@ class RetrieveTaskImpl extends BasicRetrieveTask<InstanceLocator> {
                 in.setIncludeBulkData(IncludeBulkData.URI);
                 attrs = in.readDataset(-1, -1);
             }
+
         } finally {
             SafeClose.close(in);
+        }
+
+        if (archiveTimeZone != null) {
+            ArchiveInstanceLocator archInst = (ArchiveInstanceLocator) inst;
+            retrieveContext.getRetrieveService().coerceFileBeforeMerge(
+                    archInst, retrieveContext, storeas.getRemoteAET(), attrs);
         }
         attrs.addAll((Attributes) inst.getObject());
         if (!tsuid.equals(inst.tsuid))
@@ -123,16 +133,13 @@ class RetrieveTaskImpl extends BasicRetrieveTask<InstanceLocator> {
     @Override
     protected void close() {
         super.close();
-        
+
         retrieveEvent.fire(new RetrieveAfterSendEvent(
                 new RemoteAssociationParticipant(rqas),
-                new LocalAssociationParticipant(rqas), 
-                new RemoteAssociationParticipant(storeas),
-                rqas.getApplicationEntity().getDevice(),
-                insts,
-                completed,
-                warning,
-                failed));
+                new LocalAssociationParticipant(rqas),
+                new RemoteAssociationParticipant(storeas), rqas
+                        .getApplicationEntity().getDevice(), insts, completed,
+                warning, failed));
     }
 
- }
+}

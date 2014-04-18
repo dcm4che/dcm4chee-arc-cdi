@@ -41,7 +41,6 @@ package org.dcm4chee.archive.retrieve.impl;
 import java.util.List;
 
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.dto.Participant;
 
 /**
@@ -52,25 +51,25 @@ public class RetrieveEvent {
     
     private Participant source, destination, requestor;
     private Device device;
-    List<InstanceLocator> instances;
+    List<ArchiveInstanceLocator> instances;
 
     
     /**
      * @param source
      * @param destination
      * @param remoteAET
-     * @param instances
+     * @param matches
      */
     public RetrieveEvent(Participant requestor, Participant source, 
             Participant destination,
             Device device,
-           List<InstanceLocator> instances) {
+           List<ArchiveInstanceLocator> matches) {
         super();
         this.source = source;
         this.destination = destination;
         this.requestor = requestor;
         this.device = device;
-        this.instances = instances;
+        this.instances = matches;
     }
     
     public Participant getRequestor() {
@@ -89,7 +88,7 @@ public class RetrieveEvent {
         return device;
     }
     
-    public List<InstanceLocator> getInstances() {
+    public List<ArchiveInstanceLocator> getInstances() {
         return instances;
     }
     

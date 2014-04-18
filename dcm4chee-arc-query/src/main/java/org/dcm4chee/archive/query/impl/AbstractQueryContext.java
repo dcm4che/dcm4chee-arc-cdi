@@ -57,6 +57,7 @@ import com.mysema.query.types.OrderSpecifier;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 public abstract class AbstractQueryContext implements QueryContext {
 

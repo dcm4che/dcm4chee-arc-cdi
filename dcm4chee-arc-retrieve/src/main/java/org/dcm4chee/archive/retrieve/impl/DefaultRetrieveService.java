@@ -40,18 +40,25 @@ package org.dcm4chee.archive.retrieve.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.xml.transform.Templates;
 
+import org.dcm4che3.conf.api.ConfigurationException;
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
@@ -79,12 +86,16 @@ import com.mysema.query.jpa.hibernate.HibernateQuery;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @ApplicationScoped
 public class DefaultRetrieveService implements RetrieveService {
 
-    @PersistenceContext(unitName="dcm4chee-arc")
+    @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
+
+    @Inject
+    private IApplicationEntityCache aeCache;
 
     @Override
     public RetrieveContext createRetrieveContext(RetrieveService service,
@@ -93,15 +104,16 @@ public class DefaultRetrieveService implements RetrieveService {
     }
 
     @Override
-    public IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys) {
+    public IDWithIssuer[] queryPatientIDs(RetrieveContext context,
+            Attributes keys) {
         IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
         return pid == null ? IDWithIssuer.EMPTY : new IDWithIssuer[] { pid };
     }
 
     @Override
-    public List<InstanceLocator> calculateMatches(IDWithIssuer[] pids,
+    public List<ArchiveInstanceLocator> calculateMatches(IDWithIssuer[] pids,
             Attributes keys, QueryParam queryParam) {
-        
+
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(QueryBuilder.pids(pids, false));
         builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
@@ -110,73 +122,71 @@ public class DefaultRetrieveService implements RetrieveService {
                 keys.getStrings(Tag.SeriesInstanceUID), false));
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                 keys.getStrings(Tag.SOPInstanceUID), false));
-        
+
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNotes(queryParam));
         return query(builder);
     }
-    
+
     /**
      * Given study and/or series and/or object uids, performs the query and
      * returns references to the instances.
      */
-    public List<InstanceLocator> calculateMatches(String studyUID, String seriesUID,
-            String objectUID,QueryParam queryParam) {
-        
+    public List<ArchiveInstanceLocator> calculateMatches(String studyUID,
+            String seriesUID, String objectUID, QueryParam queryParam) {
+
         BooleanBuilder builder = new BooleanBuilder();
-        
-        if (studyUID!=null)
+
+        if (studyUID != null)
             builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
-                new String[]{studyUID}, false));
-        
-        if (seriesUID!=null)
+                    new String[] { studyUID }, false));
+
+        if (seriesUID != null)
             builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,
-                new String[]{seriesUID}, false));
-        
-        if (objectUID!=null)
+                    new String[] { seriesUID }, false));
+
+        if (objectUID != null)
             builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
-                new String[]{objectUID}, false));
-        
+                    new String[] { objectUID }, false));
+
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNotes(queryParam));
         return query(builder);
     }
-    
+
     /**
      * Executes the query.
      */
-    private List<InstanceLocator> query (BooleanBuilder builder)
-    {
+    private List<ArchiveInstanceLocator> query(BooleanBuilder builder) {
         List<Tuple> query = new HibernateQuery(em.unwrap(Session.class))
-        .from(QInstance.instance)
-        .leftJoin(QInstance.instance.fileRefs, QFileRef.fileRef)
-        .leftJoin(QFileRef.fileRef.fileSystem, QFileSystem.fileSystem)
-        .innerJoin(QInstance.instance.series, QSeries.series)
-        .innerJoin(QSeries.series.study, QStudy.study)
-        .innerJoin(QStudy.study.patient, QPatient.patient)
-        .where(builder)
-        .list(
-            QFileRef.fileRef.transferSyntaxUID,
-            QFileRef.fileRef.filePath,
-            QFileSystem.fileSystem.uri,
-            QSeries.series.pk,
-            QInstance.instance.pk,
-            QInstance.instance.sopClassUID,
-            QInstance.instance.sopInstanceUID,
-            QInstance.instance.retrieveAETs,
-            QInstance.instance.externalRetrieveAET,
-            QInstance.instance.encodedAttributes);
-        
-        return locate (query);
+                .from(QInstance.instance)
+                .leftJoin(QInstance.instance.fileRefs, QFileRef.fileRef)
+                .leftJoin(QFileRef.fileRef.fileSystem, QFileSystem.fileSystem)
+                .innerJoin(QInstance.instance.series, QSeries.series)
+                .innerJoin(QSeries.series.study, QStudy.study)
+                .innerJoin(QStudy.study.patient, QPatient.patient)
+                .where(builder)
+                .list(QFileRef.fileRef.transferSyntaxUID,
+                        QFileRef.fileRef.filePath, QFileSystem.fileSystem.uri,
+                        QSeries.series.pk, QInstance.instance.pk,
+                        QInstance.instance.sopClassUID,
+                        QInstance.instance.sopInstanceUID,
+                        QInstance.instance.retrieveAETs,
+                        QInstance.instance.externalRetrieveAET,
+                        QInstance.instance.encodedAttributes,
+                        QFileRef.fileRef.fileTimeZone);
+
+        return locate(query);
     }
 
     /**
      * Given the query result, constructs response.
      */
-    private List<InstanceLocator> locate(List<Tuple> tuples) {
-        List<InstanceLocator> locators = new ArrayList<InstanceLocator>(tuples.size());
+    private List<ArchiveInstanceLocator> locate(List<Tuple> tuples) {
+        List<ArchiveInstanceLocator> locators = new ArrayList<ArchiveInstanceLocator>(
+                tuples.size());
         long instPk = -1;
         long seriesPk = -1;
         Attributes seriesAttrs = null;
@@ -184,6 +194,7 @@ public class DefaultRetrieveService implements RetrieveService {
             String tsuid = tuple.get(0, String.class);
             String filePath = tuple.get(1, String.class);
             String fsuri = tuple.get(2, String.class);
+            String ftz = tuple.get(10, String.class);
             long nextSeriesPk = tuple.get(3, long.class);
             long nextInstPk = tuple.get(4, long.class);
             if (seriesPk != nextSeriesPk) {
@@ -216,7 +227,8 @@ public class DefaultRetrieveService implements RetrieveService {
                     uri = sb.toString();
                     attrs = null;
                 }
-                locators.add(new InstanceLocator(cuid, iuid, tsuid, uri).setObject(attrs));
+                locators.add((ArchiveInstanceLocator) new ArchiveInstanceLocator(
+                        cuid, iuid, tsuid, uri, ftz).setObject(attrs));
                 instPk = nextInstPk;
             }
         }
@@ -224,10 +236,9 @@ public class DefaultRetrieveService implements RetrieveService {
     }
 
     private Attributes getSeriesAttributes(Long seriesPk) {
-        PatientStudySeriesAttributes result = (PatientStudySeriesAttributes)
-                em.createNamedQuery(Series.PATIENT_STUDY_SERIES_ATTRIBUTES)
-                  .setParameter(1, seriesPk)
-                  .getSingleResult();
+        PatientStudySeriesAttributes result = (PatientStudySeriesAttributes) em
+                .createNamedQuery(Series.PATIENT_STUDY_SERIES_ATTRIBUTES)
+                .setParameter(1, seriesPk).getSingleResult();
         return result.getAttributes();
     }
 
@@ -235,13 +246,99 @@ public class DefaultRetrieveService implements RetrieveService {
     public void coerceRetrievedObject(RetrieveContext retrieveContext,
             String remoteAET, Attributes attrs) throws DicomServiceException {
         ArchiveAEExtension aeExt = retrieveContext.getArchiveAEExtension();
+        ApplicationEntity sourceAE = null;
         try {
             Templates tpl = aeExt.getAttributeCoercionTemplates(
-                    attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ, Role.SCU, remoteAET);
+                    attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
+                    Role.SCU, remoteAET);
             if (tpl != null)
-                attrs.update(SAXTransformer.transform(attrs, tpl, false, false), null);
+                attrs.update(
+                        SAXTransformer.transform(attrs, tpl, false, false),
+                        null);
+
+            try {
+                sourceAE = aeCache.findApplicationEntity(remoteAET);
+            } catch (ConfigurationException e1) {
+                e1.printStackTrace();
+            }
+            TimeZone archiveTimeZone = aeExt.getApplicationEntity().getDevice()
+                    .getTimeZoneOfDevice();
+            TimeZone sourceTimeZone = sourceAE.getDevice()
+                    .getTimeZoneOfDevice();
+            if (sourceTimeZone != null) {
+                attrs.setDefaultTimeZone(archiveTimeZone);
+                attrs.setTimezone(sourceTimeZone);
+                // in device time - add tag with offset from device
+                int offsetFromUTC = sourceTimeZone.getRawOffset();
+                if (attrs.contains(Tag.StudyDate)) {
+                    offsetFromUTC = sourceTimeZone.getOffset(attrs.getDate(
+                            Tag.StudyDate).getTime());
+                }
+                else if(attrs.contains(Tag.ContentDate))
+                {
+                    offsetFromUTC = archiveTimeZone.getOffset(attrs
+                            .getDate(Tag.ContentDate).getTime());
+                }
+                String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
+                attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""
+                        + offsetString);
+            } else {
+                // in archive time - add tag with offset from archive
+                int offsetFromUTC = archiveTimeZone.getRawOffset();
+                if (attrs.contains(Tag.StudyDate)) {
+                    offsetFromUTC = archiveTimeZone.getOffset(attrs.getDate(
+                            Tag.StudyDate).getTime());
+                }
+                else if(attrs.contains(Tag.ContentDate))
+                {
+                    offsetFromUTC = archiveTimeZone.getOffset(attrs
+                            .getDate(Tag.ContentDate).getTime());
+                }
+                String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
+                attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""
+                        + offsetString);
+            }
+
         } catch (Exception e) {
-            throw new  DicomServiceException(Status.UnableToProcess, e);
+            throw new DicomServiceException(Status.UnableToProcess, e);
         }
+    }
+
+    @Override
+    public void coerceFileBeforeMerge(ArchiveInstanceLocator inst,
+            RetrieveContext retrieveContext, String remoteAET, Attributes attrs)
+            throws DicomServiceException {
+        // here the source time zone is the one in the db
+        try {
+
+            ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
+            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                    .getTimeZoneOfDevice();
+            TimeZone sourceTimeZone = TimeZone.getTimeZone(inst
+                    .getFileTimeZoneID());
+            if (sourceTimeZone != null) {
+                attrs.setDefaultTimeZone(sourceTimeZone);
+                attrs.setTimezone(archiveTimeZone);
+            }
+
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.UnableToProcess, e);
+        }
+    }
+
+    public String timeOffsetInMillisToDICOMTimeOffset(int millis) {
+        int mns = millis / (1000 * 60);
+        String h = "" + (int) mns / 60;
+        if (h.length() == 1) {
+            String tmp = h;
+            h = "0" + tmp;
+        }
+        String m = "" + (int) (mns % 60);
+        if (m.length() == 1) {
+            String tmp = m;
+            m = "0" + tmp;
+        }
+        String sign = (int) Math.signum(mns) > 0 ? "+" : "-";
+        return sign + h + m;
     }
 }

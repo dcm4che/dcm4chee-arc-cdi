@@ -39,20 +39,17 @@
 package org.dcm4chee.archive.retrieve.scp;
 
 import java.util.EnumSet;
-import java.util.EventObject;
 import java.util.List;
 
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
@@ -68,9 +65,9 @@ import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.query.QueryService;
-import org.dcm4chee.archive.query.impl.QueryEvent;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 
@@ -131,8 +128,8 @@ public class CGetSCP extends BasicCGetSCP {
             RetrieveContext context = retrieveService.createRetrieveContext(
                     retrieveService, as.getRemoteAET(), aeExt);
             IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
-            List<InstanceLocator> matches = 
-                    retrieveService.calculateMatches(pids, keys, queryParam);
+            List<ArchiveInstanceLocator> matches = 
+                    (List<ArchiveInstanceLocator>) retrieveService.calculateMatches(pids, keys, queryParam);
             if (matches.isEmpty())
                 return null;
 

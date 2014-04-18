@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,43 +35,27 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.retrieve.impl;
 
-package org.dcm4chee.archive.retrieve;
-
-import java.util.List;
-
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 
-/**
- * Retrieve service. Used to get list of references to dicom instances.
- * 
- * @author Gunter Zeilinger <gunterze@gmail.com>
- * @author Hesham Elbadawi <bsdreko@gmail.com>
- */
-public interface RetrieveService {
+public class ArchiveInstanceLocator extends InstanceLocator {
 
-    RetrieveContext createRetrieveContext(RetrieveService service,
-            String sourceAET, ArchiveAEExtension arcAE);
-
-    IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys);
-
-    List<ArchiveInstanceLocator> calculateMatches(IDWithIssuer[] pids,
-            Attributes keys, QueryParam queryParam);
-    
-    List<ArchiveInstanceLocator> calculateMatches(String studyUID, String seriesUID,
-            String objectUID, QueryParam queryParam);
-
-    void coerceRetrievedObject(RetrieveContext retrieveContext,
-            String remoteAET, Attributes attrs) throws DicomServiceException;
-
-    void coerceFileBeforeMerge(ArchiveInstanceLocator inst,
-	    RetrieveContext retrieveContext, String remoteAET, Attributes attrs)
-	    throws DicomServiceException;
+    /**
+     * @author Hesham Elbadawi <bsdreko@gmail.com>
+     */
+    private static final long serialVersionUID = 7208477744305290578L;
+    private String fileTimeZoneID;
+    public ArchiveInstanceLocator(String cuid, String iuid, String tsuid,
+	    String uri,String fileTz) {
+	super(cuid, iuid, tsuid, uri);
+	this.fileTimeZoneID=fileTz;
+    }
+    public String getFileTimeZoneID() {
+	return fileTimeZoneID;
+    }
+    public void setFileTimeZoneID(String fileTimeZoneID) {
+	this.fileTimeZoneID = fileTimeZoneID;
+    }
 
 }
