@@ -52,6 +52,7 @@ import com.mysema.query.types.path.StringPath;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 class MatchDateTimeRange {
     
@@ -104,14 +105,14 @@ class MatchDateTimeRange {
                 predicates.and(matchUnknown(dateField, matchUnknown, 
                         range(dateField, keys.getDateRange(dateTag, null), FormatDate.DA)));
             if (containsTimeTag)
-                predicates.and(matchUnknown(timeField, matchUnknown, 
+            	predicates.and(matchUnknown(timeField, matchUnknown, 
                         range(timeField, keys.getDateRange(timeTag, null), FormatDate.TM)));
+            
         }
         return predicates;
     }
 
-
-    private static Predicate matchUnknown(StringPath field, boolean matchUnknown, 
+	private static Predicate matchUnknown(StringPath field, boolean matchUnknown, 
             Predicate predicate) {
         return matchUnknown 
             ? ExpressionUtils.or(predicate, field.eq("*"))
@@ -125,16 +126,24 @@ class MatchDateTimeRange {
             return field.loe(dt.format(endDate));
         if (endDate == null)
             return field.goe(dt.format(startDate));
-        return rangeInterval(field, startDate, endDate, dt);
+        return rangeInterval(field, startDate, endDate, dt, range);
     }
 
     private static Predicate rangeInterval(StringPath field, Date startDate,
-            Date endDate, FormatDate dt) {
+            Date endDate, FormatDate dt, DateRange range) {
         String start = dt.format(startDate);
         String end = dt.format(endDate);
-        return end.equals(start)
-            ? field.eq(start)
-            : field.between(start, end);
+    	if(dt.equals(FormatDate.TM) && range.isStartDateExeedsEndDate()){
+    		String midnightLow = "115959.999";
+    		String midnightHigh = "000000.000";
+    		return ExpressionUtils.or(field.between(start, midnightLow),field.between(midnightHigh, end));
+    	}
+    	else
+    	{
+    	     return end.equals(start)
+    	             ? field.eq(start)
+    	             : field.between(start, end);
+    	}
     }
 
     private static Predicate combinedRange(StringPath dateField, StringPath timeField, DateRange dateRange) {
