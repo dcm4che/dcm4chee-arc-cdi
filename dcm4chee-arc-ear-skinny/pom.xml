@@ -26,7 +26,7 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-patient-impl</artifactId>
+      <artifactId>dcm4chee-arc-patient-impl-skinny</artifactId>
       <version>${project.version}</version>
       <type>ejb</type>
     </dependency>

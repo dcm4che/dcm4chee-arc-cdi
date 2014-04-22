@@ -245,5 +245,6 @@
     <module>dcm4chee-arc-ear</module>
     <module>dcm4chee-arc-war-skinny</module>
     <module>dcm4chee-arc-ear-skinny</module>
+    <module>dcm4chee-arc-patient-impl-skinny</module>
   </modules>
 </project>
