@@ -69,6 +69,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @RunWith(Arquillian.class)

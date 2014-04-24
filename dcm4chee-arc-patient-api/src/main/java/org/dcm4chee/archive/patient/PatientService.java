@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.patient;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Patient;
 
@@ -61,5 +62,7 @@ public interface PatientService {
     void mergePatientByHL7(Attributes attrs, Attributes mrg, StoreParam storeParam)
             throws NonUniquePatientException, PatientMergedException,
             PatientCircularMergedException;
+
+    Patient deletePatient(IDWithIssuer idWithIssuer);
 
 }
