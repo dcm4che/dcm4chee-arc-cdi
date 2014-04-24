@@ -264,22 +264,25 @@ public class DefaultRetrieveService implements RetrieveService {
             }
             TimeZone archiveTimeZone = aeExt.getApplicationEntity().getDevice()
                     .getTimeZoneOfDevice();
-            TimeZone sourceTimeZone = sourceAE.getDevice()
-                    .getTimeZoneOfDevice();
-            attrs.setDefaultTimeZone(archiveTimeZone);
-            if (sourceTimeZone != null) {
-                attrs.setTimezone(sourceTimeZone);
-            }
-            if(!attrs.containsValue(Tag.TimezoneOffsetFromUTC))
-            {
-                if(sourceTimeZone != null)
-                attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
-                        DateUtils.formatTimezoneOffsetFromUTC(sourceTimeZone,
-                        attrs.getDate(Tag.StudyDateAndTime)));
-                else
-                attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
-                        DateUtils.formatTimezoneOffsetFromUTC(archiveTimeZone,
-                        attrs.getDate(Tag.StudyDateAndTime)));
+            if (archiveTimeZone != null) {
+                TimeZone sourceTimeZone = sourceAE.getDevice()
+                        .getTimeZoneOfDevice();
+                attrs.setDefaultTimeZone(archiveTimeZone);
+                if (sourceTimeZone != null) {
+                    attrs.setTimezone(sourceTimeZone);
+                }
+                if (!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
+                    if (sourceTimeZone != null)
+                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
+                                DateUtils.formatTimezoneOffsetFromUTC(
+                                        sourceTimeZone,
+                                        attrs.getDate(Tag.StudyDateAndTime)));
+                    else
+                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
+                                DateUtils.formatTimezoneOffsetFromUTC(
+                                        archiveTimeZone,
+                                        attrs.getDate(Tag.StudyDateAndTime)));
+                }
             }
 
         } catch (Exception e) {
