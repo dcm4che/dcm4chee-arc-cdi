@@ -44,8 +44,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.Participant;
@@ -60,31 +58,17 @@ import org.dcm4chee.archive.store.StoreSession;
 public class StoreSessionImpl implements StoreSession {
 
     private final StoreService storeService;
-    private final Participant source;
-    private final String remoteAET;
-    private final ArchiveAEExtension arcAE;
-    private final StoreParam storeParam;
-    private final MessageDigest messageDigest;
+    private Participant source;
+    private String remoteAET;
+    private ArchiveAEExtension arcAE;
+    private StoreParam storeParam;
+    private MessageDigest messageDigest;
     private FileSystem storageFileSystem;
     private Path spoolDirectory;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
 
-    public StoreSessionImpl(StoreService storeService, Participant source,
-            String remoteAET, ArchiveAEExtension arcAE)
-                    throws DicomServiceException {
+    public StoreSessionImpl(StoreService storeService) {
         this.storeService = storeService;
-        this.source = source;
-        this.remoteAET = remoteAET;
-        this.arcAE = arcAE;
-        this.storeParam = arcAE.getStoreParam();
-        try {
-            String algorithm = arcAE.getDigestAlgorithm();
-            this.messageDigest = algorithm != null
-                    ? MessageDigest.getInstance(algorithm)
-                    : null;
-        } catch (NoSuchAlgorithmException e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
     }
 
     @Override
@@ -92,8 +76,14 @@ public class StoreSessionImpl implements StoreSession {
         return arcAE.getApplicationEntity().getDevice();
     }
 
+    @Override
     public Participant getSource() {
         return source;
+    }
+
+    @Override
+    public void setSource(Participant source) {
+        this.source = source;
     }
 
     @Override
@@ -117,13 +107,38 @@ public class StoreSessionImpl implements StoreSession {
     }
 
     @Override
+    public void setRemoteAET(String remoteAET) {
+        this.remoteAET = remoteAET;
+    }
+
+    @Override
     public ArchiveAEExtension getArchiveAEExtension() {
         return arcAE;
     }
 
     @Override
+    public void setArchiveAEExtension(ArchiveAEExtension arcAE) {
+        this.arcAE = arcAE;
+        this.arcAE = arcAE;
+        this.storeParam = arcAE.getStoreParam();
+        try {
+            String algorithm = arcAE.getDigestAlgorithm();
+            this.messageDigest = algorithm != null
+                    ? MessageDigest.getInstance(algorithm)
+                    : null;
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public StoreParam getStoreParam() {
         return storeParam;
+    }
+
+    @Override
+    public void setStoreParam(StoreParam storeParam) {
+        this.storeParam = storeParam;
     }
 
     @Override
@@ -149,6 +164,11 @@ public class StoreSessionImpl implements StoreSession {
     @Override
     public MessageDigest getMessageDigest() {
         return messageDigest;
+    }
+
+    @Override
+    public void setMessageDigest(MessageDigest messageDigest) {
+        this.messageDigest = messageDigest;
     }
 
     @Override

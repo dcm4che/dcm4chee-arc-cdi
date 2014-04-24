@@ -55,9 +55,13 @@ public interface StoreSession {
 
     Participant getSource();
 
+    void setSource(Participant source);
+
     StoreService getStoreService();
 
     String getRemoteAET();
+
+    void setRemoteAET(String remoteAET);
 
     String getLocalAET();
 
@@ -71,9 +75,15 @@ public interface StoreSession {
 
     ArchiveAEExtension getArchiveAEExtension();
 
+    void setArchiveAEExtension(ArchiveAEExtension arcAE);
+
     MessageDigest getMessageDigest();
 
+    void setMessageDigest(MessageDigest messageDigest);
+
     StoreParam getStoreParam();
+
+    void setStoreParam(StoreParam storeParam);
 
     Object getProperty(String key);
 
