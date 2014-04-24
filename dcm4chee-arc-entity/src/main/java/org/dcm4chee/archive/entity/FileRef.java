@@ -82,7 +82,7 @@ public class FileRef implements Serializable {
     @Column(name = "file_tsuid", updatable = false)
     private String transferSyntaxUID;
 
-    @Basic(optional = false)
+    @Basic(optional = true)
     @Column(name = "file_time_zone", updatable = false)
     private String fileTimeZone;
     

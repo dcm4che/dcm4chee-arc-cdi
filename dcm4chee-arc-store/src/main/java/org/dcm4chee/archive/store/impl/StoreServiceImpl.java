@@ -346,29 +346,18 @@ public class StoreServiceImpl implements StoreService {
             //Time zone store adjustments
             if(archiveTimeZone!=null){
         	
-                if(attrs.contains(Tag.TimezoneOffsetFromUTC))
+                if(attrs.containsValue(Tag.TimezoneOffsetFromUTC))
                 {
-            	String offset = attrs.getString(Tag.TimezoneOffsetFromUTC);
-            	sourceTimeZoneCache = TimeZone.getTimeZone("UTC"+offset);
+            	sourceTimeZoneCache = attrs.getTimeZone();
             	attrs.setTimezone(archiveTimeZone);
                 }
-                else if(sourceTimeZoneCache != null)
+                else if(sourceTimeZoneCache == null)
                 {
-            	
-            	if(sourceTimeZoneCache==null)
-            	{
             	    sourceTimeZoneCache=archiveTimeZone;
             	}
             	attrs.setDefaultTimeZone(sourceTimeZoneCache);
-            	attrs.setTimezone(sourceTimeZoneCache);
             	attrs.setTimezone(archiveTimeZone);
                 }
-                 //else assumed in archive time    
-            }
-            else
-            {
-        	sourceTimeZoneCache = TimeZone.getDefault();
-            }
             Attributes modified = context.getCoercedAttributes();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID),

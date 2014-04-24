@@ -39,14 +39,20 @@
 package org.dcm4chee.archive.patient.impl;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.conf.AttributeFilter;
@@ -191,5 +197,37 @@ public class PatientServiceEJB implements PatientService {
             for (MPPS pps : mpps)
                 pps.setPatient(pat);
         prior.setMergedWith(pat);
+    }
+    public List<Patient> findPatients(IDWithIssuer pid) {
+        if (pid.getID() == null)
+            throw new IllegalArgumentException("Missing pid");
+
+        TypedQuery<Patient> query = em.createNamedQuery(
+                    Patient.FIND_BY_PATIENT_ID, Patient.class)
+                .setParameter(1, pid.getID());
+        List<Patient> list = query.getResultList();
+        if (pid.getIssuer() != null) {
+            for (Iterator<Patient> it = list.iterator(); it.hasNext();) {
+                Patient pat = (Patient) it.next();
+                Issuer issuer2 = pat.getIssuerOfPatientID();
+                if (issuer2 != null) {
+                    if (issuer2.matches(pid.getIssuer()))
+                        return Collections.singletonList(pat);
+                    else
+                        it.remove();
+                }
+            }
+        }
+        return list;
+    }
+    public Patient deletePatient(IDWithIssuer pid) {
+        List<Patient> list = findPatients(pid);
+        if (list.isEmpty())
+            return null;
+        if (list.size() > 1)
+            throw new NonUniqueResultException();
+        Patient patient = list.get(0);
+        em.remove(patient);
+        return patient;
     }
 }
