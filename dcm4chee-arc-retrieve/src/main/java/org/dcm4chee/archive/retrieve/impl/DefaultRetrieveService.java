@@ -62,6 +62,7 @@ import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.PatientStudySeriesAttributes;
@@ -265,38 +266,20 @@ public class DefaultRetrieveService implements RetrieveService {
                     .getTimeZoneOfDevice();
             TimeZone sourceTimeZone = sourceAE.getDevice()
                     .getTimeZoneOfDevice();
+            attrs.setDefaultTimeZone(archiveTimeZone);
             if (sourceTimeZone != null) {
-                attrs.setDefaultTimeZone(archiveTimeZone);
                 attrs.setTimezone(sourceTimeZone);
-                // in device time - add tag with offset from device
-                int offsetFromUTC = sourceTimeZone.getRawOffset();
-                if (attrs.contains(Tag.StudyDate)) {
-                    offsetFromUTC = sourceTimeZone.getOffset(attrs.getDate(
-                            Tag.StudyDate).getTime());
-                }
-                else if(attrs.contains(Tag.ContentDate))
-                {
-                    offsetFromUTC = archiveTimeZone.getOffset(attrs
-                            .getDate(Tag.ContentDate).getTime());
-                }
-                String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
-                attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""
-                        + offsetString);
-            } else {
-                // in archive time - add tag with offset from archive
-                int offsetFromUTC = archiveTimeZone.getRawOffset();
-                if (attrs.contains(Tag.StudyDate)) {
-                    offsetFromUTC = archiveTimeZone.getOffset(attrs.getDate(
-                            Tag.StudyDate).getTime());
-                }
-                else if(attrs.contains(Tag.ContentDate))
-                {
-                    offsetFromUTC = archiveTimeZone.getOffset(attrs
-                            .getDate(Tag.ContentDate).getTime());
-                }
-                String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
-                attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""
-                        + offsetString);
+            }
+            if(!attrs.containsValue(Tag.TimezoneOffsetFromUTC))
+            {
+                if(sourceTimeZone != null)
+                attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
+                        DateUtils.formatTimezoneOffsetFromUTC(sourceTimeZone,
+                        attrs.getDate(Tag.StudyDateAndTime)));
+                else
+                attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
+                        DateUtils.formatTimezoneOffsetFromUTC(archiveTimeZone,
+                        attrs.getDate(Tag.StudyDateAndTime)));
             }
 
         } catch (Exception e) {

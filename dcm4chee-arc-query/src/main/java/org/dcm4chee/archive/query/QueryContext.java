@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.query;
 
+import java.util.TimeZone;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -99,6 +101,6 @@ public interface QueryContext {
 
     void setProperty(String key, Object value);
 
-    void setCachedTimeZoneFromTag(String string);
-    String getCachedTimeZoneFromTag();
+    void setRequestedTimeZone(TimeZone tz);
+    TimeZone getRequestedTimeZone();
 }

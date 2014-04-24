@@ -40,6 +40,7 @@ package org.dcm4chee.archive.query.impl;
 
 import java.util.HashMap;
 import java.util.NoSuchElementException;
+import java.util.TimeZone;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
@@ -83,7 +84,7 @@ public abstract class AbstractQueryContext implements QueryContext {
 
     private Attributes keysOriginal;
     
-    private String CachedTimeZoneFromTag;
+    private TimeZone requestedTimeZone;
     
     private final HashMap<String,Object> properties = new HashMap<String,Object>();
     
@@ -234,13 +235,13 @@ public abstract class AbstractQueryContext implements QueryContext {
     }
     
     @Override
-    public void setCachedTimeZoneFromTag(String tagValue)
+    public void setRequestedTimeZone(TimeZone tz)
     {
-	this.CachedTimeZoneFromTag=tagValue;
+	this.requestedTimeZone=tz;
     }
 
     @Override
-    public String getCachedTimeZoneFromTag() {
-        return CachedTimeZoneFromTag;
+    public TimeZone getRequestedTimeZone() {
+        return this.requestedTimeZone;
     }
 }

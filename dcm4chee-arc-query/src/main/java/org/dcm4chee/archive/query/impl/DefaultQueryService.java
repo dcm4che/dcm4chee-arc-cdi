@@ -61,6 +61,7 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
+import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
@@ -183,9 +184,7 @@ public class DefaultQueryService implements QueryService {
         } catch (ConfigurationException e1) {
             e1.printStackTrace();
         }
-
         try {
-
             ArchiveAEExtension arcAE = context.getArchiveAEExtension();
             Attributes attrs = context.getKeys();
             TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
@@ -200,18 +199,14 @@ public class DefaultQueryService implements QueryService {
             }
             // Time zone query req adjustments
             if (archiveTimeZone != null) {
-                if (attrs.contains(Tag.TimezoneOffsetFromUTC)) {
-                    attrs.setTimezone(archiveTimeZone);
-                    context.setCachedTimeZoneFromTag(attrs
-                            .getString(Tag.TimezoneOffsetFromUTC));
+                if (attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
+                    context.setRequestedTimeZone(attrs.getTimeZone());
                 } else if (sourceTimeZone != null) {
+                    context.setRequestedTimeZone(sourceTimeZone);
                     attrs.setDefaultTimeZone(sourceTimeZone);
-                    attrs.setTimezone(sourceTimeZone);
-                    attrs.setTimezone(archiveTimeZone);
                 }
-                // else assume archive time
+                attrs.setTimezone(archiveTimeZone);
             }
-
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
@@ -227,83 +222,39 @@ public class DefaultQueryService implements QueryService {
     public void coerceAttributesForResponse(Attributes match,
             QueryContext context, String sourceAET)
             throws DicomServiceException {
-
-        ApplicationEntity sourceAE = null;
         try {
-            sourceAE = aeCache.findApplicationEntity(sourceAET);
-        } catch (ConfigurationException e1) {
-            e1.printStackTrace();
-        }
-        try {
-
             ArchiveAEExtension arcAE = context.getArchiveAEExtension();
             Attributes attrs = match;
-            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                    .getTimeZoneOfDevice();
-            TimeZone sourceTimeZone = sourceAE.getDevice()
-                    .getTimeZoneOfDevice();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID), Dimse.C_FIND_RSP,
                     TransferCapability.Role.SCU, sourceAET);
             if (tpl != null) {
                 attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false));
             }
-            // Time zone query req adjustments
+            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                    .getTimeZoneOfDevice();
+            // Time zone query rsp adjustments
             if (archiveTimeZone != null) {
-                String tmpTagValue = context.getCachedTimeZoneFromTag();
-                if (tmpTagValue != null) {
-                    attrs.setDefaultTimeZone(archiveTimeZone);
-                    attrs.setTimezoneOffsetFromUTC(context
-                            .getCachedTimeZoneFromTag());
-                } else if (sourceTimeZone != null) {
-                    int offsetFromUTC = sourceTimeZone.getRawOffset();
-                    if (attrs.contains(Tag.StudyDate)) {
-                        offsetFromUTC = sourceTimeZone.getOffset(attrs.getDate(
-                                Tag.StudyDate).getTime());
-                    }
-                    attrs.setDefaultTimeZone(archiveTimeZone);
-                    attrs.setTimezone(archiveTimeZone);
-                    attrs.setTimezone(sourceTimeZone);
-                    String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
-                    attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""
-                            + offsetString);
-                } else // assumed in archive time
+                attrs.setDefaultTimeZone(archiveTimeZone);
+                if (context.getRequestedTimeZone() != null) {
+                    attrs.setTimezone(context.getRequestedTimeZone());
+                }
+                if(!attrs.containsValue(Tag.TimezoneOffsetFromUTC))
                 {
-                    int offsetFromUTC = archiveTimeZone.getRawOffset();
-                    if (attrs.contains(Tag.StudyDate)) {
-                        offsetFromUTC = archiveTimeZone.getOffset(attrs
-                                .getDate(Tag.StudyDate).getTime());
-                    }
-                    else if(attrs.contains(Tag.ContentDate))
-                    {
-                        offsetFromUTC = archiveTimeZone.getOffset(attrs
-                                .getDate(Tag.ContentDate).getTime());
-                    }
-                    String offsetString = timeOffsetInMillisToDICOMTimeOffset(offsetFromUTC);
-                    attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, ""
-                            + offsetString);
+                    if(context.getRequestedTimeZone()!=null)
+                    attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
+                            DateUtils.formatTimezoneOffsetFromUTC(context.getRequestedTimeZone(),
+                            attrs.getDate(Tag.StudyDateAndTime)));
+                    else
+                    attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
+                            DateUtils.formatTimezoneOffsetFromUTC(archiveTimeZone,
+                            attrs.getDate(Tag.StudyDateAndTime)));
                 }
             }
 
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-    }
-
-    public String timeOffsetInMillisToDICOMTimeOffset(int millis) {
-        int mns = millis / (1000 * 60);
-        String h = "" + (int) mns / 60;
-        if (h.length() == 1) {
-            String tmp = h;
-            h = "0" + tmp;
-        }
-        String m = "" + (int) (mns % 60);
-        if (m.length() == 1) {
-            String tmp = m;
-            m = "0" + tmp;
-        }
-        String sign = (int) Math.signum(mns) > 0 ? "+" : "-";
-        return sign + h + m;
     }
 
 }
