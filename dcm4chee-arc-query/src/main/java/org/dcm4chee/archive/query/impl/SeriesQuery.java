@@ -39,13 +39,12 @@
 package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.hibernate.ScrollableResults;
 import org.hibernate.StatelessSession;
@@ -57,18 +56,18 @@ import com.mysema.query.types.Expression;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-class SeriesQueryContext extends AbstractQueryContext {
+class SeriesQuery extends AbstractQuery {
 
     private Long studyPk;
     private Attributes studyAttrs;
 
-    public SeriesQueryContext(QueryService service, StatelessSession session) {
-        super(service, session);
+    public SeriesQuery(QueryContext context, StatelessSession session) {
+        super(context, session);
     }
 
     @Override
     protected Expression<?>[] select() {
-        return getQueryParam().isShowRejectedForQualityReasons()
+        return context.getQueryParam().isShowRejectedForQualityReasons()
             ? new Expression<?>[] {
                     QStudy.study.pk,                         // (0)
                     QSeries.series.pk,                       // (1)
@@ -102,11 +101,18 @@ class SeriesQueryContext extends AbstractQueryContext {
     }
 
     @Override
-    protected HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys) {
+    protected HibernateQuery createQuery(QueryContext context) {
         BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, getQueryParam());
-        QueryBuilder.addStudyLevelPredicates(builder, keys, getQueryParam());
-        QueryBuilder.addSeriesLevelPredicates(builder, keys, getQueryParam());
+        QueryBuilder.addPatientLevelPredicates(builder,
+                context.getPatientIDs(),
+                context.getKeys(),
+                context.getQueryParam());
+        QueryBuilder.addStudyLevelPredicates(builder,
+                context.getKeys(),
+                context.getQueryParam());
+        QueryBuilder.addSeriesLevelPredicates(builder,
+                context.getKeys(),
+                context.getQueryParam());
         return new HibernateQuery(session)
             .from(QSeries.series)
             .innerJoin(QSeries.series.study, QStudy.study)
@@ -119,10 +125,11 @@ class SeriesQueryContext extends AbstractQueryContext {
         Long studyPk = results.getLong(0);
         Long seriesPk = results.getLong(1);
         int numberOfSeriesRelatedInstances = results.getInteger(4);
-        if (numberOfSeriesRelatedInstances < 0)
-            numberOfSeriesRelatedInstances =
-                service.calculateNumberOfSeriesRelatedInstance(seriesPk, queryParam);
-
+        if (numberOfSeriesRelatedInstances < 0) {
+            numberOfSeriesRelatedInstances = context.getQueryService()
+                    .calculateNumberOfSeriesRelatedInstance(seriesPk,
+                            context.getQueryParam());
+        }
         // skip match for empty Series
         if (numberOfSeriesRelatedInstances == 0)
             return null;
@@ -146,15 +153,17 @@ class SeriesQueryContext extends AbstractQueryContext {
 
     private Attributes toStudyAttributes(Long studyPk, ScrollableResults results) {
         int numberOfStudyRelatedSeries = results.getInteger(2);
-        if (numberOfStudyRelatedSeries < 0)
-            numberOfStudyRelatedSeries =
-                service.calculateNumberOfStudyRelatedSeries(studyPk, queryParam);
-
+        if (numberOfStudyRelatedSeries < 0) {
+            numberOfStudyRelatedSeries = context.getQueryService()
+                    .calculateNumberOfStudyRelatedSeries(studyPk,
+                            context.getQueryParam());
+        }
         int numberOfStudyRelatedInstances = results.getInteger(3);
-        if (numberOfStudyRelatedInstances < 0)
-            numberOfStudyRelatedInstances = 
-                service.calculateNumberOfStudyRelatedInstance(studyPk, queryParam);
-        
+        if (numberOfStudyRelatedInstances < 0) {
+            numberOfStudyRelatedInstances = context.getQueryService()
+                    .calculateNumberOfStudyRelatedInstance(studyPk,
+                            context.getQueryParam());
+        }
         String modalitiesInStudy = results.getString(5);
         String sopClassesInStudy = results.getString(6);
         byte[] studyAttributes = results.getBinary(11);

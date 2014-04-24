@@ -51,7 +51,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -80,6 +79,8 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.util.QueryBuilder;
@@ -160,25 +161,25 @@ public class QidoRS {
     @Context
     private HttpHeaders headers;
 
-    @QueryParam("fuzzymatching")
+    @javax.ws.rs.QueryParam("fuzzymatching")
     private boolean fuzzymatching;
 
-    @QueryParam("datetimematching")
+    @javax.ws.rs.QueryParam("datetimematching")
     private boolean datetimematching;
 
-    @QueryParam("timezoneadjustment")
+    @javax.ws.rs.QueryParam("timezoneadjustment")
     private boolean timezoneadjustment;
 
-    @QueryParam("offset")
+    @javax.ws.rs.QueryParam("offset")
     private int offset;
 
-    @QueryParam("limit")
+    @javax.ws.rs.QueryParam("limit")
     private int limit;
 
-    @QueryParam("includefield")
+    @javax.ws.rs.QueryParam("includefield")
     private List<String> includefield;
 
-    @QueryParam("orderby")
+    @javax.ws.rs.QueryParam("orderby")
     private List<String> orderby;
 
     private OrderSpecifier<?>[] orderSpecifiers;
@@ -315,15 +316,16 @@ public class QidoRS {
         
         init(method, qrlevel, relational, studyInstanceUID, seriesInstanceUID,
                 includetags);
-        
-        org.dcm4chee.archive.conf.QueryParam queryParam = queryService.getQueryParam(
+
+        QueryParam queryParam = queryService.getQueryParam(
                 request, request.getRemoteHost(), arcAE, mkQueryOpts());
-        QueryContext query = queryService.createQueryContext(qrlevel, queryService);
+        QueryContext ctx = queryService.createQueryContext(queryService);
+        Query query = queryService.createQuery(qrlevel, ctx);
+        ctx.setArchiveAEExtension(arcAE);
+        ctx.setQueryParam(queryParam);
+        ctx.setKeys(keys);
         try {
-            query.setArchiveAEExtension(arcAE);
-            query.setQueryParam(queryParam);
-            query.setPatientIDs(pids);
-            query.setKeys(keys);
+            ctx.setPatientIDs(pids);
             query.initQuery();
             int status = STATUS_OK;
             int maxResults = arcAE.getQIDOMaxNumberOfResults();
@@ -538,21 +540,21 @@ public class QidoRS {
     private enum Output {
         DICOM_XML {
             @Override
-            Object entity(QidoRS service, QueryContext query, QueryRetrieveLevel qrlevel) {
+            Object entity(QidoRS service, Query query, QueryRetrieveLevel qrlevel) {
                 return service.writeXML(query, qrlevel);
             }
         },
         JSON {
             @Override
-            Object entity(QidoRS service, QueryContext query, QueryRetrieveLevel qrlevel) {
+            Object entity(QidoRS service, Query query, QueryRetrieveLevel qrlevel) {
                 return service.writeJSON(query, qrlevel);
             }
         };
         
-        abstract Object entity(QidoRS service, QueryContext query, QueryRetrieveLevel qrlevel);
+        abstract Object entity(QidoRS service, Query query, QueryRetrieveLevel qrlevel);
     }
 
-    private Object writeXML(QueryContext query,QueryRetrieveLevel qrlevel) {
+    private Object writeXML(Query query, QueryRetrieveLevel qrlevel) {
         MultipartRelatedOutput output = new MultipartRelatedOutput();
         int count = 0;
         while (query.hasMoreMatches()) {
@@ -578,7 +580,7 @@ public class QidoRS {
         return output;
     }
 
-    private Object writeJSON(QueryContext query, QueryRetrieveLevel qrlevel) {
+    private Object writeJSON(Query query, QueryRetrieveLevel qrlevel) {
         final ArrayList<Attributes> matches = new ArrayList<Attributes>();
         int count = 0;
         while (query.hasMoreMatches()) {

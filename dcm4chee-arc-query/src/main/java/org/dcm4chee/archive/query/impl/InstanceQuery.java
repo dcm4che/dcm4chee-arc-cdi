@@ -39,14 +39,13 @@
 package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.hibernate.ScrollableResults;
 import org.hibernate.StatelessSession;
@@ -58,7 +57,7 @@ import com.mysema.query.types.Expression;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-class InstanceQueryContext extends AbstractQueryContext {
+class InstanceQuery extends AbstractQuery {
 
     private static final Expression<?>[] SELECT = {
         QSeries.series.pk,
@@ -71,8 +70,8 @@ class InstanceQueryContext extends AbstractQueryContext {
     private Long seriesPk;
     private Attributes seriesAttrs;
 
-    public InstanceQueryContext(QueryService service, StatelessSession session) {
-        super(service, session);
+    public InstanceQuery(QueryContext context, StatelessSession session) {
+        super(context, session);
     }
 
     @Override
@@ -81,12 +80,21 @@ class InstanceQueryContext extends AbstractQueryContext {
     }
 
     @Override
-    protected HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys) {
+    protected HibernateQuery createQuery(QueryContext context) {
         BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, getQueryParam());
-        QueryBuilder.addStudyLevelPredicates(builder, keys, getQueryParam());
-        QueryBuilder.addSeriesLevelPredicates(builder, keys, getQueryParam());
-        QueryBuilder.addInstanceLevelPredicates(builder, keys, getQueryParam());
+        QueryBuilder.addPatientLevelPredicates(builder,
+                context.getPatientIDs(),
+                context.getKeys(),
+                context.getQueryParam());
+        QueryBuilder.addStudyLevelPredicates(builder,
+                context.getKeys(),
+                context.getQueryParam());
+        QueryBuilder.addSeriesLevelPredicates(builder,
+                context.getKeys(),
+                context.getQueryParam());
+        QueryBuilder.addInstanceLevelPredicates(builder,
+                context.getKeys(),
+                context.getQueryParam());
         return new HibernateQuery(session)
             .from(QInstance.instance)
             .innerJoin(QInstance.instance.series, QSeries.series)
@@ -103,7 +111,8 @@ class InstanceQueryContext extends AbstractQueryContext {
         Availability availability = (Availability) results.get(3);
         byte[] instAttributes = results.getBinary(4);
         if (!seriesPk.equals(this.seriesPk)) {
-            this.seriesAttrs = service.getSeriesAttributes(seriesPk, getQueryParam());
+            this.seriesAttrs = context.getQueryService()
+                    .getSeriesAttributes(seriesPk, context.getQueryParam());
             this.seriesPk = seriesPk;
         }
         Attributes attrs = new Attributes(seriesAttrs);

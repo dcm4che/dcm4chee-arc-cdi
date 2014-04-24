@@ -45,8 +45,6 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 
-import com.mysema.query.types.OrderSpecifier;
-
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
@@ -68,32 +66,10 @@ public interface QueryContext {
     Attributes getKeysOriginal();
 
     void setKeys(Attributes keys);
-    
-    void setKeysOriginal(Attributes keys);
 
     IDWithIssuer[] getPatientIDs();
 
     void setPatientIDs(IDWithIssuer[] pids);
-
-    void initQuery();
-
-    void executeQuery();
-
-    long count();
-
-    void limit(long limit);
-
-    void offset(long offset);
-
-    void orderBy(OrderSpecifier<?>... orderSpecifiers);
-
-    boolean optionalKeysNotSupported();
-
-    boolean hasMoreMatches();
-
-    Attributes nextMatch();
-
-    void close();
 
     Object getProperty(String key);
 
@@ -102,5 +78,6 @@ public interface QueryContext {
     void setProperty(String key, Object value);
 
     void setRequestedTimeZone(TimeZone tz);
+
     TimeZone getRequestedTimeZone();
 }

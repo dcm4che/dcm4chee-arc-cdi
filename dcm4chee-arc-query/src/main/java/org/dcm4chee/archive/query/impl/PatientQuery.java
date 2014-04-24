@@ -39,10 +39,9 @@
 package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.hibernate.ScrollableResults;
 import org.hibernate.StatelessSession;
@@ -54,15 +53,15 @@ import com.mysema.query.types.Expression;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-class PatientQueryContext extends AbstractQueryContext {
+class PatientQuery extends AbstractQuery {
 
     private static final Expression<?>[] SELECT = {
         QPatient.patient.pk,
         QPatient.patient.encodedAttributes
     };
 
-    public PatientQueryContext(QueryService service, StatelessSession session) {
-        super(service, session);
+    public PatientQuery(QueryContext context, StatelessSession session) {
+        super(context, session);
     }
 
     @Override
@@ -71,9 +70,12 @@ class PatientQueryContext extends AbstractQueryContext {
     }
 
     @Override
-    protected HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys) {
+    protected HibernateQuery createQuery(QueryContext context) {
         BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addPatientLevelPredicates(builder, pids, keys, getQueryParam());
+        QueryBuilder.addPatientLevelPredicates(builder,
+                context.getPatientIDs(),
+                context.getKeys(), 
+                context.getQueryParam());
         return new HibernateQuery(session)
             .from(QPatient.patient)
             .where(builder);
