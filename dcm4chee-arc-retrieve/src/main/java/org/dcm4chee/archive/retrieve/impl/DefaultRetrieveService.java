@@ -78,6 +78,8 @@ import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.hibernate.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.Tuple;
@@ -95,6 +97,7 @@ public class DefaultRetrieveService implements RetrieveService {
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
+    static Logger LOG = LoggerFactory.getLogger(DefaultRetrieveService.class);
     @Inject
     private IApplicationEntityCache aeCache;
 
@@ -258,9 +261,10 @@ public class DefaultRetrieveService implements RetrieveService {
                         null);
 
             try {
-                sourceAE = aeCache.findApplicationEntity(remoteAET);
+                sourceAE = aeCache.get(remoteAET);
             } catch (ConfigurationException e1) {
-                e1.printStackTrace();
+                LOG.warn("Failed to access configuration for query source {} - no Timezone support:",
+                        remoteAET, e1);
             }
             TimeZone archiveTimeZone = aeExt.getApplicationEntity().getDevice()
                     .getTimeZoneOfDevice();
@@ -268,20 +272,26 @@ public class DefaultRetrieveService implements RetrieveService {
                 TimeZone sourceTimeZone = sourceAE.getDevice()
                         .getTimeZoneOfDevice();
                 attrs.setDefaultTimeZone(archiveTimeZone);
+                LOG.debug("(TimeZone Support): In coerceRetrievedObject: Setting default time zone to archive. \n");
                 if (sourceTimeZone != null) {
                     attrs.setTimezone(sourceTimeZone);
+                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Converting time in blob to destination time zone. \n");
                 }
                 if (!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
-                    if (sourceTimeZone != null)
+                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Adding TimezoneOffsetFromUTC with: \n");
+                    if (sourceTimeZone != null) {
                         attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
                                 DateUtils.formatTimezoneOffsetFromUTC(
                                         sourceTimeZone,
                                         attrs.getDate(Tag.StudyDateAndTime)));
-                    else
+                        LOG.debug("(TimeZone Support): destination device as value.");
+                    } else {
                         attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
                                 DateUtils.formatTimezoneOffsetFromUTC(
                                         archiveTimeZone,
                                         attrs.getDate(Tag.StudyDateAndTime)));
+                        LOG.debug("(TimeZone Support): archive device as value.");
+                    }
                 }
             }
 
@@ -303,6 +313,7 @@ public class DefaultRetrieveService implements RetrieveService {
             TimeZone sourceTimeZone = TimeZone.getTimeZone(inst
                     .getFileTimeZoneID());
             if (sourceTimeZone != null) {
+                LOG.debug("(TimeZone Support): In coerceFileBeforeMerge: Converting time in file attributes to archive time zone. \n");
                 attrs.setDefaultTimeZone(sourceTimeZone);
                 attrs.setTimezone(archiveTimeZone);
             }

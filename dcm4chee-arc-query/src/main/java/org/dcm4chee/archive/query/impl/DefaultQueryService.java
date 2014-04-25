@@ -202,6 +202,8 @@ public class DefaultQueryService implements QueryService {
                 TimeZone sourceTimeZone = getSourceTimeZone(keys, arcAE, 
                         context.getRemoteAET());
                 if (sourceTimeZone != null) {
+                    LOG.debug("(TimeZone Support): Query request with a requested timezone. \n "
+                            + "(TimeZone Support): Converting to archive time and setting the requested time zone");
                     keys.setTimezone(archiveTimeZone);
                     context.setRequestedTimeZone(sourceTimeZone);
                 }
@@ -255,6 +257,8 @@ public class DefaultQueryService implements QueryService {
                 attrs.setDefaultTimeZone(archiveTimeZone);
                 if (context.getRequestedTimeZone() != null) {
                     attrs.setTimezone(context.getRequestedTimeZone());
+                    LOG.debug("(TimeZone Support): Query response Found a requested timezone. \n "
+                            + "(TimeZone Support): Converting to requester time zone");
                 }
                 if(!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
                     attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
@@ -263,6 +267,7 @@ public class DefaultQueryService implements QueryService {
                                             context.getRequestedTimeZone(),
                                             archiveTimeZone),
                             attrs.getDate(Tag.StudyDateAndTime)));
+                    LOG.debug("(TimeZone Support): In query response, adding TimezoneOffsetFromUTC. \n ");
                 }
             }
         } catch (Exception e) {

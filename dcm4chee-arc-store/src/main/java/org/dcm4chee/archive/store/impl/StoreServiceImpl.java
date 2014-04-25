@@ -60,6 +60,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.xml.transform.Templates;
 
+import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
@@ -347,8 +348,13 @@ public class StoreServiceImpl implements StoreService {
             Attributes attrs = context.getAttributes();
             TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                     .getTimeZoneOfDevice();
-            ApplicationEntity remoteAE = aeCache.findApplicationEntity(session
-                    .getRemoteAET());
+            ApplicationEntity remoteAE = null;
+            try {
+                remoteAE = aeCache.get(session.getRemoteAET());
+            } catch (ConfigurationException e1) {
+                LOG.warn("Failed to access configuration for query source {} - no Timezone support:",
+                        session.getRemoteAET(), e1);
+            }
             sourceTimeZoneCache = remoteAE.getDevice().getTimeZoneOfDevice();
             // Time zone store adjustments
             if (archiveTimeZone != null) {
