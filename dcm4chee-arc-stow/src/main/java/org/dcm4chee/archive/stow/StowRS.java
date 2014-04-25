@@ -209,8 +209,12 @@ public class StowRS {
     @Consumes({"multipart/related","multipart/form-data"})
     public Response storeInstances(InputStream in) throws Exception {
         init();
-        final StoreSession session = storeService.initStoreSession(
-                storeService, new HttpSource(request), request.getRemoteHost(), arcAE);
+        final StoreSession session = storeService.createStoreSession(storeService);
+        session.setSource(new HttpSource(request));
+        session.setRemoteAET(request.getRemoteHost()); //TODO use hostname as AET, may be needed to change
+        session.setArchiveAEExtension(arcAE);
+        storeService.initStorageFileSystem(session);
+        storeService.initSpoolDirectory(session);
         try {
             new MultipartParser(boundary).parse(in, new MultipartParser.Handler() {
                 
@@ -327,7 +331,9 @@ public class StowRS {
             throws DicomServiceException {
         StoreContext context;
         try {
-            context = storeService.initStoreContext(session, null, in);
+            context = storeService.createStoreContext(session);
+            storeService.writeSpoolFile(context, null, in);
+            storeService.parseSpoolFile(context);
         } catch (DicomServiceException e) {
             if (e.getStatus() == StoreService.DATA_SET_NOT_PARSEABLE) {
                 storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
@@ -404,7 +410,8 @@ public class StowRS {
         try {
             checkStudyInstanceUID(ds.getString(Tag.StudyInstanceUID));
             checkTransferCapability(cuid, fmi.getString(Tag.TransferSyntaxUID));
-            StoreContext context = storeService.initStoreContext(session, fmi, ds);
+            StoreContext context = storeService.createStoreContext(session);
+            storeService.writeSpoolFile(context, fmi, ds);
             storeService.store(context);
             sopSequence.add(sopRef(context));
         } catch (DicomServiceException e) {

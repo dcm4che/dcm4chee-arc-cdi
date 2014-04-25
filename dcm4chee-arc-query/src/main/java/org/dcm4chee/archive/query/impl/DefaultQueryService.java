@@ -52,6 +52,7 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.hibernate.Session;
@@ -73,41 +74,44 @@ public class DefaultQueryService implements QueryService {
         return em.unwrap(Session.class).getSessionFactory().openStatelessSession();
     }
 
+    public QueryContext createQueryContext(QueryService queryService) {
+        return new QueryContextImpl(queryService);
+    }
+
     @Override
-    public QueryContext createQueryContext(QueryRetrieveLevel qrlevel,
-            QueryService queryService){
+    public Query createQuery(QueryRetrieveLevel qrlevel, QueryContext ctx) {
         switch (qrlevel) {
         case PATIENT:
-            return queryService.createPatientQueryContext(queryService);
+            return ctx.getQueryService().createPatientQuery(ctx);
         case STUDY:
-            return queryService.createStudyQueryContext(queryService);
+            return ctx.getQueryService().createStudyQuery(ctx);
         case SERIES:
-            return queryService.createSeriesQueryContext(queryService);
+            return ctx.getQueryService().createSeriesQuery(ctx);
         case IMAGE:
-            return queryService.createInstanceQueryContext(queryService);
+            return ctx.getQueryService().createInstanceQuery(ctx);
         default:
             throw new IllegalArgumentException("qrlevel: " + qrlevel);
         }
     }
 
     @Override
-    public QueryContext createPatientQueryContext(QueryService queryService) {
-        return new PatientQueryContext(queryService, openStatelessSession());
+    public Query createPatientQuery(QueryContext ctx) {
+        return new PatientQuery(ctx, openStatelessSession());
     }
 
     @Override
-    public QueryContext createStudyQueryContext(QueryService queryService) {
-        return new StudyQueryContext(queryService, openStatelessSession());
+    public Query createStudyQuery(QueryContext ctx) {
+        return new StudyQuery(ctx, openStatelessSession());
     }
 
     @Override
-    public QueryContext createSeriesQueryContext(QueryService queryService) {
-        return new SeriesQueryContext(queryService, openStatelessSession());
+    public Query createSeriesQuery(QueryContext ctx) {
+        return new SeriesQuery(ctx, openStatelessSession());
     }
 
     @Override
-    public QueryContext createInstanceQueryContext(QueryService queryService) {
-        return new InstanceQueryContext(queryService, openStatelessSession());
+    public Query createInstanceQuery(QueryContext ctx) {
+        return new InstanceQuery(ctx, openStatelessSession());
     }
 
     public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {

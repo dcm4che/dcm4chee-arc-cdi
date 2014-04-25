@@ -81,16 +81,21 @@ public class CStoreSCP extends BasicCStoreSCP {
             if (session == null) {
                 ArchiveAEExtension arcAE = as.getApplicationEntity()
                         .getAEExtension(ArchiveAEExtension.class);
-                session = storeService.initStoreSession(storeService, new LocalAssociationParticipant(as),
-                        as.getRemoteAET(), arcAE);
+                session = storeService.createStoreSession(storeService);
+                session.setSource(new LocalAssociationParticipant(as));
+                session.setRemoteAET(as.getRemoteAET());
+                session.setArchiveAEExtension(arcAE);
+                storeService.initStorageFileSystem(session);
+                storeService.initSpoolDirectory(session);
                 as.setProperty(StoreSession.class.getName(), session);
             }
             Attributes fmi = as.createFileMetaInformation(
                   rq.getString(Tag.AffectedSOPInstanceUID),
                   rq.getString(Tag.AffectedSOPClassUID),
                   pc.getTransferSyntax());
-            StoreContext context =
-                    storeService.initStoreContext(session, fmi, data);
+            StoreContext context = storeService.createStoreContext(session);
+            storeService.writeSpoolFile(context, fmi, data);
+            storeService.parseSpoolFile(context);
             storeService.store(context);
             Attributes coercedAttrs = context.getCoercedAttributes();
             if (!coercedAttrs.isEmpty() 

@@ -48,7 +48,7 @@ import org.dcm4che3.net.service.BasicQueryTask;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.query.QueryContext;
+import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryService;
 
 /**
@@ -57,16 +57,16 @@ import org.dcm4chee.archive.query.QueryService;
  */
 class QueryTaskImpl extends BasicQueryTask {
 
-    private final QueryContext query;
+    private final Query query;
     private final QueryRetrieveLevel modelRootLevel;
     private final QueryService queryService;
 
     public QueryTaskImpl(Association as, PresentationContext pc, Attributes rq,
             Attributes keys, QueryParam queryParam,
-            QueryRetrieveLevel modelRootLevel, QueryContext query,
+            QueryRetrieveLevel modelRootLevel, Query query,
             QueryService queryService)
             throws Exception {
-        super(as, pc, rq, keys);
+        super(as, pc, rq, keys); 
         setOptionalKeysNotSupported(query.optionalKeysNotSupported());
         this.query = query;
         this.modelRootLevel = modelRootLevel;
@@ -78,7 +78,7 @@ class QueryTaskImpl extends BasicQueryTask {
         if (match == null)
             return null;
 
-        queryService.adjustMatch(query, match);
+        queryService.adjustMatch(query.getQueryContext(), match);
         if (modelRootLevel == QueryRetrieveLevel.PATIENT
                 && !match.containsValue(Tag.PatientID))
             return null;

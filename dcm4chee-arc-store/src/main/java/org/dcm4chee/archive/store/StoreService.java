@@ -46,8 +46,6 @@ import javax.persistence.EntityManager;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Series;
@@ -61,15 +59,23 @@ public interface StoreService {
 
     int DATA_SET_NOT_PARSEABLE = 0xC900;
 
-    StoreSession initStoreSession(StoreService storeService, Participant source,
-            String sourceAET, ArchiveAEExtension arcAE)
-                    throws DicomServiceException;
+    StoreSession createStoreSession(StoreService storeService)
+            throws DicomServiceException;
 
-    StoreContext initStoreContext(StoreSession session, Attributes fmi,
-            InputStream data) throws DicomServiceException;
+    StoreContext createStoreContext(StoreSession session);
 
-    StoreContext initStoreContext(StoreSession session, Attributes fmi,
-            Attributes attrs) throws DicomServiceException;
+    void initStorageFileSystem(StoreSession session)
+            throws DicomServiceException;
+
+    void initSpoolDirectory(StoreSession session) throws DicomServiceException;
+
+    void writeSpoolFile(StoreContext session, Attributes fmi, Attributes attrs)
+            throws DicomServiceException;
+
+    void writeSpoolFile(StoreContext context, Attributes fmi, InputStream data)
+            throws DicomServiceException;
+
+    void parseSpoolFile(StoreContext context) throws DicomServiceException;
 
     void onClose(StoreSession session);
 

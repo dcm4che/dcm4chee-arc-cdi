@@ -49,7 +49,6 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.ExtendedNegotiation;
@@ -61,6 +60,7 @@ import org.dcm4che3.net.service.QueryTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
+import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.impl.QueryEvent;
@@ -101,12 +101,13 @@ public class CFindSCP extends BasicCFindSCP {
             QueryParam queryParam =  queryService.getQueryParam(
                     as, as.getRemoteAET(), arcAE, queryOpts);
             IDWithIssuer[] pids = queryService.queryPatientIDs(arcAE, keys, queryParam);
-            QueryContext query = queryService.createQueryContext(qrlevel, queryService);
+            QueryContext ctx = queryService.createQueryContext(queryService);
+            ctx.setArchiveAEExtension(arcAE);
+            ctx.setPatientIDs(pids);
+            ctx.setKeys(keys);
+            ctx.setQueryParam(queryParam);
+            Query query = queryService.createQuery(qrlevel, ctx);
             try {
-                query.setArchiveAEExtension(arcAE);
-                query.setQueryParam(queryParam);
-                query.setPatientIDs(pids);
-                query.setKeys(keys);
                 query.initQuery();
                 query.executeQuery();
             } catch (Exception e) {

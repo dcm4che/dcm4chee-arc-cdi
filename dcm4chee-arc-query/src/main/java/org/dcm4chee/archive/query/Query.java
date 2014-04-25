@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2013
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,50 +38,35 @@
 
 package org.dcm4chee.archive.query;
 
-import java.util.EnumSet;
-
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.net.QueryOption;
-import org.dcm4che3.net.service.QueryRetrieveLevel;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
+
+import com.mysema.query.types.OrderSpecifier;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface QueryService {
+public interface Query {
 
-    QueryContext createQueryContext(QueryService queryService);
+    void initQuery();
 
-    Query createQuery(QueryRetrieveLevel qrlevel, QueryContext ctx);
+    void executeQuery();
 
-    Query createPatientQuery(QueryContext ctx);
+    long count();
 
-    Query createStudyQuery(QueryContext ctx);
+    void limit(long limit);
 
-    Query createSeriesQuery(QueryContext ctx);
+    void offset(long offset);
 
-    Query createInstanceQuery(QueryContext ctx);
+    void orderBy(OrderSpecifier<?>... orderSpecifiers);
 
-    Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
+    boolean optionalKeysNotSupported();
 
-    QueryParam getQueryParam(Object source, String sourceAET,
-            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts);
+    boolean hasMoreMatches();
 
-    IDWithIssuer[] queryPatientIDs(ArchiveAEExtension aeExt,
-            Attributes keys, QueryParam queryParam);
+    Attributes nextMatch();
 
-    void adjustMatch(QueryContext query, Attributes match);
+    void close();
 
-    int calculateNumberOfSeriesRelatedInstance(Long seriesPk,
-            QueryParam queryParam);
-
-    int calculateNumberOfStudyRelatedSeries(Long studyPk,
-            QueryParam queryParam);
-
-    int calculateNumberOfStudyRelatedInstance(Long studyPk,
-            QueryParam queryParam);
-
+    QueryContext getQueryContext();
 }

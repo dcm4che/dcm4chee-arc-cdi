@@ -82,7 +82,6 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
@@ -132,16 +131,12 @@ public class StoreServiceImpl implements StoreService {
     private Event<StoreSession> storeSessionClosed;
 
     @Override
-    public StoreSession initStoreSession(StoreService storeService, Participant source,
-            String sourceAET, ArchiveAEExtension arcAE) throws DicomServiceException {
-        StoreSession session = new StoreSessionImpl(storeService, source,
-                sourceAET, arcAE);
-        initStorageFileSystem(session);
-        initSpoolDirectory(session);
-        return session;
+    public StoreSession createStoreSession(StoreService storeService) {
+        return new StoreSessionImpl(storeService);
     }
 
-    private void initStorageFileSystem(StoreSession session) throws DicomServiceException {
+    @Override
+    public void initStorageFileSystem(StoreSession session) throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         String groupID = arcAE.getFileSystemGroupID();
         FileSystem fs = fileSystemEJB.findCurrentFileSystem(groupID,
@@ -152,7 +147,8 @@ public class StoreServiceImpl implements StoreService {
         session.setStorageFileSystem(fs);
     }
 
-    private void initSpoolDirectory(StoreSession session) throws DicomServiceException {
+    @Override
+    public void initSpoolDirectory(StoreSession session) throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         FileSystem fs = session.getStorageFileSystem();
         Path parentDir = fs.getPath().resolve(arcAE.getSpoolDirectoryPath());
@@ -168,22 +164,22 @@ public class StoreServiceImpl implements StoreService {
     
 
     @Override
-    public StoreContext initStoreContext(StoreSession session, Attributes fmi,
-            InputStream data) throws DicomServiceException {
-        StoreContextImpl context = new StoreContextImpl(session);
-        writeSpoolFile(context, fmi, null, data);
-        parseSpoolFile(context);
-        return context;
+    public StoreContext createStoreContext(StoreSession session) {
+        return new StoreContextImpl(session);
     }
 
     @Override
-    public StoreContext initStoreContext(StoreSession session, Attributes fmi,
+    public void writeSpoolFile(StoreContext context, Attributes fmi,
+            InputStream data) throws DicomServiceException {
+        writeSpoolFile(context, fmi, null, data);
+    }
+
+    @Override
+    public void writeSpoolFile(StoreContext context, Attributes fmi,
             Attributes attrs) throws DicomServiceException {
-        StoreContextImpl context = new StoreContextImpl(session);
         writeSpoolFile(context, fmi, attrs, null);
         context.setTransferSyntax(fmi.getString(Tag.TransferSyntaxUID));
         context.setAttributes(attrs);
-        return context;
     }
 
     @Override
@@ -231,7 +227,7 @@ public class StoreServiceImpl implements StoreService {
         }
     }
 
-    private void writeSpoolFile(StoreContextImpl context, Attributes fmi,
+    private void writeSpoolFile(StoreContext context, Attributes fmi,
             Attributes ds, InputStream in) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         MessageDigest digest = session.getMessageDigest();
@@ -244,7 +240,8 @@ public class StoreServiceImpl implements StoreService {
         }
     }
 
-    private void parseSpoolFile(StoreContextImpl context)
+    @Override
+    public void parseSpoolFile(StoreContext context)
             throws DicomServiceException {
         Path path = context.getSpoolFile();
         try (DicomInputStream in = new DicomInputStream(path.toFile());) {

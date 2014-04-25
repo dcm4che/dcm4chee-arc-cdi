@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.query.impl;
 
 import java.util.HashMap;
-import java.util.NoSuchElementException;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
@@ -47,24 +46,13 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
-import org.hibernate.ScrollMode;
-import org.hibernate.ScrollableResults;
-import org.hibernate.StatelessSession;
-
-import com.mysema.query.jpa.hibernate.HibernateQuery;
-import com.mysema.query.types.Expression;
-import com.mysema.query.types.OrderSpecifier;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-public abstract class AbstractQueryContext implements QueryContext {
+public class QueryContextImpl implements QueryContext {
 
     protected final QueryService service;
-
-    protected final StatelessSession session;
-
-    protected ScrollableResults results;
 
     protected ArchiveAEExtension arcAE;
 
@@ -74,17 +62,12 @@ public abstract class AbstractQueryContext implements QueryContext {
 
     protected QueryParam queryParam;
 
-    protected  HibernateQuery query;
-
-    private boolean hasMoreMatches;
- 
-    private boolean optionalKeyNotSupported;
-
+    private Attributes keysOriginal;
+    
     private final HashMap<String,Object> properties = new HashMap<String,Object>();
     
-    public AbstractQueryContext(QueryService service, StatelessSession session) {
+    public QueryContextImpl(QueryService service) {
         this.service = service;
-        this.session = session;
     }
 
     @Override
@@ -101,17 +84,23 @@ public abstract class AbstractQueryContext implements QueryContext {
     public void setArchiveAEExtension(ArchiveAEExtension arcAE) {
         this.arcAE = arcAE;
     }
-
+    
     @Override
     public Attributes getKeys() {
         return keys;
     }
-
+    
     @Override
     public void setKeys(Attributes keys) {
         this.keys = keys;
+        this.keysOriginal = new Attributes(keys);
     }
 
+    @Override
+    public Attributes getKeysOriginal() {
+        return keysOriginal;
+    }
+    
     @Override
     public IDWithIssuer[] getPatientIDs() {
         return pids;
@@ -133,76 +122,6 @@ public abstract class AbstractQueryContext implements QueryContext {
     }
 
     @Override
-    public void initQuery() {
-        query = createQuery(pids, keys);
-    }
-    
-    protected abstract HibernateQuery createQuery(IDWithIssuer[] pids, Attributes keys);
-
-    protected abstract Expression<?>[] select();
-
-    protected abstract Attributes toAttributes(ScrollableResults results);
-
-    @Override
-    public void executeQuery() {
-        results = query.scroll(ScrollMode.FORWARD_ONLY, select());
-        hasMoreMatches = results.next();
-    }
-
-    @Override
-    public long count() {
-        checkQuery();
-        return query.count();
-    }
-
-    @Override
-    public void limit(long limit) {
-        checkQuery();
-        query.limit(limit);
-    }
-
-    @Override
-    public void offset(long offset) {
-        checkQuery();
-        query.offset(offset);
-    }
-
-    @Override
-    public void orderBy(OrderSpecifier<?>... orderSpecifiers) {
-        checkQuery();
-        query.orderBy(orderSpecifiers);
-    }
-
-    @Override
-    public boolean optionalKeysNotSupported() {
-        return optionalKeyNotSupported;
-    }
-
-    @Override
-    public boolean hasMoreMatches() {
-        return hasMoreMatches;
-    }
-
-    @Override
-    public Attributes nextMatch() {
-        if (!hasMoreMatches)
-            throw new NoSuchElementException();
-        Attributes attrs = toAttributes(results);
-        hasMoreMatches = results.next();
-        return attrs;
-    }
-
-    private void checkQuery() {
-        if (query == null)
-            throw new IllegalStateException("query not initalized");
-    }
-
-    @Override
-    public void close() {
-        session.close();
-    }
-
-    @Override
     public Object getProperty(String key) {
         return properties.get(key);
     }
@@ -216,5 +135,4 @@ public abstract class AbstractQueryContext implements QueryContext {
     public void setProperty(String key, Object value) {
         properties.put(key, value);
     }
-
 }
