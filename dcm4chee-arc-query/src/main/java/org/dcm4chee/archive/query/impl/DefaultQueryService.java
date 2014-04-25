@@ -70,6 +70,8 @@ import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.hibernate.Session;
 import org.hibernate.StatelessSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -77,6 +79,8 @@ import org.hibernate.StatelessSession;
  */
 @ApplicationScoped
 public class DefaultQueryService implements QueryService {
+
+    static Logger LOG = LoggerFactory.getLogger(DefaultQueryService.class);
 
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
@@ -218,6 +222,8 @@ public class DefaultQueryService implements QueryService {
                     ? ae.getDevice().getTimeZoneOfDevice()
                     : null;
         } catch (ConfigurationException e) {
+            LOG.warn("Failed to access configuration for query source {} - no Timezone support:",
+                    sourceAET, e);
             //TODO log
             return null;
         }
