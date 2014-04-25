@@ -130,12 +130,13 @@ public class StoreServiceImpl implements StoreService {
     @Inject
     private Event<StoreContext> storeEvent;
 
-    @Inject @StoreSessionClosed
+    @Inject
+    @StoreSessionClosed
     private Event<StoreSession> storeSessionClosed;
 
     @Inject
     private IApplicationEntityCache aeCache;
-    
+
     private TimeZone sourceTimeZoneCache;
 
     @Override
@@ -144,7 +145,8 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void initStorageFileSystem(StoreSession session) throws DicomServiceException {
+    public void initStorageFileSystem(StoreSession session)
+            throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         String groupID = arcAE.getFileSystemGroupID();
         FileSystem fs = fileSystemEJB.findCurrentFileSystem(groupID,
@@ -156,7 +158,8 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void initSpoolDirectory(StoreSession session) throws DicomServiceException {
+    public void initSpoolDirectory(StoreSession session)
+            throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         FileSystem fs = session.getStorageFileSystem();
         Path parentDir = fs.getPath().resolve(arcAE.getSpoolDirectoryPath());
@@ -169,7 +172,6 @@ public class StoreServiceImpl implements StoreService {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
-    
 
     @Override
     public StoreContext createStoreContext(StoreSession session) {
@@ -225,13 +227,15 @@ public class StoreServiceImpl implements StoreService {
                     Files.delete(file);
                     LOG.info("{}: M-DELETE spool file - {}", session, file);
                 } catch (IOException e) {
-                    LOG.warn("{}: Failed to M-DELETE spool file - {}", session, file, e);
+                    LOG.warn("{}: Failed to M-DELETE spool file - {}", session,
+                            file, e);
                 }
             }
             Files.delete(dir);
             LOG.info("{}: M-DELETE spool directory - {}", session, dir);
         } catch (IOException e) {
-            LOG.warn("{}: Failed to M-DELETE spool directory - {}", session, dir, e);
+            LOG.warn("{}: Failed to M-DELETE spool directory - {}", session,
+                    dir, e);
         }
     }
 
@@ -273,7 +277,7 @@ public class StoreServiceImpl implements StoreService {
 
     private Path spool(StoreSession session, Attributes fmi, Attributes ds,
             InputStream in, String suffix, MessageDigest digest)
-                    throws IOException {
+            throws IOException {
         Path spoolDirectory = session.getSpoolDirectory();
         Path path = Files.createTempFile(spoolDirectory, null, suffix);
         OutputStream out = Files.newOutputStream(path);
@@ -285,7 +289,7 @@ public class StoreServiceImpl implements StoreService {
             out = new BufferedOutputStream(out);
             if (fmi != null) {
                 @SuppressWarnings("resource")
-                DicomOutputStream dout = new DicomOutputStream(out, 
+                DicomOutputStream dout = new DicomOutputStream(out,
                         UID.ExplicitVRLittleEndian);
                 if (ds == null)
                     dout.writeFileMetaInformation(fmi);
@@ -314,8 +318,7 @@ public class StoreServiceImpl implements StoreService {
             service.processFile(context);
             service.updateDB(context);
             service.updateCoercedAttributes(context);
-        }    
-        catch (DicomServiceException e) {
+        } catch (DicomServiceException e) {
             context.setStoreAction(StoreAction.FAIL);
             context.setThrowable(e);
             throw e;
@@ -329,9 +332,11 @@ public class StoreServiceImpl implements StoreService {
     public void fireStoreEvent(StoreContext context) {
         storeEvent.fire(context);
     }
-    /* coerceAttributes
-     * applies a loaded XSL stylesheet on the keys if given
-     *  currently 15/4/2014 modifies date and time attributes in the keys per request
+
+    /*
+     * coerceAttributes applies a loaded XSL stylesheet on the keys if given
+     * currently 15/4/2014 modifies date and time attributes in the keys per
+     * request
      */
     @Override
     public void coerceAttributes(StoreContext context)
@@ -340,31 +345,40 @@ public class StoreServiceImpl implements StoreService {
             StoreSession session = context.getStoreSession();
             ArchiveAEExtension arcAE = session.getArchiveAEExtension();
             Attributes attrs = context.getAttributes();
-            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
-            ApplicationEntity remoteAE = aeCache.findApplicationEntity(session.getRemoteAET());
-        	sourceTimeZoneCache = remoteAE.getDevice().getTimeZoneOfDevice();
-            //Time zone store adjustments
-            if(archiveTimeZone!=null){
-        	
-                if(attrs.containsValue(Tag.TimezoneOffsetFromUTC))
-                {
-            	sourceTimeZoneCache = attrs.getTimeZone();
-            	attrs.setTimezone(archiveTimeZone);
+            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                    .getTimeZoneOfDevice();
+            ApplicationEntity remoteAE = aeCache.findApplicationEntity(session
+                    .getRemoteAET());
+            sourceTimeZoneCache = remoteAE.getDevice().getTimeZoneOfDevice();
+            // Time zone store adjustments
+            if (archiveTimeZone != null) {
+
+                if (attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
+                    LOG.debug("(TimeZone Support):Found TimezoneOffsetFromUTC Attribute. \n "
+                            + "(TimeZone Support): With value: "
+                            + attrs.getString(Tag.TimezoneOffsetFromUTC)
+                            + "(TimeZone Support): Setting sourceTimeZoneCache \n"
+                            + "(TimeZone Support): Setting time zone to archive time.");
+                    sourceTimeZoneCache = attrs.getTimeZone();
+                    attrs.setTimezone(archiveTimeZone);
+                } else if (sourceTimeZoneCache == null) {
+                    LOG.debug("(TimeZone Support): SourceTimeZoneCache is null \n "
+                            + "(TimeZone Support): No device time zone"
+                            + "(TimeZone Support): No TimezoneOffsetFromUTC Attribute."
+                            + "Using archive time zone");
+                    sourceTimeZoneCache = archiveTimeZone;
                 }
-                else if(sourceTimeZoneCache == null)
-                {
-            	    sourceTimeZoneCache=archiveTimeZone;
-            	}
-            	attrs.setDefaultTimeZone(sourceTimeZoneCache);
-            	attrs.setTimezone(archiveTimeZone);
-                }
+                LOG.debug("(TimeZone Support): converting time zone to archive time zone \n ");
+                attrs.setDefaultTimeZone(sourceTimeZoneCache);
+                attrs.setTimezone(archiveTimeZone);
+            }
             Attributes modified = context.getCoercedAttributes();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
-                    attrs.getString(Tag.SOPClassUID),
-                    Dimse.C_STORE_RQ, TransferCapability.Role.SCP, 
-                    session.getRemoteAET());
+                    attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
+                    TransferCapability.Role.SCP, session.getRemoteAET());
             if (tpl != null) {
-                attrs.update(SAXTransformer.transform(attrs, tpl, false, false),
+                attrs.update(
+                        SAXTransformer.transform(attrs, tpl, false, false),
                         modified);
             }
         } catch (Exception e) {
@@ -412,8 +426,7 @@ public class StoreServiceImpl implements StoreService {
             path = format.format(context.getAttributes());
         }
         FileSystem fs = session.getStorageFileSystem();
-        return fs.getPath().resolve(
-                path.replace('/', File.separatorChar));
+        return fs.getPath().resolve(path.replace('/', File.separatorChar));
     }
 
     @Override
@@ -456,8 +469,8 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         Attributes attrs = context.getCoercedAttributes();
         if (!attrs.isEmpty()) {
-            LOG.info("{}: Coerced Attributes:\n{}New Attributes:\n{}",
-                    session, attrs, 
+            LOG.info("{}: Coerced Attributes:\n{}New Attributes:\n{}", session,
+                    attrs,
                     new Attributes(context.getAttributes(), attrs.tags()));
         }
     }
@@ -481,7 +494,8 @@ public class StoreServiceImpl implements StoreService {
         return remoteAET.equals(instance.getSeries().getSourceAET());
     }
 
-    private boolean hasFileRefWithDigest(Collection<FileRef> fileRefs, String digest) {
+    private boolean hasFileRefWithDigest(Collection<FileRef> fileRefs,
+            String digest) {
         if (digest == null)
             return false;
 
@@ -499,10 +513,11 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         try {
             Attributes attrs = context.getAttributes();
-            Instance inst = em.createNamedQuery(
-                    Instance.FIND_BY_SOP_INSTANCE_UID, Instance.class)
-                 .setParameter(1, attrs.getString(Tag.SOPInstanceUID))
-                 .getSingleResult();
+            Instance inst = em
+                    .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID,
+                            Instance.class)
+                    .setParameter(1, attrs.getString(Tag.SOPInstanceUID))
+                    .getSingleResult();
             StoreAction action = service.instanceExists(em, context, inst);
             LOG.info("{}: {} already exists - {}", session, inst, action);
             context.setStoreAction(action);
@@ -513,7 +528,7 @@ public class StoreServiceImpl implements StoreService {
                 return inst;
             case REPLACE:
                 inst.setReplaced(true);
-           }
+            }
         } catch (NoResultException e) {
             context.setStoreAction(StoreAction.STORE);
         } catch (DicomServiceException e) {
@@ -531,10 +546,11 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         try {
-            Series series = em.createNamedQuery(
-                    Series.FIND_BY_SERIES_INSTANCE_UID, Series.class)
-                 .setParameter(1, attrs.getString(Tag.SeriesInstanceUID))
-                 .getSingleResult();
+            Series series = em
+                    .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID,
+                            Series.class)
+                    .setParameter(1, attrs.getString(Tag.SeriesInstanceUID))
+                    .getSingleResult();
             service.updateSeries(em, context, series);
             return series;
         } catch (NoResultException e) {
@@ -551,10 +567,11 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         try {
-            Study study = em.createNamedQuery(
-                    Study.FIND_BY_STUDY_INSTANCE_UID, Study.class)
-                 .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
-                 .getSingleResult();
+            Study study = em
+                    .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID,
+                            Study.class)
+                    .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
+                    .getSingleResult();
             service.updateStudy(em, context, study);
             return study;
         } catch (NoResultException e) {
@@ -577,7 +594,8 @@ public class StoreServiceImpl implements StoreService {
                 return patient;
             }
         } catch (NonUniquePatientException e) {
-            LOG.info("{}: Could not find unique Patient Record for received Study",
+            LOG.info(
+                    "{}: Could not find unique Patient Record for received Study",
                     session, e);
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
@@ -589,8 +607,8 @@ public class StoreServiceImpl implements StoreService {
     public Patient createPatient(EntityManager em, StoreContext context)
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Patient patient = patientService.createPatientOnStore(
-                context.getAttributes(), context.getStoreSession().getStoreParam());
+        Patient patient = patientService.createPatientOnStore(context
+                .getAttributes(), context.getStoreSession().getStoreParam());
         LOG.info("{}: Create {}", session, patient);
         return patient;
     }
@@ -677,12 +695,10 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         FileSystem fs = session.getStorageFileSystem();
         Path filePath = context.getFinalFile();
-        FileRef fileRef = new FileRef(fs,
-                unixFilePath(fs.getPath(), filePath),
-                context.getTransferSyntax(),
-                filePath.toFile().length(),
+        FileRef fileRef = new FileRef(fs, unixFilePath(fs.getPath(), filePath),
+                context.getTransferSyntax(), filePath.toFile().length(),
                 context.getFinalFileDigest());
-        //Time zone store adjustments
+        // Time zone store adjustments
         fileRef.setSourceTimeZone(sourceTimeZoneCache.getID());
         fileRef.setInstance(instance);
         em.persist(fileRef);
@@ -692,15 +708,14 @@ public class StoreServiceImpl implements StoreService {
 
     private String unixFilePath(Path fsPath, Path filePath) {
         return fsPath.relativize(filePath).toString()
-            .replace(File.separatorChar, '/');
+                .replace(File.separatorChar, '/');
     }
 
     @Override
     public void updatePatient(EntityManager em, StoreContext context,
             Patient patient) {
         StoreSession session = context.getStoreSession();
-        patientService.updatePatientOnStore(patient,
-                context.getAttributes(),
+        patientService.updatePatientOnStore(patient, context.getAttributes(),
                 session.getStoreParam());
     }
 
@@ -717,11 +732,12 @@ public class StoreServiceImpl implements StoreService {
                 .getAttributeFilter(Entity.Study);
         Attributes studyAttrs = study.getAttributes();
         Attributes modified = new Attributes();
-        if (studyAttrs.updateSelected(data, modified, studyFilter.getSelection())) {
+        if (studyAttrs.updateSelected(data, modified,
+                studyFilter.getSelection())) {
             study.setAttributes(studyAttrs, studyFilter,
                     storeParam.getFuzzyStr());
-            LOG.info("{}: Update {}:\n{}\nmodified:\n{}",
-                    session, study, studyAttrs, modified);
+            LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
+                    studyAttrs, modified);
         }
         service.updatePatient(em, context, study.getPatient());
     }
@@ -738,11 +754,12 @@ public class StoreServiceImpl implements StoreService {
         AttributeFilter seriesFilter = storeParam
                 .getAttributeFilter(Entity.Series);
         Attributes modified = new Attributes();
-        if (seriesAttrs.updateSelected(data, modified, seriesFilter.getSelection())) {
+        if (seriesAttrs.updateSelected(data, modified,
+                seriesFilter.getSelection())) {
             series.setAttributes(seriesAttrs, seriesFilter,
                     storeParam.getFuzzyStr());
-            LOG.info("{}: Update {}:\n{}\nmodified:\n{}",
-                    session, series, seriesAttrs, modified);
+            LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
+                    seriesAttrs, modified);
         }
         service.updateStudy(em, context, series.getStudy());
     }
@@ -760,14 +777,14 @@ public class StoreServiceImpl implements StoreService {
         Attributes modified = new Attributes();
         if (instAttrs.updateSelected(data, modified, instFilter.getSelection())) {
             inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
-            LOG.info("{}: {}:\n{}\nmodified:\n{}",
-                    session, inst, instAttrs, modified);
+            LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
+                    modified);
         }
         service.updateSeries(em, context, inst.getSeries());
     }
 
-    private Collection<RequestAttributes> createRequestAttributes(
-            Sequence seq, FuzzyStr fuzzyStr) {
+    private Collection<RequestAttributes> createRequestAttributes(Sequence seq,
+            FuzzyStr fuzzyStr) {
         if (seq == null || seq.isEmpty())
             return null;
 
