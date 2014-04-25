@@ -104,12 +104,11 @@ public class CFindSCP extends BasicCFindSCP {
             ctx.setArchiveAEExtension(arcAE);
             ctx.setKeys(keys);
             ctx.setQueryParam(queryParam);
+            queryService.coerceAttributesForRequest(ctx, as.getRemoteAET());
+            IDWithIssuer[] pids = queryService.queryPatientIDs(arcAE, keys, queryParam);
+            ctx.setPatientIDs(pids);
             Query query = queryService.createQuery(qrlevel, ctx);
-            IDWithIssuer[] pids=null;
             try {
-                queryService.coerceAttributesForRequest(ctx,as.getRemoteAET());
-                pids= queryService.queryPatientIDs(arcAE, keys, queryParam);
-                ctx.setPatientIDs(pids);
                 query.initQuery();
                 query.executeQuery();
             } catch (Exception e) {

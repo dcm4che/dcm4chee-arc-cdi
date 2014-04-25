@@ -320,12 +320,12 @@ public class QidoRS {
         QueryParam queryParam = queryService.getQueryParam(
                 request, request.getRemoteHost(), arcAE, mkQueryOpts());
         QueryContext ctx = queryService.createQueryContext(queryService);
-        Query query = queryService.createQuery(qrlevel, ctx);
         ctx.setArchiveAEExtension(arcAE);
         ctx.setQueryParam(queryParam);
         ctx.setKeys(keys);
+        ctx.setPatientIDs(pids);
+        Query query = queryService.createQuery(qrlevel, ctx);
         try {
-            ctx.setPatientIDs(pids);
             query.initQuery();
             int status = STATUS_OK;
             int maxResults = arcAE.getQIDOMaxNumberOfResults();
