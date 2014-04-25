@@ -144,7 +144,7 @@ public class QidoRS {
     
     private ArchiveAEExtension arcAE;
     
-    private org.dcm4chee.archive.conf.QueryParam queryParam;
+    private QueryContext queryContext;
 
     @Inject
     private Device device;
@@ -189,8 +189,6 @@ public class QidoRS {
     private String method;
 
     private boolean includeAll;
-
-    private IDWithIssuer[] pids;
 
     private static int[] catAndSort(int[] src1, int[] src2) {
         int[] dest = new int[src1.length + src2.length];
@@ -317,14 +315,7 @@ public class QidoRS {
         init(method, qrlevel, relational, studyInstanceUID, seriesInstanceUID,
                 includetags);
 
-        QueryParam queryParam = queryService.getQueryParam(
-                request, request.getRemoteHost(), arcAE, mkQueryOpts());
-        QueryContext ctx = queryService.createQueryContext(queryService);
-        ctx.setArchiveAEExtension(arcAE);
-        ctx.setQueryParam(queryParam);
-        ctx.setKeys(keys);
-        ctx.setPatientIDs(pids);
-        Query query = queryService.createQuery(qrlevel, ctx);
+        Query query = queryService.createQuery(qrlevel, queryContext);
         try {
             query.initQuery();
             int status = STATUS_OK;
@@ -359,15 +350,6 @@ public class QidoRS {
         } finally {
             query.close();
         }
-    }
-
-    private EnumSet<QueryOption> mkQueryOpts() {
-        EnumSet<QueryOption> queryOpts = EnumSet.noneOf(QueryOption.class);
-        if (fuzzymatching)
-            queryOpts.add(QueryOption.FUZZY);
-        if (datetimematching)
-            queryOpts.add(QueryOption.DATETIME);
-        return queryOpts;
     }
 
     /**
@@ -426,9 +408,22 @@ public class QidoRS {
             throw new WebApplicationException(e, Status.BAD_REQUEST);
         }
 
-        queryParam = queryService.getQueryParam(
-                request, request.getRemoteHost(), arcAE, queryOpts);
-        pids = queryService.queryPatientIDs(arcAE, keys, queryParam);
+        queryContext = queryService.createQueryContext(queryService);
+        queryContext.setRemoteAET(request.getRemoteHost()); //TODO use hostname as AET, may be needed to change
+        queryContext.setServiceSOPClassUID(UID.StudyRootQueryRetrieveInformationModelFIND);
+        queryContext.setArchiveAEExtension(arcAE);
+        QueryParam queryParam = queryService.getQueryParam(
+                request, queryContext.getRemoteAET(), arcAE, queryOpts,
+                accessControlIDs());
+        queryContext.setQueryParam(queryParam);
+        queryContext.setKeys(keys);
+        queryService.initPatientIDs(queryContext);
+
+    }
+
+    //TODO
+    private String[] accessControlIDs() {
+        return StringUtils.EMPTY_STRING;
     }
 
     private void initDefaultIncludefields(int[] defIncludefields) {

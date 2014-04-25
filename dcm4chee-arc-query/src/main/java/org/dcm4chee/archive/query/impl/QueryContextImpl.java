@@ -54,15 +54,19 @@ import org.dcm4chee.archive.query.QueryService;
  */
 public class QueryContextImpl implements QueryContext {
 
-    protected final QueryService service;
+    private final QueryService service;
 
-    protected ArchiveAEExtension arcAE;
+    private ArchiveAEExtension arcAE;
 
-    protected IDWithIssuer[] pids;
+    private String remoteAET;
 
-    protected Attributes keys;
+    private String serviceSOPClassUID;
 
-    protected QueryParam queryParam;
+    private IDWithIssuer[] pids;
+
+    private Attributes keys;
+
+    private QueryParam queryParam;
 
     private Attributes keysOriginal;
     
@@ -88,7 +92,27 @@ public class QueryContextImpl implements QueryContext {
     public void setArchiveAEExtension(ArchiveAEExtension arcAE) {
         this.arcAE = arcAE;
     }
-    
+
+    @Override
+    public String getRemoteAET() {
+        return remoteAET;
+    }
+
+    @Override
+    public void setRemoteAET(String remoteAET) {
+        this.remoteAET = remoteAET;
+    }
+
+    @Override
+    public String getServiceSOPClassUID() {
+        return serviceSOPClassUID;
+    }
+
+    @Override
+    public void setServiceSOPClassUID(String serviceSOPClassUID) {
+        this.serviceSOPClassUID = serviceSOPClassUID;
+    }
+
     @Override
     public Attributes getKeys() {
         return keys;

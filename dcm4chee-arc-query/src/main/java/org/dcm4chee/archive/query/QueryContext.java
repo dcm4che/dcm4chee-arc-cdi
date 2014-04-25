@@ -53,6 +53,14 @@ public interface QueryContext {
 
     QueryService getQueryService();
 
+    String getRemoteAET();
+
+    void setRemoteAET(String remoteAET);
+
+    String getServiceSOPClassUID();
+
+    void setServiceSOPClassUID(String serviceSOPClassUID);
+
     ArchiveAEExtension getArchiveAEExtension();
 
     void setArchiveAEExtension(ArchiveAEExtension arcAE);

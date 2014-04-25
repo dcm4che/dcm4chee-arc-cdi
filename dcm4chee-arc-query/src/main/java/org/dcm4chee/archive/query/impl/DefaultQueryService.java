@@ -153,19 +153,17 @@ public class DefaultQueryService implements QueryService {
 
     @Override
     public QueryParam getQueryParam(Object source, String sourceAET,
-            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts) {
-        return aeExt.getQueryParam(queryOpts, accessControlIDs(source));
+            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,
+            String[] accessControlIDs) {
+        return aeExt.getQueryParam(queryOpts, accessControlIDs);
     }
 
     @Override
-    public IDWithIssuer[] queryPatientIDs(ArchiveAEExtension aeExt,
-            Attributes keys, QueryParam queryParam) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
-        return pid == null ? IDWithIssuer.EMPTY : new IDWithIssuer[] { pid };
-    }
-
-    private String[] accessControlIDs(Object source) {
-        return StringUtils.EMPTY_STRING;
+    public void initPatientIDs(QueryContext ctx) {
+        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(ctx.getKeys());
+        ctx.setPatientIDs(pid == null 
+                ? IDWithIssuer.EMPTY
+                : new IDWithIssuer[] { pid });
     }
 
     @Override
@@ -179,16 +177,17 @@ public class DefaultQueryService implements QueryService {
      * attributes in the keys per request
      */
     @Override
-    public void coerceAttributesForRequest(QueryContext context,
-            String sourceAET) throws DicomServiceException {
+    public void coerceRequestAttributes(QueryContext context)
+            throws DicomServiceException {
 
         try {
             ArchiveAEExtension arcAE = context.getArchiveAEExtension();
             Attributes keys = context.getKeys();
-            //TODO use Affected SOP CLass UID from COmmand Set instead SOP Class UID from keys
             Templates tpl = arcAE.getAttributeCoercionTemplates(
-                    keys.getString(Tag.SOPClassUID), Dimse.C_FIND_RQ,
-                    TransferCapability.Role.SCP, sourceAET);
+                    context.getServiceSOPClassUID(),
+                    Dimse.C_FIND_RQ,
+                    TransferCapability.Role.SCP,
+                    context.getRemoteAET());
             if (tpl != null) {
                 keys.addAll(SAXTransformer.transform(keys, tpl, false, false));
             }
@@ -196,10 +195,11 @@ public class DefaultQueryService implements QueryService {
             TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                     .getTimeZoneOfDevice();
             if (archiveTimeZone != null) {
-                TimeZone sourceTimeZone = getSourceTimeZone(keys, arcAE, sourceAET);
+                TimeZone sourceTimeZone = getSourceTimeZone(keys, arcAE, 
+                        context.getRemoteAET());
                 if (sourceTimeZone != null) {
                     keys.setTimezone(archiveTimeZone);
-                    context.setRequestedTimeZone(keys.getTimeZone());
+                    context.setRequestedTimeZone(sourceTimeZone);
                 }
             }
         } catch (Exception e) {
@@ -229,16 +229,16 @@ public class DefaultQueryService implements QueryService {
      * attributes in the keys per response
      */
     @Override
-    public void coerceAttributesForResponse(Attributes match,
-            QueryContext context, String sourceAET)
+    public void coerceResponseAttributes(QueryContext context, Attributes match)
             throws DicomServiceException {
         try {
             ArchiveAEExtension arcAE = context.getArchiveAEExtension();
             Attributes attrs = match;
-            //TODO use Affected SOP CLass UID from Command Set instead SOP Class UID from keys
             Templates tpl = arcAE.getAttributeCoercionTemplates(
-                    attrs.getString(Tag.SOPClassUID), Dimse.C_FIND_RSP,
-                    TransferCapability.Role.SCU, sourceAET);
+                    context.getServiceSOPClassUID(),
+                    Dimse.C_FIND_RSP,
+                    TransferCapability.Role.SCU,
+                    context.getRemoteAET());
             if (tpl != null) {
                 attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false));
             }

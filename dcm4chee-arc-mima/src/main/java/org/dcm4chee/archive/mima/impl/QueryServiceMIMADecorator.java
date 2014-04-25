@@ -86,9 +86,10 @@ public abstract class QueryServiceMIMADecorator implements QueryService {
 
     @Override
     public QueryParam getQueryParam(Object source, String sourceAET,
-            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts) {
+            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,
+            String[] accessControlIDs) {
         QueryParam queryParam = queryService.getQueryParam(
-                source, sourceAET, aeExt, queryOpts);
+                source, sourceAET, aeExt, queryOpts, accessControlIDs);
         try {
             ApplicationEntity scrAE = aeCache.get(sourceAET);
             if (scrAE != null) {
@@ -106,18 +107,16 @@ public abstract class QueryServiceMIMADecorator implements QueryService {
     }
 
     @Override
-    public IDWithIssuer[] queryPatientIDs(ArchiveAEExtension aeExt,
-           Attributes keys, QueryParam queryParam) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
-        if (pid == null)
-            return IDWithIssuer.EMPTY;
-        
-        if (pid.getIssuer() == null) {
-            if (queryParam.getDefaultIssuerOfPatientID() == null)
-                return new IDWithIssuer[] { pid };
-            pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
+    public void initPatientIDs(QueryContext ctx) {
+        queryService.initPatientIDs(ctx);
+        IDWithIssuer[] pids = ctx.getPatientIDs();
+        if (pids.length > 0) {
+            if (pids[0].getIssuer() == null)
+                pids[0].setIssuer(
+                        ctx.getQueryParam().getDefaultIssuerOfPatientID());
+            ctx.setPatientIDs(
+                    pixConsumer.pixQuery(ctx.getArchiveAEExtension(), pids[0]));
         }
-        return pixConsumer.pixQuery(aeExt, pid);
     }
 
     @Override

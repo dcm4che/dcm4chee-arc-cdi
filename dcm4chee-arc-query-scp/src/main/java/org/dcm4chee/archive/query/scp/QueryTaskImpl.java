@@ -61,11 +61,9 @@ class QueryTaskImpl extends BasicQueryTask {
     private final Query query;
     private final QueryRetrieveLevel modelRootLevel;
     private final QueryService queryService;
-    private final String remoteAET;
 
     public QueryTaskImpl(Association as, PresentationContext pc, Attributes rq,
-            Attributes keys, QueryParam queryParam,
-            QueryRetrieveLevel modelRootLevel, Query query,
+            Attributes keys, QueryRetrieveLevel modelRootLevel, Query query,
             QueryService queryService)
             throws Exception {
         super(as, pc, rq, keys); 
@@ -73,15 +71,14 @@ class QueryTaskImpl extends BasicQueryTask {
         this.query = query;
         this.modelRootLevel = modelRootLevel;
         this.queryService = queryService;
-        this.remoteAET = as.getRemoteAET();
      }
 
     @Override
     protected Attributes adjust(Attributes match) {
         // timezone response adjustment
         try {
-            queryService.coerceAttributesForResponse(match,
-                    query.getQueryContext(), remoteAET);
+            queryService.coerceResponseAttributes(query.getQueryContext(),
+                    match);
         } catch (DicomServiceException e) {
             e.printStackTrace();
         }

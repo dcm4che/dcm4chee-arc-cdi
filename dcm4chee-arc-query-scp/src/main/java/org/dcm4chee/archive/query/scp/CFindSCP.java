@@ -99,14 +99,15 @@ public class CFindSCP extends BasicCFindSCP {
         ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
         try {
             QueryParam queryParam =  queryService.getQueryParam(
-                    as, as.getRemoteAET(), arcAE, queryOpts);
+                    as, as.getRemoteAET(), arcAE, queryOpts, null);
             QueryContext ctx = queryService.createQueryContext(queryService);
+            ctx.setRemoteAET(as.getRemoteAET());
+            ctx.setServiceSOPClassUID(rq.getString(Tag.AffectedSOPClassUID));
             ctx.setArchiveAEExtension(arcAE);
             ctx.setKeys(keys);
             ctx.setQueryParam(queryParam);
-            queryService.coerceAttributesForRequest(ctx, as.getRemoteAET());
-            IDWithIssuer[] pids = queryService.queryPatientIDs(arcAE, keys, queryParam);
-            ctx.setPatientIDs(pids);
+            queryService.coerceRequestAttributes(ctx);
+            queryService.initPatientIDs(ctx);
             Query query = queryService.createQuery(qrlevel, ctx);
             try {
                 query.initQuery();
@@ -115,13 +116,14 @@ public class CFindSCP extends BasicCFindSCP {
                 query.close();
                 throw e;
             } finally {
-                queryEvent.fire(new QueryEvent(ctx.getKeysOriginal(), pids, 
+                queryEvent.fire(new QueryEvent(ctx.getKeysOriginal(),
+                        ctx.getPatientIDs(), 
                         rq.getString(Tag.AffectedSOPClassUID),
                         ae.getDevice(),
                         new LocalAssociationParticipant(as)));
             }
             //return the cached keys
-            return new QueryTaskImpl(as, pc, rq, ctx.getKeysOriginal(), queryParam,
+            return new QueryTaskImpl(as, pc, rq, ctx.getKeysOriginal(),
                     rootLevel, query, queryService);
         } catch (DicomServiceException e) {
             throw e;

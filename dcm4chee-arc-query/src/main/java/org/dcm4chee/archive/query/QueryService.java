@@ -41,7 +41,6 @@ package org.dcm4chee.archive.query;
 import java.util.EnumSet;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
@@ -69,10 +68,10 @@ public interface QueryService {
     Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
 
     QueryParam getQueryParam(Object source, String sourceAET,
-            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts);
+            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,
+            String[] accessControlIDs);
 
-    IDWithIssuer[] queryPatientIDs(ArchiveAEExtension aeExt,
-            Attributes keys, QueryParam queryParam);
+    void initPatientIDs(QueryContext queryContext);
 
     void adjustMatch(QueryContext query, Attributes match);
 
@@ -85,9 +84,9 @@ public interface QueryService {
     int calculateNumberOfStudyRelatedInstance(Long studyPk,
             QueryParam queryParam);
     
-    void coerceAttributesForRequest(QueryContext context, String sourceAET)
+    void coerceRequestAttributes(QueryContext context)
             throws DicomServiceException;
 
-    void coerceAttributesForResponse(Attributes match, QueryContext context,
-            String sourceAET) throws DicomServiceException;
+    void coerceResponseAttributes(QueryContext context, Attributes match)
+            throws DicomServiceException;
 }
