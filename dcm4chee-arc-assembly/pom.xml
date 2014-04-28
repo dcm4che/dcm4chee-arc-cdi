@@ -7,7 +7,7 @@
     <version>4.3.0-SNAPSHOT</version>
   </parent>
   <artifactId>dcm4chee-arc-assembly</artifactId>
-      <version>4.3.0.Alpha4</version>
+  <version>4.3.0.Alpha4</version>
   <packaging>pom</packaging>
   <description>Assemble dcm4chee-arc distribution packages</description>
   <build>
@@ -84,7 +84,7 @@
       <version>1.2-pre-dr-b04</version>
       <type>zip</type>
     </dependency>
-  <!-- <dependency> <groupId>com.soebes.maven.plugins</groupId> <artifactId>iterator-maven-plugin</artifactId> 
-    <version>0.2</version> </dependency> -->
+    <!-- <dependency> <groupId>com.soebes.maven.plugins</groupId> <artifactId>iterator-maven-plugin</artifactId> 
+      <version>0.2</version> </dependency> -->
   </dependencies>
 </project>
