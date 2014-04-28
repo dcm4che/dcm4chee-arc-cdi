@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -6,52 +7,23 @@
     <version>4.3.0-SNAPSHOT</version>
   </parent>
   <artifactId>dcm4chee-arc-assembly</artifactId>
+      <version>4.3.0.Alpha4</version>
   <packaging>pom</packaging>
   <description>Assemble dcm4chee-arc distribution packages</description>
   <build>
     <finalName>dcm4chee-arc-${project.version}-${db}</finalName>
     <plugins>
-	 <!-- <plugin>
-        <groupId>com.soebes.maven.plugins</groupId>
-        <artifactId>iterator-maven-plugin</artifactId>
-        <version>0.2</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>executor</goal>
-            </goals>
-            <configuration>
-              <items>
-                <item>mysql</item>
-                <item>oracle</item>
-				<item>db2</item>
-                <item>h2</item>
-                <item>firebird</item>
-                <item>psql</item>
-				<item>sqlserver</item>
-              </items>
-              <pluginExecutors>
-                <pluginExecutor>
-                  <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                  </plugin>
-                  <configuration>
-				  <attach>false</attach>
-				  <appendAssemblyId>false</appendAssemblyId>
-                    <descriptors>
-                      <descriptor>src/main/assembly/dist.xml</descriptor>
-                    </descriptors>
-                  </configuration>
-              <goal>single</goal>
-                </pluginExecutor>
-              </pluginExecutors>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin> -->
-	  <plugin>
+      <!-- <plugin> <groupId>com.soebes.maven.plugins</groupId> <artifactId>iterator-maven-plugin</artifactId> 
+        <version>0.2</version> <executions> <execution> <phase>generate-sources</phase> 
+        <goals> <goal>executor</goal> </goals> <configuration> <items> <item>mysql</item> 
+        <item>oracle</item> <item>db2</item> <item>h2</item> <item>firebird</item> 
+        <item>psql</item> <item>sqlserver</item> </items> <pluginExecutors> <pluginExecutor> 
+        <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-assembly-plugin</artifactId> 
+        </plugin> <configuration> <attach>false</attach> <appendAssemblyId>false</appendAssemblyId> 
+        <descriptors> <descriptor>src/main/assembly/dist.xml</descriptor> </descriptors> 
+        </configuration> <goal>single</goal> </pluginExecutor> </pluginExecutors> 
+        </configuration> </execution> </executions> </plugin> -->
+      <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.3</version>
         <configuration>
@@ -76,14 +48,14 @@
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-war</artifactId>
-      <version>${project.version}</version>
+      <version>${parent.version}</version>
       <classifier>${db}</classifier>
       <type>war</type>
     </dependency>
-	 <dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-web</artifactId>
-      <version>${project.version}</version>
+      <version>${parent.version}</version>
       <classifier>${db}</classifier>
       <type>war</type>
     </dependency>
@@ -112,10 +84,7 @@
       <version>1.2-pre-dr-b04</version>
       <type>zip</type>
     </dependency>
-	<dependency>
-	<groupId>com.soebes.maven.plugins</groupId>
-	<artifactId>iterator-maven-plugin</artifactId>
-	<version>0.2</version>
-</dependency>
+  <!-- <dependency> <groupId>com.soebes.maven.plugins</groupId> <artifactId>iterator-maven-plugin</artifactId> 
+    <version>0.2</version> </dependency> -->
   </dependencies>
 </project>
