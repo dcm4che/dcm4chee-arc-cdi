@@ -80,6 +80,7 @@ provided by DCM4CHEE Archive 4.x final releases.
 3. Create tables and indexes
        
         > psql -U <user-name> < $DCM4CHEE_ARC/sql/create-table-psql.ddl
+        > psql -U <user-name> < $DCM4CHEE_ARC/sql/create-fk-index.ddl
         > psql -U <user-name> < $DCM4CHEE_ARC/sql/create-index.ddl
 
 
@@ -123,6 +124,7 @@ provided by DCM4CHEE Archive 4.x final releases.
         Password: <user-password>
         > db2 connect to <database-name>
         > db2 -t < $DCM4CHEE_ARC/sql/create-table-db2.ddl
+        > db2 -t < $DCM4CHEE_ARC/sql/create-fk-index.ddl
         > db2 -t < $DCM4CHEE_ARC/sql/create-index.ddl
         > db2 terminate
         
@@ -157,6 +159,7 @@ provided by DCM4CHEE Archive 4.x final releases.
 
         $ sqlplus <user-name>/<user-password>
         SQL> @$DCM4CHEE_ARC/sql/create-table-oracle.ddl
+        SQL> @$DCM4CHEE_ARC/sql/create-fk-index.ddl
         SQL> @$DCM4CHEE_ARC/sql/create-index.ddl
 
 Setup LDAP Server
