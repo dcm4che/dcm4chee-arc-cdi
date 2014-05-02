@@ -182,6 +182,7 @@
         <version>2.1.1</version>
         <configuration>
           <classifier>${db}</classifier>
+          <webappDirectory>${project.build.directory}/${project.build.finalName}-${db}</webappDirectory>
         </configuration>
       </plugin>
       <plugin>
