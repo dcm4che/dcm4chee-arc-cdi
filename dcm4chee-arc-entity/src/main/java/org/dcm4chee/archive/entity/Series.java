@@ -126,7 +126,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "WHERE s.pk = ?2")
 })
 @Entity
-@Table(name = "series4")
+@Table(name = "series")
 public class Series implements Serializable {
 
     private static final long serialVersionUID = -8317105475421750944L;

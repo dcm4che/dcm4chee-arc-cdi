@@ -70,7 +70,7 @@ import org.dcm4che3.data.Attributes;
             "AND c.codingSchemeVersion = ?3")
 })
 @Entity
-@Table(name = "code4")
+@Table(name = "code")
 public class Code extends org.dcm4che3.data.Code {
 
     private static final long serialVersionUID = -130090842318534124L;

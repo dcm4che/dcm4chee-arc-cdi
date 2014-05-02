@@ -62,7 +62,7 @@ import org.dcm4che3.util.DateUtils;
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
 @Entity
-@Table(name = "verify_observer4")
+@Table(name = "verify_observer")
 public class VerifyingObserver implements Serializable {
 
     private static final long serialVersionUID = -4116421655961983539L;

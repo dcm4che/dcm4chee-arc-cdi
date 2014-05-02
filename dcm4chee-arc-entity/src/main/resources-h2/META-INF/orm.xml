@@ -41,7 +41,7 @@
   </mapped-superclass>
 
   <entity class="Patient">
-    <table name="patient4" />
+    <table name="patient" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -54,7 +54,7 @@
   </entity>
 
   <entity class="Study">
-    <table name="study4" />
+    <table name="study" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -67,7 +67,7 @@
   </entity>
 
   <entity class="Series">
-    <table name="series4" />
+    <table name="series" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -80,7 +80,7 @@
   </entity>
 
   <entity class="Instance">
-    <table name="instance4" />
+    <table name="instance" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -93,7 +93,7 @@
   </entity>
 
   <entity class="MWLItem">
-    <table name="mwl_item4" />
+    <table name="mwl_item" />
     <attributes>
       <basic name="encodedAttributes" optional="false">
         <column name="item_attrs" column-definition="varbinary" />
@@ -102,7 +102,7 @@
   </entity>
 
   <entity class="MPPS">
-    <table name="mpps4" />
+    <table name="mpps" />
     <attributes>
       <basic name="encodedAttributes" optional="false">
         <column name="mpps_attrs" column-definition="varbinary" />

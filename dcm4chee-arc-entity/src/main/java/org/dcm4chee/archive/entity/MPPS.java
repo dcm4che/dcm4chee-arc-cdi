@@ -71,7 +71,7 @@ import org.dcm4che3.data.Tag;
             query="SELECT mpps FROM MPPS mpps WHERE mpps.sopInstanceUID = ?1)")
 })
 @Entity
-@Table(name = "mpps4")
+@Table(name = "mpps")
 public class MPPS implements Serializable {
 
     public enum Status {

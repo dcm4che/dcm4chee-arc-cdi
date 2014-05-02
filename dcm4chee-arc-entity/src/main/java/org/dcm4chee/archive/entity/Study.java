@@ -104,7 +104,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
         + "WHERE s.pk = ?2")
 })
 @Entity
-@Table(name = "study4")
+@Table(name = "study")
 public class Study implements Serializable {
 
     private static final long serialVersionUID = -6358525535057418771L;
@@ -231,7 +231,7 @@ public class Study implements Serializable {
     private Attributes cachedAttributes;
 
     @ManyToMany
-    @JoinTable(name = "rel_study_pcode4", 
+    @JoinTable(name = "rel_study_pcode", 
         joinColumns = @JoinColumn(name = "study_fk", referencedColumnName = "pk"),
         inverseJoinColumns = @JoinColumn(name = "pcode_fk", referencedColumnName = "pk"))
     private Collection<Code> procedureCodes;

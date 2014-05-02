@@ -162,7 +162,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "LEFT JOIN i.fileRefs f "
             + "WHERE i.series.seriesInstanceUID = ?1 AND i.replaced = FALSE")})
 @Entity
-@Table(name = "instance4")
+@Table(name = "instance")
 public class Instance implements Serializable {
 
     private static final long serialVersionUID = -6510894512195470408L;

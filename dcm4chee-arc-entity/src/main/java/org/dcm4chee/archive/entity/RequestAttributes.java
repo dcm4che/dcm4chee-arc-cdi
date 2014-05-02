@@ -64,7 +64,7 @@ import org.dcm4che3.soundex.FuzzyStr;
  * @since Feb 29, 2008
  */
 @Entity
-@Table(name = "series_req4")
+@Table(name = "series_req")
 public class RequestAttributes implements Serializable {
 
     private static final long serialVersionUID = -5693026277386978780L;

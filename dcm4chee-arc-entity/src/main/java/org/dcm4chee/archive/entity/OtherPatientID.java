@@ -63,7 +63,7 @@ import org.dcm4che3.data.Tag;
  * @since Feb 28, 2008
  */
 @Entity
-@Table(name = "other_pid4")
+@Table(name = "other_pid")
 public class OtherPatientID implements Serializable {
 
     private static final long serialVersionUID = -7983218873187437331L;
@@ -81,7 +81,7 @@ public class OtherPatientID implements Serializable {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "rel_pat_other_pid4", 
+            name = "rel_pat_other_pid", 
             joinColumns = 
                 @JoinColumn(name = "other_pid_fk", referencedColumnName = "pk"), 
             inverseJoinColumns = 

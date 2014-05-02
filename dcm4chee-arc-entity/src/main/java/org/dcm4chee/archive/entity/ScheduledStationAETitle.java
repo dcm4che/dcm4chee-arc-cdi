@@ -52,7 +52,7 @@ import javax.persistence.Table;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
 @Entity
-@Table(name = "sps_station_aet4")
+@Table(name = "sps_station_aet")
 public class ScheduledStationAETitle implements Serializable  {
 
     private static final long serialVersionUID = -145604862103707241L;
