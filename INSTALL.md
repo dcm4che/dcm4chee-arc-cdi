@@ -555,7 +555,11 @@ Setup WildFly
     You may choose any `<driver-name>` for the JDBC Driver, `<module-name>` must match the name
     defined in the module definition file `module.xml` of the JDBC driver, e.g.:
 
-        [standalone@localhost:9999 /] /subsystem=datasources/jdbc-driver=db2:add(driver-module-name=com.ibm.db2)
+        [standalone@localhost:9999 /] /subsystem=datasources/jdbc-driver=db2:add(driver-name=db2,driver-module-name=com.ibm.db2)
+
+    For MySQL JDBC driver with version 5.1.30+ you have to specify `driver-class-name=com.mysql.jdbc.Driver` additionally, e.g.:
+
+        [standalone@localhost:9999 /] /subsystem=datasources/jdbc-driver=mysql:add(driver-name=mysql,driver-module-name=com.mysql,driver-class-name=com.mysql.jdbc.Driver)    
 
 9.  Create and enable a new Data Source bound to JNDI name `java:/PacsDS` using WildFly CLI:
 
