@@ -63,64 +63,75 @@ public class ConnectionEventSource implements ConnectionMonitor {
     @Override
     public void onConnectionEstablished(Connection conn, Connection remoteConn,
             Socket s) {
-// Eventually Audit Connection Established
-//        ConnectionEvent connEv = new ConnectionEvent(
-//                remoteConn.getHostname()+":"+remoteConn.getPort(), 
-//                false, 
-//                null, 
-//                new GenericParticipant(conn.getHostname(), Participant.UNKNOWN),
-//                conn.getDevice());
-//        connectionEvent.fire(connEv);
+        
+            // Eventually Audit Connection Established
+            //        ConnectionEvent connEv = new ConnectionEvent(
+            //                remoteConn.getHostname()+":"+remoteConn.getPort(), 
+            //                false, 
+            //                null, 
+            //                new GenericParticipant(conn.getHostname(), Participant.UNKNOWN),
+            //                conn.getDevice());
+            //        connectionEvent.fire(connEv);
     }
 
     @Override
     public void onConnectionFailed(Connection conn, Connection remoteConn,
             Socket s, Exception e) {
         
-        ConnectionEvent connEv = new ConnectionEvent(
-                remoteConn.getHostname()+":"+remoteConn.getPort(), 
-                true, 
-                e, 
-                new GenericParticipant(conn.getHostname(), Participant.UNKNOWN),
-                conn.getDevice());
-        connectionEvent.fire(connEv);
+        if (!remoteConn.getProtocol().isSyslog()) // no connection events for Syslog failures
+        {
+            ConnectionEvent connEv = new ConnectionEvent(
+                    remoteConn.getHostname()+":"+remoteConn.getPort(), 
+                    true, 
+                    e, 
+                    new GenericParticipant(conn.getHostname(), Participant.UNKNOWN),
+                    conn.getDevice());
+            
+            connectionEvent.fire(connEv);
+        }
     }
 
     @Override
     public void onConnectionRejectedBlacklisted(Connection conn, Socket s) {
         
-        ConnectionEvent connEv = new ConnectionEvent(
-                conn.getHostname()+":"+conn.getPort(), 
-                true, 
-                new Exception("Connection Rejected:Blacklisted"), 
-                new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
-                conn.getDevice());
-        connectionEvent.fire(connEv);
-
+        if (!conn.getProtocol().isSyslog()) // no connection events for Syslog failures
+        {
+            ConnectionEvent connEv = new ConnectionEvent(
+                    conn.getHostname()+":"+conn.getPort(), 
+                    true, 
+                    new Exception("Connection Rejected:Blacklisted"), 
+                    new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
+                    conn.getDevice());
+            connectionEvent.fire(connEv);
+        }
     }
 
     @Override
     public void onConnectionRejected(Connection conn, Socket s, Exception e) {
         
-        ConnectionEvent connEv = new ConnectionEvent(
-                conn.getHostname()+":"+conn.getPort(),  
-                true, 
-                e, 
-                new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
-                conn.getDevice());
-        connectionEvent.fire(connEv);
+        if (!conn.getProtocol().isSyslog()) // no connection events for Syslog failures
+        {
+            ConnectionEvent connEv = new ConnectionEvent(
+                    conn.getHostname()+":"+conn.getPort(),  
+                    true, 
+                    e, 
+                    new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
+                    conn.getDevice());
+            connectionEvent.fire(connEv);
+        }
     }
 
     @Override
     public void onConnectionAccepted(Connection conn, Socket s) {
-// Eventually Audit Connection Accepted
-//        ConnectionEvent connEv = new ConnectionEvent(
-//                conn.getHostname()+":"+conn.getPort(), 
-//                false, 
-//                null, 
-//                new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
-//                conn.getDevice());
-//        connectionEvent.fire(connEv);
+        
+            // Eventually Audit Connection Accepted
+            //        ConnectionEvent connEv = new ConnectionEvent(
+            //                conn.getHostname()+":"+conn.getPort(), 
+            //                false, 
+            //                null, 
+            //                new GenericParticipant(s.getRemoteSocketAddress().toString(), Participant.UNKNOWN),
+            //                conn.getDevice());
+            //        connectionEvent.fire(connEv);
     }
 
 }
