@@ -51,6 +51,8 @@ import javax.transaction.UserTransaction;
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.io.SAXReader;
+import org.dcm4che3.soundex.ESoundex;
+import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.Availability;
@@ -177,7 +179,6 @@ public class InitDataForTest {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         return SAXReader.parse(cl.getResource(name).toString());
     }
-
 }
 
 

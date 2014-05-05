@@ -40,6 +40,7 @@ package org.dcm4chee.archive.store;
 
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.util.TimeZone;
 
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -92,4 +93,12 @@ public interface StoreSession {
     void setProperty(String key, Object value);
 
     Device getDevice();
+    
+    Device getSourceDevice();
+    
+    void setSourceDevice(Device source);
+
+    TimeZone getSourceTimeZone();
+    
+    void setSourceTimeZone(TimeZone sourceTimeZone);
 }

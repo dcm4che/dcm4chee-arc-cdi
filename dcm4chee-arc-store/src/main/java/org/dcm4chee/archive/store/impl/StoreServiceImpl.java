@@ -138,8 +138,6 @@ public class StoreServiceImpl implements StoreService {
     @Inject
     private IApplicationEntityCache aeCache;
 
-    private TimeZone sourceTimeZoneCache;
-
     @Override
     public StoreSession createStoreSession(StoreService storeService) {
         return new StoreSessionImpl(storeService);
@@ -355,7 +353,7 @@ public class StoreServiceImpl implements StoreService {
                 LOG.warn("Failed to access configuration for query source {} - no Timezone support:",
                         session.getRemoteAET(), e1);
             }
-            sourceTimeZoneCache = remoteAE.getDevice().getTimeZoneOfDevice();
+            session.setSourceTimeZone(remoteAE.getDevice().getTimeZoneOfDevice());
             // Time zone store adjustments
             if (archiveTimeZone != null) {
 
@@ -365,17 +363,17 @@ public class StoreServiceImpl implements StoreService {
                             + attrs.getString(Tag.TimezoneOffsetFromUTC)
                             + "(TimeZone Support): Setting sourceTimeZoneCache \n"
                             + "(TimeZone Support): Setting time zone to archive time.");
-                    sourceTimeZoneCache = attrs.getTimeZone();
+                    session.setSourceTimeZone(attrs.getTimeZone());
                     attrs.setTimezone(archiveTimeZone);
-                } else if (sourceTimeZoneCache == null) {
+                } else if (session.getSourceTimeZone() == null) {
                     LOG.debug("(TimeZone Support): SourceTimeZoneCache is null \n "
                             + "(TimeZone Support): No device time zone"
                             + "(TimeZone Support): No TimezoneOffsetFromUTC Attribute."
                             + "Using archive time zone");
-                    sourceTimeZoneCache = archiveTimeZone;
+                    session.setSourceTimeZone(archiveTimeZone);
                 }
                 LOG.debug("(TimeZone Support): converting time zone to archive time zone \n ");
-                attrs.setDefaultTimeZone(sourceTimeZoneCache);
+                attrs.setDefaultTimeZone(session.getSourceTimeZone());
                 attrs.setTimezone(archiveTimeZone);
             }
             Attributes modified = context.getCoercedAttributes();
@@ -705,7 +703,9 @@ public class StoreServiceImpl implements StoreService {
                 context.getTransferSyntax(), filePath.toFile().length(),
                 context.getFinalFileDigest());
         // Time zone store adjustments
-        fileRef.setSourceTimeZone(sourceTimeZoneCache.getID());
+        TimeZone sourceTimeZone = session.getSourceTimeZone();
+        if(sourceTimeZone!=null)
+        fileRef.setSourceTimeZone(sourceTimeZone.getID());
         fileRef.setInstance(instance);
         em.persist(fileRef);
         LOG.info("{}: Create {}", session, fileRef);
