@@ -444,10 +444,7 @@ Setup WildFly
 
     *Note*: Beside LDAP Connection configuration, the private key used in TLS connections
     and XSLT stylesheets specifing attribute coercion in incoming or outgoing DICOM messages
-    and mapping of HL7 fields in incoming HL7 messages are not stored in LDAP
-	A keystore file is provided with the sample config under $DCM4CHEE_ARC/configuration/dcm4chee-arc
-	the password for the given keystore is "changeit" and can be set in the LDAP or java preferences configuration
-	by setting the attribute dcmKeyStorePin to change it instead of secret as provided in the sample configuration.
+    and mapping of HL7 fields in incoming HL7 messages are not stored in LDAP.
 
 3.  Install DCM4CHE 3.3.3 libraries as WildFly module:
 
@@ -461,10 +458,9 @@ Setup WildFly
         > cd  $JBOSS_HOME
         > unzip $DCM4CHEE_ARC/jboss-module/jai_imageio-jboss-modules-1.2-pre-dr-b04.zip
 
-		Latest version of the native libraries can be downloaded from
+    Latest version of the native libraries can be downloaded from
+    [jai-download](http://download.java.net/media/jai/builds/release/1_1_3/)
 
-		[jai-download](http://download.java.net/media/jai/builds/release/1_1_3/)
-		
 5.  Install QueryDSL 3.2.3 libraries as WildFly module:
 
         > cd  $JBOSS_HOME
@@ -525,22 +521,22 @@ Setup WildFly
    
     Verify, that WildFly started successfully, e.g.:
 
-		===============================================================================
-
-		JBoss Bootstrap Environment
-
-		JBOSS_HOME: "D:\Users\aprta\Documents\Servers\wildfly-8.0.0.Final"
-
-		JAVA: "C:\Program Files\Java\jdk1.7.0_51\bin\java"
-
-		JAVA_OPTS: "-XX:+UseCompressedOops -Dprogram.name=standalone.bat -Xms64M -Xmx512M -XX:MaxPermSize=256M 
-		-Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman"
-
-		===============================================================================
+        ===============================================================================
         
-		13:04:01,146 INFO  [org.jboss.modules] (main) JBoss Modules version 1.3.0.Final
-		13:04:01,348 INFO  [org.jboss.msc] (main) JBoss MSC version 1.2.0.Final
-		13:04:01,412 INFO  [org.jboss.as] (MSC service thread 1-6) JBAS015899: WildFly 8.0.0.Final "WildFly" starting
+        JBoss Bootstrap Environment
+        
+        JBOSS_HOME: "D:\Users\aprta\Documents\Servers\wildfly-8.0.0.Final"
+        
+        JAVA: "C:\Program Files\Java\jdk1.7.0_51\bin\java"
+        
+        JAVA_OPTS: "-XX:+UseCompressedOops -Dprogram.name=standalone.bat -Xms64M -Xmx512M -XX:MaxPermSize=256M 
+        -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman"
+        
+        ===============================================================================
+        
+        13:04:01,146 INFO  [org.jboss.modules] (main) JBoss Modules version 1.3.0.Final
+        13:04:01,348 INFO  [org.jboss.msc] (main) JBoss MSC version 1.2.0.Final
+        13:04:01,412 INFO  [org.jboss.as] (MSC service thread 1-6) JBAS015899: WildFly 8.0.0.Final "WildFly" starting
         :
         13:04:02,744 INFO  [org.jboss.as] (Controller Boot Thread) JBAS015874: WildFly 8.0.0.Final "WildFly" started in 1826ms - Started 183 of 232 services (80 services are lazy, passive or on-demand)
                 
@@ -585,31 +581,31 @@ Setup WildFly
         [standalone@localhost:9999 /] jms-queue add --queue-address=mppsscu --entries=queue/mppsscu
         [standalone@localhost:9999 /] jms-queue add --queue-address=stgcmtscp --entries=queue/stgcmtscp
 
-11. At default, DCM4CHEE Archive 4.x will look for the LDAP connection configuration file at
+11. Set system property `org.dcm4chee.archive.ldap` to the location of the LDAP Connection configuration file,
+    using WildFly CLI, e.g.:
 
-        $JBOSS_HOME/standalone/configuration/dcm4chee-arc/ldap.properties
+        [standalone@localhost:9999 /] /system-property=org.dcm4chee.archive.ldap:add(value=/home/gunter/wildfly-8.0.0.Final/standalone/configuration/dcm4chee-arc/ldap.properties)
 
-    You may specify a different location by system property `org.dcm4chee.archive.ldapPropertiesURL`
-    using WildFly CLI:
+    *Note:* Alternatively system property `org.dcm4chee.archive.prefs` may be set to any value, to
+    configure DCM4CHEE Archive 4.3.0 to try to fetch the Archive configuration from Java Preferences.
+    If neither system property `org.dcm4chee.archive.ldap` nor `org.dcm4chee.archive.prefs` is set,
+    the deployment of DCM4CHEE Archive 4.3.0 will fail with:
 
-        [standalone@localhost:9999 /] /system-property=org.dcm4chee.archive.ldapPropertiesURL:add(value=<url>)
-
-    If DCM4CHEE Archive 4.x cannot find the LDAP connection configuration on the specified location, it
-    will try to fetch the Archive configuration from Java Preferences.
+        org.jboss.weld.exceptions.DeploymentException: WELD-001409: Ambiguous dependencies for type IApplicationEntityCache with qualifiers @Default
+          at injection point [BackedAnnotatedField] @Inject private org.dcm4chee.archive.retrieve.scp.CMoveSCP.aeCache
+          at org.dcm4chee.archive.retrieve.scp.CMoveSCP.aeCache(CMoveSCP.java:0)
+          Possible dependencies: 
+          - Producer Method [IApplicationEntityCache] with qualifiers [@Any @Default] declared as [[BackedAnnotatedMethod] @Produces @ApplicationScoped public static org.dcm4chee.archive.conf.prefs.PreferencesArchiveConfigurationFactory.getApplicationEntityCache(DicomConfiguration)],
+          - Producer Method [IApplicationEntityCache] with qualifiers [@Any @Default] declared as [[BackedAnnotatedMethod] @Produces @ApplicationScoped public static org.dcm4chee.archive.conf.ldap.LdapArchiveConfigurationFactory.getApplicationEntityCache(DicomConfiguration)]
+        :
 
 12. At default, DCM4CHEE Archive 4.x will assume `dcm4chee-arc` as its Device Name, used to find its
     configuration in the configuration backend (LDAP Server or Java Preferences). You may specify a different
     Device Name by system property `org.dcm4chee.archive.deviceName` using WildFly CLI:
 
         [standalone@localhost:9999 /] /system-property=org.dcm4chee.archive.deviceName:add(value=<device-name>)
-		
-*Note*:If you do that you can not directly use the sample ldap configuration provided under $DCM4CHEE_ARC/ldap/sample-config.ldif
-You will then have to change in each dn the dicomDeviceName=XXX from dcm4chee-arc to the name you specify.
 
-13. JMX MBeans are no longer supported by DCM4CHEE Archive 4.x, however appropriate restful interfaces are available for starting, stopping 
-	the archive service as well as reloading the archive configuration.
-   
-14. Deploy DCM4CHEE Archive 4.x using WildFly CLI, e.g.:
+13. Deploy DCM4CHEE Archive 4.x using WildFly CLI, e.g.:
 
         [standalone@localhost:9999 /] deploy $DCM4CHEE_ARC/deploy/dcm4chee-arc-war-4.3.0.Alpha4-mysql.war
 
@@ -619,42 +615,42 @@ You will then have to change in each dn the dicomDeviceName=XXX from dcm4chee-ar
         13:52:30,000 INFO  [org.jboss.as.jpa] (MSC service thread 1-2) JBAS011401: Read persistence.xml for dcm4chee-arc
         :
         13:52:34,284 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-1) Start TCP Listener on localhost/127.0.0.1:11112
-		13:52:34,284 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-2) Start TCP Listener on localhost/127.0.0.1:2575
-		13:52:34,612 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-3) Start TCP Listener on localhost/127.0.0.1:2762
-		13:52:34,613 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-4) Start TCP Listener on localhost/127.0.0.1:12575
+        13:52:34,284 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-2) Start TCP Listener on localhost/127.0.0.1:2575
+        13:52:34,612 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-3) Start TCP Listener on localhost/127.0.0.1:2762
+        13:52:34,613 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-4) Start TCP Listener on localhost/127.0.0.1:12575
         13:52:34,775 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-11) JBAS017534: Registered web context: /dcm4chee-arc
         13:52:34,814 INFO  [org.jboss.as.server] (ServerService Thread Pool -- 32) JBAS018559: Deployed "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war" (runtime-name : "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war")
 
-15. You may undeploy DCM4CHEE Archive at any time using WildFly CLI, e.g.:
+14. You may undeploy DCM4CHEE Archive at any time using WildFly CLI, e.g.:
 
         [standalone@localhost:9999 /] undeploy dcm4chee-arc-war-4.3.0.Alpha4-mysql.war
 
         13:59:14,861 INFO  [org.jboss.weld.deployer] (MSC service thread 1-2) JBAS016009: Stopping weld service for deployment dcm4chee-arc-war-4.3.0.Alpha4-mysql.war
-		13:59:14,863 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-1) Stop TCP Listener on localhost/127.0.0.1:11112
-		13:59:14,864 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-4) Stop TCP Listener on localhost/127.0.0.1:12575
-		13:59:14,864 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-3) Stop TCP Listener on localhost/127.0.0.1:2762
-		13:59:14,864 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-2) Stop TCP Listener on localhost/127.0.0.1:2575
-		..
-		13:59:14,895 INFO  [org.jboss.as.jpa] (ServerService Thread Pool -- 74) JBAS011410: Stopping Persistence Unit (phase 1 of 2) Service 'dcm4chee-arc-war-4.3.0.Alpha4-mysql.war#dcm4chee-arc'
-		13:59:14,927 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-14) JBAS015877: Stopped deployment dcm4chee-arc-war-4.3.0.Alpha4-mysql.war (runtime-name: dcm4chee-arc-war-4.3.0.Alpha4-mysql.war) in 110ms
-		13:59:14,983 INFO  [org.jboss.as.server] (management-handler-thread - 2) JBAS018558: Undeployed "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war" (runtime-name: "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war")
+        13:59:14,863 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-1) Stop TCP Listener on localhost/127.0.0.1:11112
+        13:59:14,864 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-4) Stop TCP Listener on localhost/127.0.0.1:12575
+        13:59:14,864 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-3) Stop TCP Listener on localhost/127.0.0.1:2762
+        13:59:14,864 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-2) Stop TCP Listener on localhost/127.0.0.1:2575
+        ..
+        13:59:14,895 INFO  [org.jboss.as.jpa] (ServerService Thread Pool -- 74) JBAS011410: Stopping Persistence Unit (phase 1 of 2) Service 'dcm4chee-arc-war-4.3.0.Alpha4-mysql.war#dcm4chee-arc'
+        13:59:14,927 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-14) JBAS015877: Stopped deployment dcm4chee-arc-war-4.3.0.Alpha4-mysql.war (runtime-name: dcm4chee-arc-war-4.3.0.Alpha4-mysql.war) in 110ms
+        13:59:14,983 INFO  [org.jboss.as.server] (management-handler-thread - 2) JBAS018558: Undeployed "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war" (runtime-name: "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war")
 
-16. You may deploy the web interface using the provided dcm4chee-arc-web-4.3.0.Alpha4-mysql.war using wildfly CLI, e.g.:
+15. You may deploy the web interface using the provided dcm4chee-arc-web-4.3.0.Alpha4.war using wildfly CLI, e.g.:
 
-		[standalone@localhost:9999 /] deploy $DCM4CHEE_ARC/deploy/dcm4chee-arc-web-4.3.0.Alpha4-mysql.war
-		
-		14:04:46,081 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-16) JBAS015876: Starting deployment of "dcm4chee-arc-web-4.3.0.alpha4-mysql.war" (runtime-name: "dcm4chee-arc-web-4.3.0.alpha4-mysql.war")
-		14:04:46,185 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-15) JBAS017534: Registered web context: /dcm4chee-web
-		14:04:46,210 INFO  [org.jboss.as.server] (management-handler-thread - 12) JBAS018559: Deployed "dcm4chee-arc-web-4.3.0.alpha4-mysql.war" (runtime-name: "dcm4chee-arc-web-4.3.0.alpha4-mysql.war")
-		
-17. You may undeply the web interface at any time using the WildFly CLI, e.g.:
+        [standalone@localhost:9999 /] deploy $DCM4CHEE_ARC/deploy/dcm4chee-arc-web-4.3.0.Alpha4.war
+        
+        14:04:46,081 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-16) JBAS015876: Starting deployment of "dcm4chee-arc-web-4.3.0.alpha4.war" (runtime-name: "dcm4chee-arc-web-4.3.0.alpha4.war")
+        14:04:46,185 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-15) JBAS017534: Registered web context: /dcm4chee-web
+        14:04:46,210 INFO  [org.jboss.as.server] (management-handler-thread - 12) JBAS018559: Deployed "dcm4chee-arc-web-4.3.0.Alpha4.war" (runtime-name: "dcm4chee-arc-web-4.3.0.alpha4.war")
 
-		[standalone@localhost:9999 /] undeploy dcm4chee-arc-web-4.3.0.Alpha4-mysql.war
+16. You may undeploy the web interface at any time using the WildFly CLI, e.g.:
 
-		14:08:19,399 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-15) JBAS017535: Unregistered web context: /dcm4chee-web
-		14:08:19,416 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-14) JBAS015877: Stopped deployment dcm4chee-arc-web-4.3.0.alpha4-mysql.war (runtime-name: dcm4chee-arc-web-4.3.0.alpha4-mysql.war) in 18ms
-		..
-		14:08:19,449 INFO  [org.jboss.as.server] (management-handler-thread - 16) JBAS018558: Undeployed "dcm4chee-arc-web-4.3.0.alpha4-mysql.war" (runtime-name: "dcm4chee-arc-web-4.3.0.alpha4-mysql.war")
+        [standalone@localhost:9999 /] undeploy dcm4chee-arc-web-4.3.0.Alpha4.war
+        
+        14:08:19,399 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-15) JBAS017535: Unregistered web context: /dcm4chee-web
+        14:08:19,416 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-14) JBAS015877: Stopped deployment dcm4chee-arc-web-4.3.0.Alpha4.war (runtime-name: dcm4chee-arc-web-4.3.0.alpha4.war) in 18ms
+        ..
+        14:08:19,449 INFO  [org.jboss.as.server] (management-handler-thread - 16) JBAS018558: Undeployed "dcm4chee-arc-web-4.3.0.Alpha4.war" (runtime-name: "dcm4chee-arc-web-4.3.0.alpha4.war")
 
 Control DCM4CHEE Archive 4.x by HTTP GET
 ----------------------------------------
