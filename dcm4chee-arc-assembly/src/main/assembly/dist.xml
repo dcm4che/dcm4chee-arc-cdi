@@ -52,6 +52,7 @@
       <directory>../dcm4chee-arc-entity/src/main</directory>
       <includes>
         <include>sql/create-index.ddl</include>
+        <include>sql/create-fk-index.ddl</include>
       </includes>
       <outputDirectory>.</outputDirectory>
       <lineEnding>dos</lineEnding>
@@ -72,8 +73,8 @@
         <include>org.dcm4che.dcm4chee-arc:dcm4chee-arc-war</include>
         <include>org.dcm4che.dcm4chee-arc:dcm4chee-arc-web</include>
       </includes>
-      <outputFileNameMapping>${artifact.artifactId}-${project.version}${dashClassifier?}.${artifact.extension}</outputFileNameMapping>
-      <useProjectArtifact>false</useProjectArtifact>
+<!--       <outputFileNameMapping>${artifact.artifactId}-${project.version}${dashClassifier?}.${artifact.extension}</outputFileNameMapping>
+ -->      <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>
     <dependencySet>
       <outputDirectory>jboss-module</outputDirectory>
