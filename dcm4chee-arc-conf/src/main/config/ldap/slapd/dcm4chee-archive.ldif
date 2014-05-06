@@ -1,7 +1,7 @@
-# dcm4chee-arc extensions of the DICOM Application Configuration Data Model Hierarchy LDAP Schema
-dn: cn=dcm4chee-arc,cn=schema,cn=config
+# DICOM Application Configuration Data Model Hierarchy LDAP Schema
+dn: cn=dcm4chee-archive,cn=schema,cn=config
 objectClass: olcSchemaConfig
-cn: dcm4chee-arc
+cn: dcm4chee-archive
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.1 NAME 'dcmInitFileSystemURI'
   DESC 'URI of directory path of initial Storage File System.'
   EQUALITY caseExactIA5Match
@@ -229,6 +229,13 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.44 NAME 'dcmQidoMaxNumberOfResults'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
+  
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.45 NAME 'dcmIsTimeZoneSupported'
+  DESC 'Specifies if time zone support will be used or not'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+  SINGLE-VALUE )
+  
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -274,7 +281,8 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
     dcmShowRejectedInstances $
     hl7PIXManagerApplication $
     hl7PIXConsumerApplication $
-    dcmQidoMaxNumberOfResults ) )
+    dcmQidoMaxNumberOfResults $
+    dcmIsTimeZoneSupported) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.10 NAME 'dcmAttributeFilter'
   DESC 'Attributes stored in the database'
   SUP top STRUCTURAL
