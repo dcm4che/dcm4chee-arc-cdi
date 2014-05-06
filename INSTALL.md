@@ -10,7 +10,7 @@ Requirements
 
 -   Supported SQL Database:
     - [MySQL 5.5](http://dev.mysql.com/downloads/mysql)
-    - [PostgreSQL 9.2.4](http://www.postgresql.org/download/)
+    - [PostgreSQL 9.3.4](http://www.postgresql.org/download/)
     - [Firebird 2.5.1](http://www.firebirdsql.org/en/firebird-2-5-1/)
     - [DB2 10.1](http://www-01.ibm.com/software/data/db2/express/download.html)
     - [Oracle 11g](http://www.oracle.com/technetwork/products/express-edition/downloads/)
@@ -18,8 +18,8 @@ Requirements
       (not yet tested!)
 
 -   LDAP Server - tested with
-    - [OpenDJ 2.5.0-Xpress1](http://www.forgerock.org/opendj.html),
-    - [OpenLDAP 2.4.35](http://www.openldap.org/software/download/) and
+    - [OpenDJ 2.6.0](https://backstage.forgerock.com/#/downloads/enterprise/OpenDJ),
+    - [OpenLDAP 2.4.39](http://www.openldap.org/software/download/) and
     - [Apache DS 2.0.0-M16](http://directory.apache.org/apacheds/downloads.html).
 
     *Note*: DCM4CHEE Archive 4.3.0.Alpha4 also supports using Java Preferences 
