@@ -340,23 +340,29 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public void coerceAttributes(StoreContext context)
             throws DicomServiceException {
+
+        StoreSession session = context.getStoreSession();
+        ArchiveAEExtension arcAE = session.getArchiveAEExtension();
+        Attributes attrs = context.getAttributes();
+        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                .getTimeZoneOfDevice();
+        ApplicationEntity remoteAE = null;
         try {
-            StoreSession session = context.getStoreSession();
-            ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-            Attributes attrs = context.getAttributes();
-            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                    .getTimeZoneOfDevice();
-            ApplicationEntity remoteAE = null;
-            try {
-                remoteAE = aeCache.get(session.getRemoteAET());
-            } catch (ConfigurationException e1) {
-                LOG.warn("Failed to access configuration for query source {} - no Timezone support:",
-                        session.getRemoteAET(), e1);
-            }
-            session.setSourceTimeZone(remoteAE.getDevice().getTimeZoneOfDevice());
             // Time zone store adjustments
             if (archiveTimeZone != null) {
-
+                try {
+                    remoteAE = aeCache.get(session.getRemoteAET());
+                } catch (ConfigurationException e1) {
+                    LOG.warn(
+                            "Failed to access configuration for query source {} - no Timezone support:",
+                            session.getRemoteAET(), e1);
+                }
+                if (remoteAE != null)
+                    session.setSourceTimeZone(remoteAE.getDevice()
+                            .getTimeZoneOfDevice());
+                else
+                    session.setSourceTimeZone(archiveTimeZone);
+                
                 if (attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
                     LOG.debug("(TimeZone Support):Found TimezoneOffsetFromUTC Attribute. \n "
                             + "(TimeZone Support): With value: "
@@ -704,8 +710,8 @@ public class StoreServiceImpl implements StoreService {
                 context.getFinalFileDigest());
         // Time zone store adjustments
         TimeZone sourceTimeZone = session.getSourceTimeZone();
-        if(sourceTimeZone!=null)
-        fileRef.setSourceTimeZone(sourceTimeZone.getID());
+        if (sourceTimeZone != null)
+            fileRef.setSourceTimeZone(sourceTimeZone.getID());
         fileRef.setInstance(instance);
         em.persist(fileRef);
         LOG.info("{}: Create {}", session, fileRef);
