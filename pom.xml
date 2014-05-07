@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.dcm4che.dcm4chee-arc</groupId>
   <artifactId>dcm4chee-arc-parent</artifactId>
-  <version>4.3.0.Alpha4</version>
+  <version>4.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dcm4che.version>3.3.3</dcm4che.version>
+    <dcm4che.version>3.3.4-SNAPSHOT</dcm4che.version>
     <slf4j.version>1.7.5</slf4j.version>
     <hibernate.version>4.2.7.Final</hibernate.version>
     <querydsl.version>3.2.3</querydsl.version>
