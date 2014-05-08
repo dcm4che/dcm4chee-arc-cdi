@@ -40,17 +40,17 @@
     </dependency>
     <dependency>
       <groupId>org.hibernate.javax.persistence</groupId>
-      <artifactId>hibernate-jpa-2.1-api</artifactId>
+      <artifactId>hibernate-jpa-2.0-api</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.spec.javax.ejb</groupId>
-      <artifactId>jboss-ejb-api_3.2_spec</artifactId>
+      <artifactId>jboss-ejb-api_3.1_spec</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.spec.javax.jms</groupId>
-      <artifactId>jboss-jms-api_2.0_spec</artifactId>
+      <artifactId>jboss-jms-api_1.1_spec</artifactId>
       <scope>provided</scope>
     </dependency>
   </dependencies>

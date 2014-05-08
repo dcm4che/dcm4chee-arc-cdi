@@ -43,10 +43,13 @@ import java.io.IOException;
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-import javax.jms.JMSContext;
-import javax.jms.JMSProducer;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
 import javax.jms.Queue;
+import javax.jms.Session;
 
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
@@ -99,13 +102,24 @@ public class StgCmtServiceImpl implements StgCmtService {
 
     public void scheduleNEventReport(String localAET, String remoteAET,
             Attributes eventInfo, int retries, long delay) {
-        try (JMSContext jmsContext = connFactory.createContext();) {
-            JMSProducer producer = jmsContext.createProducer();
-            producer.setProperty("LocalAET", localAET);
-            producer.setProperty("RemoteAET", remoteAET);
-            producer.setProperty("Retries", retries);
-            producer.setDeliveryDelay(delay);
-            producer.send(stgcmtSCPQueue, eventInfo);
+        try {
+            Connection conn = connFactory.createConnection();
+            try {
+                Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                MessageProducer producer = session.createProducer(stgcmtSCPQueue);
+                ObjectMessage msg = session.createObjectMessage(eventInfo);
+                msg.setStringProperty("LocalAET", localAET);
+                msg.setStringProperty("RemoteAET", remoteAET);
+                msg.setIntProperty("Retries", retries);
+                if (delay > 0)
+                    msg.setLongProperty("_HQ_SCHED_DELIVERY",
+                            System.currentTimeMillis() + delay);
+                producer.send(msg);
+            } finally {
+                conn.close();
+            }
+        } catch (JMSException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -1,4 +1,7 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -17,7 +20,12 @@
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-code</artifactId>
-       <version>${project.version}</version>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-conf</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
@@ -33,8 +41,8 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.jboss.spec.javax.enterprise.concurrent</groupId>
-      <artifactId>jboss-concurrency-api_1.0_spec</artifactId>
+      <groupId>org.jboss.spec.javax.ejb</groupId>
+      <artifactId>jboss-ejb-api_3.1_spec</artifactId>
       <scope>provided</scope>
     </dependency>
   </dependencies>

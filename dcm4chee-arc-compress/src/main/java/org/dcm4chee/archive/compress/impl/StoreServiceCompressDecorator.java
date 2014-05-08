@@ -44,7 +44,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 
-import javax.annotation.Priority;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
@@ -70,7 +69,7 @@ import org.slf4j.LoggerFactory;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
-@Decorator @Priority(Interceptor.Priority.APPLICATION)
+@Decorator
 public abstract class StoreServiceCompressDecorator implements StoreService {
 
     static Logger LOG = LoggerFactory.getLogger(StoreServiceCompressDecorator.class);

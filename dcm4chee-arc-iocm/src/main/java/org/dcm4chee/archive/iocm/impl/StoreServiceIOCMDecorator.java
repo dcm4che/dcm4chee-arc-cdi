@@ -43,12 +43,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import javax.annotation.Priority;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 import javax.persistence.EntityManager;
 
 import org.dcm4che3.data.Attributes;
@@ -73,7 +71,7 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Decorator @Priority(Interceptor.Priority.APPLICATION)
+@Decorator
 public abstract class StoreServiceIOCMDecorator implements StoreService {
 
     public static int DUPLICATE_REJECTION_NOTE = Status.CannotUnderstand + 0x800;

@@ -176,8 +176,8 @@
       </dependency>
       <dependency>
         <groupId>org.jboss.spec</groupId>
-        <artifactId>jboss-javaee-all-7.0</artifactId>
-        <version>1.0.0.Beta2</version>
+        <artifactId>jboss-javaee-6.0</artifactId>
+        <version>3.0.2.Final</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>

@@ -42,6 +42,7 @@ import javax.ejb.MessageDriven;
 import javax.inject.Inject;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
@@ -71,7 +72,7 @@ public class StgCmtMDB implements MessageListener {
         try {
             stgCmtService.sendNEventReport(msg.getStringProperty("LocalAET"),
                 msg.getStringProperty("RemoteAET"),
-                msg.getBody(Attributes.class),
+                (Attributes) ((ObjectMessage) msg).getObject(),
                 msg.getIntProperty("Retries"));
         } catch (Throwable th) {
             LOG.warn("Failed to process " + msg, th);
