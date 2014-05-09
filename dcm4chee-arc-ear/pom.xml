@@ -8,11 +8,8 @@
     <artifactId>dcm4chee-arc-parent</artifactId>
     <version>4.4.0-SNAPSHOT</version>
   </parent>
-  <artifactId>dcm4chee-arc-war</artifactId>
-  <packaging>war</packaging>
-  <properties>
-
-  </properties>
+  <artifactId>dcm4chee-arc-ear</artifactId>
+  <packaging>ear</packaging>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -21,18 +18,9 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-conf-ldap</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-conf-prefs</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-service</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -49,16 +37,19 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-patient-impl</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-code</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-store</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -69,11 +60,7 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-stgcmt-scp</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-stow</artifactId>
-      <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -84,6 +71,7 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-query</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -104,35 +92,23 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-mpps-scp</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-mpps-scu</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-ian-scu</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-ctrl</artifactId>
-      <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-compress</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-wado</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-qido</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -155,25 +131,14 @@
       <artifactId>dcm4chee-arc-audit</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-war-skinny</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+    </dependency>
   </dependencies>
   <profiles>
-    <profile>
-      <id>do-not-deploy</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <wildfly-skip>true</wildfly-skip>
-      </properties>
-    </profile>
-    <profile>
-      <id>wildfly-deploy</id>
-      <properties>
-        <wildfly-skip>false</wildfly-skip>
-        <wildfly-hostname>127.0.0.1</wildfly-hostname>
-        <wildfly-port>9990</wildfly-port>
-      </properties>
-    </profile>
     <profile>
       <id>prefs</id>
       <dependencies>
@@ -196,36 +161,24 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
-    </profile>    
+    </profile>
   </profiles>
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>2.1.1</version>
+        <artifactId>maven-ear-plugin</artifactId>
+        <version>2.9</version>
         <configuration>
           <classifier>${db}</classifier>
-          <webappDirectory>${project.build.directory}/${project.build.finalName}-${db}</webappDirectory>
+          <defaultLibBundleDir>lib</defaultLibBundleDir>
+          <modules>
+            <webModule>
+              <groupId>org.dcm4che.dcm4chee-arc</groupId>
+              <artifactId>dcm4chee-arc-war-skinny</artifactId>
+              <contextRoot>dcm4chee-arc</contextRoot>
+            </webModule>
+          </modules>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.wildfly.plugins</groupId>
-        <artifactId>wildfly-maven-plugin</artifactId>
-        <version>1.0.1.Final</version>
-        <configuration>
-          <hostname>${wildfly-hostname}</hostname>
-          <port>${wildfly-port}</port>
-          <filename>${project.build.finalName}-${db}.${project.packaging}</filename>
-          <skip>${wildfly-skip}</skip>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>install</phase>
-            <goals>
-              <goal>deploy</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
