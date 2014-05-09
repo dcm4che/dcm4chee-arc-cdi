@@ -223,6 +223,7 @@
     <module>dcm4chee-arc-store-scp</module>
     <module>dcm4chee-arc-stow</module>
     <module>dcm4chee-arc-ctrl</module>
+    <module>dcm4chee-arc-data-mgmt</module>
     <module>dcm4chee-arc-war</module>
     <module>dcm4chee-arc-compress</module>
     <module>dcm4chee-arc-stgcmt-scp</module>
