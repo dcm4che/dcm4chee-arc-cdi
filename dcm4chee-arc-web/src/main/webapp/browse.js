@@ -512,7 +512,7 @@
         var row = table.insertRow(-1);
         row.className = "attribute";
         row.insertCell(-1).innerHTML = level;
-        row.insertCell(-1).innerHTML = keywordOf(tag);
+        row.insertCell(-1).innerHTML = keywordOf(tag, null);
         row.insertCell(-1).innerHTML = tag2str(tag);
         row.insertCell(-1).innerHTML = attr.vr;
         row.insertCell(-1).innerHTML = valueOf2(tag, attr);
