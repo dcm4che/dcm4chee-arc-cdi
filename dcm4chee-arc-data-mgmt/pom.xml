@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcm4che.dcm4chee-arc</groupId>
     <artifactId>dcm4chee-arc-parent</artifactId>
-    <version>4.3.0.Alpha4</version>
+    <version>4.4.0-SNAPSHOT</version>
   </parent>
   <artifactId>dcm4chee-arc-data-mgmt</artifactId>
   <dependencies>
@@ -55,7 +55,7 @@
     </dependency>
     <dependency>
       <groupId>org.hibernate.javax.persistence</groupId>
-      <artifactId>hibernate-jpa-2.1-api</artifactId>
+      <artifactId>hibernate-jpa-2.0-api</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -65,12 +65,13 @@
     </dependency>
     <dependency>
       <groupId>org.jboss.spec.javax.ejb</groupId>
-      <artifactId>jboss-ejb-api_3.2_spec</artifactId>
+      <artifactId>jboss-ejb-api_3.1_spec</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.resteasy</groupId>
-      <artifactId>jaxrs-api</artifactId>
+      <artifactId>resteasy-multipart-provider</artifactId>
+      <version>3.0.6.Final</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -81,7 +82,7 @@
     </dependency>
     <dependency>
       <groupId>org.jboss.spec.javax.servlet</groupId>
-      <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+      <artifactId>jboss-servlet-api_3.0_spec</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
