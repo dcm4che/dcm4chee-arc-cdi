@@ -613,7 +613,7 @@ public class QidoRS {
         Templates jsonTpls0 = jsonTpls;
         if (jsonTpls == null)
             jsonTpls = jsonTpls0 = SAXTransformer.newTemplates(new StreamSource(
-                    QidoRS.class.getResource("json_compact.xsl").toString()));
+                    QidoRS.class.getResource("json_indent.xsl").toString()));
         return jsonTpls0;
     }
 
