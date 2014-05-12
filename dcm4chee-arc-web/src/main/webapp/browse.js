@@ -512,7 +512,7 @@
         var row = table.insertRow(-1);
         row.className = "attribute";
         row.insertCell(-1).innerHTML = level;
-        row.insertCell(-1).innerHTML = keywordOf(tag, null);
+        row.insertCell(-1).innerHTML = DCM4CHE.elementDictionary.lookup("name",tag);
         row.insertCell(-1).innerHTML = tag2str(tag);
         row.insertCell(-1).innerHTML = attr.vr;
         row.insertCell(-1).innerHTML = valueOf2(tag, attr);
@@ -573,11 +573,7 @@
     },
 
     valueOf2 = function(name, attr) {
-        console.log(name);
-        console.log(getVR(name));
-        if (getVR(name) == "PN") {
-            console.log(name);
-            console.log(getVR(name));
+        if (DCM4CHE.elementDictionary.lookup("vr",name) == "PN") {
             return pnOf(attr);
         }
         if (attr.vr == "SQ") {
