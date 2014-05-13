@@ -44,9 +44,9 @@
                   <version>${dcm4che.version}</version>
                   <type>jar</type>
                   <overWrite>false</overWrite>
-                  <outputDirectory>src/main/webapp</outputDirectory>
+                  <outputDirectory>target/classes/webapp2</outputDirectory>
                   <destFileName>dict-min.js</destFileName>
-                  <includes>**/dict-min.js</includes>
+                  <includes>js/dict-min.js</includes>
                 </artifactItem>
               </artifactItems>
             </configuration>
@@ -56,19 +56,14 @@
       <plugin>
         <artifactId>maven-war-plugin</artifactId>
         <version>2.1.1</version>
-    <!--     <configuration>
-          <overlays>
-            <overlay>
-              <groupId>org.dcm4che</groupId>
-              <artifactId>dcm4che-javascript</artifactId>
-              <version>${dcm4che.version}</version>
-              <includes>
-                <include>
-                </include>
-              </includes>
-            </overlay>
-          </overlays>
-        </configuration> -->
+        <configuration>
+          <webResources>
+            <resource>
+              <!-- this is relative to the pom.xml directory -->
+              <directory>target/classes/webapp2</directory>
+            </resource>
+          </webResources>
+        </configuration>
       </plugin>
     </plugins>
   </build>
