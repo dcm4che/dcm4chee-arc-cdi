@@ -48,6 +48,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.List;
 
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -80,6 +81,7 @@ import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.ElementDictionary;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.datamgmt.ejb.DataMgmtBean;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB;
 import org.dcm4chee.archive.rs.HttpSource;
 import org.dcm4chee.archive.store.StoreService;
@@ -93,6 +95,7 @@ import org.xml.sax.SAXException;
  * 
  */
 @Path("/datamgmt")
+@RequestScoped
 public class DataMgmt {
 
     private static final Logger log = LoggerFactory
@@ -106,12 +109,13 @@ public class DataMgmt {
     StoreService storeService;
 
     @Inject
-    DataMgmtEJB dataManager;
+    DataMgmtBean dataManager;
 
     @Inject
     IApplicationEntityCache aeCache;
 
-    private static final String archAETitle = "DCM4CHEE";
+    private static final String archDeviceName =
+            "org.dcm4chee.archive.deviceName";
 
     @HeaderParam("Content-Type")
     private MediaType contentType;
@@ -119,11 +123,12 @@ public class DataMgmt {
     
     @POST
     @Path("updateDICOM")
-    @Consumes({ "application/xml", "multipart/form-data", "application/json",
+    @Consumes({ "application/xml", "application/json",
             "application/octet-stream", "application/dicom",
             "application/dicom+xml" })
     public Response updateDICOM(@Context UriInfo uriInfo, InputStream in)
             throws Exception {
+        log.info(storeService.DATA_SET_NOT_PARSEABLE+"");
         log.info("------------" + request.getHeader("Content-Type"));
         log.info("########" + contentType.getType() + "###########" + "sub####"
                 + contentType.getSubtype());
@@ -331,6 +336,9 @@ public class DataMgmt {
         // get archive extension for store service attributes filter purposes
         ArchiveAEExtension arcAE;
         try {
+            log.info(System.getProperty(archDeviceName));
+            log.info(aeCache.get(System.getProperty(archDeviceName)).getAETitle());
+            String archAETitle =  aeCache.get("DCM4CHEE").getAETitle();
             arcAE = aeCache.get(archAETitle).getAEExtension(
                     ArchiveAEExtension.class);
         } catch (ConfigurationException e) {
@@ -358,6 +366,7 @@ public class DataMgmt {
         // get archive extension for store service attributes filter purposes
         ArchiveAEExtension arcAE;
         try {
+            String archAETitle =  aeCache.get(System.getProperty(archDeviceName)).getAETitle();
             arcAE = aeCache.get(archAETitle).getAEExtension(
                     ArchiveAEExtension.class);
         } catch (ConfigurationException e) {
@@ -385,6 +394,7 @@ public class DataMgmt {
         // get archive extension for store service attributes filter purposes
         ArchiveAEExtension arcAE;
         try {
+            String archAETitle =  aeCache.get(System.getProperty(archDeviceName)).getAETitle();
             arcAE = aeCache.get(archAETitle).getAEExtension(
                     ArchiveAEExtension.class);
         } catch (ConfigurationException e) {
@@ -412,6 +422,7 @@ public class DataMgmt {
         // get archive extension for store service attributes filter purposes
         ArchiveAEExtension arcAE;
         try {
+            String archAETitle =  aeCache.get(System.getProperty(archDeviceName)).getAETitle();
             arcAE = aeCache.get(archAETitle).getAEExtension(
                     ArchiveAEExtension.class);
         } catch (ConfigurationException e) {

@@ -100,7 +100,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.net</Dependencies>
+              <Dependencies>org.dcm4che.net, org.dcm4che.conf.api</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>
