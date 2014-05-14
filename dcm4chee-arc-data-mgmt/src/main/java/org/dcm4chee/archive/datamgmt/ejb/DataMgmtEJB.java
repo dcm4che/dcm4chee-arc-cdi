@@ -40,7 +40,10 @@ package org.dcm4chee.archive.datamgmt.ejb;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.NoSuchFileException;
 import java.util.Collection;
 import java.util.List;
 
@@ -339,65 +342,92 @@ public class DataMgmtEJB implements DataMgmtBean {
     }
 
     @Override
-    public Instance deleteInstance(String sopInstanceUID) {
+    public Instance deleteInstance(String sopInstanceUID)
+            throws Exception {
         TypedQuery<Instance> query = em.createNamedQuery(
                 Instance.FIND_BY_SOP_INSTANCE_UID, Instance.class)
                 .setParameter(1, sopInstanceUID);
         Instance inst = query.getSingleResult();
         Series series = inst.getSeries();
         Study study = series.getStudy();
-        
+
         int numInstancesNew = series.getNumberOfInstances() - 1;
-        int numInstancesNewStudy = study.getNumberOfInstances() -1;
+        int numInstancesNewStudy = study.getNumberOfInstances() - 1;
         em.remove(inst);
         if (numInstancesNew > 0)
             series.setNumberOfInstances(numInstancesNew);
         else
             series.resetNumberOfInstances();
-        if(numInstancesNewStudy > 0)
+        if (numInstancesNewStudy > 0)
             study.setNumberOfInstances(numInstancesNewStudy);
         else
             study.resetNumberOfInstances();
-        
+        List<FileRef> fileRef = (List<FileRef>) inst.getFileRefs();
+        for (FileRef file : fileRef) {
+
+            try {
+                log.info("deleted file: " + file.getFilePath());
+                if(!new File(file.getFileSystem().getPath() + "/" + file.getFilePath()).delete())
+                    throw new Exception();
+            } catch (NoSuchFileException e) {
+                log.error("No such file or directory\n"
+                        + e.getStackTrace().toString());
+            } catch (IOException e1) {
+                log.error("No sufficient permissions to delete file\n"
+                        + e1.getStackTrace().toString());
+            }
+        }
+
+        // TODO-Clear service
         return inst;
     }
 
     @Override
-    public Series purgeSeries(String seriesInstanceUID, String studyInstanceUID) {
-        Series series = deleteSeries(seriesInstanceUID);
-        Study study = series.getStudy();
-        
-        if(study.getNumberOfInstances() == -1)
-            deleteStudy(studyInstanceUID);
-        
-        return series;
+    public boolean deleteSeriesIfEmpty(String seriesInstanceUID,
+            String studyInstanceUID) {
+        TypedQuery<Series> query = em.createNamedQuery(
+                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(
+                1, seriesInstanceUID);
+        Series series = query.getSingleResult();
+
+        if (series.getNumberOfInstances() == -1){
+            em.remove(series);
+        return true;
+        }
+
+        return false;
     }
 
     @Override
-    public Instance purgeInstance(String sopInstanceUID, String seriesInstanceUID, String studyInstanceUID) {
-        Instance instance = deleteInstance(sopInstanceUID);
-        Series series = instance.getSeries();
-        Study study = series.getStudy();
-        try{
-        if(series.getNumberOfInstances() == -1)
-            deleteSeries(seriesInstanceUID);
-        if(study.getNumberOfInstances() == -1)
-            deleteStudy(studyInstanceUID);
+    public boolean deleteStudyIfEmpty(String studyInstanceUID) {
+        TypedQuery<Study> query = em.createNamedQuery(
+                Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
+                studyInstanceUID);
+        Study study = query.getSingleResult();
+
+        if (study.getNumberOfInstances() == -1){
+         return true;
         }
-        catch(Exception e)
-        {
-            log.error(e.getStackTrace().toString());
-        }
-        finally
-        {
-            List<FileRef> fileRef = (List<FileRef>) instance.getFileRefs();
-            for(FileRef file :fileRef)
-            {
-                log.info("deleted file: "+ file.getFilePath());
-                new File(file.getFileSystem().getPath()+"/"+file.getFilePath()).delete();
-            }
-        }
-        return instance;
+
+        return false;
+    }
+
+    @Override
+    public Instance splitSeries(String sopInstanceUID, String seriesInstanceUID) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Series splitStudy(String seriesInstanceUID, String studyInstanceUID) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Study moveStudy(String pid) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

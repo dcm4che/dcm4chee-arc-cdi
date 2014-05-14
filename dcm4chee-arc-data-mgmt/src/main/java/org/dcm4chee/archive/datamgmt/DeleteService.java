@@ -38,6 +38,10 @@
 
 package org.dcm4chee.archive.datamgmt;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
+
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -76,7 +80,8 @@ public class DeleteService {
     public Response deleteStudyGet(
             @PathParam("StudyInstanceUID") String studyInstanceUID) {
         RSP = "Deleted Study with UID = "
-                + dataManager.deleteStudy(studyInstanceUID).getStudyInstanceUID();
+                + dataManager.deleteStudy(studyInstanceUID)
+                        .getStudyInstanceUID();
 
         return Response.ok(RSP).build();
     }
@@ -87,7 +92,8 @@ public class DeleteService {
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
         RSP = "Deleted Series with UID = "
-                + dataManager.deleteSeries(seriesInstanceUID).getSeriesInstanceUID();
+                + dataManager.deleteSeries(seriesInstanceUID)
+                        .getSeriesInstanceUID();
 
         return Response.ok(RSP).build();
     }
@@ -97,9 +103,11 @@ public class DeleteService {
     public Response deleteInstanceGet(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID) {
+            @PathParam("SOPInstanceUID") String sopInstanceUID)
+            throws Exception {
         RSP = "Deleted Instance with UID = "
-                + dataManager.deleteInstance(sopInstanceUID).getSopInstanceUID();
+                + dataManager.deleteInstance(sopInstanceUID)
+                        .getSopInstanceUID();
 
         return Response.ok(RSP).build();
     }
@@ -109,7 +117,8 @@ public class DeleteService {
     public Response deleteStudy(
             @PathParam("StudyInstanceUID") String studyInstanceUID) {
         RSP = "Deleted Study with UID = "
-                + dataManager.deleteStudy(studyInstanceUID).getStudyInstanceUID();
+                + dataManager.deleteStudy(studyInstanceUID)
+                        .getStudyInstanceUID();
 
         return Response.ok(RSP).build();
 
@@ -121,7 +130,8 @@ public class DeleteService {
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
         RSP = "Deleted Series with UID = "
-                + dataManager.deleteSeries(seriesInstanceUID).getSeriesInstanceUID();
+                + dataManager.deleteSeries(seriesInstanceUID)
+                        .getSeriesInstanceUID();
 
         return Response.ok(RSP).build();
     }
@@ -131,55 +141,61 @@ public class DeleteService {
     public Response deleteInstance(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID) {
+            @PathParam("SOPInstanceUID") String sopInstanceUID)
+            throws Exception {
         RSP = "Deleted Instance with UID = "
-                + dataManager.deleteInstance(sopInstanceUID).getSopInstanceUID();
+                + dataManager.deleteInstance(sopInstanceUID)
+                        .getSopInstanceUID();
 
         return Response.ok(RSP).build();
     }
 
     @GET
-    @Path("/purge/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
-    public Response purgeSeriesGet(
+    @Path("/deleteifempty/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
+    public Response deleteSeriesIfEmptyGet(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
-        RSP = "Purged Series with UID = "
-                + dataManager.purgeSeries(seriesInstanceUID,studyInstanceUID).getSeriesInstanceUID();
-        
+        RSP = "Series with UID = "
+                + seriesInstanceUID
+                + " was empty and Deleted = "
+                + dataManager.deleteSeriesIfEmpty(seriesInstanceUID,
+                        studyInstanceUID);
+
         return Response.ok(RSP).build();
     }
 
     @GET
-    @Path("/purge/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
-    public Response purgeInstanceGet(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID) {
-        RSP = "Purged Instance with UID = "
-                + dataManager.purgeInstance(sopInstanceUID, seriesInstanceUID,studyInstanceUID).getSopInstanceUID();
+    @Path("/deleteifempty/studies/{StudyInstanceUID}")
+    public Response deleteStudyIfEmptyGet(
+            @PathParam("StudyInstanceUID") String studyInstanceUID) {
+        RSP = "Study with UID = " + studyInstanceUID
+                + " was empty and Deleted = "
+                + dataManager.deleteStudyIfEmpty(studyInstanceUID);
 
         return Response.ok(RSP).build();
     }
 
     @DELETE
     @Path("/purge/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
-    public Response purgeSeries(
+    public Response deleteSeriesIfEmpty(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
-        RSP = "Purged Series with UID = "
-                + dataManager.purgeSeries(seriesInstanceUID,studyInstanceUID).getSeriesInstanceUID();
+        RSP = "Series with UID = "
+                + seriesInstanceUID
+                + " was empty and Deleted = "
+                + dataManager.deleteSeriesIfEmpty(seriesInstanceUID,
+                        studyInstanceUID);
 
         return Response.ok(RSP).build();
     }
 
     @DELETE
     @Path("/purge/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
-    public Response purgeInstance(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID) {
-        RSP = "Purged Instance with UID = "
-                + dataManager.purgeInstance(sopInstanceUID, seriesInstanceUID, studyInstanceUID).getSopInstanceUID();
+    public Response deleteStudyIfEmpty(
+            @PathParam("StudyInstanceUID") String studyInstanceUID) {
+        RSP = "Study with UID = " + studyInstanceUID
+                + " was empty and Deleted = "
+                + dataManager.deleteStudyIfEmpty(studyInstanceUID);
 
         return Response.ok(RSP).build();
     }

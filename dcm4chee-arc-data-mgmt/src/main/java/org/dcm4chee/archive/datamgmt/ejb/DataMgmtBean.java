@@ -38,6 +38,10 @@
 
 package org.dcm4chee.archive.datamgmt.ejb;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
+
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.dcm4che3.data.Attributes;
@@ -84,10 +88,13 @@ public interface DataMgmtBean {
             byte[] blob, StoreContext context, Study study)
             throws DicomServiceException ;
 
-    public Study deleteStudy(String studyInstanceUID);
-    public Series deleteSeries(String seriesInstanceUID);
-    public Instance deleteInstance(String sopInstanceUID);
+    Study deleteStudy(String studyInstanceUID);
+    Series deleteSeries(String seriesInstanceUID);
+    Instance deleteInstance(String sopInstanceUID) throws FileNotFoundException, NoSuchFileException, IOException, Exception;
     
-    public Series purgeSeries(String seriesInstanceUID, String studyInstanceUID);
-    public Instance purgeInstance(String sopInstanceUID, String seriesInstanceUID, String studyInstanceUID);
+    boolean deleteSeriesIfEmpty(String seriesInstanceUID, String studyInstanceUID);
+    boolean deleteStudyIfEmpty(String studyInstanceUID);
+    Instance splitSeries(String sopInstanceUID, String seriesInstanceUID);
+    Series splitStudy(String seriesInstanceUID, String studyInstanceUID);
+    Study moveStudy(String pid);
 }
