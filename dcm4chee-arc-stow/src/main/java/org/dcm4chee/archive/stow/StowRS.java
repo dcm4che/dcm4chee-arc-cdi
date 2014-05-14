@@ -467,53 +467,57 @@ public class StowRS {
 
     private boolean resolveBulkdata(final StoreSession session,
             final Attributes fmi, Attributes attrs) {
-        return attrs.accept(new Visitor() {
-            @Override
-            public boolean visit(Attributes attrs, int tag, VR vr, Object value) {
-                if (!(value instanceof BulkData))
+        try {
+            return attrs.accept(new Visitor() {
+                @Override
+                public boolean visit(Attributes attrs, int tag, VR vr, Object value) {
+                    if (!(value instanceof BulkData))
+                        return true;
+
+                    String uri = ((BulkData) value).uri;
+                    BulkdataPath bulkdataPath = bulkdata.get(uri);
+                    if (bulkdataPath == null) {
+                        LOG.info("{}: Missing Bulkdata {}", session, uri);
+                        return false;
+                    }
+
+                    java.nio.file.Path path = bulkdataPath.path;
+                    BulkData bd = new BulkData(
+                            path.toUri().toString(),
+                            0, (int) path.toFile().length(),
+                            attrs.bigEndian());
+
+                    MediaType mediaType = bulkdataPath.mediaType;
+                    if (mediaType.isCompatible(
+                            MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
+                        attrs.setValue(tag, vr, bd);
+                        return true;
+                    }
+
+                    if (!(attrs.isRoot() && tag == Tag.PixelData)) {
+                        LOG.info("{}: Invalid Mediatype of Bulkdata - {}",
+                                session, mediaType);
+                        return false;
+                    }
+
+                    try {
+                        fmi.setString(Tag.TransferSyntaxUID, VR.UI,
+                                MediaTypes.transferSyntaxOf(mediaType));
+                    } catch (IllegalArgumentException e) {
+                        LOG.info("{}: Invalid Mediatype of Bulkdata - {}",
+                                session, mediaType);
+                        return false;
+                    }
+
+                    Fragments frags = attrs.newFragments(Tag.PixelData, VR.OB, 2);
+                    frags.add(null);
+                    frags.add(bd);
                     return true;
-
-                String uri = ((BulkData) value).uri;
-                BulkdataPath bulkdataPath = bulkdata.get(uri);
-                if (bulkdataPath == null) {
-                    LOG.info("{}: Missing Bulkdata {}", session, uri);
-                    return false;
                 }
-
-                java.nio.file.Path path = bulkdataPath.path;
-                BulkData bd = new BulkData(
-                        path.toUri().toString(),
-                        0, (int) path.toFile().length(),
-                        attrs.bigEndian());
-
-                MediaType mediaType = bulkdataPath.mediaType;
-                if (mediaType.isCompatible(
-                        MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
-                    attrs.setValue(tag, vr, bd);
-                    return true;
-                }
-
-                if (!(attrs.isRoot() && tag == Tag.PixelData)) {
-                    LOG.info("{}: Invalid Mediatype of Bulkdata - {}",
-                            session, mediaType);
-                    return false;
-                }
-
-                try {
-                    fmi.setString(Tag.TransferSyntaxUID, VR.UI,
-                            MediaTypes.transferSyntaxOf(mediaType));
-                } catch (IllegalArgumentException e) {
-                    LOG.info("{}: Invalid Mediatype of Bulkdata - {}",
-                            session, mediaType);
-                    return false;
-                }
-
-                Fragments frags = attrs.newFragments(Tag.PixelData, VR.OB, 2);
-                frags.add(null);
-                frags.add(bd);
-                return true;
-            }
-        }, true);
+            }, true);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static final class BulkdataPath {
