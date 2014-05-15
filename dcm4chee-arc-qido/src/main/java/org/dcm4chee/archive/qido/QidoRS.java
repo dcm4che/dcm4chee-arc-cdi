@@ -39,6 +39,7 @@ package org.dcm4chee.archive.qido;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -46,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -70,6 +73,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.json.JSONWriter;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.QueryOption;
@@ -591,14 +595,16 @@ public class QidoRS {
 
             @Override
             public void write(OutputStream out) throws IOException {
+                JsonGenerator gen=null;
+                StringWriter writer=null;
                 try {
                     StreamResult result = new StreamResult(out);
-                    Templates jsonTpls = jsonTpls();
+                    gen = Json.createGenerator(result.getOutputStream());
                     for (int i = 0, n=matches.size(); i < n; i++) {
                         out.write(i == 0 ? '[' : ',');
                             Attributes match = matches.get(i);
-                            SAXTransformer.getSAXWriter(jsonTpls, result)
-                                .write(match);
+                            new JSONWriter(gen).write(match);
+                            gen.flush();
                     }
                     out.write(']');
                 } catch (Exception e) {
@@ -609,13 +615,13 @@ public class QidoRS {
         return output;
     }
 
-    private static Templates jsonTpls() throws Exception {
-        Templates jsonTpls0 = jsonTpls;
-        if (jsonTpls == null)
-            jsonTpls = jsonTpls0 = SAXTransformer.newTemplates(new StreamSource(
-                    QidoRS.class.getResource("json_indent.xsl").toString()));
-        return jsonTpls0;
-    }
+//    private static Templates jsonTpls() throws Exception {
+//        Templates jsonTpls0 = jsonTpls;
+//        if (jsonTpls == null)
+//            jsonTpls = jsonTpls0 = SAXTransformer.newTemplates(new StreamSource(
+//                    QidoRS.class.getResource("json_indent.xsl").toString()));
+//        return jsonTpls0;
+//    }
 
     private Attributes addRetrieveURL(Attributes match, QueryRetrieveLevel qrlevel) {
         match.setString(Tag.RetrieveURL, VR.UT, RetrieveURL(match, qrlevel));
