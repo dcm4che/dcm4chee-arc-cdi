@@ -200,4 +200,18 @@ public class DeleteService {
         return Response.ok(RSP).build();
     }
 
+    @GET
+    @Path("/splitstudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudy/{TargetStudyInstanceUID}")
+    public Response splitStudy(
+            @PathParam("StudyInstanceUID") String studyInstanceUID,
+            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
+            @PathParam("TargetStudyInstanceUID") String targetStudyInstanceUID) {
+        RSP = "Series with UID = "
+                + seriesInstanceUID
+                + " was moved from : \n Study with UID= "+studyInstanceUID+" to study with UID = "+targetStudyInstanceUID
+                + " Success: "
+                + dataManager.splitStudy(studyInstanceUID, seriesInstanceUID, targetStudyInstanceUID);
+
+        return Response.ok(RSP).build();
+    }
 }

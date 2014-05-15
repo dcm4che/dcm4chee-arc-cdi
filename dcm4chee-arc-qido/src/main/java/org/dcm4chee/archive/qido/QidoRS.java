@@ -595,18 +595,16 @@ public class QidoRS {
 
             @Override
             public void write(OutputStream out) throws IOException {
-                JsonGenerator gen=null;
-                StringWriter writer=null;
                 try {
-                    StreamResult result = new StreamResult(out);
-                    gen = Json.createGenerator(result.getOutputStream());
+                    JsonGenerator gen = Json.createGenerator(out);
+                    JSONWriter writer = new JSONWriter(gen);
+                    gen.writeStartArray();
                     for (int i = 0, n=matches.size(); i < n; i++) {
-                        out.write(i == 0 ? '[' : ',');
                             Attributes match = matches.get(i);
-                            new JSONWriter(gen).write(match);
-                            gen.flush();
+                            writer.write(match);
                     }
-                    out.write(']');
+                    gen.writeEnd();
+                    gen.flush();
                 } catch (Exception e) {
                     throw new WebApplicationException(e);
                 }
@@ -614,15 +612,7 @@ public class QidoRS {
         };
         return output;
     }
-
-//    private static Templates jsonTpls() throws Exception {
-//        Templates jsonTpls0 = jsonTpls;
-//        if (jsonTpls == null)
-//            jsonTpls = jsonTpls0 = SAXTransformer.newTemplates(new StreamSource(
-//                    QidoRS.class.getResource("json_indent.xsl").toString()));
-//        return jsonTpls0;
-//    }
-
+    
     private Attributes addRetrieveURL(Attributes match, QueryRetrieveLevel qrlevel) {
         match.setString(Tag.RetrieveURL, VR.UT, RetrieveURL(match, qrlevel));
         return match;

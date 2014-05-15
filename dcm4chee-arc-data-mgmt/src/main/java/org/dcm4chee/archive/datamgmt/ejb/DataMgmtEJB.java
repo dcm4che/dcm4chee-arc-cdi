@@ -338,6 +338,8 @@ public class DataMgmtEJB implements DataMgmtBean {
             study.setNumberOfInstances(numInstancesNew);
         else
             study.resetNumberOfInstances();
+        
+        study.setNumberOfSeries(study.getNumberOfSeries()-1);
         return series;
     }
 
@@ -406,6 +408,7 @@ public class DataMgmtEJB implements DataMgmtBean {
         Study study = query.getSingleResult();
 
         if (study.getNumberOfInstances() == -1){
+            em.remove(study);
          return true;
         }
 
@@ -413,21 +416,33 @@ public class DataMgmtEJB implements DataMgmtBean {
     }
 
     @Override
-    public Instance splitSeries(String sopInstanceUID, String seriesInstanceUID) {
-        // TODO Auto-generated method stub
-        return null;
+    public boolean splitStudy(String studyInstanceUID, String seriesInstanceUID, String targetStudyInstanceUID) {
+        TypedQuery<Series> query = em.createNamedQuery(
+                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(1,
+                seriesInstanceUID);
+        Series series= query.getSingleResult();
+        
+        String uidOld = series.getStudy().getStudyInstanceUID();
+        TypedQuery<Study> query2 = em.createNamedQuery(
+                Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
+                targetStudyInstanceUID);
+        Study targetStudy = query2.getSingleResult();
+        series.setStudy(targetStudy);
+        
+        String uidNew = series.getStudy().getStudyInstanceUID();
+        if(uidNew.compareTo(uidOld) ==0 )
+        {
+            return false;
+        }
+        return true;
     }
 
     @Override
-    public Series splitStudy(String seriesInstanceUID, String studyInstanceUID) {
+    public boolean splitSeries(String studyInstanceUID,
+            String seriesInstanceUID, String sopInstanceUID,
+            String targetSeriesInstanceUID) {
         // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Study moveStudy(String pid) {
-        // TODO Auto-generated method stub
-        return null;
+        return false;
     }
 
 }

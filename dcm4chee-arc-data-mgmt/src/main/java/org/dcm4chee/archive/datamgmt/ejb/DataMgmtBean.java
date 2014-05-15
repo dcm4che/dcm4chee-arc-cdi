@@ -94,7 +94,6 @@ public interface DataMgmtBean {
     
     boolean deleteSeriesIfEmpty(String seriesInstanceUID, String studyInstanceUID);
     boolean deleteStudyIfEmpty(String studyInstanceUID);
-    Instance splitSeries(String sopInstanceUID, String seriesInstanceUID);
-    Series splitStudy(String seriesInstanceUID, String studyInstanceUID);
-    Study moveStudy(String pid);
+    boolean splitSeries(String studyInstanceUID, String seriesInstanceUID, String sopInstanceUID, String targetSeriesInstanceUID);
+    boolean splitStudy(String studyInstanceUID, String seriesInstanceUID, String targetStudyInstanceUID);
 }

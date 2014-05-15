@@ -84,12 +84,12 @@
         <version>${dcm4che.version}</version>
         <scope>provided</scope>
       </dependency>
-      <dependency>
+<!--       <dependency>
         <groupId>org.dcm4che</groupId>
         <artifactId>dcm4che-json</artifactId>
         <version>${dcm4che.version}</version>
         <scope>provided</scope>
-      </dependency>
+      </dependency> -->
       <dependency>
         <groupId>org.dcm4che</groupId>
         <artifactId>dcm4che-mime</artifactId>
