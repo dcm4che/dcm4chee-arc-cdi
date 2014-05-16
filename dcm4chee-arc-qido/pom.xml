@@ -23,7 +23,6 @@
         <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-json</artifactId>
-      <version>3.3.4-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
@@ -63,7 +62,7 @@
       <artifactId>querydsl-core</artifactId>
     </dependency>
   </dependencies>
- <!--    <build>
+    <build>
     <plugins>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
@@ -77,5 +76,5 @@
         </configuration>
       </plugin>
     </plugins>
-  </build> -->
+  </build>
 </project>
