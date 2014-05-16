@@ -195,40 +195,11 @@ public class DefaultQueryService implements QueryService {
             if (tpl != null) {
                 keys.addAll(SAXTransformer.transform(keys, tpl, false, false));
             }
-
-            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                    .getTimeZoneOfDevice();
-            if (archiveTimeZone != null) {
-                TimeZone sourceTimeZone = getSourceTimeZone(keys, arcAE, 
-                        context.getRemoteAET());
-                if (sourceTimeZone != null) {
-                    LOG.debug("(TimeZone Support): Query request with a requested timezone. \n "
-                            + "(TimeZone Support): Converting to archive time and setting the requested time zone");
-                    keys.setTimezone(archiveTimeZone);
-                    context.setRequestedTimeZone(sourceTimeZone);
-                }
-            }
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
+        //time zone support moved to decorator
 
-    }
-
-    private TimeZone getSourceTimeZone(Attributes keys,
-            ArchiveAEExtension arcAE, String sourceAET) {
-        if (keys.containsValue(Tag.TimezoneOffsetFromUTC))
-            return keys.getTimeZone();
-        try {
-            ApplicationEntity ae = aeCache.get(sourceAET);
-            return ae != null
-                    ? ae.getDevice().getTimeZoneOfDevice()
-                    : null;
-        } catch (ConfigurationException e) {
-            LOG.warn("Failed to access configuration for query source {} - no Timezone support:",
-                    sourceAET, e);
-            //TODO log
-            return null;
-        }
     }
 
     /*
@@ -250,29 +221,10 @@ public class DefaultQueryService implements QueryService {
             if (tpl != null) {
                 attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false));
             }
-            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                    .getTimeZoneOfDevice();
-            // Time zone query rsp adjustments
-            if (archiveTimeZone != null) {
-                attrs.setDefaultTimeZone(archiveTimeZone);
-                if (context.getRequestedTimeZone() != null) {
-                    attrs.setTimezone(context.getRequestedTimeZone());
-                    LOG.debug("(TimeZone Support): Query response Found a requested timezone. \n "
-                            + "(TimeZone Support): Converting to requester time zone");
-                }
-                if(!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
-                    attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
-                            DateUtils.formatTimezoneOffsetFromUTC(
-                                    StringUtils.maskNull(
-                                            context.getRequestedTimeZone(),
-                                            archiveTimeZone),
-                            attrs.getDate(Tag.StudyDateAndTime)));
-                    LOG.debug("(TimeZone Support): In query response, adding TimezoneOffsetFromUTC. \n ");
-                }
-            }
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
+       //time zone support moved to decorator
     }
 
 }

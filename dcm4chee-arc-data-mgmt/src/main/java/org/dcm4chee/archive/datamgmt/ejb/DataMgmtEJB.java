@@ -415,34 +415,4 @@ public class DataMgmtEJB implements DataMgmtBean {
         return false;
     }
 
-    @Override
-    public boolean splitStudy(String studyInstanceUID, String seriesInstanceUID, String targetStudyInstanceUID) {
-        TypedQuery<Series> query = em.createNamedQuery(
-                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(1,
-                seriesInstanceUID);
-        Series series= query.getSingleResult();
-        
-        String uidOld = series.getStudy().getStudyInstanceUID();
-        TypedQuery<Study> query2 = em.createNamedQuery(
-                Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
-                targetStudyInstanceUID);
-        Study targetStudy = query2.getSingleResult();
-        series.setStudy(targetStudy);
-        
-        String uidNew = series.getStudy().getStudyInstanceUID();
-        if(uidNew.compareTo(uidOld) ==0 )
-        {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public boolean splitSeries(String studyInstanceUID,
-            String seriesInstanceUID, String sopInstanceUID,
-            String targetSeriesInstanceUID) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
 }

@@ -4,5 +4,6 @@
        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/beans_1_0.xsd">
  <decorators>
   <class>org.dcm4chee.archive.compress.impl.StoreServiceCompressDecorator</class>
+   <class>org.dcm4chee.archive.timezone.StoreServiceTimeZoneDecorator</class>
  </decorators>
 </beans>

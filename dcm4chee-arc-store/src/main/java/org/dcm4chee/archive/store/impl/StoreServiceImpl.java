@@ -60,8 +60,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.xml.transform.Templates;
 
-import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
@@ -134,9 +132,6 @@ public class StoreServiceImpl implements StoreService {
     @Inject
     @StoreSessionClosed
     private Event<StoreSession> storeSessionClosed;
-
-    @Inject
-    private IApplicationEntityCache aeCache;
 
     @Override
     public StoreSession createStoreSession(StoreService storeService) {
@@ -344,44 +339,8 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         Attributes attrs = context.getAttributes();
-        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                .getTimeZoneOfDevice();
-        ApplicationEntity remoteAE = null;
-        try {
-            // Time zone store adjustments
-            if (archiveTimeZone != null) {
-                try {
-                    remoteAE = aeCache.get(session.getRemoteAET());
-                } catch (ConfigurationException e1) {
-                    LOG.warn(
-                            "Failed to access configuration for query source {} - no Timezone support:",
-                            session.getRemoteAET(), e1);
-                }
-                if (remoteAE != null)
-                    session.setSourceTimeZone(remoteAE.getDevice()
-                            .getTimeZoneOfDevice());
-                else
-                    session.setSourceTimeZone(archiveTimeZone);
-                
-                if (attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
-                    LOG.debug("(TimeZone Support):Found TimezoneOffsetFromUTC Attribute. \n "
-                            + "(TimeZone Support): With value: "
-                            + attrs.getString(Tag.TimezoneOffsetFromUTC)
-                            + "(TimeZone Support): Setting sourceTimeZoneCache \n"
-                            + "(TimeZone Support): Setting time zone to archive time.");
-                    session.setSourceTimeZone(attrs.getTimeZone());
-                    attrs.setTimezone(archiveTimeZone);
-                } else if (session.getSourceTimeZone() == null) {
-                    LOG.debug("(TimeZone Support): SourceTimeZoneCache is null \n "
-                            + "(TimeZone Support): No device time zone"
-                            + "(TimeZone Support): No TimezoneOffsetFromUTC Attribute."
-                            + "Using archive time zone");
-                    session.setSourceTimeZone(archiveTimeZone);
-                }
-                LOG.debug("(TimeZone Support): converting time zone to archive time zone \n ");
-                attrs.setDefaultTimeZone(session.getSourceTimeZone());
-                attrs.setTimezone(archiveTimeZone);
-            }
+        
+            try{
             Attributes modified = context.getCoercedAttributes();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
@@ -394,6 +353,8 @@ public class StoreServiceImpl implements StoreService {
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
+            //store service time zone support moved to decorator
+            
     }
 
     @Override

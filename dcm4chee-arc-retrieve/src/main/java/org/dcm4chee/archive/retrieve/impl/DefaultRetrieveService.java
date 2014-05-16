@@ -259,41 +259,41 @@ public class DefaultRetrieveService implements RetrieveService {
                 attrs.update(
                         SAXTransformer.transform(attrs, tpl, false, false),
                         null);
-
-            try {
-                sourceAE = aeCache.get(remoteAET);
-            } catch (ConfigurationException e1) {
-                LOG.warn("Failed to access configuration for query source {} - no Timezone support:",
-                        remoteAET, e1);
-            }
-            TimeZone archiveTimeZone = aeExt.getApplicationEntity().getDevice()
-                    .getTimeZoneOfDevice();
-            if (archiveTimeZone != null) {
-                TimeZone sourceTimeZone = sourceAE.getDevice()
-                        .getTimeZoneOfDevice();
-                attrs.setDefaultTimeZone(archiveTimeZone);
-                LOG.debug("(TimeZone Support): In coerceRetrievedObject: Setting default time zone to archive. \n");
-                if (sourceTimeZone != null) {
-                    attrs.setTimezone(sourceTimeZone);
-                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Converting time in blob to destination time zone. \n");
-                }
-                if (!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
-                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Adding TimezoneOffsetFromUTC with: \n");
-                    if (sourceTimeZone != null) {
-                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
-                                DateUtils.formatTimezoneOffsetFromUTC(
-                                        sourceTimeZone,
-                                        attrs.getDate(Tag.StudyDateAndTime)));
-                        LOG.debug("(TimeZone Support): destination device as value.");
-                    } else {
-                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
-                                DateUtils.formatTimezoneOffsetFromUTC(
-                                        archiveTimeZone,
-                                        attrs.getDate(Tag.StudyDateAndTime)));
-                        LOG.debug("(TimeZone Support): archive device as value.");
-                    }
-                }
-            }
+//
+//            try {
+//                sourceAE = aeCache.get(remoteAET);
+//            } catch (ConfigurationException e1) {
+//                LOG.warn("Failed to access configuration for query source {} - no Timezone support:",
+//                        remoteAET, e1);
+//            }
+//            TimeZone archiveTimeZone = aeExt.getApplicationEntity().getDevice()
+//                    .getTimeZoneOfDevice();
+//            if (archiveTimeZone != null) {
+//                TimeZone sourceTimeZone = sourceAE.getDevice()
+//                        .getTimeZoneOfDevice();
+//                attrs.setDefaultTimeZone(archiveTimeZone);
+//                LOG.debug("(TimeZone Support): In coerceRetrievedObject: Setting default time zone to archive. \n");
+//                if (sourceTimeZone != null) {
+//                    attrs.setTimezone(sourceTimeZone);
+//                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Converting time in blob to destination time zone. \n");
+//                }
+//                if (!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
+//                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Adding TimezoneOffsetFromUTC with: \n");
+//                    if (sourceTimeZone != null) {
+//                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
+//                                DateUtils.formatTimezoneOffsetFromUTC(
+//                                        sourceTimeZone,
+//                                        attrs.getDate(Tag.StudyDateAndTime)));
+//                        LOG.debug("(TimeZone Support): destination device as value.");
+//                    } else {
+//                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
+//                                DateUtils.formatTimezoneOffsetFromUTC(
+//                                        archiveTimeZone,
+//                                        attrs.getDate(Tag.StudyDateAndTime)));
+//                        LOG.debug("(TimeZone Support): archive device as value.");
+//                    }
+//                }
+//            }
 
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
@@ -305,22 +305,22 @@ public class DefaultRetrieveService implements RetrieveService {
             RetrieveContext retrieveContext, String remoteAET, Attributes attrs)
             throws DicomServiceException {
         // here the source time zone is the one in the db
-        try {
-
-            ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
-            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                    .getTimeZoneOfDevice();
-            TimeZone sourceTimeZone = TimeZone.getTimeZone(inst
-                    .getFileTimeZoneID());
-            if (sourceTimeZone != null) {
-                LOG.debug("(TimeZone Support): In coerceFileBeforeMerge: Converting time in file attributes to archive time zone. \n");
-                attrs.setDefaultTimeZone(sourceTimeZone);
-                attrs.setTimezone(archiveTimeZone);
-            }
-
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
+//        try {
+//
+//            ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
+//            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+//                    .getTimeZoneOfDevice();
+//            TimeZone sourceTimeZone = TimeZone.getTimeZone(inst
+//                    .getFileTimeZoneID());
+//            if (sourceTimeZone != null) {
+//                LOG.debug("(TimeZone Support): In coerceFileBeforeMerge: Converting time in file attributes to archive time zone. \n");
+//                attrs.setDefaultTimeZone(sourceTimeZone);
+//                attrs.setTimezone(archiveTimeZone);
+//            }
+//
+//        } catch (Exception e) {
+//            throw new DicomServiceException(Status.UnableToProcess, e);
+//        }
     }
 
     public String timeOffsetInMillisToDICOMTimeOffset(int millis) {
