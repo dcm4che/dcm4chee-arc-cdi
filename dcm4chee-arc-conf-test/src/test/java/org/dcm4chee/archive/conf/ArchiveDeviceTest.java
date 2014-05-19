@@ -243,7 +243,7 @@ public class ArchiveDeviceTest {
         UID.ImplicitVRLittleEndian,
         UID.ExplicitVRLittleEndian,
         UID.DeflatedExplicitVRLittleEndian,
-        UID.ExplicitVRBigEndian,
+        UID.ExplicitVRBigEndianRetired,
         UID.JPEGBaseline1,
         UID.JPEGExtended24,
         UID.JPEGLossless,
@@ -265,7 +265,7 @@ public class ArchiveDeviceTest {
         UID.ImplicitVRLittleEndian,
         UID.ExplicitVRLittleEndian,
         UID.DeflatedExplicitVRLittleEndian,
-        UID.ExplicitVRBigEndian,
+        UID.ExplicitVRBigEndianRetired,
     };
     private static final String[] IMAGE_CUIDS = {
         UID.ComputedRadiographyImageStorage,
