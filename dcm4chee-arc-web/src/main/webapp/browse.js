@@ -512,11 +512,11 @@
         var row = table.insertRow(-1);
         row.className = "attribute";
         row.insertCell(-1).innerHTML = level;
-        row.insertCell(-1).innerHTML = DCM4CHE.elementDictionary.lookup("name",tag);
+        row.insertCell(-1).innerHTML = DCM4CHE.elementName.forTag(tag);
         row.insertCell(-1).innerHTML = tag2str(tag);
         row.insertCell(-1).innerHTML = attr.vr;
-        row.insertCell(-1).innerHTML = valueOf2(tag, attr);
-        if (attr.vr == "SQ" && attr.Value != undefined)
+        row.insertCell(-1).innerHTML = valueOf2(attr);
+        if (attr.Value && attr.vr == "SQ")
             addItemsRow(table, attr.Value, level + ">");
     },
 
@@ -572,15 +572,14 @@
         return attr && attr.Value || "&nbsp";
     },
 
-    valueOf2 = function(name, attr) {
-        if (DCM4CHE.elementDictionary.lookup("vr",name) == "PN") {
+    valueOf2 = function(attr) {
+        switch (attr.vr) {
+        case "PN":
             return pnOf(attr);
+        case "SQ":
+            return attr.Value && (attr.Value.length + " Item") || "&nbsp";
         }
-        if (attr.vr == "SQ") {
-            return attr.Value && (attr.Value.length + " Item")
-        }
-
-        return attr.Value || "&nbsp";
+        return valueOf(attr);
     };
 
     query.onclick = function() {
