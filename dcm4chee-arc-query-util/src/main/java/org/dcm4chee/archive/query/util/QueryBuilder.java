@@ -112,7 +112,7 @@ public class QueryBuilder {
                 case Tag.BodyPartExamined:
                     return QSeries.series.bodyPartExamined;
                 case Tag.Laterality:
-                    return QSeries.series.seriesInstanceUID;
+                    return QSeries.series.laterality;
                 case Tag.PerformedProcedureStepStartDate:
                     return QSeries.series.performedProcedureStepStartDate;
                 case Tag.PerformedProcedureStepStartTime:
@@ -120,12 +120,12 @@ public class QueryBuilder {
                 case Tag.PerformingPhysicianName:
                     return QSeries.series.performingPhysicianName;
                 case Tag.SeriesDescription:
-                    return QSeries.series.seriesInstanceUID;
+                    return QSeries.series.seriesDescription;
                 case Tag.StationName:
                     return QSeries.series.stationName;
-                case Tag.InstitutionalDepartmentName:
-                    return QSeries.series.institutionName;
                 case Tag.InstitutionName:
+                    return QSeries.series.institutionName;
+                case Tag.InstitutionalDepartmentName:
                     return QSeries.series.institutionalDepartmentName;
                 }
             case STUDY:
