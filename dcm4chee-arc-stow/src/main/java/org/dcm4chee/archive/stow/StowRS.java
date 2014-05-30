@@ -268,11 +268,11 @@ public class StowRS {
     }
 
     private Response buildResponse() {
-        if (sopSequence.isEmpty())
-            throw new WebApplicationException(Status.CONFLICT);
+//        if (sopSequence.isEmpty())
+//            throw new WebApplicationException(Status.CONFLICT);
 
         return Response.status(
-                failedSOPSequence == null ? Status.OK : Status.ACCEPTED)
+                sopSequence.isEmpty()?Status.CONFLICT:failedSOPSequence == null ? Status.OK : Status.ACCEPTED)
                 .entity(new StreamingOutput() {
                     
                     @Override
