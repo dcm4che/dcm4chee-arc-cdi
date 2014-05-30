@@ -38,8 +38,10 @@
 
 package org.dcm4chee.archive.stow;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -51,6 +53,7 @@ import java.util.zip.ZipInputStream;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.json.Json;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
@@ -60,6 +63,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
@@ -76,12 +80,14 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.json.JSONReader;
 import org.dcm4che3.mime.MultipartInputStream;
 import org.dcm4che3.mime.MultipartParser;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.rs.HttpSource;
@@ -172,7 +178,12 @@ public class StowRS {
                     creatorType = CreatorType.XML_BULKDATA;
                     metadata = new ArrayList<java.nio.file.Path>();
                     bulkdata = new HashMap<String,BulkdataPath>();
-                } else
+                }
+                else if (rootBodyMediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+                    creatorType = CreatorType.JSON_BULKDATA;
+                    metadata = new ArrayList<java.nio.file.Path>();
+                    bulkdata = new HashMap<String,BulkdataPath>();
+                }else
                     throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
             } catch (IllegalArgumentException e) {
                 throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
@@ -203,11 +214,13 @@ public class StowRS {
         List<String> list = headerParams.get(key);
         return list != null && !list.isEmpty() ? list.get(0) : null;
     }
-
+@Context Request req;
     @POST
     @Path("/studies")
     @Consumes({"multipart/related","multipart/form-data"})
     public Response storeInstances(InputStream in) throws Exception {
+        String str = req.toString();
+        LOG.info(str);
         init();
         final StoreSession session = storeService.createStoreSession(storeService);
         session.setSource(new HttpSource(request));
@@ -304,7 +317,28 @@ public class StowRS {
                     MultipartInputStream in, MediaType mediaType,
                     String contentLocation) throws IOException {
                 if (mediaType.isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE)) {
-                    stowRS.spoolMetaData(session, in);
+                    stowRS.spoolMetaData(session, in,false);
+                    return true;
+                }
+                if (contentLocation != null) {
+                    stowRS.spoolBulkdata(session, in, contentLocation, mediaType);
+                    return true;
+                }
+                return false;
+            }
+            @Override
+            void storeMetadataAndBulkdata(StowRS stowRS, StoreSession session) {
+                stowRS.storeMetadataAndBulkdata(session);
+            }
+
+        },
+        JSON_BULKDATA {
+            @Override
+            boolean readBodyPart(StowRS stowRS, StoreSession session,
+                    MultipartInputStream in, MediaType mediaType,
+                    String contentLocation) throws IOException {
+                if (mediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+                    stowRS.spoolMetaData(session, in, true);
                     return true;
                 }
                 if (contentLocation != null) {
@@ -373,7 +407,10 @@ public class StowRS {
         }
     }
 
-    private void spoolMetaData(StoreSession session, InputStream in) throws IOException {
+    private void spoolMetaData(StoreSession session, InputStream in, boolean json) throws IOException {
+        if(json)
+            metadata.add(storeService.spool(session, in, ".json"));    
+        else
         metadata.add(storeService.spool(session, in, ".xml"));
     }
 
@@ -389,17 +426,51 @@ public class StowRS {
         }
     }
 
+    public  Attributes parseJSON(String fname) throws Exception {
+        Attributes attrs = new Attributes();
+        parseJSON(fname, attrs);
+        return attrs;
+    }
 
+    private  JSONReader parseJSON(String fname, Attributes attrs)
+            throws IOException {
+        @SuppressWarnings("resource")
+        InputStream in =new FileInputStream(
+                fname);
+        try {
+            JSONReader reader = new JSONReader(
+                    Json.createParser(new InputStreamReader(in, "UTF-8")));
+            reader.readDataset(attrs);
+            return reader;
+        } finally {
+            if (in != System.in)
+                SafeClose.close(in);
+        }
+    }
     private void storeMetadataAndBulkdata(StoreSession session,
             java.nio.file.Path path) {
-        Attributes ds;
-        try {
-            ds = SAXReader.parse(path.toUri().toString());
-        } catch (Exception e) {
-            storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
-                    METADATA_NOT_PARSEABLE);
-            return;
+        Attributes ds = null;
+        if(creatorType == CreatorType.JSON_BULKDATA)
+        {
+            try {
+                ds = parseJSON(path.toFile().getPath());
+            } catch (Exception e) {
+                storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
+                        METADATA_NOT_PARSEABLE);
+                return;
+            } 
         }
+        else
+        {
+            try {
+                ds = SAXReader.parse(path.toUri().toString());
+            } catch (Exception e) {
+                storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
+                        METADATA_NOT_PARSEABLE);
+                return;
+            }    
+        }
+        
         String iuid = ds.getString(Tag.SOPInstanceUID);
         String cuid = ds.getString(Tag.SOPClassUID);
         Attributes fmi = ds.createFileMetaInformation(UID.ExplicitVRLittleEndian);
@@ -489,11 +560,13 @@ public class StowRS {
 
                     MediaType mediaType = bulkdataPath.mediaType;
                     if (mediaType.isCompatible(
-                            MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
+                            MediaType.APPLICATION_OCTET_STREAM_TYPE)||
+                            mediaType.isCompatible(
+                                    MediaTypes.APPLICATION_PDF_TYPE)) {
                         attrs.setValue(tag, vr, bd);
                         return true;
                     }
-
+                    
                     if (!(attrs.isRoot() && tag == Tag.PixelData)) {
                         LOG.info("{}: Invalid Mediatype of Bulkdata - {}",
                                 session, mediaType);
