@@ -90,6 +90,7 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
             if (archiveTimeZone != null) {
                 try {
                     remoteAE = aeCache.get(session.getRemoteAET());
+                    if(remoteAE!=null){
                     LOG.debug("(TimeZone Support):Loaded Device for remote Application entity AETitle: "
                             + remoteAE.getAETitle()
                             + " and device name: "
@@ -97,6 +98,7 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
                     LOG.debug("(TimeZone Support):-with Time zone: "
                             + remoteAE.getDevice().getTimeZoneOfDevice()
                                     .getID());
+                    }
                 } catch (ConfigurationException e1) {
                     LOG.warn(
                             "(TimeZone Support): Failed to access configuration for query source {} - no Timezone support:",

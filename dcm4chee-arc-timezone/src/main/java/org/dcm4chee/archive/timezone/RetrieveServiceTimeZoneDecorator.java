@@ -82,6 +82,7 @@ public abstract class RetrieveServiceTimeZoneDecorator implements
             String remoteAET, Attributes attrs) throws DicomServiceException {
         ArchiveAEExtension aeExt = retrieveContext.getArchiveAEExtension();
         ApplicationEntity sourceAE = null;
+        TimeZone sourceTimeZone=null;
         try {
             retrieveService.coerceRetrievedObject(retrieveContext, remoteAET,
                     attrs);
@@ -95,8 +96,10 @@ public abstract class RetrieveServiceTimeZoneDecorator implements
             TimeZone archiveTimeZone = aeExt.getApplicationEntity().getDevice()
                     .getTimeZoneOfDevice();
             if (archiveTimeZone != null) {
-                TimeZone sourceTimeZone = sourceAE.getDevice()
+                if(sourceAE!=null){
+                sourceTimeZone = sourceAE.getDevice()
                         .getTimeZoneOfDevice();
+                }
                 attrs.setDefaultTimeZone(archiveTimeZone);
                 LOG.debug("(TimeZone Support): In coerceRetrievedObject: Setting default time zone to archive. \n");
                 if (sourceTimeZone != null) {
