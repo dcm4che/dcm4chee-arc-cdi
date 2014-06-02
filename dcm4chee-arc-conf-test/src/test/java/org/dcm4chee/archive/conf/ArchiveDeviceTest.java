@@ -493,7 +493,7 @@ public class ArchiveDeviceTest {
     private DicomConfiguration config;
     private HL7Configuration hl7Config;
 
-    @Before
+//    @Before
     public void setUp() throws Exception {
         keystore = SSLManagerFactory.loadKeyStore("JKS", 
                 ResourceLocator.resourceURL("cacerts.jks"), "secret");
@@ -545,7 +545,7 @@ public class ArchiveDeviceTest {
         return config;
     }
 
-    @After
+//    @After
     public void tearDown() throws Exception {
         if (System.getProperty("keep") == null)
             cleanUp();
@@ -601,7 +601,7 @@ public class ArchiveDeviceTest {
    
    
     
-    @Test
+//    @Test
     public void test() throws Exception {
         for (int i = 0; i < OTHER_AES.length; i++) {
             String aet = OTHER_AES[i];

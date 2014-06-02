@@ -38,9 +38,8 @@
 
 package org.dcm4chee.archive.store.test;
 
-import static org.junit.Assert.assertNotNull;
-
 import java.io.File;
+import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
@@ -51,8 +50,6 @@ import javax.transaction.UserTransaction;
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.io.SAXReader;
-import org.dcm4che3.soundex.ESoundex;
-import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.Availability;
@@ -64,9 +61,15 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.transaction.api.annotation.TransactionMode;
 import org.jboss.arquillian.transaction.api.annotation.Transactional;
+import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.shrinkwrap.impl.base.path.BasicPath;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.shrinkwrap.resolver.api.maven.MavenResolvedArtifact;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -137,12 +140,16 @@ public class InitDataForTest {
         WebArchive war= ShrinkWrap.create(WebArchive.class, "test.war");
         war.addClass(InitDataForTest.class);
         war.addClass(ParamFactory.class);
-        File[] libs =  Maven.resolver().loadPomFromFile("testpom.xml").importTestDependencies().importRuntimeAndTestDependencies().resolve().withoutTransitivity().asFile();
-        System.out.println(war.toString(true));
-        war.addClass(StoreService.class);
-        war.addAsLibraries(libs);
+        JavaArchive[] archs =   Maven.resolver().loadPomFromFile("testpom.xml").importRuntimeAndTestDependencies().resolve().withTransitivity().as(JavaArchive.class);
+        for(JavaArchive a: archs)
+        {
+            a.addAsManifestResource(EmptyAsset.INSTANCE,"beans.xml");
+            war.addAsLibrary(a);
+        }
         for (String resourceName : INSTANCES)
             war.addAsResource(resourceName);
+        //war.addAsManifestResource("testdata/beans.xml","beans.xml");
+        
         return war;
     }
     @Test

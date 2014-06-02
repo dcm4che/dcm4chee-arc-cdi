@@ -24,7 +24,7 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-conf</artifactId>
       <version>${project.version}</version>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-store</artifactId>
@@ -168,6 +168,14 @@
         <skipTests>true</skipTests>
       </properties>
       <build>
+        <resources>
+          <resource>
+            <directory>src/main/resources/META-INF</directory>
+            <includes>
+              <include>**/*beans.xml</include>
+            </includes>
+          </resource>
+        </resources>
         <plugins>
           <plugin>
             <artifactId>maven-jar-plugin</artifactId>
@@ -175,8 +183,7 @@
             <configuration>
               <archive>
                 <manifestEntries>
-                  <Dependencies>org.dcm4che.conf.api,org.dcm4che.net,
-                    org.dcm4che.soundex</Dependencies>
+                  <Dependencies>org.dcm4che.conf.api,org.dcm4che.net,org.dcm4che.soundex</Dependencies>
                 </manifestEntries>
               </archive>
             </configuration>
@@ -204,6 +211,56 @@
           <groupId>org.wildfly</groupId>
           <artifactId>wildfly-arquillian-container-remote</artifactId>
           <version>8.0.0.Final</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>jbossas-remote-7</id>
+      <properties>
+        <skipTests>false</skipTests>
+      </properties>
+      <build>
+        <resources>
+          <resource>
+            <directory>src/main/resources/META-INF</directory>
+            <excludes>
+              <exclude>**/*beans.xml</exclude>
+            </excludes>
+          </resource>
+        </resources>
+        <plugins>
+          <plugin>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>2.3.2</version>
+            <configuration>
+              <archive>
+                <manifestEntries>
+                  <Dependencies>org.dcm4che.conf.api,org.dcm4che.net,org.dcm4che.soundex</Dependencies>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>jboss-packaging-maven-plugin</artifactId>
+            <version>2.1.1</version>
+            <extensions>true</extensions>
+          </plugin>
+        </plugins>
+      </build>
+      <dependencies>
+        <dependency>
+          <groupId>org.jboss.spec</groupId>
+          <artifactId>jboss-javaee-6.0</artifactId>
+          <version>1.0.0.Final</version>
+          <type>pom</type>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jboss.as</groupId>
+          <artifactId>jboss-as-arquillian-container-remote</artifactId>
+          <version>7.1.1.Final</version>
           <scope>test</scope>
         </dependency>
       </dependencies>

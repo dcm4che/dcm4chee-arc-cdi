@@ -59,6 +59,8 @@ import org.dcm4chee.archive.query.QueryService;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
@@ -90,12 +92,13 @@ public class QueryServiceTest {
     public static WebArchive createDeployment() {
         WebArchive war= ShrinkWrap.create(WebArchive.class, "test.war"); 
         war.addClass(ParamFactory.class);
-        File[] libs = Maven.resolver().loadPomFromFile("testpom.xml")
-                .importTestDependencies().importRuntimeAndTestDependencies()
-                .resolve().withoutTransitivity().asFile();
-        System.out.println(war.toString(true));
-        war.addClass(QueryService.class);
-        war.addAsLibraries(libs);
+        war.addClass(QueryServiceTest.class);
+        JavaArchive[] archs =   Maven.resolver().loadPomFromFile("testpom.xml").importRuntimeAndTestDependencies().resolve().withTransitivity().as(JavaArchive.class);
+        for(JavaArchive a: archs)
+        {
+            a.addAsManifestResource(EmptyAsset.INSTANCE,"beans.xml");
+            war.addAsLibrary(a);
+        }
         return war;
     }
     private String[] matches(Query query,int tag)
