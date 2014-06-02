@@ -164,7 +164,7 @@ public class DefaultQueryService implements QueryService {
 
     @Override
     public void initPatientIDs(QueryContext ctx) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(ctx.getKeys());
+        IDWithIssuer pid = IDWithIssuer.pidOf(ctx.getKeys());
         ctx.setPatientIDs(pid == null 
                 ? IDWithIssuer.EMPTY
                 : new IDWithIssuer[] { pid });

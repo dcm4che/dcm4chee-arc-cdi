@@ -259,5 +259,6 @@
     <module>dcm4chee-arc-assembly</module>
     <module>dcm4chee-arc-ear</module>
     <module>dcm4chee-arc-war-skinny</module>
+    <module>dcm4chee-arc-issuer</module>
   </modules>
 </project>

@@ -38,9 +38,11 @@
 
 package org.dcm4chee.archive.patient;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.entity.Patient;
 
 /**
@@ -49,7 +51,7 @@ import org.dcm4chee.archive.entity.Patient;
  */
 public interface PatientSelector {
 
-    Patient select(List<Patient> patients, Attributes attrs)
-            throws NonUniquePatientException;
+    Patient select(List<Patient> patients, Collection<IDWithIssuer> pids,
+            Attributes attrs) throws NonUniquePatientException;
 
 }

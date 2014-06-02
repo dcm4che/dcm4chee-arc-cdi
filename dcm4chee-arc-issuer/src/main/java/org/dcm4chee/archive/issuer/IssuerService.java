@@ -36,37 +36,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.patient;
+package org.dcm4chee.archive.issuer;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.Issuer;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface PatientService {
+public interface IssuerService {
 
-    Patient updateOrCreatePatientByMPPS(Attributes attrs,
-            PatientSelector selector, StoreParam storeParam)
-            throws PatientCircularMergedException;
-
-    Patient updateOrCreatePatientByCStore(Attributes attrs,
-            PatientSelector selector, StoreParam storeParam)
-            throws PatientCircularMergedException;
-
-    void updatePatientByCStore(Patient patient, Attributes attrs,
-            StoreParam storeParam);
-
-    Patient updateOrCreatePatientByHL7(Attributes attrs, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException;
-
-    void mergePatientByHL7(Attributes attrs, Attributes mrg, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException,
-            PatientCircularMergedException;
-
-    Patient deletePatient(IDWithIssuer idWithIssuer) throws NonUniquePatientException;
-
+    Issuer findOrCreate(Issuer issuer);
 }

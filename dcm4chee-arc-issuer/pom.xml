@@ -5,7 +5,7 @@
     <artifactId>dcm4chee-arc-parent</artifactId>
     <version>4.4.0-SNAPSHOT</version>
   </parent>
-  <artifactId>dcm4chee-arc-query-util</artifactId>
+  <artifactId>dcm4chee-arc-issuer</artifactId>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -16,20 +16,17 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-net</artifactId>
+      <artifactId>dcm4che-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-soundex</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>javax.enterprise</groupId>
-      <artifactId>cdi-api</artifactId>
+      <groupId>org.hibernate.javax.persistence</groupId>
+      <artifactId>hibernate-jpa-2.0-api</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.mysema.querydsl</groupId>
-      <artifactId>querydsl-jpa</artifactId>
+      <groupId>org.jboss.spec.javax.ejb</groupId>
+      <artifactId>jboss-ejb-api_3.1_spec</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
@@ -40,7 +37,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.net, org.dcm4che.soundex</Dependencies>
+              <Dependencies>org.dcm4che.core</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

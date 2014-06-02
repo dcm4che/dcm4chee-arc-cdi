@@ -68,7 +68,6 @@ import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.PDVInputStream;
 import org.dcm4che3.net.Status;
@@ -95,7 +94,6 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.patient.IDPatientSelector;
-import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
@@ -555,33 +553,15 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public Patient findOrCreatePatient(EntityManager em, StoreContext context)
             throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
         try {
-            Patient patient = patientService.findPatientOnStore(
-                    context.getAttributes(), new IDPatientSelector());
-            if (patient != null) {
-                service.updatePatient(em, context, patient);
-                return patient;
-            }
-        } catch (NonUniquePatientException e) {
-            LOG.info(
-                    "{}: Could not find unique Patient Record for received Study",
-                    session, e);
+            StoreSession session = context.getStoreSession();
+            return patientService.updateOrCreatePatientByCStore(
+                    context.getAttributes(),
+                    new IDPatientSelector(),
+                    session.getStoreParam());
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-        return service.createPatient(em, context);
-    }
-
-    @Override
-    public Patient createPatient(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        Patient patient = patientService.createPatientOnStore(context
-                .getAttributes(), context.getStoreSession().getStoreParam());
-        LOG.info("{}: Create {}", session, patient);
-        return patient;
     }
 
     @Override
@@ -685,14 +665,6 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void updatePatient(EntityManager em, StoreContext context,
-            Patient patient) {
-        StoreSession session = context.getStoreSession();
-        patientService.updatePatientOnStore(patient, context.getAttributes(),
-                session.getStoreParam());
-    }
-
-    @Override
     public void updateStudy(EntityManager em, StoreContext context, Study study) {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
@@ -713,6 +685,15 @@ public class StoreServiceImpl implements StoreService {
                     studyAttrs, modified);
         }
         service.updatePatient(em, context, study.getPatient());
+    }
+
+    @Override
+    public void updatePatient(EntityManager em, StoreContext context,
+            Patient patient) {
+        StoreSession session = context.getStoreSession();
+        patientService.updatePatientByCStore(patient, 
+                context.getAttributes(),
+                session.getStoreParam());
     }
 
     @Override

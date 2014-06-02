@@ -36,37 +36,56 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.patient;
+package org.dcm4chee.archive.issuer.impl;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Patient;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
+
+import org.dcm4chee.archive.entity.Issuer;
+import org.dcm4chee.archive.issuer.IssuerService;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface PatientService {
+@Stateless
+public class IssuerServiceEJB implements IssuerService {
 
-    Patient updateOrCreatePatientByMPPS(Attributes attrs,
-            PatientSelector selector, StoreParam storeParam)
-            throws PatientCircularMergedException;
+    @PersistenceContext(unitName="dcm4chee-arc")
+    private EntityManager em;
 
-    Patient updateOrCreatePatientByCStore(Attributes attrs,
-            PatientSelector selector, StoreParam storeParam)
-            throws PatientCircularMergedException;
+    @Override
+    public Issuer findOrCreate(Issuer issuer) {
+        try {
+            return find(issuer);
+        } catch (NoResultException e) {
+            em.persist(issuer);
+            return issuer;
+        }
+    }
 
-    void updatePatientByCStore(Patient patient, Attributes attrs,
-            StoreParam storeParam);
-
-    Patient updateOrCreatePatientByHL7(Attributes attrs, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException;
-
-    void mergePatientByHL7(Attributes attrs, Attributes mrg, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException,
-            PatientCircularMergedException;
-
-    Patient deletePatient(IDWithIssuer idWithIssuer) throws NonUniquePatientException;
+    private Issuer find(Issuer issuer) {
+        String entityID = issuer.getLocalNamespaceEntityID();
+        String entityUID = issuer.getUniversalEntityID();
+        String entityUIDType = issuer.getUniversalEntityIDType();
+        TypedQuery<Issuer> query;
+        if (entityID == null) {
+            query = em.createNamedQuery(Issuer.FIND_BY_ENTITY_UID, Issuer.class)
+                .setParameter(1, entityUID)
+                .setParameter(2, entityUIDType);
+        } else if (entityUID == null) {
+            query = em.createNamedQuery(Issuer.FIND_BY_ENTITY_ID, Issuer.class)
+                .setParameter(1, entityID);
+        } else {
+            query = em.createNamedQuery(Issuer.FIND_BY_ENTITY_ID_OR_UID, Issuer.class)
+                .setParameter(1, entityID)
+                .setParameter(2, entityUID)
+                .setParameter(3, entityUIDType);
+        }
+        return query.getSingleResult();
+    }
 
 }
