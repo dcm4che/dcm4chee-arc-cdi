@@ -49,14 +49,50 @@ import org.dcm4chee.archive.entity.Patient;
  */
 public interface PatientService {
 
+    /**
+     * Query for existing Patient records with matching Patient ID's and/or
+     * Patient demographics. If no or multiple existing Patient records matches,
+     * a new Patient record is inserted. Otherwise the matching Patient record
+     * - or if merged, following the merge path to the resulting dominate
+     * Patient - will be updated. Called on receive of MPPS N-CREATE requests.
+     * 
+     * @param attrs
+     * @param selector
+     * @param storeParam
+     * @return
+     * @throws PatientCircularMergedException
+     */
     Patient updateOrCreatePatientByMPPS(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
             throws PatientCircularMergedException;
 
+    /**
+     * Query for existing Patient records with matching Patient ID's and/or
+     * Patient demographics. If no or multiple existing Patient records matches,
+     * a new Patient record is inserted. Otherwise the matching Patient record
+     * - or if merged, following the merge path to the resulting dominate
+     * Patient - will be updated. Called on receiving of the first Composite
+     * Object of a Study.
+     * 
+     * @param attrs
+     * @param selector
+     * @param storeParam
+     * @return
+     * @throws PatientCircularMergedException
+     */
     Patient updateOrCreatePatientByCStore(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
             throws PatientCircularMergedException;
 
+    /**
+     * Update existing Patient with attributes of received Composite Object.
+     * Called on receiving additional Composite Objects to an already existing
+     * Study.
+     * 
+     * @param patient
+     * @param attrs
+     * @param storeParam
+     */
     void updatePatientByCStore(Patient patient, Attributes attrs,
             StoreParam storeParam);
 
