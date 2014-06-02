@@ -39,8 +39,11 @@
 package org.dcm4chee.archive.store.test;
 
 import java.io.File;
+
 import javax.inject.Inject;
+
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreService;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -95,7 +98,7 @@ public class ClearDataForTest {
     }
 
     @Test
-    public void clearTestData() {
+    public void clearTestData() throws NonUniquePatientException {
         for (String pid : PIDS)
             patientService.deletePatient(
                     new IDWithIssuer(pid, "DCM4CHEE_TESTDATA"));
