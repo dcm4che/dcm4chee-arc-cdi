@@ -3,6 +3,8 @@ create index code_idx on code (code_value, code_designator, code_version);
 create index content_item_rel_type_idx on content_item (rel_type);
 create index content_item_text_value_idx on content_item (text_value);
 
+create unique index issuer_entity_id_idx on issuer (entity_id);
+create unique index issuer_entity_uid_idx on issuer (entity_uid, entity_uid_type);
 
 create index fs_group_id_idx on filesystem (fs_group_id);
 create index fs_status_idx on filesystem (fs_status);
@@ -20,8 +22,8 @@ create index inst_custom2_idx on instance (inst_custom2);
 create index inst_custom3_idx on instance (inst_custom3);
 create index inst_replaced_idx on instance (replaced);
 
-create index pat_id_idx on patient (pat_id);
-create index pat_id_issuer_idx on patient (pat_id_issuer);
+create unique index pat_id_idx on patient_id (pat_id, issuer_fk);
+
 create index pat_name_idx on patient (pat_name);
 create index pat_p_name_idx on patient (pat_p_name);
 create index pat_i_name_idx on patient (pat_i_name);
@@ -32,11 +34,6 @@ create index pat_sex_idx on patient (pat_sex);
 create index pat_custom1_idx on patient (pat_custom1);
 create index pat_custom2_idx on patient (pat_custom2);
 create index pat_custom3_idx on patient (pat_custom3);
-
-create index other_pid_pat_id_idx on other_pid (pat_id);
-create index other_pid_pat_id_issuer_idx on other_pid (pat_id_issuer);
-
-
 
 create unique index series_iuid_idx on series (series_iuid);
 create index series_no_idx on series (series_no);

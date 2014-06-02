@@ -56,7 +56,9 @@ import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.QCode;
 import org.dcm4chee.archive.entity.QContentItem;
 import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
+import org.dcm4chee.archive.entity.QPatientID;
 import org.dcm4chee.archive.entity.QRequestAttributes;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.entity.QStudy;
@@ -64,6 +66,7 @@ import org.dcm4chee.archive.entity.QVerifyingObserver;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateSubQuery;
+import com.mysema.query.types.EntityPath;
 import com.mysema.query.types.ExpressionUtils;
 import com.mysema.query.types.Predicate;
 import com.mysema.query.types.expr.BooleanExpression;
@@ -377,17 +380,47 @@ public class QueryBuilder {
 
         BooleanBuilder result = new BooleanBuilder();
         for (IDWithIssuer pid : pids)
-            result.or(pid(pid, matchUnknown));
+            result.or(pid(pid));
 
-        return result;
+        BooleanExpression matchingIDsExists = new HibernateSubQuery()
+                .from(QPatientID.patientID)
+                .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
+                .where(ExpressionUtils.and(
+                        QPatientID.patientID.patient.eq(QPatient.patient),
+                        result)).exists();
+
+        return matchUnknown 
+                ? ExpressionUtils.or(QPatient.patient.patientIDs.isEmpty(), matchingIDsExists)
+                : matchingIDsExists;
     }
 
-    static Predicate pid(IDWithIssuer idWithIssuer, boolean matchUnknown) {
-        return idWithIssuer(idWithIssuer.getID(),
-                idWithIssuer.getIssuer(),
-                QPatient.patient.patientID, 
-                QPatient.patient.issuerOfPatientID,
-                matchUnknown);
+    static Predicate pid(IDWithIssuer idWithIssuer) {
+        Predicate predicate = wildCard(QPatientID.patientID.id, idWithIssuer.getID());
+        if (predicate == null)
+            return null;
+
+        Issuer issuer = idWithIssuer.getIssuer();
+        if (issuer != null) {
+            String entityID = issuer.getLocalNamespaceEntityID();
+            String entityUID = issuer.getUniversalEntityID();
+            String entityUIDType = issuer.getUniversalEntityIDType();
+            if (!isUniversalMatching(entityID))
+                predicate = ExpressionUtils.and(predicate,
+                        ExpressionUtils.or(
+                            QIssuer.issuer.localNamespaceEntityID.isNull(),
+                            QIssuer.issuer.localNamespaceEntityID
+                                .eq(entityID)));
+            if (!isUniversalMatching(entityUID))
+                predicate = ExpressionUtils.and(predicate,
+                        ExpressionUtils.or(
+                            QIssuer.issuer.universalEntityID.isNull(),
+                            ExpressionUtils.and(
+                                QIssuer.issuer.universalEntityID
+                                    .eq(entityUID),
+                                QIssuer.issuer.universalEntityIDType
+                                    .eq(entityUIDType))));
+        }
+        return predicate;
     }
 
     private static Predicate idWithIssuer(String id, Issuer issuer,
@@ -435,8 +468,26 @@ public class QueryBuilder {
         
     }
 
+    static Predicate wildCard(StringPath path, String value) {
+        if (isUniversalMatching(value))
+            return null;
+
+        if (!containsWildcard(value))
+            return path.eq(value);
+
+        String pattern = toLikePattern(value);
+        if (pattern.equals("%"))
+            return null;
+
+        return path.like(pattern);
+    }
+
+    static boolean isUniversalMatching(String value) {
+        return value == null || value.equals("*");
+    }
+
     static Predicate wildCard(StringPath path, String value, boolean matchUnknown, boolean ignoreCase) {
-        if (value == null || value.equals("*"))
+        if (isUniversalMatching(value))
             return null;
 
         Predicate predicate;
@@ -522,11 +573,11 @@ public class QueryBuilder {
 
         return ExpressionUtils.allOf(
                 wildCard(QCode.code.codeValue, 
-                        item.getString(Tag.CodeValue, "*"), false, false),
+                        item.getString(Tag.CodeValue, "*")),
                 wildCard(QCode.code.codingSchemeDesignator,
-                        item.getString(Tag.CodingSchemeDesignator, "*"), false, false),
+                        item.getString(Tag.CodingSchemeDesignator, "*")),
                 wildCard(QCode.code.codingSchemeVersion,
-                        item.getString(Tag.CodingSchemeVersion, "*"), false, false));
+                        item.getString(Tag.CodingSchemeVersion, "*")));
     }
 
     static Predicate code(QCode code, Attributes item, boolean matchUnknown) {
@@ -654,7 +705,7 @@ public class QueryBuilder {
                     code(QContentItem.contentItem.conceptName,
                         item.getNestedDataset(Tag.ConceptNameCodeSequence), false),
                     wildCard(QContentItem.contentItem.relationshipType,
-                            item.getString(Tag.RelationshipType, "*").toUpperCase(), false, false),
+                            item.getString(Tag.RelationshipType, "*").toUpperCase()),
                     code(QContentItem.contentItem.conceptCode,
                         item.getNestedDataset(Tag.ConceptCodeSequence), false),
                     wildCard(QContentItem.contentItem.textValue,
@@ -667,86 +718,5 @@ public class QueryBuilder {
             .where(QInstance.instance.contentItems.contains(QContentItem.contentItem), predicate)
             .exists();
     }
-
-//    public static void addServiceRequestPredicates(BooleanBuilder builder,
-//            Attributes item, QueryParam queryParam) {
-//
-//        boolean matchUnknown = queryParam.isMatchUnknown();
-//        String accNo = item.getString(Tag.AccessionNumber, "*");
-//        builder.and(wildCard(QServiceRequest.serviceRequest.requestingService,
-//                    item.getString(Tag.RequestingService, "*"),
-//                    matchUnknown, true));
-//        builder.and(MatchPersonName.match(
-//                QServiceRequest.serviceRequest.requestingPhysician,
-//                QServiceRequest.serviceRequest.requestingPhysicianIdeographicName,
-//                QServiceRequest.serviceRequest.requestingPhysicianPhoneticName,
-//                QServiceRequest.serviceRequest.requestingPhysicianFamilyNameSoundex,
-//                QServiceRequest.serviceRequest.requestingPhysicianGivenNameSoundex,
-//                item.getString(Tag.ReferringPhysicianName, "*"),
-//                queryParam));
-//        builder.and(wildCard(QServiceRequest.serviceRequest.accessionNumber, accNo, matchUnknown, false));
-//
-//        if (!accNo.equals("*"))
-//            builder.and(
-//                    issuer(QServiceRequest.serviceRequest.issuerOfAccessionNumber,
-//                        item.getNestedDataset(Tag.IssuerOfAccessionNumberSequence),
-//                        queryParam.getDefaultIssuerOfAccessionNumber(), matchUnknown));
-//
-//    }
-//
-//    public static void addRequestedProcedurePredicates(BooleanBuilder builder,
-//            Attributes keys, QueryParam queryParam) {
-//        boolean matchUnknown = queryParam.isMatchUnknown();
-//        builder.and(wildCard(QRequestedProcedure.requestedProcedure.requestedProcedureID,
-//                keys.getString(Tag.RequestedProcedureID, "*"),
-//                matchUnknown, false));
-//        builder.and(uids(QRequestedProcedure.requestedProcedure.studyInstanceUID,
-//                keys.getStrings(Tag.StudyInstanceUID), matchUnknown));
-//    }
-//
-//    public static void addScheduledProcedureStepPredicates(BooleanBuilder builder,
-//            Attributes item, QueryParam queryParam) {
-//        if (item == null || item.isEmpty())
-//            return;
-//
-//        boolean matchUnknown = queryParam.isMatchUnknown();
-//        boolean combinedDatetimeMatching = queryParam.isCombinedDatetimeMatching();
-//        builder.and(wildCard(QScheduledProcedureStep.scheduledProcedureStep.modality,
-//                item.getString(Tag.Modality, "*").toUpperCase(), matchUnknown, false));
-//        builder.and(scheduledStationAET(item.getString(Tag.ScheduledStationAETitle, "*"), matchUnknown));
-//        builder.and(MatchPersonName.match(
-//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianName,
-//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianIdeographicName,
-//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianPhoneticName,
-//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianFamilyNameSoundex,
-//                QScheduledProcedureStep.scheduledProcedureStep.scheduledPerformingPhysicianGivenNameSoundex,
-//                item.getString(Tag.ScheduledPerformingPhysicianName, "*"),
-//                queryParam));
-//        builder.and(MatchDateTimeRange.rangeMatch(
-//                QScheduledProcedureStep.scheduledProcedureStep.scheduledStartDate,
-//                QScheduledProcedureStep.scheduledProcedureStep.scheduledStartTime,
-//                Tag.ScheduledProcedureStepStartDate,
-//                Tag.ScheduledProcedureStepStartTime,
-//                Tag.ScheduledProcedureStepStartDateAndTime,
-//                item, combinedDatetimeMatching, matchUnknown));
-//        builder.and(wildCard(QScheduledProcedureStep.scheduledProcedureStep.scheduledProcedureStepID,
-//                item.getString(Tag.ScheduledProcedureStepID, "*"),
-//                matchUnknown, false));
-//        builder.and(uids(QScheduledProcedureStep.scheduledProcedureStep.status,
-//                item.getStrings(Tag.ScheduledProcedureStepStatus), matchUnknown));
-//    }
-//
-//    private static Predicate scheduledStationAET(String aet, boolean matchUnknown) {
-//        if (aet.equals("*"))
-//            return null;
-//
-//        return new HibernateSubQuery()
-//            .from(QScheduledStationAETitle.scheduledStationAETitle)
-//            .where(QMWLItem.mWLItem.scheduledStationAETs.contains(
-//                    QScheduledStationAETitle.scheduledStationAETitle),
-//                    wildCard(QScheduledStationAETitle.scheduledStationAETitle.aeTitle,
-//                            aet, matchUnknown, false))
-//            .exists();
-//    }
 
 }

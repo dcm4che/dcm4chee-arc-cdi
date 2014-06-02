@@ -110,7 +110,7 @@ public class DefaultRetrieveService implements RetrieveService {
     @Override
     public IDWithIssuer[] queryPatientIDs(RetrieveContext context,
             Attributes keys) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
+        IDWithIssuer pid = IDWithIssuer.pidOf(keys);
         return pid == null ? IDWithIssuer.EMPTY : new IDWithIssuer[] { pid };
     }
 
@@ -119,7 +119,8 @@ public class DefaultRetrieveService implements RetrieveService {
             Attributes keys, QueryParam queryParam) {
 
         BooleanBuilder builder = new BooleanBuilder();
-        builder.and(QueryBuilder.pids(pids, false));
+        //TODO
+//        builder.and(QueryBuilder.pids(pids, false));
         builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
                 keys.getStrings(Tag.StudyInstanceUID), false));
         builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,

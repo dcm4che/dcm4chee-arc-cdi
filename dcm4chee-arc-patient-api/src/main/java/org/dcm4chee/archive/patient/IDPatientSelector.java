@@ -38,12 +38,11 @@
 
 package org.dcm4chee.archive.patient;
 
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Issuer;
-import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.entity.Patient;
 
 /**
@@ -53,32 +52,17 @@ import org.dcm4chee.archive.entity.Patient;
 public class IDPatientSelector implements PatientSelector {
 
     @Override
-    public Patient select(List<Patient> list, Attributes attrs)
+    public Patient select(List<Patient> patients,
+            Collection<IDWithIssuer> pids, Attributes attrs)
             throws NonUniquePatientException {
-        String pid = attrs.getString(Tag.PatientID);
-        if (pid == null)
-            throw new NonUniquePatientException("No Patient ID");
-
-        Issuer issuer = Issuer.fromIssuerOfPatientID(attrs);
-        if (issuer != null) {
-            for (Iterator<Patient> it = list.iterator(); it.hasNext();) {
-                Patient pat = (Patient) it.next();
-                Issuer issuer2 = pat.getIssuerOfPatientID();
-                if (issuer2 != null) {
-                    if (issuer2.matches(issuer)) {
-                        return pat;
-                    } else
-                        it.remove();
-                }
-            }
-        }
-        if (list.isEmpty())
+        switch (patients.size()) {
+        case 0:
             return null;
-        
-        if (list.size() > 1)
-            throw new NonUniquePatientException("Nonunique Patient ID: " + pid);
-
-        return list.get(0);
+        case 1:
+            return patients.get(0);
+        default:
+            throw new NonUniquePatientException(patients.size() + " matching patients");
+        }
     }
 
 }

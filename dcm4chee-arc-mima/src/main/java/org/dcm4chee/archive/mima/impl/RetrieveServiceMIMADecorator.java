@@ -79,7 +79,7 @@ public abstract class RetrieveServiceMIMADecorator implements RetrieveService {
 
     @Override
     public IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
+        IDWithIssuer pid = IDWithIssuer.pidOf(keys);
         if (pid == null)
             return IDWithIssuer.EMPTY;
 

@@ -73,7 +73,6 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
-import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
@@ -246,17 +245,11 @@ public class MPPSServiceImpl implements MPPSService {
     public Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)
             throws DicomServiceException {
         try {
-            Patient patient = patientService.findPatientOnStore(attrs, new IDPatientSelector());
-            if (patient != null) {
-                patientService.updatePatientOnStore(patient, attrs, storeParam);
-                return patient;
-            }
-        } catch (NonUniquePatientException e) {
-            LOG.info("Could not find unique Patient Record for received MPPS - create new Patient Record", e);
+            return patientService.updateOrCreatePatientByMPPS(
+                    attrs, new IDPatientSelector(), storeParam);
         } catch (Exception e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }
-        return patientService.createPatientOnStore(attrs, storeParam);
     }
 
     @Override

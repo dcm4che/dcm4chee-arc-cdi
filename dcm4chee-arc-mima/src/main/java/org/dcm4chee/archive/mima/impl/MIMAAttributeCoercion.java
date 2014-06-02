@@ -88,7 +88,7 @@ class MIMAAttributeCoercion {
 
     private void coercePatientIDsAndPatientNames(ArchiveAEExtension arcAE,
             MIMAInfo info, Attributes attrs) {
-        IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(attrs);
+        IDWithIssuer pid = IDWithIssuer.pidOf(attrs);
         if (pid == null)
             return;
 
@@ -139,7 +139,7 @@ class MIMAAttributeCoercion {
         Sequence seq = attrs.newSequence(Tag.OtherPatientIDsSequence,
                 pids.length);
         for (IDWithIssuer pid : pids)
-            seq.add(pid.toPatientIDWithIssuer(null));
+            seq.add(pid.exportPatientIDWithIssuer(null));
         LOG.info("Add Other Patient IDs: {}", Arrays.toString(pids));
     }
     

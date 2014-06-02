@@ -119,9 +119,6 @@ public interface StoreService {
     Study createStudy(EntityManager em, StoreContext context)
             throws DicomServiceException;
 
-    Patient createPatient(EntityManager em, StoreContext context)
-            throws DicomServiceException;
-
     void updateInstance(EntityManager em, StoreContext context, Instance inst)
             throws DicomServiceException;
 

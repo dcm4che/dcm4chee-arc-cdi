@@ -50,6 +50,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -60,7 +62,6 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
@@ -74,9 +75,6 @@ import org.dcm4chee.archive.conf.AttributeFilter;
  */
 @NamedQueries({
 @NamedQuery(
-    name="Patient.findByPatientID",
-    query="SELECT p FROM Patient p WHERE p.patientID = ?1"),
-@NamedQuery(
     name="Patient.findByPatientName",
     query="SELECT p FROM Patient p WHERE UPPER(p.patientName) = UPPER(?1)")
 })
@@ -86,8 +84,6 @@ public class Patient implements Serializable {
 
     private static final long serialVersionUID = 6430339764844147679L;
 
-    public static final String FIND_BY_PATIENT_ID =
-            "Patient.findByPatientID";
     public static final String FIND_BY_PATIENT_NAME =
             "Patient.findByPatientName";
 
@@ -103,18 +99,6 @@ public class Patient implements Serializable {
     @Basic(optional = false)
     @Column(name = "updated_time")
     private Date updatedTime;
-
-    @Basic(optional = false)
-    @Column(name = "pat_id")
-    private String patientID;
-
-    @Basic(optional = false)
-    @Column(name = "pat_id_issuer")
-    private String issuerOfPatientID;
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "pat_id_issuer_fk")
-//    private Issuer issuerOfPatientID;
 
     @Basic(optional = false)
     @Column(name = "pat_name")
@@ -171,6 +155,15 @@ public class Patient implements Serializable {
     private Collection<Patient> previous;
 
     @OneToMany(mappedBy = "patient", orphanRemoval = true)
+    private Collection<PatientID> patientIDs;
+
+    @ManyToMany
+    @JoinTable(name = "rel_linked_patient_id", 
+        joinColumns = @JoinColumn(name = "patient_fk", referencedColumnName = "pk"),
+        inverseJoinColumns = @JoinColumn(name = "patient_id_fk", referencedColumnName = "pk"))
+    private Collection<PatientID> linkedPatientIDs;
+
+    @OneToMany(mappedBy = "patient", orphanRemoval = true)
     private Collection<Study> studies;
 
     @OneToMany(mappedBy = "patient", orphanRemoval = true)
@@ -182,8 +175,6 @@ public class Patient implements Serializable {
     @Override
     public String toString() {
         return "Patient[pk=" + pk
-                + ", id=" + patientID
-                + ", issuer=" + issuerOfPatientID
                 + ", name=" + patientName
                 + ", dob=" + patientBirthDate
                 + ", sex=" + patientSex
@@ -212,24 +203,6 @@ public class Patient implements Serializable {
 
     public Date getUpdatedTime() {
         return updatedTime;
-    }
-
-    public String getPatientID() {
-        return patientID;
-    }
-
-    public Issuer getIssuerOfPatientID() {
-        return (issuerOfPatientID == null 
-                || issuerOfPatientID.isEmpty()
-                || issuerOfPatientID.equals("*"))
-                ? null
-                : new Issuer(issuerOfPatientID);
-    }
-
-    public void setIssuerOfPatientID(org.dcm4che3.data.Issuer issuerOfPatientID) {
-        this.issuerOfPatientID = issuerOfPatientID != null 
-                ? issuerOfPatientID.toString()
-                : "*";
     }
 
     public String getPatientName() {
@@ -284,6 +257,14 @@ public class Patient implements Serializable {
         return previous;
     }
 
+    public Collection<PatientID> getPatientIDs() {
+        return patientIDs;
+    }
+
+    public Collection<PatientID> getLinkedPatientIDs() {
+        return linkedPatientIDs;
+    }
+
     public Collection<Study> getStudies() {
         return studies;
     }
@@ -307,8 +288,6 @@ public class Patient implements Serializable {
     }
 
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
-        patientID = attrs.getString(Tag.PatientID, "*");
-        setIssuerOfPatientID(Issuer.fromIssuerOfPatientID(attrs));
         PersonName pn = new PersonName(attrs.getString(Tag.PatientName), true);
         patientName = pn.contains(PersonName.Group.Alphabetic) 
                 ? pn.toString(PersonName.Group.Alphabetic, false) : "*";

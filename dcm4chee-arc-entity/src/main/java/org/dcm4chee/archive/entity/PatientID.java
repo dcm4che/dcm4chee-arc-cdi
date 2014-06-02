@@ -36,37 +36,80 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.patient;
+package org.dcm4chee.archive.entity;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Patient;
+import java.io.Serializable;
+
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface PatientService {
+@Entity
+@Table(name = "patient_id")
+public class PatientID implements Serializable {
 
-    Patient updateOrCreatePatientByMPPS(Attributes attrs,
-            PatientSelector selector, StoreParam storeParam)
-            throws PatientCircularMergedException;
+    private static final long serialVersionUID = -473286258988921273L;
 
-    Patient updateOrCreatePatientByCStore(Attributes attrs,
-            PatientSelector selector, StoreParam storeParam)
-            throws PatientCircularMergedException;
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name = "pk")
+    private long pk;
 
-    void updatePatientByCStore(Patient patient, Attributes attrs,
-            StoreParam storeParam);
+    @Basic(optional=false)
+    @Column(name = "pat_id")
+    private String id;
 
-    Patient updateOrCreatePatientByHL7(Attributes attrs, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException;
+    @ManyToOne
+    @JoinColumn(name = "issuer_fk")
+    private Issuer issuer;
 
-    void mergePatientByHL7(Attributes attrs, Attributes mrg, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException,
-            PatientCircularMergedException;
+    @ManyToOne
+    @JoinColumn(name = "patient_fk")
+    private Patient patient;
 
-    Patient deletePatient(IDWithIssuer idWithIssuer) throws NonUniquePatientException;
+    public long getPk() {
+        return pk;
+    }
 
+    public String getID() {
+        return id;
+    }
+
+    public void setID(String id) {
+        this.id = id;
+    }
+
+    public Patient getPatient() {
+        return patient;
+    }
+
+    public void setPatient(Patient patient) {
+        this.patient = patient;
+    }
+
+    public Issuer getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(Issuer issuer) {
+        this.issuer = issuer;
+    }
+    
+    @Override
+    public String toString() {
+        return "PatientID[pk=" + pk
+                + ", id=" + id
+                + ", issuer=" + issuer
+                + "]";
+    }
 }
