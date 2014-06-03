@@ -601,7 +601,7 @@ public class ArchiveDeviceTest {
    
    
     
-//    @Test
+   @Test
     public void test() throws Exception {
         for (int i = 0; i < OTHER_AES.length; i++) {
             String aet = OTHER_AES[i];

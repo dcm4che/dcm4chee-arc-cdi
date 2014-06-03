@@ -12,6 +12,8 @@
 
     GSPS_CUID = "1.2.840.10008.5.1.4.1.1.11.1",
 
+    PDF_CUID = "1.2.840.10008.5.1.4.1.1.104.1",
+
     QIDO_PATH = "/dcm4chee-arc/qido/",
 
     ATTRS_HEADER = "<td><a href='#' title='Hide Attributes'>X</a></td>"
@@ -320,6 +322,10 @@
     wadoURIofFrame = function(wadouri, frame) {
         return wadouri + "&contentType=image/jpeg&frameNumber=" + frame;
     },
+    
+    wadoURIofPDF = function(wadouri) {
+        return wadouri + "&contentType=application/pdf";
+    },
 
     wadoURIofGSPS = function(inst, index) {
         var rsuri = inst["00081190"].Value[0], // RetrieveURL
@@ -411,7 +417,7 @@
         };
         viewLink.onclick = function() {
             window
-                    .open(gsps ? wadoURIofGSPS(inst,
+                    .open(inst["00080016"].Value[0]===PDF_CUID ? wadoURIofPDF(wadouri):gsps ? wadoURIofGSPS(inst,
                             select ? select.selectedIndex : 0)
                             : select ? wadoURIofFrame(wadouri,
                                     select.selectedIndex + 1) : wadouri);
