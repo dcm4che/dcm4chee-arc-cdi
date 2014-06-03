@@ -53,7 +53,7 @@ public interface PatientService {
      * Query for existing Patient records with matching Patient ID's and/or
      * Patient demographics. If no or multiple existing Patient records matches,
      * a new Patient record is inserted. Otherwise the matching Patient record
-     * - or if merged, following the merge path to the resulting dominate
+     * - or if merged, following the merge path to the final dominate
      * Patient - will be updated. Called on receive of MPPS N-CREATE requests.
      * 
      * @param attrs
@@ -70,7 +70,7 @@ public interface PatientService {
      * Query for existing Patient records with matching Patient ID's and/or
      * Patient demographics. If no or multiple existing Patient records matches,
      * a new Patient record is inserted. Otherwise the matching Patient record
-     * - or if merged, following the merge path to the resulting dominate
+     * - or if merged, following the merge path to the final dominate
      * Patient - will be updated. Called on receiving of the first Composite
      * Object of a Study.
      * 
