@@ -99,14 +99,14 @@ public class PatientServiceEJB implements PatientService {
     private IssuerService issuerService;
 
     @Override
-    public Patient updateOrCreatePatientByCStore(Attributes attrs,
+    public Patient updateOrCreatePatientOnCStore(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
             throws PatientCircularMergedException {
         return updateOrCreatePatientByDICOM(attrs, selector, storeParam);
     }
 
     @Override
-    public Patient updateOrCreatePatientByMPPS(Attributes attrs,
+    public Patient updateOrCreatePatientOnMPPSNCreate(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
             throws PatientCircularMergedException {
         return updateOrCreatePatientByDICOM(attrs, selector, storeParam);

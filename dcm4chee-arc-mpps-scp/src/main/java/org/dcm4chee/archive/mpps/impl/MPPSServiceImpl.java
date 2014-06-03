@@ -245,7 +245,7 @@ public class MPPSServiceImpl implements MPPSService {
     public Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)
             throws DicomServiceException {
         try {
-            return patientService.updateOrCreatePatientByMPPS(
+            return patientService.updateOrCreatePatientOnMPPSNCreate(
                     attrs, new IDPatientSelector(), storeParam);
         } catch (Exception e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);

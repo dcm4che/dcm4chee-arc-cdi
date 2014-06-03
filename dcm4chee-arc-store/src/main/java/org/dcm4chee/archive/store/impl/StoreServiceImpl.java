@@ -555,7 +555,7 @@ public class StoreServiceImpl implements StoreService {
             throws DicomServiceException {
         try {
             StoreSession session = context.getStoreSession();
-            return patientService.updateOrCreatePatientByCStore(
+            return patientService.updateOrCreatePatientOnCStore(
                     context.getAttributes(),
                     new IDPatientSelector(),
                     session.getStoreParam());

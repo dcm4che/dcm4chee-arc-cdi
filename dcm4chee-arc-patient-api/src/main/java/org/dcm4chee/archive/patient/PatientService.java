@@ -62,7 +62,7 @@ public interface PatientService {
      * @return
      * @throws PatientCircularMergedException
      */
-    Patient updateOrCreatePatientByMPPS(Attributes attrs,
+    Patient updateOrCreatePatientOnMPPSNCreate(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
             throws PatientCircularMergedException;
 
@@ -80,7 +80,7 @@ public interface PatientService {
      * @return
      * @throws PatientCircularMergedException
      */
-    Patient updateOrCreatePatientByCStore(Attributes attrs,
+    Patient updateOrCreatePatientOnCStore(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
             throws PatientCircularMergedException;
 
