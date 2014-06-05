@@ -41,6 +41,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -237,6 +238,9 @@ public class WadoURI extends Wado  {
         if (mediaType == MediaTypes.IMAGE_JPEG_TYPE)
             return retrieveJPEG(instance, attrs);
 
+        if(mediaType == MediaTypes.APPLICATION_PDF_TYPE){
+            return retrievePDF(instance);
+    }
         throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
 
     }
@@ -280,7 +284,29 @@ public class WadoURI extends Wado  {
         return false;
     }
 
+    private Response retrievePDF(final InstanceLocator instance) {
+        final MediaType mediaType = MediaTypes.APPLICATION_PDF_TYPE;
+        return Response.ok(new StreamingOutput() {
 
+                @Override
+                public void write(OutputStream out) throws IOException,
+                                WebApplicationException {
+                        BufferedOutputStream bOut = null;
+                        DicomInputStream in =null;
+                        try{
+                        in = new DicomInputStream(instance.getFile());
+                        Attributes atts = in.readDataset(-1, -1);
+                        bOut = new BufferedOutputStream(out);
+                        bOut.write(atts.getBytes(Tag.EncapsulatedDocument));
+                        }
+                        finally{
+                        bOut.flush();
+                        bOut.close();
+                        in.close();
+                        }
+                }
+        }, mediaType).build();
+}
     private Response retrieveNativeDicomObject(InstanceLocator ref,
             Attributes attrs) {
         String tsuid = selectTransferSyntax(ref.tsuid);
