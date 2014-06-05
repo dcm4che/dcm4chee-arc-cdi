@@ -51,7 +51,18 @@ import org.dcm4chee.archive.entity.Patient;
  */
 public interface PatientSelector {
 
-    Patient select(List<Patient> patients, Collection<IDWithIssuer> pids,
-            Attributes attrs) throws NonUniquePatientException;
+    /**
+     * Select one Patient from a list of candidates considering matching on
+     * other attributes than Patient ID's.
+     * 
+     * @param candidates pre-selected list of patients with matching Patient IDs
+     * @param attrs DICOM Data Set of target object
+     * @param pids extracted Patient IDs with Issuers
+     * @return selected Patient from candidates or {@code null}
+     * @throws NonUniquePatientException if more than one of the candidates
+     * passes the applied matching criteria
+     */
+    Patient select(List<Patient> candidates, Attributes attrs,
+            Collection<IDWithIssuer> pids) throws NonUniquePatientException;
 
 }

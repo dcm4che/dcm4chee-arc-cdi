@@ -52,7 +52,9 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.PersonName;
+import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
@@ -127,7 +129,7 @@ public class PatientServiceEJB implements PatientService {
             return createPatient(pids, attrs, storeParam);
 
         patient = followMergedWith(patient);
-        updatePatient(patient, pids, attrs, storeParam, false);
+        updatePatientByDICOM(patient, attrs, storeParam, pids);
         return patient;
     }
 
@@ -143,7 +145,7 @@ public class PatientServiceEJB implements PatientService {
         else
             throw new NonUniquePatientException("No Patient ID and no Patient Name");
         
-        return selector.select(patients, pids, attrs);
+        return selector.select(patients, attrs, pids);
     }
 
     private List<Patient> findPatientByName(String pn) {
@@ -189,15 +191,10 @@ public class PatientServiceEJB implements PatientService {
 
     private BooleanExpression matchingIDsWithoutIssuer(
             Collection<BooleanExpression> eqIDs) {
-        BooleanExpression hasIssuer = QPatientID.patientID.issuer.isNotNull();
         BooleanExpression noIssuer = QPatientID.patientID.issuer.isNull();
         BooleanBuilder builder = new BooleanBuilder();
         for (BooleanExpression eqID : eqIDs) {
-            BooleanExpression notExists = new HibernateSubQuery()
-                .from(QPatientID.patientID)
-                .where(ExpressionUtils.and(eqID, hasIssuer))
-                .notExists();
-            builder.or(ExpressionUtils.allOf(eqID, noIssuer, notExists));
+            builder.or(ExpressionUtils.and(eqID, noIssuer));
         }
         return new HibernateSubQuery()
             .from(QPatientID.patientID)
@@ -263,27 +260,115 @@ public class PatientServiceEJB implements PatientService {
                 storeParam.getFuzzyStr());
         em.persist(patient);
         LOG.info("Create {}", patient);
-        for (IDWithIssuer idWithIssuer : pids) {
-            PatientID pid = new PatientID();
-            pid.setID(idWithIssuer.getID());
-            if (idWithIssuer.getIssuer() != null)
-                pid.setIssuer(issuerService.findOrCreate(
-                    new Issuer(idWithIssuer.getIssuer())));
-            pid.setPatient(patient);
-            em.persist(pid);
-            LOG.info("Create {}", pid);
+        for (IDWithIssuer pid : pids) {
+            createPatientID(pid, patient);
         }
         return patient;
+    }
+
+    private PatientID createPatientID(IDWithIssuer pid, Patient patient) {
+        PatientID patientID = new PatientID();
+        patientID.setID(pid.getID());
+        if (pid.getIssuer() != null)
+            pid.setIssuer(findOrCreateIssuer(pid));
+        patientID.setPatient(patient);
+        em.persist(pid);
+        LOG.info("Create {}", patientID);
+        return patientID;
+    }
+
+    private Issuer findOrCreateIssuer(IDWithIssuer pid) {
+        return issuerService.findOrCreate(
+            new Issuer(pid.getIssuer()));
     }
 
     @Override
     public void updatePatientByCStore(Patient patient, Attributes attrs,
             StoreParam storeParam) {
-        updatePatient(patient, IDWithIssuer.pidsOf(attrs), attrs, storeParam, false);
+        updatePatientByDICOM(patient, attrs, storeParam, IDWithIssuer.pidsOf(attrs));
     }
 
-    private void updatePatient(Patient patient, Collection<IDWithIssuer> pids,
-            Attributes attrs, StoreParam storeParam, boolean overwriteValues) {
+    private void updatePatientByDICOM(Patient patient, Attributes attrs,
+            StoreParam storeParam, Collection<IDWithIssuer> pids) {
+        boolean patientIDsMerged = mergePatientIDs(patient, pids);
+        Attributes patientAttrs = patient.getAttributes();
+        if (patientIDsMerged) {
+            updatePatientIDsAttributes(patientAttrs, patient);
+        }
+        AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
+        if (patientAttrs.mergeSelected(attrs, filter.getSelection()) || patientIDsMerged) {
+            patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
+        }
+    }
+
+    private void updatePatientIDsAttributes(Attributes attrs, Patient patient) {
+        IDWithIssuer pid0 = IDWithIssuer.pidOf(attrs);
+        attrs.remove(Tag.IssuerOfPatientID);
+        attrs.remove(Tag.IssuerOfPatientIDQualifiersSequence);
+        attrs.remove(Tag.OtherPatientIDsSequence);
+        Collection<PatientID> patientIDs = patient.getPatientIDs();
+        if (patientIDs.isEmpty()) {
+            attrs.setNull(Tag.PatientID, VR.LO);
+            return;
+        }
+        int numopids = patientIDs.size() - 1;
+        if (numopids == 0) {
+            patientIDs.iterator().next().toIDWithIssuer()
+                .exportPatientIDWithIssuer(attrs);
+            return;
+        }
+        Sequence opidsSeq = attrs.newSequence(Tag.OtherPatientIDsSequence, numopids);
+        for (PatientID patientID : patientIDs) {
+            IDWithIssuer opid = patientID.toIDWithIssuer();
+            if (opid.matches(pid0)) {
+                opid.exportPatientIDWithIssuer(attrs);
+                pid0 = null;
+            } else {
+                opidsSeq.add(opid.exportPatientIDWithIssuer(null));
+            }
+        }
+    }
+
+    private boolean mergePatientIDs(Patient patient,
+            Collection<IDWithIssuer> pids) {
+        int modCount = 0;
+        Collection<PatientID> patientIDs = patient.getPatientIDs();
+        for (IDWithIssuer pid : pids) {
+            PatientID patientID = selectFrom(patientIDs, pid);
+            if (patientID != null) {
+                if (pid.getIssuer() == null)
+                    continue;
+                
+                Issuer issuer = patientID.getIssuer();
+                if (issuer != null) {
+                    if (!issuer.equals(pid.getIssuer()))
+                        continue;
+
+                    issuer.merge(pid.getIssuer());
+                } else {
+                    patientID.setIssuer(findOrCreateIssuer(pid));
+                }
+            } else {
+                patientIDs.add(createPatientID(pid, patient));
+            }
+            modCount++;
+        }
+        return modCount > 0;
+    }
+
+    private PatientID selectFrom(Collection<PatientID> patientIDs,
+            IDWithIssuer pid) {
+        for (PatientID patientID : patientIDs) {
+            if (pid.getID().equals(patientID.getID())
+                    && pid.getIssuer() == null
+                    || pid.getIssuer().matches(patientID.getIssuer()))
+                return patientID;
+        }
+        return null;
+    }
+
+    private void updatePatient(Patient patient, Attributes attrs,
+            Collection<IDWithIssuer> pids, StoreParam storeParam, boolean overwriteValues) {
         //TODO update patient IDs
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
@@ -300,14 +385,14 @@ public class PatientServiceEJB implements PatientService {
         //TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
-        Patient patient = selector.select(findPatientByIDs(pids), pids, attrs);
+        Patient patient = selector.select(findPatientByIDs(pids), attrs, pids);
         if (patient == null)
             createPatient(pids, attrs, storeParam);
 
         if (patient.getMergedWith() != null)
             throw new PatientMergedException(patient);
 
-        updatePatient(patient, pids, attrs, storeParam, true);
+        updatePatient(patient, attrs, pids, storeParam, true);
         return patient;
     }
 

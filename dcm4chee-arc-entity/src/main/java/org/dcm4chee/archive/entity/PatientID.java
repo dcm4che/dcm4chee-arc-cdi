@@ -50,6 +50,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.dcm4che3.data.IDWithIssuer;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
@@ -111,5 +113,9 @@ public class PatientID implements Serializable {
                 + ", id=" + id
                 + ", issuer=" + issuer
                 + "]";
+    }
+
+    public IDWithIssuer toIDWithIssuer() {
+        return new IDWithIssuer(id, issuer);
     }
 }

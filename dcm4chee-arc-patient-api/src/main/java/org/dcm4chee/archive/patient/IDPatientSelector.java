@@ -53,7 +53,7 @@ public class IDPatientSelector implements PatientSelector {
 
     @Override
     public Patient select(List<Patient> patients,
-            Collection<IDWithIssuer> pids, Attributes attrs)
+            Attributes attrs, Collection<IDWithIssuer> pids)
             throws NonUniquePatientException {
         switch (patients.size()) {
         case 0:

@@ -56,11 +56,11 @@ public interface PatientService {
      * - or if merged, following the merge path to the final dominate
      * Patient - will be updated. Called on receive of MPPS N-CREATE requests.
      * 
-     * @param attrs
-     * @param selector
-     * @param storeParam
-     * @return
-     * @throws PatientCircularMergedException
+     * @param attrs Data Set of received MPPS N-CREATE Request
+     * @param selector used PatientSelector
+     * @param storeParam used StoreParam
+     * @return updated or created Patient
+     * @throws PatientCircularMergedException if a circular merge path is detected
      */
     Patient updateOrCreatePatientOnMPPSNCreate(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
@@ -74,11 +74,11 @@ public interface PatientService {
      * Patient - will be updated. Called on receiving of the first Composite
      * Object of a Study.
      * 
-     * @param attrs
-     * @param selector
-     * @param storeParam
-     * @return
-     * @throws PatientCircularMergedException
+     * @param attrs Data Set of received composite object
+     * @param selector used PatientSelector
+     * @param storeParam used StoreParam
+     * @return updated or created Patient
+     * @throws PatientCircularMergedException if a circular merge path is detected
      */
     Patient updateOrCreatePatientOnCStore(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
