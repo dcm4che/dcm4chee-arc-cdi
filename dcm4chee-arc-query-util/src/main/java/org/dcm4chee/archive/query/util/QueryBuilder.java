@@ -390,7 +390,7 @@ public class QueryBuilder {
                         result)).exists();
 
         return matchUnknown 
-                ? ExpressionUtils.or(QPatient.patient.patientIDs.isEmpty(), matchingIDsExists)
+                ? ExpressionUtils.or(matchingIDsExists, QPatient.patient.patientIDs.isEmpty())
                 : matchingIDsExists;
     }
 
