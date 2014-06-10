@@ -229,10 +229,10 @@ public class WadoURI extends Wado {
     @GET
     public Response retrieve() throws WebApplicationException {
 
-        List<InstanceLocator>  insts = new ArrayList<InstanceLocator>();
-        List<InstanceLocator>  instswarning = new ArrayList<InstanceLocator>();
-        List<InstanceLocator>  instscompleted = new ArrayList<InstanceLocator>();
-        List<InstanceLocator>  instsfailed = new ArrayList<InstanceLocator>();
+        List<ArchiveInstanceLocator>  insts = new ArrayList<ArchiveInstanceLocator>();
+        List<ArchiveInstanceLocator>  instswarning = new ArrayList<ArchiveInstanceLocator>();
+        List<ArchiveInstanceLocator>  instscompleted = new ArrayList<ArchiveInstanceLocator>();
+        List<ArchiveInstanceLocator>  instsfailed = new ArrayList<ArchiveInstanceLocator>();
         
         try {
             checkRequest();
