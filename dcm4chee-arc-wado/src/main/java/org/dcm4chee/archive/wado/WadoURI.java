@@ -215,7 +215,7 @@ public class WadoURI extends Wado  {
         
         List<ArchiveInstanceLocator> ref =
                 retrieveService.calculateMatches(studyUID, seriesUID, objectUID, queryParam);
-        if (ref == null)
+        if (ref == null || ref.size() == 0)
             throw new WebApplicationException(Status.NOT_FOUND);
         
         if (ref.size() != 1)
