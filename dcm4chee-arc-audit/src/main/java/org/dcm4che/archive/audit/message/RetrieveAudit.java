@@ -65,7 +65,7 @@ public class RetrieveAudit extends AuditMessage {
     private Participant source;
     private Participant destination;
     private Participant requestor;
-    private List<ArchiveInstanceLocator> instances;
+    private List<InstanceLocator> instances;
     private EventID eventID; 
     private String eventOutcomeIndicator;
     private AuditLogger logger;
@@ -76,7 +76,7 @@ public class RetrieveAudit extends AuditMessage {
             Participant source,
             Participant destination,
             Participant requestor,
-            List<ArchiveInstanceLocator> instances,
+            List<InstanceLocator> instances,
             EventID eventID,
             String eventOutcomeIndicator,
             AuditLogger logger) {
@@ -125,7 +125,7 @@ public class RetrieveAudit extends AuditMessage {
 
         
         // Participating Object: one for each Study being transferred
-        HashMap<String, List<ArchiveInstanceLocator>> map = groupInstancePerStudy(instances);
+        HashMap<String, List<InstanceLocator>> map = groupInstancePerStudy(instances);
         for (String studyuid : map.keySet()) {
             ParticipantObjectDescription pod = createRetrieveObjectPOD(logger,
                     map.get(studyuid));
@@ -163,12 +163,12 @@ public class RetrieveAudit extends AuditMessage {
     /**
      * Returns (and logs) only instances having a study instance uid.
      */
-    private HashMap<String, List<ArchiveInstanceLocator>> groupInstancePerStudy(
-            List<ArchiveInstanceLocator> instances) {
+    private HashMap<String, List<InstanceLocator>> groupInstancePerStudy(
+            List<InstanceLocator> instances) {
 
-        HashMap<String, List<ArchiveInstanceLocator>> map = new HashMap<String, List<ArchiveInstanceLocator>>();
+        HashMap<String, List<InstanceLocator>> map = new HashMap<String, List<InstanceLocator>>();
 
-        for (ArchiveInstanceLocator instance : instances) {
+        for (InstanceLocator instance : instances) {
 
             if (instance.getObject() != null
                     && instance.getObject() instanceof Attributes) {
@@ -179,7 +179,7 @@ public class RetrieveAudit extends AuditMessage {
 
                     if (map.get(studyInstanceUID) == null)
                         map.put(studyInstanceUID,
-                                new ArrayList<ArchiveInstanceLocator>());
+                                new ArrayList<InstanceLocator>());
 
                     map.get(studyInstanceUID).add(instance);
                 }
@@ -190,7 +190,7 @@ public class RetrieveAudit extends AuditMessage {
     }
 
     private static ParticipantObjectDescription createRetrieveObjectPOD(
-            AuditLogger logger, List<ArchiveInstanceLocator> instances) {
+            AuditLogger logger, List<InstanceLocator> instances) {
 
         if (instances == null || instances.size() == 0) {
             return null;
@@ -211,7 +211,7 @@ public class RetrieveAudit extends AuditMessage {
         }
     }
     
-    private String getPatientID(List<ArchiveInstanceLocator> instances) {
+    private String getPatientID(List<InstanceLocator> instances) {
         String id = null;
         if (instances!=null)
             for (InstanceLocator instance : instances)

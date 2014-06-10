@@ -134,7 +134,7 @@ public class CGetSCP extends BasicCGetSCP {
                 return null;
 
             RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(
-                    Dimse.C_GET_RQ, as, pc, rq, matches, as, context, withoutBulkData, retrieveAfterEvent);
+                    Dimse.C_GET_RQ, as, pc, rq, (List<InstanceLocator>)(List<?>)matches, as, context, withoutBulkData, retrieveAfterEvent);
 //            if (sourceAE != null)
 //                retrieveTask.setDestinationDevice(sourceAE.getDevice());
             retrieveTask.setSendPendingRSP(aeExt.isSendPendingCGet());
@@ -146,7 +146,7 @@ public class CGetSCP extends BasicCGetSCP {
                     new LocalAssociationParticipant(as), 
                     new RemoteAssociationParticipant(as),
                     ae.getDevice(),
-                    matches));
+                    (List<InstanceLocator>)(List<?>)matches));
             
             return retrieveTask;
         } catch (Exception e) {

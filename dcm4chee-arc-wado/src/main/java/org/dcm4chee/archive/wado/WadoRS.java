@@ -47,6 +47,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.enterprise.context.RequestScoped;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 import javax.servlet.http.HttpServletRequest;
@@ -82,7 +85,9 @@ import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
+import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.jboss.resteasy.plugins.providers.multipart.ContentIDUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.jboss.resteasy.plugins.providers.multipart.OutputPart;
@@ -99,6 +104,9 @@ import org.slf4j.LoggerFactory;
  */
 @Path("/wado/{AETitle}")
 public class WadoRS extends Wado {
+
+    @Inject
+    private Event<RetrieveAfterSendEvent> retrieveEvent;
 
     private static final int STATUS_OK = 200;
     private static final int STATUS_PARTIAL_CONTENT = 206;
@@ -378,39 +386,65 @@ public class WadoRS extends Wado {
     }
 
     private Response retrieve(List<ArchiveInstanceLocator> refs) {
-        if (refs.isEmpty())
-            throw new WebApplicationException(Status.NOT_FOUND);
 
-        if (acceptDicom || acceptBulkdata) {
-            MultipartRelatedOutput output = new MultipartRelatedOutput();
-            int failed = 0;
-            if (acceptedBulkdataMediaTypes.isEmpty()) {
-                for (InstanceLocator ref : refs)
-                    if (!addDicomObjectTo(ref, output))
-                        failed++;
+        List<InstanceLocator> insts = new ArrayList<InstanceLocator>();
+        List<InstanceLocator> instswarning = new ArrayList<InstanceLocator>();
+        List<InstanceLocator> instscompleted = new ArrayList<InstanceLocator>();
+        List<InstanceLocator> instsfailed = new ArrayList<InstanceLocator>();
+
+        try {
+            if (refs.isEmpty())
+                throw new WebApplicationException(Status.NOT_FOUND);
+            else
+                insts.addAll(refs);
+
+            if (acceptDicom || acceptBulkdata) {
+                MultipartRelatedOutput output = new MultipartRelatedOutput();
+                int failed = 0;
+                if (acceptedBulkdataMediaTypes.isEmpty()) {
+                    for (InstanceLocator ref : refs)
+                        if (!addDicomObjectTo(ref, output)) {
+                            instsfailed.add(ref);
+                            failed++;
+                        } else
+                            instscompleted.add(ref);
+                } else {
+                    for (InstanceLocator ref : refs)
+                        if (addPixelDataTo(ref.uri, output) != STATUS_OK) {
+                            instsfailed.add(ref);
+                            failed++;
+                        } else
+                            instscompleted.add(ref);
+                }
+
+                if (output.getParts().isEmpty())
+                    throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+
+                int status = failed > 0 ? STATUS_PARTIAL_CONTENT : STATUS_OK;
+                return Response.status(status).entity(output).build();
             } else {
-                for (InstanceLocator ref : refs)
-                    if (addPixelDataTo(ref.uri, output) != STATUS_OK)
-                        failed++;
+                instscompleted.addAll(refs);
             }
 
-            if (output.getParts().isEmpty())
+            if (!acceptZip && !acceptAll)
                 throw new WebApplicationException(Status.NOT_ACCEPTABLE);
 
-            int status = failed > 0 ? STATUS_PARTIAL_CONTENT : STATUS_OK;
-            return Response.status(status).entity(output).build();
+            ZipOutput output = new ZipOutput();
+            for (InstanceLocator ref : refs) {
+                output.addEntry(new DicomObjectOutput(ref, (Attributes) ref
+                        .getObject(), ref.tsuid));
+            }
+            return Response.ok().entity(output)
+                    .type(MediaTypes.APPLICATION_ZIP_TYPE).build();
+        } finally {
+            // audit
+            retrieveEvent.fire(new RetrieveAfterSendEvent(
+                    new GenericParticipant(request.getRemoteAddr(), request
+                            .getRemoteUser()), new GenericParticipant(request
+                            .getLocalAddr(), null), new GenericParticipant(
+                            request.getRemoteAddr(), request.getRemoteUser()),
+                    device, insts, instscompleted, instswarning, instsfailed));
         }
-
-        if (!acceptZip && !acceptAll)
-            throw new WebApplicationException(Status.NOT_ACCEPTABLE);
-
-        ZipOutput output = new ZipOutput();
-        for (InstanceLocator ref : refs) {
-            output.addEntry(new DicomObjectOutput(ref, (Attributes) ref
-                    .getObject(), ref.tsuid));
-        }
-        return Response.ok().entity(output)
-                .type(MediaTypes.APPLICATION_ZIP_TYPE).build();
     }
 
     private Response retrievePixelData(String fileURI, int... frames) {

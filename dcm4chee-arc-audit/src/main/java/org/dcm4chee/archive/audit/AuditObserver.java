@@ -169,7 +169,7 @@ public class AuditObserver {
         
         AuditLogger logger = getLogger(event.getDevice());
         
-        List<ArchiveInstanceLocator> success = new ArrayList<ArchiveInstanceLocator>();
+        List<InstanceLocator> success = new ArrayList<InstanceLocator>();
         
         //completed and warning instances are considered as "success"
         //failed instances are considered "minor failures", unless all the instances

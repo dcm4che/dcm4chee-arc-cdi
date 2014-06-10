@@ -144,7 +144,7 @@ public class CMoveSCP extends BasicCMoveSCP {
             AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, matches);
             Association storeas = openStoreAssociation(as, destAE, aarq);
             RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(
-                    Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, context, false, retrieveAfterEvent);
+                    Dimse.C_MOVE_RQ, as, pc, rq, (List<InstanceLocator>)(List<?>)matches, storeas, context, false, retrieveAfterEvent);
 //            retrieveTask.setDestinationDevice(destAE.getDevice());
             retrieveTask.setSendPendingRSPInterval(arcAE.getSendPendingCMoveInterval());
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
@@ -155,7 +155,7 @@ public class CMoveSCP extends BasicCMoveSCP {
                     new LocalAssociationParticipant(as), 
                     new GenericParticipant(Participant.UNKNOWN,destAE.getAETitle()),
                     ae.getDevice(),
-                    matches));
+                    (List<InstanceLocator>)(List<?>)matches));
             
             return retrieveTask;
         } catch (ConfigurationNotFoundException e) {

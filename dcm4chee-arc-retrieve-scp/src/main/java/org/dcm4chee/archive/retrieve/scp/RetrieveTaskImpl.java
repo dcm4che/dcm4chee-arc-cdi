@@ -70,14 +70,14 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
+class RetrieveTaskImpl extends BasicRetrieveTask<InstanceLocator> {
 
     private final RetrieveContext retrieveContext;
     private final boolean withoutBulkData;
     private Event<RetrieveAfterSendEvent> retrieveEvent;
 
     public RetrieveTaskImpl(Dimse rq, Association rqas, PresentationContext pc,
-            Attributes rqCmd, List<ArchiveInstanceLocator> matches,
+            Attributes rqCmd, List<InstanceLocator> matches,
             Association storeas, RetrieveContext retrieveContext,
             boolean withoutBulkData, Event<RetrieveAfterSendEvent> retrieveEvent) {
         super(rq, rqas, pc, rqCmd, matches, storeas);
@@ -88,7 +88,7 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
 
     @Override
     protected String selectTransferSyntaxFor(Association storeas,
-            ArchiveInstanceLocator inst) {
+            InstanceLocator inst) {
         if (storeas.getTransferSyntaxesFor(inst.cuid).contains(inst.tsuid))
             return inst.tsuid;
 
@@ -96,7 +96,7 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
     }
 
     @Override
-    protected DataWriter createDataWriter(ArchiveInstanceLocator inst,
+    protected DataWriter createDataWriter(InstanceLocator inst,
             String tsuid) throws IOException {
         ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()

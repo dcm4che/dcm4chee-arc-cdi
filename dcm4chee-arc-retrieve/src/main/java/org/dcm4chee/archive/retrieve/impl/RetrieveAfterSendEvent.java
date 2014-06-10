@@ -50,9 +50,9 @@ import org.dcm4chee.archive.dto.Participant;
  */
 public class RetrieveAfterSendEvent extends RetrieveEvent {
 
-    protected final List<ArchiveInstanceLocator> completed;
-    protected final List<ArchiveInstanceLocator> warning;
-    protected final List<ArchiveInstanceLocator> failed;
+    protected final List<InstanceLocator> completed;
+    protected final List<InstanceLocator> warning;
+    protected final List<InstanceLocator> failed;
     
     /**
      * @param requestor
@@ -63,25 +63,25 @@ public class RetrieveAfterSendEvent extends RetrieveEvent {
      */
     public RetrieveAfterSendEvent(Participant requestor, Participant source,
             Participant destination, Device device,
-            List<ArchiveInstanceLocator> instances, 
-            List<ArchiveInstanceLocator> completed,
-            List<ArchiveInstanceLocator> warning,
-            List<ArchiveInstanceLocator> failed) {
+            List<InstanceLocator> instances, 
+            List<InstanceLocator> completed,
+            List<InstanceLocator> warning,
+            List<InstanceLocator> failed) {
         super(requestor, source, destination, device, instances);
         this.completed = completed;
         this.warning = warning;
         this.failed = failed;
     }
     
-    public List<ArchiveInstanceLocator> getCompleted() {
+    public List<InstanceLocator> getCompleted() {
         return completed;
     }
 
-    public List<ArchiveInstanceLocator> getWarning() {
+    public List<InstanceLocator> getWarning() {
         return warning;
     }
 
-    public List<ArchiveInstanceLocator> getFailed() {
+    public List<InstanceLocator> getFailed() {
         return failed;
     }
 

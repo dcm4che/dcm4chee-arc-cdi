@@ -49,6 +49,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.enterprise.context.RequestScoped;
+import javax.enterprise.event.Event;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -56,6 +57,7 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -83,10 +85,15 @@ import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
+import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.dto.LocalAssociationParticipant;
+import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 
 /**
  * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.
+ * 
  * @see ftp://medical.nema.org/medical/dicom/2011/11_18pu.pdf
  * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -94,16 +101,24 @@ import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
  */
 @RequestScoped
 @Path("/wado/{AETitle}")
-public class WadoURI extends Wado  {
+public class WadoURI extends Wado {
+
+    @Inject
+    private Event<RetrieveAfterSendEvent> retrieveEvent;
 
     private static final int STATUS_NOT_IMPLEMENTED = 501;
 
-    public enum Anonymize { yes }
+    public enum Anonymize {
+        yes
+    }
 
-    public enum Annotation { patient, technique }
+    public enum Annotation {
+        patient, technique
+    }
 
     public static final class Strings {
         final String[] values;
+
         public Strings(String s) {
             values = StringUtils.split(s, ',');
         }
@@ -111,6 +126,7 @@ public class WadoURI extends Wado  {
 
     public static final class ContentTypes {
         final MediaType[] values;
+
         public ContentTypes(String s) {
             String[] ss = StringUtils.split(s, ',');
             values = new MediaType[ss.length];
@@ -121,6 +137,7 @@ public class WadoURI extends Wado  {
 
     public static final class Annotations {
         final Annotation[] values;
+
         public Annotations(String s) {
             String[] ss = StringUtils.split(s, ',');
             values = new Annotation[ss.length];
@@ -134,6 +151,7 @@ public class WadoURI extends Wado  {
         final double top;
         final double right;
         final double bottom;
+
         public Region(String s) {
             String[] ss = StringUtils.split(s, ',');
             if (ss.length != 4)
@@ -147,7 +165,7 @@ public class WadoURI extends Wado  {
                 throw new IllegalArgumentException(s);
         }
     }
-    
+
     @Context
     private HttpServletRequest request;
 
@@ -210,43 +228,77 @@ public class WadoURI extends Wado  {
 
     @GET
     public Response retrieve() throws WebApplicationException {
+
+        List<InstanceLocator>  insts = new ArrayList<InstanceLocator>();
+        List<InstanceLocator>  instswarning = new ArrayList<InstanceLocator>();
+        List<InstanceLocator>  instscompleted = new ArrayList<InstanceLocator>();
+        List<InstanceLocator>  instsfailed = new ArrayList<InstanceLocator>();
         
-        checkRequest();
-        
-        List<ArchiveInstanceLocator> ref =
-                retrieveService.calculateMatches(studyUID, seriesUID, objectUID, queryParam);
-        if (ref == null || ref.size() == 0)
-            throw new WebApplicationException(Status.NOT_FOUND);
-        
-        if (ref.size() != 1)
-            throw new WebApplicationException(Status.BAD_REQUEST);
-        
-        InstanceLocator instance = ref.get(0);
-        Attributes attrs = (Attributes)instance.getObject();
+        try {
+            checkRequest();
 
-        MediaType mediaType = selectMediaType(instance.tsuid, instance.cuid, attrs);
+            List<ArchiveInstanceLocator> ref = retrieveService
+                    .calculateMatches(studyUID, seriesUID, objectUID,
+                            queryParam);
+                      
+            if (ref == null || ref.size() == 0)
+                throw new WebApplicationException(Status.NOT_FOUND);
+            else
+                insts.addAll(ref);
 
-        if (!isAccepted(mediaType))
-            throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+            if (ref.size() != 1)
+            {
+                instsfailed.addAll(ref);
+                throw new WebApplicationException(Status.BAD_REQUEST);
+            }
 
-        //TODO Audit        
-        //AuditUtils.logWADORetrieve(ref, attrs, request);
+            InstanceLocator instance = ref.get(0);
+            Attributes attrs = (Attributes) instance.getObject();
 
-        if (mediaType == MediaTypes.APPLICATION_DICOM_TYPE)
-            return retrieveNativeDicomObject(instance, attrs);
+            MediaType mediaType = selectMediaType(instance.tsuid,
+                    instance.cuid, attrs);
 
-        if (mediaType == MediaTypes.IMAGE_JPEG_TYPE)
-            return retrieveJPEG(instance, attrs);
+            if (!isAccepted(mediaType))
+            {
+                instsfailed.addAll(ref);
+                throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+            }
 
-        if(mediaType == MediaTypes.APPLICATION_PDF_TYPE){
-            return retrievePDF(instance);
+            if (mediaType == MediaTypes.APPLICATION_DICOM_TYPE)
+            {
+                instscompleted.addAll(ref);
+                return retrieveNativeDicomObject(instance, attrs);
+            }
+
+            if (mediaType == MediaTypes.IMAGE_JPEG_TYPE) {
+                instscompleted.addAll(ref);
+                return retrieveJPEG(instance, attrs);
+            }
+
+            if (mediaType == MediaTypes.APPLICATION_PDF_TYPE) {
+                instscompleted.addAll(ref);
+                return retrievePDF(instance);
+            }
+            
+            throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
+            
+        } finally {
+            // audit
+            retrieveEvent.fire(new RetrieveAfterSendEvent(
+                    new GenericParticipant(request.getRemoteAddr(), request
+                            .getRemoteUser()), new GenericParticipant(request
+                            .getLocalAddr(), null), new GenericParticipant(
+                            request.getRemoteAddr(), request.getRemoteUser()),
+                            device,
+                            insts, 
+                            instscompleted, 
+                            instswarning, 
+                            instsfailed));
+            System.out.println("fired:"+retrieveEvent);
+        }
     }
-        throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
 
-    }
-    
-    private void checkRequest()
-            throws WebApplicationException {
+    private void checkRequest() throws WebApplicationException {
         ApplicationEntity ae = device.getApplicationEntity(aetitle);
         if (ae == null || !ae.isInstalled())
             throw new WebApplicationException(Status.SERVICE_UNAVAILABLE);
@@ -265,15 +317,14 @@ public class WadoURI extends Wado  {
                     applicationDicom = true;
             }
         }
-        if (applicationDicom
-                ? (annotation != null || rows != 0 || columns != 0
-                    || region != null || windowCenter != 0 || windowWidth != 0
-                    || frameNumber != 0 || imageQuality != 0
-                    || presentationUID != null || presentationSeriesUID != null)
-                : (anonymize != null || !transferSyntax.isEmpty() 
-                    || rows < 0 || columns < 0
-                    || imageQuality < 0 || imageQuality > 100
-                    || presentationUID != null && presentationSeriesUID == null))
+        if (applicationDicom ? (annotation != null || rows != 0 || columns != 0
+                || region != null || windowCenter != 0 || windowWidth != 0
+                || frameNumber != 0 || imageQuality != 0
+                || presentationUID != null || presentationSeriesUID != null)
+                : (anonymize != null || !transferSyntax.isEmpty() || rows < 0
+                        || columns < 0 || imageQuality < 0
+                        || imageQuality > 100 || presentationUID != null
+                        && presentationSeriesUID == null))
             throw new WebApplicationException(Status.BAD_REQUEST);
     }
 
@@ -288,52 +339,51 @@ public class WadoURI extends Wado  {
         final MediaType mediaType = MediaTypes.APPLICATION_PDF_TYPE;
         return Response.ok(new StreamingOutput() {
 
-                @Override
-                public void write(OutputStream out) throws IOException,
-                                WebApplicationException {
-                        BufferedOutputStream bOut = null;
-                        DicomInputStream in =null;
-                        try{
-                        in = new DicomInputStream(instance.getFile());
-                        Attributes atts = in.readDataset(-1, -1);
-                        bOut = new BufferedOutputStream(out);
-                        bOut.write(atts.getBytes(Tag.EncapsulatedDocument));
-                        }
-                        finally{
-                        bOut.flush();
-                        bOut.close();
-                        in.close();
-                        }
-                }
-        }, mediaType).build();
-}
-    private Response retrieveNativeDicomObject(InstanceLocator ref,
-            Attributes attrs) {
-        String tsuid = selectTransferSyntax(ref.tsuid);
-        MediaType mediaType = MediaType.valueOf(
-                "application/dicom;transfer-syntax=" + tsuid);
-        return Response.ok(new DicomObjectOutput(ref, attrs, tsuid),
-                mediaType).build();
-    }
-
-    private String selectTransferSyntax(String tsuid) {
-        return transferSyntax.contains("*") 
-                || transferSyntax.contains(tsuid)
-                || !ImageReaderFactory.canDecompress(tsuid)
-                ? tsuid
-                : UID.ExplicitVRLittleEndian;
-    }
-
-    private Response retrieveJPEG(final InstanceLocator ref, 
-            final Attributes attrs) {
-        
-        final MediaType mediaType = MediaTypes.IMAGE_JPEG_TYPE;
-        return Response.ok(new StreamingOutput() {
-            
             @Override
             public void write(OutputStream out) throws IOException,
                     WebApplicationException {
-                ImageInputStream iis = ImageIO.createImageInputStream(ref.getFile());
+                BufferedOutputStream bOut = null;
+                DicomInputStream in = null;
+                try {
+                    in = new DicomInputStream(instance.getFile());
+                    Attributes atts = in.readDataset(-1, -1);
+                    bOut = new BufferedOutputStream(out);
+                    bOut.write(atts.getBytes(Tag.EncapsulatedDocument));
+                } finally {
+                    bOut.flush();
+                    bOut.close();
+                    in.close();
+                }
+            }
+        }, mediaType).build();
+    }
+
+    private Response retrieveNativeDicomObject(InstanceLocator ref,
+            Attributes attrs) {
+        String tsuid = selectTransferSyntax(ref.tsuid);
+        MediaType mediaType = MediaType
+                .valueOf("application/dicom;transfer-syntax=" + tsuid);
+        return Response.ok(new DicomObjectOutput(ref, attrs, tsuid), mediaType)
+                .build();
+    }
+
+    private String selectTransferSyntax(String tsuid) {
+        return transferSyntax.contains("*") || transferSyntax.contains(tsuid)
+                || !ImageReaderFactory.canDecompress(tsuid) ? tsuid
+                : UID.ExplicitVRLittleEndian;
+    }
+
+    private Response retrieveJPEG(final InstanceLocator ref,
+            final Attributes attrs) {
+
+        final MediaType mediaType = MediaTypes.IMAGE_JPEG_TYPE;
+        return Response.ok(new StreamingOutput() {
+
+            @Override
+            public void write(OutputStream out) throws IOException,
+                    WebApplicationException {
+                ImageInputStream iis = ImageIO.createImageInputStream(ref
+                        .getFile());
                 BufferedImage bi;
                 try {
                     bi = readImage(iis, attrs);
@@ -347,8 +397,8 @@ public class WadoURI extends Wado  {
 
     private BufferedImage readImage(ImageInputStream iis, Attributes attrs)
             throws IOException {
-        Iterator<ImageReader> readers = 
-                ImageIO.getImageReadersByFormatName("DICOM");
+        Iterator<ImageReader> readers = ImageIO
+                .getImageReadersByFormatName("DICOM");
         if (!readers.hasNext()) {
             ImageIO.scanForPlugins();
             readers = ImageIO.getImageReadersByFormatName("DICOM");
@@ -358,11 +408,11 @@ public class WadoURI extends Wado  {
             reader.setInput(iis);
             DicomMetaData metaData = (DicomMetaData) reader.getStreamMetadata();
             metaData.getAttributes().addAll(attrs);
-            DicomImageReadParam param = (DicomImageReadParam)
-                    reader.getDefaultReadParam();
+            DicomImageReadParam param = (DicomImageReadParam) reader
+                    .getDefaultReadParam();
             init(param);
             return rescale(
-                    reader.read(frameNumber > 0 ? frameNumber-1 : 0, param),
+                    reader.read(frameNumber > 0 ? frameNumber - 1 : 0, param),
                     metaData.getAttributes(), param.getPresentationState());
         } finally {
             reader.dispose();
@@ -373,9 +423,9 @@ public class WadoURI extends Wado  {
             Attributes psAttrs) {
         int r = rows;
         int c = columns;
-        float sy = psAttrs != null 
-                ? PixelAspectRatio.forPresentationState(psAttrs)
-                : PixelAspectRatio.forImage(imgAttrs);
+        float sy = psAttrs != null ? PixelAspectRatio
+                .forPresentationState(psAttrs) : PixelAspectRatio
+                .forImage(imgAttrs);
         if (r == 0 && c == 0 && sy == 1f)
             return src;
 
@@ -386,9 +436,7 @@ public class WadoURI extends Wado  {
                     r = 0;
                 else
                     c = 0;
-            sx = r != 0 
-                    ? r / (src.getHeight() * sy)
-                    : c / src.getWidth();
+            sx = r != 0 ? r / (src.getHeight() * sy) : c / src.getWidth();
             sy *= sx;
         }
         AffineTransformOp op = new AffineTransformOp(
@@ -400,18 +448,19 @@ public class WadoURI extends Wado  {
 
     private void init(DicomImageReadParam param)
             throws WebApplicationException, IOException {
-        
+
         param.setWindowCenter(windowCenter);
         param.setWindowWidth(windowWidth);
         if (presentationUID != null) {
-            List<ArchiveInstanceLocator> ref = retrieveService.calculateMatches(
-                    studyUID, presentationSeriesUID, presentationUID,queryParam);
-            if (ref == null || ref.size()==0)
+            List<ArchiveInstanceLocator> ref = retrieveService
+                    .calculateMatches(studyUID, presentationSeriesUID,
+                            presentationUID, queryParam);
+            if (ref == null || ref.size() == 0)
                 throw new WebApplicationException(Status.NOT_FOUND);
 
-            if (ref.size() !=1)
+            if (ref.size() != 1)
                 throw new WebApplicationException(Status.BAD_REQUEST);
-                
+
             DicomInputStream dis = new DicomInputStream(ref.get(0).getFile());
             try {
                 param.setPresentationState(dis.readDataset(-1, -1));
@@ -426,31 +475,34 @@ public class WadoURI extends Wado  {
         ColorModel cm = bi.getColorModel();
         if (cm instanceof PaletteColorModel)
             bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
-        ImageWriter imageWriter =
-                ImageIO.getImageWritersByFormatName("JPEG").next();
+        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("JPEG")
+                .next();
         try {
-            ImageWriteParam imageWriteParam = imageWriter.getDefaultWriteParam();
+            ImageWriteParam imageWriteParam = imageWriter
+                    .getDefaultWriteParam();
             if (imageQuality > 0) {
-                imageWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                imageWriteParam
+                        .setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
                 imageWriteParam.setCompressionQuality(imageQuality / 100f);
             }
             imageWriter.setOutput(ios);
-            imageWriter.write(null, new IIOImage(bi, null, null), imageWriteParam);
+            imageWriter.write(null, new IIOImage(bi, null, null),
+                    imageWriteParam);
         } finally {
             imageWriter.dispose();
         }
     }
-    
+
     /**
      * Returns the media type specified in the contentType request parameter if
      * supported, otherwise returns the first of the supported media types.
      */
     private MediaType selectMediaType(String transferSyntaxUID,
             String sopClassUID, Attributes attrs) {
-        
-        List<MediaType> supportedMediaTypes =
-                supportedMediaTypesOf(transferSyntaxUID, sopClassUID, attrs);
-        
+
+        List<MediaType> supportedMediaTypes = supportedMediaTypesOf(
+                transferSyntaxUID, sopClassUID, attrs);
+
         if (contentType != null)
             for (MediaType requestedType : contentType.values)
                 for (MediaType supportedType : supportedMediaTypes)
@@ -458,9 +510,9 @@ public class WadoURI extends Wado  {
                         return supportedType;
         return supportedMediaTypes.get(0);
     }
-    
-    public static List<MediaType> supportedMediaTypesOf(String transferSyntaxUID,
-            String sopClassUID, Attributes attrs) {
+
+    public static List<MediaType> supportedMediaTypesOf(
+            String transferSyntaxUID, String sopClassUID, Attributes attrs) {
         List<MediaType> list = new ArrayList<MediaType>(4);
         if (attrs.contains(Tag.BitsAllocated)) {
             if (attrs.getInt(Tag.NumberOfFrames, 1) > 1) {
@@ -468,15 +520,15 @@ public class WadoURI extends Wado  {
                 MediaType mediaType;
                 if (UID.MPEG2.equals(transferSyntaxUID)
                         || UID.MPEG2MainProfileHighLevel
-                        .equals(transferSyntaxUID))
+                                .equals(transferSyntaxUID))
                     mediaType = MediaTypes.VIDEO_MPEG_TYPE;
                 else if (UID.MPEG4AVCH264HighProfileLevel41
                         .equals(transferSyntaxUID)
                         || UID.MPEG4AVCH264BDCompatibleHighProfileLevel41
-                        .equals(transferSyntaxUID))
+                                .equals(transferSyntaxUID))
                     mediaType = MediaTypes.VIDEO_MP4_TYPE;
                 else
-                    mediaType= MediaTypes.IMAGE_JPEG_TYPE;
+                    mediaType = MediaTypes.IMAGE_JPEG_TYPE;
                 list.add(mediaType);
             } else {
                 list.add(MediaTypes.IMAGE_JPEG_TYPE);
@@ -485,7 +537,7 @@ public class WadoURI extends Wado  {
         } else if (attrs.contains(Tag.ContentSequence)) {
             list.add(MediaType.TEXT_HTML_TYPE);
             list.add(MediaType.TEXT_PLAIN_TYPE);
-//            list.add(APPLICATION_PDF_TYPE);
+            // list.add(APPLICATION_PDF_TYPE);
             list.add(MediaTypes.APPLICATION_DICOM_TYPE);
         } else {
             list.add(MediaTypes.APPLICATION_DICOM_TYPE);
@@ -494,7 +546,7 @@ public class WadoURI extends Wado  {
             else if (UID.EncapsulatedCDAStorage.equals(sopClassUID))
                 list.add(MediaType.TEXT_XML_TYPE);
         }
-        return list ;
+        return list;
     }
 
 }
