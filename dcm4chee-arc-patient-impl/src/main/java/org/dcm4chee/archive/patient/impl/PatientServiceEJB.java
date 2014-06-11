@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.ejb.Stateless;
@@ -275,15 +276,17 @@ public class PatientServiceEJB implements PatientService {
     private PatientID createPatientID(IDWithIssuer pid, Patient patient) {
         PatientID patientID = new PatientID();
         patientID.setID(pid.getID());
-        if (pid.getIssuer() != null)
-            pid.setIssuer(findOrCreateIssuer(pid));
+        patientID.setIssuer(findOrCreateIssuer(pid.getIssuer()));
         patientID.setPatient(patient);
+        LOG.info("Add {} to {}", patientID, patient);
         return patientID;
     }
 
-    private Issuer findOrCreateIssuer(IDWithIssuer pid) {
-        return issuerService.findOrCreate(
-            new Issuer(pid.getIssuer()));
+    private Issuer findOrCreateIssuer(org.dcm4che3.data.Issuer issuer) {
+        if (issuer == null)
+            return null;
+        
+        return issuerService.findOrCreate(new Issuer(issuer));
     }
 
     @Override
@@ -335,29 +338,39 @@ public class PatientServiceEJB implements PatientService {
 
     private boolean mergePatientIDs(Patient patient,
             Collection<IDWithIssuer> pids) {
-        int modCount = 0;
+        boolean modified = false;;
         Collection<PatientID> patientIDs = patient.getPatientIDs();
-        for (IDWithIssuer pid : pids) {
+        Collection<IDWithIssuer> add = new ArrayList<IDWithIssuer>(pids);
+        for (Iterator<IDWithIssuer> iter = add.iterator(); iter.hasNext();) {
+            IDWithIssuer pid = iter.next();
             PatientID patientID = selectFrom(patientIDs, pid);
-            if (patientID != null) {
-                if (pid.getIssuer() == null)
-                    continue;
-                
-                Issuer issuer = patientID.getIssuer();
-                if (issuer != null) {
-                    if (!issuer.equals(pid.getIssuer()))
-                        continue;
+            if (patientID == null)
+                continue;
 
-                    issuer.merge(pid.getIssuer());
-                } else {
-                    patientID.setIssuer(findOrCreateIssuer(pid));
-                }
-            } else {
-                patientIDs.add(createPatientID(pid, patient));
+            iter.remove();
+            if (pid.getIssuer() == null)
+                continue;
+
+            Issuer issuer = patientID.getIssuer();
+            if (issuer == null) {
+                patientID.setIssuer(findOrCreateIssuer(pid.getIssuer()));
+                modified = true;
+                LOG.info("Set Issuer of {} of Patient {}", patientID, patient);
+            } else if (issuer.merge(pid.getIssuer())) {
+                modified = true;
+                LOG.info("Updated Issuer of {} of Patient {}", patientID, patient);
             }
-            modCount++;
         }
-        return modCount > 0;
+
+        if (add.size() == pids.size()) { // no matching pid
+            LOG.info("Patient IDs of exisiting {} does not match any Patient ID in received DICOM object - ignore Patient IDs in received object");
+            return false;
+        }
+
+        for (IDWithIssuer pid : add)
+            patientIDs.add(createPatientID(pid, patient));
+
+        return modified || !add.isEmpty();
     }
 
     private PatientID selectFrom(Collection<PatientID> patientIDs,
