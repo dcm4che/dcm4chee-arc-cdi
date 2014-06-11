@@ -74,7 +74,9 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmModifyingSystem")
     private String modifyingSystem;
     
-    
+    @ConfigField(name = "dcmWadoSupportedSRClasses")
+    private String[] wadoSupportedSRClasses;
+
     @ConfigField(name = "dcmRetrieveAET")
     private String[] retrieveAETs;
     
@@ -190,6 +192,14 @@ public class ArchiveAEExtension extends AEExtension {
     private boolean timeZoneSupported;
 
 
+    public String[] getWadoSupportedSRClasses() {
+        return wadoSupportedSRClasses;
+    }
+
+    public void setWadoSupportedSRClasses(String[] wadoSupportedSRClasses) {
+        this.wadoSupportedSRClasses = wadoSupportedSRClasses;
+    }
+    
     public boolean isTimeZoneSupported() {
         return timeZoneSupported;
     }

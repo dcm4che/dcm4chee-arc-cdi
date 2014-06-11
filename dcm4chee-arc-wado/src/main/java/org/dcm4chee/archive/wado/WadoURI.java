@@ -42,12 +42,12 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Event;
 import javax.imageio.IIOImage;
@@ -69,6 +69,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -80,16 +87,17 @@ import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
 import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
 import org.dcm4che3.imageio.stream.OutputStreamAdapter;
 import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.SAXWriter;
+import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.GenericParticipant;
-import org.dcm4chee.archive.dto.LocalAssociationParticipant;
-import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
+import org.xml.sax.SAXException;
 
 /**
  * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.
@@ -98,6 +106,7 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
  * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @RequestScoped
 @Path("/wado/{AETitle}")
@@ -105,6 +114,14 @@ public class WadoURI extends Wado {
 
     @Inject
     private Event<RetrieveAfterSendEvent> retrieveEvent;
+
+    private final String[] standardSRSopClasses = {
+            "1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22",
+            "1.2.840.10008.5.1.4.1.1.88.33", "1.2.840.10008.5.1.4.1.1.88.34",
+            "1.2.840.10008.5.1.4.1.1.88.40", "1.2.840.10008.5.1.4.1.1.88.50",
+            "1.2.840.10008.5.1.4.1.1.88.59", "1.2.840.10008.5.1.4.1.1.88.65",
+            "1.2.840.10008.5.1.4.1.1.88.67", "1.2.840.10008.5.1.4.1.1.88.69",
+            "1.2.840.10008.5.1.4.1.1.88.70" };
 
     private static final int STATUS_NOT_IMPLEMENTED = 501;
 
@@ -229,43 +246,39 @@ public class WadoURI extends Wado {
     @GET
     public Response retrieve() throws WebApplicationException {
 
-        List<ArchiveInstanceLocator>  insts = new ArrayList<ArchiveInstanceLocator>();
-        List<ArchiveInstanceLocator>  instswarning = new ArrayList<ArchiveInstanceLocator>();
-        List<ArchiveInstanceLocator>  instscompleted = new ArrayList<ArchiveInstanceLocator>();
-        List<ArchiveInstanceLocator>  instsfailed = new ArrayList<ArchiveInstanceLocator>();
-        
+        List<ArchiveInstanceLocator> insts = new ArrayList<ArchiveInstanceLocator>();
+        List<ArchiveInstanceLocator> instswarning = new ArrayList<ArchiveInstanceLocator>();
+        List<ArchiveInstanceLocator> instscompleted = new ArrayList<ArchiveInstanceLocator>();
+        List<ArchiveInstanceLocator> instsfailed = new ArrayList<ArchiveInstanceLocator>();
+
         try {
             checkRequest();
 
             List<ArchiveInstanceLocator> ref = retrieveService
                     .calculateMatches(studyUID, seriesUID, objectUID,
                             queryParam);
-                      
+
             if (ref == null || ref.size() == 0)
                 throw new WebApplicationException(Status.NOT_FOUND);
             else
                 insts.addAll(ref);
 
-            if (ref.size() != 1)
-            {
+            if (ref.size() != 1) {
                 instsfailed.addAll(ref);
                 throw new WebApplicationException(Status.BAD_REQUEST);
             }
-
             InstanceLocator instance = ref.get(0);
             Attributes attrs = (Attributes) instance.getObject();
 
             MediaType mediaType = selectMediaType(instance.tsuid,
                     instance.cuid, attrs);
 
-            if (!isAccepted(mediaType))
-            {
+            if (!isAccepted(mediaType)) {
                 instsfailed.addAll(ref);
                 throw new WebApplicationException(Status.NOT_ACCEPTABLE);
             }
 
-            if (mediaType == MediaTypes.APPLICATION_DICOM_TYPE)
-            {
+            if (mediaType == MediaTypes.APPLICATION_DICOM_TYPE) {
                 instscompleted.addAll(ref);
                 return retrieveNativeDicomObject(instance, attrs);
             }
@@ -279,9 +292,17 @@ public class WadoURI extends Wado {
                 instscompleted.addAll(ref);
                 return retrievePDF(instance);
             }
-            
+            if (mediaType == MediaType.TEXT_HTML_TYPE) {
+                try {
+                    instscompleted.addAll(ref);
+                    return retrieveSRHTML(instance);
+                } catch (TransformerConfigurationException e) {
+                    e.printStackTrace();
+                }
+            }
+
             throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
-            
+
         } finally {
             // audit
             retrieveEvent.fire(new RetrieveAfterSendEvent(
@@ -289,13 +310,22 @@ public class WadoURI extends Wado {
                             .getRemoteUser()), new GenericParticipant(request
                             .getLocalAddr(), null), new GenericParticipant(
                             request.getRemoteAddr(), request.getRemoteUser()),
-                            device,
-                            insts, 
-                            instscompleted, 
-                            instswarning, 
-                            instsfailed));
-            System.out.println("fired:"+retrieveEvent);
+                    device, insts, instscompleted, instswarning, instsfailed));
+            System.out.println("fired:" + retrieveEvent);
         }
+    }
+
+    private boolean isSupportedSR(String cuid) {
+        String[] supportedSRClasses = arcAE.getWadoSupportedSRClasses();
+        if (supportedSRClasses == null) {
+            supportedSRClasses = this.standardSRSopClasses;
+        }
+
+        for (String c_uid : supportedSRClasses) {
+            if (c_uid.compareToIgnoreCase(cuid) == 0)
+                return true;
+        }
+        return false;
     }
 
     private void checkRequest() throws WebApplicationException {
@@ -333,6 +363,48 @@ public class WadoURI extends Wado {
             if (mediaType.isCompatible(accepted))
                 return true;
         return false;
+    }
+
+    private Response retrieveSRHTML(final InstanceLocator instance)
+            throws TransformerConfigurationException {
+        return Response.ok(new StreamingOutput() {
+            @Override
+            public void write(OutputStream out) throws IOException {
+                BufferedOutputStream bout = new BufferedOutputStream(out);
+                Templates templates = null;
+                SAXTransformerFactory factory = (SAXTransformerFactory) TransformerFactory.newInstance();
+                TransformerHandler th = null;
+                ClassLoader cl = this.getClass().getClassLoader();
+                try {
+                    File stylesheet = new File(cl.getResource(
+                            "sr-report-html-dicom-native.xsl").toString());
+                    templates = TemplatesCache.getDefault().get(
+                            stylesheet.getPath());
+                } catch (TransformerConfigurationException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    th = factory.newTransformerHandler(templates);
+                } catch (TransformerConfigurationException e2) {
+                    e2.printStackTrace();
+                }
+                Transformer tr = th.getTransformer();
+
+                String wado = request.getRequestURL().toString();
+                tr.setParameter("wadoURL", wado);
+                SAXWriter w = null;
+                th.setResult(new StreamResult(bout));
+                w = new SAXWriter(th);
+                DicomInputStream dis = new DicomInputStream(instance.getFile());
+                Attributes data = dis.readDataset(-1, -1);
+                dis.close();
+                try {
+                    w.write(data);
+                } catch (SAXException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, MediaType.TEXT_HTML_TYPE).build();
     }
 
     private Response retrievePDF(final InstanceLocator instance) {
@@ -511,8 +583,8 @@ public class WadoURI extends Wado {
         return supportedMediaTypes.get(0);
     }
 
-    public static List<MediaType> supportedMediaTypesOf(
-            String transferSyntaxUID, String sopClassUID, Attributes attrs) {
+    public List<MediaType> supportedMediaTypesOf(String transferSyntaxUID,
+            String sopClassUID, Attributes attrs) {
         List<MediaType> list = new ArrayList<MediaType>(4);
         if (attrs.contains(Tag.BitsAllocated)) {
             if (attrs.getInt(Tag.NumberOfFrames, 1) > 1) {
@@ -534,7 +606,7 @@ public class WadoURI extends Wado {
                 list.add(MediaTypes.IMAGE_JPEG_TYPE);
                 list.add(MediaTypes.APPLICATION_DICOM_TYPE);
             }
-        } else if (attrs.contains(Tag.ContentSequence)) {
+        } else if (isSupportedSR(sopClassUID)) {
             list.add(MediaType.TEXT_HTML_TYPE);
             list.add(MediaType.TEXT_PLAIN_TYPE);
             // list.add(APPLICATION_PDF_TYPE);
