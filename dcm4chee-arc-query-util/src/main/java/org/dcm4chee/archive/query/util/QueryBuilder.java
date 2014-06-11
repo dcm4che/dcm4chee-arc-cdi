@@ -221,9 +221,10 @@ public class QueryBuilder {
                         keys.getNestedDataset(Tag.IssuerOfAccessionNumberSequence));
                 if (issuer == null)
                     issuer = queryParam.getDefaultIssuerOfAccessionNumber();
-                builder.and(idWithIssuer(accNo, issuer,
+                builder.and(matchUnknown(
+                        idWithIssuer(QStudy.study.accessionNumber, accNo, issuer),
                         QStudy.study.accessionNumber,
-                        QStudy.study.issuerOfAccessionNumber, matchUnknown));
+                        matchUnknown));
             }
             builder.and(modalitiesInStudy(
                     keys.getString(Tag.ModalitiesInStudy, "*").toUpperCase(), matchUnknown));
@@ -380,7 +381,8 @@ public class QueryBuilder {
 
         BooleanBuilder result = new BooleanBuilder();
         for (IDWithIssuer pid : pids)
-            result.or(pid(pid));
+            result.or(idWithIssuer(
+                    QPatientID.patientID.id, pid.getID(), pid.getIssuer()));
 
         BooleanExpression matchingIDsExists = new HibernateSubQuery()
                 .from(QPatientID.patientID)
@@ -395,12 +397,11 @@ public class QueryBuilder {
                 : matchingIDsExists;
     }
 
-    static Predicate pid(IDWithIssuer idWithIssuer) {
-        Predicate predicate = wildCard(QPatientID.patientID.id, idWithIssuer.getID());
+    static Predicate idWithIssuer(StringPath idPath, String id, Issuer issuer) {
+        Predicate predicate = wildCard(idPath, id);
         if (predicate == null)
             return null;
 
-        Issuer issuer = idWithIssuer.getIssuer();
         if (issuer != null) {
             String entityID = issuer.getLocalNamespaceEntityID();
             String entityUID = issuer.getUniversalEntityID();
@@ -422,51 +423,6 @@ public class QueryBuilder {
                                     .eq(entityUIDType))));
         }
         return predicate;
-    }
-
-    private static Predicate idWithIssuer(String id, Issuer issuer,
-            StringPath idPath, StringPath issuerPath, boolean matchUnknown) {
-        if (id == null)
-            return null;
-            
-        Predicate p1;
-        if (containsWildcard(id)) {
-            String pattern = toLikePattern(id);
-            if (pattern.equals("%"))
-                return null;
-
-            p1 = idPath.like(pattern);
-        } else
-            p1 = idPath.eq(id);
-        Predicate p2 = issuer(issuerPath, issuer);
-        return matchUnknown(p2 != null ? ExpressionUtils.and(p1, p2) : p1, idPath, matchUnknown);
-    }
-
-    private static Predicate issuer(StringPath path, Issuer issuer) {
-        if (issuer == null)
-            return null;
-
-        BooleanExpression unknown = path.eq("*");
-        String localNamespaceEntityID = issuer.getLocalNamespaceEntityID();
-        String universalEntityID = issuer.getUniversalEntityID();
-        if (universalEntityID == null) {
-            return ExpressionUtils.anyOf(
-                    path.eq(localNamespaceEntityID),
-                    path.like(localNamespaceEntityID + "&%"),
-                    path.like("&%"),
-                    unknown);
-        }
-        String universalEntityIDType = issuer.getUniversalEntityIDType();
-        if (localNamespaceEntityID == null)
-            return ExpressionUtils.or(
-                    path.like("%&" + universalEntityID + '&' + universalEntityIDType),
-                    unknown);
-        return ExpressionUtils.anyOf(
-                path.eq(localNamespaceEntityID),
-                path.eq(localNamespaceEntityID + '&' + universalEntityID + '&' + universalEntityIDType),
-                path.eq('&' + universalEntityID + '&' + universalEntityIDType),
-                unknown);
-        
     }
 
     static Predicate wildCard(StringPath path, String value) {
@@ -627,9 +583,12 @@ public class QueryBuilder {
                     item.getNestedDataset(Tag.IssuerOfAccessionNumberSequence));
             if (issuer == null)
                 issuer = queryParam.getDefaultIssuerOfAccessionNumber();
-            builder.and(idWithIssuer(accNo, issuer,
+            builder.and(matchUnknown(
+                    idWithIssuer(
+                            QRequestAttributes.requestAttributes.accessionNumber,
+                            accNo, issuer),
                     QRequestAttributes.requestAttributes.accessionNumber,
-                    QRequestAttributes.requestAttributes.issuerOfAccessionNumber, matchUnknown));
+                    matchUnknown));
         }
         builder.and(wildCard(QRequestAttributes.requestAttributes.requestingService,
                       item.getString(Tag.RequestingService, "*"),
@@ -657,6 +616,7 @@ public class QueryBuilder {
         return matchUnknown(
                 new HibernateSubQuery()
                     .from(QRequestAttributes.requestAttributes)
+                    .leftJoin(QRequestAttributes.requestAttributes.issuerOfAccessionNumber, QIssuer.issuer)
                     .where(QSeries.series.requestAttributes.contains(
                                 QRequestAttributes.requestAttributes),
                             builder)

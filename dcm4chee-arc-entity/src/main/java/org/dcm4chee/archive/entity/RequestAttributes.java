@@ -51,7 +51,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
@@ -77,10 +76,6 @@ public class RequestAttributes implements Serializable {
     @Basic(optional = false)
     @Column(name = "accession_no")
     private String accessionNumber;
-    
-    @Basic(optional = false)
-    @Column(name = "accno_issuer")
-    private String issuerOfAccessionNumber;
 
     @Basic(optional = false)
     @Column(name = "study_iuid")
@@ -118,17 +113,21 @@ public class RequestAttributes implements Serializable {
     @Column(name = "req_phys_p_name")
     private String requestingPhysicianPhoneticName;
 
+    @ManyToOne
+    @JoinColumn(name = "accno_issuer_fk")
+    private Issuer issuerOfAccessionNumber;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "series_fk")
     private Series series;
     
     public RequestAttributes() {}
 
-    public RequestAttributes(Attributes attrs, FuzzyStr fuzzyStr) {
+    public RequestAttributes(Attributes attrs, Issuer issuerOfAccessionNumber,
+            FuzzyStr fuzzyStr) {
         studyInstanceUID = attrs.getString(Tag.StudyInstanceUID, "*");
         accessionNumber = attrs.getString(Tag.AccessionNumber, "*");
-        setIssuerOfAccessionNumber(Issuer.valueOf(
-                attrs.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
+        this.issuerOfAccessionNumber = issuerOfAccessionNumber;
         requestedProcedureID = attrs.getString(Tag.RequestedProcedureID, "*");
         scheduledProcedureStepID = attrs.getString(
                 Tag.ScheduledProcedureStepID, "*");
@@ -205,17 +204,7 @@ public class RequestAttributes implements Serializable {
     }
 
     public Issuer getIssuerOfAccessionNumber() {
-        return (issuerOfAccessionNumber == null 
-                || issuerOfAccessionNumber.isEmpty()
-                || issuerOfAccessionNumber.equals("*"))
-                ? null
-                : new Issuer(issuerOfAccessionNumber);
-    }
-
-    public void setIssuerOfAccessionNumber(Issuer issuerOfAccessionNumber) {
-        this.issuerOfAccessionNumber = issuerOfAccessionNumber != null 
-                ? issuerOfAccessionNumber.toString()
-                : "*";
+        return issuerOfAccessionNumber;
     }
 
     public Series getSeries() {

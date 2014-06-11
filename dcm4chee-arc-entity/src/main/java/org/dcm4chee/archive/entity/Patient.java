@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Date;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -154,7 +155,7 @@ public class Patient implements Serializable {
     @OneToMany(mappedBy = "mergedWith", orphanRemoval = true)
     private Collection<Patient> previous;
 
-    @OneToMany(mappedBy = "patient", orphanRemoval = true)
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<PatientID> patientIDs;
 
     @ManyToMany
@@ -259,6 +260,10 @@ public class Patient implements Serializable {
 
     public Collection<PatientID> getPatientIDs() {
         return patientIDs;
+    }
+
+    public void setPatientIDs(Collection<PatientID> patientIDs) {
+        this.patientIDs = patientIDs;
     }
 
     public Collection<PatientID> getLinkedPatientIDs() {

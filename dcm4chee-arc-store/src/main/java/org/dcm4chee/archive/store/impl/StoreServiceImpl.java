@@ -88,11 +88,13 @@ import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
+import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreAction;
@@ -114,6 +116,9 @@ public class StoreServiceImpl implements StoreService {
 
     @Inject
     private PatientService patientService;
+
+    @Inject
+    private IssuerService issuerService;
 
     @Inject
     private CodeService codeService;
@@ -582,9 +587,17 @@ public class StoreServiceImpl implements StoreService {
         study.setAvailability(fs.getAvailability());
         study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
                 storeParam.getFuzzyStr());
+        study.setIssuerOfAccessionNumber(findOrCreateIssuer(
+                attrs.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         em.persist(study);
         LOG.info("{}: Create {}", session, study);
         return study;
+    }
+
+    private Issuer findOrCreateIssuer(Attributes item) {
+        return item != null
+                ? issuerService.findOrCreate(new Issuer(item))
+                : null;
     }
 
     @Override
@@ -745,7 +758,10 @@ public class StoreServiceImpl implements StoreService {
         ArrayList<RequestAttributes> list = new ArrayList<RequestAttributes>(
                 seq.size());
         for (Attributes item : seq)
-            list.add(new RequestAttributes(item, fuzzyStr));
+            list.add(new RequestAttributes(item,
+                    findOrCreateIssuer(
+                            item.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
+                    fuzzyStr));
         return list;
     }
 

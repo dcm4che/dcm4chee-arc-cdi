@@ -258,12 +258,18 @@ public class PatientServiceEJB implements PatientService {
         patient.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Patient),
                 storeParam.getFuzzyStr());
+        patient.setPatientIDs(createPatientIDs(pids, patient));
         em.persist(patient);
         LOG.info("Create {}", patient);
-        for (IDWithIssuer pid : pids) {
-            createPatientID(pid, patient);
-        }
         return patient;
+    }
+
+    private Collection<PatientID> createPatientIDs(
+            Collection<IDWithIssuer> pids, Patient patient) {
+        ArrayList<PatientID> patientIDs = new ArrayList<PatientID>(pids.size());
+        for (IDWithIssuer pid : pids)
+            patientIDs.add(createPatientID(pid, patient));
+        return patientIDs;
     }
 
     private PatientID createPatientID(IDWithIssuer pid, Patient patient) {
@@ -272,8 +278,6 @@ public class PatientServiceEJB implements PatientService {
         if (pid.getIssuer() != null)
             pid.setIssuer(findOrCreateIssuer(pid));
         patientID.setPatient(patient);
-        em.persist(pid);
-        LOG.info("Create {}", patientID);
         return patientID;
     }
 

@@ -54,3 +54,22 @@ insert patient_id (patient_fk, pat_id)
 alter table patient 
     drop pat_id,
     drop pat_id_issuer;
+
+alter table study
+    drop accno_issuer,
+    add accno_issuer_fk bigint;
+
+alter table study
+    add constraint FK68B0DC9C45E7AAD 
+    foreign key (accno_issuer_fk) 
+    references issuer (pk);
+
+alter table series_req
+    drop accno_issuer,
+    add accno_issuer_fk bigint;
+
+alter table series_req 
+    add constraint FKE38CD2D6C45E7AAD 
+    foreign key (accno_issuer_fk) 
+    references issuer (pk);
+    

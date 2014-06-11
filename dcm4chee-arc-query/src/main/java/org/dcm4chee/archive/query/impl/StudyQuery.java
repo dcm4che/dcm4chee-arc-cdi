@@ -40,7 +40,9 @@ package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.Availability;
+import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
+import org.dcm4chee.archive.entity.QRequestAttributes;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.QueryContext;
@@ -103,6 +105,7 @@ class StudyQuery extends AbstractQuery {
         return new HibernateQuery(session)
             .from(QStudy.study)
             .innerJoin(QStudy.study.patient, QPatient.patient)
+            .leftJoin(QStudy.study.issuerOfAccessionNumber, QIssuer.issuer)
             .where(builder);
     }
 

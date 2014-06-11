@@ -112,8 +112,11 @@
       <artifactId>dcm4chee-arc-code</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- dependency> <groupId>org.dcm4che.dcm4chee-arc</groupId> <artifactId>dcm4chee-arc-compress</artifactId> 
-      <version>${project.version}</version> </dependency -->
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-issuer</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-net</artifactId>

@@ -63,7 +63,6 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
@@ -149,10 +148,6 @@ public class Study implements Serializable {
     private String accessionNumber;
 
     @Basic(optional = false)
-    @Column(name = "accno_issuer")
-    private String issuerOfAccessionNumber;
-
-    @Basic(optional = false)
     @Column(name = "ref_physician")
     private String referringPhysicianName;
     
@@ -229,6 +224,10 @@ public class Study implements Serializable {
 
     @Transient
     private Attributes cachedAttributes;
+
+    @ManyToOne
+    @JoinColumn(name = "accno_issuer_fk")
+    private Issuer issuerOfAccessionNumber;
 
     @ManyToMany
     @JoinTable(name = "rel_study_pcode", 
@@ -307,17 +306,11 @@ public class Study implements Serializable {
     }
 
     public Issuer getIssuerOfAccessionNumber() {
-        return (issuerOfAccessionNumber == null 
-                || issuerOfAccessionNumber.isEmpty()
-                || issuerOfAccessionNumber.equals("*"))
-                ? null
-                : new Issuer(issuerOfAccessionNumber);
+        return issuerOfAccessionNumber;
     }
 
     public void setIssuerOfAccessionNumber(Issuer issuerOfAccessionNumber) {
-        this.issuerOfAccessionNumber = issuerOfAccessionNumber != null 
-                ? issuerOfAccessionNumber.toString()
-                : "*";
+        this.issuerOfAccessionNumber = issuerOfAccessionNumber;
     }
 
     public String getReferringPhysicianName() {
@@ -513,8 +506,6 @@ public class Study implements Serializable {
             studyTime = "*";
         }
         accessionNumber = attrs.getString(Tag.AccessionNumber, "*");
-        setIssuerOfAccessionNumber(Issuer.valueOf(
-                attrs.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         PersonName pn = new PersonName(attrs.getString(Tag.ReferringPhysicianName), true);
         referringPhysicianName = pn.contains(PersonName.Group.Alphabetic) 
                 ? pn.toString(PersonName.Group.Alphabetic, false) : "*";
