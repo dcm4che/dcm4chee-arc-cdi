@@ -141,11 +141,16 @@ public class InitDataForTest {
         war.addClass(InitDataForTest.class);
         war.addClass(ParamFactory.class);
         JavaArchive[] archs =   Maven.resolver().loadPomFromFile("testpom.xml").importRuntimeAndTestDependencies().resolve().withTransitivity().as(JavaArchive.class);
-        for(JavaArchive a: archs)
-        {
-            a.addAsManifestResource(EmptyAsset.INSTANCE,"beans.xml");
-            war.addAsLibrary(a);
-        }
+        JavaArchive storeDependency = Maven.resolver().resolve("org.dcm4che.dcm4chee-arc:dcm4chee-arc-store:4.4.0-SNAPSHOT").withoutTransitivity().asSingle(JavaArchive.class);
+        
+        storeDependency.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+        war.addAsLibraries(storeDependency);
+        war.addAsLibraries(archs);
+//        for(JavaArchive a: archs)
+//        {
+//            a.addAsManifestResource(EmptyAsset.INSTANCE,"beans.xml");
+//            war.addAsLibrary(a);
+//        }
         for (String resourceName : INSTANCES)
             war.addAsResource(resourceName);
         //war.addAsManifestResource("testdata/beans.xml","beans.xml");

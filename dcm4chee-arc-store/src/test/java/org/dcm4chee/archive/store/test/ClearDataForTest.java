@@ -49,6 +49,8 @@ import org.dcm4chee.archive.store.StoreService;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Test;
@@ -91,8 +93,10 @@ public class ClearDataForTest {
         war.addClass(InitDataForTest.class);
         war.addClass(ParamFactory.class);
         File[] libs =  Maven.resolver().loadPomFromFile("testpom.xml").importTestDependencies().importRuntimeAndTestDependencies().resolve().withoutTransitivity().asFile();
-        System.out.println(war.toString(true));
-        war.addClass(StoreService.class);
+        JavaArchive storeDependency = Maven.resolver().resolve("org.dcm4che.dcm4chee-arc:dcm4chee-arc-store:4.4.0-SNAPSHOT").withoutTransitivity().asSingle(JavaArchive.class);
+        
+        storeDependency.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+        war.addAsLibraries(storeDependency);
         war.addAsLibraries(libs);
         return war;
     }
