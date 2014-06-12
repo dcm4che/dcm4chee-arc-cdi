@@ -53,9 +53,7 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.PersonName;
-import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
@@ -297,42 +295,13 @@ public class PatientServiceEJB implements PatientService {
 
     private void updatePatientByDICOM(Patient patient, Attributes attrs,
             StoreParam storeParam, Collection<IDWithIssuer> pids) {
-        boolean patientIDsMerged = mergePatientIDs(patient, pids);
+        if (mergePatientIDs(patient, pids)) {
+            patient.updateOtherPatientIDs();
+        }
         Attributes patientAttrs = patient.getAttributes();
-        if (patientIDsMerged) {
-            updatePatientIDsAttributes(patientAttrs, patient);
-        }
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (patientAttrs.mergeSelected(attrs, filter.getSelection()) || patientIDsMerged) {
+        if (patientAttrs.mergeSelected(attrs, filter.getSelection())) {
             patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
-        }
-    }
-
-    private void updatePatientIDsAttributes(Attributes attrs, Patient patient) {
-        IDWithIssuer pid0 = IDWithIssuer.pidOf(attrs);
-        attrs.remove(Tag.IssuerOfPatientID);
-        attrs.remove(Tag.IssuerOfPatientIDQualifiersSequence);
-        attrs.remove(Tag.OtherPatientIDsSequence);
-        Collection<PatientID> patientIDs = patient.getPatientIDs();
-        if (patientIDs.isEmpty()) {
-            attrs.setNull(Tag.PatientID, VR.LO);
-            return;
-        }
-        int numopids = patientIDs.size() - 1;
-        if (numopids == 0) {
-            patientIDs.iterator().next().toIDWithIssuer()
-                .exportPatientIDWithIssuer(attrs);
-            return;
-        }
-        Sequence opidsSeq = attrs.newSequence(Tag.OtherPatientIDsSequence, numopids);
-        for (PatientID patientID : patientIDs) {
-            IDWithIssuer opid = patientID.toIDWithIssuer();
-            if (opid.matches(pid0)) {
-                opid.exportPatientIDWithIssuer(attrs);
-                pid0 = null;
-            } else {
-                opidsSeq.add(opid.exportPatientIDWithIssuer(null));
-            }
         }
     }
 
@@ -384,24 +353,32 @@ public class PatientServiceEJB implements PatientService {
         return null;
     }
 
-    private void updatePatient(Patient patient, Attributes attrs,
-            Collection<IDWithIssuer> pids, StoreParam storeParam, boolean overwriteValues) {
-        //TODO update patient IDs
+    private void updatePatientByHL7(Patient patient, Attributes attrs,
+            Collection<IDWithIssuer> pids, StoreParam storeParam) {
+        if (mergePatientIDs(patient, pids)) {
+            patient.updateOtherPatientIDs();
+        }
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (overwriteValues
-                ? patientAttrs.updateSelected(attrs, null, filter.getSelection())
-                : patientAttrs.mergeSelected(attrs, filter.getSelection())) {
+        if (patientAttrs.updateSelected(attrs, null, filter.getSelection())) {
             patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
         }
     }
 
     @Override
-    public Patient updateOrCreatePatientByHL7(Attributes attrs, StoreParam storeParam)
+    public Patient updateOrCreatePatientByHL7(Attributes attrs,
+            StoreParam storeParam)
             throws NonUniquePatientException, PatientMergedException {
         //TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
+        return updateOrCreatePatientByHL7(attrs, storeParam, selector, pids);
+    }
+
+    private Patient updateOrCreatePatientByHL7(Attributes attrs,
+            StoreParam storeParam, PatientSelector selector,
+            Collection<IDWithIssuer> pids)
+            throws NonUniquePatientException, PatientMergedException {
         Patient patient = selector.select(findPatientByIDs(pids), attrs, pids);
         if (patient == null)
             createPatient(pids, attrs, storeParam);
@@ -409,7 +386,7 @@ public class PatientServiceEJB implements PatientService {
         if (patient.getMergedWith() != null)
             throw new PatientMergedException(patient);
 
-        updatePatient(patient, attrs, pids, storeParam, true);
+        updatePatientByHL7(patient, attrs, pids, storeParam);
         return patient;
     }
 
@@ -417,28 +394,92 @@ public class PatientServiceEJB implements PatientService {
     public void mergePatientByHL7(Attributes attrs, Attributes priorAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
             PatientMergedException, PatientCircularMergedException {
-        Patient prior = updateOrCreatePatientByHL7(priorAttrs, storeParam);
-        Patient pat = updateOrCreatePatientByHL7(attrs, storeParam);
-        mergePatient(pat, prior);
+        //TODO make PatientSelector configurable
+        PatientSelector selector = new IDPatientSelector();
+        Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
+        Collection<IDWithIssuer> priorPIDs = IDWithIssuer.pidsOf(priorAttrs);
+        Patient prior = updateOrCreatePatientByHL7(priorAttrs, storeParam,
+                selector, priorPIDs);
+        Patient pat = updateOrCreatePatientByHL7(attrs, storeParam, 
+                selector, pids);
+        mergePatient(pat, prior, priorPIDs);
     }
 
-    private void mergePatient(Patient pat, Patient prior)
+    private void mergePatient(Patient pat, Patient prior,
+            Collection<IDWithIssuer> priorPIDs)
             throws PatientCircularMergedException {
         if (pat == prior)
             throw new PatientCircularMergedException(pat);
-        Collection<Study> studies = prior.getStudies();
-        if (studies != null)
-            for (Study study : studies)
-                study.setPatient(pat);
-        Collection<MWLItem> mwlItems = prior.getModalityWorklistItems();
-        if (mwlItems != null)
-            for (MWLItem mwlItem : mwlItems)
-                mwlItem.setPatient(pat);
-        Collection<MPPS> mpps = prior.getModalityPerformedProcedureSteps();
-        if (mpps != null)
-            for (MPPS pps : mpps)
-                pps.setPatient(pat);
+        
+        LOG.info("Merge {} with {}", prior, pat);
+        moveStudies(pat, prior);
+        moveModalityWorklistItems(pat, prior);
+        moveModalityPerformedProcedureSteps(pat, prior);
+
+        if (movePatientIDs(pat, prior, priorPIDs)) {
+            pat.updateOtherPatientIDs();
+        }
         prior.setMergedWith(pat);
+    }
+
+    private void moveStudies(Patient pat, Patient prior) {
+        Collection<Study> studies = pat.getStudies();
+        for (Iterator<Study> iter = prior.getStudies().iterator(); iter.hasNext();) {
+            Study study = iter.next();
+            iter.remove();
+            study.setPatient(pat);
+            studies.add(study);
+            LOG.info("Move {} from {} to {}", study, prior, pat);
+        }
+    }
+
+    private void moveModalityWorklistItems(Patient pat, Patient prior) {
+        Collection<MWLItem> mwlItems = pat.getModalityWorklistItems();
+        for (Iterator<MWLItem> iter = prior.getModalityWorklistItems().iterator();
+                iter.hasNext();) {
+            MWLItem mwlItem = iter.next();
+            iter.remove();
+            mwlItem.setPatient(pat);
+            mwlItems.add(mwlItem);
+            LOG.info("Move {} from {} to {}", mwlItem, prior, pat);
+        }
+    }
+
+    private void moveModalityPerformedProcedureSteps(Patient pat, Patient prior) {
+        Collection<MPPS> mppss = pat.getModalityPerformedProcedureSteps();
+        for (Iterator<MPPS> iter = prior.getModalityPerformedProcedureSteps().iterator(); iter.hasNext();) {
+            MPPS mpps = iter.next();
+            iter.remove();
+            mpps.setPatient(pat);
+            mppss.add(mpps);
+            LOG.info("Move {} from {} to {}", mpps, prior, pat);
+        }
+    }
+
+    private boolean movePatientIDs(Patient pat, Patient prior,
+            Collection<IDWithIssuer> priorPIDs) {
+        int moved = 0;
+        Collection<PatientID> patientIDs = pat.getPatientIDs();
+        for (Iterator<PatientID> iter = prior.getPatientIDs().iterator();
+                iter.hasNext();) {
+            PatientID patientID = iter.next();
+            if (!contains(priorPIDs, patientID.toIDWithIssuer())) {
+                iter.remove();
+                patientID.setPatient(pat);
+                patientIDs.add(patientID);
+                LOG.info("Move {} from {} to {}", patientID, prior, pat);
+                moved++;
+            }
+        }
+        return moved > 0;
+    }
+
+    private boolean contains(Collection<IDWithIssuer> pids, IDWithIssuer pid) {
+        for (IDWithIssuer pid1 : pids) {
+            if (pid1.matches(pid))
+                return true;
+        }
+        return false;
     }
 
     @Override

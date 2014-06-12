@@ -63,8 +63,11 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.PersonName;
+import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.AttributeFilter;
 
@@ -316,5 +319,36 @@ public class Patient implements Serializable {
 
         encodedAttributes = Utils.encodeAttributes(
                 cachedAttributes = new Attributes(attrs, filter.getSelection()));
+    }
+
+    public void updateOtherPatientIDs() {
+        Attributes attrs = getAttributes();
+        IDWithIssuer pid0 = IDWithIssuer.pidOf(attrs);
+        attrs.remove(Tag.IssuerOfPatientID);
+        attrs.remove(Tag.IssuerOfPatientIDQualifiersSequence);
+        attrs.remove(Tag.OtherPatientIDsSequence);
+        if (patientIDs.isEmpty()) {
+            attrs.setNull(Tag.PatientID, VR.LO);
+            return;
+        } else {
+            int numopids = patientIDs.size() - 1;
+            if (numopids == 0) {
+                patientIDs.iterator().next().toIDWithIssuer()
+                    .exportPatientIDWithIssuer(attrs);
+            } else {
+                Sequence opidsSeq = attrs.newSequence(
+                        Tag.OtherPatientIDsSequence, numopids);
+                for (PatientID patientID : patientIDs) {
+                    IDWithIssuer opid = patientID.toIDWithIssuer();
+                    if (opid.matches(pid0)) {
+                        opid.exportPatientIDWithIssuer(attrs);
+                        pid0 = null;
+                    } else {
+                        opidsSeq.add(opid.exportPatientIDWithIssuer(null));
+                    }
+                }
+            }
+        }
+        encodedAttributes = Utils.encodeAttributes(attrs);
     }
 }
