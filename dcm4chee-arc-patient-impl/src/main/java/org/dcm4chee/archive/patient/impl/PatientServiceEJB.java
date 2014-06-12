@@ -346,8 +346,8 @@ public class PatientServiceEJB implements PatientService {
             IDWithIssuer pid) {
         for (PatientID patientID : patientIDs) {
             if (pid.getID().equals(patientID.getID())
-                    && pid.getIssuer() == null
-                    || pid.getIssuer().matches(patientID.getIssuer()))
+                    && (pid.getIssuer() == null
+                     || pid.getIssuer().matches(patientID.getIssuer())))
                 return patientID;
         }
         return null;

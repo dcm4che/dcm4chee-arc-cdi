@@ -340,7 +340,7 @@ public class Patient implements Serializable {
                         Tag.OtherPatientIDsSequence, numopids);
                 for (PatientID patientID : patientIDs) {
                     IDWithIssuer opid = patientID.toIDWithIssuer();
-                    if (opid.matches(pid0)) {
+                    if (pid0 != null && pid0.matches(opid)) {
                         opid.exportPatientIDWithIssuer(attrs);
                         pid0 = null;
                     } else {
