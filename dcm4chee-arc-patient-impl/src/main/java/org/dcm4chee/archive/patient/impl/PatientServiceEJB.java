@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -261,9 +262,9 @@ public class PatientServiceEJB implements PatientService {
         return patient;
     }
 
-    private Collection<PatientID> createPatientIDs(
+    private Set<PatientID> createPatientIDs(
             Collection<IDWithIssuer> pids, Patient patient) {
-        ArrayList<PatientID> patientIDs = new ArrayList<PatientID>(pids.size());
+        Set<PatientID> patientIDs = new HashSet<PatientID>(pids.size() * 2);
         for (IDWithIssuer pid : pids)
             patientIDs.add(createPatientID(pid, patient));
         return patientIDs;
@@ -397,7 +398,7 @@ public class PatientServiceEJB implements PatientService {
     @Override
     public void mergePatientByHL7(Attributes attrs, Attributes priorAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException, PatientCircularMergedException {
+            PatientMergedException {
         // TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
@@ -410,10 +411,9 @@ public class PatientServiceEJB implements PatientService {
     }
 
     private void mergePatient(Patient pat, Patient prior,
-            Collection<IDWithIssuer> priorPIDs)
-            throws PatientCircularMergedException {
+            Collection<IDWithIssuer> priorPIDs)  {
         if (pat == prior)
-            throw new PatientCircularMergedException(pat);
+            throw new IllegalArgumentException("Cannot merge " + pat + " with itself");
 
         LOG.info("Merge {} with {}", prior, pat);
         moveStudies(pat, prior);
@@ -421,9 +421,101 @@ public class PatientServiceEJB implements PatientService {
         moveModalityPerformedProcedureSteps(pat, prior);
 
         if (movePatientIDs(pat, prior, priorPIDs)) {
+            prior.updateOtherPatientIDs();
             pat.updateOtherPatientIDs();
         }
         prior.setMergedWith(pat);
+    }
+
+    @Override
+    public void linkPatient(Attributes attrs, Attributes otherAttrs,
+            StoreParam storeParam) throws NonUniquePatientException,
+            PatientMergedException {
+        Patient pat = updateOrCreatePatientByHL7(attrs, storeParam);
+        Patient other = updateOrCreatePatientByHL7(otherAttrs, storeParam);
+        linkPatient(pat, other);
+    }
+
+    private void linkPatient(Patient pat, Patient other)  {
+        if (pat == other)
+            throw new IllegalArgumentException("Cannot link " + pat + " with itself");
+
+        LOG.info("Link {} with {}", other, pat);
+        linkPatientIDs(pat, other);
+        linkPatientIDs(other, pat);
+        pat.updateOtherPatientIDs();
+        other.updateOtherPatientIDs();
+    }
+
+    private void linkPatientIDs(Patient pat, Patient other) {
+        Collection<PatientID> linkedPatientIDs = pat.getLinkedPatientIDs();
+        for (PatientID pid : other.getPatientIDs()) {
+            if (!containsWithPk(linkedPatientIDs, pid.getPk())) {
+                linkedPatientIDs.add(pid);
+                LOG.info("Link {} of {} to {}", pid, other, pat);
+            }
+        }
+    }
+
+    private boolean containsWithPk(Collection<PatientID> pids, long pk) {
+        for (PatientID pid  : pids)
+            if (pid.getPk() == pk)
+                return true;
+        return false;
+    }
+
+    @Override
+    public void unlinkPatient(Attributes attrs, Attributes otherAttrs) 
+            throws NonUniquePatientException, PatientMergedException {
+        // TODO make PatientSelector configurable
+        PatientSelector selector = new IDPatientSelector();
+        Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
+        Patient pat = selector.select(findPatientByIDs(pids), attrs, pids);
+        if (pat == null)
+            return;
+        if (pat.getMergedWith() != null)
+            throw new PatientMergedException(pat);
+
+        Collection<IDWithIssuer> otherPIDs = IDWithIssuer.pidsOf(otherAttrs);
+        Patient other = selector.select(findPatientByIDs(otherPIDs), attrs, otherPIDs);
+        if (other == null)
+            return;
+
+        if (other.getMergedWith() != null)
+            throw new PatientMergedException(other);
+
+        unlinkPatient(pat, other);
+    }
+
+    private void unlinkPatient(Patient pat, Patient other)  {
+        if (pat == other)
+            throw new IllegalArgumentException("Cannot link " + pat + " with itself");
+
+        LOG.info("Unlink {} from {}", other, pat);
+        unlinkPatientIDs(pat, other);
+        unlinkPatientIDs(other, pat);
+        pat.updateOtherPatientIDs();
+        other.updateOtherPatientIDs();
+    }
+
+    private void unlinkPatientIDs(Patient pat, Patient other) {
+        Collection<PatientID> linkedPatientIDs = pat.getLinkedPatientIDs();
+        for (PatientID pid : other.getPatientIDs()) {
+            if (removePatientIDWithPk(linkedPatientIDs, pid.getPk())) {
+                LOG.info("Unlink {} of {} from {}", pid, other, pat);
+            }
+        }
+    }
+
+    private boolean removePatientIDWithPk(Collection<PatientID> pids, long pk) {
+        for (Iterator<PatientID> iter = pids.iterator(); iter.hasNext();) {
+            PatientID pid = iter.next();
+            if (pid.getPk() == pk) {
+                iter.remove();
+                return true;
+            }
+        }
+        return false;
     }
 
     private void moveStudies(Patient pat, Patient prior) {

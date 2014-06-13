@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
@@ -327,18 +328,19 @@ public class Patient implements Serializable {
         attrs.remove(Tag.IssuerOfPatientID);
         attrs.remove(Tag.IssuerOfPatientIDQualifiersSequence);
         attrs.remove(Tag.OtherPatientIDsSequence);
-        if (patientIDs.isEmpty()) {
+        Collection<PatientID> allPatientIDs = getAllPatientIDs();
+        if (allPatientIDs.isEmpty()) {
             attrs.setNull(Tag.PatientID, VR.LO);
             return;
         } else {
-            int numopids = patientIDs.size() - 1;
+            int numopids = allPatientIDs.size() - 1;
             if (numopids == 0) {
-                patientIDs.iterator().next().toIDWithIssuer()
+                allPatientIDs.iterator().next().toIDWithIssuer()
                     .exportPatientIDWithIssuer(attrs);
             } else {
                 Sequence opidsSeq = attrs.newSequence(
                         Tag.OtherPatientIDsSequence, numopids);
-                for (PatientID patientID : patientIDs) {
+                for (PatientID patientID : allPatientIDs) {
                     IDWithIssuer opid = patientID.toIDWithIssuer();
                     if (pid0 != null && pid0.matches(opid)) {
                         opid.exportPatientIDWithIssuer(attrs);
@@ -350,5 +352,19 @@ public class Patient implements Serializable {
             }
         }
         encodedAttributes = Utils.encodeAttributes(attrs);
+    }
+
+    private Collection<PatientID> getAllPatientIDs() {
+        if (linkedPatientIDs.isEmpty())
+            return patientIDs;
+
+        if (patientIDs.isEmpty())
+            return linkedPatientIDs;
+
+        ArrayList<PatientID> all = new ArrayList<PatientID>(
+                patientIDs.size() + linkedPatientIDs.size());
+        all.addAll(patientIDs);
+        all.addAll(linkedPatientIDs);
+        return all;
     }
 }

@@ -105,4 +105,11 @@ public interface PatientService {
 
     Patient deletePatient(IDWithIssuer idWithIssuer) throws NonUniquePatientException;
 
+    void linkPatient(Attributes attrs, Attributes otherAttrs,
+            StoreParam storeParam) throws NonUniquePatientException,
+            PatientMergedException;
+
+    void unlinkPatient(Attributes attrs, Attributes otherAttrs)
+            throws NonUniquePatientException, PatientMergedException;
+
 }
