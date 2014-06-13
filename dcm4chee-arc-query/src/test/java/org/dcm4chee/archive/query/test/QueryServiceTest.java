@@ -47,6 +47,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -168,6 +169,33 @@ public class QueryServiceTest {
         query.executeQuery();
         assertArrayEquals(new String[] { "DOB_20010101", "DOB_20020202",
                 "DOB_NONE" }, matches(query, Tag.PatientID));
+    }
+    @Test
+    public void testFindPatientWithMultiplePatientID() {
+        QueryParam queryParam = ParamFactory.createQueryParam();
+        IDWithIssuer[] pids = { new IDWithIssuer("Test ID_1")};
+        QueryContext ctx = queryService.createQueryContext(queryService);
+        ctx.setKeys(new Attributes());
+        ctx.setQueryParam(queryParam);
+        query = queryService.createQuery(QueryRetrieveLevel.PATIENT, ctx);
+        ctx.setPatientIDs(pids);
+        query.initQuery();
+        query.executeQuery();
+        assertEquals("OOMIYA^SHOUGO",getResultAttributes(query,Tag.PatientName).split("=")[0].toUpperCase());
+    }
+    private String getResultAttributes(Query query,int tag) {
+        TreeSet<String> result = new TreeSet<String>();
+        while (query.hasMoreMatches()){
+            String tmpResult = query.nextMatch().getString(tag);
+            result.add(tmpResult);
+            log.info("Added "+tmpResult+"\n");
+        }
+        String out="";
+        for(String tmp:result)
+        {
+            out+=tmp;
+        }
+        return out;
     }
     @Test
     public void testFindPatientByPatientName() {

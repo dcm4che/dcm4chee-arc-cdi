@@ -133,7 +133,7 @@ public class InitDataForTest {
         "testdata/fuzzy-3.xml",
         "testdata/fuzzy-4.xml",
         "testdata/fuzzy-5.xml",
-        "testdata/person-name-1.xml",
+        "testdata/person-name-1.xml"
    };
     @Deployment
     public static WebArchive createDeployment() {

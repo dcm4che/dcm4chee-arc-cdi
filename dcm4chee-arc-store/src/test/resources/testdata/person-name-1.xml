@@ -53,4 +53,22 @@
 <DicomAttribute keyword="InstanceNumber" tag="00200013" vr="IS">
 <Value number="1">1</Value>
 </DicomAttribute>
+<DicomAttribute keyword="OtherPatientIDsSequence" tag="00101002" vr="SQ">
+<Item number="1">
+<DicomAttribute keyword="PatientID" tag="00100020" vr="LO">
+<Value number="1">Test ID_1</Value>
+</DicomAttribute>
+<DicomAttribute keyword="IssuerOfPatientID" tag="00100021" vr="LO">
+<Value number="1">Issuer No_1</Value>
+</DicomAttribute>
+</Item>
+<Item number="2">
+<DicomAttribute keyword="PatientID" tag="00100020" vr="LO">
+<Value number="1">Test ID_2</Value>
+</DicomAttribute>
+<DicomAttribute keyword="IssuerOfPatientID" tag="00100021" vr="LO">
+<Value number="1">Issuer No_2</Value>
+</DicomAttribute>
+</Item>
+</DicomAttribute>
 </NativeDicomModel>
