@@ -355,16 +355,26 @@ public class Patient implements Serializable {
     }
 
     private Collection<PatientID> getAllPatientIDs() {
+        if(linkedPatientIDs!=null)
         if (linkedPatientIDs.isEmpty())
             return patientIDs;
 
         if (patientIDs.isEmpty())
             return linkedPatientIDs;
 
+        if(linkedPatientIDs!=null)
+        {
         ArrayList<PatientID> all = new ArrayList<PatientID>(
                 patientIDs.size() + linkedPatientIDs.size());
         all.addAll(patientIDs);
         all.addAll(linkedPatientIDs);
         return all;
+    }
+        else
+        {
+            ArrayList<PatientID> pids = new ArrayList<PatientID>(patientIDs.size());
+            pids.addAll(patientIDs);
+            return pids;
+        }
     }
 }
