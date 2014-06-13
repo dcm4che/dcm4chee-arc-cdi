@@ -443,8 +443,7 @@ public class PatientServiceEJB implements PatientService {
     private void moveModalityWorklistItems(Patient pat, Patient prior) {
         Collection<MWLItem> mwlItems = (pat.getModalityWorklistItems() != null ? pat
                 .getModalityWorklistItems() : new ArrayList<MWLItem>());
-        for (Iterator<MWLItem> iter = (prior.getModalityWorklistItems()
-                .iterator() != null ? prior.getModalityWorklistItems()
+        for (Iterator<MWLItem> iter = (prior.getModalityWorklistItems() != null ? prior.getModalityWorklistItems()
                 .iterator() : new ArrayList<MWLItem>().iterator()); iter
                 .hasNext();) {
             MWLItem mwlItem = iter.next();
@@ -458,8 +457,7 @@ public class PatientServiceEJB implements PatientService {
     private void moveModalityPerformedProcedureSteps(Patient pat, Patient prior) {
         Collection<MPPS> mppss = (pat.getModalityPerformedProcedureSteps() != null ? pat
                 .getModalityPerformedProcedureSteps() : new ArrayList<MPPS>());
-        for (Iterator<MPPS> iter = (prior.getModalityPerformedProcedureSteps()
-                .iterator() != null ? prior
+        for (Iterator<MPPS> iter = (prior.getModalityPerformedProcedureSteps() != null ? prior
                 .getModalityPerformedProcedureSteps().iterator()
                 : new ArrayList<MPPS>().iterator()); iter.hasNext();) {
             MPPS mpps = iter.next();
