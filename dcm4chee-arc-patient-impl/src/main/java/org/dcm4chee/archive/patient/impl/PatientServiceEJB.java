@@ -86,14 +86,15 @@ import com.mysema.query.types.expr.BooleanExpression;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * 
  */
 @Stateless
 public class PatientServiceEJB implements PatientService {
 
-    private static Logger LOG = LoggerFactory.getLogger(PatientServiceEJB.class);
+    private static Logger LOG = LoggerFactory
+            .getLogger(PatientServiceEJB.class);
 
-    @PersistenceContext(unitName="dcm4chee-arc")
+    @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
     @Inject
@@ -115,14 +116,14 @@ public class PatientServiceEJB implements PatientService {
 
     private Patient updateOrCreatePatientByDICOM(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
-                    throws PatientCircularMergedException {
+            throws PatientCircularMergedException {
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         Patient patient = null;
         try {
             patient = findPatientByDICOM(pids, attrs, selector);
         } catch (NonUniquePatientException e) {
             LOG.info("Could not associate unique Patient Record to "
-                    + "received DICOM object - create new Patient Record:", e); 
+                    + "received DICOM object - create new Patient Record:", e);
         }
         if (patient == null)
             return createPatient(pids, attrs, storeParam);
@@ -139,25 +140,29 @@ public class PatientServiceEJB implements PatientService {
         String pname;
         if (!pids.isEmpty())
             patients = findPatientByIDs(pids);
-        else if ((pname = attrs.getString(Tag.PatientName)) != null) 
+        else if ((pname = attrs.getString(Tag.PatientName)) != null)
             patients = findPatientByName(pname);
         else
-            throw new NonUniquePatientException("No Patient ID and no Patient Name");
-        
+            throw new NonUniquePatientException(
+                    "No Patient ID and no Patient Name");
+
         return selector.select(patients, attrs, pids);
     }
 
     private List<Patient> findPatientByName(String pn) {
-        return em.createNamedQuery(
-                Patient.FIND_BY_PATIENT_NAME, Patient.class)
-                .setParameter(1, new PersonName(pn, true)
-                .toString(PersonName.Group.Alphabetic, false))
+        return em
+                .createNamedQuery(Patient.FIND_BY_PATIENT_NAME, Patient.class)
+                .setParameter(
+                        1,
+                        new PersonName(pn, true).toString(
+                                PersonName.Group.Alphabetic, false))
                 .getResultList();
     }
 
     private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
         BooleanBuilder builder = new BooleanBuilder();
-        Collection<BooleanExpression> eqIDs = new ArrayList<BooleanExpression>(pids.size());
+        Collection<BooleanExpression> eqIDs = new ArrayList<BooleanExpression>(
+                pids.size());
         for (IDWithIssuer pid : pids) {
             BooleanExpression eqID = QPatientID.patientID.id.eq(pid.getID());
             if (pid.getIssuer() == null) {
@@ -168,20 +173,17 @@ public class PatientServiceEJB implements PatientService {
             }
         }
         BooleanExpression matchingIDs = new HibernateSubQuery()
-            .from(QPatientID.patientID)
-            .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
-            .where(ExpressionUtils.and(
-                    QPatientID.patientID.patient.eq(QPatient.patient),
-                    builder))
-            .exists();
+                .from(QPatientID.patientID)
+                .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
+                .where(ExpressionUtils.and(
+                        QPatientID.patientID.patient.eq(QPatient.patient),
+                        builder)).exists();
         Session session = em.unwrap(Session.class);
         List<Patient> result = new HibernateQuery(session)
-                .from(QPatient.patient)
-                .where(matchingIDs)
+                .from(QPatient.patient).where(matchingIDs)
                 .list(QPatient.patient);
         if (result.isEmpty() && !eqIDs.isEmpty()) {
-            result = new HibernateQuery(session)
-                    .from(QPatient.patient)
+            result = new HibernateQuery(session).from(QPatient.patient)
                     .where(matchingIDsWithoutIssuer(eqIDs))
                     .list(QPatient.patient);
         }
@@ -196,11 +198,10 @@ public class PatientServiceEJB implements PatientService {
             builder.or(ExpressionUtils.and(eqID, noIssuer));
         }
         return new HibernateSubQuery()
-            .from(QPatientID.patientID)
-            .where(ExpressionUtils.and(
-                    QPatientID.patientID.patient.eq(QPatient.patient),
-                    builder))
-            .exists();
+                .from(QPatientID.patientID)
+                .where(ExpressionUtils.and(
+                        QPatientID.patientID.patient.eq(QPatient.patient),
+                        builder)).exists();
     }
 
     private Predicate eqIssuer(org.dcm4che3.data.Issuer issuer) {
@@ -216,16 +217,13 @@ public class PatientServiceEJB implements PatientService {
         Predicate eqUID = eqUniversalEntityID(uid, uidType);
         Predicate noID = QIssuer.issuer.localNamespaceEntityID.isNull();
         Predicate noUID = QIssuer.issuer.universalEntityID.isNull();
-        return ExpressionUtils.and(
-                QIssuer.issuer.isNotNull(),
-                ExpressionUtils.and(
-                    ExpressionUtils.or(eqID, noID),
-                    ExpressionUtils.or(eqUID, noUID)));
+        return ExpressionUtils.and(QIssuer.issuer.isNotNull(), ExpressionUtils
+                .and(ExpressionUtils.or(eqID, noID),
+                        ExpressionUtils.or(eqUID, noUID)));
     }
 
     private Predicate eqUniversalEntityID(String uid, String uidType) {
-        return ExpressionUtils.and(
-                QIssuer.issuer.universalEntityID.eq(uid),
+        return ExpressionUtils.and(QIssuer.issuer.universalEntityID.eq(uid),
                 QIssuer.issuer.universalEntityIDType.eq(uidType));
     }
 
@@ -283,14 +281,15 @@ public class PatientServiceEJB implements PatientService {
     private Issuer findOrCreateIssuer(org.dcm4che3.data.Issuer issuer) {
         if (issuer == null)
             return null;
-        
+
         return issuerService.findOrCreate(new Issuer(issuer));
     }
 
     @Override
     public void updatePatientByCStore(Patient patient, Attributes attrs,
             StoreParam storeParam) {
-        updatePatientByDICOM(patient, attrs, storeParam, IDWithIssuer.pidsOf(attrs));
+        updatePatientByDICOM(patient, attrs, storeParam,
+                IDWithIssuer.pidsOf(attrs));
     }
 
     private void updatePatientByDICOM(Patient patient, Attributes attrs,
@@ -301,13 +300,15 @@ public class PatientServiceEJB implements PatientService {
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
         if (patientAttrs.mergeSelected(attrs, filter.getSelection())) {
-            patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
+            patient.setAttributes(patientAttrs, filter,
+                    storeParam.getFuzzyStr());
         }
     }
 
     private boolean mergePatientIDs(Patient patient,
             Collection<IDWithIssuer> pids) {
-        boolean modified = false;;
+        boolean modified = false;
+        ;
         Collection<PatientID> patientIDs = patient.getPatientIDs();
         Collection<IDWithIssuer> add = new ArrayList<IDWithIssuer>(pids);
         for (Iterator<IDWithIssuer> iter = add.iterator(); iter.hasNext();) {
@@ -327,7 +328,8 @@ public class PatientServiceEJB implements PatientService {
                 LOG.info("Set Issuer of {} of Patient {}", patientID, patient);
             } else if (issuer.merge(pid.getIssuer())) {
                 modified = true;
-                LOG.info("Updated Issuer of {} of Patient {}", patientID, patient);
+                LOG.info("Updated Issuer of {} of Patient {}", patientID,
+                        patient);
             }
         }
 
@@ -347,7 +349,8 @@ public class PatientServiceEJB implements PatientService {
         for (PatientID patientID : patientIDs) {
             if (pid.getID().equals(patientID.getID())
                     && (pid.getIssuer() == null
-                     || pid.getIssuer().matches(patientID.getIssuer())))
+
+                    || pid.getIssuer().matches(patientID.getIssuer())))
                 return patientID;
         }
         return null;
@@ -361,15 +364,16 @@ public class PatientServiceEJB implements PatientService {
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
         if (patientAttrs.updateSelected(attrs, null, filter.getSelection())) {
-            patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr());
+            patient.setAttributes(patientAttrs, filter,
+                    storeParam.getFuzzyStr());
         }
     }
 
     @Override
     public Patient updateOrCreatePatientByHL7(Attributes attrs,
-            StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException {
-        //TODO make PatientSelector configurable
+            StoreParam storeParam) throws NonUniquePatientException,
+            PatientMergedException {
+        // TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         return updateOrCreatePatientByHL7(attrs, storeParam, selector, pids);
@@ -377,8 +381,8 @@ public class PatientServiceEJB implements PatientService {
 
     private Patient updateOrCreatePatientByHL7(Attributes attrs,
             StoreParam storeParam, PatientSelector selector,
-            Collection<IDWithIssuer> pids)
-            throws NonUniquePatientException, PatientMergedException {
+            Collection<IDWithIssuer> pids) throws NonUniquePatientException,
+            PatientMergedException {
         Patient patient = selector.select(findPatientByIDs(pids), attrs, pids);
         if (patient == null)
             createPatient(pids, attrs, storeParam);
@@ -394,14 +398,14 @@ public class PatientServiceEJB implements PatientService {
     public void mergePatientByHL7(Attributes attrs, Attributes priorAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
             PatientMergedException, PatientCircularMergedException {
-        //TODO make PatientSelector configurable
+        // TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         Collection<IDWithIssuer> priorPIDs = IDWithIssuer.pidsOf(priorAttrs);
         Patient prior = updateOrCreatePatientByHL7(priorAttrs, storeParam,
                 selector, priorPIDs);
-        Patient pat = updateOrCreatePatientByHL7(attrs, storeParam, 
-                selector, pids);
+        Patient pat = updateOrCreatePatientByHL7(attrs, storeParam, selector,
+                pids);
         mergePatient(pat, prior, priorPIDs);
     }
 
@@ -410,7 +414,7 @@ public class PatientServiceEJB implements PatientService {
             throws PatientCircularMergedException {
         if (pat == prior)
             throw new PatientCircularMergedException(pat);
-        
+
         LOG.info("Merge {} with {}", prior, pat);
         moveStudies(pat, prior);
         moveModalityWorklistItems(pat, prior);
@@ -423,8 +427,11 @@ public class PatientServiceEJB implements PatientService {
     }
 
     private void moveStudies(Patient pat, Patient prior) {
-        Collection<Study> studies = pat.getStudies();
-        for (Iterator<Study> iter = prior.getStudies().iterator(); iter.hasNext();) {
+        Collection<Study> studies = (pat.getStudies() != null ? pat
+                .getStudies() : new ArrayList<Study>());
+        for (Iterator<Study> iter = (prior.getStudies() != null ? prior
+                .getStudies().iterator() : new ArrayList<Study>().iterator()); iter
+                .hasNext();) {
             Study study = iter.next();
             iter.remove();
             study.setPatient(pat);
@@ -434,9 +441,12 @@ public class PatientServiceEJB implements PatientService {
     }
 
     private void moveModalityWorklistItems(Patient pat, Patient prior) {
-        Collection<MWLItem> mwlItems = pat.getModalityWorklistItems();
-        for (Iterator<MWLItem> iter = prior.getModalityWorklistItems().iterator();
-                iter.hasNext();) {
+        Collection<MWLItem> mwlItems = (pat.getModalityWorklistItems() != null ? pat
+                .getModalityWorklistItems() : new ArrayList<MWLItem>());
+        for (Iterator<MWLItem> iter = (prior.getModalityWorklistItems()
+                .iterator() != null ? prior.getModalityWorklistItems()
+                .iterator() : new ArrayList<MWLItem>().iterator()); iter
+                .hasNext();) {
             MWLItem mwlItem = iter.next();
             iter.remove();
             mwlItem.setPatient(pat);
@@ -446,8 +456,12 @@ public class PatientServiceEJB implements PatientService {
     }
 
     private void moveModalityPerformedProcedureSteps(Patient pat, Patient prior) {
-        Collection<MPPS> mppss = pat.getModalityPerformedProcedureSteps();
-        for (Iterator<MPPS> iter = prior.getModalityPerformedProcedureSteps().iterator(); iter.hasNext();) {
+        Collection<MPPS> mppss = (pat.getModalityPerformedProcedureSteps() != null ? pat
+                .getModalityPerformedProcedureSteps() : new ArrayList<MPPS>());
+        for (Iterator<MPPS> iter = (prior.getModalityPerformedProcedureSteps()
+                .iterator() != null ? prior
+                .getModalityPerformedProcedureSteps().iterator()
+                : new ArrayList<MPPS>().iterator()); iter.hasNext();) {
             MPPS mpps = iter.next();
             iter.remove();
             mpps.setPatient(pat);
@@ -460,8 +474,8 @@ public class PatientServiceEJB implements PatientService {
             Collection<IDWithIssuer> priorPIDs) {
         int moved = 0;
         Collection<PatientID> patientIDs = pat.getPatientIDs();
-        for (Iterator<PatientID> iter = prior.getPatientIDs().iterator();
-                iter.hasNext();) {
+        for (Iterator<PatientID> iter = prior.getPatientIDs().iterator(); iter
+                .hasNext();) {
             PatientID patientID = iter.next();
             if (!contains(priorPIDs, patientID.toIDWithIssuer())) {
                 iter.remove();
@@ -483,7 +497,8 @@ public class PatientServiceEJB implements PatientService {
     }
 
     @Override
-    public Patient deletePatient(IDWithIssuer pid) throws NonUniquePatientException {
+    public Patient deletePatient(IDWithIssuer pid)
+            throws NonUniquePatientException {
         List<Patient> results = findPatientByIDs(Collections.singleton(pid));
         switch (results.size()) {
         case 0:
