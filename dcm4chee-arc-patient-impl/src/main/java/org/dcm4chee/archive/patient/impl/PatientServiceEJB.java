@@ -262,9 +262,9 @@ public class PatientServiceEJB implements PatientService {
         return patient;
     }
 
-    private Set<PatientID> createPatientIDs(
+    private Collection<PatientID> createPatientIDs(
             Collection<IDWithIssuer> pids, Patient patient) {
-        Set<PatientID> patientIDs = new HashSet<PatientID>(pids.size() * 2);
+        Collection<PatientID> patientIDs = new ArrayList<PatientID>(pids.size());
         for (IDWithIssuer pid : pids)
             patientIDs.add(createPatientID(pid, patient));
         return patientIDs;
@@ -420,7 +420,16 @@ public class PatientServiceEJB implements PatientService {
         moveModalityWorklistItems(pat, prior);
         moveModalityPerformedProcedureSteps(pat, prior);
 
-        if (movePatientIDs(pat, prior, priorPIDs)) {
+        boolean movePatientIDs = movePatientIDs(pat, prior, priorPIDs);
+        Collection<Patient> linkedPatients = prior.getLinkedPatients();
+        if (movePatientIDs || !linkedPatients.isEmpty()) {
+            for (Patient linked : linkedPatients) {
+                unlinkPatientIDs(prior, linked);
+                unlinkPatientIDs(linked, prior);
+                linkPatientIDs(pat, linked);
+                linkPatientIDs(linked, pat);
+                linked.updateOtherPatientIDs();
+            }
             prior.updateOtherPatientIDs();
             pat.updateOtherPatientIDs();
         }
@@ -450,14 +459,15 @@ public class PatientServiceEJB implements PatientService {
     private void linkPatientIDs(Patient pat, Patient other) {
         Collection<PatientID> linkedPatientIDs = pat.getLinkedPatientIDs();
         for (PatientID pid : other.getPatientIDs()) {
-            if (!containsWithPk(linkedPatientIDs, pid.getPk())) {
+            if (!contains(linkedPatientIDs, pid)) {
                 linkedPatientIDs.add(pid);
                 LOG.info("Link {} of {} to {}", pid, other, pat);
             }
         }
     }
 
-    private boolean containsWithPk(Collection<PatientID> pids, long pk) {
+    private boolean contains(Collection<PatientID> pids, PatientID other) {
+        long pk = other.getPk();
         for (PatientID pid  : pids)
             if (pid.getPk() == pk)
                 return true;
@@ -501,13 +511,14 @@ public class PatientServiceEJB implements PatientService {
     private void unlinkPatientIDs(Patient pat, Patient other) {
         Collection<PatientID> linkedPatientIDs = pat.getLinkedPatientIDs();
         for (PatientID pid : other.getPatientIDs()) {
-            if (removePatientIDWithPk(linkedPatientIDs, pid.getPk())) {
+            if (removePatientID(linkedPatientIDs, pid)) {
                 LOG.info("Unlink {} of {} from {}", pid, other, pat);
             }
         }
     }
 
-    private boolean removePatientIDWithPk(Collection<PatientID> pids, long pk) {
+    private boolean removePatientID(Collection<PatientID> pids, PatientID other) {
+        long pk = other.getPk();
         for (Iterator<PatientID> iter = pids.iterator(); iter.hasNext();) {
             PatientID pid = iter.next();
             if (pid.getPk() == pk) {

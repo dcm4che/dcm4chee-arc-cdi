@@ -41,7 +41,9 @@ package org.dcm4chee.archive.entity;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
@@ -274,6 +276,10 @@ public class Patient implements Serializable {
         return linkedPatientIDs;
     }
 
+    public void setLinkedPatientIDs(Collection<PatientID> linkedPatientIDs) {
+        this.linkedPatientIDs = linkedPatientIDs;
+    }
+
     public Collection<Study> getStudies() {
         return studies;
     }
@@ -355,26 +361,40 @@ public class Patient implements Serializable {
     }
 
     private Collection<PatientID> getAllPatientIDs() {
-        if(linkedPatientIDs!=null)
-        if (linkedPatientIDs.isEmpty())
-            return patientIDs;
+        if (linkedPatientIDs == null || linkedPatientIDs.isEmpty())
+            if (patientIDs == null)
+                return Collections.emptyList();
+            else
+                return patientIDs;
 
-        if (patientIDs.isEmpty())
+        if (patientIDs == null || patientIDs.isEmpty())
             return linkedPatientIDs;
 
-        if(linkedPatientIDs!=null)
-        {
         ArrayList<PatientID> all = new ArrayList<PatientID>(
                 patientIDs.size() + linkedPatientIDs.size());
         all.addAll(patientIDs);
         all.addAll(linkedPatientIDs);
         return all;
     }
-        else
-        {
-            ArrayList<PatientID> pids = new ArrayList<PatientID>(patientIDs.size());
-            pids.addAll(patientIDs);
-            return pids;
+
+    public Collection<Patient> getLinkedPatients() {
+        if (linkedPatientIDs.isEmpty())
+            return Collections.emptyList();
+
+        List<Patient> list = new ArrayList<Patient>(linkedPatientIDs.size());
+        for (PatientID pid : linkedPatientIDs) {
+            Patient pat = pid.getPatient();
+            if (!contains(list, pat))
+                list.add(pat);
         }
+        return list;
+    }
+
+    private static boolean contains(Collection<Patient> pats, Patient other) {
+        long pk = other.getPk();
+        for (Patient pat  : pats)
+            if (pat.getPk() == pk)
+                return true;
+        return false;
     }
 }
