@@ -378,7 +378,7 @@ public class Patient implements Serializable {
     }
 
     public Collection<Patient> getLinkedPatients() {
-        if (linkedPatientIDs.isEmpty())
+        if (linkedPatientIDs == null || linkedPatientIDs.isEmpty())
             return Collections.emptyList();
 
         List<Patient> list = new ArrayList<Patient>(linkedPatientIDs.size());
