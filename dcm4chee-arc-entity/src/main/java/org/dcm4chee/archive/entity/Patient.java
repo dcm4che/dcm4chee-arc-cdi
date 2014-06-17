@@ -48,6 +48,7 @@ import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -73,6 +74,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.AttributeFilter;
+import org.dcm4chee.archive.entity.ext.PatientExtension;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -150,6 +152,9 @@ public class Patient implements Serializable {
     @Basic(optional = false)
     @Column(name = "pat_attrs")
     private byte[] encodedAttributes;
+
+    @Embedded
+    private PatientExtension extension;
 
     @Transient
     private Attributes cachedAttributes;
@@ -250,6 +255,14 @@ public class Patient implements Serializable {
 
     public String getPatientCustomAttribute3() {
         return patientCustomAttribute3;
+    }
+
+    public PatientExtension getExtension() {
+        return extension;
+    }
+
+    public void setExtension(PatientExtension extension) {
+        this.extension = extension;
     }
 
     public Patient getMergedWith() {

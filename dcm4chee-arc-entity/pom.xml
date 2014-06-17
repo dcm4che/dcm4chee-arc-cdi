@@ -14,7 +14,13 @@
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-conf</artifactId>
-       <version>${project.version}</version>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-entity-ext</artifactId>
+      <version>${project.version}</version>
+      <classifier>${db}</classifier>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
@@ -75,8 +81,8 @@
                 <pluginExecution>
                   <pluginExecutionFilter>
                     <groupId>com.mysema.maven</groupId>
-                    <artifactId>maven-apt-plugin</artifactId>
-                    <versionRange>[1.0.3,)</versionRange>
+                    <artifactId>apt-maven-plugin</artifactId>
+                    <versionRange>[1.0.9,)</versionRange>
                     <goals>
                       <goal>process</goal>
                     </goals>
@@ -84,19 +90,6 @@
                   <action>
                     <ignore></ignore>
                   </action>
-                </pluginExecution>
-                <pluginExecution>
-                	<pluginExecutionFilter>
-                		<groupId>com.mysema.maven</groupId>
-                		<artifactId>apt-maven-plugin</artifactId>
-                		<versionRange>[1.0.9,)</versionRange>
-                		<goals>
-                			<goal>process</goal>
-                		</goals>
-                	</pluginExecutionFilter>
-                	<action>
-                		<ignore></ignore>
-                	</action>
                 </pluginExecution>
               </pluginExecutions>
             </lifecycleMappingMetadata>
