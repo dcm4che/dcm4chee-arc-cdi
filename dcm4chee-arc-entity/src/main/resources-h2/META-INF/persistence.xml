@@ -5,6 +5,7 @@
   xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd">
   <persistence-unit name="dcm4chee-arc">
     <jta-data-source>${ds}</jta-data-source>
+    <jar-file>dcm4chee-arc-entity-ext-${project.version}-${db}.jar</jar-file>
     <properties>
       <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
       <property name="hibernate.hbm2ddl.auto" value="${hbm2ddl.auto}" />
