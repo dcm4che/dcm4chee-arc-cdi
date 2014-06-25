@@ -107,7 +107,7 @@
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
       <basic name="familyName">
-        <column name="familyName" nullable="false" column-definition="nvarchar2(255)" />
+        <column name="family_name" nullable="false" column-definition="nvarchar2(255)" />
       </basic>
       <basic name="givenName">
         <column name="given_name" nullable="false" column-definition="nvarchar2(255)" />

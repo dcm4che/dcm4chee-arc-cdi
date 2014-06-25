@@ -77,7 +77,7 @@ create index study_access_control_id_idx on study (access_control_id);
 
 create index vo_verify_datetime_idx on verify_observer (verify_datetime);
 
-create index mpps_iuid_idx on mpps (mpps_iuid);
+create unique index mpps_iuid_idx on mpps (mpps_iuid);
 
 create index mwl_item_sps_id_idx on mwl_item (sps_id);
 create index mwl_item_req_proc_id_idx on mwl_item (req_proc_id);
