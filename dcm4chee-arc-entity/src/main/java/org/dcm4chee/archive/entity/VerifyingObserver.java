@@ -42,15 +42,17 @@ import java.io.Serializable;
 import java.util.Date;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
@@ -76,42 +78,18 @@ public class VerifyingObserver implements Serializable {
     @Column(name = "verify_datetime")
     private String verificationDateTime;
 
-    @Basic(optional = false)
-    @Column(name = "observer_name")
-    private String verifyingObserverName;
-    
-    @Basic(optional = false)
-    @Column(name = "observer_fn_sx")
-    private String verifyingObserverFamilyNameSoundex;
-    
-    @Basic(optional = false)
-    @Column(name = "observer_gn_sx")
-    private String verifyingObserverGivenNameSoundex;
-
-    @Basic(optional = false)
-    @Column(name = "observer_i_name")
-    private String verifyingObserverIdeographicName;
-
-    @Basic(optional = false)
-    @Column(name = "observer_p_name")
-    private String verifyingObserverPhoneticName;
+    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "observer_name_fk")
+    private PersonName verifyingObserverName;
 
     public VerifyingObserver() {}
 
     public VerifyingObserver(Attributes attrs, FuzzyStr fuzzyStr) {
         Date dt = attrs.getDate(Tag.VerificationDateTime);
         verificationDateTime = DateUtils.formatDT(null, dt);
-        PersonName pn = new PersonName(attrs.getString(Tag.VerifyingObserverName), true);
-        verifyingObserverName = pn.contains(PersonName.Group.Alphabetic) 
-                ? pn.toString(PersonName.Group.Alphabetic, false) : "*";
-        verifyingObserverIdeographicName = pn.contains(PersonName.Group.Ideographic)
-                ? pn.toString(PersonName.Group.Ideographic, false) : "*";
-        verifyingObserverPhoneticName = pn.contains(PersonName.Group.Phonetic)
-                ? pn.toString(PersonName.Group.Phonetic, false) : "*";
-        verifyingObserverFamilyNameSoundex = Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.FamilyName));
-        verifyingObserverGivenNameSoundex = Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.GivenName));
+        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.VerifyingObserverName), true);
+        verifyingObserverName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
     }
 
     public long getPk() {
@@ -122,23 +100,8 @@ public class VerifyingObserver implements Serializable {
         return verificationDateTime;
     }
 
-    public String getVerifyingObserverName() {
+    public PersonName getVerifyingObserverName() {
         return verifyingObserverName;
     }
 
-    public String getVerifyingObserverFamilyNameSoundex() {
-        return verifyingObserverFamilyNameSoundex;
-    }
-
-    public String getVerifyingObserverGivenNameSoundex() {
-        return verifyingObserverGivenNameSoundex;
-    }
-
-    public String getVerifyingObserverIdeographicName() {
-        return verifyingObserverIdeographicName;
-    }
-
-    public String getVerifyingObserverPhoneticName() {
-        return verifyingObserverPhoneticName;
-    }
 }

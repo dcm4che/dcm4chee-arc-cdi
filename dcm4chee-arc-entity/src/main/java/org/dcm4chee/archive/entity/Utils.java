@@ -145,11 +145,6 @@ public class Utils {
         attrs.setString(Tag.InstanceAvailability, VR.CS, availability.toString());
     }
 
-    public static String toFuzzy(FuzzyStr fuzzyStr, String s) {
-        String fuzzy = fuzzyStr.toFuzzy(s);
-        return fuzzy.length() == 0 ? "*" : fuzzy;
-    }
-
     public static String[] intersection(String[] ss1, String[] ss2) {
         int l = 0;
         for (int i = 0; i < ss1.length; i++)

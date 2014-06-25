@@ -70,6 +70,7 @@ import org.dcm4chee.archive.entity.BlobCorruptedException;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
+import org.dcm4chee.archive.entity.PersonName;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
@@ -175,7 +176,9 @@ public class PatientServiceTest {
                 true, 1);
         Attributes attrs = decodeAttributes(patients[0].getEncodedAttributes());
         Assert.assertSame(patients[0], patients[1]);
-        Assert.assertTrue(patients[0].getPatientName().contains("Bugs^Bunny"));
+        PersonName pn = patients[0].getPatientName();
+        Assert.assertEquals("Bugs", pn.getFamilyName());
+        Assert.assertEquals("Bunny", pn.getGivenName());
         Assert.assertTrue(attrs.getString(Tag.PatientName).contains("Bugs^Bunny"));
         LinkedList<PatientID> lstID = new LinkedList<PatientID>();
         PatientID id1 = new PatientID();
@@ -220,7 +223,9 @@ public class PatientServiceTest {
                 true, 2);
         Attributes attrs = decodeAttributes(patients[0].getEncodedAttributes());
         Assert.assertSame(patients[0], patients[1]);
-        Assert.assertTrue(patients[0].getPatientName().contains("Bugs^Bunny"));
+        PersonName pn = patients[0].getPatientName();
+        Assert.assertEquals("Bugs", pn.getFamilyName());
+        Assert.assertEquals("Bunny", pn.getGivenName());
         Assert.assertTrue(attrs.getString(Tag.PatientName).contains("Bugs^Bunny"));
         LinkedList<PatientID> lstID = new LinkedList<PatientID>();
         PatientID id1 = new PatientID();
@@ -272,7 +277,9 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         Set<IDWithIssuer> ids = IDWithIssuer.pidsOf(attrs);
         Assert.assertTrue(((IDWithIssuer)ids.toArray()[0]).getIssuer().toString().contains("G12345&G12345&ISO"));
         Assert.assertSame(patients[0], patients[1]);
-        Assert.assertTrue(patients[0].getPatientName().contains("Bugs^Bunny"));
+        PersonName pn = patients[0].getPatientName();
+        Assert.assertEquals("Bugs", pn.getFamilyName());
+        Assert.assertEquals("Bunny", pn.getGivenName());
         LinkedList<PatientID> lstID = new LinkedList<PatientID>();
         PatientID id1 = new PatientID();
         id1.setID("123");
@@ -333,7 +340,9 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         Set<IDWithIssuer> ids = IDWithIssuer.pidsOf(attrs);
         Assert.assertTrue(((IDWithIssuer)ids.toArray()[0]).getIssuer().toString().contains("G12345&G12345&ISO"));
         Assert.assertSame(patients[0], patients[1]);
-        Assert.assertTrue(patients[0].getPatientName().contains("Bugs^Bunny"));
+        PersonName pn = patients[0].getPatientName();
+        Assert.assertEquals("Bugs", pn.getFamilyName());
+        Assert.assertEquals("Bunny", pn.getGivenName());
         LinkedList<PatientID> lstID = new LinkedList<PatientID>();
         PatientID id1 = new PatientID();
         id1.setID("123");
@@ -402,8 +411,12 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         Assert.assertTrue(attrs0.getString(Tag.PatientName).contains("Bugs^Bunny"));
         Assert.assertTrue(attrs1.getString(Tag.PatientName).contains("Lola^Bunny"));
         Assert.assertNotSame(patients[0], patients[1]);
-        Assert.assertTrue(patients[0].getPatientName().contains("Bugs^Bunny"));
-        Assert.assertTrue(patients[1].getPatientName().contains("Lola^Bunny"));
+        PersonName pn = patients[0].getPatientName();
+        Assert.assertEquals("Bugs", pn.getFamilyName());
+        Assert.assertEquals("Bunny", pn.getGivenName());
+        PersonName pn1 = patients[1].getPatientName();
+        Assert.assertEquals("Lola", pn1.getFamilyName());
+        Assert.assertEquals("Bunny", pn1.getGivenName());
         Assert.assertEquals(
                 ((PatientID) patients[0].getPatientIDs().toArray()[0]).getID(),
                 "123");
@@ -452,8 +465,12 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         Assert.assertTrue(attrs1.getString(Tag.PatientName).contains("Lola^Bunny"));
         Assert.assertTrue(attrs1.getString(Tag.PatientID).contains("444"));
         Assert.assertNotSame(patients[0], patients[1]);
-        Assert.assertTrue(patients[0].getPatientName().contains("Bugs^Bunny"));
-        Assert.assertTrue(patients[1].getPatientName().contains("Lola^Bunny"));
+        PersonName pn = patients[0].getPatientName();
+        Assert.assertEquals("Bugs", pn.getFamilyName());
+        Assert.assertEquals("Bunny", pn.getGivenName());
+        PersonName pn1 = patients[1].getPatientName();
+        Assert.assertEquals("Lola", pn1.getFamilyName());
+        Assert.assertEquals("Bunny", pn1.getGivenName());
         Assert.assertEquals(
                 ((PatientID) patients[0].getPatientIDs().toArray()[0]).getID(),
                 "123");

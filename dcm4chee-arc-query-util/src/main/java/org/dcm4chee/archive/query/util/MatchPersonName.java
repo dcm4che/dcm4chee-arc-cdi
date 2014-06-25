@@ -40,136 +40,162 @@ package org.dcm4chee.archive.query.util;
 
 import org.dcm4che3.data.PersonName;
 import org.dcm4che3.soundex.FuzzyStr;
+import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.entity.QPersonName;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.types.ExpressionUtils;
 import com.mysema.query.types.Predicate;
-import com.mysema.query.types.expr.BooleanExpression;
 import com.mysema.query.types.path.StringPath;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  */
 class MatchPersonName {
 
-    static Predicate match(StringPath alphabethicName,
-            StringPath ideographicName, 
-            StringPath phoneticName,
-            StringPath familyNameSoundex,
-            StringPath givenNameSoundex, 
-            String value,
-            QueryParam queryParam) {
+
+    public static Predicate match(QPersonName qpn, String value, QueryParam queryParam) {
+
         if (value.equals("*"))
             return null;
 
         PersonName pn = new PersonName(value);
-        
-        return  queryParam.isFuzzySemanticMatching()
-            ? fuzzyMatch(familyNameSoundex, givenNameSoundex, pn, queryParam)
-            : literalMatch(alphabethicName, ideographicName, phoneticName, pn, queryParam);
+ 
+        return  QueryBuilder.matchUnknown(
+                    queryParam.isFuzzySemanticMatching()
+                        ? fuzzyMatch(qpn, pn, queryParam)
+                        : literalMatch(qpn, pn, queryParam),
+                    qpn,
+                    queryParam.isMatchUnknown());
     }
 
-    private static Predicate literalMatch(StringPath alphabethicName,
-            StringPath ideographicName, StringPath phoneticName,
+    private static Predicate literalMatch(QPersonName qpn,
             PersonName pn, QueryParam param) {
-        BooleanBuilder builder = new BooleanBuilder();
-        boolean matchUnknown = param.isMatchUnknown();
-        if (!pn.contains(PersonName.Group.Ideographic)
+         BooleanBuilder builder = new BooleanBuilder();
+         if (!pn.contains(PersonName.Group.Ideographic)
                 && !pn.contains(PersonName.Group.Phonetic)) {
-            String queryString = toQueryString(pn, PersonName.Group.Alphabetic);
-            builder.or(QueryBuilder.wildCard(alphabethicName, queryString, false, true));
-            builder.or(QueryBuilder.wildCard(ideographicName, queryString, false, false));
-            builder.or(QueryBuilder.wildCard(phoneticName, queryString, false, false));
-            if (matchUnknown) {
-                Predicate emptyName = ExpressionUtils.and(alphabethicName.eq("*"),
-                                      ExpressionUtils.and(ideographicName.eq("*"),
-                                                          phoneticName.eq("*")));
-                builder.or(emptyName);
-            }
+             builder.or(match(
+                     qpn.familyName,
+                     qpn.givenName,
+                     qpn.middleName, 
+                     pn, PersonName.Group.Alphabetic));
+             builder.or(match(
+                     qpn.ideographicFamilyName,
+                     qpn.ideographicGivenName,
+                     qpn.ideographicMiddleName,
+                     pn, PersonName.Group.Alphabetic));
+             builder.or(match(
+                     qpn.phoneticFamilyName,
+                     qpn.phoneticGivenName,
+                     qpn.phoneticMiddleName,
+                     pn, PersonName.Group.Alphabetic));
         } else {
-            builder.and(wildCard(alphabethicName, pn, PersonName.Group.Alphabetic, matchUnknown, true));
-            builder.and(wildCard(ideographicName, pn, PersonName.Group.Ideographic, matchUnknown, false));
-            builder.and(wildCard(phoneticName, pn, PersonName.Group.Phonetic, matchUnknown, false));
+            builder.and(match(
+                    qpn.familyName,
+                    qpn.givenName,
+                    qpn.middleName, 
+                    pn, PersonName.Group.Alphabetic));
+            builder.and(match(
+                    qpn.ideographicFamilyName,
+                    qpn.ideographicGivenName,
+                    qpn.ideographicMiddleName,
+                    pn, PersonName.Group.Ideographic));
+            builder.and(match(
+                    qpn.phoneticFamilyName,
+                    qpn.phoneticGivenName,
+                    qpn.phoneticMiddleName,
+                    pn, PersonName.Group.Phonetic));
         }
         return builder;
     }
 
-    private static Predicate wildCard(StringPath path,
-            PersonName pn, PersonName.Group group, boolean matchUnknown, boolean ignoreCase) {
-        return pn.contains(group)
-            ? QueryBuilder.wildCard(path, toQueryString(pn, group), matchUnknown, ignoreCase)
-            : null;
+    private static Predicate match(StringPath familyName,
+            StringPath givenName, StringPath middleName,
+            PersonName pn, PersonName.Group group) {
+        if (!pn.contains(group))
+            return null;
+
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(QueryBuilder.wildCard(familyName,
+                pn.get(group, PersonName.Component.FamilyName), false, true));
+        builder.and(QueryBuilder.wildCard(givenName,
+                pn.get(group, PersonName.Component.GivenName), false, true));
+        builder.and(QueryBuilder.wildCard(middleName,
+                pn.get(group, PersonName.Component.MiddleName), false, true));
+        return builder;
     }
 
-    private static String toQueryString(PersonName pn, PersonName.Group g) {
-        String s = pn.toString(g, true);
-        return (s.endsWith("*") || pn.contains(g, PersonName.Component.NameSuffix)) ? s : s + "^*";
-    }
-
-    private static Predicate fuzzyMatch(StringPath familyNameSoundex, StringPath givenNameSoundex,
+    private static Predicate fuzzyMatch(QPersonName qpn,
             PersonName pn, QueryParam param) {
         FuzzyStr fuzzyStr = param.getFuzzyStr();
-        String familyName = pn.get(PersonName.Component.FamilyName);
-        String fuzzyFamilyName = fuzzyStr.toFuzzy(familyName);
-        String givenName = pn.get(PersonName.Component.GivenName);
-        String fuzzyGivenName = fuzzyStr.toFuzzy(givenName);
-        return fuzzyFamilyName.length() > 0
-            ? fuzzyGivenName.length() > 0
-                    ? fuzzyMatch(familyNameSoundex, givenNameSoundex, familyName, fuzzyFamilyName, 
-                            givenName, fuzzyGivenName, param)
-                    : fuzzyMatch(familyNameSoundex, givenNameSoundex, familyName, fuzzyFamilyName, param)
-            : fuzzyGivenName.length() > 0
-                    ? fuzzyMatch(familyNameSoundex, givenNameSoundex, givenName, fuzzyGivenName, param)
-                    : null;
+        String familyName = StringUtils.maskNull(
+                pn.get(PersonName.Component.FamilyName), "*");
+        String givenName = StringUtils.maskNull(
+                pn.get(PersonName.Component.GivenName), "*");
+        return familyName.equals("*")
+                ? givenName.equals("*")
+                        ? null
+                        : fuzzyMatch(qpn, givenName, fuzzyStr)
+                : givenName.equals("*")
+                        ? fuzzyMatch(qpn, familyName, fuzzyStr)
+                        : fuzzyMatch(qpn, familyName, givenName, fuzzyStr);
+                
     }
 
-    private static Predicate fuzzyMatch(StringPath familyNameSoundex, StringPath givenNameSoundex,
-            String name, String fuzzyName, QueryParam param) {
-        BooleanBuilder builder = new BooleanBuilder()
-            .or(fuzzyWildCard(familyNameSoundex, name, fuzzyName))
-            .or(fuzzyWildCard(givenNameSoundex, name, fuzzyName));
-        if (param.isMatchUnknown())
-            builder.or(ExpressionUtils.and(
-                    givenNameSoundex.eq("*"),
-                    familyNameSoundex.eq("*")));
-        return builder;
-    }
-
-    private static Predicate fuzzyMatch(StringPath familyNameSoundex, StringPath givenNameSoundex,
-            String familyName, String fuzzyFamilyName, String givenName, String fuzzyGivenName, 
-            QueryParam param) {
-        Predicate names = ExpressionUtils.and(
-                fuzzyWildCard(givenNameSoundex, givenName, fuzzyGivenName),
-                fuzzyWildCard(familyNameSoundex, familyName, fuzzyFamilyName));
-        Predicate namesSwap = ExpressionUtils.and(
-                fuzzyWildCard(givenNameSoundex, familyName, fuzzyFamilyName),
-                fuzzyWildCard(familyNameSoundex, givenName, fuzzyGivenName));
-        BooleanBuilder builder = new BooleanBuilder().or(names).or(namesSwap);
-        if (param.isMatchUnknown()) {
-            BooleanExpression noFamilyNameSoundex = familyNameSoundex.eq("*");
-            BooleanExpression noGivenNameSoundex = givenNameSoundex.eq("*");
-            builder
-                .or(ExpressionUtils.and(
-                        fuzzyWildCard(givenNameSoundex, givenName, fuzzyGivenName),
-                        noFamilyNameSoundex))
-                .or(ExpressionUtils.and(
-                        fuzzyWildCard(familyNameSoundex, familyName, fuzzyFamilyName),
-                        noGivenNameSoundex))
-                .or(ExpressionUtils.and(
-                        fuzzyWildCard(givenNameSoundex, familyName, fuzzyFamilyName),
-                        noFamilyNameSoundex))
-                .or(ExpressionUtils.and(
-                        fuzzyWildCard(familyNameSoundex, givenName, fuzzyGivenName),
-                        noGivenNameSoundex))
-                .or(ExpressionUtils.and(noFamilyNameSoundex, noGivenNameSoundex));
+    private static Predicate fuzzyMatch(QPersonName qpn, String name,
+            FuzzyStr fuzzyStr) {
+        boolean wc = name.endsWith("*");
+        String fuzzyName = fuzzyStr.toFuzzy(name);
+        if (fuzzyName.isEmpty()) {
+            if (wc)
+                return null;
+            fuzzyName = "*";
         }
-        return builder;
+        return fuzzyMatch(qpn, wc, fuzzyName);
     }
 
-    private static Predicate fuzzyWildCard(StringPath field, String name, String fuzzy) {
-        return name.endsWith("*")
-            ? field.like(fuzzy.concat("%"))
-            : field.eq(fuzzy);
+    private static Predicate fuzzyMatch(QPersonName qpn, boolean wc,
+            String fuzzyName) {
+        return wc
+                ? ExpressionUtils.or(
+                    qpn.soundexFamilyName.startsWith(fuzzyName),
+                    qpn.soundexGivenName.startsWith(fuzzyName))
+                : ExpressionUtils.or(
+                    qpn.soundexFamilyName.eq(fuzzyName),
+                    qpn.soundexGivenName.eq(fuzzyName));
     }
+
+    private static Predicate fuzzyMatch(QPersonName qpn,
+            String familyName,
+            String givenName,
+            FuzzyStr fuzzyStr) {
+        boolean familyNameWC = familyName.endsWith("*");
+        String fuzzyFamilyName = fuzzyStr.toFuzzy(familyName);
+        if (fuzzyFamilyName.isEmpty()) {
+            if (familyNameWC)
+                return fuzzyMatch(qpn, givenName, fuzzyStr);
+            fuzzyFamilyName = "*";
+        }
+        boolean givenNameWC = givenName.endsWith("*");
+        String fuzzyGivenName = fuzzyStr.toFuzzy(givenName);
+        if (fuzzyGivenName.isEmpty()) {
+            if (givenNameWC)
+                return fuzzyMatch(qpn, familyNameWC, fuzzyFamilyName);
+            fuzzyGivenName = "*";
+        }
+        return ExpressionUtils.or(
+                ExpressionUtils.and(
+                    match(qpn.soundexFamilyName, familyNameWC, fuzzyFamilyName),
+                    match(qpn.soundexGivenName, givenNameWC, fuzzyGivenName)),
+                ExpressionUtils.and(
+                    match(qpn.soundexGivenName, familyNameWC, fuzzyFamilyName),
+                    match(qpn.soundexFamilyName, givenNameWC, fuzzyGivenName)));
+    }
+
+    private static Predicate match(StringPath path, boolean wc, String value) {
+        return wc ? path.startsWith(value) : path.eq(value);
+    }
+
 }

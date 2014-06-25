@@ -44,9 +44,9 @@ import java.util.Collection;
 import java.util.Date;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -57,13 +57,13 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
@@ -148,26 +148,6 @@ public class Study implements Serializable {
     private String accessionNumber;
 
     @Basic(optional = false)
-    @Column(name = "ref_physician")
-    private String referringPhysicianName;
-    
-    @Basic(optional = false)
-    @Column(name = "ref_phys_fn_sx")
-    private String referringPhysicianFamilyNameSoundex;
-    
-    @Basic(optional = false)
-    @Column(name = "ref_phys_gn_sx")
-    private String referringPhysicianGivenNameSoundex;
-
-    @Basic(optional = false)
-    @Column(name = "ref_phys_i_name")
-    private String referringPhysicianIdeographicName;
-
-    @Basic(optional = false)
-    @Column(name = "ref_phys_p_name")
-    private String referringPhysicianPhoneticName;
-
-    @Basic(optional = false)
     @Column(name = "study_desc")
     private String studyDescription;
 
@@ -224,6 +204,10 @@ public class Study implements Serializable {
 
     @Transient
     private Attributes cachedAttributes;
+
+    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "ref_phys_name_fk")
+    private PersonName referringPhysicianName;
 
     @ManyToOne
     @JoinColumn(name = "accno_issuer_fk")
@@ -313,24 +297,8 @@ public class Study implements Serializable {
         this.issuerOfAccessionNumber = issuerOfAccessionNumber;
     }
 
-    public String getReferringPhysicianName() {
+    public PersonName getReferringPhysicianName() {
         return referringPhysicianName;
-    }
-
-    public String getReferringPhysicianFamilyNameSoundex() {
-        return referringPhysicianFamilyNameSoundex;
-    }
-
-    public String getReferringPhysicianGivenNameSoundex() {
-        return referringPhysicianGivenNameSoundex;
-    }
-
-    public String getReferringPhysicianIdeographicName() {
-        return referringPhysicianIdeographicName;
-    }
-
-    public String getReferringPhysicianPhoneticName() {
-        return referringPhysicianPhoneticName;
     }
 
     public String getStudyDescription() {
@@ -506,17 +474,9 @@ public class Study implements Serializable {
             studyTime = "*";
         }
         accessionNumber = attrs.getString(Tag.AccessionNumber, "*");
-        PersonName pn = new PersonName(attrs.getString(Tag.ReferringPhysicianName), true);
-        referringPhysicianName = pn.contains(PersonName.Group.Alphabetic) 
-                ? pn.toString(PersonName.Group.Alphabetic, false) : "*";
-        referringPhysicianIdeographicName = pn.contains(PersonName.Group.Ideographic)
-                ? pn.toString(PersonName.Group.Ideographic, false) : "*";
-        referringPhysicianPhoneticName = pn.contains(PersonName.Group.Phonetic)
-                ? pn.toString(PersonName.Group.Phonetic, false) : "*";
-        referringPhysicianFamilyNameSoundex = Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.FamilyName));
-        referringPhysicianGivenNameSoundex = Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.GivenName));
+        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.ReferringPhysicianName), true);
+        referringPhysicianName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
         studyCustomAttribute1 = 
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
         studyCustomAttribute2 =

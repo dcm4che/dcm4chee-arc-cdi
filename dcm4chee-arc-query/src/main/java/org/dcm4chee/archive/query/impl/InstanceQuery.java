@@ -43,6 +43,7 @@ import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
+import org.dcm4chee.archive.entity.QPersonName;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Utils;
@@ -101,7 +102,10 @@ class InstanceQuery extends AbstractQuery {
             .innerJoin(QInstance.instance.series, QSeries.series)
             .innerJoin(QSeries.series.study, QStudy.study)
             .innerJoin(QStudy.study.patient, QPatient.patient)
+//            .leftJoin(QSeries.series.performingPhysicianName, QPersonName.personName)
+//            .leftJoin(QStudy.study.referringPhysicianName, QPersonName.personName)
             .leftJoin(QStudy.study.issuerOfAccessionNumber, QIssuer.issuer)
+//            .leftJoin(QPatient.patient.patientName, QPersonName.personName)
             .where(builder);
     }
 

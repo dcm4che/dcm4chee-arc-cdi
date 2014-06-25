@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -53,8 +52,6 @@ import javax.persistence.PersistenceContext;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.data.PersonName;
-import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
@@ -137,27 +134,10 @@ public class PatientServiceEJB implements PatientService {
     private Patient findPatientByDICOM(Collection<IDWithIssuer> pids,
             Attributes attrs, PatientSelector selector)
             throws NonUniquePatientException {
-        List<Patient> patients;
-        String pname;
-        if (!pids.isEmpty())
-            patients = findPatientByIDs(pids);
-        else if ((pname = attrs.getString(Tag.PatientName)) != null)
-            patients = findPatientByName(pname);
-        else
-            throw new NonUniquePatientException(
-                    "No Patient ID and no Patient Name");
+        if (pids.isEmpty())
+            throw new NonUniquePatientException("No Patient ID");
 
-        return selector.select(patients, attrs, pids);
-    }
-
-    private List<Patient> findPatientByName(String pn) {
-        return em
-                .createNamedQuery(Patient.FIND_BY_PATIENT_NAME, Patient.class)
-                .setParameter(
-                        1,
-                        new PersonName(pn, true).toString(
-                                PersonName.Group.Alphabetic, false))
-                .getResultList();
+        return selector.select(findPatientByIDs(pids), attrs, pids);
     }
 
     private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {

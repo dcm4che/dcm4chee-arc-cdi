@@ -58,9 +58,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
@@ -68,7 +67,6 @@ import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
-import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -82,19 +80,11 @@ import org.dcm4chee.archive.entity.ext.PatientExtension;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
-@NamedQueries({
-@NamedQuery(
-    name="Patient.findByPatientName",
-    query="SELECT p FROM Patient p WHERE UPPER(p.patientName) = UPPER(?1)")
-})
 @Entity
 @Table(name = "patient")
 public class Patient implements Serializable {
 
     private static final long serialVersionUID = 6430339764844147679L;
-
-    public static final String FIND_BY_PATIENT_NAME =
-            "Patient.findByPatientName";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -108,26 +98,6 @@ public class Patient implements Serializable {
     @Basic(optional = false)
     @Column(name = "updated_time")
     private Date updatedTime;
-
-    @Basic(optional = false)
-    @Column(name = "pat_name")
-    private String patientName;
-
-    @Basic(optional = false)
-    @Column(name = "pat_fn_sx")
-    private String patientFamilyNameSoundex;
-
-    @Basic(optional = false)
-    @Column(name = "pat_gn_sx")
-    private String patientGivenNameSoundex;
-
-    @Basic(optional = false)
-    @Column(name = "pat_i_name")
-    private String patientIdeographicName;
-
-    @Basic(optional = false)
-    @Column(name = "pat_p_name")
-    private String patientPhoneticName;
 
     @Basic(optional = false)
     @Column(name = "pat_birthdate")
@@ -158,6 +128,10 @@ public class Patient implements Serializable {
 
     @Transient
     private Attributes cachedAttributes;
+
+    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "pat_name_fk")
+    private PersonName patientName;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "merge_fk")
@@ -217,26 +191,6 @@ public class Patient implements Serializable {
         return updatedTime;
     }
 
-    public String getPatientName() {
-        return patientName;
-    }
-
-    public String getPatientFamilyNameSoundex() {
-        return patientFamilyNameSoundex;
-    }
-
-    public String getPatientGivenNameSoundex() {
-        return patientGivenNameSoundex;
-    }
-
-    public String getPatientIdeographicName() {
-        return patientIdeographicName;
-    }
-
-    public String getPatientPhoneticName() {
-        return patientPhoneticName;
-    }
-
     public String getPatientBirthDate() {
         return patientBirthDate;
     }
@@ -267,6 +221,14 @@ public class Patient implements Serializable {
 
     public Patient getMergedWith() {
         return mergedWith;
+    }
+
+    public PersonName getPatientName() {
+        return patientName;
+    }
+
+    public void setPatientName(PersonName patientName) {
+        this.patientName = patientName;
     }
 
     public void setMergedWith(Patient mergedWith) {
@@ -316,17 +278,9 @@ public class Patient implements Serializable {
     }
 
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
-        PersonName pn = new PersonName(attrs.getString(Tag.PatientName), true);
-        patientName = pn.contains(PersonName.Group.Alphabetic) 
-                ? pn.toString(PersonName.Group.Alphabetic, false) : "*";
-        patientIdeographicName = pn.contains(PersonName.Group.Ideographic)
-                ? pn.toString(PersonName.Group.Ideographic, false) : "*";
-        patientPhoneticName = pn.contains(PersonName.Group.Phonetic)
-                ? pn.toString(PersonName.Group.Phonetic, false) : "*";
-        patientFamilyNameSoundex = Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.FamilyName));
-        patientGivenNameSoundex =  Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.GivenName));
+        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.PatientName), true);
+        patientName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
         patientBirthDate = attrs.getString(Tag.PatientBirthDate, "*");
         patientSex = attrs.getString(Tag.PatientSex, "*").toUpperCase();
 

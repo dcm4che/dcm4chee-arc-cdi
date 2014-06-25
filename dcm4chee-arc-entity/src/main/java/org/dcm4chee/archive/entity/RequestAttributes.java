@@ -40,6 +40,7 @@ package org.dcm4chee.archive.entity;
 import java.io.Serializable;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -48,10 +49,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 
@@ -93,26 +94,10 @@ public class RequestAttributes implements Serializable {
     @Column(name = "req_service")
     private String requestingService;
 
-    @Basic(optional = false)
-    @Column(name = "req_physician")
-    private String requestingPhysician;
+    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "req_phys_name_fk")
+    private PersonName requestingPhysician;
     
-    @Basic(optional = false)
-    @Column(name = "req_phys_fn_sx")
-    private String requestingPhysicianFamilyNameSoundex;
-    
-    @Basic(optional = false)
-    @Column(name = "req_phys_gn_sx")
-    private String requestingPhysicianGivenNameSoundex;
-
-    @Basic(optional = false)
-    @Column(name = "req_phys_i_name")
-    private String requestingPhysicianIdeographicName;
-
-    @Basic(optional = false)
-    @Column(name = "req_phys_p_name")
-    private String requestingPhysicianPhoneticName;
-
     @ManyToOne
     @JoinColumn(name = "accno_issuer_fk")
     private Issuer issuerOfAccessionNumber;
@@ -132,17 +117,9 @@ public class RequestAttributes implements Serializable {
         scheduledProcedureStepID = attrs.getString(
                 Tag.ScheduledProcedureStepID, "*");
         requestingService = attrs.getString(Tag.RequestingService, "*");
-        PersonName pn = new PersonName(attrs.getString(Tag.RequestingPhysician), true);
-        requestingPhysician = pn.contains(PersonName.Group.Alphabetic) 
-                ? pn.toString(PersonName.Group.Alphabetic, false) : "*";
-        requestingPhysicianIdeographicName = pn.contains(PersonName.Group.Ideographic)
-                ? pn.toString(PersonName.Group.Ideographic, false) : "*";
-                requestingPhysicianPhoneticName = pn.contains(PersonName.Group.Phonetic)
-                ? pn.toString(PersonName.Group.Phonetic, false) : "*";
-        requestingPhysicianFamilyNameSoundex = Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.FamilyName));
-        requestingPhysicianGivenNameSoundex =  Utils.toFuzzy(fuzzyStr,
-                pn.get(PersonName.Component.GivenName));
+        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.RequestingPhysician), true);
+        requestingPhysician = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
     }
 
     public long getPk() {
@@ -165,16 +142,8 @@ public class RequestAttributes implements Serializable {
         return requestingService;
     }
 
-    public String getRequestingPhysician() {
+    public PersonName getRequestingPhysician() {
         return requestingPhysician;
-    }
-
-    public String getRequestingPhysicianIdeographicName() {
-        return requestingPhysicianIdeographicName;
-    }
-
-    public String getRequestingPhysicianPhoneticName() {
-        return requestingPhysicianPhoneticName;
     }
 
     public String getAccessionNumber() {
@@ -183,24 +152,6 @@ public class RequestAttributes implements Serializable {
 
     public void setAccessionNumber(String accessionNumber) {
         this.accessionNumber = accessionNumber;
-    }
-
-    public String getRequestingPhysicianFamilyNameSoundex() {
-        return requestingPhysicianFamilyNameSoundex;
-    }
-
-    public void setRequestingPhysicianFamilyNameSoundex(
-            String requestingPhysicianFamilyNameSoundex) {
-        this.requestingPhysicianFamilyNameSoundex = requestingPhysicianFamilyNameSoundex;
-    }
-
-    public String getRequestingPhysicianGivenNameSoundex() {
-        return requestingPhysicianGivenNameSoundex;
-    }
-
-    public void setRequestingPhysicianGivenNameSoundex(
-            String requestingPhysicianGivenNameSoundex) {
-        this.requestingPhysicianGivenNameSoundex = requestingPhysicianGivenNameSoundex;
     }
 
     public Issuer getIssuerOfAccessionNumber() {

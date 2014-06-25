@@ -52,17 +52,16 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
-import org.dcm4chee.archive.conf.AttributeFilter;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -126,26 +125,6 @@ public class MWLItem implements Serializable {
     private String scheduledStartTime;
 
     @Basic(optional = false)
-    @Column(name = "perf_phys_name")
-    private String scheduledPerformingPhysicianName;
-    
-    @Basic(optional = false)
-    @Column(name = "perf_phys_i_name")
-    private String scheduledPerformingPhysicianIdeographicName;
-
-    @Basic(optional = false)
-    @Column(name = "perf_phys_p_name")
-    private String scheduledPerformingPhysicianPhoneticName;
-
-    @Basic(optional = false)
-    @Column(name = "perf_phys_fn_sx")
-    private String scheduledPerformingPhysicianFamilyNameSoundex;
-    
-    @Basic(optional = false)
-    @Column(name = "perf_phys_gn_sx")
-    private String scheduledPerformingPhysicianGivenNameSoundex;
-
-    @Basic(optional = false)
     @Column(name = "sps_status")
     private String status;
 
@@ -155,6 +134,10 @@ public class MWLItem implements Serializable {
 
     @Transient
     private Attributes cachedAttributes;
+
+    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "perf_phys_name_fk")
+    private PersonName scheduledPerformingPhysicianName;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "mwl_item_fk")
@@ -204,24 +187,8 @@ public class MWLItem implements Serializable {
         return scheduledStartTime;
     }
 
-    public String getScheduledPerformingPhysicianName() {
+    public PersonName getScheduledPerformingPhysicianName() {
         return scheduledPerformingPhysicianName;
-    }
-
-    public String getScheduledPerformingPhysicianIdeographicName() {
-        return scheduledPerformingPhysicianIdeographicName;
-    }
-
-    public String getScheduledPerformingPhysicianPhoneticName() {
-        return scheduledPerformingPhysicianPhoneticName;
-    }
-
-    public String getScheduledPerformingPhysicianFamilyNameSoundex() {
-        return scheduledPerformingPhysicianFamilyNameSoundex;
-    }
-
-    public String getScheduledPerformingPhysicianGivenNameSoundex() {
-        return scheduledPerformingPhysicianGivenNameSoundex;
     }
 
     public String getStatus() {
@@ -291,17 +258,9 @@ public class MWLItem implements Serializable {
             scheduledStartDate = "*";
             scheduledStartTime = "*";
         }
-        PersonName pn = new PersonName(spsItem.getString(Tag.ScheduledPerformingPhysicianName), true);
-        scheduledPerformingPhysicianName = pn.contains(PersonName.Group.Alphabetic) 
-                ? pn.toString(PersonName.Group.Alphabetic, false) : "*";
-        scheduledPerformingPhysicianIdeographicName = pn.contains(PersonName.Group.Ideographic)
-                ? pn.toString(PersonName.Group.Ideographic, false) : "*";
-        scheduledPerformingPhysicianPhoneticName = pn.contains(PersonName.Group.Phonetic)
-                ? pn.toString(PersonName.Group.Phonetic, false) : "*";
-        scheduledPerformingPhysicianFamilyNameSoundex = 
-                Utils.toFuzzy(fuzzyStr, pn.get(PersonName.Component.FamilyName));
-        scheduledPerformingPhysicianGivenNameSoundex =
-                Utils.toFuzzy(fuzzyStr, pn.get(PersonName.Component.GivenName));
+        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.ScheduledPerformingPhysicianName), true);
+        scheduledPerformingPhysicianName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
         status = spsItem.getString(Tag.ScheduledProcedureStepStatus, SCHEDULED);
         
         requestedProcedureID = attrs.getString(Tag.RequestedProcedureID);

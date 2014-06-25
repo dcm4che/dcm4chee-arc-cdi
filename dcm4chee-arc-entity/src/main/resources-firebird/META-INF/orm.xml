@@ -98,6 +98,17 @@
     </attributes>
   </entity>
 
+  <entity class="PersonName">
+    <table name="person_name" />
+    <sequence-generator name="seq" sequence-name="person_name_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
   <entity class="Patient">
     <table name="patient" />
     <sequence-generator name="seq" sequence-name="patient_pk_seq" allocation-size="1" />

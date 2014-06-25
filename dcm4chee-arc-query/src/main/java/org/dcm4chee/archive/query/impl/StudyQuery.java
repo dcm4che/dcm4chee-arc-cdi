@@ -42,6 +42,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
+import org.dcm4chee.archive.entity.QPersonName;
 import org.dcm4chee.archive.entity.QRequestAttributes;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Utils;
@@ -106,6 +107,8 @@ class StudyQuery extends AbstractQuery {
             .from(QStudy.study)
             .innerJoin(QStudy.study.patient, QPatient.patient)
             .leftJoin(QStudy.study.issuerOfAccessionNumber, QIssuer.issuer)
+//            .leftJoin(QStudy.study.referringPhysicianName, QPersonName.personName)
+//            .leftJoin(QPatient.patient.patientName, QPersonName.personName)
             .where(builder);
     }
 

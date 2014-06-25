@@ -52,19 +52,17 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
@@ -188,26 +186,6 @@ public class Series implements Serializable {
     private String laterality;
 
     @Basic(optional = false)
-    @Column(name = "perf_phys_name")
-    private String performingPhysicianName;
-    
-    @Basic(optional = false)
-    @Column(name = "perf_phys_fn_sx")
-    private String performingPhysicianFamilyNameSoundex;
-    
-    @Basic(optional = false)
-    @Column(name = "perf_phys_gn_sx")
-    private String performingPhysicianGivenNameSoundex;
-
-    @Basic(optional = false)
-    @Column(name = "perf_phys_i_name")
-    private String performingPhysicianIdeographicName;
-
-    @Basic(optional = false)
-    @Column(name = "perf_phys_p_name")
-    private String performingPhysicianPhoneticName;
-
-    @Basic(optional = false)
     @Column(name = "pps_start_date")
     private String performedProcedureStepStartDate;
 
@@ -262,6 +240,10 @@ public class Series implements Serializable {
 
     @Transient
     private Attributes cachedAttributes;
+
+    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "perf_phys_name_fk")
+    private PersonName performingPhysicianName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inst_code_fk")
@@ -361,24 +343,8 @@ public class Series implements Serializable {
         return laterality;
     }
 
-    public String getPerformingPhysicianName() {
+    public PersonName getPerformingPhysicianName() {
         return performingPhysicianName;
-    }
-
-    public String getPerformingPhysicianFamilyNameSoundex() {
-        return performingPhysicianFamilyNameSoundex;
-    }
-
-    public String getPerformingPhysicianGivenNameSoundex() {
-        return performingPhysicianGivenNameSoundex;
-    }
-
-    public String getPerformingPhysicianIdeographicName() {
-        return performingPhysicianIdeographicName;
-    }
-
-    public String getPerformingPhysicianPhoneticName() {
-        return performingPhysicianPhoneticName;
     }
 
     public String getPerformedProcedureStepStartDate() {
@@ -397,7 +363,7 @@ public class Series implements Serializable {
         return performedProcedureStepClassUID;
     }
 
-   public String getSeriesCustomAttribute1() {
+    public String getSeriesCustomAttribute1() {
         return seriesCustomAttribute1;
     }
 
@@ -553,25 +519,9 @@ public class Series implements Serializable {
             performedProcedureStepStartDate = "*";
             performedProcedureStepStartTime = "*";
         }
-        PersonName pn = new PersonName(attrs.getString(Tag.PerformingPhysicianName), true);
-        if (pn.isEmpty()) {
-            performingPhysicianName = "*";
-            performingPhysicianIdeographicName = "*";
-            performingPhysicianPhoneticName = "*";
-            performingPhysicianFamilyNameSoundex = "*";
-            performingPhysicianGivenNameSoundex = "*";
-        } else {
-            performingPhysicianName = pn.contains(PersonName.Group.Alphabetic) 
-                    ? pn.toString(PersonName.Group.Alphabetic, false) : "*";
-            performingPhysicianIdeographicName = pn.contains(PersonName.Group.Ideographic)
-                    ? pn.toString(PersonName.Group.Ideographic, false) : "*";
-            performingPhysicianPhoneticName = pn.contains(PersonName.Group.Phonetic)
-                    ? pn.toString(PersonName.Group.Phonetic, false) : "*";
-            performingPhysicianFamilyNameSoundex = Utils.toFuzzy(fuzzyStr,
-                    pn.get(PersonName.Component.FamilyName));
-            performingPhysicianGivenNameSoundex = Utils.toFuzzy(fuzzyStr,
-                    pn.get(PersonName.Component.GivenName));
-        }
+        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.PerformingPhysicianName), true);
+        performingPhysicianName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
         seriesCustomAttribute1 = 
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
         seriesCustomAttribute2 =

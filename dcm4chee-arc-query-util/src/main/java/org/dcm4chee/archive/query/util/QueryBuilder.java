@@ -59,6 +59,7 @@ import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QPatientID;
+import org.dcm4chee.archive.entity.QPersonName;
 import org.dcm4chee.archive.entity.QRequestAttributes;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.entity.QStudy;
@@ -66,7 +67,6 @@ import org.dcm4chee.archive.entity.QVerifyingObserver;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateSubQuery;
-import com.mysema.query.types.EntityPath;
 import com.mysema.query.types.ExpressionUtils;
 import com.mysema.query.types.Predicate;
 import com.mysema.query.types.expr.BooleanExpression;
@@ -120,8 +120,8 @@ public class QueryBuilder {
                     return QSeries.series.performedProcedureStepStartDate;
                 case Tag.PerformedProcedureStepStartTime:
                     return QSeries.series.performedProcedureStepStartTime;
-                case Tag.PerformingPhysicianName:
-                    return QSeries.series.performingPhysicianName;
+//                case Tag.PerformingPhysicianName:
+//                    return QSeries.series.performingPhysicianName;
                 case Tag.SeriesDescription:
                     return QSeries.series.seriesDescription;
                 case Tag.StationName:
@@ -141,8 +141,8 @@ public class QueryBuilder {
                     return QStudy.study.studyDate;
                 case Tag.StudyTime:
                     return QStudy.study.studyTime;
-                case Tag.ReferringPhysicianName:
-                    return QStudy.study.referringPhysicianName;
+//                case Tag.ReferringPhysicianName:
+//                    return QStudy.study.referringPhysicianName;
                 case Tag.StudyDescription:
                     return QStudy.study.studyDescription;
                 case Tag.AccessionNumber:
@@ -152,8 +152,8 @@ public class QueryBuilder {
                 }
             case PATIENT:
                 switch (tag) {
-                case Tag.PatientName:
-                    return QPatient.patient.patientName;
+//                case Tag.PatientName:
+//                    return QPatient.patient.patientName;
                 case Tag.PatientSex:
                     return QPatient.patient.patientSex;
                 case Tag.PatientBirthDate:
@@ -174,10 +174,6 @@ public class QueryBuilder {
             return;
 
         builder.and(MatchPersonName.match(QPatient.patient.patientName,
-                QPatient.patient.patientIdeographicName,
-                QPatient.patient.patientPhoneticName,
-                QPatient.patient.patientFamilyNameSoundex,
-                QPatient.patient.patientGivenNameSoundex,
                 keys.getString(Tag.PatientName, "*"),
                 queryParam));
         builder.and(wildCard(QPatient.patient.patientSex,
@@ -207,10 +203,6 @@ public class QueryBuilder {
                     Tag.StudyDate, Tag.StudyTime, Tag.StudyDateAndTime, 
                     keys, combinedDatetimeMatching, matchUnknown));
             builder.and(MatchPersonName.match(QStudy.study.referringPhysicianName,
-                    QStudy.study.referringPhysicianIdeographicName,
-                    QStudy.study.referringPhysicianPhoneticName,
-                    QStudy.study.referringPhysicianFamilyNameSoundex,
-                    QStudy.study.referringPhysicianGivenNameSoundex,
                     keys.getString(Tag.ReferringPhysicianName, "*"),
                     queryParam));
             builder.and(wildCard(QStudy.study.studyDescription,
@@ -276,10 +268,6 @@ public class QueryBuilder {
                 Tag.PerformedProcedureStepStartDateAndTime,
                 keys, queryParam.isCombinedDatetimeMatching(), matchUnknown));
         builder.and(MatchPersonName.match(QSeries.series.performingPhysicianName,
-                QSeries.series.performingPhysicianIdeographicName,
-                QSeries.series.performingPhysicianPhoneticName,
-                QSeries.series.performingPhysicianFamilyNameSoundex,
-                QSeries.series.performingPhysicianGivenNameSoundex,
                 keys.getString(Tag.PerformingPhysicianName, "*"),
                 queryParam));
         builder.and(wildCard(QSeries.series.seriesDescription,
@@ -595,10 +583,6 @@ public class QueryBuilder {
                       matchUnknown, true));
         builder.and(MatchPersonName.match(
                 QRequestAttributes.requestAttributes.requestingPhysician,
-                QRequestAttributes.requestAttributes.requestingPhysicianIdeographicName,
-                QRequestAttributes.requestAttributes.requestingPhysicianPhoneticName,
-                QRequestAttributes.requestAttributes.requestingPhysicianFamilyNameSoundex,
-                QRequestAttributes.requestAttributes.requestingPhysicianGivenNameSoundex,
                 item.getString(Tag.ReferringPhysicianName, "*"),
                 queryParam));
         builder.and(wildCard(QRequestAttributes.requestAttributes.requestedProcedureID,
@@ -616,6 +600,7 @@ public class QueryBuilder {
         return matchUnknown(
                 new HibernateSubQuery()
                     .from(QRequestAttributes.requestAttributes)
+                    .leftJoin(QRequestAttributes.requestAttributes.requestingPhysician, QPersonName.personName)
                     .leftJoin(QRequestAttributes.requestAttributes.issuerOfAccessionNumber, QIssuer.issuer)
                     .where(QSeries.series.requestAttributes.contains(
                                 QRequestAttributes.requestAttributes),
@@ -636,10 +621,6 @@ public class QueryBuilder {
                         Tag.VerificationDateTime, MatchDateTimeRange.FormatDate.DT, matchUnknown),
                     MatchPersonName.match(
                         QVerifyingObserver.verifyingObserver.verifyingObserverName,
-                        QVerifyingObserver.verifyingObserver.verifyingObserverIdeographicName,
-                        QVerifyingObserver.verifyingObserver.verifyingObserverPhoneticName,
-                        QVerifyingObserver.verifyingObserver.verifyingObserverFamilyNameSoundex,
-                        QVerifyingObserver.verifyingObserver.verifyingObserverGivenNameSoundex,
                         item.getString(Tag.VerifyingObserverName, "*"),
                         queryParam));
 
@@ -649,6 +630,8 @@ public class QueryBuilder {
         return matchUnknown(
                 new HibernateSubQuery()
                     .from(QVerifyingObserver.verifyingObserver)
+                    .leftJoin(QVerifyingObserver.verifyingObserver.verifyingObserverName,
+                            QPersonName.personName)
                     .where(QInstance.instance.verifyingObservers
                             .contains(QVerifyingObserver.verifyingObserver),
                             predicate)

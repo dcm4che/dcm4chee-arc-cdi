@@ -72,4 +72,113 @@ alter table series_req
     add constraint FKE38CD2D6C45E7AAD 
     foreign key (accno_issuer_fk) 
     references issuer (pk);
-    
+
+create table person_name (
+    pk bigint not null auto_increment,
+    family_name varchar(255),
+    given_name varchar(255),
+    i_family_name varchar(255),
+    i_given_name varchar(255),
+    i_middle_name varchar(255),
+    middle_name varchar(255),
+    p_family_name varchar(255),
+    p_given_name varchar(255),
+    p_middle_name varchar(255),
+    prefix varchar(255),
+    sx_family_name varchar(255),
+    sx_given_name varchar(255),
+    sx_middle_name varchar(255),
+    suffix varchar(255),
+    primary key (pk)
+) ENGINE=InnoDB;
+
+create index family_name_idx on person_name (family_name);
+create index given_name_idx on person_name (given_name);
+create index middle_name_idx on person_name (middle_name);
+create index i_family_name_idx on person_name (i_family_name);
+create index i_given_name_idx on person_name (i_given_name);
+create index i_middle_name_idx on person_name (i_middle_name);
+create index p_family_name_idx on person_name (p_family_name);
+create index p_given_name_idx on person_name (p_given_name);
+create index p_middle_name_idx on person_name (p_middle_name);
+create index sx_family_name_idx on person_name (sx_family_name);
+create index sx_given_name_idx on person_name (sx_given_name);
+create index sx_middle_name_idx on person_name (sx_middle_name);
+
+alter table patient
+    drop pat_name,
+    drop pat_i_name,
+    drop pat_p_name,
+    drop pat_fn_sx,
+    drop pat_gn_sx,
+    add pat_name_fk bigint;
+
+alter table patient 
+    add constraint FKD0D3EB05E7945C3 
+    foreign key (pat_name_fk) 
+    references person_name (pk);
+
+alter table study
+    drop ref_physician,
+    drop ref_phys_i_name,
+    drop ref_phys_p_name,
+    drop ref_phys_fn_sx,
+    drop ref_phys_gn_sx,
+    add ref_phys_name_fk bigint;
+
+alter table study 
+    add constraint FK68B0DC97F2DAD5E 
+    foreign key (ref_phys_name_fk) 
+    references person_name (pk);
+
+alter table series
+    drop perf_phys_name,
+    drop perf_phys_i_name,
+    drop perf_phys_p_name,
+    drop perf_phys_fn_sx,
+    drop perf_phys_gn_sx,
+    add perf_phys_name_fk bigint;
+
+alter table series 
+    add constraint FKCA01FE77E53AEEC8 
+    foreign key (perf_phys_name_fk) 
+    references person_name (pk);
+
+alter table series_req
+    drop req_physician,
+    drop req_phys_i_name,
+    drop req_phys_p_name,
+    drop req_phys_fn_sx,
+    drop req_phys_gn_sx,
+    add req_phys_name_fk bigint;
+
+alter table series_req 
+    add constraint FKE38CD2D633B55733 
+    foreign key (req_phys_name_fk) 
+    references person_name (pk);
+
+alter table verify_observer
+    drop observer_name,
+    drop observer_i_name,
+    drop observer_p_name,
+    drop observer_fn_sx,
+    drop observer_gn_sx,
+    add observer_name_fk bigint;
+
+alter table verify_observer 
+    add constraint FKC9DB73DC661F04F6 
+    foreign key (observer_name_fk) 
+    references person_name (pk);
+
+alter table mwl_item
+    drop perf_phys_name,
+    drop perf_phys_i_name,
+    drop perf_phys_p_name,
+    drop perf_phys_fn_sx,
+    drop perf_phys_gn_sx,
+    add perf_phys_name_fk bigint;
+
+alter table mwl_item 
+    add constraint FK8F9D3D30E53AEEC8 
+    foreign key (perf_phys_name_fk) 
+    references person_name (pk);
