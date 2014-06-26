@@ -415,7 +415,8 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
-        if (context.getStoreAction() != StoreAction.IGNORE) {
+        if (context.getStoreAction() != StoreAction.IGNORE
+                && context.getFinalFile() != null) {
             context.setFileRef(createFileRef(em, context, instance));
         }
     }

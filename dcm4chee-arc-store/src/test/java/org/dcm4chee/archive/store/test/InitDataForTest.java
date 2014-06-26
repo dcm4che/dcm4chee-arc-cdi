@@ -38,14 +38,7 @@
 
 package org.dcm4chee.archive.store.test;
 
-import java.io.File;
-import java.util.Map;
-
-import javax.annotation.Resource;
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.transaction.UserTransaction;
 
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
@@ -59,17 +52,11 @@ import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.arquillian.transaction.api.annotation.TransactionMode;
-import org.jboss.arquillian.transaction.api.annotation.Transactional;
-import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.impl.base.path.BasicPath;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.jboss.shrinkwrap.resolver.api.maven.MavenResolvedArtifact;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -89,11 +76,11 @@ public class InitDataForTest {
     @Inject
     private StoreService storeService; 
     
-    @PersistenceContext
-    EntityManager em;
-    
-    @Resource
-    UserTransaction utx;
+//    @PersistenceContext
+//    EntityManager em;
+//    
+//    @Resource
+//    UserTransaction utx;
     
     private static final String[] INSTANCES = {
         "testdata/date-range-1.xml",
@@ -140,25 +127,20 @@ public class InitDataForTest {
         WebArchive war= ShrinkWrap.create(WebArchive.class, "test.war");
         war.addClass(InitDataForTest.class);
         war.addClass(ParamFactory.class);
-        JavaArchive[] archs =   Maven.resolver().loadPomFromFile("testpom.xml").importRuntimeAndTestDependencies().resolve().withTransitivity().as(JavaArchive.class);
-        JavaArchive storeDependency = Maven.resolver().resolve("org.dcm4che.dcm4chee-arc:dcm4chee-arc-store:4.4.0-SNAPSHOT").withoutTransitivity().asSingle(JavaArchive.class);
-        
-        storeDependency.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-        war.addAsLibraries(storeDependency);
-        war.addAsLibraries(archs);
-//        for(JavaArchive a: archs)
-//        {
-//            a.addAsManifestResource(EmptyAsset.INSTANCE,"beans.xml");
-//            war.addAsLibrary(a);
-//        }
+        JavaArchive[] archs =   Maven.resolver()
+                .loadPomFromFile("testpom.xml")
+                .importRuntimeAndTestDependencies()
+                .resolve().withTransitivity()
+                .as(JavaArchive.class);
+        for(JavaArchive a: archs) {
+            a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+            war.addAsLibrary(a);
+        }
         for (String resourceName : INSTANCES)
             war.addAsResource(resourceName);
-        //war.addAsManifestResource("testdata/beans.xml","beans.xml");
-        
         return war;
     }
     @Test
-    @Transactional(TransactionMode.ROLLBACK)
     public void testInitData() throws Exception {
         log.info("Started test");
         StoreParam storeParam = ParamFactory.createStoreParam();
@@ -173,18 +155,16 @@ public class InitDataForTest {
         session.setSource(new GenericParticipant("localhost", "testidentity"));
         session.setRemoteAET(SOURCE_AET);
         //Store context only needs the attributes and the store session earlier created
-        utx.begin();
-        em.joinTransaction();
-        for (String res : INSTANCES)
-        {
+//        utx.begin();
+//        em.joinTransaction();
+        for (String res : INSTANCES) {
             StoreContext storeContext = storeService.createStoreContext(session);
-                Attributes tmpAtts=load(res);
-                storeContext.setAttributes(tmpAtts);
-                storeService.createInstance(em, storeContext);
+            storeContext.setAttributes(load(res));
+            storeService.updateDB(storeContext);
         }
-        utx.commit();
+//        utx.commit();
         // clear the persistence context (first-level cache)
-        em.clear();
+//        em.clear();
      
     }
     private Attributes load(String name) throws Exception {

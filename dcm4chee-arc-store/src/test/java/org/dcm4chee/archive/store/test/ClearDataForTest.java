@@ -38,14 +38,11 @@
 
 package org.dcm4chee.archive.store.test;
 
-import java.io.File;
-
 import javax.inject.Inject;
 
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientService;
-import org.dcm4chee.archive.store.StoreService;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -92,12 +89,17 @@ public class ClearDataForTest {
         WebArchive war= ShrinkWrap.create(WebArchive.class, "test.war");
         war.addClass(InitDataForTest.class);
         war.addClass(ParamFactory.class);
-        File[] libs =  Maven.resolver().loadPomFromFile("testpom.xml").importTestDependencies().importRuntimeAndTestDependencies().resolve().withoutTransitivity().asFile();
-        JavaArchive storeDependency = Maven.resolver().resolve("org.dcm4che.dcm4chee-arc:dcm4chee-arc-store:4.4.0-SNAPSHOT").withoutTransitivity().asSingle(JavaArchive.class);
+        JavaArchive[] archs =   Maven.resolver()
+                .loadPomFromFile("testpom.xml")
+                .importRuntimeAndTestDependencies()
+                .resolve().withTransitivity()
+                .as(JavaArchive.class);
+        for(JavaArchive a: archs) {
+            a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+            war.addAsLibrary(a);
+        }
         
-        storeDependency.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-        war.addAsLibraries(storeDependency);
-        war.addAsLibraries(libs);
+        war.addAsLibraries(archs);
         return war;
     }
 

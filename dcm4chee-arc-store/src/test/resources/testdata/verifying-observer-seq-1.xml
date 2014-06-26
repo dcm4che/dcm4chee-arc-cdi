@@ -22,7 +22,7 @@
 <Value number="1">SR</Value>
 </DicomAttribute>
 <DicomAttribute keyword="StudyDescription" tag="00081030" vr="LO">
-<Value number="1">Test Verifying Observer Sequence </Value>
+<Value number="1">Test Verifying Observer Sequence</Value>
 </DicomAttribute>
 <DicomAttribute keyword="PatientName" tag="00100010" vr="PN">
 <PersonName number="1">
