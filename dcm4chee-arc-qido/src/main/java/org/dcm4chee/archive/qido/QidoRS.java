@@ -60,7 +60,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
-import javax.xml.transform.Templates;
 import javax.xml.transform.stream.StreamResult;
 
 import org.dcm4che3.data.Attributes;
@@ -136,8 +135,6 @@ public class QidoRS {
 
     private final static int[] STUDY_SERIES_INSTANCE_FIELDS =
             catAndSort(STUDY_SERIES_FIELDS, INSTANCE_FIELDS);
-
-    private volatile static Templates jsonTpls;
 
     private String aetitle;
     
