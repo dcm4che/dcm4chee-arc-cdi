@@ -80,15 +80,20 @@ create table person_name (
     i_family_name varchar(255),
     i_given_name varchar(255),
     i_middle_name varchar(255),
+    i_prefix varchar(255),
+    i_suffix varchar(255),
     middle_name varchar(255),
     p_family_name varchar(255),
     p_given_name varchar(255),
     p_middle_name varchar(255),
+    p_prefix varchar(255),
+    p_suffix varchar(255),
     prefix varchar(255),
     sx_family_name varchar(255),
     sx_given_name varchar(255),
     sx_middle_name varchar(255),
     suffix varchar(255),
+    unknown bit not null,
     primary key (pk)
 ) ENGINE=InnoDB;
 

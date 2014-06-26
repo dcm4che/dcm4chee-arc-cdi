@@ -64,6 +64,9 @@ public class PersonName {
     @Column(name = "pk")
     private long pk;
 
+    @Column(name = "unknown", nullable = false)
+    private boolean unknown;
+
     @Column(name = "family_name")
     private String familyName;
 
@@ -88,6 +91,12 @@ public class PersonName {
     @Column(name = "i_middle_name")
     private String ideographicMiddleName;
 
+    @Column(name = "i_prefix")
+    private String ideographicPrefix;
+
+    @Column(name = "i_suffix")
+    private String ideographicSuffix;
+
     @Column(name = "p_family_name")
     private String phoneticFamilyName;
 
@@ -96,6 +105,12 @@ public class PersonName {
 
     @Column(name = "p_middle_name")
     private String phoneticMiddleName;
+
+    @Column(name = "p_prefix")
+    private String phoneticPrefix;
+
+    @Column(name = "p_suffix")
+    private String phoneticSuffix;
 
     @Column(name = "sx_family_name")
     private String soundexFamilyName;
@@ -110,41 +125,37 @@ public class PersonName {
     }
 
     public PersonName(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr) {
+        unknown = pn.isEmpty();
         if ((familyName = pn.get(Group.Alphabetic, Component.FamilyName)) != null)
-            if ((soundexFamilyName = fuzzyStr.toFuzzy(familyName)).isEmpty())
-                    soundexFamilyName = "*";
+            soundexFamilyName = StringUtils.maskEmpty(fuzzyStr.toFuzzy(familyName), "*");
         if ((givenName = pn.get(Group.Alphabetic, Component.GivenName)) != null)
-            if ((soundexGivenName = fuzzyStr.toFuzzy(givenName)).isEmpty())
-                    soundexGivenName = "*";
+            soundexGivenName = StringUtils.maskEmpty(fuzzyStr.toFuzzy(givenName), "*");
         if ((middleName = pn.get(Group.Alphabetic, Component.MiddleName)) != null)
-            if ((soundexMiddleName = fuzzyStr.toFuzzy(givenName)).isEmpty())
-                    soundexMiddleName = "*";
-
-        familyName = pn.get(Group.Alphabetic, Component.FamilyName);
-        givenName = pn.get(Group.Alphabetic, Component.GivenName);
-        middleName = pn.get(Group.Alphabetic, Component.MiddleName);
+            soundexMiddleName = StringUtils.maskEmpty(fuzzyStr.toFuzzy(middleName), "*");
         prefix = pn.get(Group.Alphabetic, Component.NamePrefix);
         suffix = pn.get(Group.Alphabetic, Component.NameSuffix);
         ideographicFamilyName = pn.get(Group.Ideographic, Component.FamilyName);
         ideographicGivenName = pn.get(Group.Ideographic, Component.GivenName);
         ideographicMiddleName = pn.get(Group.Ideographic, Component.MiddleName);
+        ideographicPrefix = pn.get(Group.Ideographic, Component.NamePrefix);
+        ideographicSuffix = pn.get(Group.Ideographic, Component.NameSuffix);
         phoneticFamilyName = pn.get(Group.Phonetic, Component.FamilyName);
         phoneticGivenName = pn.get(Group.Phonetic, Component.GivenName);
         phoneticMiddleName = pn.get(Group.Phonetic, Component.MiddleName);
-
-        if (familyName != null)
-            soundexFamilyName =
-                StringUtils.maskEmpty(fuzzyStr.toFuzzy(familyName), "*");
-        if (givenName != null)
-            soundexGivenName =
-                StringUtils.maskEmpty(fuzzyStr.toFuzzy(givenName), "*");
-        if (middleName != null)
-            soundexMiddleName =
-                StringUtils.maskEmpty(fuzzyStr.toFuzzy(middleName), "*");
+        phoneticPrefix = pn.get(Group.Phonetic, Component.NamePrefix);
+        phoneticSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
     }
 
     public long getPk() {
         return pk;
+    }
+
+    public boolean isUnknown() {
+        return unknown;
+    }
+
+    public void setUnknown(boolean unknown) {
+        this.unknown = unknown;
     }
 
     public String getFamilyName() {
@@ -211,6 +222,22 @@ public class PersonName {
         this.ideographicMiddleName = ideographicMiddleName;
     }
 
+    public String getIdeographicPrefix() {
+        return ideographicPrefix;
+    }
+
+    public void setIdeographicPrefix(String ideographicPrefix) {
+        this.ideographicPrefix = ideographicPrefix;
+    }
+
+    public String getIdeographicSuffix() {
+        return ideographicSuffix;
+    }
+
+    public void setIdeographicSuffix(String ideographicSuffix) {
+        this.ideographicSuffix = ideographicSuffix;
+    }
+
     public String getPhoneticFamilyName() {
         return phoneticFamilyName;
     }
@@ -233,6 +260,22 @@ public class PersonName {
 
     public void setPhoneticMiddleName(String phoneticMiddleName) {
         this.phoneticMiddleName = phoneticMiddleName;
+    }
+
+    public String getPhoneticPrefix() {
+        return phoneticPrefix;
+    }
+
+    public void setPhoneticPrefix(String phoneticPrefix) {
+        this.phoneticPrefix = phoneticPrefix;
+    }
+
+    public String getPhoneticSuffix() {
+        return phoneticSuffix;
+    }
+
+    public void setPhoneticSuffix(String phoneticSuffix) {
+        this.phoneticSuffix = phoneticSuffix;
     }
 
     public String getSoundexFamilyName() {

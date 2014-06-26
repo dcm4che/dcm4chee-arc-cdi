@@ -258,9 +258,8 @@ public class MWLItem implements Serializable {
             scheduledStartDate = "*";
             scheduledStartTime = "*";
         }
-        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
-                attrs.getString(Tag.ScheduledPerformingPhysicianName), true);
-        scheduledPerformingPhysicianName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
+        scheduledPerformingPhysicianName = new PersonName(new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.ScheduledPerformingPhysicianName), true), fuzzyStr);
         status = spsItem.getString(Tag.ScheduledProcedureStepStatus, SCHEDULED);
         
         requestedProcedureID = attrs.getString(Tag.RequestedProcedureID);

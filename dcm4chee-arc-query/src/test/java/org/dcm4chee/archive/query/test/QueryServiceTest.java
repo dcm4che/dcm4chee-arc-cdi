@@ -263,7 +263,7 @@ public class QueryServiceTest {
     @Test
     public void testFindPatientByPatientNameFuzzy5() {
         testFindPatientByFuzzyPatientName("LU*", true, "FUZZY_GEORGE",
-                "FUZZY_JOERG", "FUZZY_LUKE", "FUZZY_NONE", "FUZZY_NUMERICAL");
+                "FUZZY_JOERG", "FUZZY_LUKE", "FUZZY_NONE");
     }
 
     private void testFindPatientByFuzzyPatientName(String name,

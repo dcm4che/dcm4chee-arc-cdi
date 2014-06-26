@@ -117,9 +117,8 @@ public class RequestAttributes implements Serializable {
         scheduledProcedureStepID = attrs.getString(
                 Tag.ScheduledProcedureStepID, "*");
         requestingService = attrs.getString(Tag.RequestingService, "*");
-        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
-                attrs.getString(Tag.RequestingPhysician), true);
-        requestingPhysician = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
+        requestingPhysician = new PersonName(new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.RequestingPhysician), true), fuzzyStr);
     }
 
     public long getPk() {

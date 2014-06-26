@@ -63,12 +63,19 @@ class MatchPersonName {
 
         PersonName pn = new PersonName(value);
  
-        return  QueryBuilder.matchUnknown(
+        return matchUnknown(
                     queryParam.isFuzzySemanticMatching()
                         ? fuzzyMatch(qpn, pn, queryParam)
                         : literalMatch(qpn, pn, queryParam),
                     qpn,
                     queryParam.isMatchUnknown());
+    }
+
+    private static Predicate matchUnknown(Predicate predicate, QPersonName qpn,
+            boolean matchUnknown) {
+        return matchUnknown
+                ? ExpressionUtils.or(predicate, qpn.unknown.isTrue())
+                : predicate;
     }
 
     private static Predicate literalMatch(QPersonName qpn,

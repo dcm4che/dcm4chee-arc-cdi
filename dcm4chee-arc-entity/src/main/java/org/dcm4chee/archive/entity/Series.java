@@ -519,9 +519,8 @@ public class Series implements Serializable {
             performedProcedureStepStartDate = "*";
             performedProcedureStepStartTime = "*";
         }
-        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
-                attrs.getString(Tag.PerformingPhysicianName), true);
-        performingPhysicianName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
+        performingPhysicianName = new PersonName(new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.PerformingPhysicianName), true), fuzzyStr);
         seriesCustomAttribute1 = 
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
         seriesCustomAttribute2 =

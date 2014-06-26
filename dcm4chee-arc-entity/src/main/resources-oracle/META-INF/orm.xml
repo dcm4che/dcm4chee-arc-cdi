@@ -130,6 +130,12 @@
       <basic name="ideographicMiddleName">
         <column name="i_middle_name" column-definition="nvarchar2(255)" />
       </basic>
+      <basic name="ideographicPrefix">
+        <column name="i_prefix" column-definition="nvarchar2(255)" />
+      </basic>
+      <basic name="ideographicSsuffix">
+        <column name="i_suffix" column-definition="nvarchar2(255)" />
+      </basic>
       <basic name="phoneticFamilyName">
         <column name="p_family_name" column-definition="nvarchar2(255)" />
       </basic>
@@ -138,6 +144,12 @@
       </basic>
       <basic name="phoneticMiddleName">
         <column name="p_middle_name" column-definition="nvarchar2(255)" />
+      </basic>
+      <basic name="phoneticPrefix">
+        <column name="p_prefix" column-definition="nvarchar2(255)" />
+      </basic>
+      <basic name="phoneticSuffix">
+        <column name="p_suffix" column-definition="nvarchar2(255)" />
       </basic>
     </attributes>
   </entity>

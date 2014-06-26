@@ -278,9 +278,8 @@ public class Patient implements Serializable {
     }
 
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
-        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
-                attrs.getString(Tag.PatientName), true);
-        patientName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
+        patientName = new PersonName(new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.PatientName), true), fuzzyStr);
         patientBirthDate = attrs.getString(Tag.PatientBirthDate, "*");
         patientSex = attrs.getString(Tag.PatientSex, "*").toUpperCase();
 

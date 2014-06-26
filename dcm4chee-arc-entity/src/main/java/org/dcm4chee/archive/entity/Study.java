@@ -474,9 +474,8 @@ public class Study implements Serializable {
             studyTime = "*";
         }
         accessionNumber = attrs.getString(Tag.AccessionNumber, "*");
-        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
-                attrs.getString(Tag.ReferringPhysicianName), true);
-        referringPhysicianName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
+        referringPhysicianName = new PersonName(new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.ReferringPhysicianName), true), fuzzyStr);
         studyCustomAttribute1 = 
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
         studyCustomAttribute2 =

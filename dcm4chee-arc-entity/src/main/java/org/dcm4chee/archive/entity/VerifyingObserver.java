@@ -87,9 +87,8 @@ public class VerifyingObserver implements Serializable {
     public VerifyingObserver(Attributes attrs, FuzzyStr fuzzyStr) {
         Date dt = attrs.getDate(Tag.VerificationDateTime);
         verificationDateTime = DateUtils.formatDT(null, dt);
-        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(
-                attrs.getString(Tag.VerifyingObserverName), true);
-        verifyingObserverName = !pn.isEmpty() ? new PersonName(pn, fuzzyStr) : null;
+        verifyingObserverName = new PersonName(new org.dcm4che3.data.PersonName(
+                attrs.getString(Tag.VerifyingObserverName), true), fuzzyStr);
     }
 
     public long getPk() {
