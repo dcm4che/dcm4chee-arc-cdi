@@ -103,8 +103,6 @@ public interface PatientService {
             throws NonUniquePatientException, PatientMergedException,
             PatientCircularMergedException;
 
-    Patient deletePatient(IDWithIssuer idWithIssuer) throws NonUniquePatientException;
-
     void linkPatient(Attributes attrs, Attributes otherAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
             PatientMergedException;

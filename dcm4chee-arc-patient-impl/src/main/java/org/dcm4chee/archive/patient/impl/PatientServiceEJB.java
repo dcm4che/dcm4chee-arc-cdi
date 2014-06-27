@@ -577,18 +577,4 @@ public class PatientServiceEJB implements PatientService {
         return false;
     }
 
-    @Override
-    public Patient deletePatient(IDWithIssuer pid)
-            throws NonUniquePatientException {
-        List<Patient> results = findPatientByIDs(Collections.singleton(pid));
-        switch (results.size()) {
-        case 0:
-            return null;
-        case 1:
-            em.remove(results.get(0));
-            return results.get(0);
-        }
-        throw new NonUniquePatientException("id=" + pid);
-    }
-
 }
