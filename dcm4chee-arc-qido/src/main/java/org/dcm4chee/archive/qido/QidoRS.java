@@ -467,19 +467,7 @@ public class QidoRS {
         if (orderby.isEmpty())
             return;
 
-        ArrayList<OrderSpecifier<?>> list = new ArrayList<OrderSpecifier<?>>();
-        for (String s : orderby) {
-            try {
-                for (String field : StringUtils.split(s, ',')) {
-                    boolean desc = field.charAt(0) == '-';
-                    int tag = parseTag(desc ? field.substring(1) : field);
-                    StringPath stringPath = QueryBuilder.stringPathOf(tag, qrLevel);
-                    list.add(desc ? stringPath.desc() : stringPath.asc());
-                }
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("orderby=" + s);
-            }
-        }
+        ArrayList<OrderSpecifier<?>> list = QueryBuilder.getOrderSpecifierList(qrLevel,orderby);
         orderSpecifiers = list.toArray(new OrderSpecifier<?>[list.size()]);
     }
 
