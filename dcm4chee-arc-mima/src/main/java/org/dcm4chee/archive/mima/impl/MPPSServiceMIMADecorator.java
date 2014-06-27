@@ -52,6 +52,11 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.mpps.MPPSService;
 
 /**
+ * Decorator to apply MIMA specifications to the MPPS Service.
+ * In case of MPPS, we apply a Configurable Mapping to 
+ * Default Assigning Authorities, supplementing (when available) 
+ * Issuer information into the dataset.
+ * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */

@@ -39,6 +39,11 @@
 package org.dcm4chee.archive.mima.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Set;
 
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Issuer;
@@ -53,8 +58,8 @@ class MIMAInfo {
     private boolean returnOtherPatientNames;
     private Issuer requestedIssuerOfPatientID;
     private Issuer requestedIssuerOfAccessionNumber;
-    private final ArrayList<PatientIDsWithPatientNames> pidsWithNames =
-            new ArrayList<PatientIDsWithPatientNames>(1);
+    private final Hashtable<Set<IDWithIssuer>,String[]> patientNamesCache = new Hashtable<Set<IDWithIssuer>,String[]> ();
+    private final Set<IDWithIssuer[]> pixResponseCache = Collections.emptySet();
 
     public boolean isReturnOtherPatientIDs() {
         return returnOtherPatientIDs;
@@ -89,19 +94,27 @@ class MIMAInfo {
         this.requestedIssuerOfAccessionNumber = requestedIssuerOfAccessionNumber;
     }
 
-    public PatientIDsWithPatientNames getPatientIDsWithPatientNames(
-            IDWithIssuer pid) {
-        for (PatientIDsWithPatientNames entry : pidsWithNames) {
-            IDWithIssuer pid2 = entry.getPatientIDByIssuer(pid.getIssuer());
-            if (pid2 != null && pid2.getID().equals(pid.getID()))
-                return entry;
-        }
-        return null;
+    public void cachePatientNames(Set<IDWithIssuer> ids, String[] names)
+    {
+        if (!patientNamesCache.containsKey(ids))
+            patientNamesCache.put(ids, names);
     }
-
-    public PatientIDsWithPatientNames addPatientIDs(IDWithIssuer[] pids) {
-        PatientIDsWithPatientNames entry = new PatientIDsWithPatientNames(pids);
-        pidsWithNames.add(entry);
-        return entry;
+    
+    public String[] getPatientNamesFromCache(Set<IDWithIssuer> ids) {
+        return patientNamesCache.get(ids);
+    }
+    
+    public void cachePixResponse (IDWithIssuer[] pixResponse) {
+        pixResponseCache.add(pixResponse);
+    }
+    
+    public IDWithIssuer[] getCachedPixResponse (IDWithIssuer pid)
+    {
+        for (IDWithIssuer[] cachedPixResponse : pixResponseCache) {
+            if (Arrays.asList(cachedPixResponse).contains(pid))
+                return cachedPixResponse;
+        }
+        
+        return null;
     }
 }

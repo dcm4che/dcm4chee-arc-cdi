@@ -132,7 +132,7 @@ public abstract class RetrieveServiceMIMADecorator implements RetrieveService {
 
         IDWithIssuer[] pids = context.getPatientIDs();
         if (pids != null && pids.length != 0) {
-            info.addPatientIDs(pids);
+            info.cachePixResponse(pids);
         }
     }
 

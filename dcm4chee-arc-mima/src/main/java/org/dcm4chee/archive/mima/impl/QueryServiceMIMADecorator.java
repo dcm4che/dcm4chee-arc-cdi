@@ -61,16 +61,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Decorator to apply MIMA specifications to the Query Service.
+ * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * 
  */
 @Decorator
 public abstract class QueryServiceMIMADecorator implements QueryService {
 
-    private static Logger LOG =
-            LoggerFactory.getLogger(QueryServiceMIMADecorator.class);
+    private static Logger LOG = LoggerFactory
+            .getLogger(QueryServiceMIMADecorator.class);
 
-    @Inject @Delegate
+    @Inject
+    @Delegate
     private QueryService queryService;
 
     @Inject
@@ -82,45 +86,65 @@ public abstract class QueryServiceMIMADecorator implements QueryService {
     @Inject
     private MIMAAttributeCoercion coercion;
 
+    /*
+     * Extends default getQueryParam method to add to the QueryParam the
+     * configured issuer of PatID and AccessionNumber associated to the query
+     * source (if existing).
+     */
     @Override
     public QueryParam getQueryParam(Object source, String sourceAET,
             ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,
             String[] accessControlIDs) {
-        QueryParam queryParam = queryService.getQueryParam(
-                source, sourceAET, aeExt, queryOpts, accessControlIDs);
+        QueryParam queryParam = queryService.getQueryParam(source, sourceAET,
+                aeExt, queryOpts, accessControlIDs);
         try {
             ApplicationEntity scrAE = aeCache.get(sourceAET);
             if (scrAE != null) {
                 Device srcDev = scrAE.getDevice();
-                queryParam.setDefaultIssuerOfPatientID(
-                        srcDev.getIssuerOfPatientID());
-                queryParam.setDefaultIssuerOfAccessionNumber(
-                        srcDev.getIssuerOfAccessionNumber());
+                queryParam.setDefaultIssuerOfPatientID(srcDev
+                        .getIssuerOfPatientID());
+                queryParam.setDefaultIssuerOfAccessionNumber(srcDev
+                        .getIssuerOfAccessionNumber());
             }
         } catch (ConfigurationException e) {
-            LOG.warn("Failed to access configuration for query source {} - no MIMA support:",
+            LOG.warn(
+                    "Failed to access configuration for query source {} - no MIMA support:",
                     source, e);
         }
         return queryParam;
     }
 
+    /*
+     * Extends the default initPatientIDs, performing a PIX query having as
+     * argument the original queried PatientID (if any). Note that if the DICOM
+     * Query contains a PatientID, this will be placed in the first element of
+     * the PatientIDs array in the context (ctx.getPatientIDs()[0]) .
+     * Afterwards, the PatientIDs will be filled up with all the extra IDs
+     * returned in the PIX response. If the queried PatientID has no issuer, the
+     * issuer associate to the query source is automatically added and used for
+     * the PIX query.
+     */
     @Override
     public void initPatientIDs(QueryContext ctx) {
         queryService.initPatientIDs(ctx);
         IDWithIssuer[] pids = ctx.getPatientIDs();
         if (pids.length > 0) {
             if (pids[0].getIssuer() == null)
-                pids[0].setIssuer(
-                        ctx.getQueryParam().getDefaultIssuerOfPatientID());
-            ctx.setPatientIDs(
-                    pixConsumer.pixQuery(ctx.getArchiveAEExtension(), pids[0]));
+                pids[0].setIssuer(ctx.getQueryParam()
+                        .getDefaultIssuerOfPatientID());
+            ctx.setPatientIDs(pixConsumer.pixQuery(ctx.getArchiveAEExtension(),
+                    pids[0]));
         }
     }
 
+    /*
+     * Extends the default adjustMatch method, coercing (according to MIMA
+     * specs) attributes of the matched instances returned by the query.
+     */
     @Override
     public void adjustMatch(QueryContext context, Attributes match) {
-        MIMAInfo info = (MIMAInfo) context.getProperty(
-                MIMAInfo.class.getName());
+        MIMAInfo info = (MIMAInfo) context
+                .getProperty(MIMAInfo.class.getName());
         if (info == null) {
             info = new MIMAInfo();
             init(context, info);
@@ -137,20 +161,20 @@ public abstract class QueryServiceMIMADecorator implements QueryService {
                 && keys.contains(Tag.OtherPatientIDsSequence));
         info.setReturnOtherPatientNames(arcAE.isReturnOtherPatientNames()
                 && keys.contains(Tag.OtherPatientNames));
-        info.setRequestedIssuerOfPatientID(keys.contains(Tag.PatientID)
-                ? keys.contains(Tag.IssuerOfPatientID)
-                    ? Issuer.fromIssuerOfPatientID(keys)
-                    : queryParam.getDefaultIssuerOfPatientID()
-                : null);
-        info.setRequestedIssuerOfAccessionNumber((keys.contains(Tag.AccessionNumber)
-                || keys.contains(Tag.RequestAttributesSequence))
-                    ?  keys.contains(Tag.IssuerOfAccessionNumberSequence)
-                        ? Issuer.valueOf(keys.getNestedDataset(Tag.IssuerOfAccessionNumberSequence))
-                        : queryParam.getDefaultIssuerOfAccessionNumber()
-                    : null);
+        info.setRequestedIssuerOfPatientID(keys.contains(Tag.PatientID) ? keys
+                .contains(Tag.IssuerOfPatientID) ? Issuer
+                .fromIssuerOfPatientID(keys) : queryParam
+                .getDefaultIssuerOfPatientID() : null);
+        info.setRequestedIssuerOfAccessionNumber((keys
+                .contains(Tag.AccessionNumber) || keys
+                .contains(Tag.RequestAttributesSequence)) ? keys
+                .contains(Tag.IssuerOfAccessionNumberSequence) ? Issuer
+                .valueOf(keys
+                        .getNestedDataset(Tag.IssuerOfAccessionNumberSequence))
+                : queryParam.getDefaultIssuerOfAccessionNumber() : null);
         IDWithIssuer[] pids = context.getPatientIDs();
         if (pixQueryAlreadyPerformed(pids)) {
-            info.addPatientIDs(pids);
+            info.cachePixResponse(pids);
         }
     }
 

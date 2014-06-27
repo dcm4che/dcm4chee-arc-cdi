@@ -39,8 +39,11 @@
 package org.dcm4chee.archive.mima.impl;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -66,16 +69,18 @@ import com.mysema.query.Tuple;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
 
 /**
+ * Attributes coercion according to MIMA specs.
+ * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * 
  */
 @ApplicationScoped
 class MIMAAttributeCoercion {
 
-    private static Logger LOG =
-            LoggerFactory.getLogger(MIMAAttributeCoercion.class);
+    private static Logger LOG = LoggerFactory
+            .getLogger(MIMAAttributeCoercion.class);
 
-    @PersistenceContext(unitName="dcm4chee-arc")
+    @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
     @Inject
@@ -88,76 +93,106 @@ class MIMAAttributeCoercion {
 
     private void coercePatientIDsAndPatientNames(ArchiveAEExtension arcAE,
             MIMAInfo info, Attributes attrs) {
-        IDWithIssuer pid = IDWithIssuer.pidOf(attrs);
-        if (pid == null)
+        
+        // ids contained in the response instance
+        Set<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs); 
+
+        if (pids == null || pids.size() == 0)
             return;
 
+        IDWithIssuer coercedRootID = null;
+        Set<IDWithIssuer> coercedOtherIDs = Collections.emptySet();
+        
         Issuer requestedIssuer = info.getRequestedIssuerOfPatientID();
-        if (requestedIssuer == null
-                && !info.isReturnOtherPatientIDs()
+        if (requestedIssuer == null && !info.isReturnOtherPatientIDs()
                 && !info.isReturnOtherPatientNames())
             return;
 
-        Issuer issuer = pid.getIssuer();
-        if (issuer == null) {
-            if (requestedIssuer != null) {
+        // group together all the patient's pids and the linked ids of each pid,
+        // avoiding re-running a pix query when not necessary (i.e. using the
+        // cached PIX responses).
+        for (IDWithIssuer pid : pids) {
+
+            // first, add the id itself, if not already added.
+            // if the pid is already found in the list, all the rest is skipped 
+            // as we consider the pix query to be simmetrical and we don't need
+            // to perform the reverse pix query
+            if (!coercedOtherIDs.contains(pid))
+            {
+                coercedOtherIDs.add(pid);
+    
+                // Second, search for linked ids.
+                // If a PIX query response already containing the pid is found in
+                // the cache, reuse the cached PIX response, otherwise make a new
+                // PIX query
+                IDWithIssuer[] linkedIDs = info.getCachedPixResponse(pid);
+                if (linkedIDs == null) {
+                    linkedIDs = pixConsumer.pixQuery(arcAE, pid);
+                    info.cachePixResponse(linkedIDs);
+                }
+    
+                // third, add the linked ids, if not already added.
+                for (IDWithIssuer linkedID : linkedIDs)
+                    if (!coercedOtherIDs.contains(linkedID))
+                        coercedOtherIDs.add(linkedID);
+            }
+        }
+
+        // calculate the returned root id, i.e. the id among the collected
+        // coercedOtherIDs having the requested issuer (if any)
+        if (requestedIssuer != null) {
+            for (IDWithIssuer pid : coercedOtherIDs)
+                if (pid.getIssuer() != null
+                        && requestedIssuer.matches(pid.getIssuer())) {
+                    coercedRootID = pid;
+                    break;
+                }
+
+            if (coercedRootID == null) {
                 attrs.setNull(Tag.PatientID, VR.LO);
                 requestedIssuer.toIssuerOfPatientID(attrs);
                 LOG.info("Nullify Patient ID for requested Issuer: {}",
                         requestedIssuer);
+            } else {
+                IDWithIssuer originalRootID = IDWithIssuer.pidOf(attrs);
+                if (coercedRootID != originalRootID) {
+                    attrs.setString(Tag.PatientID, VR.LO, coercedRootID.getID());
+                    LOG.info("Adjust Patient ID to {}", coercedRootID);
+                }
             }
-            return;
         }
 
-        PatientIDsWithPatientNames pidsWithNames =
-                info.getPatientIDsWithPatientNames(pid);
-        if (pidsWithNames == null) {
-            pidsWithNames = info.addPatientIDs(pixConsumer.pixQuery(arcAE, pid));
-        }
-        if (requestedIssuer != null && !requestedIssuer.matches(issuer)) {
-            IDWithIssuer requestedPID = pidsWithNames.getPatientIDByIssuer(requestedIssuer);
-            if (requestedPID != null) {
-                attrs.setString(Tag.PatientID, VR.LO, requestedPID.getID());
-                LOG.info("Adjust Patient ID to {}", requestedPID);
-            } else {
-                attrs.setNull(Tag.PatientID, VR.LO);
-                LOG.info("Nullify Patient ID for requested Issuer: {}", 
-                        requestedIssuer);
-            }
-            requestedIssuer.toIssuerOfPatientID(attrs);
-        }
+        // if requested, add the whole set of other patient ids to the response
         if (info.isReturnOtherPatientIDs()) {
-            addOtherPatientIDs(attrs, pidsWithNames.getPatientIDs());
+            addOtherPatientIDs(attrs, coercedOtherIDs);
         }
+
+        // if requested, add the whole set of patient names to the response
         if (info.isReturnOtherPatientNames()) {
-            addOtherPatientNames(attrs, pidsWithNames);
+            addOtherPatientNames(attrs, coercedOtherIDs, info);
         }
     }
 
     private static void addOtherPatientIDs(Attributes attrs,
-            IDWithIssuer... pids) {
+            Set<IDWithIssuer> pids) {
         Sequence seq = attrs.newSequence(Tag.OtherPatientIDsSequence,
-                pids.length);
+                pids.size());
         for (IDWithIssuer pid : pids)
             seq.add(pid.exportPatientIDWithIssuer(null));
-        LOG.info("Add Other Patient IDs: {}", Arrays.toString(pids));
+        LOG.info("Add Other Patient IDs: {}", Arrays.toString(pids.toArray()));
     }
-    
-    private void addOtherPatientNames(Attributes match,
-            PatientIDsWithPatientNames pidsWithNames) {
-        if (pidsWithNames.getPatientIDs().length == 1) {
-            String patientName = match.getString(Tag.PatientName);
-            if (patientName != null) {
-                match.setString(Tag.OtherPatientNames, VR.PN, patientName);
-                LOG.info("Add Other Patient Name: {}", patientName);
-            }
-            return;
-        }
-        String[] patientNames = pidsWithNames.getPatientNames();
+
+    private void addOtherPatientNames(Attributes match, Set<IDWithIssuer> pids,
+            MIMAInfo info) {
+
+        String[] patientNames = info.getPatientNamesFromCache(pids);
+
         if (patientNames == null) {
-            patientNames = queryPatientNames(pidsWithNames.getPatientIDs());
-            pidsWithNames.setPatientNames(patientNames);
+            patientNames = queryPatientNames(pids.toArray(new IDWithIssuer[pids
+                    .size()]));
+            info.cachePatientNames(pids, patientNames);
         }
+
         match.setString(Tag.OtherPatientNames, VR.PN, patientNames);
         LOG.info("Add Other Patient Names: {}", Arrays.toString(patientNames));
     }
@@ -168,14 +203,11 @@ class MIMAAttributeCoercion {
         builder.and(QueryBuilder.pids(pids, false));
         builder.and(QPatient.patient.mergedWith.isNull());
         List<Tuple> tuples = new HibernateQuery(em.unwrap(Session.class))
-            .from(QPatient.patient)
-            .where(builder)
-            .list(
-                QPatient.patient.pk,
-                QPatient.patient.encodedAttributes);
+                .from(QPatient.patient).where(builder)
+                .list(QPatient.patient.pk, QPatient.patient.encodedAttributes);
         for (Tuple tuple : tuples)
-            c.add(Utils.decodeAttributes(tuple.get(1, byte[].class))
-                    .getString(Tag.PatientName));
+            c.add(Utils.decodeAttributes(tuple.get(1, byte[].class)).getString(
+                    Tag.PatientName));
         c.remove(null);
         return c.toArray(new String[c.size()]);
     }
@@ -184,7 +216,8 @@ class MIMAAttributeCoercion {
         Issuer requestedIssuer = info.getRequestedIssuerOfAccessionNumber();
         if (requestedIssuer != null) {
             adjustAccessionNumber(requestedIssuer, attrs);
-            Sequence rqAttrsSeq = attrs.getSequence(Tag.RequestAttributesSequence);
+            Sequence rqAttrsSeq = attrs
+                    .getSequence(Tag.RequestAttributesSequence);
             if (rqAttrsSeq != null) {
                 for (Attributes rqAttrs : rqAttrsSeq)
                     adjustAccessionNumber(requestedIssuer, rqAttrs);
@@ -196,15 +229,15 @@ class MIMAAttributeCoercion {
         if (!attrs.containsValue(Tag.AccessionNumber))
             return;
 
-        Issuer issuer = Issuer.valueOf(
-                attrs.getNestedDataset(Tag.IssuerOfAccessionNumberSequence));
+        Issuer issuer = Issuer.valueOf(attrs
+                .getNestedDataset(Tag.IssuerOfAccessionNumberSequence));
         if (issuer == null || !requestedIssuer.matches(issuer)) {
             attrs.setNull(Tag.AccessionNumber, VR.SH);
             LOG.info("Nullify Accession Number for requested Issuer: {}",
                     requestedIssuer);
         }
-        attrs.newSequence(Tag.IssuerOfAccessionNumberSequence, 1)
-            .add(requestedIssuer.toItem());
+        attrs.newSequence(Tag.IssuerOfAccessionNumberSequence, 1).add(
+                requestedIssuer.toItem());
     }
 
 }
