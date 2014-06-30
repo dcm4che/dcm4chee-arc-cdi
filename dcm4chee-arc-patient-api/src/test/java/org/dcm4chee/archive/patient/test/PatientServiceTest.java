@@ -40,12 +40,16 @@ package org.dcm4chee.archive.patient.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.Resource;
+import javax.enterprise.inject.New;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -160,7 +164,6 @@ public class PatientServiceTest {
         em.clear();
     }
 
-    
     /**
      * Testupdate or create patient on c store one patient created old name kept
      * merged i ds same issuer.
@@ -179,7 +182,8 @@ public class PatientServiceTest {
         PersonName pn = patients[0].getPatientName();
         Assert.assertEquals("Bugs", pn.getFamilyName());
         Assert.assertEquals("Bunny", pn.getGivenName());
-        Assert.assertTrue(attrs.getString(Tag.PatientName).contains("Bugs^Bunny"));
+        Assert.assertTrue(attrs.getString(Tag.PatientName).contains(
+                "Bugs^Bunny"));
         LinkedList<PatientID> lstID = new LinkedList<PatientID>();
         PatientID id1 = new PatientID();
         id1.setID("123");
@@ -192,15 +196,15 @@ public class PatientServiceTest {
         lstID.add(id3);
         String coll = "";
         String collBlob = "";
-        for(int i=0; i< patients[0].getPatientIDs().toArray().length;i++){
-        coll+=((PatientID) patients[0].getPatientIDs().toArray()[i])
-                .getID();
+        for (int i = 0; i < patients[0].getPatientIDs().toArray().length; i++) {
+            coll += ((PatientID) patients[0].getPatientIDs().toArray()[i])
+                    .getID();
         }
-                collBlob+=""+attrs.getString(Tag.PatientID);
-                Sequence tmpSeq = attrs.getSequence(Tag.OtherPatientIDsSequence);
-                for(int i=0;i<tmpSeq.size();i++)
-                 collBlob+=tmpSeq.get(i).getString(Tag.PatientID);
-                
+        collBlob += "" + attrs.getString(Tag.PatientID);
+        Sequence tmpSeq = attrs.getSequence(Tag.OtherPatientIDsSequence);
+        for (int i = 0; i < tmpSeq.size(); i++)
+            collBlob += tmpSeq.get(i).getString(Tag.PatientID);
+
         for (int i = 0; i < lstID.size(); i++) {
             Assert.assertTrue(coll.contains(lstID.get(i).getID()));
             Assert.assertTrue(collBlob.contains(lstID.get(i).getID()));
@@ -226,7 +230,8 @@ public class PatientServiceTest {
         PersonName pn = patients[0].getPatientName();
         Assert.assertEquals("Bugs", pn.getFamilyName());
         Assert.assertEquals("Bunny", pn.getGivenName());
-        Assert.assertTrue(attrs.getString(Tag.PatientName).contains("Bugs^Bunny"));
+        Assert.assertTrue(attrs.getString(Tag.PatientName).contains(
+                "Bugs^Bunny"));
         LinkedList<PatientID> lstID = new LinkedList<PatientID>();
         PatientID id1 = new PatientID();
         id1.setID("123");
@@ -237,28 +242,30 @@ public class PatientServiceTest {
         lstID.add(id1);
         lstID.add(id2);
         lstID.add(id3);
-        checkIDs(patients,attrs,lstID);
+        checkIDs(patients, attrs, lstID);
         cleanupdateOrCreatePatientOnCStore(patients);
     }
-private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID> lstID)
-{
-    String coll = "";
-    String collBlob = "";
-    for(int i=0; i< patients[0].getPatientIDs().toArray().length;i++){
-        coll+=((PatientID) patients[0].getPatientIDs().toArray()[i])
-                .getID();
+
+    private void checkIDs(Patient[] patients, Attributes attrs,
+            LinkedList<PatientID> lstID) {
+        String coll = "";
+        String collBlob = "";
+        for (int i = 0; i < patients[0].getPatientIDs().toArray().length; i++) {
+            coll += ((PatientID) patients[0].getPatientIDs().toArray()[i])
+                    .getID();
         }
-                collBlob+=""+attrs.getString(Tag.PatientID);
-                Sequence tmpSeq = attrs.getSequence(Tag.OtherPatientIDsSequence);
-                for(int i=0;i<tmpSeq.size();i++)
-                 collBlob+=tmpSeq.get(i).getString(Tag.PatientID);
-                
+        collBlob += "" + attrs.getString(Tag.PatientID);
+        Sequence tmpSeq = attrs.getSequence(Tag.OtherPatientIDsSequence);
+        for (int i = 0; i < tmpSeq.size(); i++)
+            collBlob += tmpSeq.get(i).getString(Tag.PatientID);
+
         for (int i = 0; i < lstID.size(); i++) {
             Assert.assertTrue(coll.contains(lstID.get(i).getID()));
             Assert.assertTrue(collBlob.contains(lstID.get(i).getID()));
 
         }
     }
+
     /**
      * Testupdate or create patient on c store one patient created old name kept
      * merged i ds same issuer first no issuer second full.
@@ -273,9 +280,11 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         Patient[] patients = initupdateOrCreatePatientOnCStore(false, true,
                 true, 3);
         Attributes attrs = decodeAttributes(patients[0].getEncodedAttributes());
-        Assert.assertTrue(((PatientID) patients[0].getPatientIDs().toArray()[0]).getIssuer().toString().contains("G12345&G12345&ISO"));
+        Assert.assertTrue(((PatientID) patients[0].getPatientIDs().toArray()[0])
+                .getIssuer().toString().contains("G12345&G12345&ISO"));
         Set<IDWithIssuer> ids = IDWithIssuer.pidsOf(attrs);
-        Assert.assertTrue(((IDWithIssuer)ids.toArray()[0]).getIssuer().toString().contains("G12345&G12345&ISO"));
+        Assert.assertTrue(((IDWithIssuer) ids.toArray()[0]).getIssuer()
+                .toString().contains("G12345&G12345&ISO"));
         Assert.assertSame(patients[0], patients[1]);
         PersonName pn = patients[0].getPatientName();
         Assert.assertEquals("Bugs", pn.getFamilyName());
@@ -290,7 +299,7 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         lstID.add(id1);
         lstID.add(id2);
         lstID.add(id3);
-        checkIDs(patients,attrs,lstID);
+        checkIDs(patients, attrs, lstID);
         cleanupdateOrCreatePatientOnCStore(patients);
     }
 
@@ -336,9 +345,11 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
 
         Patient[] patients = { patientOne, patientTwo };
         Attributes attrs = decodeAttributes(patients[0].getEncodedAttributes());
-        Assert.assertTrue(((PatientID) patients[0].getPatientIDs().toArray()[0]).getIssuer().toString().contains("G12345&G12345&ISO"));
+        Assert.assertTrue(((PatientID) patients[0].getPatientIDs().toArray()[0])
+                .getIssuer().toString().contains("G12345&G12345&ISO"));
         Set<IDWithIssuer> ids = IDWithIssuer.pidsOf(attrs);
-        Assert.assertTrue(((IDWithIssuer)ids.toArray()[0]).getIssuer().toString().contains("G12345&G12345&ISO"));
+        Assert.assertTrue(((IDWithIssuer) ids.toArray()[0]).getIssuer()
+                .toString().contains("G12345&G12345&ISO"));
         Assert.assertSame(patients[0], patients[1]);
         PersonName pn = patients[0].getPatientName();
         Assert.assertEquals("Bugs", pn.getFamilyName());
@@ -353,7 +364,7 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         lstID.add(id1);
         lstID.add(id2);
         lstID.add(id3);
-        checkIDs(patients,attrs,lstID);
+        checkIDs(patients, attrs, lstID);
         cleanupdateOrCreatePatientOnCStore(patients);
     }
 
@@ -381,15 +392,27 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
             throws NotSupportedException, SystemException, SecurityException,
             IllegalStateException, RollbackException, HeuristicMixedException,
             HeuristicRollbackException {
-        em.remove(patients[0]);
-        em.remove(patients[1]);
-        Query tmpQuery=em.createQuery("SELECT r FROM Issuer r",Issuer.class);
-        
-        @SuppressWarnings("unchecked")
-        ArrayList<Issuer> issuers=(ArrayList<Issuer>) tmpQuery.getResultList();
-        for(Issuer issuer: issuers)
-            em.remove(issuer);
+        for (Patient pat : patients){
+            em.remove(pat);
+            em.remove(pat.getPatientName());
+        }
         em.flush();
+
+        ArrayList<Long> issuersToRemovePKs = new ArrayList<Long>();
+        for (Patient p : patients) {
+            for (PatientID id : p.getPatientIDs()) {
+                if (!issuersToRemovePKs.contains(id.getPk()))
+                    issuersToRemovePKs.add(id.getIssuer().getPk());
+            }
+        }
+
+        for (Long pk : issuersToRemovePKs) {
+            Issuer tmpIssuer = em.find(Issuer.class, pk);
+            if (tmpIssuer != null)
+                em.remove(tmpIssuer);
+        }
+        em.flush();
+        
     }
 
     /**
@@ -405,11 +428,14 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         Patient[] patients = initupdateOrCreatePatientOnCStore(true, true,
                 false, 1);
         Attributes attrs0 = decodeAttributes(patients[0].getEncodedAttributes());
-        Assert.assertTrue(attrs0.getString(Tag.PatientName).contains("Bugs^Bunny"));
+        Assert.assertTrue(attrs0.getString(Tag.PatientName).contains(
+                "Bugs^Bunny"));
         Assert.assertTrue(attrs0.getString(Tag.PatientID).contains("123"));
         Attributes attrs1 = decodeAttributes(patients[1].getEncodedAttributes());
-        Assert.assertTrue(attrs0.getString(Tag.PatientName).contains("Bugs^Bunny"));
-        Assert.assertTrue(attrs1.getString(Tag.PatientName).contains("Lola^Bunny"));
+        Assert.assertTrue(attrs0.getString(Tag.PatientName).contains(
+                "Bugs^Bunny"));
+        Assert.assertTrue(attrs1.getString(Tag.PatientName).contains(
+                "Lola^Bunny"));
         Assert.assertNotSame(patients[0], patients[1]);
         PersonName pn = patients[0].getPatientName();
         Assert.assertEquals("Bugs", pn.getFamilyName());
@@ -459,10 +485,12 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         Patient[] patients = initupdateOrCreatePatientOnCStore(true, true,
                 false, 2);
         Attributes attrs0 = decodeAttributes(patients[0].getEncodedAttributes());
-        Assert.assertTrue(attrs0.getString(Tag.PatientName).contains("Bugs^Bunny"));
+        Assert.assertTrue(attrs0.getString(Tag.PatientName).contains(
+                "Bugs^Bunny"));
         Assert.assertTrue(attrs0.getString(Tag.PatientID).contains("123"));
         Attributes attrs1 = decodeAttributes(patients[1].getEncodedAttributes());
-        Assert.assertTrue(attrs1.getString(Tag.PatientName).contains("Lola^Bunny"));
+        Assert.assertTrue(attrs1.getString(Tag.PatientName).contains(
+                "Lola^Bunny"));
         Assert.assertTrue(attrs1.getString(Tag.PatientID).contains("444"));
         Assert.assertNotSame(patients[0], patients[1]);
         PersonName pn = patients[0].getPatientName();
@@ -529,7 +557,7 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
             PatientMergedException, SecurityException, IllegalStateException,
             NotSupportedException, SystemException, RollbackException,
             HeuristicMixedException, HeuristicRollbackException {
-        
+
         Attributes patientOneAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Bugs^Bunny");
         patientOneAttributes.setString(Tag.PatientID, VR.LO, "123");
@@ -568,13 +596,391 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
                 createStoreParam());
         Attributes attrs1 = decodeAttributes(patientTwo.getEncodedAttributes());
         Set<IDWithIssuer> DominantIDs = IDWithIssuer.pidsOf(attrs1);
-        for(Iterator<IDWithIssuer> iter = priorIDs.iterator();iter.hasNext();)
-        {
+        for (Iterator<IDWithIssuer> iter = priorIDs.iterator(); iter.hasNext();) {
             IDWithIssuer id = iter.next();
             Assert.assertTrue(DominantIDs.contains(id));
         }
         Patient[] patients = { patientOne, patientTwo };
         cleanupdateOrCreatePatientOnCStore(patients);
+    }
+
+    @Test
+    public void testLinkUnlinkPatientsSimplaCase()
+            throws PatientCircularMergedException, NonUniquePatientException,
+            PatientMergedException, SecurityException, IllegalStateException,
+            NotSupportedException, SystemException, RollbackException,
+            HeuristicMixedException, HeuristicRollbackException {
+        Attributes patientOneAttributes = new Attributes();
+        Attributes patientTwoAttributes = new Attributes();
+        Patient[] patients = initLinkPatients(patientOneAttributes,
+                patientTwoAttributes);
+        // link with A,b <-> D
+        service.linkPatient(patientOneAttributes, patientTwoAttributes,
+                createStoreParam());
+
+        //check for linked ids
+        Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs)
+            Assert.assertTrue(patients[1].getLinkedPatientIDs().contains(id));
+        Collection<PatientID> patTwoIDs = patients[1].getPatientIDs();
+        for (PatientID id : patTwoIDs)
+            Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
+
+        // unlink A,b <-> D
+        service.unlinkPatient(patientOneAttributes, patientTwoAttributes);
+        //check no ids linked
+         patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs)
+            Assert.assertFalse(patients[1].getLinkedPatientIDs().contains(id));
+         patTwoIDs = patients[1].getPatientIDs();
+        for (PatientID id : patTwoIDs)
+            Assert.assertFalse(patients[0].getLinkedPatientIDs().contains(id));
+        cleanupdateOrCreatePatientOnCStore(patients);
+    }
+
+    @Test
+    public void testLinkUnlinkPatientsUnknownIdentifier()
+            throws PatientCircularMergedException, NonUniquePatientException,
+            PatientMergedException, SecurityException, IllegalStateException,
+            NotSupportedException, SystemException, RollbackException,
+            HeuristicMixedException, HeuristicRollbackException {
+        Attributes patientOneAttributes = new Attributes();
+        Attributes patientTwoAttributes = new Attributes();
+        Patient[] patients = initLinkPatients(patientOneAttributes,
+                patientTwoAttributes);
+        // add unknown identifier
+        Sequence otherPatientIDs2 = patientTwoAttributes.newSequence(
+                Tag.OtherPatientIDsSequence, 1);
+        Attributes tempSeqItem = new Attributes();
+        tempSeqItem.setString(Tag.PatientID, VR.LO, "444");
+        tempSeqItem = setIssuer(1, tempSeqItem, "G111222");
+        otherPatientIDs2.add(tempSeqItem);
+        // link with A , B -> D , E (with E unknown)
+        service.linkPatient(patientOneAttributes, patientTwoAttributes,
+                createStoreParam());
+        //check linked ids and new one created and linked
+        boolean addedNewIdentifier = false;
+        Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs)
+            Assert.assertTrue(patients[1].getLinkedPatientIDs().contains(id));
+        Collection<PatientID> patTwoIDs = patients[1].getPatientIDs();
+        for (PatientID id : patTwoIDs) {
+            Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
+            if (id.getID().compareTo("444") == 0)
+                addedNewIdentifier = true;
+        }
+        // extra check for newly created id
+        Assert.assertTrue(addedNewIdentifier);
+        
+        // unlink with A , B, C -> D , E (with C unknown)
+        Sequence tmp = patientOneAttributes.getSequence(Tag.OtherPatientIDsSequence);
+        Attributes tmpItem = new Attributes();
+        tmpItem.setString(Tag.PatientID, VR.LO, "666");
+        tmpItem = setIssuer(1, tmpItem, "G111222");
+        tmp.add(tmpItem);
+        //unlink
+        service.unlinkPatient(patientOneAttributes, patientTwoAttributes);
+        
+        //check no ids linked and new one created for patient one (C)
+        addedNewIdentifier=false;
+        patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs){
+            Assert.assertFalse(patients[1].getLinkedPatientIDs().contains(id));
+            if (id.getID().compareTo("666") == 0)
+                addedNewIdentifier = true;
+        }
+        patTwoIDs = patients[1].getPatientIDs();
+        for (PatientID id : patTwoIDs) 
+            Assert.assertFalse(patients[0].getLinkedPatientIDs().contains(id));
+        
+        Assert.assertTrue(addedNewIdentifier);
+        
+        cleanupdateOrCreatePatientOnCStore(patients);
+    }
+
+    @Test
+    public void testLinkUnLinkPatientsnotReferencedIdentifierInLinkMessage()
+            throws PatientCircularMergedException, NonUniquePatientException,
+            PatientMergedException, SecurityException, IllegalStateException,
+            NotSupportedException, SystemException, RollbackException,
+            HeuristicMixedException, HeuristicRollbackException {
+        Attributes patientOneAttributes = new Attributes();
+        Attributes patientTwoAttributes = new Attributes();
+        Patient[] patients = initLinkPatients(patientOneAttributes,
+                patientTwoAttributes);
+        // remove the other id so it becomes unreferenced in the link message
+        patientOneAttributes.remove(Tag.OtherPatientIDs);
+        // link with A <-> D (with patient one having B unreferenced in the link)
+        service.linkPatient(patientOneAttributes, patientTwoAttributes,
+                createStoreParam());
+        //check all links created
+        Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs)
+            Assert.assertTrue(patients[1].getLinkedPatientIDs().contains(id));
+
+        Collection<PatientID> patTwoIDs = patients[1].getPatientIDs();
+        for (PatientID id : patTwoIDs) {
+            Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
+        }
+        
+        // unlink with A <-> D (with patient one having B unreferenced in the link)
+        service.unlinkPatient(patientOneAttributes, patientTwoAttributes);
+        
+        //check all links are broken  
+        
+        patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs)
+                Assert.assertFalse(patients[1].getLinkedPatientIDs().contains(id));    
+        patTwoIDs = patients[1].getPatientIDs();
+        for (PatientID id : patTwoIDs) {
+            Assert.assertFalse(patients[0].getLinkedPatientIDs().contains(id));
+        }
+
+        
+        cleanupdateOrCreatePatientOnCStore(patients);
+    }
+
+    @Test
+    public void testLinkPatientsnoPatientRecordforOneIdentifier()
+            throws PatientCircularMergedException, NonUniquePatientException,
+            PatientMergedException, SecurityException, IllegalStateException,
+            NotSupportedException, SystemException, RollbackException,
+            HeuristicMixedException, HeuristicRollbackException {
+        Attributes patientOneAttributes = new Attributes();
+        Attributes patientTwoAttributes = new Attributes();
+        patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
+        patientOneAttributes.setString(Tag.PatientID, VR.LO, "111");
+        patientOneAttributes = setIssuer(1, patientOneAttributes, "G111222");
+        Sequence otherPatientIDs1 = patientOneAttributes.newSequence(
+                Tag.OtherPatientIDsSequence, 1);
+        Attributes tempSeqItem = new Attributes();
+        tempSeqItem.setString(Tag.PatientID, VR.LO, "222");
+        tempSeqItem = setIssuer(1, tempSeqItem, "G111222");
+        otherPatientIDs1.add(tempSeqItem);
+        // create patient One
+        Patient patientOne = service.updateOrCreatePatientOnCStore(
+                patientOneAttributes, new IDPatientSelector(),
+                createStoreParam());
+        patientTwoAttributes.setString(Tag.PatientName, VR.PN, "Linked^Bunny");
+        patientTwoAttributes.setString(Tag.PatientID, VR.LO, "333");
+        patientTwoAttributes = setIssuer(1, patientTwoAttributes, "G111222");
+        patientOne.setLinkedPatientIDs(new ArrayList<PatientID>());
+        
+        // link with A,B <-> D (with D referring to no patient record)
+        service.linkPatient(patientOneAttributes, patientTwoAttributes,
+                createStoreParam());
+
+        Query query = em
+                .createQuery("SELECT p.patient from PatientID p where p.id = ?1");
+        query.setParameter(1, "333");
+        Patient patientTwo = (Patient) query.getSingleResult();
+        Patient[] patients = { patientOne, patientTwo };
+        Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs)
+            Assert.assertTrue(patients[1].getLinkedPatientIDs().contains(id));
+
+        Collection<PatientID> patTwoIDs = patients[1].getPatientIDs();
+        for (PatientID id : patTwoIDs) {
+            Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
+        }
+        
+        //unlink is not applicable here since the unlink returns on not finding patient records for the id
+        cleanupdateOrCreatePatientOnCStore(patients);
+    }
+
+    @Test
+    public void testLinkPatientsnoPatientRecordforAllIdentifiers()
+            throws PatientCircularMergedException, NonUniquePatientException,
+            PatientMergedException, SecurityException, IllegalStateException,
+            NotSupportedException, SystemException, RollbackException,
+            HeuristicMixedException, HeuristicRollbackException {
+        Attributes patientOneAttributes = new Attributes();
+        Attributes patientTwoAttributes = new Attributes();
+        patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
+        patientOneAttributes.setString(Tag.PatientID, VR.LO, "111");
+        patientOneAttributes = setIssuer(1, patientOneAttributes, "G111222");
+        Sequence otherPatientIDs1 = patientOneAttributes.newSequence(
+                Tag.OtherPatientIDsSequence, 1);
+        Attributes tempSeqItem = new Attributes();
+        tempSeqItem.setString(Tag.PatientID, VR.LO, "222");
+        tempSeqItem = setIssuer(1, tempSeqItem, "G111222");
+        otherPatientIDs1.add(tempSeqItem);
+
+        patientTwoAttributes.setString(Tag.PatientName, VR.PN, "Linked^Bunny");
+        patientTwoAttributes.setString(Tag.PatientID, VR.LO, "333");
+        patientTwoAttributes = setIssuer(1, patientTwoAttributes, "G111222");
+
+        // link with A,B <-> D (with A,B and D referring to no patient record)
+        service.linkPatient(patientOneAttributes, patientTwoAttributes,
+                createStoreParam());
+
+        Query query = em
+                .createQuery("SELECT p.patient from PatientID p where p.id = ?1 or p.id= ?2");
+        query.setParameter(1, "333");
+        query.setParameter(2, "111");
+        @SuppressWarnings("unchecked")
+        List<Patient> rs = query.getResultList();
+        Patient patientOne = rs.get(0);
+        Patient patientTwo = rs.get(1);
+        Patient[] patients = { patientOne, patientTwo };
+        Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs)
+            Assert.assertTrue(patients[1].getLinkedPatientIDs().contains(id));
+
+        Collection<PatientID> patTwoIDs = patients[1].getPatientIDs();
+        for (PatientID id : patTwoIDs) {
+            Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
+        }
+      //unlink is not applicable here since the unlink returns on not finding patient records for the id
+        cleanupdateOrCreatePatientOnCStore(patients);
+    }
+
+    @Test
+    public void testMergeLinkedPatients()
+            throws PatientCircularMergedException, NonUniquePatientException,
+            PatientMergedException, SecurityException, IllegalStateException,
+            NotSupportedException, SystemException, RollbackException,
+            HeuristicMixedException, HeuristicRollbackException {
+        Attributes patientOneAttributes = new Attributes();
+        Attributes patientTwoAttributes = new Attributes();
+        patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
+        patientOneAttributes.setString(Tag.PatientID, VR.LO, "111");
+        patientOneAttributes = setIssuer(1, patientOneAttributes, "G111222");
+        Sequence otherPatientIDs1 = patientOneAttributes.newSequence(
+                Tag.OtherPatientIDsSequence, 1);
+        Attributes tempSeqItem = new Attributes();
+        tempSeqItem.setString(Tag.PatientID, VR.LO, "222");
+        tempSeqItem = setIssuer(1, tempSeqItem, "G111222");
+        otherPatientIDs1.add(tempSeqItem);
+        // create patient 1
+        Patient patientOne = service.updateOrCreatePatientOnCStore(
+                patientOneAttributes, new IDPatientSelector(),
+                createStoreParam());
+        patientTwoAttributes.setString(Tag.PatientName, VR.PN, "Linked^Bunny");
+        patientTwoAttributes.setString(Tag.PatientID, VR.LO, "333");
+        patientTwoAttributes = setIssuer(1, patientTwoAttributes, "G111222");
+        // create patient 2
+        Patient patientTwo = service.updateOrCreatePatientOnCStore(
+                patientTwoAttributes, new IDPatientSelector(),
+                createStoreParam());
+        Attributes patientThreeAttributes = new Attributes();
+        patientThreeAttributes.setString(Tag.PatientName, VR.PN,
+                "Linkedz^Bunny");
+        patientThreeAttributes.setString(Tag.PatientID, VR.LO, "555");
+        patientThreeAttributes = setIssuer(1, patientThreeAttributes, "G111222");
+
+        // create patient 3
+        Patient patientThree = service.updateOrCreatePatientOnCStore(
+                patientThreeAttributes, new IDPatientSelector(),
+                createStoreParam());
+
+        // link 2 and 3
+        service.linkPatient(patientTwoAttributes, patientThreeAttributes,
+                createStoreParam());
+        // merge 1 dominant and 2 prior
+        service.mergePatientByHL7(patientOneAttributes, patientTwoAttributes,
+                createStoreParam());
+
+        // Assert.assertTrue(patientOne.getPatientIDs().contains(((List)patientTwo.getPatientIDs()).get(0)));
+
+        // link with D <-> E then merge D with patient 1 with A,B as ids
+
+        Patient[] patients = { patientOne, patientTwo, patientThree };
+        Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs)
+            Assert.assertTrue(patients[2].getLinkedPatientIDs().contains(id));
+
+        Collection<PatientID> patThreeIDs = patients[2].getPatientIDs();
+        for (PatientID id : patThreeIDs) {
+            Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
+        }
+        cleanupdateOrCreatePatientOnCStore(patients);
+    }
+
+    @Test
+    public void testLinkPatientsdifferentPatientRecords()
+            throws PatientCircularMergedException, NonUniquePatientException,
+            PatientMergedException, SecurityException, IllegalStateException,
+            NotSupportedException, SystemException, RollbackException,
+            HeuristicMixedException, HeuristicRollbackException {
+        Attributes patientOneAttributes = new Attributes();
+        Attributes patientTwoAttributes = new Attributes();
+        Patient[] patients = initLinkPatients(patientOneAttributes,
+                patientTwoAttributes);
+        Attributes patientThreeAttributes = new Attributes();
+        patientThreeAttributes.setString(Tag.PatientName, VR.PN,
+                "Linkedz^Bunny");
+        patientThreeAttributes.setString(Tag.PatientID, VR.LO, "555");
+        patientThreeAttributes = setIssuer(1, patientThreeAttributes, "G111222");
+        Patient patientThree = service.updateOrCreatePatientOnCStore(
+                patientThreeAttributes, new IDPatientSelector(),
+                createStoreParam());
+        patientThree.setLinkedPatientIDs(new ArrayList<PatientID>());
+
+        // add the id from patient three to the link attributes
+        Sequence otherPatientIDs2 = patientTwoAttributes.newSequence(
+                Tag.OtherPatientIDsSequence, 1);
+        Attributes tempSeqItem = new Attributes();
+        tempSeqItem.setString(Tag.PatientID, VR.LO, "555");
+        tempSeqItem = setIssuer(1, tempSeqItem, "G111222");
+        otherPatientIDs2.add(tempSeqItem);
+        // link with A,B <-> D,E (with E belonging to a third patient)
+
+        NonUniquePatientException e = null;
+        try {
+            service.linkPatient(patientOneAttributes, patientTwoAttributes,
+                    createStoreParam());
+        } catch (NonUniquePatientException e1) {
+            e = e1;
+        }
+
+        Assert.assertNotNull(e);
+
+        Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
+        for (PatientID id : patOneIDs)
+            Assert.assertFalse(patients[1].getLinkedPatientIDs().contains(id));
+
+        Collection<PatientID> patTwoIDs = patients[1].getPatientIDs();
+        for (PatientID id : patTwoIDs) {
+            Assert.assertFalse(patients[0].getLinkedPatientIDs().contains(id));
+        }
+
+        Patient[] newPatients = new Patient[3];
+        newPatients[0] = patients[0];
+        newPatients[1] = patients[1];
+        newPatients[2] = patientThree;
+        cleanupdateOrCreatePatientOnCStore(newPatients);
+    }
+
+    private Patient[] initLinkPatients(Attributes patientOneAttributes,
+            Attributes patientTwoAttributes)
+            throws PatientCircularMergedException {
+        // create patient one
+
+        patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
+        patientOneAttributes.setString(Tag.PatientID, VR.LO, "111");
+        patientOneAttributes = setIssuer(1, patientOneAttributes, "G111222");
+        Sequence otherPatientIDs1 = patientOneAttributes.newSequence(
+                Tag.OtherPatientIDsSequence, 2);
+        Attributes tempSeqItem = new Attributes();
+        tempSeqItem.setString(Tag.PatientID, VR.LO, "222");
+        tempSeqItem = setIssuer(1, tempSeqItem, "G111222");
+        otherPatientIDs1.add(tempSeqItem);
+        // create patient two
+        Patient patientOne = service.updateOrCreatePatientOnCStore(
+                patientOneAttributes, new IDPatientSelector(),
+                createStoreParam());
+
+        patientTwoAttributes.setString(Tag.PatientName, VR.PN, "Linked^Bunny");
+        patientTwoAttributes.setString(Tag.PatientID, VR.LO, "333");
+        patientTwoAttributes = setIssuer(1, patientTwoAttributes, "G111222");
+        Patient patientTwo = service.updateOrCreatePatientOnCStore(
+                patientTwoAttributes, new IDPatientSelector(),
+                createStoreParam());
+        patientOne.setLinkedPatientIDs(new ArrayList<PatientID>());
+        patientTwo.setLinkedPatientIDs(new ArrayList<PatientID>());
+        Patient[] result = { patientOne, patientTwo };
+        return result;
     }
 
     /**
@@ -677,11 +1083,10 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
      */
     private Attributes setIssuer(int issuerRepresentation,
             Attributes patientTwoAttributes, String issuer) {
-        if (issuerRepresentation == 1){
+        if (issuerRepresentation == 1) {
             patientTwoAttributes
                     .setString(Tag.IssuerOfPatientID, VR.LO, issuer);
-        }
-        else if (issuerRepresentation == 2) {
+        } else if (issuerRepresentation == 2) {
             Sequence issuerSeq = patientTwoAttributes.newSequence(
                     Tag.IssuerOfPatientIDQualifiersSequence, 1);
             Attributes tempItem = new Attributes();
@@ -698,7 +1103,7 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
             tempItem.setString(Tag.UniversalEntityIDType, VR.CS, "ISO");
             issuerSeq.add(tempItem);
         }
-        
+
         return patientTwoAttributes;
     }
 
@@ -715,6 +1120,7 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
         storeParam.setFuzzyStr(new ESoundex());
         return storeParam;
     }
+
     public static Attributes decodeAttributes(byte[] b) {
         if (b == null || b.length == 0)
             return new Attributes(0);
@@ -727,6 +1133,7 @@ private void checkIDs(Patient[] patients, Attributes attrs, LinkedList<PatientID
             throw new BlobCorruptedException(e);
         }
     }
+
     private static final int[] PATIENT_ATTRS = { Tag.SpecificCharacterSet,
             Tag.PatientName, Tag.PatientID, Tag.IssuerOfPatientID,
             Tag.IssuerOfPatientIDQualifiersSequence, Tag.PatientBirthDate,
