@@ -366,7 +366,7 @@ public class PatientServiceEJB implements PatientService {
             PatientMergedException {
         Patient patient = selector.select(findPatientByIDs(pids), attrs, pids);
         if (patient == null)
-            createPatient(pids, attrs, storeParam);
+            return createPatient(pids, attrs, storeParam);
 
         if (patient.getMergedWith() != null)
             throw new PatientMergedException(patient);
