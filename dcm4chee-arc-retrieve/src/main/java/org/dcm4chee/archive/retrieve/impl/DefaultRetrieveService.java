@@ -120,7 +120,7 @@ public class DefaultRetrieveService implements RetrieveService {
 
         BooleanBuilder builder = new BooleanBuilder();
         //TODO
-//        builder.and(QueryBuilder.pids(pids, false));
+        builder.and(QueryBuilder.pids(pids, false));
         builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
                 keys.getStrings(Tag.StudyInstanceUID), false));
         builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,

@@ -56,6 +56,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Decorator to apply MIMA specifications to the Retrieve Service.
+ * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
@@ -77,6 +79,12 @@ public abstract class RetrieveServiceMIMADecorator implements RetrieveService {
     @Inject
     private MIMAAttributeCoercion coercion;
 
+    /*
+     * Extends default queryPatientIDs method associating an issuer to the 
+     * queried id (if any) and performing a PIX Query. The pids resulting
+     * from the PIX query are then used for the internal DICOM query along
+     * the original queried id.
+     */
     @Override
     public IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys) {
         IDWithIssuer pid = IDWithIssuer.pidOf(keys);
