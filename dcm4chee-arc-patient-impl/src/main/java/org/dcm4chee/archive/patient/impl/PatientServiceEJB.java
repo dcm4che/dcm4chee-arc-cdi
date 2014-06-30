@@ -477,13 +477,9 @@ public class PatientServiceEJB implements PatientService {
         if (pat == other)
             throw new IllegalArgumentException("Cannot link " + pat + " with itself");
 
+        LOG.info("Unlink {} from {}", other, pat);
         mergePatientIDs(pat, pids);
         mergePatientIDs(other, otherPIDs);
-        unlinkPatient(pat, other);
-    }
-
-    private void unlinkPatient(Patient pat, Patient other)  {
-        LOG.info("Unlink {} from {}", other, pat);
         unlinkPatientIDs(pat, other);
         unlinkPatientIDs(other, pat);
         pat.updateOtherPatientIDs();
