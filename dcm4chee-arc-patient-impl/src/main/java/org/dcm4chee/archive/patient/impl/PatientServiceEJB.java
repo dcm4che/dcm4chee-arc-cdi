@@ -438,6 +438,10 @@ public class PatientServiceEJB implements PatientService {
 
     private void linkPatientIDs(Patient pat, Patient other) {
         Collection<PatientID> linkedPatientIDs = pat.getLinkedPatientIDs();
+        if (linkedPatientIDs == null) {
+            linkedPatientIDs = new ArrayList<PatientID>();
+            pat.setLinkedPatientIDs(linkedPatientIDs);
+        }
         for (PatientID pid : other.getPatientIDs()) {
             if (!contains(linkedPatientIDs, pid)) {
                 linkedPatientIDs.add(pid);
