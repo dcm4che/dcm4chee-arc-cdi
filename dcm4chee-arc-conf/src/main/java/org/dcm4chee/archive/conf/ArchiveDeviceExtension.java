@@ -38,6 +38,10 @@
 
 package org.dcm4chee.archive.conf;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 
@@ -54,7 +58,7 @@ import org.dcm4che3.util.StringUtils;
 public class ArchiveDeviceExtension extends DeviceExtension {
 
     private static final long serialVersionUID = -3611223780276386740L;
-
+    public static final String ARCHIVE_HOST_AE_MAP_NODE="HostNameAETitleMap";
     private Code incorrectWorklistEntrySelectedCode;
     private Code rejectedForQualityReasonsCode;
     private Code rejectedForPatientSafetyReasonsCode;
@@ -68,6 +72,26 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
+    
+    private ArrayList<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
+
+    private boolean hostnameAEresoultion;
+
+    public boolean isHostnameAEresoultion() {
+        return hostnameAEresoultion;
+    }
+
+    public void setHostnameAEresoultion(boolean hostnameAEresoultion) {
+        this.hostnameAEresoultion = hostnameAEresoultion;
+    }
+
+    public ArrayList<HostNameAEEntry> getHostNameAEList() {
+        return hostNameAEList;
+    }
+
+    public void setHostNameAEList(ArrayList<HostNameAEEntry> hostNameAEList) {
+        this.hostNameAEList = hostNameAEList;
+    }
 
     public Code getIncorrectWorklistEntrySelectedCode() {
         return incorrectWorklistEntrySelectedCode;

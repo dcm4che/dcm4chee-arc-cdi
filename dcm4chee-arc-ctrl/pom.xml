@@ -39,6 +39,10 @@
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-net</artifactId>
     </dependency>
+        <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-api</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.jboss.spec.javax.servlet</groupId>
       <artifactId>jboss-servlet-api_3.0_spec</artifactId>
@@ -53,7 +57,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.net</Dependencies>
+              <Dependencies>org.dcm4che.net, org.dcm4che.conf.api</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

@@ -39,9 +39,14 @@
 package org.dcm4chee.archive.conf.prefs;
 
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map.Entry;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+
+import javax.naming.directory.Attributes;
+import javax.naming.directory.BasicAttributes;
 
 import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
@@ -56,39 +61,48 @@ import org.dcm4che3.conf.prefs.generic.PrefsDiffWriter;
 import org.dcm4che3.conf.prefs.imageio.PreferencesCompressionRulesConfiguration;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.ValueSelector;
+import org.dcm4che3.imageio.codec.ImageReaderFactory;
+import org.dcm4che3.imageio.codec.ImageReaderFactory.ImageReaderParam;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.HostNameAEEntry;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
-public class PreferencesArchiveConfiguration
-    extends PreferencesDicomConfigurationExtension {
+public class PreferencesArchiveConfiguration extends
+        PreferencesDicomConfigurationExtension {
 
     @Override
     protected void storeTo(Device device, Preferences prefs) {
-        ArchiveDeviceExtension arcDev =
-                device.getDeviceExtension(ArchiveDeviceExtension.class);
+        ArchiveDeviceExtension arcDev = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
         if (arcDev == null)
             return;
 
         prefs.putBoolean("dcmArchiveDevice", true);
-        PreferencesUtils.storeNotNull(prefs, "dcmIncorrectWorklistEntrySelectedCode",
+        PreferencesUtils.storeNotNull(prefs,
+                "dcmIncorrectWorklistEntrySelectedCode",
                 arcDev.getIncorrectWorklistEntrySelectedCode());
-        PreferencesUtils.storeNotNull(prefs, "dcmRejectedForQualityReasonsCode",
+        PreferencesUtils.storeNotNull(prefs,
+                "dcmRejectedForQualityReasonsCode",
                 arcDev.getRejectedForQualityReasonsCode());
-        PreferencesUtils.storeNotNull(prefs, "dcmRejectedForPatientSafetyReasonsCode",
+        PreferencesUtils.storeNotNull(prefs,
+                "dcmRejectedForPatientSafetyReasonsCode",
                 arcDev.getRejectedForPatientSafetyReasonsCode());
-        PreferencesUtils.storeNotNull(prefs, "dcmIncorrectModalityWorklistEntryCode",
+        PreferencesUtils.storeNotNull(prefs,
+                "dcmIncorrectModalityWorklistEntryCode",
                 arcDev.getIncorrectModalityWorklistEntryCode());
-        PreferencesUtils.storeNotNull(prefs, "dcmDataRetentionPeriodExpiredCode",
+        PreferencesUtils.storeNotNull(prefs,
+                "dcmDataRetentionPeriodExpiredCode",
                 arcDev.getDataRetentionPeriodExpiredCode());
         PreferencesUtils.storeNotNull(prefs, "dcmFuzzyAlgorithmClass",
                 arcDev.getFuzzyAlgorithmClass());
@@ -96,18 +110,38 @@ public class PreferencesArchiveConfiguration
                 arcDev.getConfigurationStaleTimeout(), 0);
         PreferencesUtils.storeNotDef(prefs, "dcmWadoAttributesStaleTimeout",
                 arcDev.getWadoAttributesStaleTimeout(), 0);
+        PreferencesUtils.storeNotDef(prefs, "dcmHostNameAEResolution",
+                arcDev.isHostnameAEresoultion(), false);
     }
 
     @Override
     protected void storeChilds(Device device, Preferences deviceNode) {
-        ArchiveDeviceExtension arcDev =
-                device.getDeviceExtension(ArchiveDeviceExtension.class);
+        ArchiveDeviceExtension arcDev = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
         if (arcDev == null)
             return;
 
         Preferences afsNode = deviceNode.node("dcmAttributeFilter");
         for (Entity entity : Entity.values())
-            storeTo(arcDev.getAttributeFilter(entity), afsNode.node(entity.name()));
+            storeTo(arcDev.getAttributeFilter(entity),
+                    afsNode.node(entity.name()));
+
+        Preferences hostNameMap = deviceNode
+                .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
+        HostNameAEEntry[] tmpMap = null;
+        tmpMap = arcDev.getHostNameAEList().toArray(tmpMap);
+        storeTo(tmpMap, hostNameMap);
+    }
+
+    private void storeTo(HostNameAEEntry[] entries, Preferences prefs) {
+        for (HostNameAEEntry entry : entries)
+            storeTo(entry, prefs.node(entry.getHostName()));
+    }
+
+    private void storeTo(HostNameAEEntry entry, Preferences prefs) {
+        prefs.put("dicomAETitle", entry.getAeTitle());
+        PreferencesUtils.storeNotNull(prefs, "dicomHostname",
+                entry.getHostName());
     }
 
     @Override
@@ -117,15 +151,18 @@ public class PreferencesArchiveConfiguration
             return;
 
         config.store(arcAE.getAttributeCoercions(), aeNode);
-        PreferencesCompressionRulesConfiguration
-                .store(arcAE.getCompressionRules(), aeNode);
+        PreferencesCompressionRulesConfiguration.store(
+                arcAE.getCompressionRules(), aeNode);
     }
 
     private static void storeTo(AttributeFilter filter, Preferences prefs) {
         storeTags(prefs, "dcmTag", filter.getSelection());
-        PreferencesUtils.storeNotNull(prefs, "dcmCustomAttribute1", filter.getCustomAttribute1());
-        PreferencesUtils.storeNotNull(prefs, "dcmCustomAttribute2", filter.getCustomAttribute2());
-        PreferencesUtils.storeNotNull(prefs, "dcmCustomAttribute3", filter.getCustomAttribute3());
+        PreferencesUtils.storeNotNull(prefs, "dcmCustomAttribute1",
+                filter.getCustomAttribute1());
+        PreferencesUtils.storeNotNull(prefs, "dcmCustomAttribute2",
+                filter.getCustomAttribute2());
+        PreferencesUtils.storeNotNull(prefs, "dcmCustomAttribute3",
+                filter.getCustomAttribute3());
     }
 
     private static void storeTags(Preferences prefs, String key, int[] tags) {
@@ -146,14 +183,14 @@ public class PreferencesArchiveConfiguration
         prefs.putBoolean("dcmArchiveNetworkAE", true);
 
         try {
-            
-            ConfigWriter prefsWriter = new PrefsConfigWriter(prefs);   
+
+            ConfigWriter prefsWriter = new PrefsConfigWriter(prefs);
             ReflectiveConfig.store(arcAE, prefsWriter);
-            
-	} catch (Exception e) {
-	    throw new RuntimeException(e);
-	}
-        
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
@@ -165,32 +202,46 @@ public class PreferencesArchiveConfiguration
         ArchiveDeviceExtension arcdev = new ArchiveDeviceExtension();
         device.addDeviceExtension(arcdev);
 
-        arcdev.setIncorrectWorklistEntrySelectedCode(new Code(
-                prefs.get("dcmIncorrectWorklistEntrySelectedCode", null)));
-        arcdev.setRejectedForQualityReasonsCode(new Code(
-                prefs.get("dcmRejectedForQualityReasonsCode", null)));
-        arcdev.setRejectedForPatientSafetyReasonsCode(new Code(
-                prefs.get("dcmRejectedForPatientSafetyReasonsCode", null)));
-        arcdev.setIncorrectModalityWorklistEntryCode(new Code(
-                prefs.get("dcmIncorrectModalityWorklistEntryCode", null)));
-        arcdev.setDataRetentionPeriodExpiredCode(new Code(
-                prefs.get("dcmDataRetentionPeriodExpiredCode", null)));
+        arcdev.setIncorrectWorklistEntrySelectedCode(new Code(prefs.get(
+                "dcmIncorrectWorklistEntrySelectedCode", null)));
+        arcdev.setRejectedForQualityReasonsCode(new Code(prefs.get(
+                "dcmRejectedForQualityReasonsCode", null)));
+        arcdev.setRejectedForPatientSafetyReasonsCode(new Code(prefs.get(
+                "dcmRejectedForPatientSafetyReasonsCode", null)));
+        arcdev.setIncorrectModalityWorklistEntryCode(new Code(prefs.get(
+                "dcmIncorrectModalityWorklistEntryCode", null)));
+        arcdev.setDataRetentionPeriodExpiredCode(new Code(prefs.get(
+                "dcmDataRetentionPeriodExpiredCode", null)));
         arcdev.setFuzzyAlgorithmClass(prefs.get("dcmFuzzyAlgorithmClass", null));
-        arcdev.setConfigurationStaleTimeout(
-                prefs.getInt("dcmConfigurationStaleTimeout", 0));
-        arcdev.setWadoAttributesStaleTimeout(
-                prefs.getInt("dcmWadoAttributesStaleTimeout", 0));
+        arcdev.setConfigurationStaleTimeout(prefs.getInt(
+                "dcmConfigurationStaleTimeout", 0));
+        arcdev.setWadoAttributesStaleTimeout(prefs.getInt(
+                "dcmWadoAttributesStaleTimeout", 0));
+        arcdev.setHostnameAEresoultion(prefs.getBoolean(
+                "dcmHostNameAEResolution", true));
     }
 
     @Override
     protected void loadChilds(Device device, Preferences deviceNode)
             throws BackingStoreException, ConfigurationException {
-        ArchiveDeviceExtension arcdev =
-                device.getDeviceExtension(ArchiveDeviceExtension.class);
+        ArchiveDeviceExtension arcdev = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
         if (arcdev == null)
             return;
 
         loadAttributeFilters(arcdev, deviceNode);
+        Preferences prefs = deviceNode
+                .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
+        ArrayList<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
+        for (String hostname : prefs.childrenNames())
+            hostNameAEList.add(loadHostNameAEEntry(prefs.node(hostname)));
+
+        arcdev.setHostNameAEList(hostNameAEList);
+    }
+
+    private HostNameAEEntry loadHostNameAEEntry(Preferences prefs) {
+        return new HostNameAEEntry(prefs.get("dicomHostname", null), prefs.get(
+                "dicomAETitle", null));
     }
 
     @Override
@@ -201,15 +252,15 @@ public class PreferencesArchiveConfiguration
         ArchiveAEExtension arcae = new ArchiveAEExtension();
         ae.addAEExtension(arcae);
 
-	try {
-	    
-		ConfigReader prefsReader = new PrefsConfigReader(prefs);
-		ReflectiveConfig.read(arcae, prefsReader);
+        try {
 
-	} catch (Exception e) {
-	    throw new RuntimeException(e);
-	}  
-        
+            ConfigReader prefsReader = new PrefsConfigReader(prefs);
+            ReflectiveConfig.read(arcae, prefsReader);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
@@ -220,24 +271,23 @@ public class PreferencesArchiveConfiguration
             return;
 
         config.load(arcae.getAttributeCoercions(), aeNode);
-        PreferencesCompressionRulesConfiguration
-                .load(arcae.getCompressionRules(), aeNode);
+        PreferencesCompressionRulesConfiguration.load(
+                arcae.getCompressionRules(), aeNode);
     }
 
-    private static void loadAttributeFilters(ArchiveDeviceExtension device, Preferences deviceNode)
-            throws BackingStoreException {
+    private static void loadAttributeFilters(ArchiveDeviceExtension device,
+            Preferences deviceNode) throws BackingStoreException {
         Preferences afsNode = deviceNode.node("dcmAttributeFilter");
         for (String entity : afsNode.childrenNames()) {
             Preferences acNode = afsNode.node(entity);
             AttributeFilter filter = new AttributeFilter(tags(acNode, "dcmTag"));
-            filter.setCustomAttribute1(
-                    valueSelectorOf(acNode, "dcmCustomAttribute1"));
-            filter.setCustomAttribute2(
-                    valueSelectorOf(acNode, "dcmCustomAttribute2"));
-            filter.setCustomAttribute3(
-                    valueSelectorOf(acNode, "dcmCustomAttribute3"));
-            device.setAttributeFilter(
-                    Entity.valueOf(entity), filter);
+            filter.setCustomAttribute1(valueSelectorOf(acNode,
+                    "dcmCustomAttribute1"));
+            filter.setCustomAttribute2(valueSelectorOf(acNode,
+                    "dcmCustomAttribute2"));
+            filter.setCustomAttribute3(valueSelectorOf(acNode,
+                    "dcmCustomAttribute3"));
+            device.setAttributeFilter(Entity.valueOf(entity), filter);
         }
     }
 
@@ -250,97 +300,143 @@ public class PreferencesArchiveConfiguration
         int n = prefs.getInt(key + ".#", 0);
         int[] is = new int[n];
         for (int i = 0; i < n; i++)
-            is[i] = Integer.parseInt(prefs.get(key + '.' + (i+1), null), 16);
+            is[i] = Integer.parseInt(prefs.get(key + '.' + (i + 1), null), 16);
         return is;
     }
 
     @Override
     protected void storeDiffs(Device a, Device b, Preferences prefs) {
-        ArchiveDeviceExtension aa = a.getDeviceExtension(ArchiveDeviceExtension.class);
-        ArchiveDeviceExtension bb = b.getDeviceExtension(ArchiveDeviceExtension.class);
+        ArchiveDeviceExtension aa = a
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        ArchiveDeviceExtension bb = b
+                .getDeviceExtension(ArchiveDeviceExtension.class);
         if (aa == null || bb == null)
             return;
-        
-        PreferencesUtils.storeDiff(prefs, "dcmIncorrectWorklistEntrySelectedCode",
+
+        PreferencesUtils.storeDiff(prefs,
+                "dcmIncorrectWorklistEntrySelectedCode",
                 aa.getIncorrectWorklistEntrySelectedCode(),
                 bb.getIncorrectWorklistEntrySelectedCode());
         PreferencesUtils.storeDiff(prefs, "dcmRejectedForQualityReasonsCode",
                 aa.getRejectedForQualityReasonsCode(),
                 bb.getRejectedForQualityReasonsCode());
-        PreferencesUtils.storeDiff(prefs, "dcmRejectedForPatientSafetyReasonsCode",
+        PreferencesUtils.storeDiff(prefs,
+                "dcmRejectedForPatientSafetyReasonsCode",
                 aa.getRejectedForPatientSafetyReasonsCode(),
                 bb.getRejectedForPatientSafetyReasonsCode());
-        PreferencesUtils.storeDiff(prefs, "dcmIncorrectModalityWorklistEntryCode",
+        PreferencesUtils.storeDiff(prefs,
+                "dcmIncorrectModalityWorklistEntryCode",
                 aa.getIncorrectModalityWorklistEntryCode(),
                 bb.getIncorrectModalityWorklistEntryCode());
         PreferencesUtils.storeDiff(prefs, "dcmDataRetentionPeriodExpiredCode",
                 aa.getDataRetentionPeriodExpiredCode(),
                 bb.getDataRetentionPeriodExpiredCode());
         PreferencesUtils.storeDiff(prefs, "dcmFuzzyAlgorithmClass",
-                aa.getFuzzyAlgorithmClass(),
-                bb.getFuzzyAlgorithmClass());
+                aa.getFuzzyAlgorithmClass(), bb.getFuzzyAlgorithmClass());
         PreferencesUtils.storeDiff(prefs, "dcmConfigurationStaleTimeout",
                 aa.getConfigurationStaleTimeout(),
-                bb.getConfigurationStaleTimeout(),
-                0);
+                bb.getConfigurationStaleTimeout(), 0);
         PreferencesUtils.storeDiff(prefs, "dcmWadoAttributesStaleTimeout",
                 aa.getWadoAttributesStaleTimeout(),
-                bb.getWadoAttributesStaleTimeout(),
-                0);
+                bb.getWadoAttributesStaleTimeout(), 0);
+        PreferencesUtils.storeDiff(prefs, "dcmHostNameAEResolution",
+                aa.isHostnameAEresoultion(), bb.isHostnameAEresoultion());
     }
 
     @Override
     protected void storeDiffs(ApplicationEntity a, ApplicationEntity b,
             Preferences prefs) {
-         ArchiveAEExtension aa = a.getAEExtension(ArchiveAEExtension.class);
-         ArchiveAEExtension bb = b.getAEExtension(ArchiveAEExtension.class);
-         if (aa == null || bb == null)
-             return;
+        ArchiveAEExtension aa = a.getAEExtension(ArchiveAEExtension.class);
+        ArchiveAEExtension bb = b.getAEExtension(ArchiveAEExtension.class);
+        if (aa == null || bb == null)
+            return;
 
- 	try {
+        try {
 
-	    	DiffWriter prefsDiffWriter = new PrefsDiffWriter(prefs);
-		ReflectiveConfig.storeAllDiffs(a, b, prefsDiffWriter);
+            DiffWriter prefsDiffWriter = new PrefsDiffWriter(prefs);
+            ReflectiveConfig.storeAllDiffs(a, b, prefsDiffWriter);
 
-	} catch (Exception e) {
-	    throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
 
-	}
+        }
     }
 
     @Override
     protected void mergeChilds(Device prev, Device device,
             Preferences deviceNode) throws BackingStoreException {
-        ArchiveDeviceExtension aa =
-                prev.getDeviceExtension(ArchiveDeviceExtension.class);
-        ArchiveDeviceExtension bb =
-                device.getDeviceExtension(ArchiveDeviceExtension.class);
+        ArchiveDeviceExtension aa = prev
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        ArchiveDeviceExtension bb = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
         if (aa == null || bb == null)
             return;
 
         Preferences afsNode = deviceNode.node("dcmAttributeFilter");
         for (Entity entity : Entity.values())
-            storeDiffs(afsNode.node(entity.name()), aa.getAttributeFilter(entity),
+            storeDiffs(afsNode.node(entity.name()),
+                    aa.getAttributeFilter(entity),
                     bb.getAttributeFilter(entity));
+
+        Preferences hostNameAEMap = deviceNode
+                .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
+        storeDiffs(hostNameAEMap, aa.getHostNameAEList(),
+                bb.getHostNameAEList());
     }
 
-    private void storeDiffs(Preferences prefs, AttributeFilter prev, AttributeFilter filter) {
+    private void storeDiffs(Preferences prefs,
+            ArrayList<HostNameAEEntry> prevList,
+            ArrayList<HostNameAEEntry> current) throws BackingStoreException {
+        for (HostNameAEEntry entry : prevList) {
+            String host = entry.getHostName();
+            if (!current.contains(host)) {
+                Preferences node = prefs.node(host);
+                node.removeNode();
+                node.flush();
+            }
+        }
+        for (HostNameAEEntry entry : current) {
+            String host = entry.getHostName();
+            storeDiffs(prefs.node(host), getMatchingEntry(entry, prevList),
+                    entry);
+        }
+    }
+
+    private HostNameAEEntry getMatchingEntry(HostNameAEEntry entry,
+            ArrayList<HostNameAEEntry> lst) {
+        for (HostNameAEEntry item : lst)
+            if (entry.getHostName().compareTo(item.getHostName()) == 0)
+                return item;
+
+        return null;
+    }
+
+    private void storeDiffs(Preferences prefs, HostNameAEEntry prev,
+            HostNameAEEntry current) {
+        if (prev != null) {
+            PreferencesUtils.storeDiff(prefs, "dicomHostname",
+                    prev.getHostName(), current.getHostName());
+            PreferencesUtils.storeDiff(prefs, "dicomAETitle",
+                    prev.getHostName(), current.getHostName());
+        } else
+            storeTo(current, prefs);
+    }
+
+    private void storeDiffs(Preferences prefs, AttributeFilter prev,
+            AttributeFilter filter) {
         storeTags(prefs, "dcmTag", filter.getSelection());
-        storeDiffTags(prefs, "dcmTag", 
-                prev.getSelection(),
+        storeDiffTags(prefs, "dcmTag", prev.getSelection(),
                 filter.getSelection());
         PreferencesUtils.storeDiff(prefs, "dcmCustomAttribute1",
-                prev.getCustomAttribute1(),
-                filter.getCustomAttribute1());
+                prev.getCustomAttribute1(), filter.getCustomAttribute1());
         PreferencesUtils.storeDiff(prefs, "dcmCustomAttribute2",
-                prev.getCustomAttribute2(),
-                filter.getCustomAttribute2());
+                prev.getCustomAttribute2(), filter.getCustomAttribute2());
         PreferencesUtils.storeDiff(prefs, "dcmCustomAttribute3",
-                prev.getCustomAttribute3(),
-                filter.getCustomAttribute3());
+                prev.getCustomAttribute3(), filter.getCustomAttribute3());
     }
 
-    private void storeDiffTags(Preferences prefs, String key, int[] prevs, int[] vals) {
+    private void storeDiffTags(Preferences prefs, String key, int[] prevs,
+            int[] vals) {
         if (!Arrays.equals(prevs, vals)) {
             PreferencesUtils.removeKeys(prefs, key, vals.length, prevs.length);
             storeTags(prefs, key, vals);
@@ -355,9 +451,10 @@ public class PreferencesArchiveConfiguration
         if (aa == null || bb == null)
             return;
 
-        config.merge(aa.getAttributeCoercions(), bb.getAttributeCoercions(), aePrefs);
-        PreferencesCompressionRulesConfiguration
-            .merge(aa.getCompressionRules(), bb.getCompressionRules(), aePrefs);
+        config.merge(aa.getAttributeCoercions(), bb.getAttributeCoercions(),
+                aePrefs);
+        PreferencesCompressionRulesConfiguration.merge(
+                aa.getCompressionRules(), bb.getCompressionRules(), aePrefs);
 
     }
 
