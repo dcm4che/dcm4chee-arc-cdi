@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -118,7 +119,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 .getDeviceExtension(ArchiveDeviceExtension.class);
         if (arcDev == null)
             return;
-
+        
         for (Entity entity : Entity.values())
             config.createSubcontext(
                     LdapUtils.dnOf("dcmEntity", entity.toString(), deviceDN),
@@ -130,8 +131,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
             attrs.put("objectclass", "dcmHostNameAEEntry");
             attrs.put("dicomAETitle", entry.getAeTitle());
             attrs.put("dicomHostname", entry.getHostName());
-            config.createSubcontext(LdapUtils.dnOf("cn",
-                    arcDev.ARCHIVE_HOST_AE_MAP_NODE, deviceDN), attrs);
+            config.createSubcontext(LdapUtils.dnOf("dicomHostname",entry.getHostName(),LdapUtils.dnOf("cn",
+                    arcDev.ARCHIVE_HOST_AE_MAP_NODE, deviceDN)), attrs);
         }
     }
 
@@ -219,6 +220,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         arcdev.setWadoAttributesStaleTimeout(LdapUtils.intValue(
                 attrs.get("dcmWadoAttributesStaleTimeout"), 0));
         arcdev.setHostnameAEresoultion(LdapUtils.booleanValue(attrs.get("dcmHostNameAEResolution"), true));
+
     }
 
     @Override
@@ -260,10 +262,28 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
 
     private void loadWebClientMappings(ArchiveDeviceExtension device,
             String deviceDN) throws NamingException {
-        NamingEnumeration<SearchResult> map = config.search(LdapUtils.dnOf("cn",
-                ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN),
-                "(objectclass=dcmHostNameAEEntry)");
+        NamingEnumeration<SearchResult> map = null;
+        Attributes mapParentAttrs = null;
+        
+        try{
+            mapParentAttrs = config.getAttributes(LdapUtils.dnOf("cn", ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN));
+            device.setHostNameAEFallBackEntry(new HostNameAEEntry("*", (String)mapParentAttrs.get("dcmHostNameAEFallBackAE").get()));
+        }
+        catch(NameNotFoundException e)
+        {
+            Attributes attrs = new BasicAttributes(false);
+            attrs.put("dcmHostNameAEFallBackAE", "FALL_BACK_AET");
+            attrs.put("objectclass", "dcmHostNameAEMap");
+            config.createSubcontext(LdapUtils.dnOf("cn",
+                    ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN), attrs);
+            mapParentAttrs = config.getAttributes(LdapUtils.dnOf("cn", ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN));
+            device.setHostNameAEFallBackEntry(new HostNameAEEntry("*", (String)mapParentAttrs.get("dcmHostNameAEFallBackAE").get()));
+            return;
+        }
         try {
+            map = config.search(LdapUtils.dnOf("cn",
+                    ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN),
+                    "(objectclass=dcmHostNameAEEntry)");
             ArrayList<HostNameAEEntry> tmpMap = new ArrayList<HostNameAEEntry>();
             while (map.hasMore()) {
                 SearchResult entry = map.next();
@@ -273,7 +293,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                         "dicomAETitle").get()));
             }
             device.setHostNameAEList(tmpMap);
-        } finally {
+        }
+        finally {
             LdapUtils.safeClose(map);
         }
     }

@@ -380,7 +380,15 @@ attributetype ( 1.2.40.0.13.1.15.10.3.46
 	SINGLE-VALUE 
  )
 
-
+ attributetype ( 1.2.40.0.13.1.15.10.3.48 
+	NAME 'dcmHostNameAEFallBackAE' 
+	DESC 'Defines the fallback AETitle for Hostname AE Title mapping' 
+	EQUALITY caseExactMatch 
+	SUBSTR caseExactSubstringsMatch 
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 
+	SINGLE-VALUE 
+ )
+ 
 objectclass ( 1.2.40.0.13.1.15.10.4.4 
 	NAME 'dcmArchiveDevice' 
 	DESC 'DICOM Archive Device related information' 
@@ -426,10 +434,10 @@ objectclass ( 1.2.40.0.13.1.15.10.4.12
 
 objectclass ( 1.2.40.0.13.1.15.10.4.13 
 	NAME 'dcmHostNameAEMap' 
-	DESC 'Specifies a map of web client hostname to associated application entity' 
+	DESC 'Specifies a map of web client hostname to associated application entity with a fall back AE' 
 	SUP top 
 	STRUCTURAL 
-	MUST cn 
+	MUST ( cn $ dcmHostNameAEFallBackAE ) 
  )
 
 objectclass ( 1.2.40.0.13.1.15.10.4.14 

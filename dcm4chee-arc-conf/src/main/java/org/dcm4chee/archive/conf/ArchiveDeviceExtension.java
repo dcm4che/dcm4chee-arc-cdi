@@ -75,6 +75,16 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     
     private ArrayList<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
 
+    private HostNameAEEntry hostNameAEFallBackEntry;
+    
+    public HostNameAEEntry getHostNameAEFallBackEntry() {
+        return hostNameAEFallBackEntry;
+    }
+
+    public void setHostNameAEFallBackEntry(HostNameAEEntry hostNameAEFallBackEntry) {
+        this.hostNameAEFallBackEntry = hostNameAEFallBackEntry;
+    }
+
     private boolean hostnameAEresoultion;
 
     public boolean isHostnameAEresoultion() {
@@ -239,4 +249,5 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         queryParam.setAttributeFilters(attributeFilters);
         return queryParam;
     }
+
 }

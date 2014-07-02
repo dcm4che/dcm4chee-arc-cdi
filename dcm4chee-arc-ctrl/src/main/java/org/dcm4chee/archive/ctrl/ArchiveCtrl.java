@@ -52,14 +52,18 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.ArchiveService;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.HostNameAEEntry;
 import org.dcm4chee.archive.rs.HttpSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -68,6 +72,7 @@ import org.dcm4chee.archive.rs.HttpSource;
 @Path("/ctrl")
 @RequestScoped
 public class ArchiveCtrl {
+    private static final Logger LOG = LoggerFactory.getLogger(ArchiveCtrl.class);
 
     private static final String IPADDRESS_PATTERN = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
             + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
@@ -116,6 +121,7 @@ public class ArchiveCtrl {
     public Response whoami() throws ConfigurationException {
         ArchiveDeviceExtension arcDevExt = service.getDevice()
                 .getDeviceExtension(ArchiveDeviceExtension.class);
+        
         HostNameAEEntry caller = null;
         Pattern pattern;
         Matcher matcher;
@@ -134,14 +140,35 @@ public class ArchiveCtrl {
                 caller = entry;
             }
         }
-        ApplicationEntity ae = cache.get(caller.getAeTitle());
+        if(caller == null)
+        {
+            caller = arcDevExt.getHostNameAEFallBackEntry();
+            LOG.debug("Unable to match request remote host with an AE, \n"
+                    + "(Probably due to missing map entry in the configuration or due to hostname resolution failure)\n"
+                    + "Using FallBack AE with Title"+caller.getAeTitle());
+        }
+        ApplicationEntity ae = null;
+        try{
+       ae = cache.get(caller.getAeTitle());
 
+       if(ae == null)
+           throw new NullPointerException();
+        }
+        catch(Exception e)
+        {
+            //happens if incorrect AETitle (not in the configuration backend)
+            return Response.ok(
+                    "<div>Calling Device: <br>Host:" + caller.getHostName()
+                            + "<br>AETitle: " + "Incorrect AETitle or not found in the configuration"
+                            + "<br>Device Name: " + "unable to retrieve device since not AE is found"
+                            + "</div>").build();
+        }
         Device callerDevice = ae.getDevice();
-
+        
         return Response.ok(
                 "<div>Calling Device: <br>Host:" + caller.getHostName()
                         + "<br>AETitle: " + caller.getAeTitle()
-                        + "<br>device name: " + callerDevice.getDeviceName()
+                        + "<br>Device Name: " + callerDevice.getDeviceName()
                         + "</div>").build();
 
     }
