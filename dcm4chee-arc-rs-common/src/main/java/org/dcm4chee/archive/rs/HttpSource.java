@@ -62,7 +62,14 @@ public class HttpSource implements Participant {
         else
             return Participant.UNKNOWN;
     }
-
+    @Override
+    public String getIP()
+    {
+        if(request!=null)
+            return unknownIfNull(request.getRemoteAddr());
+        else
+            return Participant.UNKNOWN;
+    }
     @Override
     public String getHost() {
         if (request != null)

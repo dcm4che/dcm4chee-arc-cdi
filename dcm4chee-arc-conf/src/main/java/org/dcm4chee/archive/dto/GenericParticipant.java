@@ -64,5 +64,11 @@ public class GenericParticipant implements Participant {
         return identity;
     }
 
+    @Override
+    public String getIP() {
+        // TODO Auto-generated method stub
+        return host;
+    }
+
     
 }

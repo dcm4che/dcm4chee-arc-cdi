@@ -89,7 +89,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mysema.query.types.OrderSpecifier;
-import com.mysema.query.types.path.StringPath;
 
 /**
  * Service implementing DICOM Supplement 166: Query based on ID for DICOM Objects (QIDO).

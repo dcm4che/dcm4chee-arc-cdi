@@ -38,9 +38,7 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;

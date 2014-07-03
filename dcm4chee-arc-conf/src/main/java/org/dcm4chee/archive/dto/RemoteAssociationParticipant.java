@@ -80,4 +80,15 @@ public class RemoteAssociationParticipant implements Participant {
         return value != null ? value : Participant.UNKNOWN;
     }
 
+    @Override
+    public String getIP() {
+        
+        if (association != null && association.getSocket() != null
+                && association.getSocket().getInetAddress() != null)
+                    return unknownIfNull(association.getSocket().getInetAddress()
+                            .getHostAddress());
+            else
+                return UNKNOWN;
+    }
+
 }

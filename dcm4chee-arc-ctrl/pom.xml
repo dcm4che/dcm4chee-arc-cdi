@@ -57,7 +57,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.net, org.dcm4che.conf.api</Dependencies>
+              <Dependencies>org.dcm4che.net</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

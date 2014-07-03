@@ -50,4 +50,6 @@ public interface Participant {
             
     public String getHost();
     
+    public String getIP();
+    
 }

@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.event;
 
 import java.net.UnknownHostException;
+
 import org.dcm4chee.archive.dto.Participant;
 
 /**
@@ -64,5 +65,15 @@ public class LocalSource implements Participant {
 
     private static String unknownIfNull(String value) {
         return value != null ? value : Participant.UNKNOWN;
+    }
+
+    @Override
+    public String getIP() {
+        try {
+            return unknownIfNull(java.net.InetAddress
+                    .getLocalHost().getHostAddress());
+        } catch (UnknownHostException e) {
+           return Participant.UNKNOWN;
+        }
     }
 }

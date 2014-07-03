@@ -37,10 +37,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 package org.dcm4chee.archive.ctrl;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response.Status;
@@ -52,18 +48,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.ArchiveService;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.HostNameAEEntry;
+import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -72,15 +62,9 @@ import org.slf4j.LoggerFactory;
 @Path("/ctrl")
 @RequestScoped
 public class ArchiveCtrl {
-    private static final Logger LOG = LoggerFactory.getLogger(ArchiveCtrl.class);
-
-    private static final String IPADDRESS_PATTERN = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
     @Inject
-    IApplicationEntityCache cache;
+    private HostAECache cache;
 
     @Inject
     private ArchiveService service;
@@ -119,55 +103,14 @@ public class ArchiveCtrl {
     @Path("/whoami")
     @Produces(MediaType.TEXT_HTML)
     public Response whoami() throws ConfigurationException {
-        ArchiveDeviceExtension arcDevExt = service.getDevice()
-                .getDeviceExtension(ArchiveDeviceExtension.class);
         
-        HostNameAEEntry caller = null;
-        Pattern pattern;
-        Matcher matcher;
-        pattern = Pattern.compile(IPADDRESS_PATTERN);
-        String host = arcDevExt.isHostnameAEresoultion() ? request
-                .getRemoteHost() : request.getRemoteAddr();
-        matcher = pattern.matcher(host);
-        if (arcDevExt.isHostnameAEresoultion() && matcher.matches())
-            return Response
-                    .status(Status.CONFLICT)
-                    .entity("Unable to perform name resoultion for the host\n reset the map entry to ip address and disable name resolution")
-                    .build();
-
-        for (HostNameAEEntry entry : arcDevExt.getHostNameAEList()) {
-            if (entry.getHostName().compareTo(host) == 0) {
-                caller = entry;
-            }
-        }
-        if(caller == null)
-        {
-            caller = arcDevExt.getHostNameAEFallBackEntry();
-            LOG.debug("Unable to match request remote host with an AE, \n"
-                    + "(Probably due to missing map entry in the configuration or due to hostname resolution failure)\n"
-                    + "Using FallBack AE with Title"+caller.getAeTitle());
-        }
-        ApplicationEntity ae = null;
-        try{
-       ae = cache.get(caller.getAeTitle());
-
-       if(ae == null)
-           throw new NullPointerException();
-        }
-        catch(Exception e)
-        {
-            //happens if incorrect AETitle (not in the configuration backend)
-            return Response.ok(
-                    "<div>Calling Device: <br>Host:" + caller.getHostName()
-                            + "<br>AETitle: " + "Incorrect AETitle or not found in the configuration"
-                            + "<br>Device Name: " + "unable to retrieve device since not AE is found"
-                            + "</div>").build();
-        }
+        HttpSource source = new HttpSource(request);
+        ApplicationEntity ae = cache.findAE(source);
         Device callerDevice = ae.getDevice();
         
         return Response.ok(
-                "<div>Calling Device: <br>Host:" + caller.getHostName()
-                        + "<br>AETitle: " + caller.getAeTitle()
+                "<div>Calling Device: <br>Host:" + request.getRemoteHost()
+                        + "<br>AETitle: " + ae.getAETitle()
                         + "<br>Device Name: " + callerDevice.getDeviceName()
                         + "</div>").build();
 
