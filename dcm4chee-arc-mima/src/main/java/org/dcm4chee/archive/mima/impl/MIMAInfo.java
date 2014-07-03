@@ -59,7 +59,7 @@ class MIMAInfo {
     private Issuer requestedIssuerOfPatientID;
     private Issuer requestedIssuerOfAccessionNumber;
     private final Hashtable<Set<IDWithIssuer>,String[]> patientNamesCache = new Hashtable<Set<IDWithIssuer>,String[]> ();
-    private final Set<IDWithIssuer[]> pixResponseCache = Collections.emptySet();
+    private final Set<IDWithIssuer[]> pixResponseCache = new HashSet<IDWithIssuer[]>();
 
     public boolean isReturnOtherPatientIDs() {
         return returnOtherPatientIDs;

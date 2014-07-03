@@ -72,6 +72,7 @@ import com.mysema.query.jpa.hibernate.HibernateQuery;
  * Attributes coercion according to MIMA specs.
  * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
 @ApplicationScoped
@@ -101,7 +102,7 @@ class MIMAAttributeCoercion {
             return;
 
         IDWithIssuer coercedRootID = null;
-        Set<IDWithIssuer> coercedOtherIDs = Collections.emptySet();
+        Set<IDWithIssuer> coercedOtherIDs = new HashSet<IDWithIssuer>();
         
         Issuer requestedIssuer = info.getRequestedIssuerOfPatientID();
         if (requestedIssuer == null && !info.isReturnOtherPatientIDs()
