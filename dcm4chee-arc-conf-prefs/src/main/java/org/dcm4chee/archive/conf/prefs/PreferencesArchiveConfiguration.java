@@ -41,12 +41,8 @@ package org.dcm4chee.archive.conf.prefs;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map.Entry;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
-
-import javax.naming.directory.Attributes;
-import javax.naming.directory.BasicAttributes;
 
 import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
@@ -61,12 +57,8 @@ import org.dcm4che3.conf.prefs.generic.PrefsDiffWriter;
 import org.dcm4che3.conf.prefs.imageio.PreferencesCompressionRulesConfiguration;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.ValueSelector;
-import org.dcm4che3.imageio.codec.ImageReaderFactory;
-import org.dcm4che3.imageio.codec.ImageReaderFactory.ImageReaderParam;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.imageio.ImageReaderExtension;
-import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
@@ -128,6 +120,8 @@ public class PreferencesArchiveConfiguration extends
 
         Preferences hostNameMap = deviceNode
                 .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
+        hostNameMap.put("dcmHostNameAEFallBackAE", arcDev
+                .getHostNameAEFallBackEntry().getAeTitle());
         HostNameAEEntry[] tmpMap = null;
         tmpMap = arcDev.getHostNameAEList().toArray(tmpMap);
         storeTo(tmpMap, hostNameMap);
@@ -233,6 +227,10 @@ public class PreferencesArchiveConfiguration extends
         Preferences prefs = deviceNode
                 .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
         ArrayList<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
+        if (prefs.get("dcmHostNameAEFallBackAE", null) == null)
+            prefs.put("dcmHostNameAEFallBackAE", "FALLBACK");
+        arcdev.setHostNameAEFallBackEntry(new HostNameAEEntry("*",
+                (String) prefs.get("dcmHostNameAEFallBackAE", "FALLBACK")));
         for (String hostname : prefs.childrenNames())
             hostNameAEList.add(loadHostNameAEEntry(prefs.node(hostname)));
 
@@ -380,6 +378,14 @@ public class PreferencesArchiveConfiguration extends
 
         Preferences hostNameAEMap = deviceNode
                 .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
+        if (aa.getHostNameAEFallBackEntry() != null) {
+            PreferencesUtils.storeDiff(hostNameAEMap,
+                    "dcmHostNameAEFallBackAE", aa.getHostNameAEFallBackEntry()
+                            .getAeTitle(), bb.getHostNameAEFallBackEntry()
+                            .getAeTitle());
+        } else
+            hostNameAEMap.put("dcmHostNameAEFallBackAE", bb
+                    .getHostNameAEFallBackEntry().getAeTitle());
         storeDiffs(hostNameAEMap, aa.getHostNameAEList(),
                 bb.getHostNameAEList());
     }

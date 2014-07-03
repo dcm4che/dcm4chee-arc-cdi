@@ -41,7 +41,6 @@ package org.dcm4chee.archive.conf.ldap;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.naming.NameNotFoundException;
@@ -108,8 +107,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 arcDev.getConfigurationStaleTimeout(), 0);
         LdapUtils.storeNotDef(attrs, "dcmWadoAttributesStaleTimeout",
                 arcDev.getWadoAttributesStaleTimeout(), 0);
-        LdapUtils.storeNotDef(attrs, "dcmHostNameAEResolution",
-                arcDev.isHostnameAEresoultion(),false);
+        LdapUtils.storeBoolean(attrs, "dcmHostNameAEResolution",
+                arcDev.isHostnameAEresoultion());
     }
 
     @Override
@@ -125,14 +124,17 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                     LdapUtils.dnOf("dcmEntity", entity.toString(), deviceDN),
                     storeTo(arcDev.getAttributeFilter(entity), entity,
                             new BasicAttributes(true)));
-
+        Attributes attrs = new BasicAttributes();
+        attrs.get("objectclass").add("dcmArchiveDevice");
+        LdapUtils.storeNotNull(attrs, "dcmHostNameAEResolution",
+                arcDev.getHostNameAEFallBackEntry().getAeTitle());
         for (HostNameAEEntry entry : arcDev.getHostNameAEList()) {
-            Attributes attrs = new BasicAttributes(false);
+            attrs = new BasicAttributes(false);
             attrs.put("objectclass", "dcmHostNameAEEntry");
             attrs.put("dicomAETitle", entry.getAeTitle());
             attrs.put("dicomHostname", entry.getHostName());
             config.createSubcontext(LdapUtils.dnOf("dicomHostname",entry.getHostName(),LdapUtils.dnOf("cn",
-                    arcDev.ARCHIVE_HOST_AE_MAP_NODE, deviceDN)), attrs);
+                    ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN)), attrs);
         }
     }
 
@@ -272,7 +274,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         catch(NameNotFoundException e)
         {
             Attributes attrs = new BasicAttributes(false);
-            attrs.put("dcmHostNameAEFallBackAE", "FALL_BACK_AET");
+            attrs.put("dcmHostNameAEFallBackAE", "FALLBACK");
             attrs.put("objectclass", "dcmHostNameAEMap");
             config.createSubcontext(LdapUtils.dnOf("cn",
                     ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN), attrs);
@@ -423,6 +425,9 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                     storeDiffs(aa.getAttributeFilter(entity),
                             bb.getAttributeFilter(entity),
                             new ArrayList<ModificationItem>()));
+        
+        config.modifyAttributes(LdapUtils.dnOf("cn",
+                ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN), storeDiffs(aa.getHostNameAEFallBackEntry(), bb.getHostNameAEFallBackEntry(), new ArrayList<ModificationItem>()));
         
         for (HostNameAEEntry entry : aa.getHostNameAEList()) {
             for(HostNameAEEntry entryNew: bb.getHostNameAEList())

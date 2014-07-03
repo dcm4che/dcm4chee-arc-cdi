@@ -71,8 +71,8 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
     
+    private boolean hostnameAEresoultion=false;
     private ArrayList<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
-
     private HostNameAEEntry hostNameAEFallBackEntry;
     
     public HostNameAEEntry getHostNameAEFallBackEntry() {
@@ -82,8 +82,6 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     public void setHostNameAEFallBackEntry(HostNameAEEntry hostNameAEFallBackEntry) {
         this.hostNameAEFallBackEntry = hostNameAEFallBackEntry;
     }
-
-    private boolean hostnameAEresoultion;
 
     public boolean isHostnameAEresoultion() {
         return hostnameAEresoultion;
@@ -221,6 +219,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         setConfigurationStaleTimeout(arcdev.configurationStaleTimeout);
         System.arraycopy(arcdev.attributeFilters, 0,
                 attributeFilters, 0, attributeFilters.length);
+        System.arraycopy(arcdev.hostNameAEList.toArray(), 0,
+                arcdev.hostNameAEList.toArray(), 0, arcdev.hostNameAEList.size());
+        
     }
 
     public StoreParam getStoreParam() {
