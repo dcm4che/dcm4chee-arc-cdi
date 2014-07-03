@@ -58,7 +58,7 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.11 NAME 'dcmStoreOriginalAttributes'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.12 NAME 'dcmModifyingSystem'
-  DESC 'Specifies value of Modifying System (0400,0563) in added Modified Attributes Sequence (0400,0550) items; use Device  NAME if absent.'
+  DESC 'Specifies value of Modifying System (0400,0563) in added Modified Attributes Sequence (0400,0550) items; use Device NAME if absent.'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
@@ -156,23 +156,23 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.31 NAME 'hl7PIXManagerApplication'
   DESC 'Application^Facility name of remote PIX Manager Application'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.32 NAME 'hl7PIXConsumerApplication'
   DESC 'Application^Facility name of local PIX Consumer Application'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.33 NAME 'dcmReturnOtherPatientIDs'
   DESC 'Specifies to return all known Patient IDs in the Other Patient IDs Sequence; disable if absent'
   EQUALITY booleanMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.34 NAME 'dcmReturnOtherPatientNames'
   DESC 'Specifies to return all known patient names known in Other Patient Names; disable if absent'
   EQUALITY booleanMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.35 NAME 'dcmSpoolDirectoryPath'
   DESC 'Specifies path of directory for spooling received objects'
@@ -182,42 +182,42 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.35 NAME 'dcmSpoolDirectoryPath'
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.36 NAME 'dcmPreserveSpoolFileOnFailure'
   DESC 'Specifies to preserve spool file with received composite object if the storage failed; disable if absent'
   EQUALITY booleanMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.37 NAME 'dcmIncorrectWorklistEntrySelectedCode'
   DESC 'Procedure Discontinuation Reason code used by the IHE Acquisition Modality Actor to convey that the wrong SPS has been selected: (110514, DCM, "Incorrect worklist entry select")'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.38 NAME 'dcmRejectedForQualityReasonsCode'
   DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for quality reasons: (113001, DCM, “Rejected for Quality Reasons”)'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.39 NAME 'dcmRejectedForPatientSafetyReasonsCode'
   DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for patient safety reasons: (113037, DCM, “Rejected for Patient Safety Reasons”)'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.40 NAME 'dcmIncorrectModalityWorklistEntryCode'
   DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as associated with an incorrect modality worklist entry: (XXXXXX11, 99IHEIOCM, “Incorrect Modality Worklist Entry”)'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.41 NAME 'dcmDataRetentionPeriodExpiredCode'
   DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as expired for data retention policy: (XXXXXX22, 99IHEIOCM, “Data Retention Period Expired”)'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.42 NAME 'dcmShowRejectedInstances'
   DESC 'Specifies to show instances rejected for quality reasons; disable if absent'
   EQUALITY booleanMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.43 NAME 'dcmWadoAttributesStaleTimeout'
   DESC 'Stale timeout of cached Patient, Study and Series Attributes by WADO Service in s. 0 (=no caching) if absent'
@@ -229,13 +229,21 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.44 NAME 'dcmQidoMaxNumberOfResults'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
-  
-olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.45 NAME 'dcmIsTimeZoneSupported'
-  DESC 'Specifies if time zone support will be used or not'
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.45 NAME 'dcmWadoSupportedSRClasses'
+  DESC 'Supported SR SOP classes for WADO retrieval'
+  EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.46 NAME 'dcmHostNameAEResolution'
+  DESC 'Indicates if name resolution will be applied on mapped hosts to AEs'
   EQUALITY booleanMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE)
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.47 NAME 'dcmHostNameAEFallBackAE'
+  DESC 'Defines the fallback AETitle for Hostname AE Title mapping'
+  EQUALITY caseExactMatch
+  SUBSTR caseExactSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-  
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -247,6 +255,7 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmDataRetentionPeriodExpiredCode $
     dcmFuzzyAlgorithmClass )
   MAY (
+    dcmHostNameAEResolution $
     dcmConfigurationStaleTimeout $
     dcmWadoAttributesStaleTimeout ) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
@@ -282,7 +291,7 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
     hl7PIXManagerApplication $
     hl7PIXConsumerApplication $
     dcmQidoMaxNumberOfResults $
-    dcmIsTimeZoneSupported) )
+    dcmWadoSupportedSRClasses) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.10 NAME 'dcmAttributeFilter'
   DESC 'Attributes stored in the database'
   SUP top STRUCTURAL
@@ -305,3 +314,17 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.12 NAME 'dcmStoreDuplicate'
   MUST (
     dcmStoreDuplicateCondition $
     dcmStoreDuplicateAction ) )
+olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.13 NAME 'dcmHostNameAEMap'
+  DESC 'Specifies a map of web client hostname to associated application entity with a fall back AE'
+  SUP top
+  STRUCTURAL
+  MUST (
+    cn $
+    dcmHostNameAEFallBackAE ) )
+olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.14 NAME 'dcmHostNameAEEntry'
+  DESC 'Specifies one association of web client hostname application entity'
+  SUP top
+  STRUCTURAL
+  MUST (
+    dicomAETitle $
+    dicomHostname ) )
