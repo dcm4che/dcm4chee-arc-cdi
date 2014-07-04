@@ -118,7 +118,7 @@ class MIMAAttributeCoercion {
             // if the pid is already found in the list, all the rest is skipped 
             // as we consider the pix query to be simmetrical and we don't need
             // to perform the reverse pix query
-            if (!coercedOtherIDs.contains(pid))
+            if (!containsMatch(coercedOtherIDs,pid))
             {
                 coercedOtherIDs.add(pid);
     
@@ -134,7 +134,7 @@ class MIMAAttributeCoercion {
     
                 // third, add the linked ids, if not already added.
                 for (IDWithIssuer linkedID : linkedIDs)
-                    if (!coercedOtherIDs.contains(linkedID))
+                    if (!containsMatch(coercedOtherIDs,linkedID))
                         coercedOtherIDs.add(linkedID);
             }
         }
@@ -239,6 +239,22 @@ class MIMAAttributeCoercion {
         }
         attrs.newSequence(Tag.IssuerOfAccessionNumberSequence, 1).add(
                 requestedIssuer.toItem());
+    }
+    
+    private boolean containsMatch (Set<IDWithIssuer> set, IDWithIssuer id)
+    {
+        if (set == null || id == null)
+            return false;
+
+        boolean contains = false;
+        
+        for (IDWithIssuer idOfSet : set)
+            if (idOfSet!=null && idOfSet.matches(id)) {
+                contains = true;
+                break;
+            }
+                
+        return contains;
     }
 
 }
