@@ -219,9 +219,10 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         setConfigurationStaleTimeout(arcdev.configurationStaleTimeout);
         System.arraycopy(arcdev.attributeFilters, 0,
                 attributeFilters, 0, attributeFilters.length);
-        System.arraycopy(arcdev.hostNameAEList.toArray(), 0,
-                hostNameAEList.toArray(), 0, arcdev.hostNameAEList.size());
-        
+        hostNameAEList = new ArrayList<HostNameAEEntry>();
+        for(HostNameAEEntry newEntry: arcdev.getHostNameAEList())
+        hostNameAEList.add(newEntry);
+        setHostNameAEFallBackEntry(arcdev.getHostNameAEFallBackEntry());
     }
 
     public StoreParam getStoreParam() {
