@@ -51,6 +51,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.TimeZone;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -59,6 +60,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
@@ -68,6 +70,7 @@ import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.PDVInputStream;
 import org.dcm4che3.net.Status;
@@ -75,6 +78,7 @@ import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.AttributesFormat;
+import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StreamUtils;
 import org.dcm4che3.util.TagUtils;
@@ -335,10 +339,10 @@ public class StoreServiceImpl implements StoreService {
      * request
      */
     @Override
-    public void coerceAttributes(StoreContext context)
+    public void coerceAttributes(final StoreContext context)
             throws DicomServiceException {
 
-        StoreSession session = context.getStoreSession();
+        final StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         Attributes attrs = context.getAttributes();
         try{
@@ -348,7 +352,13 @@ public class StoreServiceImpl implements StoreService {
                     TransferCapability.Role.SCP, session.getRemoteAET());
             if (tpl != null) {
                 attrs.update(
-                        SAXTransformer.transform(attrs, tpl, false, false),
+                        SAXTransformer.transform(attrs, tpl, false, false, new SetupTransformer() {
+                            
+                            @Override
+                            public void setup(Transformer transformer) {
+                                setParameters(transformer, session);
+                            }
+                        }),
                         modified);
             }
         } catch (Exception e) {
@@ -357,7 +367,21 @@ public class StoreServiceImpl implements StoreService {
             //store service time zone support moved to decorator
             
     }
+    private void setParameters(Transformer tr, StoreSession session) {
+        setAETParameters(tr, session);
+        Date date = new Date();
+        String currentDate = DateUtils.formatDA(null, date);
+        String currentTime = DateUtils.formatTM(null, date);
+        tr.setParameter("date", currentDate);
+        tr.setParameter("time", currentTime);
+        tr.setParameter("calling", session.getRemoteAET());
+        tr.setParameter("called", session.getLocalAET());
+    }
 
+    private void setAETParameters(Transformer tr, StoreSession session) {
+
+    }
+    
     @Override
     public void processFile(StoreContext context) throws DicomServiceException {
         try {

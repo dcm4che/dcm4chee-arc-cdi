@@ -90,6 +90,7 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
@@ -132,6 +133,9 @@ public class StowRS {
     @Inject
     private Device device;
 
+    @Inject
+    private HostAECache aeCache;
+    
     private ApplicationEntity ae;
 
     private ArchiveAEExtension arcAE;
@@ -224,7 +228,7 @@ public class StowRS {
         init();
         final StoreSession session = storeService.createStoreSession(storeService);
         session.setSource(new HttpSource(request));
-        session.setRemoteAET(request.getRemoteHost()); //TODO use hostname as AET, may be needed to change
+        session.setRemoteAET(aeCache.findAE(new HttpSource(request)).getAETitle()); //add AE for the web source
         session.setArchiveAEExtension(arcAE);
         storeService.initStorageFileSystem(session);
         storeService.initSpoolDirectory(session);

@@ -220,7 +220,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         System.arraycopy(arcdev.attributeFilters, 0,
                 attributeFilters, 0, attributeFilters.length);
         System.arraycopy(arcdev.hostNameAEList.toArray(), 0,
-                arcdev.hostNameAEList.toArray(), 0, arcdev.hostNameAEList.size());
+                hostNameAEList.toArray(), 0, arcdev.hostNameAEList.size());
         
     }
 
