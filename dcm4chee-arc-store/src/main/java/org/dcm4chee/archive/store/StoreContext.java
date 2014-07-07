@@ -68,9 +68,9 @@ public interface StoreContext {
 
     void setAttributes(Attributes attributes);
 
-    Attributes getCoercedAttributes();
+    Attributes getCoercedOriginalAttributes();
 
-    void setCoercedAttributes(Attributes attributes);
+    void setCoercedOrginalAttributes(Attributes attributes);
 
     Path getFinalFile();
 

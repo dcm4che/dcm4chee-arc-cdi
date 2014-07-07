@@ -314,7 +314,6 @@ public class StoreServiceImpl implements StoreService {
             service.coerceAttributes(context);
             service.processFile(context);
             service.updateDB(context);
-            service.updateCoercedAttributes(context);
         } catch (DicomServiceException e) {
             context.setStoreAction(StoreAction.FAIL);
             context.setThrowable(e);
@@ -342,9 +341,8 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         Attributes attrs = context.getAttributes();
-        
-            try{
-            Attributes modified = context.getCoercedAttributes();
+        try{
+            Attributes modified = context.getCoercedOriginalAttributes();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
                     TransferCapability.Role.SCP, session.getRemoteAET());
@@ -406,6 +404,7 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public void updateDB(StoreContext context) throws DicomServiceException {
         storeServiceEJB.updateDB(context);
+        updateAttributes(context);
     }
 
     @Override
@@ -421,8 +420,7 @@ public class StoreServiceImpl implements StoreService {
         }
     }
 
-    @Override
-    public void updateCoercedAttributes(StoreContext context) {
+    private void updateAttributes(StoreContext context) {
         Instance instance = context.getInstance();
         Series series = instance.getSeries();
         Study study = series.getStudy();
@@ -434,15 +432,15 @@ public class StoreServiceImpl implements StoreService {
         attrs.update(series.getAttributes(), modified);
         attrs.update(instance.getAttributes(), modified);
         if (!modified.isEmpty()) {
-            modified.addAll(context.getCoercedAttributes());
-            context.setCoercedAttributes(modified);
+            modified.addAll(context.getCoercedOriginalAttributes());
+            context.setCoercedOrginalAttributes(modified);
         }
         logCoercedAttributes(context);
     }
 
     private void logCoercedAttributes(StoreContext context) {
         StoreSession session = context.getStoreSession();
-        Attributes attrs = context.getCoercedAttributes();
+        Attributes attrs = context.getCoercedOriginalAttributes();
         if (!attrs.isEmpty()) {
             LOG.info("{}: Coerced Attributes:\n{}New Attributes:\n{}", session,
                     attrs,

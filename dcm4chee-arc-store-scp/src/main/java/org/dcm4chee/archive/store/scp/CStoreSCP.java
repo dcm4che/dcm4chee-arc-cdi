@@ -97,7 +97,7 @@ public class CStoreSCP extends BasicCStoreSCP {
             storeService.writeSpoolFile(context, fmi, data);
             storeService.parseSpoolFile(context);
             storeService.store(context);
-            Attributes coercedAttrs = context.getCoercedAttributes();
+            Attributes coercedAttrs = context.getCoercedOriginalAttributes();
             if (!coercedAttrs.isEmpty() 
                     && !session.getArchiveAEExtension()
                         .isSuppressWarningCoercionOfDataElements()) {

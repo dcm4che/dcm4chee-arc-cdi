@@ -138,12 +138,12 @@ public class StoreContextImpl implements StoreContext {
     }
 
     @Override
-    public Attributes getCoercedAttributes() {
+    public Attributes getCoercedOriginalAttributes() {
         return coercedAttributes;
     }
 
     @Override
-    public void setCoercedAttributes(Attributes attrs) {
+    public void setCoercedOrginalAttributes(Attributes attrs) {
         this.coercedAttributes = attrs;
     }
 

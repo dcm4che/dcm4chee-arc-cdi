@@ -503,7 +503,7 @@ public class StowRS {
                 + study_iuid + "/series/"
                 + series_iuid + "/instances/"
                 + iuid);
-        Attributes coercedAttrs = ctx.getCoercedAttributes();
+        Attributes coercedAttrs = ctx.getCoercedOriginalAttributes();
         if (!coercedAttrs.isEmpty()) {
             sopRef.setInt(Tag.WarningReason, VR.US,
                           org.dcm4che3.net.Status.CoercionOfDataElements);

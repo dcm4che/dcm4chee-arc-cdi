@@ -130,8 +130,6 @@ public interface StoreService {
 
     void updatePatient(EntityManager em, StoreContext context, Patient patient);
 
-    void updateCoercedAttributes(StoreContext context);
-
     void cleanup(StoreContext context);
 
     void fireStoreEvent(StoreContext context);

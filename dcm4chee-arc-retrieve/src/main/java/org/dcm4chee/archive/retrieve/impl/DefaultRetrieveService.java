@@ -251,15 +251,13 @@ public class DefaultRetrieveService implements RetrieveService {
     public void coerceRetrievedObject(RetrieveContext retrieveContext,
             String remoteAET, Attributes attrs) throws DicomServiceException {
         ArchiveAEExtension aeExt = retrieveContext.getArchiveAEExtension();
-        ApplicationEntity sourceAE = null;
         try {
             Templates tpl = aeExt.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
                     Role.SCU, remoteAET);
             if (tpl != null)
-                attrs.update(
-                        SAXTransformer.transform(attrs, tpl, false, false),
-                        null);
+                attrs.addAll(
+                        SAXTransformer.transform(attrs, tpl, false, false));
 //
 //            try {
 //                sourceAE = aeCache.get(remoteAET);
