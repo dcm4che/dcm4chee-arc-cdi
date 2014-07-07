@@ -434,7 +434,6 @@ public class StowRS {
 
     private  JSONReader parseJSON(String fname, Attributes attrs)
             throws IOException {
-        @SuppressWarnings("resource")
         InputStream in =new FileInputStream(
                 fname);
         try {

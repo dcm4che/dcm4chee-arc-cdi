@@ -53,6 +53,7 @@ import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
@@ -78,6 +79,9 @@ import org.dcm4chee.archive.event.StartStopEvent;
 @Singleton
 @Startup
 public class ArchiveServiceImpl implements ArchiveService {
+    
+    @Inject
+    private IApplicationEntityCache aeCache;
 
     private static final String DEVICE_NAME_PROPERTY =
             "org.dcm4chee.archive.deviceName";
@@ -217,6 +221,7 @@ public class ArchiveServiceImpl implements ArchiveService {
 
     @Override
     public void reload() throws Exception {
+        aeCache.clear();
         device.reconfigure(findDevice());
         findOrCreateRejectionCodes(device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class));
         device.rebindConnections();

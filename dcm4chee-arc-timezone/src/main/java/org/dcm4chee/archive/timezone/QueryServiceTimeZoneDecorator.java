@@ -110,8 +110,8 @@ public abstract class QueryServiceTimeZoneDecorator implements QueryService {
             return keys.getTimeZone();
         try {
             ApplicationEntity ae = aeCache.get(sourceAET);
-
-            if (ae != null) {
+            TimeZone sourceTimeZone = ae.getDevice().getTimeZoneOfDevice(); 
+            if (sourceTimeZone != null ) {
                 LOG.debug("Loaded Device for remote Application entity AETitle: "
                         + ae.getAETitle()
                         + " and device name: "

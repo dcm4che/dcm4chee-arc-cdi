@@ -84,19 +84,20 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
         Attributes attrs = context.getAttributes();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                 .getTimeZoneOfDevice();
-        ApplicationEntity remoteAE = null;
+        TimeZone remoteAETimeZone = null;
         try {
             // Time zone store adjustments
             if (archiveTimeZone != null) {
                 try {
-                    remoteAE = aeCache.get(session.getRemoteAET());
-                    if(remoteAE!=null){
+                    ApplicationEntity remoteAE =aeCache.get(session.getRemoteAET()); 
+                    remoteAETimeZone = remoteAE.getDevice().getTimeZoneOfDevice();
+                    if(remoteAETimeZone!=null){
                     LOG.debug("(TimeZone Support):Loaded Device for remote Application entity AETitle: "
                             + remoteAE.getAETitle()
                             + " and device name: "
                             + remoteAE.getDevice().getDeviceName());
                     LOG.debug("(TimeZone Support):-with Time zone: "
-                            + remoteAE.getDevice().getTimeZoneOfDevice()
+                            + remoteAETimeZone
                                     .getID());
                     }
                 } catch (ConfigurationException e1) {
@@ -104,9 +105,8 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
                             "(TimeZone Support): Failed to access configuration for query source {} - no Timezone support:",
                             session.getRemoteAET(), e1);
                 }
-                if (remoteAE != null)
-                    session.setSourceTimeZone(remoteAE.getDevice()
-                            .getTimeZoneOfDevice());
+                if (remoteAETimeZone != null)
+                    session.setSourceTimeZone(remoteAETimeZone);
                 else
                     session.setSourceTimeZone(archiveTimeZone);
 
