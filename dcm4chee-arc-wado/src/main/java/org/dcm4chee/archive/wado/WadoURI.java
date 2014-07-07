@@ -317,7 +317,7 @@ public class WadoURI extends Wado {
 
     private boolean isSupportedSR(String cuid) {
         String[] supportedSRClasses = arcAE.getWadoSupportedSRClasses();
-        if (supportedSRClasses == null) {
+        if (supportedSRClasses == null || supportedSRClasses.length==0) {
             supportedSRClasses = this.standardSRSopClasses;
         }
 
