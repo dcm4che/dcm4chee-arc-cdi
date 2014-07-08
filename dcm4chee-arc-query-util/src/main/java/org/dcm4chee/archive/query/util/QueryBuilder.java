@@ -435,6 +435,9 @@ public class QueryBuilder {
             result.or(idWithIssuer(QPatientID.patientID.id, pid.getID(),
                     pid.getIssuer()));
 
+        if (!result.hasValue())
+            return null;
+
         BooleanExpression matchingIDsExists = new HibernateSubQuery()
                 .from(QPatientID.patientID)
                 .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
@@ -481,7 +484,7 @@ public class QueryBuilder {
         if (pattern.equals("%"))
             return null;
 
-        return path.like(pattern);
+        return path.like(pattern, '!');
     }
 
     static boolean isUniversalMatching(String value) {
@@ -501,7 +504,7 @@ public class QueryBuilder {
             if (pattern.equals("%"))
                 return null;
 
-            predicate = expr.like(pattern);
+            predicate = expr.like(pattern, '!');
         } else
             predicate = expr.eq(value);
 
@@ -545,6 +548,7 @@ public class QueryBuilder {
                 break;
             case '_':
             case '%':
+            case '!':
                 like.append('!');
                 // fall through
             default:
