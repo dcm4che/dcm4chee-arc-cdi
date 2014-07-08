@@ -289,6 +289,26 @@ attributetype ( 1.2.40.0.13.1.15.10.3.47 NAME 'dcmHostNameAEFallBackAE'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 
+attributetype ( 1.2.40.0.13.1.15.10.3.48 NAME 'dcmPatientSelectorClassName'
+  DESC 'dcmPatientSelectorClassName'
+  EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.10.3.49 NAME 'dcmPatientSelectorProperty'
+  DESC 'dcmPatientSelectorProperty'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+  
+attributetype ( 1.2.40.0.13.1.15.10.3.50 NAME 'dcmPatientSelectorValue'
+  DESC 'dcmPatientSelectorValue'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
 objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -379,3 +399,19 @@ objectclass ( 1.2.40.0.13.1.15.10.4.14 NAME 'dcmHostNameAEEntry'
   MUST (
     dicomAETitle $
     dicomHostname ) )
+    
+objectclass ( 1.2.40.0.13.1.15.10.4.15 NAME 'dcmPatientSelectorClass'
+  DESC 'Patient selector'
+  SUP top
+  STRUCTURAL
+  MUST (
+    cn $
+    dcmPatientSelectorClassName ) )
+    
+objectclass ( 1.2.40.0.13.1.15.10.4.16 NAME 'dcmPatientSelectorEntry'
+  DESC 'dcmPatientSelectorEntry'
+  SUP top
+  STRUCTURAL
+  MUST (
+    dcmPatientSelectorProperty $
+    dcmPatientSelectorValue ) )    

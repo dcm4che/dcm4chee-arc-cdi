@@ -38,13 +38,16 @@
 
 package org.dcm4chee.archive.conf;
 
+import java.io.Serializable;
 import java.util.EnumSet;
+import java.util.Map;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
+import org.dcm4che3.conf.api.generic.ConfigClass;
 import org.dcm4che3.conf.api.generic.ConfigField;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
 import org.dcm4che3.imageio.codec.CompressionRule;
@@ -190,7 +193,39 @@ public class ArchiveAEExtension extends AEExtension {
     
     @ConfigField(name = "dcmIsTimeZoneSupported", def="false")    
     private boolean timeZoneSupported;
+    
+//    @ConfigField(name = "dcmPatientSelector")    
+    private PatientSelector patientSelector;
 
+//   @ConfigClass(objectClass = "dcmPatientSelectorClass")
+    public static class PatientSelector implements Serializable
+    {
+        
+        private static final long serialVersionUID = -7211371641145410318L;
+
+        @ConfigField(name = "dcmPatientSelectorClassName")
+        private String patientSelectorClassName;
+
+        @ConfigField(mapName = "dcmPatientSelectorProperties", mapKey = "dcmPatientSelectorProperty", name = "dcmPatientSelectorValue", mapElementObjectClass = "dcmPatientSelectorEntry")
+        private Map<String, String> patientSelectorProperties;
+
+        public String getPatientSelectorClass() {
+            return patientSelectorClassName;
+        }
+
+        public void setPatientSelectorClass(String patientSelectorClass) {
+            this.patientSelectorClassName = patientSelectorClass;
+        }
+
+        public Map<String, String> getPatientSelectorProperties() {
+            return patientSelectorProperties;
+        }
+
+        public void setPatientSelectorProperties(
+                Map<String, String> patientSelectorProperties) {
+            this.patientSelectorProperties = patientSelectorProperties;
+        }
+    }
 
     public String[] getWadoSupportedSRClasses() {
         return wadoSupportedSRClasses;
@@ -490,6 +525,14 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setQIDOMaxNumberOfResults(int qidoMaxNumberOfResults) {
         this.QIDOMaxNumberOfResults = qidoMaxNumberOfResults;
+    }
+
+    public PatientSelector getPatientSelector() {
+        return patientSelector;
+    }
+
+    public void setPatientSelector(PatientSelector patientSelector) {
+        this.patientSelector = patientSelector;
     }
 
     @Override
