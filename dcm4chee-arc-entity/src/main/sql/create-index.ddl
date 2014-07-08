@@ -37,6 +37,7 @@ create index inst_replaced_idx on instance (replaced);
 
 create unique index pat_id_idx on patient_id (pat_id, issuer_fk);
 
+create index pat_id_unknown_idx on patient (pat_id_unknown);
 create index pat_birthdate_idx on patient (pat_birthdate);
 create index pat_sex_idx on patient (pat_sex);
 create index pat_custom1_idx on patient (pat_custom1);

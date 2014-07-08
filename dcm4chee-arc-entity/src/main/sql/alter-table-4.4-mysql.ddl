@@ -51,9 +51,12 @@ drop table other_pid;
 insert patient_id (patient_fk, pat_id)
     select pk, pat_id from patient;
 
-alter table patient 
+alter table patient
     drop pat_id,
-    drop pat_id_issuer;
+    drop pat_id_issuer,
+    add pat_id_unknown bit not null;
+
+create index pat_id_unknown_idx on patient (pat_id_unknown);
 
 alter table study
     drop accno_issuer,

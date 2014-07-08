@@ -40,7 +40,6 @@ package org.dcm4chee.archive.patient.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -236,6 +235,7 @@ public class PatientServiceEJB implements PatientService {
         patient.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Patient),
                 storeParam.getFuzzyStr());
+        patient.setPatientIDUnknown(pids.isEmpty());
         patient.setPatientIDs(createPatientIDs(pids, patient));
         em.persist(patient);
         LOG.info("Create {}", patient);
@@ -289,7 +289,6 @@ public class PatientServiceEJB implements PatientService {
     private boolean mergePatientIDs(Patient patient,
             Collection<IDWithIssuer> pids) {
         boolean modified = false;
-        ;
         Collection<PatientID> patientIDs = patient.getPatientIDs();
         Collection<IDWithIssuer> add = new ArrayList<IDWithIssuer>(pids);
         for (Iterator<IDWithIssuer> iter = add.iterator(); iter.hasNext();) {
@@ -322,6 +321,7 @@ public class PatientServiceEJB implements PatientService {
         for (IDWithIssuer pid : add)
             patientIDs.add(createPatientID(pid, patient));
 
+        patient.setPatientIDUnknown(patientIDs.isEmpty());
         return modified || !add.isEmpty();
     }
 

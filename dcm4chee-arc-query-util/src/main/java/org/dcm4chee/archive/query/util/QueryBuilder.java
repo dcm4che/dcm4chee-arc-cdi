@@ -433,7 +433,7 @@ public class QueryBuilder {
                         result)).exists();
 
         return matchUnknown ? ExpressionUtils.or(matchingIDsExists,
-                QPatient.patient.patientIDs.isEmpty()) : matchingIDsExists;
+                QPatient.patient.patientIDUnkown.isTrue()) : matchingIDsExists;
     }
 
     static Predicate idWithIssuer(StringPath idPath, String id, Issuer issuer) {

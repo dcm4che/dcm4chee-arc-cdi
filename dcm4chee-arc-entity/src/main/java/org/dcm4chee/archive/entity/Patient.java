@@ -100,6 +100,10 @@ public class Patient implements Serializable {
     private Date updatedTime;
 
     @Basic(optional = false)
+    @Column(name = "pat_id_unknown")
+    private boolean patientIDUnkown;
+
+    @Basic(optional = false)
     @Column(name = "pat_birthdate")
     private String patientBirthDate;
 
@@ -189,6 +193,14 @@ public class Patient implements Serializable {
 
     public Date getUpdatedTime() {
         return updatedTime;
+    }
+
+    public boolean isPatientIDUnknown() {
+        return patientIDUnkown;
+    }
+
+    public void setPatientIDUnknown(boolean patientIDUnkown) {
+        this.patientIDUnkown = patientIDUnkown;
     }
 
     public String getPatientBirthDate() {
