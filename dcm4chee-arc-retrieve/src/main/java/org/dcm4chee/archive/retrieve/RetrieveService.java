@@ -43,7 +43,6 @@ import java.util.List;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
@@ -69,7 +68,12 @@ public interface RetrieveService {
 
     void coerceRetrievedObject(RetrieveContext retrieveContext,
             String remoteAET, Attributes attrs) throws DicomServiceException;
-
+    /**
+     * This method is only used by the time zone support decorator
+     * The purpose is to be able to apply time zone conversion from the source time zone
+     * from the database to the archive time zone before applying the time zone conversion
+     * from the archive time zone to the destination time zone
+     */
     void coerceFileBeforeMerge(ArchiveInstanceLocator inst,
 	    RetrieveContext retrieveContext, String remoteAET, Attributes attrs)
 	    throws DicomServiceException;

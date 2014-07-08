@@ -39,29 +39,24 @@
 package org.dcm4chee.archive.retrieve.impl;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
 
-import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
-import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
@@ -98,8 +93,6 @@ public class DefaultRetrieveService implements RetrieveService {
     private EntityManager em;
 
     static Logger LOG = LoggerFactory.getLogger(DefaultRetrieveService.class);
-    @Inject
-    private IApplicationEntityCache aeCache;
 
     @Override
     public RetrieveContext createRetrieveContext(RetrieveService service,
@@ -119,7 +112,7 @@ public class DefaultRetrieveService implements RetrieveService {
             Attributes keys, QueryParam queryParam) {
 
         BooleanBuilder builder = new BooleanBuilder();
-        //TODO
+        // TODO
         builder.and(QueryBuilder.pids(pids, false));
         builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
                 keys.getStrings(Tag.StudyInstanceUID), false));
@@ -247,52 +240,36 @@ public class DefaultRetrieveService implements RetrieveService {
         return result.getAttributes();
     }
 
+    private void setParameters(Transformer tr, RetrieveContext retrieveContext) {
+        Date date = new Date();
+        String currentDate = DateUtils.formatDA(null, date);
+        String currentTime = DateUtils.formatTM(null, date);
+        tr.setParameter("date", currentDate);
+        tr.setParameter("time", currentTime);
+        tr.setParameter("calling", retrieveContext.getSourceAET());
+        tr.setParameter("called", retrieveContext.getDestinationAE()
+                .getAETitle());
+    }
+
     @Override
-    public void coerceRetrievedObject(RetrieveContext retrieveContext,
+    public void coerceRetrievedObject(final RetrieveContext retrieveContext,
             String remoteAET, Attributes attrs) throws DicomServiceException {
         ArchiveAEExtension aeExt = retrieveContext.getArchiveAEExtension();
+        
+        
         try {
             Templates tpl = aeExt.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
                     Role.SCU, remoteAET);
             if (tpl != null)
                 attrs.addAll(
-                        SAXTransformer.transform(attrs, tpl, false, false));
-//
-//            try {
-//                sourceAE = aeCache.get(remoteAET);
-//            } catch (ConfigurationException e1) {
-//                LOG.warn("Failed to access configuration for query source {} - no Timezone support:",
-//                        remoteAET, e1);
-//            }
-//            TimeZone archiveTimeZone = aeExt.getApplicationEntity().getDevice()
-//                    .getTimeZoneOfDevice();
-//            if (archiveTimeZone != null) {
-//                TimeZone sourceTimeZone = sourceAE.getDevice()
-//                        .getTimeZoneOfDevice();
-//                attrs.setDefaultTimeZone(archiveTimeZone);
-//                LOG.debug("(TimeZone Support): In coerceRetrievedObject: Setting default time zone to archive. \n");
-//                if (sourceTimeZone != null) {
-//                    attrs.setTimezone(sourceTimeZone);
-//                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Converting time in blob to destination time zone. \n");
-//                }
-//                if (!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
-//                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Adding TimezoneOffsetFromUTC with: \n");
-//                    if (sourceTimeZone != null) {
-//                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
-//                                DateUtils.formatTimezoneOffsetFromUTC(
-//                                        sourceTimeZone,
-//                                        attrs.getDate(Tag.StudyDateAndTime)));
-//                        LOG.debug("(TimeZone Support): destination device as value.");
-//                    } else {
-//                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
-//                                DateUtils.formatTimezoneOffsetFromUTC(
-//                                        archiveTimeZone,
-//                                        attrs.getDate(Tag.StudyDateAndTime)));
-//                        LOG.debug("(TimeZone Support): archive device as value.");
-//                    }
-//                }
-//            }
+                        SAXTransformer.transform(attrs, tpl, false, false, new SetupTransformer() {
+                            
+                            @Override
+                            public void setup(Transformer transformer) {
+                                setParameters(transformer, retrieveContext);
+                            }
+                        }));
 
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
@@ -303,23 +280,6 @@ public class DefaultRetrieveService implements RetrieveService {
     public void coerceFileBeforeMerge(ArchiveInstanceLocator inst,
             RetrieveContext retrieveContext, String remoteAET, Attributes attrs)
             throws DicomServiceException {
-        // here the source time zone is the one in the db
-//        try {
-//
-//            ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
-//            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-//                    .getTimeZoneOfDevice();
-//            TimeZone sourceTimeZone = TimeZone.getTimeZone(inst
-//                    .getFileTimeZoneID());
-//            if (sourceTimeZone != null) {
-//                LOG.debug("(TimeZone Support): In coerceFileBeforeMerge: Converting time in file attributes to archive time zone. \n");
-//                attrs.setDefaultTimeZone(sourceTimeZone);
-//                attrs.setTimezone(archiveTimeZone);
-//            }
-//
-//        } catch (Exception e) {
-//            throw new DicomServiceException(Status.UnableToProcess, e);
-//        }
     }
 
     public String timeOffsetInMillisToDICOMTimeOffset(int millis) {

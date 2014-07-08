@@ -368,7 +368,6 @@ public class StoreServiceImpl implements StoreService {
             
     }
     private void setParameters(Transformer tr, StoreSession session) {
-        setAETParameters(tr, session);
         Date date = new Date();
         String currentDate = DateUtils.formatDA(null, date);
         String currentTime = DateUtils.formatTM(null, date);
@@ -376,10 +375,6 @@ public class StoreServiceImpl implements StoreService {
         tr.setParameter("time", currentTime);
         tr.setParameter("calling", session.getRemoteAET());
         tr.setParameter("called", session.getLocalAET());
-    }
-
-    private void setAETParameters(Transformer tr, StoreSession session) {
-
     }
     
     @Override

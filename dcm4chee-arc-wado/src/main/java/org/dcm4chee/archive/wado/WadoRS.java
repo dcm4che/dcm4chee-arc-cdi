@@ -40,18 +40,14 @@ package org.dcm4chee.archive.wado;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.stream.JsonGenerator;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -70,6 +66,7 @@ import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Fragments;
@@ -79,19 +76,21 @@ import org.dcm4che3.imageio.codec.Decompressor;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che3.json.JSONWriter;
 import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
+import org.dcm4chee.archive.rs.HostAECache;
+import org.dcm4chee.archive.rs.HttpSource;
 import org.jboss.resteasy.plugins.providers.multipart.ContentIDUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.jboss.resteasy.plugins.providers.multipart.OutputPart;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,6 +106,9 @@ public class WadoRS extends Wado {
 
     @Inject
     private Event<RetrieveAfterSendEvent> retrieveEvent;
+
+    @Inject
+    private HostAECache aeCache;
 
     private static final int STATUS_OK = 200;
     private static final int STATUS_PARTIAL_CONTENT = 206;
@@ -144,6 +146,8 @@ public class WadoRS extends Wado {
     @Context
     private HttpHeaders headers;
 
+    private RetrieveContext context;
+
     private boolean acceptAll;
 
     private boolean acceptZip;
@@ -170,6 +174,18 @@ public class WadoRS extends Wado {
     }
 
     private void init(String method) {
+
+        try {
+           ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
+           
+           if(sourceAE!=null)
+           context = retrieveService.createRetrieveContext(
+                   retrieveService, sourceAE.getAETitle(), arcAE);
+           context.setDestinationAE(sourceAE);
+        } catch (ConfigurationNotFoundException e1) {
+            LOG.error("Unable to find the mapped AE for this host or even the fallback AE, coercion will not be applied");
+        }
+
         this.method = method;
         List<MediaType> acceptableMediaTypes = headers
                 .getAcceptableMediaTypes();
@@ -263,7 +279,8 @@ public class WadoRS extends Wado {
     @GET
     @Path("/studies/{StudyInstanceUID}")
     public Response retrieveStudy(
-            @PathParam("StudyInstanceUID") String studyInstanceUID) {
+            @PathParam("StudyInstanceUID") String studyInstanceUID)
+            throws DicomServiceException, ConfigurationNotFoundException {
         init("retrieveStudy");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -276,7 +293,8 @@ public class WadoRS extends Wado {
     @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
     public Response retrieveSeries(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
+            @PathParam("SeriesInstanceUID") String seriesInstanceUID)
+            throws DicomServiceException, ConfigurationNotFoundException {
         init("retrieveSeries");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -291,7 +309,8 @@ public class WadoRS extends Wado {
     public Response retrieveInstance(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID) {
+            @PathParam("SOPInstanceUID") String sopInstanceUID)
+            throws DicomServiceException, ConfigurationNotFoundException {
         init("retrieveInstance");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -345,7 +364,8 @@ public class WadoRS extends Wado {
     @GET
     @Path("/studies/{StudyInstanceUID}/metadata")
     public Response retrieveStudyMetadata(
-            @PathParam("StudyInstanceUID") String studyInstanceUID) {
+            @PathParam("StudyInstanceUID") String studyInstanceUID)
+            throws ConfigurationNotFoundException, DicomServiceException {
         init("retrieveMetadata");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -359,7 +379,8 @@ public class WadoRS extends Wado {
     @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/metadata")
     public Response retrieveSeriesMetadata(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
+            @PathParam("SeriesInstanceUID") String seriesInstanceUID)
+            throws ConfigurationNotFoundException, DicomServiceException {
         init("retrieveMetadata");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -375,7 +396,8 @@ public class WadoRS extends Wado {
     public Response retrieveInstanceMetadata(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID) {
+            @PathParam("SOPInstanceUID") String sopInstanceUID)
+            throws ConfigurationNotFoundException, DicomServiceException {
         init("retrieveMetadata");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -385,13 +407,15 @@ public class WadoRS extends Wado {
         return retrieveMetadata(instances);
     }
 
-    private Response retrieve(List<ArchiveInstanceLocator> refs) {
+    private Response retrieve(List<ArchiveInstanceLocator> refs)
+            throws DicomServiceException, ConfigurationNotFoundException {
 
         List<ArchiveInstanceLocator> insts = new ArrayList<ArchiveInstanceLocator>();
         List<ArchiveInstanceLocator> instswarning = new ArrayList<ArchiveInstanceLocator>();
         List<ArchiveInstanceLocator> instscompleted = new ArrayList<ArchiveInstanceLocator>();
         List<ArchiveInstanceLocator> instsfailed = new ArrayList<ArchiveInstanceLocator>();
 
+        
         try {
             if (refs.isEmpty())
                 throw new WebApplicationException(Status.NOT_FOUND);
@@ -404,17 +428,17 @@ public class WadoRS extends Wado {
                 if (acceptedBulkdataMediaTypes.isEmpty()) {
                     for (InstanceLocator ref : refs)
                         if (!addDicomObjectTo(ref, output)) {
-                            instsfailed.add((ArchiveInstanceLocator)ref);
+                            instsfailed.add((ArchiveInstanceLocator) ref);
                             failed++;
                         } else
-                            instscompleted.add((ArchiveInstanceLocator)ref);
+                            instscompleted.add((ArchiveInstanceLocator) ref);
                 } else {
                     for (InstanceLocator ref : refs)
                         if (addPixelDataTo(ref.uri, output) != STATUS_OK) {
-                            instsfailed.add((ArchiveInstanceLocator)ref);
+                            instsfailed.add((ArchiveInstanceLocator) ref);
                             failed++;
                         } else
-                            instscompleted.add((ArchiveInstanceLocator)ref);
+                            instscompleted.add((ArchiveInstanceLocator) ref);
                 }
 
                 if (output.getParts().isEmpty())
@@ -432,7 +456,7 @@ public class WadoRS extends Wado {
             ZipOutput output = new ZipOutput();
             for (InstanceLocator ref : refs) {
                 output.addEntry(new DicomObjectOutput(ref, (Attributes) ref
-                        .getObject(), ref.tsuid));
+                        .getObject(), ref.tsuid, context));
             }
             return Response.ok().entity(output)
                     .type(MediaTypes.APPLICATION_ZIP_TYPE).build();
@@ -444,6 +468,25 @@ public class WadoRS extends Wado {
                             .getLocalAddr(), null), new GenericParticipant(
                             request.getRemoteAddr(), request.getRemoteUser()),
                     device, insts, instscompleted, instswarning, instsfailed));
+        }
+    }
+
+    private Attributes getFileAttributes(InstanceLocator ref) {
+        DicomInputStream dis = null;
+        try {
+            dis = new DicomInputStream(ref.getFile());
+            dis.setIncludeBulkData(IncludeBulkData.URI);
+            Attributes dataset = dis.readDataset(-1, -1);
+            return dataset;
+        }
+        catch(IOException e)
+        {
+            LOG.error("Unable to read file, Exception {}, using the blob for coercion - (Incomplete Coercion)",e);
+            return (Attributes) ref.getObject();
+        }
+        finally
+        {
+            SafeClose.close(dis);
         }
     }
 
@@ -470,7 +513,9 @@ public class WadoRS extends Wado {
         return Response.ok(output).build();
     }
 
-    private Response retrieveMetadata(final List<ArchiveInstanceLocator> refs) {
+    private Response retrieveMetadata(final List<ArchiveInstanceLocator> refs)
+            throws ConfigurationNotFoundException, DicomServiceException {
+
         if (refs.isEmpty())
             throw new WebApplicationException(Status.NOT_FOUND);
 
@@ -480,27 +525,7 @@ public class WadoRS extends Wado {
         if (acceptDicomJSON) {
             StreamingOutput output = null;
             ResponseBuilder JSONResponseBuilder = null;
-            output = new StreamingOutput() {
-
-                @Override
-                public void write(OutputStream out) throws IOException {
-                    JsonGenerator gen = Json.createGenerator(out);
-                    JSONWriter writer = new JSONWriter(gen);
-                    gen.writeStartArray();
-                    for (InstanceLocator ref : refs) {
-
-                        try {
-                            Attributes attrs = (Attributes) ref.getObject();
-                            writer.write(attrs);
-
-                        } catch (Exception e) {
-                            throw new WebApplicationException(e);
-                        }
-                    }
-                    gen.writeEnd();
-                    gen.flush();
-                }
-            };
+            output = new DicomJSONOutput(aetitle, uriInfo, refs, context);
 
             if (output != null) {
                 JSONResponseBuilder = Response.ok(output);
@@ -528,7 +553,7 @@ public class WadoRS extends Wado {
         }
         Attributes attrs = (Attributes) ref.getObject();
         addPart(output,
-                new DicomObjectOutput(ref, attrs, tsuid),
+                new DicomObjectOutput(ref, attrs, tsuid, context),
                 MediaType.valueOf("application/dicom;transfer-syntax=" + tsuid),
                 null, ref.iuid);
         return true;
@@ -713,7 +738,7 @@ public class WadoRS extends Wado {
     private void addMetadataTo(InstanceLocator ref,
             MultipartRelatedOutput output) {
         Attributes attrs = (Attributes) ref.getObject();
-        addPart(output, new DicomXMLOutput(ref, toBulkDataURI(ref.uri), attrs),
+        addPart(output, new DicomXMLOutput(ref, toBulkDataURI(ref.uri), attrs,context),
                 MediaTypes.APPLICATION_DICOM_XML_TYPE, null, ref.iuid);
     }
 

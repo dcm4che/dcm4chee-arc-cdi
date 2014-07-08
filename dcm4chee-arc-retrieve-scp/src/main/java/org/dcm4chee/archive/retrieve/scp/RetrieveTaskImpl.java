@@ -56,7 +56,6 @@ import org.dcm4che3.net.DataWriterAdapter;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicRetrieveTask;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;

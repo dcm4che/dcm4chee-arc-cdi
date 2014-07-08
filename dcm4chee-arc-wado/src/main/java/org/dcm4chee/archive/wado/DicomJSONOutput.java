@@ -39,10 +39,13 @@ package org.dcm4chee.archive.wado;
 
 import java.io.IOException;
 import java.io.OutputStream;
-
+import java.net.URI;
+import java.util.List;
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
-import javax.xml.transform.stream.StreamResult;
+import javax.ws.rs.core.UriInfo;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
@@ -51,7 +54,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.json.JSONWriter;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
@@ -60,60 +63,78 @@ import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * 
  */
-public class DicomXMLOutput implements StreamingOutput {
+public class DicomJSONOutput implements StreamingOutput {
 
-    private final InstanceLocator fileRef;
-    private final Attributes attrs;
-    private final String bulkDataURI;
+    private final List<ArchiveInstanceLocator> refs;
+    private String bulkDataURI;
     private RetrieveContext context;
     private RetrieveService service;
-    
-    public DicomXMLOutput(InstanceLocator fileRef, String bulkDataURI,
-            Attributes attrs, RetrieveContext ctx) {
-        this.fileRef = fileRef;
-        this.bulkDataURI = bulkDataURI;
-        this.attrs = attrs;
+    private UriInfo uriInfo;
+    private String aeTitle;
+
+    public DicomJSONOutput(String aeTitle, UriInfo uriInfo, List<ArchiveInstanceLocator> refs,RetrieveContext ctx) {
+        this.refs = refs;
         this.context = ctx;
         service = ctx.getRetrieveService();
+        this.aeTitle=aeTitle;
+        this.uriInfo = uriInfo;
     }
 
     @Override
     public void write(OutputStream out) throws IOException,
             WebApplicationException {
-        DicomInputStream dis = new DicomInputStream(fileRef.getFile());
-        dis.setURI(bulkDataURI);
-        try {
-            dis.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes dataset = dis.readDataset(-1, -1);
-            
-            if(context.getSourceAET()!=null){
-            service.coerceFileBeforeMerge(
-                    (ArchiveInstanceLocator) fileRef, context,
-                    context.getSourceAET(), dataset);
+        JsonGenerator gen = Json.createGenerator(out);
+        JSONWriter writer = new JSONWriter(gen);
+        gen.writeStartArray();
 
-             service.coerceRetrievedObject(context,
-                        context.getSourceAET(), dataset);
+        for (InstanceLocator ref : refs) {
+            bulkDataURI = toBulkDataURI(ref.uri);
+            DicomInputStream dis = new DicomInputStream(ref.getFile());
+            try {
+                dis.setURI(bulkDataURI);
+                dis.setIncludeBulkData(IncludeBulkData.URI);
+                Attributes dataset = dis.readDataset(-1, -1);
+
+                if (context.getSourceAET() != null) {
+                    service.coerceFileBeforeMerge((ArchiveInstanceLocator) ref,
+                            context, context.getSourceAET(), dataset);
+
+                    service.coerceRetrievedObject(context,
+                            context.getSourceAET(), dataset);
+                }
+
+                dataset.addAll((Attributes)ref.getObject());
+                Object pixelData = dataset.getValue(Tag.PixelData);
+                if (pixelData instanceof Fragments) {
+                    Fragments frags = (Fragments) pixelData;
+                    dataset.setValue(
+                            Tag.PixelData,
+                            VR.OB,
+                            new BulkData(((BulkData) frags.get(1))
+                                    .uriWithoutOffsetAndLength(), 0, -1,
+                                    dataset.bigEndian()));
+                }
+                try {
+                    writer.write(dataset);
+
+                } catch (Exception e) {
+                    throw new WebApplicationException(e);
+                }
+            } catch (IOException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new WebApplicationException(e);
+            } finally {
+                SafeClose.close(dis);
             }
-            
-            dataset.addAll(attrs);
-            Object pixelData = dataset.getValue(Tag.PixelData);
-            if (pixelData instanceof Fragments) {
-                Fragments frags = (Fragments) pixelData;
-                dataset.setValue(Tag.PixelData, VR.OB,
-                        new BulkData(((BulkData) frags.get(1))
-                                .uriWithoutOffsetAndLength(), 0, -1,
-                                dataset.bigEndian()));
-            }
-            SAXTransformer.getSAXWriter(new StreamResult(out)).write(dataset);
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new WebApplicationException(e);
-        } finally {
-            SafeClose.close(dis);
         }
+        gen.writeEnd();
+        gen.flush();
     }
-
+    private String toBulkDataURI(String uri) {
+        return uriInfo.getBaseUri() + "wado/" + aeTitle + "/bulkdata/"
+                + URI.create(uri).getPath();
+    }
 }

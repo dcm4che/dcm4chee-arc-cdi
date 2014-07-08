@@ -48,6 +48,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Event;
 import javax.imageio.IIOImage;
@@ -77,6 +78,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
+import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -95,8 +97,13 @@ import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
+import org.dcm4chee.archive.rs.HostAECache;
+import org.dcm4chee.archive.rs.HttpSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 /**
@@ -112,9 +119,16 @@ import org.xml.sax.SAXException;
 @Path("/wado/{AETitle}")
 public class WadoURI extends Wado {
 
+    private static final Logger LOG = LoggerFactory.getLogger(WadoURI.class);
+
     @Inject
     private Event<RetrieveAfterSendEvent> retrieveEvent;
 
+    @Inject
+    private HostAECache aeCache;
+
+    private RetrieveContext context;
+    
     private final String[] standardSRSopClasses = {
             "1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22",
             "1.2.840.10008.5.1.4.1.1.88.33", "1.2.840.10008.5.1.4.1.1.88.34",
@@ -252,6 +266,17 @@ public class WadoURI extends Wado {
         List<ArchiveInstanceLocator> instsfailed = new ArrayList<ArchiveInstanceLocator>();
 
         try {
+            try {
+               ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
+               
+               if(sourceAE!=null)
+               context = retrieveService.createRetrieveContext(
+                       retrieveService, sourceAE.getAETitle(), arcAE);
+               context.setDestinationAE(sourceAE);
+            } catch (ConfigurationNotFoundException e1) {
+                LOG.error("Unable to find the mapped AE for this host or even the fallback AE, coercion will not be applied");
+            }
+
             checkRequest();
 
             List<ArchiveInstanceLocator> ref = retrieveService
@@ -435,7 +460,7 @@ public class WadoURI extends Wado {
         String tsuid = selectTransferSyntax(ref.tsuid);
         MediaType mediaType = MediaType
                 .valueOf("application/dicom;transfer-syntax=" + tsuid);
-        return Response.ok(new DicomObjectOutput(ref, attrs, tsuid), mediaType)
+        return Response.ok(new DicomObjectOutput(ref, attrs, tsuid,context), mediaType)
                 .build();
     }
 

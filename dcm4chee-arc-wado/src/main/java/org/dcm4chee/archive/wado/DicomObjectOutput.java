@@ -50,6 +50,9 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
+import org.dcm4chee.archive.retrieve.RetrieveContext;
+import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 
 /**
  * Callback object used by the RESTful runtime when ready
@@ -66,7 +69,7 @@ import org.dcm4che3.util.SafeClose;
  * the one used to store the file, the data is decompressed
  * and returned as is.
  * 
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
 class DicomObjectOutput implements StreamingOutput {
@@ -74,11 +77,16 @@ class DicomObjectOutput implements StreamingOutput {
     private final InstanceLocator fileRef;
     private final Attributes attrs;
     private final String tsuid;
-
-    DicomObjectOutput(InstanceLocator fileRef, Attributes attrs, String tsuid) {
+    private RetrieveContext context;
+    private RetrieveService service;
+    
+    DicomObjectOutput(InstanceLocator fileRef, Attributes attrs, String tsuid,
+            RetrieveContext ctx) {
         this.fileRef = fileRef;
         this.attrs = attrs;
         this.tsuid = tsuid;
+        this.context = ctx;
+        service = ctx.getRetrieveService();
     }
 
     public void write(OutputStream out) throws IOException {
@@ -86,14 +94,23 @@ class DicomObjectOutput implements StreamingOutput {
         try {
             dis.setIncludeBulkData(IncludeBulkData.URI);
             Attributes dataset = dis.readDataset(-1, -1);
+            
+            if(context.getSourceAET()!=null){
+            service.coerceFileBeforeMerge(
+                    (ArchiveInstanceLocator) fileRef, context,
+                    context.getSourceAET(), dataset);
+
+             service.coerceRetrievedObject(context,
+                        context.getSourceAET(), dataset);
+            }
             dataset.addAll(attrs);
             if (tsuid != fileRef.tsuid) {
                 Decompressor.decompress(dataset, fileRef.tsuid);
             }
             Attributes fmi = dataset.createFileMetaInformation(tsuid);
             @SuppressWarnings("resource")
-            DicomOutputStream dos =
-                new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
+            DicomOutputStream dos = new DicomOutputStream(out,
+                    UID.ExplicitVRLittleEndian);
             dos.writeDataset(fmi, dataset);
         } finally {
             SafeClose.close(dis);
