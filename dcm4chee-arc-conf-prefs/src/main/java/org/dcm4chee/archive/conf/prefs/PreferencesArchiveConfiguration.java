@@ -122,8 +122,11 @@ public class PreferencesArchiveConfiguration extends
                 .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
         hostNameMap.put("dcmHostNameAEFallBackAE", arcDev
                 .getHostNameAEFallBackEntry().getAeTitle());
-        HostNameAEEntry[] tmpMap = null;
-        tmpMap = arcDev.getHostNameAEList().toArray(tmpMap);
+        HostNameAEEntry[] tmpMap = new HostNameAEEntry[arcDev.getHostNameAEList().size()];
+        for(int i=0;i<arcDev.getHostNameAEList().size();i++)
+        {
+            tmpMap[i]=arcDev.getHostNameAEList().get(i);
+        }
         storeTo(tmpMap, hostNameMap);
     }
 

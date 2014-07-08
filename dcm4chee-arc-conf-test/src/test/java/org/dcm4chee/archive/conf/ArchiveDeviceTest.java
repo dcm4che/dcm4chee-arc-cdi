@@ -493,7 +493,7 @@ public class ArchiveDeviceTest {
     private DicomConfiguration config;
     private HL7Configuration hl7Config;
 
-//    @Before
+    @Before
     public void setUp() throws Exception {
         keystore = SSLManagerFactory.loadKeyStore("JKS", 
                 ResourceLocator.resourceURL("cacerts.jks"), "secret");
@@ -545,7 +545,7 @@ public class ArchiveDeviceTest {
         return config;
     }
 
-//    @After
+    @After
     public void tearDown() throws Exception {
         if (System.getProperty("keep") == null)
             cleanUp();
@@ -783,6 +783,8 @@ public class ArchiveDeviceTest {
         arcDevExt.setConfigurationStaleTimeout(CONFIGURATION_STALE_TIMEOUT);
         arcDevExt.setWadoAttributesStaleTimeout(WADO_ATTRIBUTES_STALE_TIMEOUT);
         setAttributeFilters(arcDevExt);
+        arcDevExt.setHostnameAEresoultion(true);
+        arcDevExt.setHostNameAEFallBackEntry(new HostNameAEEntry("*", "FALLBACK"));
         device.setManufacturer("dcm4che.org");
         device.setManufacturerModelName("dcm4chee-arc");
         device.setSoftwareVersions("4.2.0.Alpha3");

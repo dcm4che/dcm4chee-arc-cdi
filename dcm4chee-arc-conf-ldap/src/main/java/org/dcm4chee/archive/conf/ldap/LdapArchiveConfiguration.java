@@ -125,7 +125,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                     storeTo(arcDev.getAttributeFilter(entity), entity,
                             new BasicAttributes(true)));
         Attributes attrs = new BasicAttributes();
-        attrs.get("objectclass").add("dcmArchiveDevice");
+        attrs.put("objectclass","dcmArchiveDevice");
         LdapUtils.storeNotNull(attrs, "dcmHostNameAEResolution",
                 arcDev.getHostNameAEFallBackEntry().getAeTitle());
         for (HostNameAEEntry entry : arcDev.getHostNameAEList()) {
