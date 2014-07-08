@@ -89,6 +89,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mysema.query.types.OrderSpecifier;
+import com.mysema.query.types.path.StringPath;
 
 /**
  * Service implementing DICOM Supplement 166: Query based on ID for DICOM Objects (QIDO).
@@ -466,7 +467,21 @@ public class QidoRS {
         if (orderby.isEmpty())
             return;
 
-        ArrayList<OrderSpecifier<?>> list = QueryBuilder.getOrderSpecifierList(qrLevel,orderby);
+        ArrayList<OrderSpecifier<?>> list = new ArrayList<OrderSpecifier<?>>();
+        for (String s : orderby) {
+            try {
+                for (String field : StringUtils.split(s, ',')) {
+                    boolean desc = field.charAt(0) == '-';
+                    int tag = parseTag(desc ? field.substring(1) : field);
+                    for (StringPath path : QueryBuilder.stringPathOf(tag, qrLevel)) {
+                        list.add(desc ? path.desc() : path.asc());
+                    }
+                }
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("orderby=" + s);
+            }
+        }
+
         orderSpecifiers = list.toArray(new OrderSpecifier<?>[list.size()]);
     }
 

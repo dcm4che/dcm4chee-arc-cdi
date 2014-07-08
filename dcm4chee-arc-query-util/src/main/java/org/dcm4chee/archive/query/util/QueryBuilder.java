@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.ElementDictionary;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.Sequence;
@@ -69,7 +68,6 @@ import org.dcm4chee.archive.entity.QVerifyingObserver;
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateSubQuery;
 import com.mysema.query.types.ExpressionUtils;
-import com.mysema.query.types.OrderSpecifier;
 import com.mysema.query.types.Predicate;
 import com.mysema.query.types.expr.BooleanExpression;
 import com.mysema.query.types.expr.SimpleExpression;
@@ -87,84 +85,96 @@ public class QueryBuilder {
     private QueryBuilder() {
     }
 
-    public static StringPath stringPathOf(int tag, QueryRetrieveLevel qrLevel) {
+    public static StringPath[] stringPathOf(int tag, QueryRetrieveLevel qrLevel) {
         switch (qrLevel) {
         case FRAME:
         case IMAGE:
             switch (tag) {
             case Tag.SOPInstanceUID:
-                return QInstance.instance.sopInstanceUID;
+                return arrayOf(QInstance.instance.sopInstanceUID);
             case Tag.SOPClassUID:
-                return QInstance.instance.sopClassUID;
+                return arrayOf(QInstance.instance.sopClassUID);
             case Tag.InstanceNumber:
-                return QInstance.instance.instanceNumber;
+                return arrayOf(QInstance.instance.instanceNumber);
             case Tag.VerificationFlag:
-                return QInstance.instance.verificationFlag;
+                return arrayOf(QInstance.instance.verificationFlag);
             case Tag.CompletionFlag:
-                return QInstance.instance.completionFlag;
+                return arrayOf(QInstance.instance.completionFlag);
             case Tag.ContentDate:
-                return QInstance.instance.contentDate;
+                return arrayOf(QInstance.instance.contentDate);
             case Tag.ContentTime:
-                return QInstance.instance.contentTime;
+                return arrayOf(QInstance.instance.contentTime);
             }
         case SERIES:
             switch (tag) {
             case Tag.SeriesInstanceUID:
-                return QSeries.series.seriesInstanceUID;
+                return arrayOf(QSeries.series.seriesInstanceUID);
             case Tag.SeriesNumber:
-                return QSeries.series.seriesNumber;
+                return arrayOf(QSeries.series.seriesNumber);
             case Tag.Modality:
-                return QSeries.series.modality;
+                return arrayOf(QSeries.series.modality);
             case Tag.BodyPartExamined:
-                return QSeries.series.bodyPartExamined;
+                return arrayOf(QSeries.series.bodyPartExamined);
             case Tag.Laterality:
-                return QSeries.series.laterality;
+                return arrayOf(QSeries.series.laterality);
             case Tag.PerformedProcedureStepStartDate:
-                return QSeries.series.performedProcedureStepStartDate;
+                return arrayOf(QSeries.series.performedProcedureStepStartDate);
             case Tag.PerformedProcedureStepStartTime:
-                return QSeries.series.performedProcedureStepStartTime;
-                // case Tag.PerformingPhysicianName:
-                // return QSeries.series.performingPhysicianName.familyName;
-                // return QSeries.series.performingPhysicianName;
+                return arrayOf(QSeries.series.performedProcedureStepStartTime);
+            case Tag.PerformingPhysicianName:
+                return arrayOf(
+                        QSeries.series.performingPhysicianName.familyName,
+                        QSeries.series.performingPhysicianName.givenName,
+                        QSeries.series.performingPhysicianName.middleName);
             case Tag.SeriesDescription:
-                return QSeries.series.seriesDescription;
+                return arrayOf(QSeries.series.seriesDescription);
             case Tag.StationName:
-                return QSeries.series.stationName;
+                return arrayOf(QSeries.series.stationName);
             case Tag.InstitutionName:
-                return QSeries.series.institutionName;
+                return arrayOf(QSeries.series.institutionName);
             case Tag.InstitutionalDepartmentName:
-                return QSeries.series.institutionalDepartmentName;
+                return arrayOf(QSeries.series.institutionalDepartmentName);
             }
         case STUDY:
             switch (tag) {
             case Tag.StudyInstanceUID:
-                return QStudy.study.studyInstanceUID;
+                return arrayOf(QStudy.study.studyInstanceUID);
             case Tag.StudyID:
-                return QStudy.study.studyID;
+                return arrayOf(QStudy.study.studyID);
             case Tag.StudyDate:
-                return QStudy.study.studyDate;
+                return arrayOf(QStudy.study.studyDate);
             case Tag.StudyTime:
-                return QStudy.study.studyTime;
-                // case Tag.ReferringPhysicianName:
-                // return QStudy.study.referringPhysicianName;
+                return arrayOf(QStudy.study.studyTime);
+            case Tag.ReferringPhysicianName:
+                return arrayOf(
+                        QStudy.study.referringPhysicianName.familyName,
+                        QStudy.study.referringPhysicianName.givenName,
+                        QStudy.study.referringPhysicianName.middleName);
             case Tag.StudyDescription:
-                return QStudy.study.studyDescription;
+                return arrayOf(QStudy.study.studyDescription);
             case Tag.AccessionNumber:
-                return QStudy.study.accessionNumber;
+                return arrayOf(QStudy.study.accessionNumber);
             case Tag.ModalitiesInStudy:
-                return QStudy.study.modalitiesInStudy;
+                return arrayOf(QStudy.study.modalitiesInStudy);
             }
         case PATIENT:
             switch (tag) {
-            // case Tag.PatientName:
-            // return QPatient.patient.patientName;
+            case Tag.PatientName:
+                return arrayOf(
+                        QPatient.patient.patientName.familyName,
+                        QPatient.patient.patientName.givenName,
+                        QPatient.patient.patientName.middleName);
             case Tag.PatientSex:
-                return QPatient.patient.patientSex;
+                return arrayOf(QPatient.patient.patientSex);
             case Tag.PatientBirthDate:
-                return QPatient.patient.patientBirthDate;
+                return arrayOf(QPatient.patient.patientBirthDate);
             }
         }
         throw new IllegalArgumentException("tag: " + TagUtils.toString(tag));
+    }
+
+    private static StringPath[] arrayOf(StringPath... paths) {
+        return paths;
     }
 
     public static void addPatientLevelPredicates(BooleanBuilder builder,
@@ -715,68 +725,5 @@ public class QueryBuilder {
                 .where(QInstance.instance.contentItems
                         .contains(QContentItem.contentItem),
                         predicate).exists();
-    }
-
-    public static ArrayList<OrderSpecifier<?>> getOrderSpecifierList(
-            QueryRetrieveLevel qrLevel, List<String> orderby) {
-        ArrayList<OrderSpecifier<?>> list = new ArrayList<OrderSpecifier<?>>();
-        for (String s : orderby) {
-            try {
-                for (String field : StringUtils.split(s, ',')) {
-                    boolean desc = field.charAt(0) == '-';
-                    int tag = parseTag(desc ? field.substring(1) : field);
-                    if (tag == Tag.PatientName
-                            || tag == Tag.ReferringPhysicianName
-                            || tag == Tag.PerformingPhysicianName) {
-                        for (StringPath path : getMultiplePaths(tag)) {
-                            list.add(desc ? path.desc() : path.asc());
-                        }
-                        continue;
-                    }
-                    StringPath stringPath = stringPathOf(tag, qrLevel);
-                    list.add(desc ? stringPath.desc() : stringPath.asc());
-                }
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("orderby=" + s);
-            }
-        }
-        return list;
-    }
-
-    private static List<StringPath> getMultiplePaths(int tag) {
-        List<StringPath> paths = new ArrayList<StringPath>();
-        switch (tag) {
-        case Tag.PatientName:
-            paths.add(QPatient.patient.patientName.familyName);
-            paths.add(QPatient.patient.patientName.middleName);
-            paths.add(QPatient.patient.patientName.givenName);
-            break;
-        case Tag.ReferringPhysicianName:
-            paths.add(QStudy.study.referringPhysicianName.familyName);
-            paths.add(QStudy.study.referringPhysicianName.middleName);
-            paths.add(QStudy.study.referringPhysicianName.givenName);
-            break;
-        case Tag.PerformingPhysicianName:
-            paths.add(QSeries.series.performingPhysicianName.familyName);
-            paths.add(QSeries.series.performingPhysicianName.middleName);
-            paths.add(QSeries.series.performingPhysicianName.givenName);
-            break;
-        default:
-            break;
-        }
-        return paths;
-    }
-
-    private static int parseTag(String tagOrKeyword) {
-        ElementDictionary DICT = ElementDictionary
-                .getStandardElementDictionary();
-        try {
-            return Integer.parseInt(tagOrKeyword, 16);
-        } catch (IllegalArgumentException e) {
-            int tag = DICT.tagForKeyword(tagOrKeyword);
-            if (tag == -1)
-                throw new IllegalArgumentException(tagOrKeyword);
-            return tag;
-        }
     }
 }
