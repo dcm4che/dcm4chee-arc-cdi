@@ -180,10 +180,9 @@ public class PreferencesArchiveConfiguration extends
         prefs.putBoolean("dcmArchiveNetworkAE", true);
 
         try {
-
             ConfigWriter prefsWriter = new PrefsConfigWriter(prefs);
-            ReflectiveConfig.store(arcAE, prefsWriter);
-
+            ReflectiveConfig rc = new ReflectiveConfig(null, config);
+            rc.storeConfig(arcAE, prefsWriter);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -254,10 +253,9 @@ public class PreferencesArchiveConfiguration extends
         ae.addAEExtension(arcae);
 
         try {
-
             ConfigReader prefsReader = new PrefsConfigReader(prefs);
-            ReflectiveConfig.read(arcae, prefsReader);
-
+            ReflectiveConfig rc = new ReflectiveConfig(null, config);
+            rc.readConfig(arcae, prefsReader);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -353,10 +351,9 @@ public class PreferencesArchiveConfiguration extends
             return;
 
         try {
-
-            DiffWriter prefsDiffWriter = new PrefsDiffWriter(prefs);
-            ReflectiveConfig.storeAllDiffs(a, b, prefsDiffWriter);
-
+            ConfigWriter prefsDiffWriter = new PrefsConfigWriter(prefs);
+            ReflectiveConfig rc = new ReflectiveConfig(null, config);
+            rc.storeConfigDiffs(a, b, prefsDiffWriter);
         } catch (Exception e) {
             throw new RuntimeException(e);
 

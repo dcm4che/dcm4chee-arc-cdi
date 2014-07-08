@@ -61,6 +61,7 @@ import org.dcm4che3.conf.api.generic.ReflectiveConfig.ConfigWriter;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig.DiffWriter;
 import org.dcm4che3.conf.ldap.LdapDicomConfigurationExtension;
 import org.dcm4che3.conf.ldap.LdapUtils;
+import org.dcm4che3.conf.ldap.generic.LdapConfigIO;
 import org.dcm4che3.conf.ldap.generic.LdapConfigReader;
 import org.dcm4che3.conf.ldap.generic.LdapConfigWriter;
 import org.dcm4che3.conf.ldap.generic.LdapDiffWriter;
@@ -145,6 +146,22 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         if (arcAE == null)
             return;
 
+        
+        // use modified reflective writer to store any child nodes, but not the attributes on AE level
+        try {
+            ConfigWriter writer = new LdapConfigIO(new BasicAttributes(), aeDN ,config) {
+                @Override
+                public void flushWriter() throws ConfigurationException {
+                    //noop since we stored the attributes on AE level in storeTo already 
+                }
+            };
+            ReflectiveConfig rc = new ReflectiveConfig(null, config);
+            rc.storeConfig(arcAE, writer);
+        } catch (ConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+        
+        
         config.store(arcAE.getAttributeCoercions(), aeDN);
         new LdapCompressionRulesConfiguration(config).store(
                 arcAE.getCompressionRules(), aeDN);
@@ -180,10 +197,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         attrs.get("objectclass").add("dcmArchiveNetworkAE");
 
         try {
-
             ConfigWriter ldapWriter = new LdapConfigWriter(attrs);
             ReflectiveConfig.store(arcAE, ldapWriter);
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -328,15 +343,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         ArchiveAEExtension arcae = new ArchiveAEExtension();
         ae.addAEExtension(arcae);
 
-        try {
-            ConfigReader ldapReader = new LdapConfigReader(attrs);
-            ReflectiveConfig.read(arcae, ldapReader);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-
-        }
-
     }
 
     @Override
@@ -345,6 +351,15 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         ArchiveAEExtension arcae = ae.getAEExtension(ArchiveAEExtension.class);
         if (arcae == null)
             return;
+
+        // use reflective config to read the AE extension
+        try {
+            ConfigReader ldapReader = new LdapConfigIO(config.getAttributes(aeDN),aeDN,config);
+            ReflectiveConfig rc = new ReflectiveConfig(null, config);
+            rc.readConfig(arcae, ldapReader);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         config.load(arcae.getAttributeCoercions(), aeDN);
         new LdapCompressionRulesConfiguration(config).load(
@@ -397,11 +412,10 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         if (aa == null || bb == null)
             return;
 
+        // store AE level attributes with reflective config
         try {
-
-            DiffWriter ldapDiffWriter = new LdapDiffWriter(mods);
+            LdapConfigWriter ldapDiffWriter = new LdapConfigWriter(mods);
             ReflectiveConfig.storeAllDiffs(a, b, ldapDiffWriter);
-
         } catch (Exception e) {
             throw new RuntimeException(e);
 
@@ -444,6 +458,21 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         if (aa == null || bb == null)
             return;
 
+        // use modified reflective diffwriter to store any child nodes, but not the attributes on AE level
+        try {
+            ConfigWriter diffWriter = new LdapConfigIO(new ArrayList<ModificationItem>(), aeDN ,config) {
+                @Override
+                public void flushDiffs() throws ConfigurationException {
+                    //noop since we diffed the attributes on AE level in storeDiffs already 
+                }
+            };
+            ReflectiveConfig rc = new ReflectiveConfig(null, config);
+            rc.storeConfigDiffs(aa, bb, diffWriter);
+        } catch (ConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+
+        
         config.merge(aa.getAttributeCoercions(), bb.getAttributeCoercions(),
                 aeDN);
         new LdapCompressionRulesConfiguration(config).merge(
