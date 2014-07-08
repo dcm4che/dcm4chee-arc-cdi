@@ -194,13 +194,12 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmIsTimeZoneSupported", def="false")    
     private boolean timeZoneSupported;
     
-//    @ConfigField(name = "dcmPatientSelector")    
+    @ConfigField(name = "dcmPatientSelector", def="null")    
     private PatientSelector patientSelector;
 
-//   @ConfigClass(objectClass = "dcmPatientSelectorClass")
+    @ConfigClass(objectClass = "dcmPatientSelectorClass")
     public static class PatientSelector implements Serializable
     {
-        
         private static final long serialVersionUID = -7211371641145410318L;
 
         @ConfigField(name = "dcmPatientSelectorClassName")
@@ -209,20 +208,19 @@ public class ArchiveAEExtension extends AEExtension {
         @ConfigField(mapName = "dcmPatientSelectorProperties", mapKey = "dcmPatientSelectorProperty", name = "dcmPatientSelectorValue", mapElementObjectClass = "dcmPatientSelectorEntry")
         private Map<String, String> patientSelectorProperties;
 
-        public String getPatientSelectorClass() {
+        public String getPatientSelectorClassName() {
             return patientSelectorClassName;
         }
 
-        public void setPatientSelectorClass(String patientSelectorClass) {
-            this.patientSelectorClassName = patientSelectorClass;
+        public void setPatientSelectorClassName(String patientSelectorClassName) {
+            this.patientSelectorClassName = patientSelectorClassName;
         }
 
         public Map<String, String> getPatientSelectorProperties() {
             return patientSelectorProperties;
         }
 
-        public void setPatientSelectorProperties(
-                Map<String, String> patientSelectorProperties) {
+        public void setPatientSelectorProperties(Map<String, String> patientSelectorProperties) {
             this.patientSelectorProperties = patientSelectorProperties;
         }
     }

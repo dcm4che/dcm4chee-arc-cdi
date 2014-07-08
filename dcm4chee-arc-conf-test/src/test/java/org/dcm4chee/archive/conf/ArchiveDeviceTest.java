@@ -49,6 +49,7 @@ import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
@@ -93,6 +94,7 @@ import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.ResourceLocator;
 import org.dcm4che3.util.SafeClose;
+import org.dcm4chee.archive.conf.ArchiveAEExtension.PatientSelector;
 import org.dcm4chee.archive.conf.DeepEquals.CustomDeepEquals;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveConfiguration;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveHL7Configuration;
@@ -641,7 +643,7 @@ public class ArchiveDeviceTest {
         	System.out.println(DeepEquals.lastDualKey);
         }
         
-        assertTrue("Store/read", res);
+        assertTrue("Store/read failed for an attribute. See console output.", res);
         
         // Reconfiguration test
         Device anotherArc = createArchiveDevice("dcm4chee-arc", arrDevice );
@@ -999,6 +1001,16 @@ public class ArchiveDeviceTest {
         aeExt.setReturnOtherPatientNames(true);
         aeExt.setLocalPIXConsumerApplication(pixConsumer);
         aeExt.setRemotePIXManagerApplication(pixManager);
+        
+        // patient selector
+        PatientSelector ps = new PatientSelector();
+        ps.setPatientSelectorClassName("TheClass");
+        Map<String,String> sels = new HashMap<>();
+        sels.put("prop1", "val1");
+        sels.put("prop2", "val2");
+        ps.setPatientSelectorProperties(sels);
+        aeExt.setPatientSelector(ps);
+        
         return ae;
     }
 
