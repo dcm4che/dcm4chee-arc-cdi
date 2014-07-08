@@ -68,6 +68,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Decorator to apply IOCM specifications to the Store Service.
+ * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
@@ -88,6 +90,11 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
 
     @Inject Event<RejectionEvent> event;
 
+    /* 
+     * Extends default instanceExists method. The first part of the method throws 
+     * an exception in case a duplicate rejection note is received. The second part
+     * manages received objects previously rejected, according to the IOCM standard. 
+     */
     @Override
     public StoreAction instanceExists(EntityManager em, StoreContext context,
             Instance inst) throws DicomServiceException {
