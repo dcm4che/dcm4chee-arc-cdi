@@ -73,8 +73,6 @@ import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.hibernate.Session;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.Tuple;
@@ -91,8 +89,6 @@ public class DefaultRetrieveService implements RetrieveService {
 
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
-
-    static Logger LOG = LoggerFactory.getLogger(DefaultRetrieveService.class);
 
     @Override
     public RetrieveContext createRetrieveContext(RetrieveService service,
@@ -112,8 +108,8 @@ public class DefaultRetrieveService implements RetrieveService {
             Attributes keys, QueryParam queryParam) {
 
         BooleanBuilder builder = new BooleanBuilder();
-        // TODO
-        builder.and(QueryBuilder.pids(pids, false));
+        builder.and(QueryBuilder.pids(pids, 
+                queryParam.isMatchLinkedPatientIDs(), false));
         builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
                 keys.getStrings(Tag.StudyInstanceUID), false));
         builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,

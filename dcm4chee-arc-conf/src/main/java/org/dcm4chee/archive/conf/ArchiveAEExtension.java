@@ -73,7 +73,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     public static final String DEF_RETRY_INTERVAL = "60";
 
-    
     @ConfigField(name = "dcmModifyingSystem")
     private String modifyingSystem;
     
@@ -118,8 +117,10 @@ public class ArchiveAEExtension extends AEExtension {
     
     @ConfigField(name = "dcmMatchUnknown", def="false")
     private boolean matchUnknown;
-    
-    
+
+    @ConfigField(name = "dcmMatchLinkedPatientIDs", def="false")
+    private boolean matchLinkedPatientIDs;
+
     @ConfigField(name = "dcmSendPendingCGet", def="false")
     private boolean sendPendingCGet;
 
@@ -384,6 +385,14 @@ public class ArchiveAEExtension extends AEExtension {
         this.matchUnknown = matchUnknown;
     }
 
+    public boolean isMatchLinkedPatientIDs() {
+        return matchLinkedPatientIDs;
+    }
+
+    public void setMatchLinkedPatientIDs(boolean matchLinkedPatientIDs) {
+        this.matchLinkedPatientIDs = matchLinkedPatientIDs;
+    }
+
     public boolean isSendPendingCGet() {
         return sendPendingCGet;
     }
@@ -563,6 +572,7 @@ public class ArchiveAEExtension extends AEExtension {
         queryParam.setFuzzySemanticMatching(queryOpts
                 .contains(QueryOption.FUZZY));
         queryParam.setMatchUnknown(matchUnknown);
+        queryParam.setMatchLinkedPatientIDs(matchLinkedPatientIDs);
         queryParam.setAccessControlIDs(accessControlIDs);
         queryParam.setShowRejectedForQualityReasons(showRejectedForQualityReasons);
         return queryParam;

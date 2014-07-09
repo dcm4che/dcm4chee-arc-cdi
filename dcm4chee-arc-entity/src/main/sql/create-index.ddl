@@ -6,6 +6,7 @@ create index content_item_text_value_idx on content_item (text_value);
 create unique index issuer_entity_id_idx on issuer (entity_id);
 create unique index issuer_entity_uid_idx on issuer (entity_uid, entity_uid_type);
 
+create index no_person_name_idx on person_name (no_person_name);
 create index family_name_idx on person_name (family_name);
 create index given_name_idx on person_name (given_name);
 create index middle_name_idx on person_name (middle_name);
@@ -37,7 +38,7 @@ create index inst_replaced_idx on instance (replaced);
 
 create unique index pat_id_idx on patient_id (pat_id, issuer_fk);
 
-create index pat_id_unknown_idx on patient (pat_id_unknown);
+create index no_pat_id_idx on patient (no_pat_id);
 create index pat_birthdate_idx on patient (pat_birthdate);
 create index pat_sex_idx on patient (pat_sex);
 create index pat_custom1_idx on patient (pat_custom1);
