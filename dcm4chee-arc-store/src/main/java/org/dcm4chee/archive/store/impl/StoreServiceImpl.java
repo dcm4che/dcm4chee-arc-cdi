@@ -84,6 +84,7 @@ import org.dcm4che3.util.StreamUtils;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveAEExtension.PatientSelector;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
@@ -577,6 +578,12 @@ public class StoreServiceImpl implements StoreService {
     public Patient findOrCreatePatient(EntityManager em, StoreContext context)
             throws DicomServiceException {
         try {
+            ArchiveAEExtension arcAE = context.getStoreSession().getArchiveAEExtension();
+            PatientSelector selector = arcAE.getPatientSelector();
+            System.out.println("Selector Class Name:"+selector.getPatientSelectorClassName());
+            for (String key : selector.getPatientSelectorProperties().keySet())
+                System.out.println("Property:("+key+","+selector.getPatientSelectorProperties().get(key)+")");
+            
             StoreSession session = context.getStoreSession();
             return patientService.updateOrCreatePatientOnCStore(
                     context.getAttributes(),

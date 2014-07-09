@@ -134,7 +134,6 @@ public abstract class QueryServiceMIMADecorator implements QueryService {
                         .getDefaultIssuerOfPatientID());
             ctx.setPatientIDs(pixConsumer.pixQuery(ctx.getArchiveAEExtension(),
                     pids[0]));
-            System.out.println();
         }
     }
 
