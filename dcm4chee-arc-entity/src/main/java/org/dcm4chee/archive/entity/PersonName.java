@@ -64,8 +64,8 @@ public class PersonName {
     @Column(name = "pk")
     private long pk;
 
-    @Column(name = "unknown", nullable = false)
-    private boolean unknown;
+    @Column(name = "no_person_name", nullable = false)
+    private boolean noPersonName;
 
     @Column(name = "family_name")
     private String familyName;
@@ -125,7 +125,7 @@ public class PersonName {
     }
 
     public PersonName(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr) {
-        unknown = pn.isEmpty();
+        noPersonName = pn.isEmpty();
         if ((familyName = pn.get(Group.Alphabetic, Component.FamilyName)) != null)
             soundexFamilyName = StringUtils.maskEmpty(fuzzyStr.toFuzzy(familyName), "*");
         if ((givenName = pn.get(Group.Alphabetic, Component.GivenName)) != null)
@@ -150,12 +150,12 @@ public class PersonName {
         return pk;
     }
 
-    public boolean isUnknown() {
-        return unknown;
+    public boolean isNoPersonName() {
+        return noPersonName;
     }
 
-    public void setUnknown(boolean unknown) {
-        this.unknown = unknown;
+    public void setNoPersonName(boolean noPersonName) {
+        this.noPersonName = noPersonName;
     }
 
     public String getFamilyName() {

@@ -181,8 +181,9 @@ public class QueryBuilder {
             IDWithIssuer[] pids, Attributes keys, QueryParam queryParam) {
 
         boolean matchUnknown = queryParam.isMatchUnknown();
+        boolean matchLinkedPatientIDs = queryParam.isMatchLinkedPatientIDs();
 
-        builder.and(pids(pids, matchUnknown));
+        builder.and(pids(pids, matchLinkedPatientIDs, matchUnknown));
 
         if (keys == null)
             return;
@@ -426,7 +427,8 @@ public class QueryBuilder {
         return result;
     }
 
-    public static Predicate pids(IDWithIssuer[] pids, boolean matchUnknown) {
+    public static Predicate pids(IDWithIssuer[] pids,
+            boolean matchLinkedPatientIDs, boolean matchUnknown) {
         if (pids == null || pids.length == 0)
             return null;
 
@@ -438,15 +440,21 @@ public class QueryBuilder {
         if (!result.hasValue())
             return null;
 
+        Predicate matchPatient = QPatientID.patientID.patient.eq(QPatient.patient);
+        if (matchLinkedPatientIDs) {
+            matchPatient = ExpressionUtils.or(matchPatient,
+                    QPatient.patient.linkedPatientIDs.contains(QPatientID.patientID));
+        }
+
         BooleanExpression matchingIDsExists = new HibernateSubQuery()
                 .from(QPatientID.patientID)
                 .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
                 .where(ExpressionUtils.and(
-                        QPatientID.patientID.patient.eq(QPatient.patient),
+                        matchPatient,
                         result)).exists();
 
         return matchUnknown ? ExpressionUtils.or(matchingIDsExists,
-                QPatient.patient.patientIDUnkown.isTrue()) : matchingIDsExists;
+                QPatient.patient.noPatientID.isTrue()) : matchingIDsExists;
     }
 
     static Predicate idWithIssuer(StringPath idPath, String id, Issuer issuer) {

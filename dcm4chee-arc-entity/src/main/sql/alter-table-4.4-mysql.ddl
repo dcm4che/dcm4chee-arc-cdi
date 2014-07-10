@@ -54,9 +54,9 @@ insert patient_id (patient_fk, pat_id)
 alter table patient
     drop pat_id,
     drop pat_id_issuer,
-    add pat_id_unknown bit not null;
+    add no_pat_id bit not null;
 
-create index pat_id_unknown_idx on patient (pat_id_unknown);
+create index no_pat_id_idx on patient (no_pat_id);
 
 alter table study
     drop accno_issuer,
@@ -96,10 +96,11 @@ create table person_name (
     sx_given_name varchar(255),
     sx_middle_name varchar(255),
     suffix varchar(255),
-    unknown bit not null,
+    no_person_name_idx bit not null,
     primary key (pk)
 ) ENGINE=InnoDB;
 
+create index no_person_name_idx on person_name (no_person_name);
 create index family_name_idx on person_name (family_name);
 create index given_name_idx on person_name (given_name);
 create index middle_name_idx on person_name (middle_name);

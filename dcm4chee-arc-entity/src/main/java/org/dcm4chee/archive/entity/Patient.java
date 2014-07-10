@@ -100,8 +100,8 @@ public class Patient implements Serializable {
     private Date updatedTime;
 
     @Basic(optional = false)
-    @Column(name = "pat_id_unknown")
-    private boolean patientIDUnkown;
+    @Column(name = "no_pat_id")
+    private boolean noPatientID;
 
     @Basic(optional = false)
     @Column(name = "pat_birthdate")
@@ -195,12 +195,12 @@ public class Patient implements Serializable {
         return updatedTime;
     }
 
-    public boolean isPatientIDUnknown() {
-        return patientIDUnkown;
+    public boolean isNoPatientID() {
+        return noPatientID;
     }
 
-    public void setPatientIDUnknown(boolean patientIDUnkown) {
-        this.patientIDUnkown = patientIDUnkown;
+    public void setNoPatientID(boolean noPatientID) {
+        this.noPatientID = noPatientID;
     }
 
     public String getPatientBirthDate() {

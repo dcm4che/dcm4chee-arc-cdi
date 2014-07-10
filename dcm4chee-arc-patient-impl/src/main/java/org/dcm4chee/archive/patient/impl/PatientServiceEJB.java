@@ -235,7 +235,7 @@ public class PatientServiceEJB implements PatientService {
         patient.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Patient),
                 storeParam.getFuzzyStr());
-        patient.setPatientIDUnknown(pids.isEmpty());
+        patient.setNoPatientID(pids.isEmpty());
         patient.setPatientIDs(createPatientIDs(pids, patient));
         em.persist(patient);
         LOG.info("Create {}", patient);
@@ -321,7 +321,7 @@ public class PatientServiceEJB implements PatientService {
         for (IDWithIssuer pid : add)
             patientIDs.add(createPatientID(pid, patient));
 
-        patient.setPatientIDUnknown(patientIDs.isEmpty());
+        patient.setNoPatientID(patientIDs.isEmpty());
         return modified || !add.isEmpty();
     }
 

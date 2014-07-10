@@ -58,6 +58,7 @@ public class QueryParam {
     private boolean combinedDatetimeMatching;
     private boolean fuzzySemanticMatching;
     private boolean matchUnknown;
+    private boolean matchLinkedPatientIDs;
     private String[] accessControlIDs;
     private Issuer defaultIssuerOfPatientID;
     private Issuer defaultIssuerOfAccessionNumber;
@@ -85,6 +86,14 @@ public class QueryParam {
 
     public final void setMatchUnknown(boolean matchUnknown) {
         this.matchUnknown = matchUnknown;
+    }
+
+    public final boolean isMatchLinkedPatientIDs() {
+        return this.matchLinkedPatientIDs;
+    }
+
+    public final void setMatchLinkedPatientIDs(boolean matchLinkedPatientIDs) {
+        this.matchLinkedPatientIDs = matchLinkedPatientIDs;
     }
 
     public final String[] getAccessControlIDs() {

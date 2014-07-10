@@ -74,7 +74,7 @@ class MatchPersonName {
     private static Predicate matchUnknown(Predicate predicate, QPersonName qpn,
             boolean matchUnknown) {
         return matchUnknown
-                ? ExpressionUtils.or(predicate, qpn.unknown.isTrue())
+                ? ExpressionUtils.or(predicate, qpn.noPersonName.isTrue())
                 : predicate;
     }
 

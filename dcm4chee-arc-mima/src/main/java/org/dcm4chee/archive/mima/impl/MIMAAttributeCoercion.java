@@ -201,7 +201,7 @@ class MIMAAttributeCoercion {
     private String[] queryPatientNames(IDWithIssuer[] pids) {
         HashSet<String> c = new HashSet<String>(pids.length * 4 / 3 + 1);
         BooleanBuilder builder = new BooleanBuilder();
-        builder.and(QueryBuilder.pids(pids, false));
+        builder.and(QueryBuilder.pids(pids, false, false));
         builder.and(QPatient.patient.mergedWith.isNull());
         List<Tuple> tuples = new HibernateQuery(em.unwrap(Session.class))
                 .from(QPatient.patient).where(builder)
