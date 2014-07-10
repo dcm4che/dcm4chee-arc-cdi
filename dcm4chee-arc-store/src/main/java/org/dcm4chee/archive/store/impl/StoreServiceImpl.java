@@ -579,10 +579,10 @@ public class StoreServiceImpl implements StoreService {
             throws DicomServiceException {
         try {
             ArchiveAEExtension arcAE = context.getStoreSession().getArchiveAEExtension();
-            PatientSelector selector = arcAE.getPatientSelector();
-            System.out.println("Selector Class Name:"+selector.getPatientSelectorClassName());
-            for (String key : selector.getPatientSelectorProperties().keySet())
-                System.out.println("Property:("+key+","+selector.getPatientSelectorProperties().get(key)+")");
+//            PatientSelector selector = arcAE.getPatientSelector();
+//            System.out.println("Selector Class Name:"+selector.getPatientSelectorClassName());
+//            for (String key : selector.getPatientSelectorProperties().keySet())
+//                System.out.println("Property:("+key+","+selector.getPatientSelectorProperties().get(key)+")");
             
             StoreSession session = context.getStoreSession();
             return patientService.updateOrCreatePatientOnCStore(
