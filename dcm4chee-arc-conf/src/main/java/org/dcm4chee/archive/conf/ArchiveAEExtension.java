@@ -196,10 +196,10 @@ public class ArchiveAEExtension extends AEExtension {
     private boolean timeZoneSupported;
     
     @ConfigField(name = "dcmPatientSelector", def="null")    
-    private PatientSelector patientSelector;
+    private PatientSelectorConfig patientSelectorConfig;
 
     @ConfigClass(objectClass = "dcmPatientSelectorClass")
-    public static class PatientSelector implements Serializable
+    public static class PatientSelectorConfig implements Serializable
     {
         private static final long serialVersionUID = -7211371641145410318L;
 
@@ -534,12 +534,12 @@ public class ArchiveAEExtension extends AEExtension {
         this.QIDOMaxNumberOfResults = qidoMaxNumberOfResults;
     }
 
-    public PatientSelector getPatientSelector() {
-        return patientSelector;
+    public PatientSelectorConfig getPatientSelectorConfig() {
+        return patientSelectorConfig;
     }
 
-    public void setPatientSelector(PatientSelector patientSelector) {
-        this.patientSelector = patientSelector;
+    public void setPatientSelectorConfig(PatientSelectorConfig patientSelectorConfig) {
+        this.patientSelectorConfig = patientSelectorConfig;
     }
 
     @Override
@@ -559,6 +559,7 @@ public class ArchiveAEExtension extends AEExtension {
         storeParam.setModifyingSystem(getEffectiveModifyingSystem());
         storeParam.setRetrieveAETs(retrieveAETs);
         storeParam.setExternalRetrieveAET(externalRetrieveAET);
+        storeParam.setPatientSelectorConfig(getPatientSelectorConfig());
         return storeParam;
     }
 

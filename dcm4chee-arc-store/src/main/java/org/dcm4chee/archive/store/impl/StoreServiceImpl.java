@@ -84,7 +84,6 @@ import org.dcm4che3.util.StreamUtils;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveAEExtension.PatientSelector;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;

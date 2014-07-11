@@ -94,7 +94,7 @@ import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.ResourceLocator;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4chee.archive.conf.ArchiveAEExtension.PatientSelector;
+import org.dcm4chee.archive.conf.ArchiveAEExtension.PatientSelectorConfig;
 import org.dcm4chee.archive.conf.DeepEquals.CustomDeepEquals;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveConfiguration;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveHL7Configuration;
@@ -1003,13 +1003,13 @@ public class ArchiveDeviceTest {
         aeExt.setRemotePIXManagerApplication(pixManager);
         
         // patient selector
-        PatientSelector ps = new PatientSelector();
+        PatientSelectorConfig ps = new PatientSelectorConfig();
         ps.setPatientSelectorClassName("TheClass");
         Map<String,String> sels = new HashMap<>();
         sels.put("prop1", "val1");
         sels.put("prop2", "val2");
         ps.setPatientSelectorProperties(sels);
-        aeExt.setPatientSelector(ps);
+        aeExt.setPatientSelectorConfig(ps);
         
         return ae;
     }

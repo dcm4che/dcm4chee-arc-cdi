@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.conf;
 
 import org.dcm4che3.soundex.FuzzyStr;
+import org.dcm4chee.archive.conf.ArchiveAEExtension.PatientSelectorConfig;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -51,6 +52,7 @@ public class StoreParam {
     private String modifyingSystem;
     private String[] retrieveAETs;
     private String externalRetrieveAET;
+    private PatientSelectorConfig patientSelectorConfig;
 
     public final boolean isStoreOriginalAttributes() {
         return storeOriginalAttributes;
@@ -100,4 +102,11 @@ public class StoreParam {
         return attributeFilters[entity.ordinal()];
     }
 
+    public PatientSelectorConfig getPatientSelectorConfig() {
+        return patientSelectorConfig;
+    }
+
+    public void setPatientSelectorConfig(PatientSelectorConfig patientSelectorConfig) {
+        this.patientSelectorConfig = patientSelectorConfig;
+    }
 }
