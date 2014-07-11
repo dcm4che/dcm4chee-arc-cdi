@@ -676,8 +676,7 @@ public class QueryBuilder {
                         .leftJoin(
                                 QRequestAttributes.requestAttributes.issuerOfAccessionNumber,
                                 QIssuer.issuer)
-                        .where(QSeries.series.requestAttributes
-                                .contains(QRequestAttributes.requestAttributes),
+                        .where(QSeries.series.eq(QRequestAttributes.requestAttributes.series),
                                 builder).exists(),
                 QSeries.series.requestAttributes, matchUnknown);
     }
