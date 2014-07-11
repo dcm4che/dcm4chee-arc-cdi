@@ -41,15 +41,22 @@ package org.dcm4chee.archive.entity;
 import static org.dcm4che3.data.PersonName.Group;
 import static org.dcm4che3.data.PersonName.Component;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.StringTokenizer;
+
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.dcm4che3.soundex.FuzzyStr;
-import org.dcm4che3.util.StringUtils;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -112,26 +119,18 @@ public class PersonName {
     @Column(name = "p_suffix")
     private String phoneticSuffix;
 
-    @Column(name = "sx_family_name")
-    private String soundexFamilyName;
-
-    @Column(name = "sx_given_name")
-    private String soundexGivenName;
-
-    @Column(name = "sx_middle_name")
-    private String soundexMiddleName;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "person_name_fk", referencedColumnName = "pk")
+    private Collection<SoundexCode> soundexCodes;
 
     public PersonName() {
     }
 
     public PersonName(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr) {
         noPersonName = pn.isEmpty();
-        if ((familyName = pn.get(Group.Alphabetic, Component.FamilyName)) != null)
-            soundexFamilyName = StringUtils.maskEmpty(fuzzyStr.toFuzzy(familyName), "*");
-        if ((givenName = pn.get(Group.Alphabetic, Component.GivenName)) != null)
-            soundexGivenName = StringUtils.maskEmpty(fuzzyStr.toFuzzy(givenName), "*");
-        if ((middleName = pn.get(Group.Alphabetic, Component.MiddleName)) != null)
-            soundexMiddleName = StringUtils.maskEmpty(fuzzyStr.toFuzzy(middleName), "*");
+        familyName = pn.get(Group.Alphabetic, Component.FamilyName);
+        givenName = pn.get(Group.Alphabetic, Component.GivenName);
+        middleName = pn.get(Group.Alphabetic, Component.MiddleName);
         prefix = pn.get(Group.Alphabetic, Component.NamePrefix);
         suffix = pn.get(Group.Alphabetic, Component.NameSuffix);
         ideographicFamilyName = pn.get(Group.Ideographic, Component.FamilyName);
@@ -144,6 +143,48 @@ public class PersonName {
         phoneticMiddleName = pn.get(Group.Phonetic, Component.MiddleName);
         phoneticPrefix = pn.get(Group.Phonetic, Component.NamePrefix);
         phoneticSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
+        soundexCodes = createSoundexCodes(familyName, givenName, middleName,
+                fuzzyStr);
+    }
+
+    private Collection<SoundexCode> createSoundexCodes(String familyName,
+            String givenName, String middleName, FuzzyStr fuzzyStr) {
+        Collection<SoundexCode> codes = new ArrayList<SoundexCode>();
+        addSoundexCodesTo(Component.FamilyName, familyName, fuzzyStr, codes);
+        addSoundexCodesTo(Component.GivenName, givenName, fuzzyStr, codes);
+        addSoundexCodesTo(Component.MiddleName, middleName, fuzzyStr, codes);
+        return codes;
+   }
+
+    private void addSoundexCodesTo(Component component, String name,
+            FuzzyStr fuzzyStr, Collection<SoundexCode> codes) {
+        if (name == null)
+            return;
+
+        Iterator<String> parts = tokenizePersonNameComponent(name);
+        for (int i = 0; parts.hasNext(); i++)
+            codes.add(new SoundexCode(component, i,
+                    fuzzyStr.toFuzzy(parts.next())));
+    }
+
+    public static Iterator<String> tokenizePersonNameComponent(String name) {
+        final StringTokenizer stk = new StringTokenizer(name, " ,-\t");
+        return new Iterator<String>() {
+
+            @Override
+            public boolean hasNext() {
+                return stk.hasMoreTokens();
+            }
+
+            @Override
+            public String next() {
+                return stk.nextToken();
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }};
     }
 
     public long getPk() {
@@ -276,29 +317,5 @@ public class PersonName {
 
     public void setPhoneticSuffix(String phoneticSuffix) {
         this.phoneticSuffix = phoneticSuffix;
-    }
-
-    public String getSoundexFamilyName() {
-        return soundexFamilyName;
-    }
-
-    public void setSoundexFamilyName(String soundexFamilyName) {
-        this.soundexFamilyName = soundexFamilyName;
-    }
-
-    public String getSoundexGivenName() {
-        return soundexGivenName;
-    }
-
-    public void setSoundexGivenName(String soundexGivenName) {
-        this.soundexGivenName = soundexGivenName;
-    }
-
-    public String getSoundexMiddleName() {
-        return soundexMiddleName;
-    }
-
-    public void setSoundexMiddleName(String soundexMiddleName) {
-        this.soundexMiddleName = soundexMiddleName;
     }
 }

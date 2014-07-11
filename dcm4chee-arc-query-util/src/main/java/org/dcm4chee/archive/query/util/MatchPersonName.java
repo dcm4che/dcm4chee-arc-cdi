@@ -38,13 +38,17 @@
 
 package org.dcm4chee.archive.query.util;
 
+import java.util.Iterator;
+
 import org.dcm4che3.data.PersonName;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.QPersonName;
+import org.dcm4chee.archive.entity.QSoundexCode;
 
 import com.mysema.query.BooleanBuilder;
+import com.mysema.query.jpa.hibernate.HibernateSubQuery;
 import com.mysema.query.types.ExpressionUtils;
 import com.mysema.query.types.Predicate;
 import com.mysema.query.types.path.StringPath;
@@ -137,72 +141,43 @@ class MatchPersonName {
     private static Predicate fuzzyMatch(QPersonName qpn,
             PersonName pn, QueryParam param) {
         FuzzyStr fuzzyStr = param.getFuzzyStr();
-        String familyName = StringUtils.maskNull(
-                pn.get(PersonName.Component.FamilyName), "*");
-        String givenName = StringUtils.maskNull(
-                pn.get(PersonName.Component.GivenName), "*");
-        return familyName.equals("*")
-                ? givenName.equals("*")
-                        ? null
-                        : fuzzyMatch(qpn, givenName, fuzzyStr)
-                : givenName.equals("*")
-                        ? fuzzyMatch(qpn, familyName, fuzzyStr)
-                        : fuzzyMatch(qpn, familyName, givenName, fuzzyStr);
-                
+        BooleanBuilder builder = new BooleanBuilder();
+        fuzzyMatch(qpn, pn, PersonName.Component.FamilyName, fuzzyStr, builder);
+        fuzzyMatch(qpn, pn, PersonName.Component.GivenName, fuzzyStr, builder);
+        fuzzyMatch(qpn, pn, PersonName.Component.MiddleName, fuzzyStr, builder);
+        return builder;
     }
 
-    private static Predicate fuzzyMatch(QPersonName qpn, String name,
-            FuzzyStr fuzzyStr) {
+    private static void fuzzyMatch(QPersonName qpn, PersonName pn,
+            PersonName.Component c,
+            FuzzyStr fuzzyStr, BooleanBuilder builder) {
+        String name = StringUtils.maskNull(pn.get(c), "*");
+        if (name.equals("*"))
+            return;
+
+        Iterator<String> parts = org.dcm4chee.archive.entity.PersonName
+                .tokenizePersonNameComponent(name);
+        while (parts.hasNext())
+            fuzzyMatch(qpn, parts.next(), fuzzyStr, builder);
+    }
+
+    private static void fuzzyMatch(QPersonName qpn, String name,
+            FuzzyStr fuzzyStr, BooleanBuilder builder) {
         boolean wc = name.endsWith("*");
+        if (wc) {
+            name = name.substring(0, name.length()-1);
+            if (name.isEmpty())
+                return;
+        }
         String fuzzyName = fuzzyStr.toFuzzy(name);
-        if (fuzzyName.isEmpty()) {
-            if (wc)
-                return null;
-            fuzzyName = "*";
-        }
-        return fuzzyMatch(qpn, wc, fuzzyName);
-    }
-
-    private static Predicate fuzzyMatch(QPersonName qpn, boolean wc,
-            String fuzzyName) {
-        return wc
-                ? ExpressionUtils.or(
-                    qpn.soundexFamilyName.startsWith(fuzzyName),
-                    qpn.soundexGivenName.startsWith(fuzzyName))
-                : ExpressionUtils.or(
-                    qpn.soundexFamilyName.eq(fuzzyName),
-                    qpn.soundexGivenName.eq(fuzzyName));
-    }
-
-    private static Predicate fuzzyMatch(QPersonName qpn,
-            String familyName,
-            String givenName,
-            FuzzyStr fuzzyStr) {
-        boolean familyNameWC = familyName.endsWith("*");
-        String fuzzyFamilyName = fuzzyStr.toFuzzy(familyName);
-        if (fuzzyFamilyName.isEmpty()) {
-            if (familyNameWC)
-                return fuzzyMatch(qpn, givenName, fuzzyStr);
-            fuzzyFamilyName = "*";
-        }
-        boolean givenNameWC = givenName.endsWith("*");
-        String fuzzyGivenName = fuzzyStr.toFuzzy(givenName);
-        if (fuzzyGivenName.isEmpty()) {
-            if (givenNameWC)
-                return fuzzyMatch(qpn, familyNameWC, fuzzyFamilyName);
-            fuzzyGivenName = "*";
-        }
-        return ExpressionUtils.or(
-                ExpressionUtils.and(
-                    match(qpn.soundexFamilyName, familyNameWC, fuzzyFamilyName),
-                    match(qpn.soundexGivenName, givenNameWC, fuzzyGivenName)),
-                ExpressionUtils.and(
-                    match(qpn.soundexGivenName, familyNameWC, fuzzyFamilyName),
-                    match(qpn.soundexFamilyName, givenNameWC, fuzzyGivenName)));
-    }
-
-    private static Predicate match(StringPath path, boolean wc, String value) {
-        return wc ? path.startsWith(value) : path.eq(value);
+        Predicate pred = wc 
+                ? QSoundexCode.soundexCode.codeValue.startsWith(fuzzyName)
+                : QSoundexCode.soundexCode.codeValue.eq(fuzzyName);
+        HibernateSubQuery subquery = new HibernateSubQuery()
+                        .from(QSoundexCode.soundexCode)
+                        .where(qpn.eq(QSoundexCode.soundexCode.personName),
+                                pred);
+        builder.and(subquery.exists());
     }
 
 }

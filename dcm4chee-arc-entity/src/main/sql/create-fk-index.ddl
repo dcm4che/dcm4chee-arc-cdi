@@ -25,6 +25,7 @@ create index FKCA01FE77E53AEEC8 on series (perf_phys_name_fk);
 create index FKE38CD2D6C45E7AAD on series_req (accno_issuer_fk);
 create index FKE38CD2D68151AFEA on series_req (series_fk);
 create index FKE38CD2D633B55733 on series_req (req_phys_name_fk);
+create index FKA3E90A0A7665E75 on soundex_code (person_name_fk);
 create index FK786E2A3CF8FD7F43 on sps_station_aet (mwl_item_fk);
 create index FK68B0DC9C45E7AAD on study (accno_issuer_fk);
 create index FK68B0DC97F2DAD5E on study (ref_phys_name_fk);
