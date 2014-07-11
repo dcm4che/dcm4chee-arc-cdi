@@ -92,11 +92,18 @@ create table person_name (
     p_prefix varchar(255),
     p_suffix varchar(255),
     prefix varchar(255),
-    sx_family_name varchar(255),
-    sx_given_name varchar(255),
-    sx_middle_name varchar(255),
     suffix varchar(255),
     no_person_name_idx bit not null,
+    primary key (pk)
+) ENGINE=InnoDB;
+
+
+create table soundex_code (
+    pk bigint not null auto_increment,
+    sx_code_value varchar(255) not null,
+    pn_comp_part integer not null,
+    pn_comp integer not null,
+    person_name_fk bigint,
     primary key (pk)
 ) ENGINE=InnoDB;
 
@@ -110,9 +117,8 @@ create index i_middle_name_idx on person_name (i_middle_name);
 create index p_family_name_idx on person_name (p_family_name);
 create index p_given_name_idx on person_name (p_given_name);
 create index p_middle_name_idx on person_name (p_middle_name);
-create index sx_family_name_idx on person_name (sx_family_name);
-create index sx_given_name_idx on person_name (sx_given_name);
-create index sx_middle_name_idx on person_name (sx_middle_name);
+
+create index sx_code_value_idx on soundex_code (sx_code_value);
 
 alter table patient
     drop pat_name,
@@ -191,3 +197,9 @@ alter table mwl_item
     add constraint FK8F9D3D30E53AEEC8 
     foreign key (perf_phys_name_fk) 
     references person_name (pk);
+
+alter table soundex_code 
+    add constraint FKA3E90A0A7665E75 
+    foreign key (person_name_fk) 
+    references person_name (pk);
+

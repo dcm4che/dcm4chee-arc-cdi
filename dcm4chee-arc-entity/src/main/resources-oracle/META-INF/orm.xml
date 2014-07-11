@@ -154,6 +154,17 @@
     </attributes>
   </entity>
 
+  <entity class="SoundexCode">
+    <table name="soundex_code" />
+    <sequence-generator name="seq" sequence-name="soundex_code_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
   <entity class="Patient">
     <table name="patient" />
     <sequence-generator name="seq" sequence-name="patient_pk_seq" allocation-size="1" />
