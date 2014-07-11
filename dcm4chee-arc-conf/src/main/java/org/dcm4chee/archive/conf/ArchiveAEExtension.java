@@ -66,7 +66,6 @@ import org.dcm4che3.util.StringUtils;
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
 
-
 public class ArchiveAEExtension extends AEExtension {
 
     private static final long serialVersionUID = -2390448404282661045L;
@@ -75,133 +74,107 @@ public class ArchiveAEExtension extends AEExtension {
 
     @ConfigField(name = "dcmModifyingSystem")
     private String modifyingSystem;
-    
+
     @ConfigField(name = "dcmWadoSupportedSRClasses")
     private String[] wadoSupportedSRClasses;
 
     @ConfigField(name = "dcmRetrieveAET")
     private String[] retrieveAETs;
-    
 
     @ConfigField(name = "dcmExternalRetrieveAET")
     private String externalRetrieveAET;
-    
-    
+
     @ConfigField(name = "dcmFileSystemGroupID")
     private String fileSystemGroupID;
-    
-    
+
     @ConfigField(name = "dcmInitFileSystemURI")
     private String initFileSystemURI;
-    
-    
+
     @ConfigField(name = "dcmDigestAlgorithm")
     private String digestAlgorithm;
-    
-    
+
     @ConfigField(name = "dcmSpoolDirectoryPath")
     private String spoolDirectoryPath;
-    
-    
+
     @ConfigField(name = "dcmStorageFilePathFormat")
     private AttributesFormat storageFilePathFormat;
-    
-    
-    @ConfigField(name = "dcmSuppressWarningCoercionOfDataElements", def="false")
+
+    @ConfigField(name = "dcmSuppressWarningCoercionOfDataElements", def = "false")
     private boolean suppressWarningCoercionOfDataElements;
 
-    
-    @ConfigField(name = "dcmPreserveSpoolFileOnFailure", def="false")
+    @ConfigField(name = "dcmPreserveSpoolFileOnFailure", def = "false")
     private boolean preserveSpoolFileOnFailure;
-    
-    
-    @ConfigField(name = "dcmMatchUnknown", def="false")
+
+    @ConfigField(name = "dcmMatchUnknown", def = "false")
     private boolean matchUnknown;
 
-    @ConfigField(name = "dcmMatchLinkedPatientIDs", def="false")
+    @ConfigField(name = "dcmMatchLinkedPatientIDs", def = "false")
     private boolean matchLinkedPatientIDs;
 
-    @ConfigField(name = "dcmSendPendingCGet", def="false")
+    @ConfigField(name = "dcmSendPendingCGet", def = "false")
     private boolean sendPendingCGet;
 
-
-    @ConfigField(name = "dcmSendPendingCMoveInterval", def="0")
+    @ConfigField(name = "dcmSendPendingCMoveInterval", def = "0")
     private int sendPendingCMoveInterval;
-    
-    
-    @ConfigField(name = "dcmStgCmtDelay", def="0")
-    private int storageCommitmentDelay;
-    
-    
-    @ConfigField(name = "dcmStgCmtMaxRetries", def="0")
-    private int storageCommitmentMaxRetries;
-    
-    
-    @ConfigField(name = "dcmStgCmtRetryInterval", def=DEF_RETRY_INTERVAL)
-    private int storageCommitmentRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
 
-    
+    @ConfigField(name = "dcmStgCmtDelay", def = "0")
+    private int storageCommitmentDelay;
+
+    @ConfigField(name = "dcmStgCmtMaxRetries", def = "0")
+    private int storageCommitmentMaxRetries;
+
+    @ConfigField(name = "dcmStgCmtRetryInterval", def = DEF_RETRY_INTERVAL)
+    private int storageCommitmentRetryInterval = Integer
+            .parseInt(DEF_RETRY_INTERVAL);
+
     @ConfigField(name = "dcmFwdMppsDestination")
     private String[] forwardMPPSDestinations = {};
 
-    
-    @ConfigField(name = "dcmFwdMppsMaxRetries", def="0")
+    @ConfigField(name = "dcmFwdMppsMaxRetries", def = "0")
     private int forwardMPPSMaxRetries;
-    
-    
-    @ConfigField(name = "dcmFwdMppsRetryInterval", def=DEF_RETRY_INTERVAL)
+
+    @ConfigField(name = "dcmFwdMppsRetryInterval", def = DEF_RETRY_INTERVAL)
     private int forwardMPPSRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
-    
-    
+
     @ConfigField(name = "dcmIanDestination")
     private String[] IANDestinations = {};
-    
-    
-    @ConfigField(name = "dcmIanMaxRetries", def="0")
+
+    @ConfigField(name = "dcmIanMaxRetries", def = "0")
     private int IANMaxRetries;
-    
-    
-    @ConfigField(name = "dcmIanRetryInterval", def=DEF_RETRY_INTERVAL)
+
+    @ConfigField(name = "dcmIanRetryInterval", def = DEF_RETRY_INTERVAL)
     private int IANRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
-    
-    
+
     private final AttributeCoercions attributeCoercions = new AttributeCoercions();
     private final CompressionRules compressionRules = new CompressionRules();
-    
-    
-    @ConfigField(name = "dcmReturnOtherPatientIDs", def="false")
+
+    @ConfigField(name = "dcmReturnOtherPatientIDs", def = "false")
     private boolean returnOtherPatientIDs;
 
-    
-    @ConfigField(name = "dcmReturnOtherPatientNames", def="false")
+    @ConfigField(name = "dcmReturnOtherPatientNames", def = "false")
     private boolean returnOtherPatientNames;
 
-    
-    @ConfigField(name = "dcmShowRejectedInstances", def="false")
+    @ConfigField(name = "dcmShowRejectedInstances", def = "false")
     private boolean showRejectedForQualityReasons;
-    
-    
+
     @ConfigField(name = "hl7PIXManagerApplication")
     private String remotePIXManagerApplication;
-    
-    
+
     @ConfigField(name = "hl7PIXConsumerApplication")
     private String localPIXConsumerApplication;
-    
-    
-    @ConfigField(name = "dcmQidoMaxNumberOfResults", def="0")
+
+    @ConfigField(name = "dcmQidoMaxNumberOfResults", def = "0")
     private int QIDOMaxNumberOfResults;
-    
-    @ConfigField(name = "dcmIsTimeZoneSupported", def="false")    
+
+    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
     private boolean timeZoneSupported;
-    
-    @ConfigField(name = "dcmPatientSelector", def="null")    
+
+    @ConfigField(name = "dcmPatientSelector", def = "null")
     private PatientSelectorConfig patientSelectorConfig;
 
     @ConfigClass(objectClass = "dcmPatientSelectorClass")
-    public static class PatientSelectorConfig implements Serializable
-    {
-        private static final long serialVersionUID = -7211371641145410318L;
+    public static class PatientSelectorConfig implements Serializable {
+        private static final long serialVersionUID = -7211371641145410318L;;
 
         @ConfigField(name = "dcmPatientSelectorClassName")
         private String patientSelectorClassName;
@@ -221,9 +194,19 @@ public class ArchiveAEExtension extends AEExtension {
             return patientSelectorProperties;
         }
 
-        public void setPatientSelectorProperties(Map<String, String> patientSelectorProperties) {
+        public void setPatientSelectorProperties(
+                Map<String, String> patientSelectorProperties) {
             this.patientSelectorProperties = patientSelectorProperties;
         }
+    }
+    
+    public PatientSelectorConfig getPatientSelectorConfig() {
+        return patientSelectorConfig;
+    }
+
+    public void setPatientSelectorConfig(
+            PatientSelectorConfig patientSelectorConfig) {
+        this.patientSelectorConfig = patientSelectorConfig;
     }
 
     public String[] getWadoSupportedSRClasses() {
@@ -233,7 +216,7 @@ public class ArchiveAEExtension extends AEExtension {
     public void setWadoSupportedSRClasses(String[] wadoSupportedSRClasses) {
         this.wadoSupportedSRClasses = wadoSupportedSRClasses;
     }
-    
+
     public boolean isTimeZoneSupported() {
         return timeZoneSupported;
     }
@@ -242,9 +225,10 @@ public class ArchiveAEExtension extends AEExtension {
         this.timeZoneSupported = timeZoneSupported;
     }
 
-    public AttributeCoercion getAttributeCoercion(String sopClass,
-            Dimse dimse, Role role, String aeTitle) {
-        return attributeCoercions.findAttributeCoercion(sopClass, dimse, role, aeTitle);
+    public AttributeCoercion getAttributeCoercion(String sopClass, Dimse dimse,
+            Role role, String aeTitle) {
+        return attributeCoercions.findAttributeCoercion(sopClass, dimse, role,
+                aeTitle);
     }
 
     public AttributeCoercions getAttributeCoercions() {
@@ -286,8 +270,7 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public String getEffectiveModifyingSystem() {
-        return modifyingSystem != null 
-                ? modifyingSystem
+        return modifyingSystem != null ? modifyingSystem
                 : getApplicationEntity().getDevice().getDeviceName();
     }
 
@@ -352,12 +335,11 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public Templates getAttributeCoercionTemplates(String cuid, Dimse dimse,
-            TransferCapability.Role role, String aet) throws TransformerConfigurationException {
+            TransferCapability.Role role, String aet)
+            throws TransformerConfigurationException {
         AttributeCoercion ac = getAttributeCoercion(cuid, dimse, role, aet);
-        return ac != null 
-                ? TemplatesCache.getDefault().get(
-                        StringUtils.replaceSystemProperties(ac.getURI()))
-                : null;
+        return ac != null ? TemplatesCache.getDefault().get(
+                StringUtils.replaceSystemProperties(ac.getURI())) : null;
     }
 
     public boolean isSuppressWarningCoercionOfDataElements() {
@@ -421,7 +403,8 @@ public class ArchiveAEExtension extends AEExtension {
         return storageCommitmentMaxRetries;
     }
 
-    public final void setStorageCommitmentMaxRetries(int storageCommitmentMaxRetries) {
+    public final void setStorageCommitmentMaxRetries(
+            int storageCommitmentMaxRetries) {
         this.storageCommitmentMaxRetries = storageCommitmentMaxRetries;
     }
 
@@ -438,7 +421,8 @@ public class ArchiveAEExtension extends AEExtension {
         return forwardMPPSDestinations;
     }
 
-    public final void setForwardMPPSDestinations(String[] forwardMPPSDestinations) {
+    public final void setForwardMPPSDestinations(
+            String[] forwardMPPSDestinations) {
         this.forwardMPPSDestinations = forwardMPPSDestinations;
     }
 
@@ -506,7 +490,8 @@ public class ArchiveAEExtension extends AEExtension {
         return showRejectedForQualityReasons;
     }
 
-    public void setShowRejectedForQualityReasons(boolean showRejectedForQualityReasons) {
+    public void setShowRejectedForQualityReasons(
+            boolean showRejectedForQualityReasons) {
         this.showRejectedForQualityReasons = showRejectedForQualityReasons;
     }
 
@@ -534,20 +519,12 @@ public class ArchiveAEExtension extends AEExtension {
         this.QIDOMaxNumberOfResults = qidoMaxNumberOfResults;
     }
 
-    public PatientSelectorConfig getPatientSelectorConfig() {
-        return patientSelectorConfig;
-    }
-
-    public void setPatientSelectorConfig(PatientSelectorConfig patientSelectorConfig) {
-        this.patientSelectorConfig = patientSelectorConfig;
-    }
-
     @Override
     public void reconfigure(AEExtension from) {
         ArchiveAEExtension arcae = (ArchiveAEExtension) from;
-        
+
         ReflectiveConfig.reconfigure(arcae, this);
-        
+
         setAttributeCoercions(arcae.getAttributeCoercions());
         setCompressionRules(arcae.getCompressionRules());
     }
@@ -575,7 +552,8 @@ public class ArchiveAEExtension extends AEExtension {
         queryParam.setMatchUnknown(matchUnknown);
         queryParam.setMatchLinkedPatientIDs(matchLinkedPatientIDs);
         queryParam.setAccessControlIDs(accessControlIDs);
-        queryParam.setShowRejectedForQualityReasons(showRejectedForQualityReasons);
+        queryParam
+                .setShowRejectedForQualityReasons(showRejectedForQualityReasons);
         return queryParam;
     }
 

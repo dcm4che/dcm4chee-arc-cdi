@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
@@ -106,7 +108,7 @@
       <version>1.0.1.Final</version>
     </dependency>
     <!-- end testing dependencies -->
-       <dependency>
+    <dependency>
       <groupId>javax.enterprise</groupId>
       <artifactId>cdi-api</artifactId>
       <scope>provided</scope>
@@ -124,6 +126,12 @@
     <dependency>
       <groupId>org.jboss.spec.javax.annotation</groupId>
       <artifactId>jboss-annotations-api_1.1_spec</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-beanutils</groupId>
+      <artifactId>commons-beanutils</artifactId>
+      <version>1.8.3</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -148,18 +156,19 @@
         <!-- <resources> <resource> <directory>src/main/resources/META-INF</directory> 
           <includes> <include>**/*beans.xml</include> </includes> </resource> </resources> -->
         <plugins>
-            <plugin>
-              <artifactId>maven-jar-plugin</artifactId>
-              <version>2.3.2</version>
-              <configuration>
-                <archive>
-                  <manifestEntries>
-                    <Dependencies>org.dcm4che.core</Dependencies>
-                  </manifestEntries>
-                </archive>
-              </configuration>
-            </plugin>
-          </plugins>
+          <plugin>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>2.3.2</version>
+            <configuration>
+              <archive>
+                <manifestEntries>
+                  <Dependencies>org.dcm4che.core</Dependencies>
+                  <Dependencies>org.apache.commons.beanutils</Dependencies>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </plugin>
+        </plugins>
       </build>
     </profile>
     <profile>
