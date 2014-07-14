@@ -44,6 +44,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import javax.enterprise.event.Event;
@@ -77,6 +78,8 @@ import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
@@ -91,6 +94,7 @@ import org.dcm4chee.archive.rs.HttpSource;
 import org.jboss.resteasy.plugins.providers.multipart.ContentIDUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.jboss.resteasy.plugins.providers.multipart.OutputPart;
+import org.junit.internal.runners.statements.Fail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -176,14 +180,16 @@ public class WadoRS extends Wado {
     private void init(String method) {
 
         try {
-           ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
-           
-           if(sourceAE!=null)
-           context = retrieveService.createRetrieveContext(
-                   retrieveService, sourceAE.getAETitle(), arcAE);
-           context.setDestinationAE(sourceAE);
+            ApplicationEntity sourceAE = aeCache
+                    .findAE(new HttpSource(request));
+
+            if (sourceAE != null) {
+                context = retrieveService.createRetrieveContext(
+                        retrieveService, sourceAE.getAETitle(), arcAE);
+                context.setDestinationAE(sourceAE);
+            }
         } catch (ConfigurationNotFoundException e1) {
-            LOG.error("Unable to find the mapped AE for this host or even the fallback AE, coercion will not be applied");
+            LOG.error("Unable to find the mapped AE for this host or even the fallback AE, elimination/coercion will not be applied");
         }
 
         this.method = method;
@@ -415,17 +421,18 @@ public class WadoRS extends Wado {
         List<ArchiveInstanceLocator> instscompleted = new ArrayList<ArchiveInstanceLocator>();
         List<ArchiveInstanceLocator> instsfailed = new ArrayList<ArchiveInstanceLocator>();
 
-        
         try {
             if (refs.isEmpty())
                 throw new WebApplicationException(Status.NOT_FOUND);
             else
                 insts.addAll(refs);
-
+            // do the check here for sop classes elimination
+            refs = eliminateUnSupportedSOPClasses(refs,instsfailed);
             if (acceptDicom || acceptBulkdata) {
                 MultipartRelatedOutput output = new MultipartRelatedOutput();
                 int failed = 0;
                 if (acceptedBulkdataMediaTypes.isEmpty()) {
+
                     for (InstanceLocator ref : refs)
                         if (!addDicomObjectTo(ref, output)) {
                             instsfailed.add((ArchiveInstanceLocator) ref);
@@ -471,6 +478,37 @@ public class WadoRS extends Wado {
         }
     }
 
+    private List<ArchiveInstanceLocator> eliminateUnSupportedSOPClasses(
+            List<ArchiveInstanceLocator> refs, List<ArchiveInstanceLocator> instsfailed)
+            throws ConfigurationNotFoundException {
+        List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
+
+        try {
+            if (context == null)
+                throw new ConfigurationNotFoundException(
+                        "Neither AE nor Fall Back AE for Web Service Device is configured, SOPClass/TransferSyntax Elimination not applied");
+            // here in wado source and destination are the same
+            ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>( context
+                    .getDestinationAE().getTransferCapabilitiesWithRole(
+                            Role.SCU));
+            for (ArchiveInstanceLocator ref : refs) {
+                for (TransferCapability supportedTC :aeTCs)
+                    if (supportedTC.getSopClass().compareTo(ref.cuid) == 0) {
+                        if (supportedTC.containsTransferSyntax(ref.tsuid)) {
+                            adjustedRefs.add(ref);
+                        }
+                    }
+                if(!adjustedRefs.contains(ref))
+                    instsfailed.add(ref);
+            }
+
+            return adjustedRefs;
+        } catch (Exception e) {
+            LOG.error("Exception while applying elimination, {}",e);
+            return refs;
+        }
+    }
+
     private Attributes getFileAttributes(InstanceLocator ref) {
         DicomInputStream dis = null;
         try {
@@ -478,14 +516,12 @@ public class WadoRS extends Wado {
             dis.setIncludeBulkData(IncludeBulkData.URI);
             Attributes dataset = dis.readDataset(-1, -1);
             return dataset;
-        }
-        catch(IOException e)
-        {
-            LOG.error("Unable to read file, Exception {}, using the blob for coercion - (Incomplete Coercion)",e);
+        } catch (IOException e) {
+            LOG.error(
+                    "Unable to read file, Exception {}, using the blob for coercion - (Incomplete Coercion)",
+                    e);
             return (Attributes) ref.getObject();
-        }
-        finally
-        {
+        } finally {
             SafeClose.close(dis);
         }
     }
@@ -738,8 +774,8 @@ public class WadoRS extends Wado {
     private void addMetadataTo(InstanceLocator ref,
             MultipartRelatedOutput output) {
         Attributes attrs = (Attributes) ref.getObject();
-        addPart(output, new DicomXMLOutput(ref, toBulkDataURI(ref.uri), attrs,context),
-                MediaTypes.APPLICATION_DICOM_XML_TYPE, null, ref.iuid);
+        addPart(output, new DicomXMLOutput(ref, toBulkDataURI(ref.uri), attrs,
+                context), MediaTypes.APPLICATION_DICOM_XML_TYPE, null, ref.iuid);
     }
 
     private boolean isMultiframeMediaType(MediaType mediaType) {
