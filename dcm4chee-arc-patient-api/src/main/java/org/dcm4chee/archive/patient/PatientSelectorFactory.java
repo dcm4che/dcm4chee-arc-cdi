@@ -92,7 +92,7 @@ public class PatientSelectorFactory {
         BeanMap map = new BeanMap(selectorObject);
         
         for (String key : conf.getPatientSelectorProperties().keySet())
-            map.put(key, conf.getPatientSelectorProperties().get(key));
+            map.put(key, MatchType.valueOf(conf.getPatientSelectorProperties().get(key)));
         
         return (PatientSelector) map.getBean();
     }
