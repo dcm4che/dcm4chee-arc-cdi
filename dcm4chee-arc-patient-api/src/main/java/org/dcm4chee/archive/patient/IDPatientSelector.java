@@ -38,12 +38,15 @@
 
 package org.dcm4chee.archive.patient;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.PatientID;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -52,17 +55,49 @@ import org.dcm4chee.archive.entity.Patient;
 public class IDPatientSelector implements PatientSelector {
 
     @Override
-    public Patient select(List<Patient> patients,
+    public Patient select(List<Patient> candidates,
             Attributes attrs, Collection<IDWithIssuer> pids)
             throws NonUniquePatientException {
-        switch (patients.size()) {
-        case 0:
+
+        if (candidates.isEmpty())
             return null;
-        case 1:
-            return patients.get(0);
-        default:
-            throw new NonUniquePatientException(patients.size() + " matching patients");
+
+        if (pids.isEmpty())
+            throw new NonUniquePatientException("No Patient ID");
+
+        if (candidates.size() == 1)
+            return candidates.get(0);
+
+        ArrayList<Patient> matchingIssuer =
+                new ArrayList<Patient>(candidates.size());
+        for (Patient patient : candidates)
+            if (containsIDWithMatchingIssuer(patient.getPatientIDs(), pids))
+                matchingIssuer.add(patient);
+
+        if (matchingIssuer.size() == 1)
+            return matchingIssuer.get(0);
+ 
+        throw new NonUniquePatientException(
+                candidates.size() + " matching patients");
+    }
+
+    private boolean containsIDWithMatchingIssuer(
+            Collection<PatientID> patientIDs, Collection<IDWithIssuer> pids) {
+        for (PatientID patientID : patientIDs) {
+            String id = patientID.getID();
+            Issuer issuer = patientID.getIssuer();
+            if (issuer == null)
+                continue;
+
+            for (IDWithIssuer pid : pids) {
+                if (id.equals(pid.getID())) {
+                    org.dcm4che3.data.Issuer issuer2 = pid.getIssuer();
+                    if (issuer2 != null && issuer2.matches(issuer))
+                        return true;
+                }
+            }
         }
+        return false;
     }
 
 }

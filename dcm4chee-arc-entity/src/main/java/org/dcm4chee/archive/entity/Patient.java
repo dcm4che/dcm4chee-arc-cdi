@@ -58,6 +58,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
@@ -80,11 +82,20 @@ import org.dcm4chee.archive.entity.ext.PatientExtension;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
+@NamedQueries({
+@NamedQuery(
+    name="Patient.findByPatientFamilyName",
+    query="SELECT p FROM Patient p "
+            + "WHERE p.patientName.familyName = ?1")
+})
 @Entity
 @Table(name = "patient")
 public class Patient implements Serializable {
 
     private static final long serialVersionUID = 6430339764844147679L;
+
+    public static final String FIND_BY_PATIENT_FAMILY_NAME =
+            "Patient.findByPatientFamilyName";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

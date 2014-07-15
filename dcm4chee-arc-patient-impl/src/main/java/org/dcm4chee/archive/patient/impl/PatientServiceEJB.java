@@ -51,6 +51,8 @@ import javax.persistence.PersistenceContext;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.data.PersonName;
+import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
@@ -133,10 +135,26 @@ public class PatientServiceEJB implements PatientService {
     private Patient findPatientByDICOM(Collection<IDWithIssuer> pids,
             Attributes attrs, PatientSelector selector)
             throws NonUniquePatientException {
-        if (pids.isEmpty())
-            throw new NonUniquePatientException("No Patient ID");
+        List<Patient> candidates;
+        if (!pids.isEmpty()) {
+            candidates = findPatientByIDs(pids);
+        } else {
+            String familyName = new PersonName(
+                    attrs.getString(Tag.PatientName))
+                    .get(PersonName.Component.FamilyName);
+            if (familyName != null)
+                candidates = findPatientByFamilyName(familyName);
+            else
+                throw new NonUniquePatientException(
+                        "No Patient ID and no Patient Family Name");
+        }
+        return selector.select(candidates, attrs, pids);
+    }
 
-        return selector.select(findPatientByIDs(pids), attrs, pids);
+    private List<Patient> findPatientByFamilyName(String familyName) {
+        return em.createNamedQuery(
+                Patient.FIND_BY_PATIENT_FAMILY_NAME, Patient.class)
+                .setParameter(1, familyName).getResultList();
     }
 
     private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
@@ -148,7 +166,7 @@ public class PatientServiceEJB implements PatientService {
             if (pid.getIssuer() == null) {
                 builder.or(eqID);
             } else {
-                builder.or(ExpressionUtils.and(eqID, eqIssuer(pid.getIssuer())));
+                builder.or(ExpressionUtils.and(eqID, eqOrNoIssuer(pid.getIssuer())));
                 eqIDs.add(eqID);
             }
         }
@@ -159,56 +177,38 @@ public class PatientServiceEJB implements PatientService {
                         QPatientID.patientID.patient.eq(QPatient.patient),
                         builder)).exists();
         Session session = em.unwrap(Session.class);
-        List<Patient> result = new HibernateQuery(session)
+        return new HibernateQuery(session)
                 .from(QPatient.patient).where(matchingIDs)
                 .list(QPatient.patient);
-        if (result.isEmpty() && !eqIDs.isEmpty()) {
-            result = new HibernateQuery(session).from(QPatient.patient)
-                    .where(matchingIDsWithoutIssuer(eqIDs))
-                    .list(QPatient.patient);
-        }
-        return result;
     }
 
-    private BooleanExpression matchingIDsWithoutIssuer(
-            Collection<BooleanExpression> eqIDs) {
-        BooleanExpression noIssuer = QPatientID.patientID.issuer.isNull();
-        BooleanBuilder builder = new BooleanBuilder();
-        for (BooleanExpression eqID : eqIDs) {
-            builder.or(ExpressionUtils.and(eqID, noIssuer));
-        }
-        return new HibernateSubQuery()
-                .from(QPatientID.patientID)
-                .where(ExpressionUtils.and(
-                        QPatientID.patientID.patient.eq(QPatient.patient),
-                        builder)).exists();
-    }
-
-    private Predicate eqIssuer(org.dcm4che3.data.Issuer issuer) {
+    private Predicate eqOrNoIssuer(org.dcm4che3.data.Issuer issuer) {
         String id = issuer.getLocalNamespaceEntityID();
         String uid = issuer.getUniversalEntityID();
         String uidType = issuer.getUniversalEntityIDType();
-        if (id == null)
-            return eqUniversalEntityID(uid, uidType);
-        if (uid == null)
-            return eqLocalNamespaceEntityID(id);
 
-        Predicate eqID = eqLocalNamespaceEntityID(id);
-        Predicate eqUID = eqUniversalEntityID(uid, uidType);
-        Predicate noID = QIssuer.issuer.localNamespaceEntityID.isNull();
-        Predicate noUID = QIssuer.issuer.universalEntityID.isNull();
-        return ExpressionUtils.and(QIssuer.issuer.isNotNull(), ExpressionUtils
-                .and(ExpressionUtils.or(eqID, noID),
-                        ExpressionUtils.or(eqUID, noUID)));
+        BooleanBuilder builder = new BooleanBuilder();
+        if (id != null)
+            builder.and(eqOrNoLocalNamespaceEntityID(id));
+
+        if (uid != null)
+            builder.and(eqOrNoUniversalEntityID(uid, uidType));
+
+        return builder;
     }
 
-    private Predicate eqUniversalEntityID(String uid, String uidType) {
-        return ExpressionUtils.and(QIssuer.issuer.universalEntityID.eq(uid),
-                QIssuer.issuer.universalEntityIDType.eq(uidType));
+    private Predicate eqOrNoLocalNamespaceEntityID(String id) {
+        return ExpressionUtils.or(
+                QIssuer.issuer.localNamespaceEntityID.eq(id),
+                QIssuer.issuer.localNamespaceEntityID.isNull());
     }
 
-    private BooleanExpression eqLocalNamespaceEntityID(String id) {
-        return QIssuer.issuer.localNamespaceEntityID.eq(id);
+    private Predicate eqOrNoUniversalEntityID(String uid, String uidType) {
+        return ExpressionUtils.or(
+                ExpressionUtils.and(
+                        QIssuer.issuer.universalEntityID.eq(uid),
+                        QIssuer.issuer.universalEntityIDType.eq(uidType)),
+                QIssuer.issuer.universalEntityID.isNull());
     }
 
     private Patient followMergedWith(Patient patient)
