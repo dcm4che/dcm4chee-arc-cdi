@@ -166,9 +166,50 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmQidoMaxNumberOfResults", def = "0")
     private int QIDOMaxNumberOfResults;
 
-    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
-    private boolean timeZoneSupported;
+//removed from schema, irrelevant
+//    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
+//    private boolean timeZoneSupported;
 
+    @ConfigField(name = "dcmRetrieveSupressionCriteria", def = "null")
+    private RetrieveSupressionCriteria retrieveSupressionCriteria;
+
+    public RetrieveSupressionCriteria getRetrieveSupressionCriteria() {
+        return retrieveSupressionCriteria;
+    }
+
+    public void setRetrieveSupressionCriteria(
+            RetrieveSupressionCriteria retrieveSupressionCriteria) {
+        this.retrieveSupressionCriteria = retrieveSupressionCriteria;
+    }
+
+    @ConfigClass(objectClass = "dcmRetrieveSupressionCriteria")
+    public static class RetrieveSupressionCriteria implements Serializable {
+    private static final long serialVersionUID = -7215371541145445328L;
+    
+    @ConfigField(name = "dcmCheckTransferCapabilities", def = "false")
+    private boolean checkTransferCapabilities;
+
+    @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSupressionCriteriaEntry")
+    private Map<String, String> supressionCriteriaMap;
+
+    public boolean isCheckTransferCapabilities() {
+        return checkTransferCapabilities;
+    }
+
+    public void setCheckTransferCapabilities(boolean checkTransferCapabilities) {
+        this.checkTransferCapabilities = checkTransferCapabilities;
+    }
+
+    public Map<String, String> getSupressionCriteriaMap() {
+        return supressionCriteriaMap;
+    }
+
+    public void setSupressionCriteriaMap(Map<String, String> supressionCriteriaMap) {
+        this.supressionCriteriaMap = supressionCriteriaMap;
+    }
+
+    }
+    
     @ConfigField(name = "dcmPatientSelector", def = "null")
     private PatientSelectorConfig patientSelectorConfig;
 
@@ -216,14 +257,14 @@ public class ArchiveAEExtension extends AEExtension {
     public void setWadoSupportedSRClasses(String[] wadoSupportedSRClasses) {
         this.wadoSupportedSRClasses = wadoSupportedSRClasses;
     }
-
-    public boolean isTimeZoneSupported() {
-        return timeZoneSupported;
-    }
-
-    public void setTimeZoneSupported(boolean timeZoneSupported) {
-        this.timeZoneSupported = timeZoneSupported;
-    }
+//
+//    public boolean isTimeZoneSupported() {
+//        return timeZoneSupported;
+//    }
+//
+//    public void setTimeZoneSupported(boolean timeZoneSupported) {
+//        this.timeZoneSupported = timeZoneSupported;
+//    }
 
     public AttributeCoercion getAttributeCoercion(String sopClass, Dimse dimse,
             Role role, String aeTitle) {
