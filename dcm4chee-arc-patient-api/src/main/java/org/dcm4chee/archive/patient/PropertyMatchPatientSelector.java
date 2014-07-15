@@ -45,6 +45,10 @@ import java.util.List;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.data.PersonName;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.PersonName.Component;
+import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
 
@@ -54,28 +58,76 @@ import org.dcm4chee.archive.entity.PatientID;
  */
 public class PropertyMatchPatientSelector implements PatientSelector {
 
-    private MatchType issuer = MatchType.IGNORE;
-    private MatchType family = MatchType.IGNORE;
-    private MatchType given = MatchType.IGNORE;
-    private MatchType middle = MatchType.IGNORE;
-    private MatchType sex = MatchType.IGNORE;
-    private MatchType birth = MatchType.IGNORE;
+    private boolean forceIssuer = false;
+    private MatchDemographics demographics = MatchDemographics.NOID;
+    private MatchType familyName = MatchType.IGNORE;
+    private MatchType givenName = MatchType.IGNORE;
+    private MatchType middleName = MatchType.IGNORE;
+    private MatchType patientSex = MatchType.IGNORE;
+    private MatchType patientBirthDate = MatchType.IGNORE;
 
     @Override
     public Patient select(List<Patient> patients, Attributes attrs,
-            Collection<IDWithIssuer> pids) throws NonUniquePatientException {
+            Collection<IDWithIssuer> pids) throws NonUniquePatientException,
+            MatchTypeException, IssuerMissingException {
 
-        // check issuer of id(s)
-        // check other ids over the one used to match (transforms the OR in the
-        // match to and AND)
-        // criteria to apply demographic match (i.e. no demog if id+issuer
-        // matches)
-        // add replace with regular expression to all strings (use
-        // String.replace(reg,""))
-        // add match to only the first N characters for all strings
-        filterByIssuer(patients, pids);
-        
-        
+        if (pids == null || pids.size() == 0) {
+            // incoming ids are emty. Force checking by Demographics.
+            if (demographics.equals(MatchDemographics.NOID)
+                    || demographics.equals(MatchDemographics.NOISSUER)
+                    || demographics.equals(MatchDemographics.ALWAYS))
+                filterByDemographics(patients, attrs);
+        } else if (!containsIssuer(pids)) {
+            // incoming have no id with issuer. Filter by id and then check
+            // demographics, if configured.
+            
+            if (forceIssuer)
+                throw new IssuerMissingException("Patient has no Issuer, configured as mandatory");
+            
+            filterByPatientID(patients, pids);
+            if (demographics.equals(MatchDemographics.NOISSUER)
+                    || demographics.equals(MatchDemographics.ALWAYS))
+                filterByDemographics(patients, attrs);
+        } else {
+            // incoming has at least one id with issuer
+
+            List<Patient> matchingpatients = new ArrayList<Patient>();
+
+            // collect all patients with matching id + issuer
+            // at the end in the patients list there are only patients
+            // with matching ids and no issuer
+            for (Iterator<Patient> iter = patients.iterator(); iter.hasNext();) {
+                Patient candidate = iter.next();
+                if (containsIDWithMatchingIssuer(candidate.getPatientIDs(),
+                        pids)) {
+                    matchingpatients.add(candidate);
+                    iter.remove();
+                } else if (!containsIDWithMatchingIDNoIssuer(
+                        candidate.getPatientIDs(), pids)) {
+                    iter.remove();
+                }
+            }
+            
+            if (matchingpatients.size() == 0 && forceIssuer)
+                throw new IssuerMissingException("No Patient with right ID+Issuer found");
+
+            // filter by demographics (if configured) 
+            // remaining matching patients not having issuer
+            if (patients.size() > 0
+                    && (demographics.equals(MatchDemographics.NOISSUER) || demographics
+                            .equals(MatchDemographics.ALWAYS)))
+                filterByDemographics(patients, attrs);
+
+            matchingpatients.addAll(patients);
+
+            // match by demographis all matching patients, if configured
+            if (matchingpatients.size() > 0
+                    && demographics.equals(MatchDemographics.ALWAYS))
+                filterByDemographics(matchingpatients, attrs);
+            
+            patients = matchingpatients;
+        }
+
         switch (patients.size()) {
         case 0:
             return null;
@@ -87,7 +139,7 @@ public class PropertyMatchPatientSelector implements PatientSelector {
         }
     }
 
-    private void filterByIssuer(List<Patient> patients,
+    private void filterByPatientID(List<Patient> patients,
             Collection<IDWithIssuer> pids) {
 
         for (Iterator<Patient> iter = patients.iterator(); iter.hasNext();) {
@@ -95,102 +147,152 @@ public class PropertyMatchPatientSelector implements PatientSelector {
             Patient candidate = iter.next();
             Collection<PatientID> candidateIDs = candidate.getPatientIDs();
 
-            if ((candidateIDs == null || candidateIDs.size() == 0)) {
+            boolean found = false;
 
-                // case one: both empty, do not remove, match by demographics
+            for (PatientID candidateID : candidateIDs)
+                for (IDWithIssuer pid : pids)
+                    if (candidateID.getID() != null && pid.getID() != null
+                            && candidateID.getID().equals(pid.getID()))
+                        found = true;
 
-                // case two: candidate ids is empty, pids not empty, remove
-                // candidate
-                if (pids != null && pids.size() > 0)
-                    iter.remove();
+            if (!found)
+                iter.remove();
+        }
+    }
 
-            } else {
+    private void filterByDemographics(List<Patient> patients, Attributes attrs)
+            throws MatchTypeException {
 
-                // case three: candidate ids not empty, pids empty, remove
-                // candidate
-                if (pids == null || pids.size() == 0) {
-                    iter.remove();
-                } else { // case four both ids not empty
+        for (Iterator<Patient> iter = patients.iterator(); iter.hasNext();) {
 
-                    boolean found = false;
+            boolean matches = true;
 
-                    for (PatientID candidateID : candidateIDs)
-                        for (IDWithIssuer pid : pids) {
+            Patient candidate = iter.next();
 
-                            if (candidateID.getID() != null
-                                    && pid.getID() != null
-                                    && candidateID.getID().equals(pid.getID())) {
+            PersonName cName = new PersonName(candidate.getAttributes()
+                    .getString(Tag.PersonName));
 
-                                if (candidateID.getIssuer() == null)
-                                    if (pid.getIssuer() != null
-                                            && getIssuer().equals(
-                                                    MatchType.BROAD))
-                                        found = true;
-                                    else if (pid.getIssuer() == null
-                                            && getIssuer().equals(
-                                                    MatchType.BROAD))
-                                        found = true;
-                                    else // both not null
-                                    if (candidateID.getIssuer().equals(
-                                            pid.getIssuer()))
-                                        found = true;
+            PersonName iName = new PersonName(attrs.getString(Tag.PersonName));
 
-                            }
-                        }
-                    
-                    if (!found)
-                        iter.remove();
+            matches = matches
+                    && matchAttr(cName.get(Component.FamilyName),
+                            iName.get(Component.FamilyName), familyName);
+
+            if (matches)
+                matches = matches
+                        && matchAttr(cName.get(Component.GivenName),
+                                iName.get(Component.GivenName), givenName);
+
+            if (matches)
+                matches = matches
+                        && matchAttr(cName.get(Component.MiddleName),
+                                iName.get(Component.MiddleName), middleName);
+
+            if (matches)
+                matches = matches
+                        && matchAttr(
+                                candidate.getAttributes().getString(
+                                        Tag.PatientSex),
+                                attrs.getString(Tag.PatientSex), patientSex);
+
+            if (matches)
+                matches = matches
+                        && matchAttr(
+                                candidate.getAttributes().getString(
+                                        Tag.PatientBirthDate),
+                                attrs.getString(Tag.PatientBirthDate),
+                                patientBirthDate);
+
+            if (!matches)
+                iter.remove();
+        }
+    }
+
+    private boolean matchAttr(String one, String two, MatchType type)
+            throws MatchTypeException {
+        if (type.equals(MatchType.IGNORE))
+            return true;
+        else if (one == null && two == null)
+            return false;
+        else if (one == null && two != null)
+            return type.equals(MatchType.BROAD);
+        else if (one != null && two == null)
+            return type.equals(MatchType.BROAD);
+        else if (type.equals(MatchType.STRICT) || type.equals(MatchType.BROAD))
+            return one.trim().equalsIgnoreCase(two.trim());
+        else
+            throw new MatchTypeException(
+                    "match type must be one of [IGNORE, BROAD, STRICT]");
+    }
+
+    private boolean containsIssuer(Collection<IDWithIssuer> pids) {
+
+        for (IDWithIssuer pid : pids)
+            if (pid.getIssuer() != null)
+                return true;
+
+        return false;
+    }
+
+    private boolean containsIDWithMatchingIDNoIssuer(
+            Collection<PatientID> patientIDs, Collection<IDWithIssuer> pids) {
+        for (PatientID patientID : patientIDs) {
+
+            for (IDWithIssuer pid : pids) {
+                if (patientID.getID().equals(pid.getID())
+                        && patientID.getIssuer() == null) {
+                    return true;
                 }
             }
         }
-
+        return false;
     }
 
-    public MatchType getIssuer() {
-        return issuer;
+    private boolean containsIDWithMatchingIssuer(
+            Collection<PatientID> patientIDs, Collection<IDWithIssuer> pids) {
+        for (PatientID patientID : patientIDs) {
+            String id = patientID.getID();
+            Issuer issuer = patientID.getIssuer();
+            if (issuer == null)
+                continue;
+
+            for (IDWithIssuer pid : pids) {
+                if (id.equals(pid.getID())) {
+                    org.dcm4che3.data.Issuer issuer2 = pid.getIssuer();
+                    if (issuer2 != null && issuer2.matches(issuer))
+                        return true;
+                }
+            }
+        }
+        return false;
     }
 
-    public void setIssuer(MatchType issuer) {
-        this.issuer = issuer;
+    public void setForceIssuer(boolean forceIssuer) {
+        this.forceIssuer = forceIssuer;
     }
 
-    public MatchType getFamily() {
-        return family;
+    public void setDemographics(String demographics) {
+        this.demographics = MatchDemographics.valueOf(demographics);
     }
 
-    public void setFamily(MatchType family) {
-        this.family = family;
+    public void setFamilyName(String familyName) {
+        this.familyName = MatchType.valueOf(familyName);
     }
 
-    public MatchType getGiven() {
-        return given;
+    public void setGivenName(String givenName) {
+        this.givenName = MatchType.valueOf(givenName);
     }
 
-    public void setGiven(MatchType given) {
-        this.given = given;
+    public void setMiddleName(String middleName) {
+        this.middleName = MatchType.valueOf(middleName);
     }
 
-    public MatchType getMiddle() {
-        return middle;
+    public void setPatientSex(String patientSex) {
+        this.patientSex = MatchType.valueOf(patientSex);
     }
 
-    public void setMiddle(MatchType middle) {
-        this.middle = middle;
+    public void setPatientBirthDate(String patientBirthDate) {
+        this.patientBirthDate = MatchType.valueOf(patientBirthDate);
     }
 
-    public MatchType getSex() {
-        return sex;
-    }
-
-    public void setSex(MatchType sex) {
-        this.sex = sex;
-    }
-
-    public MatchType getBirth() {
-        return birth;
-    }
-
-    public void setBirth(MatchType birth) {
-        this.birth = birth;
-    }
 }

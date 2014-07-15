@@ -62,7 +62,9 @@ public interface PatientSelector {
      * @throws NonUniquePatientException if more than one of the candidates
      * passes the applied matching criteria
      */
-    Patient select(List<Patient> candidates, Attributes attrs,
-            Collection<IDWithIssuer> pids) throws NonUniquePatientException;
+    Patient select(List<Patient> candidates, Attributes attrs, Collection<IDWithIssuer> pids) 
+            throws NonUniquePatientException, 
+                   MatchTypeException, 
+                   IssuerMissingException;
 
 }

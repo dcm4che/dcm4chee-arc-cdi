@@ -76,6 +76,8 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
 import org.dcm4chee.archive.entity.PersonName;
 import org.dcm4chee.archive.patient.IDPatientSelector;
+import org.dcm4chee.archive.patient.IssuerMissingException;
+import org.dcm4chee.archive.patient.MatchTypeException;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientMergedException;
@@ -392,7 +394,7 @@ public class PatientServiceTest {
             throws NotSupportedException, SystemException, SecurityException,
             IllegalStateException, RollbackException, HeuristicMixedException,
             HeuristicRollbackException {
-        for (Patient pat : patients){
+        for (Patient pat : patients) {
             em.remove(pat);
             em.remove(pat.getPatientName());
         }
@@ -412,7 +414,7 @@ public class PatientServiceTest {
                 em.remove(tmpIssuer);
         }
         em.flush();
-        
+
     }
 
     /**
@@ -554,9 +556,10 @@ public class PatientServiceTest {
     @Test
     public void testMergeWithExistingPatient()
             throws PatientCircularMergedException, NonUniquePatientException,
-            PatientMergedException, SecurityException, IllegalStateException,
-            NotSupportedException, SystemException, RollbackException,
-            HeuristicMixedException, HeuristicRollbackException {
+            MatchTypeException, IssuerMissingException, PatientMergedException,
+            SecurityException, IllegalStateException, NotSupportedException,
+            SystemException, RollbackException, HeuristicMixedException,
+            HeuristicRollbackException {
 
         Attributes patientOneAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Bugs^Bunny");
@@ -607,9 +610,10 @@ public class PatientServiceTest {
     @Test
     public void testLinkUnlinkPatientsSimplaCase()
             throws PatientCircularMergedException, NonUniquePatientException,
-            PatientMergedException, SecurityException, IllegalStateException,
-            NotSupportedException, SystemException, RollbackException,
-            HeuristicMixedException, HeuristicRollbackException {
+            MatchTypeException, IssuerMissingException, PatientMergedException,
+            SecurityException, IllegalStateException, NotSupportedException,
+            SystemException, RollbackException, HeuristicMixedException,
+            HeuristicRollbackException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
@@ -618,7 +622,7 @@ public class PatientServiceTest {
         service.linkPatient(patientOneAttributes, patientTwoAttributes,
                 createStoreParam());
 
-        //check for linked ids
+        // check for linked ids
         Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
         for (PatientID id : patOneIDs)
             Assert.assertTrue(patients[1].getLinkedPatientIDs().contains(id));
@@ -628,11 +632,11 @@ public class PatientServiceTest {
 
         // unlink A,b <-> D
         service.unlinkPatient(patientOneAttributes, patientTwoAttributes);
-        //check no ids linked
-         patOneIDs = patients[0].getPatientIDs();
+        // check no ids linked
+        patOneIDs = patients[0].getPatientIDs();
         for (PatientID id : patOneIDs)
             Assert.assertFalse(patients[1].getLinkedPatientIDs().contains(id));
-         patTwoIDs = patients[1].getPatientIDs();
+        patTwoIDs = patients[1].getPatientIDs();
         for (PatientID id : patTwoIDs)
             Assert.assertFalse(patients[0].getLinkedPatientIDs().contains(id));
         cleanupdateOrCreatePatientOnCStore(patients);
@@ -641,9 +645,10 @@ public class PatientServiceTest {
     @Test
     public void testLinkUnlinkPatientsUnknownIdentifier()
             throws PatientCircularMergedException, NonUniquePatientException,
-            PatientMergedException, SecurityException, IllegalStateException,
-            NotSupportedException, SystemException, RollbackException,
-            HeuristicMixedException, HeuristicRollbackException {
+            MatchTypeException, IssuerMissingException, PatientMergedException,
+            SecurityException, IllegalStateException, NotSupportedException,
+            SystemException, RollbackException, HeuristicMixedException,
+            HeuristicRollbackException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
@@ -658,7 +663,7 @@ public class PatientServiceTest {
         // link with A , B -> D , E (with E unknown)
         service.linkPatient(patientOneAttributes, patientTwoAttributes,
                 createStoreParam());
-        //check linked ids and new one created and linked
+        // check linked ids and new one created and linked
         boolean addedNewIdentifier = false;
         Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
         for (PatientID id : patOneIDs)
@@ -671,49 +676,52 @@ public class PatientServiceTest {
         }
         // extra check for newly created id
         Assert.assertTrue(addedNewIdentifier);
-        
+
         // unlink with A , B, C -> D , E (with C unknown)
-        Sequence tmp = patientOneAttributes.getSequence(Tag.OtherPatientIDsSequence);
+        Sequence tmp = patientOneAttributes
+                .getSequence(Tag.OtherPatientIDsSequence);
         Attributes tmpItem = new Attributes();
         tmpItem.setString(Tag.PatientID, VR.LO, "666");
         tmpItem = setIssuer(1, tmpItem, "G111222");
         tmp.add(tmpItem);
-        //unlink
+        // unlink
         service.unlinkPatient(patientOneAttributes, patientTwoAttributes);
-        
-        //check no ids linked and new one created for patient one (C)
-        addedNewIdentifier=false;
+
+        // check no ids linked and new one created for patient one (C)
+        addedNewIdentifier = false;
         patOneIDs = patients[0].getPatientIDs();
-        for (PatientID id : patOneIDs){
+        for (PatientID id : patOneIDs) {
             Assert.assertFalse(patients[1].getLinkedPatientIDs().contains(id));
             if (id.getID().compareTo("666") == 0)
                 addedNewIdentifier = true;
         }
         patTwoIDs = patients[1].getPatientIDs();
-        for (PatientID id : patTwoIDs) 
+        for (PatientID id : patTwoIDs)
             Assert.assertFalse(patients[0].getLinkedPatientIDs().contains(id));
-        
+
         Assert.assertTrue(addedNewIdentifier);
-        
+
         cleanupdateOrCreatePatientOnCStore(patients);
     }
 
     @Test
     public void testLinkUnLinkPatientsnotReferencedIdentifierInLinkMessage()
             throws PatientCircularMergedException, NonUniquePatientException,
-            PatientMergedException, SecurityException, IllegalStateException,
-            NotSupportedException, SystemException, RollbackException,
-            HeuristicMixedException, HeuristicRollbackException {
+            MatchTypeException, IssuerMissingException, PatientMergedException,
+            SecurityException, IllegalStateException, NotSupportedException,
+            SystemException, RollbackException, HeuristicMixedException,
+            HeuristicRollbackException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
                 patientTwoAttributes);
         // remove the other id so it becomes unreferenced in the link message
         patientOneAttributes.remove(Tag.OtherPatientIDs);
-        // link with A <-> D (with patient one having B unreferenced in the link)
+        // link with A <-> D (with patient one having B unreferenced in the
+        // link)
         service.linkPatient(patientOneAttributes, patientTwoAttributes,
                 createStoreParam());
-        //check all links created
+        // check all links created
         Collection<PatientID> patOneIDs = patients[0].getPatientIDs();
         for (PatientID id : patOneIDs)
             Assert.assertTrue(patients[1].getLinkedPatientIDs().contains(id));
@@ -722,30 +730,31 @@ public class PatientServiceTest {
         for (PatientID id : patTwoIDs) {
             Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
         }
-        
-        // unlink with A <-> D (with patient one having B unreferenced in the link)
+
+        // unlink with A <-> D (with patient one having B unreferenced in the
+        // link)
         service.unlinkPatient(patientOneAttributes, patientTwoAttributes);
-        
-        //check all links are broken  
-        
+
+        // check all links are broken
+
         patOneIDs = patients[0].getPatientIDs();
         for (PatientID id : patOneIDs)
-                Assert.assertFalse(patients[1].getLinkedPatientIDs().contains(id));    
+            Assert.assertFalse(patients[1].getLinkedPatientIDs().contains(id));
         patTwoIDs = patients[1].getPatientIDs();
         for (PatientID id : patTwoIDs) {
             Assert.assertFalse(patients[0].getLinkedPatientIDs().contains(id));
         }
 
-        
         cleanupdateOrCreatePatientOnCStore(patients);
     }
 
     @Test
     public void testLinkPatientsnoPatientRecordforOneIdentifier()
             throws PatientCircularMergedException, NonUniquePatientException,
-            PatientMergedException, SecurityException, IllegalStateException,
-            NotSupportedException, SystemException, RollbackException,
-            HeuristicMixedException, HeuristicRollbackException {
+            MatchTypeException, IssuerMissingException, PatientMergedException,
+            SecurityException, IllegalStateException, NotSupportedException,
+            SystemException, RollbackException, HeuristicMixedException,
+            HeuristicRollbackException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
@@ -765,7 +774,7 @@ public class PatientServiceTest {
         patientTwoAttributes.setString(Tag.PatientID, VR.LO, "333");
         patientTwoAttributes = setIssuer(1, patientTwoAttributes, "G111222");
         patientOne.setLinkedPatientIDs(new ArrayList<PatientID>());
-        
+
         // link with A,B <-> D (with D referring to no patient record)
         service.linkPatient(patientOneAttributes, patientTwoAttributes,
                 createStoreParam());
@@ -783,17 +792,19 @@ public class PatientServiceTest {
         for (PatientID id : patTwoIDs) {
             Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
         }
-        
-        //unlink is not applicable here since the unlink returns on not finding patient records for the id
+
+        // unlink is not applicable here since the unlink returns on not finding
+        // patient records for the id
         cleanupdateOrCreatePatientOnCStore(patients);
     }
 
     @Test
     public void testLinkPatientsnoPatientRecordforAllIdentifiers()
             throws PatientCircularMergedException, NonUniquePatientException,
-            PatientMergedException, SecurityException, IllegalStateException,
-            NotSupportedException, SystemException, RollbackException,
-            HeuristicMixedException, HeuristicRollbackException {
+            MatchTypeException, IssuerMissingException, PatientMergedException,
+            SecurityException, IllegalStateException, NotSupportedException,
+            SystemException, RollbackException, HeuristicMixedException,
+            HeuristicRollbackException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
@@ -831,16 +842,18 @@ public class PatientServiceTest {
         for (PatientID id : patTwoIDs) {
             Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
         }
-      //unlink is not applicable here since the unlink returns on not finding patient records for the id
+        // unlink is not applicable here since the unlink returns on not finding
+        // patient records for the id
         cleanupdateOrCreatePatientOnCStore(patients);
     }
 
     @Test
     public void testMergeLinkedPatients()
             throws PatientCircularMergedException, NonUniquePatientException,
-            PatientMergedException, SecurityException, IllegalStateException,
-            NotSupportedException, SystemException, RollbackException,
-            HeuristicMixedException, HeuristicRollbackException {
+            MatchTypeException, IssuerMissingException, PatientMergedException,
+            SecurityException, IllegalStateException, NotSupportedException,
+            SystemException, RollbackException, HeuristicMixedException,
+            HeuristicRollbackException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
@@ -900,9 +913,10 @@ public class PatientServiceTest {
     @Test
     public void testLinkPatientsdifferentPatientRecords()
             throws PatientCircularMergedException, NonUniquePatientException,
-            PatientMergedException, SecurityException, IllegalStateException,
-            NotSupportedException, SystemException, RollbackException,
-            HeuristicMixedException, HeuristicRollbackException {
+            MatchTypeException, IssuerMissingException, PatientMergedException,
+            SecurityException, IllegalStateException, NotSupportedException,
+            SystemException, RollbackException, HeuristicMixedException,
+            HeuristicRollbackException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,

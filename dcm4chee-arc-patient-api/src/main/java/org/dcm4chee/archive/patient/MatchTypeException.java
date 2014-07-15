@@ -38,15 +38,58 @@
 
 package org.dcm4chee.archive.patient;
 
+import org.dcm4chee.archive.entity.Patient;
+
+
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- * 
  */
-public enum MatchType {
+public class MatchTypeException extends Exception {
 
-    IGNORE, //do not use for matching
+    /**
+     * 
+     */
+    public MatchTypeException() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+    /**
+     * @param message
+     * @param cause
+     * @param enableSuppression
+     * @param writableStackTrace
+     */
+    public MatchTypeException(String message, Throwable cause,
+            boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+        // TODO Auto-generated constructor stub
+    }
+
+    /**
+     * @param message
+     * @param cause
+     */
+    public MatchTypeException(String message, Throwable cause) {
+        super(message, cause);
+        // TODO Auto-generated constructor stub
+    }
+
+    /**
+     * @param message
+     */
+    public MatchTypeException(String message) {
+        super(message);
+        // TODO Auto-generated constructor stub
+    }
+
+    /**
+     * @param cause
+     */
+    public MatchTypeException(Throwable cause) {
+        super(cause);
+        // TODO Auto-generated constructor stub
+    }
+
     
-    STRICT, // both must exist and be equal
-
-    BROAD, // as EXACT but matches also with null (except both null)
 }

@@ -67,6 +67,8 @@ import org.dcm4chee.archive.entity.QPatientID;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
+import org.dcm4chee.archive.patient.IssuerMissingException;
+import org.dcm4chee.archive.patient.MatchTypeException;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientMergedException;
@@ -123,6 +125,12 @@ public class PatientServiceEJB implements PatientService {
         } catch (NonUniquePatientException e) {
             LOG.info("Could not associate unique Patient Record to "
                     + "received DICOM object - create new Patient Record:", e);
+        } catch (MatchTypeException e) {
+            LOG.info("Invalid Matching configuration while searching "
+                    + "matching Patient - create new Patient Record:", e);
+        } catch (IssuerMissingException e) {
+            LOG.info("Could not find Patient Record having same ID+Issuer as"
+                    + "received DICOM object - create new Patient Record:", e);
         }
         if (patient == null)
             return createPatient(pids, attrs, storeParam);
@@ -134,13 +142,13 @@ public class PatientServiceEJB implements PatientService {
 
     private Patient findPatientByDICOM(Collection<IDWithIssuer> pids,
             Attributes attrs, PatientSelector selector)
-            throws NonUniquePatientException {
+            throws NonUniquePatientException, MatchTypeException,
+            IssuerMissingException {
         List<Patient> candidates;
         if (!pids.isEmpty()) {
             candidates = findPatientByIDs(pids);
         } else {
-            String familyName = new PersonName(
-                    attrs.getString(Tag.PatientName))
+            String familyName = new PersonName(attrs.getString(Tag.PatientName))
                     .get(PersonName.Component.FamilyName);
             if (familyName != null)
                 candidates = findPatientByFamilyName(familyName);
@@ -152,9 +160,10 @@ public class PatientServiceEJB implements PatientService {
     }
 
     private List<Patient> findPatientByFamilyName(String familyName) {
-        return em.createNamedQuery(
-                Patient.FIND_BY_PATIENT_FAMILY_NAME, Patient.class)
-                .setParameter(1, familyName).getResultList();
+        return em
+                .createNamedQuery(Patient.FIND_BY_PATIENT_FAMILY_NAME,
+                        Patient.class).setParameter(1, familyName)
+                .getResultList();
     }
 
     private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
@@ -166,7 +175,8 @@ public class PatientServiceEJB implements PatientService {
             if (pid.getIssuer() == null) {
                 builder.or(eqID);
             } else {
-                builder.or(ExpressionUtils.and(eqID, eqOrNoIssuer(pid.getIssuer())));
+                builder.or(ExpressionUtils.and(eqID,
+                        eqOrNoIssuer(pid.getIssuer())));
                 eqIDs.add(eqID);
             }
         }
@@ -177,9 +187,8 @@ public class PatientServiceEJB implements PatientService {
                         QPatientID.patientID.patient.eq(QPatient.patient),
                         builder)).exists();
         Session session = em.unwrap(Session.class);
-        return new HibernateQuery(session)
-                .from(QPatient.patient).where(matchingIDs)
-                .list(QPatient.patient);
+        return new HibernateQuery(session).from(QPatient.patient)
+                .where(matchingIDs).list(QPatient.patient);
     }
 
     private Predicate eqOrNoIssuer(org.dcm4che3.data.Issuer issuer) {
@@ -198,16 +207,14 @@ public class PatientServiceEJB implements PatientService {
     }
 
     private Predicate eqOrNoLocalNamespaceEntityID(String id) {
-        return ExpressionUtils.or(
-                QIssuer.issuer.localNamespaceEntityID.eq(id),
+        return ExpressionUtils.or(QIssuer.issuer.localNamespaceEntityID.eq(id),
                 QIssuer.issuer.localNamespaceEntityID.isNull());
     }
 
     private Predicate eqOrNoUniversalEntityID(String uid, String uidType) {
-        return ExpressionUtils.or(
-                ExpressionUtils.and(
-                        QIssuer.issuer.universalEntityID.eq(uid),
-                        QIssuer.issuer.universalEntityIDType.eq(uidType)),
+        return ExpressionUtils.or(ExpressionUtils.and(
+                QIssuer.issuer.universalEntityID.eq(uid),
+                QIssuer.issuer.universalEntityIDType.eq(uidType)),
                 QIssuer.issuer.universalEntityID.isNull());
     }
 
@@ -353,7 +360,7 @@ public class PatientServiceEJB implements PatientService {
     @Override
     public Patient updateOrCreatePatientByHL7(Attributes attrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException {
+            PatientMergedException, MatchTypeException, IssuerMissingException {
         // TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
@@ -363,7 +370,7 @@ public class PatientServiceEJB implements PatientService {
     private Patient updateOrCreatePatientByHL7(Attributes attrs,
             StoreParam storeParam, PatientSelector selector,
             Collection<IDWithIssuer> pids) throws NonUniquePatientException,
-            PatientMergedException {
+            PatientMergedException, MatchTypeException, IssuerMissingException {
         Patient patient = selector.select(findPatientByIDs(pids), attrs, pids);
         if (patient == null)
             return createPatient(pids, attrs, storeParam);
@@ -378,7 +385,7 @@ public class PatientServiceEJB implements PatientService {
     @Override
     public void mergePatientByHL7(Attributes attrs, Attributes priorAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException {
+            PatientMergedException, MatchTypeException, IssuerMissingException {
         // TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
@@ -391,9 +398,10 @@ public class PatientServiceEJB implements PatientService {
     }
 
     private void mergePatient(Patient pat, Patient prior,
-            Collection<IDWithIssuer> priorPIDs)  {
+            Collection<IDWithIssuer> priorPIDs) {
         if (pat == prior)
-            throw new IllegalArgumentException("Cannot merge " + pat + " with itself");
+            throw new IllegalArgumentException("Cannot merge " + pat
+                    + " with itself");
 
         LOG.info("Merge {} with {}", prior, pat);
         moveStudies(pat, prior);
@@ -419,15 +427,16 @@ public class PatientServiceEJB implements PatientService {
     @Override
     public void linkPatient(Attributes attrs, Attributes otherAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException {
+            PatientMergedException, MatchTypeException, IssuerMissingException {
         Patient pat = updateOrCreatePatientByHL7(attrs, storeParam);
         Patient other = updateOrCreatePatientByHL7(otherAttrs, storeParam);
         linkPatient(pat, other);
     }
 
-    private void linkPatient(Patient pat, Patient other)  {
+    private void linkPatient(Patient pat, Patient other) {
         if (pat == other)
-            throw new IllegalArgumentException("Cannot link " + pat + " with itself");
+            throw new IllegalArgumentException("Cannot link " + pat
+                    + " with itself");
 
         LOG.info("Link {} with {}", other, pat);
         linkPatientIDs(pat, other);
@@ -452,15 +461,16 @@ public class PatientServiceEJB implements PatientService {
 
     private boolean contains(Collection<PatientID> pids, PatientID other) {
         long pk = other.getPk();
-        for (PatientID pid  : pids)
+        for (PatientID pid : pids)
             if (pid.getPk() == pk)
                 return true;
         return false;
     }
 
     @Override
-    public void unlinkPatient(Attributes attrs, Attributes otherAttrs) 
-            throws NonUniquePatientException, PatientMergedException {
+    public void unlinkPatient(Attributes attrs, Attributes otherAttrs)
+            throws NonUniquePatientException, PatientMergedException,
+            MatchTypeException, IssuerMissingException {
         // TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
@@ -471,7 +481,8 @@ public class PatientServiceEJB implements PatientService {
             throw new PatientMergedException(pat);
 
         Collection<IDWithIssuer> otherPIDs = IDWithIssuer.pidsOf(otherAttrs);
-        Patient other = selector.select(findPatientByIDs(otherPIDs), attrs, otherPIDs);
+        Patient other = selector.select(findPatientByIDs(otherPIDs), attrs,
+                otherPIDs);
         if (other == null)
             return;
 
@@ -479,7 +490,8 @@ public class PatientServiceEJB implements PatientService {
             throw new PatientMergedException(other);
 
         if (pat == other)
-            throw new IllegalArgumentException("Cannot link " + pat + " with itself");
+            throw new IllegalArgumentException("Cannot link " + pat
+                    + " with itself");
 
         LOG.info("Unlink {} from {}", other, pat);
         mergePatientIDs(pat, pids);
@@ -528,9 +540,9 @@ public class PatientServiceEJB implements PatientService {
     private void moveModalityWorklistItems(Patient pat, Patient prior) {
         Collection<MWLItem> mwlItems = (pat.getModalityWorklistItems() != null ? pat
                 .getModalityWorklistItems() : new ArrayList<MWLItem>());
-        for (Iterator<MWLItem> iter = (prior.getModalityWorklistItems() != null ? prior.getModalityWorklistItems()
-                .iterator() : new ArrayList<MWLItem>().iterator()); iter
-                .hasNext();) {
+        for (Iterator<MWLItem> iter = (prior.getModalityWorklistItems() != null ? prior
+                .getModalityWorklistItems().iterator()
+                : new ArrayList<MWLItem>().iterator()); iter.hasNext();) {
             MWLItem mwlItem = iter.next();
             iter.remove();
             mwlItem.setPatient(pat);

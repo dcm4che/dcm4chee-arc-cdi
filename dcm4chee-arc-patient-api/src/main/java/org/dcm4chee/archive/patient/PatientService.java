@@ -51,15 +51,19 @@ public interface PatientService {
     /**
      * Query for existing Patient records with matching Patient ID's and/or
      * Patient demographics. If no or multiple existing Patient records matches,
-     * a new Patient record is inserted. Otherwise the matching Patient record
-     * - or if merged, following the merge path to the final dominate
-     * Patient - will be updated. Called on receive of MPPS N-CREATE requests.
+     * a new Patient record is inserted. Otherwise the matching Patient record -
+     * or if merged, following the merge path to the final dominate Patient -
+     * will be updated. Called on receive of MPPS N-CREATE requests.
      * 
-     * @param attrs Data Set of received MPPS N-CREATE Request
-     * @param selector used PatientSelector
-     * @param storeParam used StoreParam
+     * @param attrs
+     *            Data Set of received MPPS N-CREATE Request
+     * @param selector
+     *            used PatientSelector
+     * @param storeParam
+     *            used StoreParam
      * @return updated or created Patient
-     * @throws PatientCircularMergedException if a circular merge path is detected
+     * @throws PatientCircularMergedException
+     *             if a circular merge path is detected
      */
     Patient updateOrCreatePatientOnMPPSNCreate(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
@@ -68,16 +72,20 @@ public interface PatientService {
     /**
      * Query for existing Patient records with matching Patient ID's and/or
      * Patient demographics. If no or multiple existing Patient records matches,
-     * a new Patient record is inserted. Otherwise the matching Patient record
-     * - or if merged, following the merge path to the final dominate
-     * Patient - will be updated. Called on receiving of the first Composite
-     * Object of a Study.
+     * a new Patient record is inserted. Otherwise the matching Patient record -
+     * or if merged, following the merge path to the final dominate Patient -
+     * will be updated. Called on receiving of the first Composite Object of a
+     * Study.
      * 
-     * @param attrs Data Set of received composite object
-     * @param selector used PatientSelector
-     * @param storeParam used StoreParam
+     * @param attrs
+     *            Data Set of received composite object
+     * @param selector
+     *            used PatientSelector
+     * @param storeParam
+     *            used StoreParam
      * @return updated or created Patient
-     * @throws PatientCircularMergedException if a circular merge path is detected
+     * @throws PatientCircularMergedException
+     *             if a circular merge path is detected
      */
     Patient updateOrCreatePatientOnCStore(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
@@ -96,17 +104,20 @@ public interface PatientService {
             StoreParam storeParam);
 
     Patient updateOrCreatePatientByHL7(Attributes attrs, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException;
-
-    void mergePatientByHL7(Attributes attrs, Attributes mrg, StoreParam storeParam)
             throws NonUniquePatientException, PatientMergedException,
-            PatientCircularMergedException;
+            MatchTypeException, IssuerMissingException;
+
+    void mergePatientByHL7(Attributes attrs, Attributes mrg,
+            StoreParam storeParam) throws NonUniquePatientException,
+            PatientMergedException, PatientCircularMergedException,
+            MatchTypeException, IssuerMissingException;
 
     void linkPatient(Attributes attrs, Attributes otherAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException;
+            PatientMergedException, MatchTypeException, IssuerMissingException;
 
     void unlinkPatient(Attributes attrs, Attributes otherAttrs)
-            throws NonUniquePatientException, PatientMergedException;
+            throws NonUniquePatientException, PatientMergedException,
+            MatchTypeException, IssuerMissingException;
 
 }

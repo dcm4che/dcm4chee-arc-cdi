@@ -42,11 +42,11 @@ package org.dcm4chee.archive.patient;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
-public enum MatchType {
+public enum MatchDemographics {
 
-    IGNORE, //do not use for matching
+    NOID, // match demographics only if no ID is present
     
-    STRICT, // both must exist and be equal
+    NOISSUER, // match demographics only if issuer of ID is unknown
 
-    BROAD, // as EXACT but matches also with null (except both null)
+    ALWAYS, // match demographics always
 }
