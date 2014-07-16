@@ -42,16 +42,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 
-import javax.ws.rs.core.MultivaluedMap;
-
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.StoreService;
-import org.dcm4chee.archive.store.StoreSession;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -59,23 +52,7 @@ import org.dcm4chee.archive.store.StoreSession;
  */
 
 public interface DataMgmtBean {
-    boolean updateInstances(String sopInstanceUID, StoreSession session,
-            StoreService storeService,
-            MultivaluedMap<String, String> queryParams)
-            throws DicomServiceException ;
-    boolean updateSeries(String seriesInstanceUID, StoreSession session,
-            StoreService storeService,
-            MultivaluedMap<String, String> queryParams)
-            throws DicomServiceException ;
 
-    boolean updateStudy(String studyInstanceUID, StoreSession session,
-            StoreService storeService,
-            MultivaluedMap<String, String> queryParams)
-            throws DicomServiceException ;
-    boolean updatePatient(String patientID, StoreSession session,
-            StoreService storeService,
-            MultivaluedMap<String, String> queryParams)
-            throws DicomServiceException ;
     long getInstancePK(String sopInstanceUID);
 
     long getStudyPK(String studyInstanceUID);
@@ -83,10 +60,6 @@ public interface DataMgmtBean {
     long getSeriesPK(String seriesInstanceUID);
 
     long getPatientPK(String patientID);
-
-    Attributes initUpdate(MultivaluedMap<String, String> queryParams,
-            byte[] blob, StoreContext context, Study study)
-            throws DicomServiceException ;
 
     Study deleteStudy(String studyInstanceUID);
     Series deleteSeries(String seriesInstanceUID);

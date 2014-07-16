@@ -38,10 +38,6 @@
 
 package org.dcm4chee.archive.datamgmt;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.NoSuchFileException;
-
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -53,8 +49,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtBean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -65,8 +59,6 @@ import org.slf4j.LoggerFactory;
 @RequestScoped
 public class DeleteService {
 
-    private static final Logger log = LoggerFactory
-            .getLogger(DeleteService.class);
     @Context
     private HttpServletRequest request;
 
