@@ -43,6 +43,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -222,8 +223,8 @@ public class StoreServiceImpl implements StoreService {
 
     private void deleteSpoolDirectory(StoreSession session) {
         Path dir = session.getSpoolDirectory();
-        try {
-            for (Path file : Files.newDirectoryStream(dir)) {
+        try (DirectoryStream<Path> directory = Files.newDirectoryStream(dir)) {
+            for (Path file : directory) {
                 try {
                     Files.delete(file);
                     LOG.info("{}: M-DELETE spool file - {}", session, file);
