@@ -59,27 +59,21 @@ import com.mysema.query.types.path.StringPath;
  */
 class MatchPersonName {
 
-
-    public static Predicate match(QPersonName qpn, String value, QueryParam queryParam) {
+    public static Predicate match(QPersonName qpn, String value,
+            QueryParam queryParam) {
 
         if (value.equals("*"))
             return null;
 
-        PersonName pn = new PersonName(value);
- 
-        return matchUnknown(
-                    queryParam.isFuzzySemanticMatching()
+        PersonName pn = new PersonName(value, true);
+        Predicate predicate = queryParam.isFuzzySemanticMatching()
                         ? fuzzyMatch(qpn, pn, queryParam)
-                        : literalMatch(qpn, pn, queryParam),
-                    qpn,
-                    queryParam.isMatchUnknown());
-    }
+                        : literalMatch(qpn, pn, queryParam);
 
-    private static Predicate matchUnknown(Predicate predicate, QPersonName qpn,
-            boolean matchUnknown) {
-        return matchUnknown
-                ? ExpressionUtils.or(predicate, qpn.noPersonName.isTrue())
-                : predicate;
+        if (queryParam.isMatchUnknown())
+            predicate = ExpressionUtils.or(predicate, qpn.isNull());
+
+        return predicate;
     }
 
     private static Predicate literalMatch(QPersonName qpn,

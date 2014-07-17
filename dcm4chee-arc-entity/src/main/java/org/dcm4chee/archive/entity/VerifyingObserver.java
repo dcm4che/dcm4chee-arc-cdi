@@ -49,6 +49,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -82,13 +83,17 @@ public class VerifyingObserver implements Serializable {
     @JoinColumn(name = "observer_name_fk")
     private PersonName verifyingObserverName;
 
+    @ManyToOne
+    @JoinColumn(name = "instance_fk")
+    private Instance instance;
+
     public VerifyingObserver() {}
 
     public VerifyingObserver(Attributes attrs, FuzzyStr fuzzyStr) {
         Date dt = attrs.getDate(Tag.VerificationDateTime);
         verificationDateTime = DateUtils.formatDT(null, dt);
-        verifyingObserverName = new PersonName(new org.dcm4che3.data.PersonName(
-                attrs.getString(Tag.VerifyingObserverName), true), fuzzyStr);
+        verifyingObserverName = PersonName.valueOf(
+                attrs.getString(Tag.VerifyingObserverName), fuzzyStr);
     }
 
     public long getPk() {
@@ -103,4 +108,11 @@ public class VerifyingObserver implements Serializable {
         return verifyingObserverName;
     }
 
+    public Instance getInstance() {
+        return instance;
+    }
+
+    public void setInstance(Instance instance) {
+        this.instance = instance;
+    }
 }

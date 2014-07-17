@@ -40,11 +40,9 @@ package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.Availability;
-import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
-import org.dcm4chee.archive.entity.QPersonName;
-import org.dcm4chee.archive.entity.QRequestAttributes;
 import org.dcm4chee.archive.entity.QStudy;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.util.QueryBuilder;
@@ -54,14 +52,15 @@ import org.hibernate.StatelessSession;
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
 import com.mysema.query.types.Expression;
+import com.mysema.query.types.Predicate;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-class StudyQuery extends AbstractQuery {
+class StudyQuery extends AbstractQuery<Study> {
 
     public StudyQuery(QueryContext context, StatelessSession session) {
-        super(context, session);
+        super(context, session, QStudy.study);
     }
 
     @Override
@@ -94,7 +93,18 @@ class StudyQuery extends AbstractQuery {
     }
 
     @Override
-    protected HibernateQuery createQuery(QueryContext context) {
+    protected HibernateQuery applyJoins(HibernateQuery query) {
+        query = QueryBuilder.applyStudyLevelJoins(query,
+                context.getKeys(),
+                context.getQueryParam());
+        query = QueryBuilder.applyPatientLevelJoins(query,
+                context.getKeys(),
+                context.getQueryParam());
+        return query;
+    }
+
+    @Override
+    protected Predicate predicate() {
         BooleanBuilder builder = new BooleanBuilder();
         QueryBuilder.addPatientLevelPredicates(builder,
                 context.getPatientIDs(),
@@ -103,13 +113,7 @@ class StudyQuery extends AbstractQuery {
         QueryBuilder.addStudyLevelPredicates(builder,
                 context.getKeys(),
                 context.getQueryParam());
-        return new HibernateQuery(session)
-            .from(QStudy.study)
-            .innerJoin(QStudy.study.patient, QPatient.patient)
-            .leftJoin(QStudy.study.issuerOfAccessionNumber, QIssuer.issuer)
-//            .leftJoin(QStudy.study.referringPhysicianName, QPersonName.personName)
-//            .leftJoin(QPatient.patient.patientName, QPersonName.personName)
-            .where(builder);
+        return builder;
     }
 
     @Override

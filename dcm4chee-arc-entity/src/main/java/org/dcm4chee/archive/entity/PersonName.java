@@ -71,9 +71,6 @@ public class PersonName {
     @Column(name = "pk")
     private long pk;
 
-    @Column(name = "no_person_name", nullable = false)
-    private boolean noPersonName;
-
     @Column(name = "family_name")
     private String familyName;
 
@@ -127,7 +124,6 @@ public class PersonName {
     }
 
     public PersonName(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr) {
-        noPersonName = pn.isEmpty();
         familyName = pn.get(Group.Alphabetic, Component.FamilyName);
         givenName = pn.get(Group.Alphabetic, Component.GivenName);
         middleName = pn.get(Group.Alphabetic, Component.MiddleName);
@@ -145,6 +141,17 @@ public class PersonName {
         phoneticSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
         soundexCodes = createSoundexCodes(familyName, givenName, middleName,
                 fuzzyStr);
+    }
+
+    public static PersonName valueOf(String s, FuzzyStr fuzzyStr) {
+        if (s == null)
+            return null;
+
+        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(s, true);
+        if (pn.isEmpty())
+            return null;
+
+        return new PersonName(pn, fuzzyStr);
     }
 
     private Collection<SoundexCode> createSoundexCodes(String familyName,
@@ -189,14 +196,6 @@ public class PersonName {
 
     public long getPk() {
         return pk;
-    }
-
-    public boolean isNoPersonName() {
-        return noPersonName;
-    }
-
-    public void setNoPersonName(boolean noPersonName) {
-        this.noPersonName = noPersonName;
     }
 
     public String getFamilyName() {

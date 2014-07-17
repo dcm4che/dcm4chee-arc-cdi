@@ -6,7 +6,6 @@ create index content_item_text_value_idx on content_item (text_value);
 create unique index issuer_entity_id_idx on issuer (entity_id);
 create unique index issuer_entity_uid_idx on issuer (entity_uid, entity_uid_type);
 
-create index no_person_name_idx on person_name (no_person_name);
 create index family_name_idx on person_name (family_name);
 create index given_name_idx on person_name (given_name);
 create index middle_name_idx on person_name (middle_name);
@@ -18,6 +17,8 @@ create index p_given_name_idx on person_name (p_given_name);
 create index p_middle_name_idx on person_name (p_middle_name);
 
 create index sx_code_value_idx on soundex_code (sx_code_value);
+create index sx_pn_comp_idx on soundex_code (pn_comp);
+create index sx_pn_comp_part_idx on soundex_code (pn_comp_part);
 
 create index fs_group_id_idx on filesystem (fs_group_id);
 create index fs_status_idx on filesystem (fs_status);

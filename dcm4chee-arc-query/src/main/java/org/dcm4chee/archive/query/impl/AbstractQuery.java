@@ -48,14 +48,16 @@ import org.hibernate.ScrollableResults;
 import org.hibernate.StatelessSession;
 
 import com.mysema.query.jpa.hibernate.HibernateQuery;
+import com.mysema.query.types.EntityPath;
 import com.mysema.query.types.Expression;
 import com.mysema.query.types.OrderSpecifier;
+import com.mysema.query.types.Predicate;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-public abstract class AbstractQuery implements Query {
+public abstract class AbstractQuery<E> implements Query {
 
     protected final QueryContext context;
 
@@ -63,15 +65,19 @@ public abstract class AbstractQuery implements Query {
 
     protected ScrollableResults results;
 
-    protected  HibernateQuery query;
+    protected HibernateQuery query;
 
     private boolean hasMoreMatches;
  
     private boolean optionalKeyNotSupported;
 
-    public AbstractQuery(QueryContext context, StatelessSession session) {
+    private final EntityPath<E> entityPath;
+
+    public AbstractQuery(QueryContext context, StatelessSession session,
+            EntityPath<E> entityPath) {
         this.context = context;
         this.session = session;
+        this.entityPath = entityPath;
     }
 
     @Override
@@ -81,12 +87,16 @@ public abstract class AbstractQuery implements Query {
 
     @Override
     public void initQuery() {
-        query = createQuery(context);
+        HibernateQuery q = new HibernateQuery(session).from(entityPath);
+        q = applyJoins(q);
+        query = q.where(predicate());
     }
-    
-    protected abstract HibernateQuery createQuery(QueryContext context);
 
     protected abstract Expression<?>[] select();
+
+    protected abstract HibernateQuery applyJoins(HibernateQuery q);
+
+    protected abstract Predicate predicate();
 
     protected abstract Attributes toAttributes(ScrollableResults results);
 

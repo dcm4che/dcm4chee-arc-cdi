@@ -66,8 +66,11 @@ import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.QVerifyingObserver;
 
 import com.mysema.query.BooleanBuilder;
+import com.mysema.query.jpa.hibernate.HibernateQuery;
 import com.mysema.query.jpa.hibernate.HibernateSubQuery;
+import com.mysema.query.types.EntityPath;
 import com.mysema.query.types.ExpressionUtils;
+import com.mysema.query.types.Path;
 import com.mysema.query.types.Predicate;
 import com.mysema.query.types.expr.BooleanExpression;
 import com.mysema.query.types.expr.SimpleExpression;
@@ -81,6 +84,17 @@ import com.mysema.query.types.path.StringPath;
  * @author Michael Backhaus <michael.backhaus@gmail.com>
  */
 public class QueryBuilder {
+
+    public static final QPersonName patientName =
+            new QPersonName("patientName");
+    public static final QPersonName referringPhysicianName =
+            new QPersonName("referringPhysicianName");
+    public static final QPersonName performingPhysicianName =
+            new QPersonName("performingPhysicianName");
+    public static final QPersonName verifyingObserverName =
+            new QPersonName("verifyingObserverName");
+    private static QPersonName requestingPhysician =
+            new QPersonName("requestingPhysician");
 
     private QueryBuilder() {
     }
@@ -188,7 +202,7 @@ public class QueryBuilder {
         if (keys == null)
             return;
 
-        builder.and(MatchPersonName.match(QPatient.patient.patientName,
+        builder.and(MatchPersonName.match(QueryBuilder.patientName,
                 keys.getString(Tag.PatientName, "*"), queryParam));
         builder.and(wildCard(QPatient.patient.patientSex,
                 keys.getString(Tag.PatientSex, "*").toUpperCase(),
@@ -230,7 +244,7 @@ public class QueryBuilder {
                     Tag.StudyDateAndTime, keys, combinedDatetimeMatching,
                     matchUnknown));
             builder.and(MatchPersonName.match(
-                    QStudy.study.referringPhysicianName,
+                    QueryBuilder.referringPhysicianName,
                     keys.getString(Tag.ReferringPhysicianName, "*"), queryParam));
             builder.and(wildCard(QStudy.study.studyDescription,
                     keys.getString(Tag.StudyDescription, "*"), matchUnknown,
@@ -307,7 +321,7 @@ public class QueryBuilder {
                 Tag.PerformedProcedureStepStartDateAndTime, keys,
                 queryParam.isCombinedDatetimeMatching(), matchUnknown));
         builder.and(MatchPersonName.match(
-                QSeries.series.performingPhysicianName,
+                QueryBuilder.performingPhysicianName,
                 keys.getString(Tag.PerformingPhysicianName, "*"), queryParam));
         builder.and(wildCard(QSeries.series.seriesDescription,
                 keys.getString(Tag.SeriesDescription, "*"), matchUnknown, true));
@@ -650,9 +664,10 @@ public class QueryBuilder {
         builder.and(wildCard(
                 QRequestAttributes.requestAttributes.requestingService,
                 item.getString(Tag.RequestingService, "*"), matchUnknown, true));
-        builder.and(MatchPersonName.match(
-                QRequestAttributes.requestAttributes.requestingPhysician,
-                item.getString(Tag.ReferringPhysicianName, "*"), queryParam));
+        Predicate matchRequestingPhysician = MatchPersonName.match(
+                QueryBuilder.requestingPhysician,
+                item.getString(Tag.RequestingPhysician, "*"), queryParam);
+        builder.and(matchRequestingPhysician);
         builder.and(wildCard(
                 QRequestAttributes.requestAttributes.requestedProcedureID,
                 item.getString(Tag.RequestedProcedureID, "*"), matchUnknown,
@@ -667,15 +682,19 @@ public class QueryBuilder {
         if (!builder.hasValue())
             return null;
 
+        HibernateSubQuery subQuery = new HibernateSubQuery()
+                .from(QRequestAttributes.requestAttributes)
+                .leftJoin(
+                        QRequestAttributes.requestAttributes.issuerOfAccessionNumber,
+                        QIssuer.issuer);
+
+        if (matchRequestingPhysician != null)
+            subQuery = matchUnknown
+                ? subQuery.leftJoin(QueryBuilder.requestingPhysician, QueryBuilder.requestingPhysician)
+                : subQuery.join(QueryBuilder.requestingPhysician, QueryBuilder.requestingPhysician);
+
         return matchUnknown(
-                new HibernateSubQuery()
-                        .from(QRequestAttributes.requestAttributes)
-                        .leftJoin(
-                                QRequestAttributes.requestAttributes.requestingPhysician,
-                                QPersonName.personName)
-                        .leftJoin(
-                                QRequestAttributes.requestAttributes.issuerOfAccessionNumber,
-                                QIssuer.issuer)
+                subQuery
                         .where(QSeries.series.eq(QRequestAttributes.requestAttributes.series),
                                 builder).exists(),
                 QSeries.series.requestAttributes, matchUnknown);
@@ -686,29 +705,34 @@ public class QueryBuilder {
             return null;
 
         boolean matchUnknown = queryParam.isMatchUnknown();
+        Predicate matchVerifyingObserverName = MatchPersonName.match(
+                QueryBuilder.verifyingObserverName,
+                item.getString(Tag.VerifyingObserverName, "*"),
+                queryParam);
         Predicate predicate = ExpressionUtils
-                .allOf(MatchDateTimeRange
-                        .rangeMatch(
+                .allOf(MatchDateTimeRange.rangeMatch(
                                 QVerifyingObserver.verifyingObserver.verificationDateTime,
                                 item, Tag.VerificationDateTime,
                                 MatchDateTimeRange.FormatDate.DT, matchUnknown),
-                        MatchPersonName
-                                .match(QVerifyingObserver.verifyingObserver.verifyingObserverName,
-                                        item.getString(
-                                                Tag.VerifyingObserverName, "*"),
-                                        queryParam));
+                        matchVerifyingObserverName);
 
         if (predicate == null)
             return null;
 
+        HibernateSubQuery query = new HibernateSubQuery()
+                .from(QVerifyingObserver.verifyingObserver);
+        
+        if (matchVerifyingObserverName != null)
+            query = matchUnknown
+                ? query.leftJoin(
+                        QVerifyingObserver.verifyingObserver.verifyingObserverName,
+                        QueryBuilder.verifyingObserverName)
+                : query.join(QVerifyingObserver.verifyingObserver.verifyingObserverName,
+                    QueryBuilder.verifyingObserverName);
+
         return matchUnknown(
-                new HibernateSubQuery()
-                        .from(QVerifyingObserver.verifyingObserver)
-                        .leftJoin(
-                                QVerifyingObserver.verifyingObserver.verifyingObserverName,
-                                QPersonName.personName)
-                        .where(QInstance.instance.verifyingObservers
-                                .contains(QVerifyingObserver.verifyingObserver),
+                query.where(QInstance.instance.eq(
+                        QVerifyingObserver.verifyingObserver.instance),
                                 predicate).exists(),
                 QInstance.instance.verifyingObservers, matchUnknown);
     }
@@ -737,4 +761,49 @@ public class QueryBuilder {
                         .contains(QContentItem.contentItem),
                         predicate).exists();
     }
+
+    public static HibernateQuery applyPatientLevelJoins(HibernateQuery query,
+            Attributes keys, QueryParam queryParam) {
+        return joinIfMatchingKey(query, keys, Tag.PatientName,
+                QPatient.patient.patientName, QueryBuilder.patientName,
+                queryParam.isMatchUnknown());
+    }
+
+    public static HibernateQuery applyStudyLevelJoins(HibernateQuery query,
+            Attributes keys, QueryParam queryParam) {
+        query = query
+                .innerJoin(QStudy.study.patient, QPatient.patient)
+                .leftJoin(QStudy.study.issuerOfAccessionNumber, QIssuer.issuer);
+        return joinIfMatchingKey(query, keys, Tag.ReferringPhysicianName,
+                QStudy.study.referringPhysicianName, QueryBuilder.referringPhysicianName,
+                queryParam.isMatchUnknown());
+    }
+
+    public static HibernateQuery applySeriesLevelJoins(HibernateQuery query,
+            Attributes keys, QueryParam queryParam) {
+        query = query.innerJoin(QSeries.series.study, QStudy.study);
+        return joinIfMatchingKey(query, keys, Tag.PerformingPhysicianName,
+                QSeries.series.performingPhysicianName, QueryBuilder.performingPhysicianName,
+                queryParam.isMatchUnknown());
+    }
+
+    public static HibernateQuery applyInstanceLevelJoins(HibernateQuery query,
+            Attributes keys, QueryParam queryParam) {
+        return query.innerJoin(QInstance.instance.series, QSeries.series);
+    }
+
+    static boolean isUniversalMatching(Attributes keys, int tag) {
+        return keys.getString(tag, "*").equals("*");
+    }
+
+    static <T> HibernateQuery joinIfMatchingKey(HibernateQuery query,
+            Attributes keys, int tag, EntityPath<T> target,
+            Path<T> alias, boolean matchUnknown) {
+        return isUniversalMatching(keys, tag)
+            ? query
+            : matchUnknown
+                ? query.leftJoin(target, alias)
+                : query.join(target, alias);
+    }
+
 }

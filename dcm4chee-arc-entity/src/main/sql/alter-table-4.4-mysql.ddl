@@ -93,7 +93,6 @@ create table person_name (
     p_suffix varchar(255),
     prefix varchar(255),
     suffix varchar(255),
-    no_person_name_idx bit not null,
     primary key (pk)
 ) ENGINE=InnoDB;
 
@@ -107,7 +106,6 @@ create table soundex_code (
     primary key (pk)
 ) ENGINE=InnoDB;
 
-create index no_person_name_idx on person_name (no_person_name);
 create index family_name_idx on person_name (family_name);
 create index given_name_idx on person_name (given_name);
 create index middle_name_idx on person_name (middle_name);
@@ -119,6 +117,8 @@ create index p_given_name_idx on person_name (p_given_name);
 create index p_middle_name_idx on person_name (p_middle_name);
 
 create index sx_code_value_idx on soundex_code (sx_code_value);
+create index sx_pn_comp_idx on soundex_code (pn_comp);
+create index sx_pn_comp_part_idx on soundex_code (pn_comp_part);
 
 alter table patient
     drop pat_name,

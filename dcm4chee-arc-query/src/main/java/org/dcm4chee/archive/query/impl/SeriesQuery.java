@@ -40,11 +40,10 @@ package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.Availability;
-import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
-import org.dcm4chee.archive.entity.QPersonName;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.entity.QStudy;
+import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.util.QueryBuilder;
@@ -54,17 +53,18 @@ import org.hibernate.StatelessSession;
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
 import com.mysema.query.types.Expression;
+import com.mysema.query.types.Predicate;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-class SeriesQuery extends AbstractQuery {
+class SeriesQuery extends AbstractQuery<Series> {
 
     private Long studyPk;
     private Attributes studyAttrs;
 
     public SeriesQuery(QueryContext context, StatelessSession session) {
-        super(context, session);
+        super(context, session, QSeries.series);
     }
 
     @Override
@@ -103,7 +103,21 @@ class SeriesQuery extends AbstractQuery {
     }
 
     @Override
-    protected HibernateQuery createQuery(QueryContext context) {
+    protected HibernateQuery applyJoins(HibernateQuery query) {
+        query = QueryBuilder.applySeriesLevelJoins(query,
+                context.getKeys(),
+                context.getQueryParam());
+        query = QueryBuilder.applyStudyLevelJoins(query,
+                context.getKeys(),
+                context.getQueryParam());
+        query = QueryBuilder.applyPatientLevelJoins(query,
+                context.getKeys(),
+                context.getQueryParam());
+        return query;
+    }
+
+    @Override
+    protected Predicate predicate() {
         BooleanBuilder builder = new BooleanBuilder();
         QueryBuilder.addPatientLevelPredicates(builder,
                 context.getPatientIDs(),
@@ -115,15 +129,7 @@ class SeriesQuery extends AbstractQuery {
         QueryBuilder.addSeriesLevelPredicates(builder,
                 context.getKeys(),
                 context.getQueryParam());
-        return new HibernateQuery(session)
-            .from(QSeries.series)
-            .innerJoin(QSeries.series.study, QStudy.study)
-            .innerJoin(QStudy.study.patient, QPatient.patient)
-//            .leftJoin(QSeries.series.performingPhysicianName, QPersonName.personName)
-            .leftJoin(QStudy.study.issuerOfAccessionNumber, QIssuer.issuer)
-//            .leftJoin(QStudy.study.referringPhysicianName, QPersonName.personName)
-//            .leftJoin(QPatient.patient.patientName, QPersonName.personName)
-            .where(builder);
+        return builder;
     }
 
     @Override

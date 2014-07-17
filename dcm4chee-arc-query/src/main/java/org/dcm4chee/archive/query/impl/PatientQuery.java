@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.QueryContext;
@@ -49,11 +50,12 @@ import org.hibernate.StatelessSession;
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
 import com.mysema.query.types.Expression;
+import com.mysema.query.types.Predicate;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-class PatientQuery extends AbstractQuery {
+class PatientQuery extends AbstractQuery<Patient> {
 
     private static final Expression<?>[] SELECT = {
         QPatient.patient.pk,
@@ -61,7 +63,7 @@ class PatientQuery extends AbstractQuery {
     };
 
     public PatientQuery(QueryContext context, StatelessSession session) {
-        super(context, session);
+        super(context, session, QPatient.patient);
     }
 
     @Override
@@ -70,16 +72,20 @@ class PatientQuery extends AbstractQuery {
     }
 
     @Override
-    protected HibernateQuery createQuery(QueryContext context) {
+    protected HibernateQuery applyJoins(HibernateQuery query) {
+        return QueryBuilder.applyPatientLevelJoins(query,
+                context.getKeys(),
+                context.getQueryParam());
+    }
+
+    @Override
+    protected Predicate predicate() {
         BooleanBuilder builder = new BooleanBuilder();
         QueryBuilder.addPatientLevelPredicates(builder,
                 context.getPatientIDs(),
                 context.getKeys(), 
                 context.getQueryParam());
-        return new HibernateQuery(session)
-            .from(QPatient.patient)
-//            .leftJoin(QPatient.patient.patientName, QPersonName.personName)
-            .where(builder);
+        return builder;
     }
 
     @Override
@@ -88,4 +94,5 @@ class PatientQuery extends AbstractQuery {
         Utils.decodeAttributes(attrs, results.getBinary(1));
         return attrs;
     }
+
 }
