@@ -17,8 +17,8 @@ create index p_given_name_idx on person_name (p_given_name);
 create index p_middle_name_idx on person_name (p_middle_name);
 
 create index sx_code_value_idx on soundex_code (sx_code_value);
-create index sx_pn_comp_idx on soundex_code (pn_comp);
-create index sx_pn_comp_part_idx on soundex_code (pn_comp_part);
+create index sx_pn_comp_idx on soundex_code (sx_pn_comp);
+create index sx_pn_comp_part_idx on soundex_code (sx_pn_comp_part);
 
 create index fs_group_id_idx on filesystem (fs_group_id);
 create index fs_status_idx on filesystem (fs_status);

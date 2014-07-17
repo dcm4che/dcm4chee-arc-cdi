@@ -93,7 +93,7 @@ public class VerifyingObserver implements Serializable {
         Date dt = attrs.getDate(Tag.VerificationDateTime);
         verificationDateTime = DateUtils.formatDT(null, dt);
         verifyingObserverName = PersonName.valueOf(
-                attrs.getString(Tag.VerifyingObserverName), fuzzyStr);
+                attrs.getString(Tag.VerifyingObserverName), fuzzyStr, null);
     }
 
     public long getPk() {

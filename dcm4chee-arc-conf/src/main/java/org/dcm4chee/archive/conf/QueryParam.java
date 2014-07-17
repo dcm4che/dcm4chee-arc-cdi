@@ -57,6 +57,7 @@ public class QueryParam {
     private AttributeFilter[] attributeFilters;
     private boolean combinedDatetimeMatching;
     private boolean fuzzySemanticMatching;
+    private boolean personNameComponentOrderInsensitiveMatching;
     private boolean matchUnknown;
     private boolean matchLinkedPatientIDs;
     private String[] accessControlIDs;
@@ -78,6 +79,15 @@ public class QueryParam {
 
     public final void setFuzzySemanticMatching(boolean fuzzySemanticMatching) {
         this.fuzzySemanticMatching = fuzzySemanticMatching;
+    }
+
+    public final boolean isPersonNameComponentOrderInsensitiveMatching() {
+        return personNameComponentOrderInsensitiveMatching;
+    }
+
+    public final void setPersonNameComponentOrderInsensitiveMatching(
+            boolean orderInsensitiveMatching) {
+        this.personNameComponentOrderInsensitiveMatching = orderInsensitiveMatching;
     }
 
     public final boolean isMatchUnknown() {

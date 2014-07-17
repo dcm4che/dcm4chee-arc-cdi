@@ -302,7 +302,7 @@ public class Patient implements Serializable {
 
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
         patientName = PersonName.valueOf(
-                attrs.getString(Tag.PatientName), fuzzyStr);
+                attrs.getString(Tag.PatientName), fuzzyStr, patientName);
         patientBirthDate = attrs.getString(Tag.PatientBirthDate, "*");
         patientSex = attrs.getString(Tag.PatientSex, "*").toUpperCase();
 

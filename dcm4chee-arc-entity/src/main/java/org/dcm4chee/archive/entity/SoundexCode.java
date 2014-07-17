@@ -38,6 +38,9 @@
 
 package org.dcm4chee.archive.entity;
 
+import java.util.Iterator;
+import java.util.StringTokenizer;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -62,10 +65,10 @@ public class SoundexCode {
     @Column(name = "pk")
     private long pk;
 
-    @Column(name = "pn_comp", nullable = false)
+    @Column(name = "sx_pn_comp", nullable = false)
     private org.dcm4che3.data.PersonName.Component personNameComponent;
 
-    @Column(name = "pn_comp_part", nullable = false)
+    @Column(name = "sx_pn_comp_part", nullable = false)
     private int componentPartIndex;
 
     @Column(name = "sx_code_value", nullable = false)
@@ -82,6 +85,26 @@ public class SoundexCode {
         this.personNameComponent = personNameComponent;
         this.componentPartIndex = componentPartIndex;
         this.codeValue = codeValue.isEmpty() ? "*" : codeValue;
+    }
+
+    public static Iterator<String> tokenizePersonNameComponent(String name) {
+        final StringTokenizer stk = new StringTokenizer(name, " ,-\t");
+        return new Iterator<String>() {
+
+            @Override
+            public boolean hasNext() {
+                return stk.hasMoreTokens();
+            }
+
+            @Override
+            public String next() {
+                return stk.nextToken();
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }};
     }
 
     public long getPk() {

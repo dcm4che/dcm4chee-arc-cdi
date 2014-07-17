@@ -259,7 +259,8 @@ public class MWLItem implements Serializable {
             scheduledStartTime = "*";
         }
         scheduledPerformingPhysicianName = PersonName.valueOf(
-                attrs.getString(Tag.ScheduledPerformingPhysicianName), fuzzyStr);
+                attrs.getString(Tag.ScheduledPerformingPhysicianName), fuzzyStr,
+                scheduledPerformingPhysicianName);
         status = spsItem.getString(Tag.ScheduledProcedureStepStatus, SCHEDULED);
         
         requestedProcedureID = attrs.getString(Tag.RequestedProcedureID);

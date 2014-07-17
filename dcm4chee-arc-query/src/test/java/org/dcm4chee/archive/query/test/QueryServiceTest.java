@@ -38,20 +38,20 @@
 
 package org.dcm4chee.archive.query.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.util.TreeSet;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Issuer;
+import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
-import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.Query;
@@ -239,38 +239,56 @@ public class QueryServiceTest {
 
     @Test
     public void testFindPatientByPatientNameFuzzy1() {
-        testFindPatientByFuzzyPatientName("LUCAS^GEORGE", false,
+        testFindPatientByFuzzyPatientName("LUCAS^GEORGE", false, true,
                 "FUZZY_GEORGE", "FUZZY_JOERG");
     }
 
     @Test
     public void testFindPatientByPatientNameFuzzy2() {
-        testFindPatientByFuzzyPatientName("LUCAS^JÖRG", false, "FUZZY_GEORGE",
-                "FUZZY_JOERG");
+        testFindPatientByFuzzyPatientName("LUCAS^JÖRG", false, true,
+                "FUZZY_GEORGE", "FUZZY_JOERG");
     }
 
     @Test
     public void testFindPatientByPatientNameFuzzy3() {
-        testFindPatientByFuzzyPatientName("LUKE", false, "FUZZY_LUKE");
+        testFindPatientByFuzzyPatientName("LUKE", false, true, "FUZZY_LUKE");
     }
 
     @Test
     public void testFindPatientByPatientNameFuzzy4() {
-        testFindPatientByFuzzyPatientName("LU*", false, "FUZZY_GEORGE",
+        testFindPatientByFuzzyPatientName("LU*", false, true, "FUZZY_GEORGE",
                 "FUZZY_JOERG", "FUZZY_LUKE");
     }
 
     @Test
     public void testFindPatientByPatientNameFuzzy5() {
-        testFindPatientByFuzzyPatientName("LU*", true, "FUZZY_GEORGE",
+        testFindPatientByFuzzyPatientName("LU*", true, true, "FUZZY_GEORGE",
                 "FUZZY_JOERG", "FUZZY_LUKE", "FUZZY_NONE");
     }
 
+    @Test
+    public void testFindPatientByPatientNameFuzzy6() {
+        testFindPatientByFuzzyPatientName("LUKE", false, false);
+    }
+
+    @Test
+    public void testFindPatientByPatientNameFuzzy7() {
+        testFindPatientByFuzzyPatientName("LU*", false, false, "FUZZY_GEORGE",
+                "FUZZY_JOERG");
+    }
+
+    @Test
+    public void testFindPatientByPatientNameFuzzy8() {
+        testFindPatientByFuzzyPatientName("LU*", true, false, "FUZZY_GEORGE",
+                "FUZZY_JOERG", "FUZZY_NONE");
+    }
+
     private void testFindPatientByFuzzyPatientName(String name,
-            boolean matchUnknown, String... expected_ids) {
+            boolean matchUnknown, boolean orderInsensitive, String... expected_ids) {
         QueryParam queryParam = ParamFactory.createQueryParam();
         queryParam.setFuzzySemanticMatching(true);
         queryParam.setMatchUnknown(matchUnknown);
+        queryParam.setPersonNameComponentOrderInsensitiveMatching(orderInsensitive);
         QueryContext ctx = queryService.createQueryContext(queryService);
         Attributes keys = new Attributes(1);
         keys.setString(Tag.PatientName, VR.PN, name);

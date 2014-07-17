@@ -83,16 +83,16 @@ create table person_name (
     i_family_name varchar(255),
     i_given_name varchar(255),
     i_middle_name varchar(255),
-    i_prefix varchar(255),
-    i_suffix varchar(255),
+    i_name_prefix varchar(255),
+    i_name_suffix varchar(255),
     middle_name varchar(255),
     p_family_name varchar(255),
     p_given_name varchar(255),
     p_middle_name varchar(255),
-    p_prefix varchar(255),
-    p_suffix varchar(255),
-    prefix varchar(255),
-    suffix varchar(255),
+    p_name_prefix varchar(255),
+    p_name_suffix varchar(255),
+    name_prefix varchar(255),
+    name_suffix varchar(255),
     primary key (pk)
 ) ENGINE=InnoDB;
 
@@ -100,8 +100,8 @@ create table person_name (
 create table soundex_code (
     pk bigint not null auto_increment,
     sx_code_value varchar(255) not null,
-    pn_comp_part integer not null,
-    pn_comp integer not null,
+    sx_pn_comp_part integer not null,
+    sx_pn_comp integer not null,
     person_name_fk bigint,
     primary key (pk)
 ) ENGINE=InnoDB;
@@ -117,8 +117,8 @@ create index p_given_name_idx on person_name (p_given_name);
 create index p_middle_name_idx on person_name (p_middle_name);
 
 create index sx_code_value_idx on soundex_code (sx_code_value);
-create index sx_pn_comp_idx on soundex_code (pn_comp);
-create index sx_pn_comp_part_idx on soundex_code (pn_comp_part);
+create index sx_pn_comp_idx on soundex_code (sx_pn_comp);
+create index sx_pn_comp_part_idx on soundex_code (sx_pn_comp_part);
 
 alter table patient
     drop pat_name,

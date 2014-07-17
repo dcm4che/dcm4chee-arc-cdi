@@ -105,6 +105,9 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmPreserveSpoolFileOnFailure", def = "false")
     private boolean preserveSpoolFileOnFailure;
 
+    @ConfigField(name = "dcmPersonNameComponentOrderInsensitiveMatching", def = "false")
+    private boolean personNameComponentOrderInsensitiveMatching;
+
     @ConfigField(name = "dcmMatchUnknown", def = "false")
     private boolean matchUnknown;
 
@@ -400,6 +403,15 @@ public class ArchiveAEExtension extends AEExtension {
         this.preserveSpoolFileOnFailure = preserveSpoolFileOnFailure;
     }
 
+    public boolean isPersonNameComponentOrderInsensitiveMatching() {
+        return personNameComponentOrderInsensitiveMatching;
+    }
+
+    public void setPersonNameComponentOrderInsensitiveMatching(
+            boolean personNameComponentOrderInsensitiveMatching) {
+        this.personNameComponentOrderInsensitiveMatching = personNameComponentOrderInsensitiveMatching;
+    }
+
     public boolean isMatchUnknown() {
         return matchUnknown;
     }
@@ -590,6 +602,8 @@ public class ArchiveAEExtension extends AEExtension {
                 .contains(QueryOption.DATETIME));
         queryParam.setFuzzySemanticMatching(queryOpts
                 .contains(QueryOption.FUZZY));
+        queryParam.setPersonNameComponentOrderInsensitiveMatching(
+                personNameComponentOrderInsensitiveMatching);
         queryParam.setMatchUnknown(matchUnknown);
         queryParam.setMatchLinkedPatientIDs(matchLinkedPatientIDs);
         queryParam.setAccessControlIDs(accessControlIDs);

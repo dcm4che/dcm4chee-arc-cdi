@@ -115,11 +115,11 @@
       <basic name="middleName">
         <column name="middle_name" column-definition="nvarchar2(255)" />
       </basic>
-      <basic name="prefix">
-        <column name="prefix" column-definition="nvarchar2(255)" />
+      <basic name="namePrefix">
+        <column name="name_prefix" column-definition="nvarchar2(255)" />
       </basic>
-      <basic name="suffix">
-        <column name="suffix" column-definition="nvarchar2(255)" />
+      <basic name="nameSuffix">
+        <column name="name_suffix" column-definition="nvarchar2(255)" />
       </basic>
       <basic name="ideographicFamilyName">
         <column name="i_family_name" column-definition="nvarchar2(255)" />
@@ -130,11 +130,11 @@
       <basic name="ideographicMiddleName">
         <column name="i_middle_name" column-definition="nvarchar2(255)" />
       </basic>
-      <basic name="ideographicPrefix">
-        <column name="i_prefix" column-definition="nvarchar2(255)" />
+      <basic name="ideographicNamePrefix">
+        <column name="i_name_prefix" column-definition="nvarchar2(255)" />
       </basic>
-      <basic name="ideographicSsuffix">
-        <column name="i_suffix" column-definition="nvarchar2(255)" />
+      <basic name="ideographicNameSsuffix">
+        <column name="i_name_suffix" column-definition="nvarchar2(255)" />
       </basic>
       <basic name="phoneticFamilyName">
         <column name="p_family_name" column-definition="nvarchar2(255)" />
@@ -145,11 +145,11 @@
       <basic name="phoneticMiddleName">
         <column name="p_middle_name" column-definition="nvarchar2(255)" />
       </basic>
-      <basic name="phoneticPrefix">
-        <column name="p_prefix" column-definition="nvarchar2(255)" />
+      <basic name="phoneticNamePrefix">
+        <column name="p_name_prefix" column-definition="nvarchar2(255)" />
       </basic>
-      <basic name="phoneticSuffix">
-        <column name="p_suffix" column-definition="nvarchar2(255)" />
+      <basic name="phoneticNameSuffix">
+        <column name="p_name_suffix" column-definition="nvarchar2(255)" />
       </basic>
     </attributes>
   </entity>

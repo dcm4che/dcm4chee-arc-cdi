@@ -475,7 +475,8 @@ public class Study implements Serializable {
         }
         accessionNumber = attrs.getString(Tag.AccessionNumber, "*");
         referringPhysicianName = PersonName.valueOf(
-                attrs.getString(Tag.ReferringPhysicianName), fuzzyStr);
+                attrs.getString(Tag.ReferringPhysicianName), fuzzyStr,
+                referringPhysicianName);
         studyCustomAttribute1 = 
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
         studyCustomAttribute2 =

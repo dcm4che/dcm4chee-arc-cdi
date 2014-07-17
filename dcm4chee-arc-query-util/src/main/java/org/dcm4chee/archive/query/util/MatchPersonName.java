@@ -46,6 +46,7 @@ import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.QPersonName;
 import org.dcm4chee.archive.entity.QSoundexCode;
+import org.dcm4chee.archive.entity.SoundexCode;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateSubQuery;
@@ -134,39 +135,49 @@ class MatchPersonName {
 
     private static Predicate fuzzyMatch(QPersonName qpn,
             PersonName pn, QueryParam param) {
-        FuzzyStr fuzzyStr = param.getFuzzyStr();
         BooleanBuilder builder = new BooleanBuilder();
-        fuzzyMatch(qpn, pn, PersonName.Component.FamilyName, fuzzyStr, builder);
-        fuzzyMatch(qpn, pn, PersonName.Component.GivenName, fuzzyStr, builder);
-        fuzzyMatch(qpn, pn, PersonName.Component.MiddleName, fuzzyStr, builder);
+        fuzzyMatch(qpn, pn, PersonName.Component.FamilyName, param, builder);
+        fuzzyMatch(qpn, pn, PersonName.Component.GivenName, param, builder);
+        fuzzyMatch(qpn, pn, PersonName.Component.MiddleName, param, builder);
         return builder;
     }
 
     private static void fuzzyMatch(QPersonName qpn, PersonName pn,
-            PersonName.Component c,
-            FuzzyStr fuzzyStr, BooleanBuilder builder) {
+            PersonName.Component c, QueryParam param, BooleanBuilder builder) {
         String name = StringUtils.maskNull(pn.get(c), "*");
         if (name.equals("*"))
             return;
 
-        Iterator<String> parts = org.dcm4chee.archive.entity.PersonName
+        Iterator<String> parts = SoundexCode
                 .tokenizePersonNameComponent(name);
-        while (parts.hasNext())
-            fuzzyMatch(qpn, parts.next(), fuzzyStr, builder);
+        for (int i = 0; parts.hasNext(); ++i)
+            fuzzyMatch(qpn, c, i, parts.next(), param, builder);
     }
 
-    private static void fuzzyMatch(QPersonName qpn, String name,
-            FuzzyStr fuzzyStr, BooleanBuilder builder) {
+    private static void fuzzyMatch(QPersonName qpn, PersonName.Component c,
+            int partIndex, String name, QueryParam param, BooleanBuilder builder) {
         boolean wc = name.endsWith("*");
         if (wc) {
             name = name.substring(0, name.length()-1);
             if (name.isEmpty())
                 return;
         }
+        FuzzyStr fuzzyStr = param.getFuzzyStr();
         String fuzzyName = fuzzyStr.toFuzzy(name);
+        if (fuzzyName.isEmpty())
+            if (wc)
+                return;
+            else // code "" is stored as "*"
+                fuzzyName = "*";
+
         Predicate pred = wc 
                 ? QSoundexCode.soundexCode.codeValue.startsWith(fuzzyName)
                 : QSoundexCode.soundexCode.codeValue.eq(fuzzyName);
+        if (!param.isPersonNameComponentOrderInsensitiveMatching()) {
+            pred = ExpressionUtils.allOf(pred,
+                    QSoundexCode.soundexCode.personNameComponent.eq(c),
+                    QSoundexCode.soundexCode.componentPartIndex.eq(partIndex));
+        }
         HibernateSubQuery subquery = new HibernateSubQuery()
                         .from(QSoundexCode.soundexCode)
                         .where(qpn.eq(QSoundexCode.soundexCode.personName),

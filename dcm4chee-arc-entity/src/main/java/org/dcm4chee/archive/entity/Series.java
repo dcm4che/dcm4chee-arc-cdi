@@ -520,7 +520,8 @@ public class Series implements Serializable {
             performedProcedureStepStartTime = "*";
         }
         performingPhysicianName = PersonName.valueOf(
-                attrs.getString(Tag.PerformingPhysicianName), fuzzyStr);
+                attrs.getString(Tag.PerformingPhysicianName), fuzzyStr,
+                performingPhysicianName);
         seriesCustomAttribute1 = 
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
         seriesCustomAttribute2 =

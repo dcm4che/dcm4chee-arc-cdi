@@ -44,7 +44,6 @@ import static org.dcm4che3.data.PersonName.Component;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.StringTokenizer;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -80,11 +79,11 @@ public class PersonName {
     @Column(name = "middle_name")
     private String middleName;
 
-    @Column(name = "prefix")
-    private String prefix;
+    @Column(name = "name_prefix")
+    private String namePrefix;
 
-    @Column(name = "suffix")
-    private String suffix;
+    @Column(name = "name_suffix")
+    private String nameSuffix;
 
     @Column(name = "i_family_name")
     private String ideographicFamilyName;
@@ -95,11 +94,11 @@ public class PersonName {
     @Column(name = "i_middle_name")
     private String ideographicMiddleName;
 
-    @Column(name = "i_prefix")
-    private String ideographicPrefix;
+    @Column(name = "i_name_prefix")
+    private String ideographicNamePrefix;
 
-    @Column(name = "i_suffix")
-    private String ideographicSuffix;
+    @Column(name = "i_name_suffix")
+    private String ideographicNameSuffix;
 
     @Column(name = "p_family_name")
     private String phoneticFamilyName;
@@ -110,11 +109,11 @@ public class PersonName {
     @Column(name = "p_middle_name")
     private String phoneticMiddleName;
 
-    @Column(name = "p_prefix")
-    private String phoneticPrefix;
+    @Column(name = "p_name_prefix")
+    private String phoneticNamePrefix;
 
-    @Column(name = "p_suffix")
-    private String phoneticSuffix;
+    @Column(name = "p_name_suffix")
+    private String phoneticNameSuffix;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "person_name_fk", referencedColumnName = "pk")
@@ -127,23 +126,23 @@ public class PersonName {
         familyName = pn.get(Group.Alphabetic, Component.FamilyName);
         givenName = pn.get(Group.Alphabetic, Component.GivenName);
         middleName = pn.get(Group.Alphabetic, Component.MiddleName);
-        prefix = pn.get(Group.Alphabetic, Component.NamePrefix);
-        suffix = pn.get(Group.Alphabetic, Component.NameSuffix);
+        namePrefix = pn.get(Group.Alphabetic, Component.NamePrefix);
+        nameSuffix = pn.get(Group.Alphabetic, Component.NameSuffix);
         ideographicFamilyName = pn.get(Group.Ideographic, Component.FamilyName);
         ideographicGivenName = pn.get(Group.Ideographic, Component.GivenName);
         ideographicMiddleName = pn.get(Group.Ideographic, Component.MiddleName);
-        ideographicPrefix = pn.get(Group.Ideographic, Component.NamePrefix);
-        ideographicSuffix = pn.get(Group.Ideographic, Component.NameSuffix);
+        ideographicNamePrefix = pn.get(Group.Ideographic, Component.NamePrefix);
+        ideographicNameSuffix = pn.get(Group.Ideographic, Component.NameSuffix);
         phoneticFamilyName = pn.get(Group.Phonetic, Component.FamilyName);
         phoneticGivenName = pn.get(Group.Phonetic, Component.GivenName);
         phoneticMiddleName = pn.get(Group.Phonetic, Component.MiddleName);
-        phoneticPrefix = pn.get(Group.Phonetic, Component.NamePrefix);
-        phoneticSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
+        phoneticNamePrefix = pn.get(Group.Phonetic, Component.NamePrefix);
+        phoneticNameSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
         soundexCodes = createSoundexCodes(familyName, givenName, middleName,
                 fuzzyStr);
     }
 
-    public static PersonName valueOf(String s, FuzzyStr fuzzyStr) {
+    public static PersonName valueOf(String s, FuzzyStr fuzzyStr, PersonName prev) {
         if (s == null)
             return null;
 
@@ -151,10 +150,12 @@ public class PersonName {
         if (pn.isEmpty())
             return null;
 
-        return new PersonName(pn, fuzzyStr);
+        return prev != null && pn.equals(prev.toPersonName())
+                ? prev
+                : new PersonName(pn, fuzzyStr);
     }
 
-    private Collection<SoundexCode> createSoundexCodes(String familyName,
+    private static Collection<SoundexCode> createSoundexCodes(String familyName,
             String givenName, String middleName, FuzzyStr fuzzyStr) {
         Collection<SoundexCode> codes = new ArrayList<SoundexCode>();
         addSoundexCodesTo(Component.FamilyName, familyName, fuzzyStr, codes);
@@ -163,35 +164,40 @@ public class PersonName {
         return codes;
    }
 
-    private void addSoundexCodesTo(Component component, String name,
+    private static void addSoundexCodesTo(Component component, String name,
             FuzzyStr fuzzyStr, Collection<SoundexCode> codes) {
         if (name == null)
             return;
 
-        Iterator<String> parts = tokenizePersonNameComponent(name);
+        Iterator<String> parts = SoundexCode.tokenizePersonNameComponent(name);
         for (int i = 0; parts.hasNext(); i++)
             codes.add(new SoundexCode(component, i,
                     fuzzyStr.toFuzzy(parts.next())));
     }
 
-    public static Iterator<String> tokenizePersonNameComponent(String name) {
-        final StringTokenizer stk = new StringTokenizer(name, " ,-\t");
-        return new Iterator<String>() {
+    public org.dcm4che3.data.PersonName toPersonName() {
+        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName();
+        pn.set(Group.Alphabetic, Component.FamilyName, familyName);
+        pn.set(Group.Alphabetic, Component.GivenName, givenName);
+        pn.set(Group.Alphabetic, Component.MiddleName, middleName);
+        pn.set(Group.Alphabetic, Component.NamePrefix, namePrefix);
+        pn.set(Group.Alphabetic, Component.NameSuffix, nameSuffix);
+        pn.set(Group.Ideographic, Component.FamilyName, ideographicFamilyName);
+        pn.set(Group.Ideographic, Component.GivenName, ideographicGivenName);
+        pn.set(Group.Ideographic, Component.MiddleName, ideographicMiddleName);
+        pn.set(Group.Ideographic, Component.NamePrefix, ideographicNamePrefix);
+        pn.set(Group.Ideographic, Component.NameSuffix, ideographicNameSuffix);
+        pn.set(Group.Phonetic, Component.FamilyName, phoneticFamilyName);
+        pn.set(Group.Phonetic, Component.GivenName, phoneticGivenName);
+        pn.set(Group.Phonetic, Component.MiddleName, phoneticMiddleName);
+        pn.set(Group.Phonetic, Component.NamePrefix, phoneticNamePrefix);
+        pn.set(Group.Phonetic, Component.NameSuffix, phoneticNameSuffix);
+        return pn;
+    }
 
-            @Override
-            public boolean hasNext() {
-                return stk.hasMoreTokens();
-            }
-
-            @Override
-            public String next() {
-                return stk.nextToken();
-            }
-
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }};
+    @Override
+    public String toString() {
+        return toPersonName().toString();
     }
 
     public long getPk() {
@@ -222,20 +228,20 @@ public class PersonName {
         this.middleName = middleName;
     }
 
-    public String getPrefix() {
-        return prefix;
+    public String getNamePrefix() {
+        return namePrefix;
     }
 
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
+    public void setNamePrefix(String namePrefix) {
+        this.namePrefix = namePrefix;
     }
 
-    public String getSuffix() {
-        return suffix;
+    public String getNameSuffix() {
+        return nameSuffix;
     }
 
-    public void setSuffix(String suffix) {
-        this.suffix = suffix;
+    public void setNameSuffix(String nameSuffix) {
+        this.nameSuffix = nameSuffix;
     }
 
     public String getIdeographicFamilyName() {
@@ -262,20 +268,20 @@ public class PersonName {
         this.ideographicMiddleName = ideographicMiddleName;
     }
 
-    public String getIdeographicPrefix() {
-        return ideographicPrefix;
+    public String getIdeographicNamePrefix() {
+        return ideographicNamePrefix;
     }
 
-    public void setIdeographicPrefix(String ideographicPrefix) {
-        this.ideographicPrefix = ideographicPrefix;
+    public void setIdeographicNamePrefix(String ideographicNamePrefix) {
+        this.ideographicNamePrefix = ideographicNamePrefix;
     }
 
-    public String getIdeographicSuffix() {
-        return ideographicSuffix;
+    public String getIdeographicNameSuffix() {
+        return ideographicNameSuffix;
     }
 
-    public void setIdeographicSuffix(String ideographicSuffix) {
-        this.ideographicSuffix = ideographicSuffix;
+    public void setIdeographicNameSuffix(String ideographicNameSuffix) {
+        this.ideographicNameSuffix = ideographicNameSuffix;
     }
 
     public String getPhoneticFamilyName() {
@@ -302,19 +308,19 @@ public class PersonName {
         this.phoneticMiddleName = phoneticMiddleName;
     }
 
-    public String getPhoneticPrefix() {
-        return phoneticPrefix;
+    public String getPhoneticNamePrefix() {
+        return phoneticNamePrefix;
     }
 
-    public void setPhoneticPrefix(String phoneticPrefix) {
-        this.phoneticPrefix = phoneticPrefix;
+    public void setPhoneticNamePrefix(String phoneticNamePrefix) {
+        this.phoneticNamePrefix = phoneticNamePrefix;
     }
 
-    public String getPhoneticSuffix() {
-        return phoneticSuffix;
+    public String getPhoneticNameSuffix() {
+        return phoneticNameSuffix;
     }
 
-    public void setPhoneticSuffix(String phoneticSuffix) {
-        this.phoneticSuffix = phoneticSuffix;
+    public void setPhoneticNameSuffix(String phoneticNameSuffix) {
+        this.phoneticNameSuffix = phoneticNameSuffix;
     }
 }
