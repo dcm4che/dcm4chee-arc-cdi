@@ -447,9 +447,12 @@ public class QueryBuilder {
             return null;
 
         BooleanBuilder result = new BooleanBuilder();
-        for (IDWithIssuer pid : pids)
+        boolean joinIssuer = false;
+        for (IDWithIssuer pid : pids) {
+            joinIssuer = joinIssuer || pid.getIssuer() != null;
             result.or(idWithIssuer(QPatientID.patientID.id, pid.getID(),
                     pid.getIssuer()));
+        }
 
         if (!result.hasValue())
             return null;
@@ -460,10 +463,13 @@ public class QueryBuilder {
                     QPatient.patient.linkedPatientIDs.contains(QPatientID.patientID));
         }
 
-        BooleanExpression matchingIDsExists = new HibernateSubQuery()
-                .from(QPatientID.patientID)
-                .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
-                .where(ExpressionUtils.and(
+        HibernateSubQuery subQuery = new HibernateSubQuery()
+                .from(QPatientID.patientID);
+        if (joinIssuer)
+            subQuery = subQuery.leftJoin(QPatientID.patientID.issuer, QIssuer.issuer);
+
+        BooleanExpression matchingIDsExists = subQuery.where(
+                ExpressionUtils.and(
                         matchPatient,
                         result)).exists();
 
@@ -649,15 +655,16 @@ public class QueryBuilder {
         boolean matchUnknown = queryParam.isMatchUnknown();
         BooleanBuilder builder = new BooleanBuilder();
         String accNo = item.getString(Tag.AccessionNumber, "*");
+        Issuer issuerOfAccessionNumber = null;
         if (!accNo.equals("*")) {
-            Issuer issuer = Issuer.valueOf(item
+            issuerOfAccessionNumber = Issuer.valueOf(item
                     .getNestedDataset(Tag.IssuerOfAccessionNumberSequence));
-            if (issuer == null)
-                issuer = queryParam.getDefaultIssuerOfAccessionNumber();
+            if (issuerOfAccessionNumber == null)
+                issuerOfAccessionNumber = queryParam.getDefaultIssuerOfAccessionNumber();
             builder.and(matchUnknown(
                     idWithIssuer(
                             QRequestAttributes.requestAttributes.accessionNumber,
-                            accNo, issuer),
+                            accNo, issuerOfAccessionNumber),
                     QRequestAttributes.requestAttributes.accessionNumber,
                     matchUnknown));
         }
@@ -683,8 +690,10 @@ public class QueryBuilder {
             return null;
 
         HibernateSubQuery subQuery = new HibernateSubQuery()
-                .from(QRequestAttributes.requestAttributes)
-                .leftJoin(
+                .from(QRequestAttributes.requestAttributes);
+
+        if (issuerOfAccessionNumber != null)
+            subQuery.leftJoin(
                         QRequestAttributes.requestAttributes.issuerOfAccessionNumber,
                         QIssuer.issuer);
 
@@ -771,9 +780,12 @@ public class QueryBuilder {
 
     public static HibernateQuery applyStudyLevelJoins(HibernateQuery query,
             Attributes keys, QueryParam queryParam) {
-        query = query
-                .innerJoin(QStudy.study.patient, QPatient.patient)
-                .leftJoin(QStudy.study.issuerOfAccessionNumber, QIssuer.issuer);
+        query = query.innerJoin(QStudy.study.patient, QPatient.patient);
+
+        if (!isUniversalMatching(keys, Tag.AccessionNumber)
+                && !isUniversalMatching(keys.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)))
+                query = query.leftJoin(QStudy.study.issuerOfAccessionNumber, QIssuer.issuer);
+
         return joinIfMatchingKey(query, keys, Tag.ReferringPhysicianName,
                 QStudy.study.referringPhysicianName, QueryBuilder.referringPhysicianName,
                 queryParam.isMatchUnknown());
@@ -794,6 +806,10 @@ public class QueryBuilder {
 
     static boolean isUniversalMatching(Attributes keys, int tag) {
         return keys.getString(tag, "*").equals("*");
+    }
+
+    static boolean isUniversalMatching(Attributes item) {
+        return item == null || item.isEmpty();
     }
 
     static <T> HibernateQuery joinIfMatchingKey(HibernateQuery query,
