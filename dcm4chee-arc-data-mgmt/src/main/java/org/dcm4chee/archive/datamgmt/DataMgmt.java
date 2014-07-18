@@ -38,14 +38,19 @@
 
 package org.dcm4chee.archive.datamgmt;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
+import javax.management.InstanceNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -61,11 +66,18 @@ import javax.xml.ws.WebServiceException;
 
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.json.JSONReader;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.soundex.Soundex;
 import org.dcm4che3.util.TagUtils;
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.ElementDictionary;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtBean;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB;
+import org.dcm4chee.archive.entity.Study;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -84,6 +96,9 @@ public class DataMgmt {
     private HttpServletRequest request;
 
     private static String RSP;
+
+    @Inject
+    Device device;
 
     @Inject
     DataMgmtBean dataManager;
@@ -177,7 +192,7 @@ public class DataMgmt {
             throws Exception {
         HashMap<String, String> query = new HashMap<String, String>();
         try {
-            parseXMLAttributes(in, query);
+            Attributes attrs = parseXMLAttributes(in, query);
             LOG.info("Received XML request for DICOM Header Object Update");
 
             if (query.size() == 0 || level == null)
@@ -192,10 +207,10 @@ public class DataMgmt {
             LOG.info("Performing Update on Level = " + level);
             switch(level)
             {
-            case "PATIENT": LOG.info("Updating patient with uid=" + patientID);break;
-            case "STUDY": LOG.info("Updating study with uid=" + studyInstanceUID);break;
-            case "SERIES": LOG.info("Updating series with uid=" + seriesInstanceUID);break;
-            case "IMAGE": LOG.info("Updating image with uid=" + sopInstanceUID);break;
+            case "PATIENT": LOG.info("Updating patient with uid=" + patientID);updatePatient(attrs,patientID);break;
+            case "STUDY": LOG.info("Updating study with uid=" + studyInstanceUID);updateStudy(attrs,studyInstanceUID);break;
+            case "SERIES": LOG.info("Updating series with uid=" + seriesInstanceUID);updateSeries(attrs,studyInstanceUID,seriesInstanceUID);break;
+            case "IMAGE": LOG.info("Updating image with uid=" + sopInstanceUID);updateInstance(attrs,studyInstanceUID,seriesInstanceUID,sopInstanceUID);break;
             }
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
@@ -210,7 +225,7 @@ public class DataMgmt {
             throws Exception {
         HashMap<String, String> query = new HashMap<String, String>();
         try {
-            parseJSONAttributes(in, query);
+            Attributes attrs = parseJSONAttributes(in, query);
             LOG.info("Received JSON request for DICOM Header Object Update");
             if (query.size() == 0 || level == null)
                 throw new WebApplicationException(
@@ -225,11 +240,12 @@ public class DataMgmt {
             LOG.info("Performing Update on Level = " + level);
             switch(level)
             {
-            case "PATIENT": LOG.info("Updating patient with uid=" + patientID);break;
-            case "STUDY": LOG.info("Updating study with uid=" + studyInstanceUID);break;
-            case "SERIES": LOG.info("Updating series with uid=" + seriesInstanceUID);break;
-            case "IMAGE": LOG.info("Updating image with uid=" + sopInstanceUID);break;
+            case "PATIENT": LOG.info("Updating patient with uid=" + patientID);updatePatient(attrs,patientID);break;
+            case "STUDY": LOG.info("Updating study with uid=" + studyInstanceUID);updateStudy(attrs,studyInstanceUID);break;
+            case "SERIES": LOG.info("Updating series with uid=" + seriesInstanceUID);updateSeries(attrs,studyInstanceUID,seriesInstanceUID);break;
+            case "IMAGE": LOG.info("Updating image with uid=" + sopInstanceUID);updateInstance(attrs,studyInstanceUID,seriesInstanceUID,sopInstanceUID);break;
             }
+            
             
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
@@ -237,7 +253,33 @@ public class DataMgmt {
         return Respond();
     }
 
-    private void parseJSONAttributes(InputStream in,
+    private void updateInstance(Attributes attrs,
+            String studyInstanceUID, String seriesInstanceUID,
+            String sopInstanceUID) {
+        // TODO Auto-generated method stub
+        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        dataManager.updateInstance(arcDevExt,studyInstanceUID,seriesInstanceUID, sopInstanceUID, attrs);
+    }
+
+    private void updateSeries(Attributes attrs,
+            String studyInstanceUID, String seriesInstanceUID) throws InstanceNotFoundException {
+        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        dataManager.updateSeries(arcDevExt,studyInstanceUID,seriesInstanceUID, attrs);
+    }
+
+    private void updateStudy(Attributes attrs,
+            String studyInstanceUID) throws InstanceNotFoundException {
+        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        dataManager.updateStudy(arcDevExt,studyInstanceUID, attrs);
+        
+    }
+
+    private void updatePatient(Attributes attrs, String patientID) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    private Attributes parseJSONAttributes(InputStream in,
             HashMap<String, String> query) throws IOException {
 
         JSONReader reader = new JSONReader(
@@ -259,10 +301,10 @@ public class DataMgmt {
                         ds.getString(ds.tags()[i]));
             }
         }
-
+        return ds;
     }
 
-    private void parseXMLAttributes(InputStream in,
+    private Attributes parseXMLAttributes(InputStream in,
             HashMap<String, String> query) throws SAXException,
             ParserConfigurationException, IOException {
         Attributes ds = new Attributes();
@@ -282,7 +324,6 @@ public class DataMgmt {
                     query.put(dict.keywordOf(ds.tags()[i]),
                             ds.getString(ds.tags()[i]));
                 }
-
             }
         } catch (SAXException e) {
             throw e;
@@ -291,6 +332,7 @@ public class DataMgmt {
         } catch (IOException e) {
             throw e;
         }
+        return ds;
     }
 
     private Response Respond() {
