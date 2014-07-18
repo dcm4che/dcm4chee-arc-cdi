@@ -133,7 +133,7 @@
       <basic name="ideographicNamePrefix">
         <column name="i_name_prefix" column-definition="nvarchar2(255)" />
       </basic>
-      <basic name="ideographicNameSsuffix">
+      <basic name="ideographicNameSuffix">
         <column name="i_name_suffix" column-definition="nvarchar2(255)" />
       </basic>
       <basic name="phoneticFamilyName">
