@@ -170,9 +170,9 @@ public class PropertyMatchPatientSelector implements PatientSelector {
             Patient candidate = iter.next();
 
             PersonName cName = new PersonName(candidate.getAttributes()
-                    .getString(Tag.PersonName));
+                    .getString(Tag.PatientName));
 
-            PersonName iName = new PersonName(attrs.getString(Tag.PersonName));
+            PersonName iName = new PersonName(attrs.getString(Tag.PatientName));
 
             matches = matches
                     && matchAttr(cName.get(Component.FamilyName),
@@ -275,24 +275,47 @@ public class PropertyMatchPatientSelector implements PatientSelector {
         this.demographics = MatchDemographics.valueOf(demographics);
     }
 
+    public void setDemographics(MatchDemographics demographics) {
+        this.demographics = demographics;
+    }
+    
     public void setFamilyName(String familyName) {
         this.familyName = MatchType.valueOf(familyName);
     }
 
+    public void setFamilyName(MatchType familyName) {
+        this.familyName = familyName;
+    }
+    
     public void setGivenName(String givenName) {
         this.givenName = MatchType.valueOf(givenName);
+    }
+
+    public void setGivenName(MatchType givenName) {
+        this.givenName = givenName;
     }
 
     public void setMiddleName(String middleName) {
         this.middleName = MatchType.valueOf(middleName);
     }
+    
+    public void setMiddleName(MatchType middleName) {
+        this.middleName = middleName;
+    }
 
     public void setPatientSex(String patientSex) {
         this.patientSex = MatchType.valueOf(patientSex);
+    }
+    
+    public void setPatientSex(MatchType patientSex) {
+        this.patientSex = patientSex;
     }
 
     public void setPatientBirthDate(String patientBirthDate) {
         this.patientBirthDate = MatchType.valueOf(patientBirthDate);
     }
 
+    public void setPatientBirthDate(MatchType patientBirthDate) {
+        this.patientBirthDate = patientBirthDate;
+    }
 }
