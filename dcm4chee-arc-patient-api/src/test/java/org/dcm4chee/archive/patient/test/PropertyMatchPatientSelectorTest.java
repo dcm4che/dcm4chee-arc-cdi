@@ -69,6 +69,7 @@ import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
 import org.dcm4chee.archive.patient.IDPatientSelector;
+import org.dcm4chee.archive.patient.IssuerMissingException;
 import org.dcm4chee.archive.patient.MatchDemographics;
 import org.dcm4chee.archive.patient.MatchType;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
@@ -161,7 +162,7 @@ public class PropertyMatchPatientSelectorTest {
 
     @Test
     @Transactional(TransactionMode.ROLLBACK)
-    public void testTwoPatientsWithoutIssuerMatchDemographicsFails()
+    public void testTwoPatientsWithoutIssuerMatchDemographics()
             throws Exception {
 
         PatientSelector strict = getSelector(false, MatchDemographics.ALWAYS,
@@ -201,6 +202,74 @@ public class PropertyMatchPatientSelectorTest {
                 new HashSet<String>(Arrays.asList("Jack","Elwood")), names);
     }
 
+    @Test
+    @Transactional(TransactionMode.ROLLBACK)
+    public void testForceIssuerFails()
+            throws Exception {
+
+        PatientSelector strict = getSelector(true, MatchDemographics.ALWAYS,
+                MatchType.STRICT, MatchType.STRICT, MatchType.IGNORE,
+                MatchType.IGNORE);
+        
+        // broad = apply demog if issuer is missing
+        PatientSelector broad = getSelector(true, MatchDemographics.NOISSUER,
+                MatchType.BROAD, MatchType.BROAD, MatchType.IGNORE,
+                MatchType.IGNORE);
+
+        Patient patient1 = initupdateOrCreatePatientOnCStore("1001", false, // noissuer
+                "Blues^Jack", 1, strict);
+        Patient patient2 = initupdateOrCreatePatientOnCStore("1001", false,
+                "Blues^Elwood", // different given
+                1, strict);
+        
+        List<Patient> pats = selectPatientsWithID("1001");
+        
+        int nr_results = pats.size();
+        Set<String> names = new HashSet<String>();
+        for (Patient p : pats) names.add(p.getPatientName().getGivenName());
+        
+         cleanupdateOrCreatePatientOnCStore(new Patient[] { patient1,
+         patient2,});
+        assertEquals(
+                "after feed of patient2, 2 patients should be present",
+                2, nr_results);
+        assertEquals(
+                "remaining names should be Jack and Elwood",
+                new HashSet<String>(Arrays.asList("Jack","Elwood")), names);    
+        }
+    
+    @Test
+    @Transactional(TransactionMode.ROLLBACK)
+    public void testForceIssuerNotFails()
+            throws Exception {
+
+        PatientSelector strict = getSelector(true, MatchDemographics.ALWAYS,
+                MatchType.STRICT, MatchType.STRICT, MatchType.IGNORE,
+                MatchType.IGNORE);
+        
+        Patient patient1 = initupdateOrCreatePatientOnCStore("1001", true,
+                "Blues^Jack", 1, strict);
+        Patient patient2 = initupdateOrCreatePatientOnCStore("1001", true,
+                "Blues^Jack", // different given
+                1, strict);
+        
+        List<Patient> pats = selectPatientsWithID("1001");
+        
+        int nr_results = pats.size();
+        Set<String> names = new HashSet<String>();
+        for (Patient p : pats) names.add(p.getPatientName().getGivenName());
+        
+         cleanupdateOrCreatePatientOnCStore(new Patient[] { patient1,
+         patient2,});
+        assertEquals(
+                "after feed of patient2, 1 patient should be present",
+                1, nr_results);
+        assertEquals(
+                "remaining name should be Jack",
+                new HashSet<String>(Arrays.asList("Jack")), names);    
+        }
+
+    
     private List<Patient> selectPatientsWithID(String id) {
         Query query = em
                 .createQuery("SELECT p.patient from PatientID p where p.id = ?1");
@@ -213,7 +282,7 @@ public class PropertyMatchPatientSelectorTest {
             PatientSelector selector) throws NotSupportedException,
             SystemException, PatientCircularMergedException, SecurityException,
             IllegalStateException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+            HeuristicRollbackException, IssuerMissingException {
         Attributes patientOneAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, name1);
         patientOneAttributes.setString(Tag.PatientID, VR.LO, id1);
