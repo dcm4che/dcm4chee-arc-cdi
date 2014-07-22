@@ -56,9 +56,11 @@ import javax.persistence.TypedQuery;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
@@ -67,6 +69,7 @@ import org.dcm4chee.archive.entity.PersonName;
 import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -333,10 +336,122 @@ public class DataMgmtEJB implements DataMgmtBean {
                     + sopInstanceUID);
 
         Attributes original = instance.getAttributes();
-        
-        //relations
-        
 
+        // relations
+        // Concept name Code Sequence on root level (SR)
+        if (attrs.contains(Tag.ConceptNameCodeSequence)) {
+            Code conceptNameCode = getCode(attrs, Tag.ConceptNameCodeSequence);
+            if (conceptNameCode != null) {
+                instance.setConceptNameCode(conceptNameCode);
+            }
+
+        }
+        
+        // verifying observers
+        if (attrs.contains(Tag.VerifyingObserverSequence)) {
+            Collection<VerifyingObserver> newObservers = getVerifyingObservers(
+                    instance, attrs, original, arcDevExt);
+            if (newObservers != null) {
+                instance.setVerifyingObservers(newObservers);
+            }
+        }
+
+        // ignored
+        if (attrs.contains(Tag.PatientID)
+                || attrs.contains(Tag.OtherPatientIDs)
+                || attrs.contains(Tag.OtherPatientIDsSequence)
+                || attrs.contains(Tag.SOPInstanceUID)
+                || attrs.contains(Tag.StudyInstanceUID)
+                || attrs.contains(Tag.SeriesInstanceUID)) {
+            // no function
+            String ignoredAttr = attrs.contains(Tag.PatientID) ? "PatientID"
+                    : attrs.contains(Tag.OtherPatientIDs) ? "OtherPatientIDs"
+                            : attrs.contains(Tag.OtherPatientIDsSequence) ? "OtherPatientIDsSequence"
+                                    : attrs.contains(Tag.StudyInstanceUID) ? "StudyInstanceUID"
+                                            : attrs.contains(Tag.SeriesInstanceUID) ? "SeriesInstanceUID"
+                                                    : attrs.contains(Tag.SOPInstanceUID) ? "SOPInstanceUID"
+                                                            : "";
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Illegal attributes to modify, Ignoring illegal attributes "
+                        + ignoredAttr);
+            }
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Attributes modified:\n" + attrs.toString());
+        }
+
+        original.update(attrs, original);
+        instance.setAttributes(original,
+                arcDevExt.getAttributeFilter(Entity.Instance),
+                arcDevExt.getFuzzyStr());
+
+        em.flush();
+
+    }
+
+    private Collection<VerifyingObserver> getVerifyingObservers(
+            Instance instance, Attributes attrs, Attributes original,
+            ArchiveDeviceExtension arcDevExt) {
+        Collection<VerifyingObserver> oldObservers = instance
+                .getVerifyingObservers();
+        Sequence verifyingObserversOld = original
+                .getSequence(Tag.VerifyingObserverSequence);
+        Sequence verifyingObserversNew = attrs
+                .getSequence(Tag.VerifyingObserverSequence);
+        // remove deprecated observers
+        if (verifyingObserversOld != null)
+            for (Attributes observer : verifyingObserversOld) {
+                if (!verifyingObserversNew.contains(observer)) {
+                    VerifyingObserver tmp = getVerifyingObserver(observer,
+                            instance, arcDevExt);
+                    oldObservers.remove(tmp);
+                }
+            }
+        // add missing ones
+        for (Attributes observer : verifyingObserversNew) {
+            if (verifyingObserversOld == null
+                    || (verifyingObserversOld != null && !verifyingObserversOld
+                            .contains(observer))) {
+                PersonName verifyingObserverName = PersonName.valueOf(
+                        observer.getString(Tag.VerifyingObserverName),
+                        arcDevExt.getFuzzyStr(), null);
+                if (verifyingObserverName != null)
+                    em.persist(verifyingObserverName);
+                VerifyingObserver newObserver = new VerifyingObserver(observer,
+                        arcDevExt.getFuzzyStr());
+                oldObservers.add(newObserver);
+            }
+        }
+        return oldObservers;
+    }
+
+    private VerifyingObserver getVerifyingObserver(Attributes observerAttrs,
+            Instance instance, ArchiveDeviceExtension arcDevExt) {
+
+        VerifyingObserver tmp = em.find(VerifyingObserver.class,
+                getObserverPK(observerAttrs, arcDevExt.getFuzzyStr()));
+        if (tmp == null) {
+            tmp = new VerifyingObserver(observerAttrs, arcDevExt.getFuzzyStr());
+        }
+
+        return tmp;
+    }
+
+    private long getObserverPK(Attributes observerAttrs, FuzzyStr str) {
+        Query query = em.createQuery("Select o from VerifyingObserver o "
+                + "where o.verifyingObserverName = ?1");
+        query.setParameter(1, PersonName.valueOf(
+                observerAttrs.getString(Tag.VerifyingObserverName), str, null));
+        VerifyingObserver foundObserver =null;
+try{
+    foundObserver = (VerifyingObserver) query
+                .getSingleResult();
+}
+catch(Exception e)
+{
+    //do nothing
+    }
+        return foundObserver != null ? foundObserver.getPk() : -1l;
     }
 
     private Collection<RequestAttributes> getRequestAttributes(Series series,
@@ -409,7 +524,12 @@ public class DataMgmtEJB implements DataMgmtBean {
                 .createNamedQuery(Code.FIND_BY_CODE_VALUE_WITHOUT_SCHEME_VERSION);
         query.setParameter(1, value);
         query.setParameter(2, designator);
-        Code foundCode = (Code) query.getSingleResult();
+        Code foundCode = null;
+        try {
+            foundCode = (Code) query.getSingleResult();
+        } catch (Exception e) {
+            // do nothing
+        }
 
         return foundCode != null ? foundCode.getPk() : -1l;
     }
@@ -420,8 +540,12 @@ public class DataMgmtEJB implements DataMgmtBean {
         query.setParameter(1, local);
         query.setParameter(2, universal);
         query.setParameter(3, universalType);
-        Issuer foundIssuer = (Issuer) query.getSingleResult();
-
+        Issuer foundIssuer = null;
+        try{
+        foundIssuer = (Issuer) query.getSingleResult();
+        }
+        catch(Exception e)
+        {}
         return foundIssuer != null ? foundIssuer.getPk() : -1l;
     }
 
@@ -516,3 +640,49 @@ public class DataMgmtEJB implements DataMgmtBean {
     }
 
 }
+/*
+ * 
+ * private Collection<ContentItem> getContentItems(Instance instance, Attributes
+ * attrs, ArchiveDeviceExtension arcDevExt, Attributes original) {
+ * 
+ * Collection<ContentItem> oldContentItems = instance.getContentItems();
+ * 
+ * Sequence oldContentSequence = original.getSequence(Tag.ContentSequence);
+ * 
+ * Sequence newContentSequence = attrs.getSequence(Tag.ContentSequence);
+ * 
+ * //remove deprecated items if(oldContentSequence!=null) { for(Attributes
+ * oldcontentItemAttr: oldContentSequence) {
+ * if(!newContentSequence.contains(oldcontentItemAttr)) { ContentItem tmp =
+ * getContentItem(oldContentItems,oldcontentItemAttr); if(tmp!=null)
+ * oldContentItems.remove(tmp); } } } for(Attributes newItem:
+ * newContentSequence){ if(oldContentSequence==null || (oldContentSequence!=null
+ * && !oldContentSequence.contains(newItem))) { String relationShipType =
+ * newItem.getString(Tag.RelationshipType); String valueType =
+ * newItem.getString(Tag.ValueType); Code conceptNameCode = getCode(newItem,
+ * Tag.ConceptNameCodeSequence); Code conceptCode = getCode(newItem,
+ * Tag.ConceptCodeSequence);
+ * 
+ * 
+ * } } }
+ * 
+ * private ContentItem getContentItem(Collection<ContentItem> oldContentItems,
+ * Attributes oldcontentItemAttr) { for(ContentItem item:oldContentItems) {
+ * if(item.getRelationshipType().compareTo(oldcontentItemAttr.getString(Tag.
+ * RelationshipType))==0) { Sequence oldConceptNameCode =
+ * oldcontentItemAttr.getSequence(Tag.ConceptNameCodeSequence); String
+ * oldConceptNameCodeValue = oldConceptNameCode.get(0).getString(Tag.CodeValue);
+ * String oldConceptNameCodeDesignator =
+ * oldConceptNameCode.get(0).getString(Tag.CodingSchemeDesignator);
+ * if(item.getConceptName().getCodeValue().compareTo(oldConceptNameCodeValue)==0
+ * && item.getConceptName().getCodingSchemeDesignator().compareTo(
+ * oldConceptNameCodeDesignator)==0) { Sequence oldConceptCode =
+ * oldcontentItemAttr.getSequence(Tag.ConceptCodeSequence); String
+ * oldConceptCodeValue = oldConceptCode.get(0).getString(Tag.CodeValue); String
+ * oldConceptCodeDesignator =
+ * oldConceptCode.get(0).getString(Tag.CodingSchemeDesignator);
+ * if(item.getConceptCode().getCodeValue().compareTo(oldConceptCodeValue)==0 &&
+ * item
+ * .getConceptCode().getCodingSchemeDesignator().compareTo(oldConceptCodeDesignator
+ * )==0) { return item; } } } } return null; }
+ */
