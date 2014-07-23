@@ -38,13 +38,9 @@
 
 package org.dcm4chee.archive.datamgmt;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.HashMap;
 
 import javax.enterprise.context.RequestScoped;
@@ -67,17 +63,14 @@ import javax.xml.ws.WebServiceException;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.json.JSONReader;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.soundex.Soundex;
 import org.dcm4che3.util.TagUtils;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.ElementDictionary;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtBean;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB;
-import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.Issuer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -105,21 +98,61 @@ public class DataMgmt {
 
     //Patient Level
     @POST
-    @Path("updateXML/patients/{PatientID}")
+    @Path("updateXML/patients/{PatientID}/{issuer:.*}")
     @Consumes({ "application/xml" })
     public Response updateXMLPatient(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("PatientID") String patientID)
+            @PathParam("PatientID") String patientID,
+            @PathParam("issuer") String issuer)
             throws Exception {
-        return updateXML("PATIENT",patientID, null, null, null, in);
+        String[] issuerVals = issuer.split("/");
+        Issuer matchingIssuer=null;
+        if(issuerVals.length>0)
+        {
+            if(issuerVals.length==1)
+            {
+                matchingIssuer =  dataManager.getIssuer(issuerVals[0],null,null);
+            }
+            else if(issuerVals.length==2)
+            {
+                matchingIssuer =  dataManager.getIssuer(null,issuerVals[0],issuerVals[1]);
+            }
+            else if(issuerVals.length==3)
+            {
+                matchingIssuer =  dataManager.getIssuer(issuerVals[0],issuerVals[1],issuerVals[2]);
+            }
+        }
+             
+        IDWithIssuer id = new IDWithIssuer(patientID,matchingIssuer);
+        return updateXML("PATIENT",id, null, null, null, in);
     }
 
     @POST
-    @Path("updateJSON/patients/{PatientID}")
+    @Path("updateJSON/patients/{PatientID}/{issuer:.*}")
     @Consumes({ "application/json" })
     public Response updateJSONPatient(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("PatientID") String patientID)
+            @PathParam("PatientID") String patientID,
+            @PathParam("issuer") String issuer)
             throws Exception {
-        return updateJSON("PATIENT", patientID, null, null, null, in);
+        String[] issuerVals = issuer.split("/");
+        Issuer matchingIssuer=null;
+        if(issuerVals.length>0)
+        {
+            if(issuerVals.length==1)
+            {
+                matchingIssuer =  dataManager.getIssuer(issuerVals[0],null,null);
+            }
+            else if(issuerVals.length==2)
+            {
+                matchingIssuer =  dataManager.getIssuer(null,issuerVals[0],issuerVals[1]);
+            }
+            else if(issuerVals.length==3)
+            {
+                matchingIssuer =  dataManager.getIssuer(issuerVals[0],issuerVals[1],issuerVals[2]);
+            }
+        }
+             
+        IDWithIssuer id = new IDWithIssuer(patientID,matchingIssuer);
+        return updateJSON("PATIENT", id, null, null, null, in);
     }
     
     //Study Level
@@ -185,7 +218,7 @@ public class DataMgmt {
         return updateJSON("IMAGE",null, studyInstanceUID, seriesInstanceUID, sopInstanceUID, in);
     }
     
-    public Response updateXML(String level,String patientID, 
+    public Response updateXML(String level,IDWithIssuer id, 
             String studyInstanceUID, 
             String seriesInstanceUID,
             String sopInstanceUID, InputStream in)
@@ -207,7 +240,7 @@ public class DataMgmt {
             LOG.info("Performing Update on Level = " + level);
             switch(level)
             {
-            case "PATIENT": LOG.info("Updating patient with uid=" + patientID);updatePatient(attrs,patientID);break;
+            case "PATIENT": LOG.info("Updating patient with uid=" + id);updatePatient(attrs,id);break;
             case "STUDY": LOG.info("Updating study with uid=" + studyInstanceUID);updateStudy(attrs,studyInstanceUID);break;
             case "SERIES": LOG.info("Updating series with uid=" + seriesInstanceUID);updateSeries(attrs,studyInstanceUID,seriesInstanceUID);break;
             case "IMAGE": LOG.info("Updating image with uid=" + sopInstanceUID);updateInstance(attrs,studyInstanceUID,seriesInstanceUID,sopInstanceUID);break;
@@ -218,7 +251,7 @@ public class DataMgmt {
         return Respond();
     }
 
-    public Response updateJSON(String level,String patientID, 
+    public Response updateJSON(String level,IDWithIssuer id, 
             String studyInstanceUID, 
             String seriesInstanceUID,
             String sopInstanceUID, InputStream in)
@@ -240,7 +273,7 @@ public class DataMgmt {
             LOG.info("Performing Update on Level = " + level);
             switch(level)
             {
-            case "PATIENT": LOG.info("Updating patient with uid=" + patientID);updatePatient(attrs,patientID);break;
+            case "PATIENT": LOG.info("Updating patient with uid=" + id);updatePatient(attrs,id);break;
             case "STUDY": LOG.info("Updating study with uid=" + studyInstanceUID);updateStudy(attrs,studyInstanceUID);break;
             case "SERIES": LOG.info("Updating series with uid=" + seriesInstanceUID);updateSeries(attrs,studyInstanceUID,seriesInstanceUID);break;
             case "IMAGE": LOG.info("Updating image with uid=" + sopInstanceUID);updateInstance(attrs,studyInstanceUID,seriesInstanceUID,sopInstanceUID);break;
@@ -256,7 +289,6 @@ public class DataMgmt {
     private void updateInstance(Attributes attrs,
             String studyInstanceUID, String seriesInstanceUID,
             String sopInstanceUID) {
-        // TODO Auto-generated method stub
         ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
         dataManager.updateInstance(arcDevExt,studyInstanceUID,seriesInstanceUID, sopInstanceUID, attrs);
     }
@@ -274,8 +306,9 @@ public class DataMgmt {
         
     }
 
-    private void updatePatient(Attributes attrs, String patientID) {
-        // TODO Auto-generated method stub
+    private void updatePatient(Attributes attrs, IDWithIssuer id) {
+        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        dataManager.updatePatient(arcDevExt,id, attrs);
         
     }
 

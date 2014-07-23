@@ -46,7 +46,6 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.ejb.Stateless;
-import javax.management.InstanceNotFoundException;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
@@ -54,17 +53,18 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.PatientID;
 import org.dcm4chee.archive.entity.PersonName;
 import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
@@ -193,6 +193,59 @@ public class DataMgmtEJB implements DataMgmtBean {
     @Override
     public Study getStudy(String studyInstanceUID) {
         return em.find(Study.class, getStudyPK(studyInstanceUID));
+    }
+
+    @Override
+    public void updatePatient(ArchiveDeviceExtension arcDevExt,
+            IDWithIssuer patientID, Attributes attrs) throws EntityNotFoundException {
+        Patient patient = getPatient(patientID);
+        if (patient == null)
+            throw new EntityNotFoundException("Unable to find patient "
+                    + patientID);
+
+        Attributes original = patient.getAttributes();
+
+        // relations
+        // patient if (add Only)
+        if (attrs.contains(Tag.PatientID)
+                || attrs.contains(Tag.OtherPatientIDs)
+                || attrs.contains(Tag.OtherPatientIDsSequence)) {
+            Collection<PatientID> patientIDs = getPatientIDs(patient, original,
+                    attrs, arcDevExt);
+            if (patientIDs != null && patientIDs.size() > 0) {
+                patient.setPatientIDs(patientIDs);
+            }
+        }
+        // name
+        if (attrs.contains(Tag.PatientName)) {
+            PersonName name = PersonName.valueOf(
+                    attrs.getString(Tag.PatientName), arcDevExt.getFuzzyStr(),
+                    null);
+            if (name != null)
+                em.persist(name);
+            patient.setPatientName(name);
+        }
+
+        if (attrs.contains(Tag.SeriesInstanceUID)
+                || attrs.contains(Tag.SeriesInstanceUID)
+                || attrs.contains(Tag.StudyInstanceUID)) {
+            // no function
+            String ignoredAttr = attrs.contains(Tag.StudyInstanceUID) ? "StudyInstanceUID"
+                    : attrs.contains(Tag.SeriesInstanceUID) ? "SeriesInstanceUID"
+                            : "";
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Illegal attributes to modify, Ignoring illegal attributes "
+                        + ignoredAttr);
+            }
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Attributes modified:\n" + attrs.toString());
+        }
+        original.update(attrs, original);
+        patient.setAttributes(original,
+                arcDevExt.getAttributeFilter(Entity.Patient),
+                arcDevExt.getFuzzyStr());
+        em.flush();
     }
 
     @Override
@@ -346,7 +399,7 @@ public class DataMgmtEJB implements DataMgmtBean {
             }
 
         }
-        
+
         // verifying observers
         if (attrs.contains(Tag.VerifyingObserverSequence)) {
             Collection<VerifyingObserver> newObservers = getVerifyingObservers(
@@ -387,6 +440,121 @@ public class DataMgmtEJB implements DataMgmtBean {
 
         em.flush();
 
+    }
+
+    private Collection<PatientID> getPatientIDs(Patient patient,
+            Attributes original, Attributes attrs,
+            ArchiveDeviceExtension arcDevExt) {
+        Collection<PatientID> oldIDs = patient.getPatientIDs();
+        Sequence newOtherPatientIDsSeq = attrs
+                .getSequence(Tag.OtherPatientIDsSequence);
+        // used in case the item in the OtherPatientIDsSequence has no issuer
+        Issuer fallbackIssuer = null;
+        // add missing ones
+        if (attrs.contains(Tag.PatientID)) {
+            Issuer issuer = getIssuer(attrs, original);
+            fallbackIssuer = issuer;
+            PatientID id = getPatientID(attrs.getString(Tag.PatientID), issuer);
+            id.setPatient(patient);
+            if (!oldIDs.contains(id))
+                oldIDs.add(id);
+        }
+        if (attrs.contains(Tag.OtherPatientIDs)) {
+            Issuer issuer = getIssuer(attrs, original);
+            fallbackIssuer = issuer;
+            PatientID id = getPatientID(attrs.getString(Tag.OtherPatientIDs),
+                    issuer);
+            if (!oldIDs.contains(id))
+                oldIDs.add(id);
+        }
+        if(newOtherPatientIDsSeq!=null)
+        for (Attributes otherPatientIDAttrs : newOtherPatientIDsSeq) {
+
+            Issuer issuer = null;
+            if (otherPatientIDAttrs.contains(Tag.IssuerOfPatientID)
+                    || otherPatientIDAttrs
+                            .contains(Tag.IssuerOfPatientIDQualifiersSequence)) {
+                String local, universal = null, universalType = null;
+                if (otherPatientIDAttrs
+                        .getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
+                        && otherPatientIDAttrs.getSequence(
+                                Tag.IssuerOfPatientIDQualifiersSequence).size() > 0) {
+                    Sequence tmp = otherPatientIDAttrs
+                            .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
+                    universal = tmp.get(0).getString(Tag.UniversalEntityID);
+                    universalType = tmp.get(0).getString(
+                            Tag.UniversalEntityIDType);
+                }
+                local = otherPatientIDAttrs.getString(Tag.IssuerOfPatientID);
+                issuer = getIssuer(local, universal, universalType);
+
+            }
+            if (issuer == null)
+                issuer = fallbackIssuer;
+            PatientID id = getPatientID(
+                    otherPatientIDAttrs.getString(Tag.PatientID), issuer);
+            if (!oldIDs.contains(id))
+                oldIDs.add(id);
+        }
+
+        return oldIDs;
+    }
+
+    private Issuer getIssuer(Attributes attrs, Attributes original) {
+        Issuer issuer = null;
+        if (attrs.contains(Tag.IssuerOfPatientID)
+                || attrs.contains(Tag.IssuerOfPatientIDQualifiersSequence)) {
+            String local, universal = null, universalType = null;
+            if (attrs.getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
+                    && attrs.getSequence(
+                            Tag.IssuerOfPatientIDQualifiersSequence).size() > 0) {
+                Sequence tmp = attrs
+                        .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
+                universal = tmp.get(0).getString(Tag.UniversalEntityID);
+                universalType = tmp.get(0).getString(Tag.UniversalEntityIDType);
+            }
+            local = attrs.getString(Tag.IssuerOfPatientID);
+            issuer = getIssuer(local, universal, universalType);
+
+        } else if (original.contains(Tag.IssuerOfPatientID)) {
+            String local, universal = null, universalType = null;
+            if (original.getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
+                    && original.getSequence(
+                            Tag.IssuerOfPatientIDQualifiersSequence).size() > 0) {
+                Sequence tmp = original
+                        .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
+                universal = tmp.get(0).getString(Tag.UniversalEntityID);
+                universalType = tmp.get(0).getString(Tag.UniversalEntityIDType);
+            }
+            local = original.getString(Tag.IssuerOfPatientID);
+            issuer = getIssuer(local, universal, universalType);
+
+        }
+        return issuer;
+    }
+
+    private PatientID getPatientID(String string, Issuer issuer) {
+        Query query = em
+                .createQuery("Select pid from PatientID pid where (pid.id = ?1 AND pid.issuer = ?2) OR pid.id=?1");
+        query.setParameter(1, string);
+        query.setParameter(2, issuer);
+        PatientID foundID = null;
+        try {
+            foundID = (PatientID) query.getSingleResult();
+        } catch (Exception e) {
+        }
+        if (foundID == null) {
+            foundID = new PatientID();
+            foundID.setID(string);
+            foundID.setIssuer(issuer);
+            em.persist(foundID);
+        }
+        foundID.setIssuer(issuer);
+        return foundID;
+    }
+
+    private Patient getPatient(IDWithIssuer patientID) {
+        return em.find(Patient.class, getPatientPK(patientID));
     }
 
     private Collection<VerifyingObserver> getVerifyingObservers(
@@ -442,15 +610,12 @@ public class DataMgmtEJB implements DataMgmtBean {
                 + "where o.verifyingObserverName = ?1");
         query.setParameter(1, PersonName.valueOf(
                 observerAttrs.getString(Tag.VerifyingObserverName), str, null));
-        VerifyingObserver foundObserver =null;
-try{
-    foundObserver = (VerifyingObserver) query
-                .getSingleResult();
-}
-catch(Exception e)
-{
-    //do nothing
-    }
+        VerifyingObserver foundObserver = null;
+        try {
+            foundObserver = (VerifyingObserver) query.getSingleResult();
+        } catch (Exception e) {
+            // do nothing
+        }
         return foundObserver != null ? foundObserver.getPk() : -1l;
     }
 
@@ -541,11 +706,10 @@ catch(Exception e)
         query.setParameter(2, universal);
         query.setParameter(3, universalType);
         Issuer foundIssuer = null;
-        try{
-        foundIssuer = (Issuer) query.getSingleResult();
+        try {
+            foundIssuer = (Issuer) query.getSingleResult();
+        } catch (Exception e) {
         }
-        catch(Exception e)
-        {}
         return foundIssuer != null ? foundIssuer.getPk() : -1l;
     }
 
@@ -558,6 +722,18 @@ catch(Exception e)
         String local = issuerAttrs.getString(Tag.LocalNamespaceEntityID);
         String universal = issuerAttrs.getString(Tag.UniversalEntityID);
         String universalType = issuerAttrs.getString(Tag.UniversalEntityIDType);
+        Issuer issuer = em.find(Issuer.class,
+                getIssuerPK(local, universal, universalType));
+        if (issuer == null) {
+            issuer = new Issuer(local, universal, universalType);
+            em.persist(issuer);
+        }
+
+        return issuer;
+    }
+
+    public Issuer getIssuer(String local, String universal,
+            String universalType) {
         Issuer issuer = em.find(Issuer.class,
                 getIssuerPK(local, universal, universalType));
         if (issuer == null) {
@@ -605,38 +781,56 @@ catch(Exception e)
     }
 
     private long getInstancePK(String sopInstanceUID) {
-        Instance inst = (Instance) em
-                .createQuery(
-                        "SELECT i FROM Instance i "
-                                + "WHERE i.sopInstanceUID = ?1 ")
-                .setParameter(1, sopInstanceUID).getSingleResult();
-        return inst.getPk();
+        Instance inst = null;
+        try {
+            inst = (Instance) em
+                    .createQuery(
+                            "SELECT i FROM Instance i "
+                                    + "WHERE i.sopInstanceUID = ?1 ")
+                    .setParameter(1, sopInstanceUID).getSingleResult();
+        } catch (Exception e) {
+        }
+        return inst != null ? inst.getPk() : -1l;
     }
 
     private long getStudyPK(String studyInstanceUID) {
-        Study study = (Study) em
-                .createQuery(
-                        "SELECT i FROM Study i "
-                                + "WHERE i.studyInstanceUID = ?1 ")
-                .setParameter(1, studyInstanceUID).getSingleResult();
-        return study.getPk();
+        Study study = null;
+        try {
+            study = (Study) em
+                    .createQuery(
+                            "SELECT i FROM Study i "
+                                    + "WHERE i.studyInstanceUID = ?1 ")
+                    .setParameter(1, studyInstanceUID).getSingleResult();
+        } catch (Exception e) {
+        }
+
+        return study != null ? study.getPk() : -1l;
     }
 
     private long getSeriesPK(String seriesInstanceUID) {
-        Series series = (Series) em
-                .createQuery(
-                        "SELECT i FROM Series i "
-                                + "WHERE i.seriesInstanceUID = ?1 ")
-                .setParameter(1, seriesInstanceUID).getSingleResult();
-        return series.getPk();
+        Series series = null;
+        try {
+            series = (Series) em
+                    .createQuery(
+                            "SELECT i FROM Series i "
+                                    + "WHERE i.seriesInstanceUID = ?1 ")
+                    .setParameter(1, seriesInstanceUID).getSingleResult();
+        } catch (Exception e) {
+        }
+        return series != null ? series.getPk() : -1l;
     }
 
-    private long getPatientPK(String patientID) {
-        Patient patient = (Patient) em
-                .createQuery(
-                        "SELECT i FROM Patient i " + "WHERE i.patientID = ?1 ")
-                .setParameter(1, patientID).getSingleResult();
-        return patient.getPk();
+    private long getPatientPK(IDWithIssuer patientID) {
+        Patient patient = null;
+        if(patientID.getIssuer()!=null){
+        try {
+             PatientID id = getPatientID(patientID.getID(),(Issuer)patientID.getIssuer());
+             patient = id.getPatient();
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+        }
+        }
+        return patient != null ? patient.getPk() : -1l;
     }
 
 }
