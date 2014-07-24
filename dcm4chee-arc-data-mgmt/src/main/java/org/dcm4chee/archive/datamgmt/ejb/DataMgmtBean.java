@@ -81,4 +81,7 @@ public interface DataMgmtBean {
     boolean moveStudy(String studyInstanceUID, IDWithIssuer id);
     boolean splitStudy(String studyInstanceUID, String seriesInstanceUID,
             String targetStudyInstanceUID);
+    boolean splitSeries(String studyInstanceUID, String seriesInstanceUID,
+            String sopInstanceUID, String targetStudyInstanceUID,
+            String targetSeriesInstanceUID);
 }

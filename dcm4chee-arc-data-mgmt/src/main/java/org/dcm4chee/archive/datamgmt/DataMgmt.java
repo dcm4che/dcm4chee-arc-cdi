@@ -97,35 +97,31 @@ public class DataMgmt {
     @Inject
     DataMgmtBean dataManager;
 
-    //Patient Level
-    //update
+    // Patient Level
+    // update
     @POST
     @Path("updateXML/patients/{PatientID}/{issuer:.*}")
     @Consumes({ "application/xml" })
     public Response updateXMLPatient(@Context UriInfo uriInfo, InputStream in,
             @PathParam("PatientID") String patientID,
-            @PathParam("issuer") String issuer)
-            throws Exception {
+            @PathParam("issuer") String issuer) throws Exception {
         String[] issuerVals = issuer.split("/");
-        Issuer matchingIssuer=null;
-        if(issuerVals.length>0)
-        {
-            if(issuerVals.length==1)
-            {
-                matchingIssuer =  dataManager.getIssuer(issuerVals[0],null,null);
-            }
-            else if(issuerVals.length==2)
-            {
-                matchingIssuer =  dataManager.getIssuer(null,issuerVals[0],issuerVals[1]);
-            }
-            else if(issuerVals.length==3)
-            {
-                matchingIssuer =  dataManager.getIssuer(issuerVals[0],issuerVals[1],issuerVals[2]);
+        Issuer matchingIssuer = null;
+        if (issuerVals.length > 0) {
+            if (issuerVals.length == 1) {
+                matchingIssuer = dataManager.getIssuer(issuerVals[0], null,
+                        null);
+            } else if (issuerVals.length == 2) {
+                matchingIssuer = dataManager.getIssuer(null, issuerVals[0],
+                        issuerVals[1]);
+            } else if (issuerVals.length == 3) {
+                matchingIssuer = dataManager.getIssuer(issuerVals[0],
+                        issuerVals[1], issuerVals[2]);
             }
         }
-             
-        IDWithIssuer id = new IDWithIssuer(patientID,matchingIssuer);
-        return updateXML("PATIENT",id, null, null, null, in);
+
+        IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
+        return updateXML("PATIENT", id, null, null, null, in);
     }
 
     @POST
@@ -133,72 +129,69 @@ public class DataMgmt {
     @Consumes({ "application/json" })
     public Response updateJSONPatient(@Context UriInfo uriInfo, InputStream in,
             @PathParam("PatientID") String patientID,
-            @PathParam("issuer") String issuer)
-            throws Exception {
+            @PathParam("issuer") String issuer) throws Exception {
         String[] issuerVals = issuer.split("/");
-        Issuer matchingIssuer=null;
-        if(issuerVals.length>0)
-        {
-            if(issuerVals.length==1)
-            {
-                matchingIssuer =  dataManager.getIssuer(issuerVals[0],null,null);
-            }
-            else if(issuerVals.length==2)
-            {
-                matchingIssuer =  dataManager.getIssuer(null,issuerVals[0],issuerVals[1]);
-            }
-            else if(issuerVals.length==3)
-            {
-                matchingIssuer =  dataManager.getIssuer(issuerVals[0],issuerVals[1],issuerVals[2]);
+        Issuer matchingIssuer = null;
+        if (issuerVals.length > 0) {
+            if (issuerVals.length == 1) {
+                matchingIssuer = dataManager.getIssuer(issuerVals[0], null,
+                        null);
+            } else if (issuerVals.length == 2) {
+                matchingIssuer = dataManager.getIssuer(null, issuerVals[0],
+                        issuerVals[1]);
+            } else if (issuerVals.length == 3) {
+                matchingIssuer = dataManager.getIssuer(issuerVals[0],
+                        issuerVals[1], issuerVals[2]);
             }
         }
-             
-        IDWithIssuer id = new IDWithIssuer(patientID,matchingIssuer);
+
+        IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
         return updateJSON("PATIENT", id, null, null, null, in);
     }
-    //move study
+
+    // move study
     @GET
     @Path("moveStudy/studies/{StudyInstanceUID}/patients/{PatientID}/{issuer:.*}")
     public Response moveStudy(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("PatientID") String patientID,
-            @PathParam("issuer") String issuer){
+            @PathParam("issuer") String issuer) {
         String[] issuerVals = issuer.split("/");
-        Issuer matchingIssuer=null;
-        if(issuerVals.length>0)
-        {
-            if(issuerVals.length==1)
-            {
-                matchingIssuer =  dataManager.getIssuer(issuerVals[0],null,null);
-            }
-            else if(issuerVals.length==2)
-            {
-                matchingIssuer =  dataManager.getIssuer(null,issuerVals[0],issuerVals[1]);
-            }
-            else if(issuerVals.length==3)
-            {
-                matchingIssuer =  dataManager.getIssuer(issuerVals[0],issuerVals[1],issuerVals[2]);
+        Issuer matchingIssuer = null;
+        if (issuerVals.length > 0) {
+            if (issuerVals.length == 1) {
+                matchingIssuer = dataManager.getIssuer(issuerVals[0], null,
+                        null);
+            } else if (issuerVals.length == 2) {
+                matchingIssuer = dataManager.getIssuer(null, issuerVals[0],
+                        issuerVals[1]);
+            } else if (issuerVals.length == 3) {
+                matchingIssuer = dataManager.getIssuer(issuerVals[0],
+                        issuerVals[1], issuerVals[2]);
             }
         }
-             
-        IDWithIssuer id = new IDWithIssuer(patientID,matchingIssuer);
-        return moveStudy(studyInstanceUID,id);
-    }
-    private Response moveStudy(String studyInstanceUID, IDWithIssuer id) {
-        boolean moved = dataManager.moveStudy(studyInstanceUID,id);
-        Response rspMoved = Response.status(Status.OK).entity("Study Moved Successfully").build();
-        Response rspError = Response.status(Status.CONFLICT).entity("Error: Study Not Moved").build();
-        return moved?rspMoved:rspError;
+
+        IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
+        return moveStudy(studyInstanceUID, id);
     }
 
-    //Study Level
+    private Response moveStudy(String studyInstanceUID, IDWithIssuer id) {
+        boolean moved = dataManager.moveStudy(studyInstanceUID, id);
+        Response rspMoved = Response.status(Status.OK)
+                .entity("Study Moved Successfully").build();
+        Response rspError = Response.status(Status.CONFLICT)
+                .entity("Error: Study Not Moved").build();
+        return moved ? rspMoved : rspError;
+    }
+
+    // Study Level
     @POST
     @Path("updateXML/studies/{StudyInstanceUID}")
     @Consumes({ "application/xml" })
     public Response updateXMLStudies(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID)
             throws Exception {
-        return updateXML("STUDY",null, studyInstanceUID, null, null, in);
+        return updateXML("STUDY", null, studyInstanceUID, null, null, in);
     }
 
     @POST
@@ -211,18 +204,21 @@ public class DataMgmt {
     }
 
     @GET
-    @Path ("splitStudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
+    @Path("splitStudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
     public Response splitStudy(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("TargetStudyInstanceUID") String targetStudyInstanceUID)
-            {
-        boolean split = dataManager.splitStudy(studyInstanceUID, seriesInstanceUID, targetStudyInstanceUID);
-        Response rspSplit = Response.status(Status.OK).entity("Study Split Successfully").build();
-        Response rspError = Response.status(Status.CONFLICT).entity("Error: Study Not Split").build();
-        return split?rspSplit:rspError;
-            }
-    //Series Level
+            @PathParam("TargetStudyInstanceUID") String targetStudyInstanceUID) {
+        boolean split = dataManager.splitStudy(studyInstanceUID,
+                seriesInstanceUID, targetStudyInstanceUID);
+        Response rspSplit = Response.status(Status.OK)
+                .entity("Study Split Successfully").build();
+        Response rspError = Response.status(Status.CONFLICT)
+                .entity("Error: Study Not Split").build();
+        return split ? rspSplit : rspError;
+    }
+
+    // Series Level
     @POST
     @Path("updateXML/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
     @Consumes({ "application/xml" })
@@ -230,7 +226,8 @@ public class DataMgmt {
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID)
             throws Exception {
-        return updateXML("SERIES",null, studyInstanceUID, seriesInstanceUID, null, in);
+        return updateXML("SERIES", null, studyInstanceUID, seriesInstanceUID,
+                null, in);
     }
 
     @POST
@@ -240,45 +237,65 @@ public class DataMgmt {
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID)
             throws Exception {
-        return updateJSON("SERIES",null, studyInstanceUID, seriesInstanceUID, null, in);
+        return updateJSON("SERIES", null, studyInstanceUID, seriesInstanceUID,
+                null, in);
     }
 
-    //Instance Level
+    @GET
+    @Path("splitSeries/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}/targetstudies/{TargetStudyInstanceUID}/targetseries/{TargetSeriesInstanceUID}")
+    public Response splitSeries(@Context UriInfo uriInfo, InputStream in,
+            @PathParam("StudyInstanceUID") String studyInstanceUID,
+            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
+            @PathParam("SOPInstanceUID") String sopInstanceUID,
+            @PathParam("TargetStudyInstanceUID") String targetStudyInstanceUID,
+            @PathParam("TargetSeriesInstanceUID") String targetSeriesInstanceUID) {
+        boolean split = dataManager.splitSeries(studyInstanceUID,
+                seriesInstanceUID, sopInstanceUID, targetStudyInstanceUID,
+                targetSeriesInstanceUID);
+        Response rspSplit = Response.status(Status.OK)
+                .entity("Series Split Successfully").build();
+        Response rspError = Response.status(Status.CONFLICT)
+                .entity("Error: Series Not Split").build();
+        return split ? rspSplit : rspError;
+    }
+
+    // Instance Level
     @POST
     @Path("updateXML/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
     @Consumes({ "application/xml" })
-    public Response updateXMLInstances(@Context UriInfo uriInfo, InputStream in,
+    public Response updateXMLInstances(@Context UriInfo uriInfo,
+            InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
             @PathParam("SOPInstanceUID") String sopInstanceUID)
             throws Exception {
-        return updateXML("IMAGE",null, studyInstanceUID, seriesInstanceUID, sopInstanceUID, in);
+        return updateXML("IMAGE", null, studyInstanceUID, seriesInstanceUID,
+                sopInstanceUID, in);
     }
 
     @POST
     @Path("updateJSON/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
     @Consumes({ "application/json" })
-    public Response updateJSONInstances(@Context UriInfo uriInfo, InputStream in,
+    public Response updateJSONInstances(@Context UriInfo uriInfo,
+            InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
             @PathParam("SOPInstanceUID") String sopInstanceUID)
             throws Exception {
-        return updateJSON("IMAGE",null, studyInstanceUID, seriesInstanceUID, sopInstanceUID, in);
+        return updateJSON("IMAGE", null, studyInstanceUID, seriesInstanceUID,
+                sopInstanceUID, in);
     }
-    
-    public Response updateXML(String level,IDWithIssuer id, 
-            String studyInstanceUID, 
-            String seriesInstanceUID,
-            String sopInstanceUID, InputStream in)
-            throws Exception {
+
+    public Response updateXML(String level, IDWithIssuer id,
+            String studyInstanceUID, String seriesInstanceUID,
+            String sopInstanceUID, InputStream in) throws Exception {
         HashMap<String, String> query = new HashMap<String, String>();
         try {
             Attributes attrs = parseXMLAttributes(in, query);
             LOG.info("Received XML request for DICOM Header Object Update");
 
             if (query.size() == 0 || level == null)
-                throw new WebApplicationException(
-                        "Unable to decide level");
+                throw new WebApplicationException("Unable to decide level");
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Received Attributes to update");
                 for (String key : query.keySet()) {
@@ -286,12 +303,24 @@ public class DataMgmt {
                 }
             }
             LOG.info("Performing Update on Level = " + level);
-            switch(level)
-            {
-            case "PATIENT": LOG.info("Updating patient with uid=" + id);updatePatient(attrs,id);break;
-            case "STUDY": LOG.info("Updating study with uid=" + studyInstanceUID);updateStudy(attrs,studyInstanceUID);break;
-            case "SERIES": LOG.info("Updating series with uid=" + seriesInstanceUID);updateSeries(attrs,studyInstanceUID,seriesInstanceUID);break;
-            case "IMAGE": LOG.info("Updating image with uid=" + sopInstanceUID);updateInstance(attrs,studyInstanceUID,seriesInstanceUID,sopInstanceUID);break;
+            switch (level) {
+            case "PATIENT":
+                LOG.info("Updating patient with uid=" + id);
+                updatePatient(attrs, id);
+                break;
+            case "STUDY":
+                LOG.info("Updating study with uid=" + studyInstanceUID);
+                updateStudy(attrs, studyInstanceUID);
+                break;
+            case "SERIES":
+                LOG.info("Updating series with uid=" + seriesInstanceUID);
+                updateSeries(attrs, studyInstanceUID, seriesInstanceUID);
+                break;
+            case "IMAGE":
+                LOG.info("Updating image with uid=" + sopInstanceUID);
+                updateInstance(attrs, studyInstanceUID, seriesInstanceUID,
+                        sopInstanceUID);
+                break;
             }
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
@@ -299,19 +328,16 @@ public class DataMgmt {
         return Respond();
     }
 
-    public Response updateJSON(String level,IDWithIssuer id, 
-            String studyInstanceUID, 
-            String seriesInstanceUID,
-            String sopInstanceUID, InputStream in)
-            throws Exception {
+    public Response updateJSON(String level, IDWithIssuer id,
+            String studyInstanceUID, String seriesInstanceUID,
+            String sopInstanceUID, InputStream in) throws Exception {
         HashMap<String, String> query = new HashMap<String, String>();
         try {
             Attributes attrs = parseJSONAttributes(in, query);
             LOG.info("Received JSON request for DICOM Header Object Update");
             if (query.size() == 0 || level == null)
-                throw new WebApplicationException(
-                        new Exception("Unable to decide level"),
-                        Response.Status.BAD_REQUEST);
+                throw new WebApplicationException(new Exception(
+                        "Unable to decide level"), Response.Status.BAD_REQUEST);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Received Attributes to update");
                 for (String key : query.keySet()) {
@@ -319,45 +345,61 @@ public class DataMgmt {
                 }
             }
             LOG.info("Performing Update on Level = " + level);
-            switch(level)
-            {
-            case "PATIENT": LOG.info("Updating patient with uid=" + id);updatePatient(attrs,id);break;
-            case "STUDY": LOG.info("Updating study with uid=" + studyInstanceUID);updateStudy(attrs,studyInstanceUID);break;
-            case "SERIES": LOG.info("Updating series with uid=" + seriesInstanceUID);updateSeries(attrs,studyInstanceUID,seriesInstanceUID);break;
-            case "IMAGE": LOG.info("Updating image with uid=" + sopInstanceUID);updateInstance(attrs,studyInstanceUID,seriesInstanceUID,sopInstanceUID);break;
+            switch (level) {
+            case "PATIENT":
+                LOG.info("Updating patient with uid=" + id);
+                updatePatient(attrs, id);
+                break;
+            case "STUDY":
+                LOG.info("Updating study with uid=" + studyInstanceUID);
+                updateStudy(attrs, studyInstanceUID);
+                break;
+            case "SERIES":
+                LOG.info("Updating series with uid=" + seriesInstanceUID);
+                updateSeries(attrs, studyInstanceUID, seriesInstanceUID);
+                break;
+            case "IMAGE":
+                LOG.info("Updating image with uid=" + sopInstanceUID);
+                updateInstance(attrs, studyInstanceUID, seriesInstanceUID,
+                        sopInstanceUID);
+                break;
             }
-            
-            
+
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
         return Respond();
     }
 
-    private void updateInstance(Attributes attrs,
-            String studyInstanceUID, String seriesInstanceUID,
-            String sopInstanceUID) {
-        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
-        dataManager.updateInstance(arcDevExt,studyInstanceUID,seriesInstanceUID, sopInstanceUID, attrs);
+    private void updateInstance(Attributes attrs, String studyInstanceUID,
+            String seriesInstanceUID, String sopInstanceUID) {
+        ArchiveDeviceExtension arcDevExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        dataManager.updateInstance(arcDevExt, studyInstanceUID,
+                seriesInstanceUID, sopInstanceUID, attrs);
     }
 
-    private void updateSeries(Attributes attrs,
-            String studyInstanceUID, String seriesInstanceUID) throws InstanceNotFoundException {
-        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
-        dataManager.updateSeries(arcDevExt,studyInstanceUID,seriesInstanceUID, attrs);
+    private void updateSeries(Attributes attrs, String studyInstanceUID,
+            String seriesInstanceUID) throws InstanceNotFoundException {
+        ArchiveDeviceExtension arcDevExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        dataManager.updateSeries(arcDevExt, studyInstanceUID,
+                seriesInstanceUID, attrs);
     }
 
-    private void updateStudy(Attributes attrs,
-            String studyInstanceUID) throws InstanceNotFoundException {
-        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
-        dataManager.updateStudy(arcDevExt,studyInstanceUID, attrs);
-        
+    private void updateStudy(Attributes attrs, String studyInstanceUID)
+            throws InstanceNotFoundException {
+        ArchiveDeviceExtension arcDevExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        dataManager.updateStudy(arcDevExt, studyInstanceUID, attrs);
+
     }
 
     private void updatePatient(Attributes attrs, IDWithIssuer id) {
-        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
-        dataManager.updatePatient(arcDevExt,id, attrs);
-        
+        ArchiveDeviceExtension arcDevExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        dataManager.updatePatient(arcDevExt, id, attrs);
+
     }
 
     private Attributes parseJSONAttributes(InputStream in,
