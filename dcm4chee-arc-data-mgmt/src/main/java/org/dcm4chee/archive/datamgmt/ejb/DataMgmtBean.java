@@ -78,4 +78,5 @@ public interface DataMgmtBean {
             Attributes attrs) throws EntityNotFoundException;
     Issuer getIssuer(String local, String universal,
             String universalType);
+    boolean moveStudy(String studyInstanceUID, IDWithIssuer id);
 }

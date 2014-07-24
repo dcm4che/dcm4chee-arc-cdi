@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.ejb.Stateless;
@@ -831,6 +832,39 @@ public class DataMgmtEJB implements DataMgmtBean {
         }
         }
         return patient != null ? patient.getPk() : -1l;
+    }
+
+    @Override
+    public boolean moveStudy(String studyInstanceUID, IDWithIssuer id) {
+
+        boolean moved=false;
+        Study study = getStudy(studyInstanceUID);
+
+        if(study == null)
+            return false;
+
+        Patient previous = study.getPatient();
+        Patient current = getPatient(id);
+        if(previous == current)
+        return false;
+        
+        Collection<Study> currentPatientStudies = current.getStudies();
+        Iterator<Study> previousPatientStudies = previous.getStudies().iterator();
+        while(previousPatientStudies.hasNext())
+        {
+            Study currentStudy = previousPatientStudies.next();
+            if(currentStudy.equals(study))
+            {
+                previousPatientStudies.remove();
+                currentStudy.setPatient(current);
+                currentPatientStudies.add(currentStudy);
+                moved = true;
+            }
+            
+        }
+
+        em.flush();
+        return moved;
     }
 
 }

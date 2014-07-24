@@ -49,6 +49,7 @@ import javax.json.Json;
 import javax.management.InstanceNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -97,6 +98,7 @@ public class DataMgmt {
     DataMgmtBean dataManager;
 
     //Patient Level
+    //update
     @POST
     @Path("updateXML/patients/{PatientID}/{issuer:.*}")
     @Consumes({ "application/xml" })
@@ -154,7 +156,41 @@ public class DataMgmt {
         IDWithIssuer id = new IDWithIssuer(patientID,matchingIssuer);
         return updateJSON("PATIENT", id, null, null, null, in);
     }
-    
+    //move study
+    @GET
+    @Path("moveStudy/studies/{StudyInstanceUID}/patients/{PatientID}/{issuer:.*}")
+    public Response moveStudy(@Context UriInfo uriInfo, InputStream in,
+            @PathParam("StudyInstanceUID") String studyInstanceUID,
+            @PathParam("PatientID") String patientID,
+            @PathParam("issuer") String issuer){
+        String[] issuerVals = issuer.split("/");
+        Issuer matchingIssuer=null;
+        if(issuerVals.length>0)
+        {
+            if(issuerVals.length==1)
+            {
+                matchingIssuer =  dataManager.getIssuer(issuerVals[0],null,null);
+            }
+            else if(issuerVals.length==2)
+            {
+                matchingIssuer =  dataManager.getIssuer(null,issuerVals[0],issuerVals[1]);
+            }
+            else if(issuerVals.length==3)
+            {
+                matchingIssuer =  dataManager.getIssuer(issuerVals[0],issuerVals[1],issuerVals[2]);
+            }
+        }
+             
+        IDWithIssuer id = new IDWithIssuer(patientID,matchingIssuer);
+        return moveStudy(studyInstanceUID,id);
+    }
+    private Response moveStudy(String studyInstanceUID, IDWithIssuer id) {
+        boolean moved = dataManager.moveStudy(studyInstanceUID,id);
+        Response rspMoved = Response.status(Status.OK).entity("Study Moved Successfully").build();
+        Response rspError = Response.status(Status.CONFLICT).entity("Error: Study Not Moved").build();
+        return moved?rspMoved:rspError;
+    }
+
     //Study Level
     @POST
     @Path("updateXML/studies/{StudyInstanceUID}")
