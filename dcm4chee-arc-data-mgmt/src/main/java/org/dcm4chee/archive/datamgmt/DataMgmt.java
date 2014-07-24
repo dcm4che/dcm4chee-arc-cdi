@@ -210,6 +210,18 @@ public class DataMgmt {
         return updateJSON("STUDY", null, studyInstanceUID, null, null, in);
     }
 
+    @GET
+    @Path ("splitStudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
+    public Response splitStudy(@Context UriInfo uriInfo, InputStream in,
+            @PathParam("StudyInstanceUID") String studyInstanceUID,
+            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
+            @PathParam("TargetStudyInstanceUID") String targetStudyInstanceUID)
+            {
+        boolean split = dataManager.splitStudy(studyInstanceUID, seriesInstanceUID, targetStudyInstanceUID);
+        Response rspSplit = Response.status(Status.OK).entity("Study Split Successfully").build();
+        Response rspError = Response.status(Status.CONFLICT).entity("Error: Study Not Split").build();
+        return split?rspSplit:rspError;
+            }
     //Series Level
     @POST
     @Path("updateXML/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")

@@ -79,4 +79,6 @@ public interface DataMgmtBean {
     Issuer getIssuer(String local, String universal,
             String universalType);
     boolean moveStudy(String studyInstanceUID, IDWithIssuer id);
+    boolean splitStudy(String studyInstanceUID, String seriesInstanceUID,
+            String targetStudyInstanceUID);
 }

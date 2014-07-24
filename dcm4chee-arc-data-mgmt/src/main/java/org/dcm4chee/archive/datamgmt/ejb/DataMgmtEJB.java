@@ -867,6 +867,43 @@ public class DataMgmtEJB implements DataMgmtBean {
         return moved;
     }
 
+    @Override
+    public boolean splitStudy(String studyInstanceUID,
+            String seriesInstanceUID, String targetStudyInstanceUID) {
+        boolean split = false;
+        Study study = getStudy(studyInstanceUID);
+        if(study == null)
+            return false;
+        
+        Study targetStudy = getStudy(targetStudyInstanceUID);
+        if(targetStudy == null)
+            return false;
+        
+        if(targetStudy == study)
+            return false;
+        
+        Series series = getSeries(study, seriesInstanceUID);
+        if(series == null)
+            return false;
+        
+        Collection<Series> targetStudySeries = targetStudy.getSeries();
+        
+        Iterator<Series> currentStudySeries = study.getSeries().iterator();
+        
+        while(currentStudySeries.hasNext())
+        {
+            Series current = currentStudySeries.next();
+            if(current == series)
+            {
+                currentStudySeries.remove();
+                series.setStudy(targetStudy);
+                targetStudySeries.add(series);
+                split = true;
+            }
+        }
+        return split;
+    }
+
 }
 /*
  * 
