@@ -218,6 +218,23 @@ public class DataMgmt {
         return split ? rspSplit : rspError;
     }
 
+    @GET
+    @Path("segmentStudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
+    public Response segmentStudy(@Context UriInfo uriInfo, InputStream in,
+            @PathParam("StudyInstanceUID") String studyInstanceUID,
+            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
+            @PathParam("TargetStudyInstanceUID") String targetStudyInstanceUID) {
+        ArchiveDeviceExtension arcDevExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        boolean segment = dataManager.segmentStudy(studyInstanceUID,
+                seriesInstanceUID, targetStudyInstanceUID,arcDevExt);
+        Response rspSegment = Response.status(Status.OK)
+                .entity("Study Segmented Successfully").build();
+        Response rspError = Response.status(Status.CONFLICT)
+                .entity("Error: Study Not Segmented").build();
+        return segment ? rspSegment : rspError;
+    }
+
     // Series Level
     @POST
     @Path("updateXML/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")

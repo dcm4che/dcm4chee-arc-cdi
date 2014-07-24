@@ -38,8 +38,12 @@
 
 package org.dcm4chee.archive.datamgmt.ejb;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,11 +61,16 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.soundex.FuzzyStr;
+import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
@@ -113,7 +122,9 @@ public class DataMgmtEJB implements DataMgmtBean {
         else
             study.resetNumberOfInstances();
 
-        study.setNumberOfSeries(study.getNumberOfSeries() - 1);
+        if (study.getNumberOfSeries() > 0)
+            study.setNumberOfSeries(study.getNumberOfSeries() - 1);
+
         LOG.info("Removed series entity - " + seriesInstanceUID);
         return series;
     }
@@ -198,7 +209,8 @@ public class DataMgmtEJB implements DataMgmtBean {
 
     @Override
     public void updatePatient(ArchiveDeviceExtension arcDevExt,
-            IDWithIssuer patientID, Attributes attrs) throws EntityNotFoundException {
+            IDWithIssuer patientID, Attributes attrs)
+            throws EntityNotFoundException {
         Patient patient = getPatient(patientID);
         if (patient == null)
             throw new EntityNotFoundException("Unable to find patient "
@@ -468,35 +480,37 @@ public class DataMgmtEJB implements DataMgmtBean {
             if (!oldIDs.contains(id))
                 oldIDs.add(id);
         }
-        if(newOtherPatientIDsSeq!=null)
-        for (Attributes otherPatientIDAttrs : newOtherPatientIDsSeq) {
+        if (newOtherPatientIDsSeq != null)
+            for (Attributes otherPatientIDAttrs : newOtherPatientIDsSeq) {
 
-            Issuer issuer = null;
-            if (otherPatientIDAttrs.contains(Tag.IssuerOfPatientID)
-                    || otherPatientIDAttrs
-                            .contains(Tag.IssuerOfPatientIDQualifiersSequence)) {
-                String local, universal = null, universalType = null;
-                if (otherPatientIDAttrs
-                        .getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
-                        && otherPatientIDAttrs.getSequence(
-                                Tag.IssuerOfPatientIDQualifiersSequence).size() > 0) {
-                    Sequence tmp = otherPatientIDAttrs
-                            .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
-                    universal = tmp.get(0).getString(Tag.UniversalEntityID);
-                    universalType = tmp.get(0).getString(
-                            Tag.UniversalEntityIDType);
+                Issuer issuer = null;
+                if (otherPatientIDAttrs.contains(Tag.IssuerOfPatientID)
+                        || otherPatientIDAttrs
+                                .contains(Tag.IssuerOfPatientIDQualifiersSequence)) {
+                    String local, universal = null, universalType = null;
+                    if (otherPatientIDAttrs
+                            .getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
+                            && otherPatientIDAttrs.getSequence(
+                                    Tag.IssuerOfPatientIDQualifiersSequence)
+                                    .size() > 0) {
+                        Sequence tmp = otherPatientIDAttrs
+                                .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
+                        universal = tmp.get(0).getString(Tag.UniversalEntityID);
+                        universalType = tmp.get(0).getString(
+                                Tag.UniversalEntityIDType);
+                    }
+                    local = otherPatientIDAttrs
+                            .getString(Tag.IssuerOfPatientID);
+                    issuer = getIssuer(local, universal, universalType);
+
                 }
-                local = otherPatientIDAttrs.getString(Tag.IssuerOfPatientID);
-                issuer = getIssuer(local, universal, universalType);
-
+                if (issuer == null)
+                    issuer = fallbackIssuer;
+                PatientID id = getPatientID(
+                        otherPatientIDAttrs.getString(Tag.PatientID), issuer);
+                if (!oldIDs.contains(id))
+                    oldIDs.add(id);
             }
-            if (issuer == null)
-                issuer = fallbackIssuer;
-            PatientID id = getPatientID(
-                    otherPatientIDAttrs.getString(Tag.PatientID), issuer);
-            if (!oldIDs.contains(id))
-                oldIDs.add(id);
-        }
 
         return oldIDs;
     }
@@ -733,8 +747,7 @@ public class DataMgmtEJB implements DataMgmtBean {
         return issuer;
     }
 
-    public Issuer getIssuer(String local, String universal,
-            String universalType) {
+    public Issuer getIssuer(String local, String universal, String universalType) {
         Issuer issuer = em.find(Issuer.class,
                 getIssuerPK(local, universal, universalType));
         if (issuer == null) {
@@ -823,13 +836,14 @@ public class DataMgmtEJB implements DataMgmtBean {
 
     private long getPatientPK(IDWithIssuer patientID) {
         Patient patient = null;
-        if(patientID.getIssuer()!=null){
-        try {
-             PatientID id = getPatientID(patientID.getID(),(Issuer)patientID.getIssuer());
-             patient = id.getPatient();
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-        }
+        if (patientID.getIssuer() != null) {
+            try {
+                PatientID id = getPatientID(patientID.getID(),
+                        (Issuer) patientID.getIssuer());
+                patient = id.getPatient();
+            } catch (Exception e) {
+                LOG.error(e.getMessage());
+            }
         }
         return patient != null ? patient.getPk() : -1l;
     }
@@ -837,30 +851,29 @@ public class DataMgmtEJB implements DataMgmtBean {
     @Override
     public boolean moveStudy(String studyInstanceUID, IDWithIssuer id) {
 
-        boolean moved=false;
+        boolean moved = false;
         Study study = getStudy(studyInstanceUID);
 
-        if(study == null)
+        if (study == null)
             return false;
 
         Patient previous = study.getPatient();
         Patient current = getPatient(id);
-        if(previous == current)
-        return false;
-        
+        if (previous == current)
+            return false;
+
         Collection<Study> currentPatientStudies = current.getStudies();
-        Iterator<Study> previousPatientStudies = previous.getStudies().iterator();
-        while(previousPatientStudies.hasNext())
-        {
+        Iterator<Study> previousPatientStudies = previous.getStudies()
+                .iterator();
+        while (previousPatientStudies.hasNext()) {
             Study currentStudy = previousPatientStudies.next();
-            if(currentStudy.equals(study))
-            {
+            if (currentStudy.equals(study)) {
                 previousPatientStudies.remove();
                 currentStudy.setPatient(current);
                 currentPatientStudies.add(currentStudy);
                 moved = true;
             }
-            
+
         }
 
         em.flush();
@@ -872,34 +885,60 @@ public class DataMgmtEJB implements DataMgmtBean {
             String seriesInstanceUID, String targetStudyInstanceUID) {
         boolean split = false;
         Study study = getStudy(studyInstanceUID);
-        if(study == null)
+        if (study == null)
             return false;
-        
+
         Study targetStudy = getStudy(targetStudyInstanceUID);
-        if(targetStudy == null)
+        if (targetStudy == null)
             return false;
-        
-        if(targetStudy == study)
+
+        if (targetStudy == study)
             return false;
-        
+
         Series series = getSeries(study, seriesInstanceUID);
-        if(series == null)
+        if (series == null)
             return false;
-        
+
         Collection<Series> targetStudySeries = targetStudy.getSeries();
-        
+
         Iterator<Series> currentStudySeries = study.getSeries().iterator();
-        
-        while(currentStudySeries.hasNext())
-        {
+
+        while (currentStudySeries.hasNext()) {
             Series current = currentStudySeries.next();
-            if(current == series)
-            {
+            if (current == series) {
                 currentStudySeries.remove();
                 series.setStudy(targetStudy);
                 targetStudySeries.add(series);
                 split = true;
             }
+        }
+        // update count
+        if (split) {
+            int numInstancesNew = study.getNumberOfInstances()
+                    - series.getNumberOfInstances();
+
+            if (numInstancesNew > 0)
+                study.setNumberOfInstances(numInstancesNew);
+            else
+                study.resetNumberOfInstances();
+
+            int numberOfSeries = study.getNumberOfSeries();
+
+            if (study.getNumberOfSeries() > 0)
+                study.setNumberOfSeries(numberOfSeries - 1);
+
+            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
+                    + series.getNumberOfInstances();
+
+            if (targetnumInstancesNew > 0)
+                targetStudy.setNumberOfInstances(targetnumInstancesNew);
+            else
+                targetStudy.resetNumberOfInstances();
+
+            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
+
+            if (targetStudy.getNumberOfSeries() > 0)
+                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
         }
         return split;
     }
@@ -910,49 +949,181 @@ public class DataMgmtEJB implements DataMgmtBean {
             String targetStudyInstanceUID, String targetSeriesInstanceUID) {
         boolean split = false;
         Study study = getStudy(studyInstanceUID);
-        if(study == null)
+        if (study == null)
             return false;
-        
+
         Study targetStudy = getStudy(targetStudyInstanceUID);
-        if(targetStudy == null)
+        if (targetStudy == null)
             return false;
-        
-        if(targetStudy == study)
+
+        if (targetStudy == study)
             return false;
-        
+
         Series series = getSeries(study, seriesInstanceUID);
-        if(series == null)
+        if (series == null)
             return false;
-        
+
         Series targetSeries = getSeries(targetStudy, targetSeriesInstanceUID);
-        if(targetSeries == null)
+        if (targetSeries == null)
             return false;
-        
-        if(targetSeries == series)
+
+        if (targetSeries == series)
             return false;
-        
+
         Instance instance = getInstance(series, sopInstanceUID);
-        
-        if(instance == null)
+
+        if (instance == null)
             return false;
-        
-        
-        Collection<Instance> targetSeriesInstances = targetSeries.getInstances();
-        
-        Iterator<Instance> currentSeriesInstances = series.getInstances().iterator();
-        
-        while(currentSeriesInstances.hasNext())
-        {
+
+        Collection<Instance> targetSeriesInstances = targetSeries
+                .getInstances();
+
+        Iterator<Instance> currentSeriesInstances = series.getInstances()
+                .iterator();
+
+        while (currentSeriesInstances.hasNext()) {
             Instance current = currentSeriesInstances.next();
-            if(current == instance)
-            {
+            if (current == instance) {
                 currentSeriesInstances.remove();
                 instance.setSeries(targetSeries);
                 targetSeriesInstances.add(instance);
                 split = true;
             }
         }
+        // update count
+        if (split) {
+            int numInstancesNewStudy = study.getNumberOfInstances() - 1;
+
+            if (numInstancesNewStudy > 0)
+                study.setNumberOfInstances(numInstancesNewStudy);
+            else
+                study.resetNumberOfInstances();
+
+            int numInstancesNewTargetStudy = targetStudy.getNumberOfInstances() + 1;
+
+            if (numInstancesNewTargetStudy > 0)
+                targetStudy.setNumberOfInstances(numInstancesNewTargetStudy);
+            else
+                targetStudy.resetNumberOfInstances();
+
+            int numInstancesNewSeries = series.getNumberOfInstances() - 1;
+
+            if (numInstancesNewSeries > 0)
+                series.setNumberOfInstances(numInstancesNewSeries);
+            else
+                series.resetNumberOfInstances();
+
+            int numInstancesNewTargetSeries = targetSeries
+                    .getNumberOfInstances() + 1;
+
+            if (numInstancesNewTargetSeries > 0)
+                targetSeries.setNumberOfInstances(numInstancesNewTargetSeries);
+            else
+                targetSeries.resetNumberOfInstances();
+        }
         return split;
+    }
+
+    @Override
+    public boolean segmentStudy(String studyInstanceUID,
+            String seriesInstanceUID, String targetStudyInstanceUID,
+            ArchiveDeviceExtension arcDevExt) {
+        boolean segment = false;
+        Study study = getStudy(studyInstanceUID);
+        if (study == null)
+            return false;
+
+        Study targetStudy = getStudy(targetStudyInstanceUID);
+        if (targetStudy == null)
+            return false;
+
+        if (targetStudy == study)
+            return false;
+
+        Series series = getSeries(study, seriesInstanceUID);
+        if (series == null)
+            return false;
+
+        Collection<Series> targetStudySeries = targetStudy.getSeries();
+
+        try {
+            Series seriesCopy = (Series) seriesShallowCopy(series, targetStudy,
+                    arcDevExt);
+            targetStudySeries.add(seriesCopy);
+            em.flush();
+            segment = true;
+        } catch (Exception e) {
+            LOG.error("Error copying series, {}", e);
+            segment = false;
+        }
+        if (segment) {
+            // update count
+            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
+                    + series.getNumberOfInstances();
+
+            if (targetnumInstancesNew > 0)
+                targetStudy.setNumberOfInstances(targetnumInstancesNew);
+            else
+                targetStudy.resetNumberOfInstances();
+
+            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
+
+            if (targetStudy.getNumberOfSeries() > 0)
+                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
+        }
+        return segment;
+    }
+
+    private Series seriesShallowCopy(Series series, Study target,
+            ArchiveDeviceExtension arcDevExt) {
+        Attributes attrs = series.getAttributes();
+        attrs.setString(Tag.StudyInstanceUID, VR.UI,
+                target.getStudyInstanceUID());
+        attrs.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
+        Series seriesCopy = new Series();
+        seriesCopy.setStudy(target);
+
+        seriesCopy.setSourceAET(series.getSourceAET());
+        seriesCopy.setRetrieveAETs(series.getRetrieveAETs());
+        seriesCopy.setExternalRetrieveAET(series.getExternalRetrieveAET());
+        seriesCopy.setAvailability(series.getAvailability());
+        seriesCopy.setAttributes(attrs,
+                arcDevExt.getAttributeFilter(Entity.Series),
+                arcDevExt.getFuzzyStr());
+        em.persist(seriesCopy);
+        seriesCopy.setInstitutionCode(series.getInstitutionCode());
+        seriesCopy.setRequestAttributes(copyRequestAttrs(series
+                .getRequestAttributes()));
+        Collection<Instance> instances = seriesCopy.getInstances();
+        addAllInstances(series, instances);
+        LOG.info("Created Series Copy {}", seriesCopy);
+        return seriesCopy;
+    }
+
+    private void addAllInstances(Series series, Collection<Instance> instances) {
+
+        ArrayList<Instance> collOld = new ArrayList<Instance>(
+                series.getInstances());
+        for (Instance instance : collOld) {
+            Instance newInstance = instanceShallowCopy(instance);
+            instances.add(newInstance);
+        }
+    }
+
+    private Instance instanceShallowCopy(Instance instance) {
+        // TODO COPY Instances
+        return null;
+    }
+
+    private Collection<RequestAttributes> copyRequestAttrs(
+            Collection<RequestAttributes> requestAttributes) {
+        ArrayList<RequestAttributes> coll = new ArrayList<RequestAttributes>(
+                requestAttributes);
+        for (RequestAttributes req : coll) {
+            em.persist(req);
+        }
+        return coll;
+
     }
 
 }

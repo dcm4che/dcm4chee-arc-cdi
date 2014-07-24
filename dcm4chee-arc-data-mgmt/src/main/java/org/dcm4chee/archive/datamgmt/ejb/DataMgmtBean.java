@@ -84,4 +84,6 @@ public interface DataMgmtBean {
     boolean splitSeries(String studyInstanceUID, String seriesInstanceUID,
             String sopInstanceUID, String targetStudyInstanceUID,
             String targetSeriesInstanceUID);
+    boolean segmentStudy(String studyInstanceUID, String seriesInstanceUID,
+            String targetStudyInstanceUID, ArchiveDeviceExtension arcDevExt);
 }
