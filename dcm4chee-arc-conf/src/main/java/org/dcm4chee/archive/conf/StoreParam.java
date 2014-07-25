@@ -53,6 +53,7 @@ public class StoreParam {
     private String[] retrieveAETs;
     private String externalRetrieveAET;
     private PatientSelectorConfig patientSelectorConfig;
+    private boolean deIdentifyLogs = false;
 
     public final boolean isStoreOriginalAttributes() {
         return storeOriginalAttributes;
@@ -108,5 +109,13 @@ public class StoreParam {
 
     public void setPatientSelectorConfig(PatientSelectorConfig patientSelectorConfig) {
         this.patientSelectorConfig = patientSelectorConfig;
+    }
+
+    public boolean isDeIdentifyLogs() {
+        return deIdentifyLogs;
+    }
+
+    public void setDeIdentifyLogs(boolean deIdentifyLogs) {
+        this.deIdentifyLogs = deIdentifyLogs;
     }
 }

@@ -116,8 +116,8 @@ public interface PatientService {
             StoreParam storeParam) throws NonUniquePatientException,
             PatientMergedException, MatchTypeException, IssuerMissingException;
 
-    void unlinkPatient(Attributes attrs, Attributes otherAttrs)
-            throws NonUniquePatientException, PatientMergedException,
-            MatchTypeException, IssuerMissingException;
+    void unlinkPatient(Attributes attrs, Attributes otherAttrs,
+            StoreParam storeParam) throws NonUniquePatientException,
+            PatientMergedException, MatchTypeException, IssuerMissingException;
 
 }

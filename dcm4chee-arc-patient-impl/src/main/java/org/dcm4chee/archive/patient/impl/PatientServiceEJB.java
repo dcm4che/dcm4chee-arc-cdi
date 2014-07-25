@@ -243,26 +243,28 @@ public class PatientServiceEJB implements PatientService {
                 storeParam.getAttributeFilter(Entity.Patient),
                 storeParam.getFuzzyStr());
         patient.setNoPatientID(pids.isEmpty());
-        patient.setPatientIDs(createPatientIDs(pids, patient));
+        patient.setPatientIDs(createPatientIDs(pids, patient,
+                storeParam.isDeIdentifyLogs()));
         em.persist(patient);
-        LOG.info("Create {}", patient);
+        LOG.info("Create {}", patient.toString(storeParam.isDeIdentifyLogs()));
         return patient;
     }
 
     private Collection<PatientID> createPatientIDs(
-            Collection<IDWithIssuer> pids, Patient patient) {
+            Collection<IDWithIssuer> pids, Patient patient, boolean deidentify) {
         Collection<PatientID> patientIDs = new ArrayList<PatientID>(pids.size());
         for (IDWithIssuer pid : pids)
-            patientIDs.add(createPatientID(pid, patient));
+            patientIDs.add(createPatientID(pid, patient, deidentify));
         return patientIDs;
     }
 
-    private PatientID createPatientID(IDWithIssuer pid, Patient patient) {
+    private PatientID createPatientID(IDWithIssuer pid, Patient patient,
+            boolean deidentify) {
         PatientID patientID = new PatientID();
         patientID.setID(pid.getID());
         patientID.setIssuer(findOrCreateIssuer(pid.getIssuer()));
         patientID.setPatient(patient);
-        LOG.info("Add {} to {}", patientID, patient);
+        LOG.info("Add {} to {}", patientID, patient.toString(deidentify));
         return patientID;
     }
 
@@ -282,7 +284,7 @@ public class PatientServiceEJB implements PatientService {
 
     private void updatePatientByDICOM(Patient patient, Attributes attrs,
             StoreParam storeParam, Collection<IDWithIssuer> pids) {
-        if (mergePatientIDs(patient, pids)) {
+        if (mergePatientIDs(patient, pids, storeParam.isDeIdentifyLogs())) {
             patient.updateOtherPatientIDs();
         }
         Attributes patientAttrs = patient.getAttributes();
@@ -294,7 +296,7 @@ public class PatientServiceEJB implements PatientService {
     }
 
     private boolean mergePatientIDs(Patient patient,
-            Collection<IDWithIssuer> pids) {
+            Collection<IDWithIssuer> pids, boolean deidentify) {
         boolean modified = false;
         Collection<PatientID> patientIDs = patient.getPatientIDs();
         Collection<IDWithIssuer> add = new ArrayList<IDWithIssuer>(pids);
@@ -312,11 +314,12 @@ public class PatientServiceEJB implements PatientService {
             if (issuer == null) {
                 patientID.setIssuer(findOrCreateIssuer(pid.getIssuer()));
                 modified = true;
-                LOG.info("Set Issuer of {} of Patient {}", patientID, patient);
+                LOG.info("Set Issuer of {} of Patient {}", patientID,
+                        patient.toString(deidentify));
             } else if (issuer.merge(pid.getIssuer())) {
                 modified = true;
                 LOG.info("Updated Issuer of {} of Patient {}", patientID,
-                        patient);
+                        patient.toString(deidentify));
             }
         }
 
@@ -326,7 +329,7 @@ public class PatientServiceEJB implements PatientService {
         }
 
         for (IDWithIssuer pid : add)
-            patientIDs.add(createPatientID(pid, patient));
+            patientIDs.add(createPatientID(pid, patient, deidentify));
 
         patient.setNoPatientID(patientIDs.isEmpty());
         return modified || !add.isEmpty();
@@ -346,7 +349,7 @@ public class PatientServiceEJB implements PatientService {
 
     private void updatePatientByHL7(Patient patient, Attributes attrs,
             Collection<IDWithIssuer> pids, StoreParam storeParam) {
-        if (mergePatientIDs(patient, pids)) {
+        if (mergePatientIDs(patient, pids, storeParam.isDeIdentifyLogs())) {
             patient.updateOtherPatientIDs();
         }
         Attributes patientAttrs = patient.getAttributes();
@@ -394,11 +397,11 @@ public class PatientServiceEJB implements PatientService {
                 selector, priorPIDs);
         Patient pat = updateOrCreatePatientByHL7(attrs, storeParam, selector,
                 pids);
-        mergePatient(pat, prior, priorPIDs);
+        mergePatient(pat, prior, priorPIDs, storeParam.isDeIdentifyLogs());
     }
 
     private void mergePatient(Patient pat, Patient prior,
-            Collection<IDWithIssuer> priorPIDs) {
+            Collection<IDWithIssuer> priorPIDs, boolean deidentify) {
         if (pat == prior)
             throw new IllegalArgumentException("Cannot merge " + pat
                     + " with itself");
@@ -412,10 +415,10 @@ public class PatientServiceEJB implements PatientService {
         Collection<Patient> linkedPatients = prior.getLinkedPatients();
         if (movePatientIDs || !linkedPatients.isEmpty()) {
             for (Patient linked : linkedPatients) {
-                unlinkPatientIDs(prior, linked);
-                unlinkPatientIDs(linked, prior);
-                linkPatientIDs(pat, linked);
-                linkPatientIDs(linked, pat);
+                unlinkPatientIDs(prior, linked, deidentify);
+                unlinkPatientIDs(linked, prior, deidentify);
+                linkPatientIDs(pat, linked, deidentify);
+                linkPatientIDs(linked, pat, deidentify);
                 linked.updateOtherPatientIDs();
             }
             prior.updateOtherPatientIDs();
@@ -430,22 +433,22 @@ public class PatientServiceEJB implements PatientService {
             PatientMergedException, MatchTypeException, IssuerMissingException {
         Patient pat = updateOrCreatePatientByHL7(attrs, storeParam);
         Patient other = updateOrCreatePatientByHL7(otherAttrs, storeParam);
-        linkPatient(pat, other);
+        linkPatient(pat, other, storeParam.isDeIdentifyLogs());
     }
 
-    private void linkPatient(Patient pat, Patient other) {
+    private void linkPatient(Patient pat, Patient other, boolean deidentify) {
         if (pat == other)
             throw new IllegalArgumentException("Cannot link " + pat
                     + " with itself");
 
         LOG.info("Link {} with {}", other, pat);
-        linkPatientIDs(pat, other);
-        linkPatientIDs(other, pat);
+        linkPatientIDs(pat, other, deidentify);
+        linkPatientIDs(other, pat, deidentify);
         pat.updateOtherPatientIDs();
         other.updateOtherPatientIDs();
     }
 
-    private void linkPatientIDs(Patient pat, Patient other) {
+    private void linkPatientIDs(Patient pat, Patient other, boolean deidentify) {
         Collection<PatientID> linkedPatientIDs = pat.getLinkedPatientIDs();
         if (linkedPatientIDs == null) {
             linkedPatientIDs = new ArrayList<PatientID>();
@@ -454,7 +457,8 @@ public class PatientServiceEJB implements PatientService {
         for (PatientID pid : other.getPatientIDs()) {
             if (!contains(linkedPatientIDs, pid)) {
                 linkedPatientIDs.add(pid);
-                LOG.info("Link {} of {} to {}", pid, other, pat);
+                LOG.info("Link {} of {} to {}", pid,
+                        other.toString(deidentify), pat.toString(deidentify));
             }
         }
     }
@@ -468,9 +472,9 @@ public class PatientServiceEJB implements PatientService {
     }
 
     @Override
-    public void unlinkPatient(Attributes attrs, Attributes otherAttrs)
-            throws NonUniquePatientException, PatientMergedException,
-            MatchTypeException, IssuerMissingException {
+    public void unlinkPatient(Attributes attrs, Attributes otherAttrs,
+            StoreParam storeParam) throws NonUniquePatientException,
+            PatientMergedException, MatchTypeException, IssuerMissingException {
         // TODO make PatientSelector configurable
         PatientSelector selector = new IDPatientSelector();
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
@@ -494,19 +498,20 @@ public class PatientServiceEJB implements PatientService {
                     + " with itself");
 
         LOG.info("Unlink {} from {}", other, pat);
-        mergePatientIDs(pat, pids);
-        mergePatientIDs(other, otherPIDs);
-        unlinkPatientIDs(pat, other);
-        unlinkPatientIDs(other, pat);
+        mergePatientIDs(pat, pids, storeParam.isDeIdentifyLogs());
+        mergePatientIDs(other, otherPIDs, storeParam.isDeIdentifyLogs());
+        unlinkPatientIDs(pat, other, storeParam.isDeIdentifyLogs());
+        unlinkPatientIDs(other, pat, storeParam.isDeIdentifyLogs());
         pat.updateOtherPatientIDs();
         other.updateOtherPatientIDs();
     }
 
-    private void unlinkPatientIDs(Patient pat, Patient other) {
+    private void unlinkPatientIDs(Patient pat, Patient other, boolean deidentify) {
         Collection<PatientID> linkedPatientIDs = pat.getLinkedPatientIDs();
         for (PatientID pid : other.getPatientIDs()) {
             if (removePatientID(linkedPatientIDs, pid)) {
-                LOG.info("Unlink {} of {} from {}", pid, other, pat);
+                LOG.info("Unlink {} of {} from {}", pid,
+                        other.toString(deidentify), pat.toString(deidentify));
             }
         }
     }

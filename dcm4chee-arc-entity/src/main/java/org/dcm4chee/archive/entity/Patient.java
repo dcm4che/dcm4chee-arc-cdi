@@ -181,6 +181,15 @@ public class Patient implements Serializable {
                 + ", sex=" + patientSex
                 + "]";
     }
+    
+    public String toString(boolean deidentify) {
+        
+        if (deidentify)
+            return "Patient[pk=" + pk
+                + ", name=XXX, dob=XXX, sex=XXX]";
+        else
+            return toString();
+    }
 
     @PrePersist
     public void onPrePersist() {

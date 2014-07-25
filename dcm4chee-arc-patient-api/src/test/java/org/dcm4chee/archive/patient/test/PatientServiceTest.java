@@ -631,7 +631,8 @@ public class PatientServiceTest {
             Assert.assertTrue(patients[0].getLinkedPatientIDs().contains(id));
 
         // unlink A,b <-> D
-        service.unlinkPatient(patientOneAttributes, patientTwoAttributes);
+        service.unlinkPatient(patientOneAttributes, patientTwoAttributes,
+                createStoreParam());
         // check no ids linked
         patOneIDs = patients[0].getPatientIDs();
         for (PatientID id : patOneIDs)
@@ -685,7 +686,8 @@ public class PatientServiceTest {
         tmpItem = setIssuer(1, tmpItem, "G111222");
         tmp.add(tmpItem);
         // unlink
-        service.unlinkPatient(patientOneAttributes, patientTwoAttributes);
+        service.unlinkPatient(patientOneAttributes, patientTwoAttributes,
+                createStoreParam());
 
         // check no ids linked and new one created for patient one (C)
         addedNewIdentifier = false;
@@ -733,7 +735,8 @@ public class PatientServiceTest {
 
         // unlink with A <-> D (with patient one having B unreferenced in the
         // link)
-        service.unlinkPatient(patientOneAttributes, patientTwoAttributes);
+        service.unlinkPatient(patientOneAttributes, patientTwoAttributes,
+                createStoreParam());
 
         // check all links are broken
 

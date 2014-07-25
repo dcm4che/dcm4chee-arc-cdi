@@ -238,6 +238,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         StoreParam storeParam = new StoreParam();
         storeParam.setFuzzyStr(getFuzzyStr());
         storeParam.setAttributeFilters(attributeFilters);
+        storeParam.setDeIdentifyLogs(isDeIdentifyLogs());
         return storeParam;
         
     }
