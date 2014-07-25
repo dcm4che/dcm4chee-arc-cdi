@@ -101,6 +101,7 @@ import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
+import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
@@ -587,7 +588,7 @@ public class StoreServiceImpl implements StoreService {
             StoreSession session = context.getStoreSession();
             return patientService.updateOrCreatePatientOnCStore(
                     context.getAttributes(),
-                    new IDPatientSelector(),
+                    PatientSelectorFactory.createSelector(context.getStoreSession().getStoreParam()),
                     session.getStoreParam());
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);

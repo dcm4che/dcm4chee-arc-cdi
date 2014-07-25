@@ -55,8 +55,7 @@ public class PatientSelectorFactory {
     private static PatientSelector selector = null;
 
     public static PatientSelector createSelector(StoreParam param)
-            throws ClassNotFoundException, IllegalAccessException,
-            InstantiationException {
+            throws InvalidPatientSelectorException {
 
         if (param != null
                 && param.getPatientSelectorConfig() != null
@@ -83,17 +82,29 @@ public class PatientSelectorFactory {
     }
 
     private static PatientSelector createSelector(PatientSelectorConfig conf)
-            throws ClassNotFoundException, IllegalAccessException,
-            InstantiationException {
+            throws InvalidPatientSelectorException {
 
-        Object selectorObject = Class.forName(
-                conf.getPatientSelectorClassName()).newInstance();
-        
-        BeanMap map = new BeanMap(selectorObject);
-        
-        for (String key : conf.getPatientSelectorProperties().keySet())
-            map.put(key, conf.getPatientSelectorProperties().get(key));
-        
-        return (PatientSelector) map.getBean();
+        try {
+            Object selectorObject = Class.forName(
+                    conf.getPatientSelectorClassName()).newInstance();
+            
+            BeanMap map = new BeanMap(selectorObject);
+            
+            for (String key : conf.getPatientSelectorProperties().keySet())
+                map.put(key, conf.getPatientSelectorProperties().get(key));
+            
+            return (PatientSelector) map.getBean();
+            
+        } catch (InstantiationException e) {
+            throw new InvalidPatientSelectorException(e);
+        } catch (IllegalAccessException e) {
+            throw new InvalidPatientSelectorException(e);
+        } catch (ClassNotFoundException e) {
+            throw new InvalidPatientSelectorException(e);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidPatientSelectorException(e);
+        } catch (ClassCastException e) {
+            throw new InvalidPatientSelectorException(e);
+        }
     }
 }

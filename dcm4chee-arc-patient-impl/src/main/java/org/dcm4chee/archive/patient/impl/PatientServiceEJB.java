@@ -67,12 +67,14 @@ import org.dcm4chee.archive.entity.QPatientID;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
+import org.dcm4chee.archive.patient.InvalidPatientSelectorException;
 import org.dcm4chee.archive.patient.IssuerMissingException;
 import org.dcm4chee.archive.patient.MatchTypeException;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientMergedException;
 import org.dcm4chee.archive.patient.PatientSelector;
+import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
 import org.hibernate.Session;
 import org.slf4j.Logger;
@@ -363,9 +365,10 @@ public class PatientServiceEJB implements PatientService {
     @Override
     public Patient updateOrCreatePatientByHL7(Attributes attrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException, MatchTypeException, IssuerMissingException {
+            PatientMergedException, MatchTypeException, IssuerMissingException,
+            InvalidPatientSelectorException {
         // TODO make PatientSelector configurable
-        PatientSelector selector = new IDPatientSelector();
+        PatientSelector selector = PatientSelectorFactory.createSelector(storeParam);
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         return updateOrCreatePatientByHL7(attrs, storeParam, selector, pids);
     }
@@ -388,9 +391,9 @@ public class PatientServiceEJB implements PatientService {
     @Override
     public void mergePatientByHL7(Attributes attrs, Attributes priorAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException, MatchTypeException, IssuerMissingException {
-        // TODO make PatientSelector configurable
-        PatientSelector selector = new IDPatientSelector();
+            PatientMergedException, MatchTypeException, IssuerMissingException,
+            InvalidPatientSelectorException {
+        PatientSelector selector = PatientSelectorFactory.createSelector(storeParam);
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         Collection<IDWithIssuer> priorPIDs = IDWithIssuer.pidsOf(priorAttrs);
         Patient prior = updateOrCreatePatientByHL7(priorAttrs, storeParam,
@@ -430,7 +433,8 @@ public class PatientServiceEJB implements PatientService {
     @Override
     public void linkPatient(Attributes attrs, Attributes otherAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException, MatchTypeException, IssuerMissingException {
+            PatientMergedException, MatchTypeException, IssuerMissingException,
+            InvalidPatientSelectorException {
         Patient pat = updateOrCreatePatientByHL7(attrs, storeParam);
         Patient other = updateOrCreatePatientByHL7(otherAttrs, storeParam);
         linkPatient(pat, other, storeParam.isDeIdentifyLogs());
@@ -474,9 +478,10 @@ public class PatientServiceEJB implements PatientService {
     @Override
     public void unlinkPatient(Attributes attrs, Attributes otherAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException, MatchTypeException, IssuerMissingException {
+            PatientMergedException, MatchTypeException, IssuerMissingException,
+            InvalidPatientSelectorException {
         // TODO make PatientSelector configurable
-        PatientSelector selector = new IDPatientSelector();
+        PatientSelector selector = PatientSelectorFactory.createSelector(storeParam);
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         Patient pat = selector.select(findPatientByIDs(pids), attrs, pids);
         if (pat == null)

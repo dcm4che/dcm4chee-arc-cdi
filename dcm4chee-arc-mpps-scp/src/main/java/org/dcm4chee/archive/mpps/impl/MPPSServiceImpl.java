@@ -73,6 +73,7 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
+import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
@@ -246,7 +247,7 @@ public class MPPSServiceImpl implements MPPSService {
             throws DicomServiceException {
         try {
             return patientService.updateOrCreatePatientOnMPPSNCreate(
-                    attrs, new IDPatientSelector(), storeParam);
+                    attrs, PatientSelectorFactory.createSelector(storeParam), storeParam);
         } catch (Exception e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }

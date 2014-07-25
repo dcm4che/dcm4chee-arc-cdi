@@ -76,6 +76,7 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
 import org.dcm4chee.archive.entity.PersonName;
 import org.dcm4chee.archive.patient.IDPatientSelector;
+import org.dcm4chee.archive.patient.InvalidPatientSelectorException;
 import org.dcm4chee.archive.patient.IssuerMissingException;
 import org.dcm4chee.archive.patient.MatchTypeException;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
@@ -559,7 +560,9 @@ public class PatientServiceTest {
             MatchTypeException, IssuerMissingException, PatientMergedException,
             SecurityException, IllegalStateException, NotSupportedException,
             SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+            HeuristicRollbackException, InstantiationException,
+            IllegalAccessException, ClassNotFoundException,
+            InvalidPatientSelectorException {
 
         Attributes patientOneAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Bugs^Bunny");
@@ -613,7 +616,7 @@ public class PatientServiceTest {
             MatchTypeException, IssuerMissingException, PatientMergedException,
             SecurityException, IllegalStateException, NotSupportedException,
             SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+            HeuristicRollbackException, InvalidPatientSelectorException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
@@ -649,7 +652,7 @@ public class PatientServiceTest {
             MatchTypeException, IssuerMissingException, PatientMergedException,
             SecurityException, IllegalStateException, NotSupportedException,
             SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+            HeuristicRollbackException, InvalidPatientSelectorException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
@@ -712,7 +715,7 @@ public class PatientServiceTest {
             MatchTypeException, IssuerMissingException, PatientMergedException,
             SecurityException, IllegalStateException, NotSupportedException,
             SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+            HeuristicRollbackException, InvalidPatientSelectorException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
@@ -757,7 +760,7 @@ public class PatientServiceTest {
             MatchTypeException, IssuerMissingException, PatientMergedException,
             SecurityException, IllegalStateException, NotSupportedException,
             SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+            HeuristicRollbackException, InvalidPatientSelectorException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
@@ -807,7 +810,7 @@ public class PatientServiceTest {
             MatchTypeException, IssuerMissingException, PatientMergedException,
             SecurityException, IllegalStateException, NotSupportedException,
             SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+            HeuristicRollbackException, InvalidPatientSelectorException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
@@ -856,7 +859,9 @@ public class PatientServiceTest {
             MatchTypeException, IssuerMissingException, PatientMergedException,
             SecurityException, IllegalStateException, NotSupportedException,
             SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+            HeuristicRollbackException, InstantiationException,
+            IllegalAccessException, ClassNotFoundException,
+            InvalidPatientSelectorException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
@@ -919,7 +924,7 @@ public class PatientServiceTest {
             MatchTypeException, IssuerMissingException, PatientMergedException,
             SecurityException, IllegalStateException, NotSupportedException,
             SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+            HeuristicRollbackException, InvalidPatientSelectorException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
