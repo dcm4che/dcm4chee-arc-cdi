@@ -3,7 +3,7 @@ jdk:
   - oraclejdk7
 before_install:
   - git clone https://github.com/abluesongbird/dcm4che.git tmp-dcm4che
-  - pushd dcm4che
+  - pushd tmp-dcm4che
   - mvn install
   - popd
 
