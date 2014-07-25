@@ -72,6 +72,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private transient TemplatesCache templatesCache;
     
     private boolean hostnameAEresoultion=false;
+    private boolean deIdentifyLogs=false;
     private ArrayList<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
     private HostNameAEEntry hostNameAEFallBackEntry;
     
@@ -146,6 +147,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     public void setFuzzyAlgorithmClass(String fuzzyAlgorithmClass) {
         this.fuzzyStr = fuzzyStr(fuzzyAlgorithmClass);
         this.fuzzyAlgorithmClass = fuzzyAlgorithmClass;
+    }
+
+    public boolean isDeIdentifyLogs() {
+        return deIdentifyLogs;
+    }
+
+    public void setDeIdentifyLogs(boolean deIdentifyLogs) {
+        this.deIdentifyLogs = deIdentifyLogs;
     }
 
     public FuzzyStr getFuzzyStr() {

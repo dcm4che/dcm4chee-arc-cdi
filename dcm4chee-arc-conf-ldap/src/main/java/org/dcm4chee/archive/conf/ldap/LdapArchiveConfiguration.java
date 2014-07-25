@@ -110,6 +110,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 arcDev.getWadoAttributesStaleTimeout(), 0);
         LdapUtils.storeBoolean(attrs, "dcmHostNameAEResolution",
                 arcDev.isHostnameAEresoultion());
+        LdapUtils.storeBoolean(attrs, "dcmDeIdentifyLogs",
+                arcDev.isDeIdentifyLogs());
     }
 
     @Override
@@ -237,6 +239,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         arcdev.setWadoAttributesStaleTimeout(LdapUtils.intValue(
                 attrs.get("dcmWadoAttributesStaleTimeout"), 0));
         arcdev.setHostnameAEresoultion(LdapUtils.booleanValue(attrs.get("dcmHostNameAEResolution"), true));
+        arcdev.setDeIdentifyLogs(LdapUtils.booleanValue(attrs.get("dcmDeIdentifyLogs"), true));
 
     }
 
@@ -402,6 +405,9 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         LdapUtils.storeDiff(mods, "dcmHostNameAEResolution",
                 aa.isHostnameAEresoultion(),
                 bb.isHostnameAEresoultion());
+        LdapUtils.storeDiff(mods, "dcmDeIdentifyLogs",
+                aa.isDeIdentifyLogs(),
+                bb.isDeIdentifyLogs());
     }
 
     @Override
