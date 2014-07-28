@@ -257,6 +257,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
                 dataRetentionPeriodExpiredCode);
         queryParam.setFuzzyStr(getFuzzyStr());
         queryParam.setAttributeFilters(attributeFilters);
+        queryParam.setDeIdentifyLogs(isDeIdentifyLogs());
         return queryParam;
     }
 

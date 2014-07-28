@@ -64,6 +64,7 @@ public class QueryParam {
     private Issuer defaultIssuerOfPatientID;
     private Issuer defaultIssuerOfAccessionNumber;
     private boolean showRejectedForQualityReasons;
+    private boolean deIdentifyLogs = false;
 
     public final boolean isCombinedDatetimeMatching() {
         return combinedDatetimeMatching;
@@ -193,5 +194,13 @@ public class QueryParam {
 
     public void setDefaultIssuerOfAccessionNumber(Issuer issuer) {
         this.defaultIssuerOfAccessionNumber = issuer;
+    }
+    
+    public boolean isDeIdentifyLogs() {
+        return deIdentifyLogs;
+    }
+
+    public void setDeIdentifyLogs(boolean deIdentifyLogs) {
+        this.deIdentifyLogs = deIdentifyLogs;
     }
 }

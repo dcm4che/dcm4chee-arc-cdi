@@ -57,6 +57,7 @@ import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
@@ -87,23 +88,24 @@ class MIMAAttributeCoercion {
     @Inject
     private PIXConsumer pixConsumer;
 
-    public void coerce(ArchiveAEExtension arcAE, MIMAInfo info, Attributes attrs) {
+    public void coerce(ArchiveAEExtension arcAE, MIMAInfo info,
+            Attributes attrs) {
         coercePatientIDsAndPatientNames(arcAE, info, attrs);
         coerceAccessionNumber(info, attrs);
     }
 
     private void coercePatientIDsAndPatientNames(ArchiveAEExtension arcAE,
             MIMAInfo info, Attributes attrs) {
-        
+
         // ids contained in the response instance
-        Set<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs); 
+        Set<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
 
         if (pids == null || pids.size() == 0)
             return;
 
         IDWithIssuer coercedRootID = null;
         Set<IDWithIssuer> coercedOtherIDs = new HashSet<IDWithIssuer>();
-        
+
         Issuer requestedIssuer = info.getRequestedIssuerOfPatientID();
         if (requestedIssuer == null && !info.isReturnOtherPatientIDs()
                 && !info.isReturnOtherPatientNames())
@@ -115,26 +117,27 @@ class MIMAAttributeCoercion {
         for (IDWithIssuer pid : pids) {
 
             // first, add the id itself, if not already added.
-            // if the pid is already found in the list, all the rest is skipped 
+            // if the pid is already found in the list, all the rest is skipped
             // as we consider the pix query to be simmetrical and we don't need
             // to perform the reverse pix query
-            if (!containsMatch(coercedOtherIDs,pid))
-            {
+            if (!containsMatch(coercedOtherIDs, pid)) {
                 coercedOtherIDs.add(pid);
-    
+
                 // Second, search for linked ids.
-                // If a PIX query response already containing the pid is found in
-                // the cache, reuse the cached PIX response, otherwise make a new
+                // If a PIX query response already containing the pid is found
+                // in
+                // the cache, reuse the cached PIX response, otherwise make a
+                // new
                 // PIX query
                 IDWithIssuer[] linkedIDs = info.getCachedPixResponse(pid);
                 if (linkedIDs == null) {
                     linkedIDs = pixConsumer.pixQuery(arcAE, pid);
                     info.cachePixResponse(linkedIDs);
                 }
-    
+
                 // third, add the linked ids, if not already added.
                 for (IDWithIssuer linkedID : linkedIDs)
-                    if (!containsMatch(coercedOtherIDs,linkedID))
+                    if (!containsMatch(coercedOtherIDs, linkedID))
                         coercedOtherIDs.add(linkedID);
             }
         }
@@ -170,7 +173,10 @@ class MIMAAttributeCoercion {
 
         // if requested, add the whole set of patient names to the response
         if (info.isReturnOtherPatientNames()) {
-            addOtherPatientNames(attrs, coercedOtherIDs, info);
+            ArchiveDeviceExtension dE = arcAE.getApplicationEntity().getDevice()
+                    .getDeviceExtension(ArchiveDeviceExtension.class);
+            boolean deIdentifyLogs = (dE != null) ? dE.isDeIdentifyLogs() : false;
+            addOtherPatientNames(attrs, coercedOtherIDs, info, deIdentifyLogs);
         }
     }
 
@@ -184,7 +190,7 @@ class MIMAAttributeCoercion {
     }
 
     private void addOtherPatientNames(Attributes match, Set<IDWithIssuer> pids,
-            MIMAInfo info) {
+            MIMAInfo info, boolean deIdentifyLogs) {
 
         String[] patientNames = info.getPatientNamesFromCache(pids);
 
@@ -195,7 +201,11 @@ class MIMAAttributeCoercion {
         }
 
         match.setString(Tag.OtherPatientNames, VR.PN, patientNames);
-        LOG.info("Add Other Patient Names: {}", Arrays.toString(patientNames));
+
+        if (deIdentifyLogs)
+         LOG.info("Add" + patientNames.length + " Other Patient Names");
+        else
+         LOG.info("Add Other Patient Names: {}",Arrays.toString(patientNames));
     }
 
     private String[] queryPatientNames(IDWithIssuer[] pids) {
@@ -240,20 +250,19 @@ class MIMAAttributeCoercion {
         attrs.newSequence(Tag.IssuerOfAccessionNumberSequence, 1).add(
                 requestedIssuer.toItem());
     }
-    
-    private boolean containsMatch (Set<IDWithIssuer> set, IDWithIssuer id)
-    {
+
+    private boolean containsMatch(Set<IDWithIssuer> set, IDWithIssuer id) {
         if (set == null || id == null)
             return false;
 
         boolean contains = false;
-        
+
         for (IDWithIssuer idOfSet : set)
-            if (idOfSet!=null && idOfSet.matches(id)) {
+            if (idOfSet != null && idOfSet.matches(id)) {
                 contains = true;
                 break;
             }
-                
+
         return contains;
     }
 
