@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.conf;
 
 import org.dcm4che3.soundex.FuzzyStr;
-import org.dcm4chee.archive.conf.ArchiveAEExtension.PatientSelectorConfig;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

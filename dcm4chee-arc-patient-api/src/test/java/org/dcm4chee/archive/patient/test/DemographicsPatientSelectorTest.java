@@ -38,7 +38,7 @@
 
 package org.dcm4chee.archive.patient.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,14 +68,12 @@ import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
-import org.dcm4chee.archive.patient.IDPatientSelector;
-import org.dcm4chee.archive.patient.IssuerMissingException;
-import org.dcm4chee.archive.patient.MatchDemographics;
-import org.dcm4chee.archive.patient.MatchType;
+import org.dcm4chee.archive.patient.DemographicsPatientSelector;
+import org.dcm4chee.archive.patient.DemographicsPatientSelector.MatchDemographics;
+import org.dcm4chee.archive.patient.DemographicsPatientSelector.MatchType;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientSelector;
 import org.dcm4chee.archive.patient.PatientService;
-import org.dcm4chee.archive.patient.PropertyMatchPatientSelector;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.transaction.api.annotation.TransactionMode;
@@ -94,7 +92,7 @@ import org.junit.runner.RunWith;
  *
  */
 @RunWith(Arquillian.class)
-public class PropertyMatchPatientSelectorTest {
+public class DemographicsPatientSelectorTest {
 
     @Inject
     private PatientService service;
@@ -113,7 +111,7 @@ public class PropertyMatchPatientSelectorTest {
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        war.addClass(PropertyMatchPatientSelectorTest.class);
+        war.addClass(DemographicsPatientSelectorTest.class);
         JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies().resolve()
                 .withTransitivity().as(JavaArchive.class);
@@ -279,10 +277,7 @@ public class PropertyMatchPatientSelectorTest {
 
     private Patient initupdateOrCreatePatientOnCStore(String id1,
             boolean withIssuer1, String name1, int issuerRepresentation,
-            PatientSelector selector) throws NotSupportedException,
-            SystemException, PatientCircularMergedException, SecurityException,
-            IllegalStateException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, IssuerMissingException {
+            PatientSelector selector) throws PatientCircularMergedException {
         Attributes patientOneAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, name1);
         patientOneAttributes.setString(Tag.PatientID, VR.LO, id1);
@@ -347,11 +342,11 @@ public class PropertyMatchPatientSelectorTest {
         return storeParam;
     }
 
-    private PropertyMatchPatientSelector getSelector(boolean mandatoryIssuer,
+    private DemographicsPatientSelector getSelector(boolean mandatoryIssuer,
             MatchDemographics demog, MatchType family, MatchType given,
             MatchType sex, MatchType birth) {
 
-        PropertyMatchPatientSelector s = new PropertyMatchPatientSelector();
+        DemographicsPatientSelector s = new DemographicsPatientSelector();
         s.setForceIssuer(mandatoryIssuer);
         s.setDemographics(demog);
         s.setFamilyName(family);

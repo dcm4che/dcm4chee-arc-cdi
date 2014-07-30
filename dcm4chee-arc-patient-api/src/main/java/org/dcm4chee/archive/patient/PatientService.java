@@ -104,24 +104,18 @@ public interface PatientService {
             StoreParam storeParam);
 
     Patient updateOrCreatePatientByHL7(Attributes attrs, StoreParam storeParam)
-            throws NonUniquePatientException, PatientMergedException,
-            MatchTypeException, IssuerMissingException,
-            InvalidPatientSelectorException;
+            throws NonUniquePatientException, PatientMergedException;
 
     void mergePatientByHL7(Attributes attrs, Attributes mrg,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException, PatientCircularMergedException,
-            MatchTypeException, IssuerMissingException,
-            InvalidPatientSelectorException;
+            PatientMergedException, PatientCircularMergedException;
 
     void linkPatient(Attributes attrs, Attributes otherAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException, MatchTypeException, IssuerMissingException,
-            InvalidPatientSelectorException;
+            PatientMergedException;
 
     void unlinkPatient(Attributes attrs, Attributes otherAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException, MatchTypeException, IssuerMissingException,
-            InvalidPatientSelectorException;
+            PatientMergedException;
 
 }

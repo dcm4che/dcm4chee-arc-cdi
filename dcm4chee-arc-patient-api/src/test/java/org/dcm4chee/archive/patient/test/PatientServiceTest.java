@@ -40,7 +40,6 @@ package org.dcm4chee.archive.patient.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -49,7 +48,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.annotation.Resource;
-import javax.enterprise.inject.New;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -76,9 +74,6 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
 import org.dcm4chee.archive.entity.PersonName;
 import org.dcm4chee.archive.patient.IDPatientSelector;
-import org.dcm4chee.archive.patient.InvalidPatientSelectorException;
-import org.dcm4chee.archive.patient.IssuerMissingException;
-import org.dcm4chee.archive.patient.MatchTypeException;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientMergedException;
@@ -391,10 +386,7 @@ public class PatientServiceTest {
      * @throws HeuristicRollbackException
      *             the heuristic rollback exception
      */
-    private void cleanupdateOrCreatePatientOnCStore(Patient[] patients)
-            throws NotSupportedException, SystemException, SecurityException,
-            IllegalStateException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException {
+    private void cleanupdateOrCreatePatientOnCStore(Patient[] patients) {
         for (Patient pat : patients) {
             em.remove(pat);
             em.remove(pat.getPatientName());
@@ -556,13 +548,7 @@ public class PatientServiceTest {
      */
     @Test
     public void testMergeWithExistingPatient()
-            throws PatientCircularMergedException, NonUniquePatientException,
-            MatchTypeException, IssuerMissingException, PatientMergedException,
-            SecurityException, IllegalStateException, NotSupportedException,
-            SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, InstantiationException,
-            IllegalAccessException, ClassNotFoundException,
-            InvalidPatientSelectorException {
+            throws NonUniquePatientException, PatientMergedException, PatientCircularMergedException {
 
         Attributes patientOneAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Bugs^Bunny");
@@ -612,11 +598,7 @@ public class PatientServiceTest {
 
     @Test
     public void testLinkUnlinkPatientsSimplaCase()
-            throws PatientCircularMergedException, NonUniquePatientException,
-            MatchTypeException, IssuerMissingException, PatientMergedException,
-            SecurityException, IllegalStateException, NotSupportedException,
-            SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, InvalidPatientSelectorException {
+            throws PatientCircularMergedException, NonUniquePatientException, PatientMergedException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
@@ -648,11 +630,7 @@ public class PatientServiceTest {
 
     @Test
     public void testLinkUnlinkPatientsUnknownIdentifier()
-            throws PatientCircularMergedException, NonUniquePatientException,
-            MatchTypeException, IssuerMissingException, PatientMergedException,
-            SecurityException, IllegalStateException, NotSupportedException,
-            SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, InvalidPatientSelectorException {
+            throws PatientCircularMergedException, NonUniquePatientException, PatientMergedException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
@@ -711,11 +689,7 @@ public class PatientServiceTest {
 
     @Test
     public void testLinkUnLinkPatientsnotReferencedIdentifierInLinkMessage()
-            throws PatientCircularMergedException, NonUniquePatientException,
-            MatchTypeException, IssuerMissingException, PatientMergedException,
-            SecurityException, IllegalStateException, NotSupportedException,
-            SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, InvalidPatientSelectorException {
+            throws PatientCircularMergedException, NonUniquePatientException, PatientMergedException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,
@@ -756,11 +730,7 @@ public class PatientServiceTest {
 
     @Test
     public void testLinkPatientsnoPatientRecordforOneIdentifier()
-            throws PatientCircularMergedException, NonUniquePatientException,
-            MatchTypeException, IssuerMissingException, PatientMergedException,
-            SecurityException, IllegalStateException, NotSupportedException,
-            SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, InvalidPatientSelectorException {
+            throws PatientCircularMergedException, NonUniquePatientException, PatientMergedException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
@@ -806,11 +776,7 @@ public class PatientServiceTest {
 
     @Test
     public void testLinkPatientsnoPatientRecordforAllIdentifiers()
-            throws PatientCircularMergedException, NonUniquePatientException,
-            MatchTypeException, IssuerMissingException, PatientMergedException,
-            SecurityException, IllegalStateException, NotSupportedException,
-            SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, InvalidPatientSelectorException {
+            throws NonUniquePatientException, PatientMergedException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
@@ -855,13 +821,7 @@ public class PatientServiceTest {
 
     @Test
     public void testMergeLinkedPatients()
-            throws PatientCircularMergedException, NonUniquePatientException,
-            MatchTypeException, IssuerMissingException, PatientMergedException,
-            SecurityException, IllegalStateException, NotSupportedException,
-            SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, InstantiationException,
-            IllegalAccessException, ClassNotFoundException,
-            InvalidPatientSelectorException {
+            throws PatientCircularMergedException, NonUniquePatientException, PatientMergedException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         patientOneAttributes.setString(Tag.PatientName, VR.PN, "Link^Bunny");
@@ -920,11 +880,7 @@ public class PatientServiceTest {
 
     @Test
     public void testLinkPatientsdifferentPatientRecords()
-            throws PatientCircularMergedException, NonUniquePatientException,
-            MatchTypeException, IssuerMissingException, PatientMergedException,
-            SecurityException, IllegalStateException, NotSupportedException,
-            SystemException, RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, InvalidPatientSelectorException {
+            throws PatientCircularMergedException, PatientMergedException {
         Attributes patientOneAttributes = new Attributes();
         Attributes patientTwoAttributes = new Attributes();
         Patient[] patients = initLinkPatients(patientOneAttributes,

@@ -216,34 +216,6 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmPatientSelector", def = "null")
     private PatientSelectorConfig patientSelectorConfig;
 
-    @ConfigClass(objectClass = "dcmPatientSelectorClass")
-    public static class PatientSelectorConfig implements Serializable {
-        private static final long serialVersionUID = -7211371641145410318L;;
-
-        @ConfigField(name = "dcmPatientSelectorClassName")
-        private String patientSelectorClassName;
-
-        @ConfigField(mapName = "dcmPatientSelectorProperties", mapKey = "dcmPatientSelectorProperty", name = "dcmPatientSelectorValue", mapElementObjectClass = "dcmPatientSelectorEntry")
-        private Map<String, String> patientSelectorProperties;
-
-        public String getPatientSelectorClassName() {
-            return patientSelectorClassName;
-        }
-
-        public void setPatientSelectorClassName(String patientSelectorClassName) {
-            this.patientSelectorClassName = patientSelectorClassName;
-        }
-
-        public Map<String, String> getPatientSelectorProperties() {
-            return patientSelectorProperties;
-        }
-
-        public void setPatientSelectorProperties(
-                Map<String, String> patientSelectorProperties) {
-            this.patientSelectorProperties = patientSelectorProperties;
-        }
-    }
-    
     public PatientSelectorConfig getPatientSelectorConfig() {
         return patientSelectorConfig;
     }

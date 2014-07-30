@@ -94,7 +94,6 @@ import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.ResourceLocator;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4chee.archive.conf.ArchiveAEExtension.PatientSelectorConfig;
 import org.dcm4chee.archive.conf.DeepEquals.CustomDeepEquals;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveConfiguration;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveHL7Configuration;

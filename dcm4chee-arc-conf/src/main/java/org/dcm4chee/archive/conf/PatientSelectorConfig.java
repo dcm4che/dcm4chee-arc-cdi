@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,60 +36,54 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.patient;
+package org.dcm4chee.archive.conf;
 
-import org.dcm4chee.archive.entity.Patient;
+import java.io.Serializable;
+import java.util.Map;
 
+import org.dcm4che3.conf.api.generic.ConfigClass;
+import org.dcm4che3.conf.api.generic.ConfigField;
 
 /**
+ *  
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-public class IssuerMissingException extends Exception {
+@ConfigClass(objectClass = "dcmPatientSelectorClass")
+public class PatientSelectorConfig implements Serializable {
 
-    /**
-     * 
-     */
-    public IssuerMissingException() {
-        super();
-        // TODO Auto-generated constructor stub
+    private static final long serialVersionUID = -8495883562439944206L;
+
+    @ConfigField(name = "dcmPatientSelectorClassName")
+    private String patientSelectorClassName;
+
+    @ConfigField(mapName = "dcmPatientSelectorProperties",
+                  mapKey = "dcmPatientSelectorProperty",
+                  name = "dcmPatientSelectorValue",
+                  mapElementObjectClass = "dcmPatientSelectorEntry")
+    private Map<String, String> patientSelectorProperties;
+
+    public String getPatientSelectorClassName() {
+        return patientSelectorClassName;
     }
 
-    /**
-     * @param message
-     * @param cause
-     * @param enableSuppression
-     * @param writableStackTrace
-     */
-    public IssuerMissingException(String message, Throwable cause,
-            boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-        // TODO Auto-generated constructor stub
+    public void setPatientSelectorClassName(String patientSelectorClassName) {
+        this.patientSelectorClassName = patientSelectorClassName;
     }
 
-    /**
-     * @param message
-     * @param cause
-     */
-    public IssuerMissingException(String message, Throwable cause) {
-        super(message, cause);
-        // TODO Auto-generated constructor stub
+    public Map<String, String> getPatientSelectorProperties() {
+        return patientSelectorProperties;
     }
 
-    /**
-     * @param message
-     */
-    public IssuerMissingException(String message) {
-        super(message);
-        // TODO Auto-generated constructor stub
+    public void setPatientSelectorProperties(
+            Map<String, String> patientSelectorProperties) {
+        this.patientSelectorProperties = patientSelectorProperties;
     }
 
-    /**
-     * @param cause
-     */
-    public IssuerMissingException(Throwable cause) {
-        super(cause);
-        // TODO Auto-generated constructor stub
+    @Override
+    public String toString() {
+        return "PatientSelectorConfig[class=" + patientSelectorClassName
+                + ", properties=" + patientSelectorProperties + "]";
     }
-
-    
 }

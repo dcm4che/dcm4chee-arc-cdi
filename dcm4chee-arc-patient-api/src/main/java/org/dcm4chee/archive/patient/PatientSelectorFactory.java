@@ -41,7 +41,7 @@ package org.dcm4chee.archive.patient;
 import java.util.Map;
 
 import org.apache.commons.beanutils.BeanMap;
-import org.dcm4chee.archive.conf.ArchiveAEExtension.PatientSelectorConfig;
+import org.dcm4chee.archive.conf.PatientSelectorConfig;
 import org.dcm4chee.archive.conf.StoreParam;
 
 /**
@@ -54,8 +54,7 @@ public class PatientSelectorFactory {
     private static Map<String, String> selectorProperties = null;
     private static PatientSelector selector = null;
 
-    public static PatientSelector createSelector(StoreParam param)
-            throws InvalidPatientSelectorException {
+    public static PatientSelector createSelector(StoreParam param) {
 
         if (param != null
                 && param.getPatientSelectorConfig() != null
@@ -81,30 +80,19 @@ public class PatientSelectorFactory {
             return new IDPatientSelector(); // default
     }
 
-    private static PatientSelector createSelector(PatientSelectorConfig conf)
-            throws InvalidPatientSelectorException {
+    private static PatientSelector createSelector(PatientSelectorConfig conf) {
 
-        try {
-            Object selectorObject = Class.forName(
-                    conf.getPatientSelectorClassName()).newInstance();
-            
-            BeanMap map = new BeanMap(selectorObject);
-            
-            for (String key : conf.getPatientSelectorProperties().keySet())
-                map.put(key, conf.getPatientSelectorProperties().get(key));
-            
-            return (PatientSelector) map.getBean();
-            
-        } catch (InstantiationException e) {
-            throw new InvalidPatientSelectorException(e);
-        } catch (IllegalAccessException e) {
-            throw new InvalidPatientSelectorException(e);
-        } catch (ClassNotFoundException e) {
-            throw new InvalidPatientSelectorException(e);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidPatientSelectorException(e);
-        } catch (ClassCastException e) {
-            throw new InvalidPatientSelectorException(e);
-        }
+            try {
+                Object selectorObject = Class.forName(
+                        conf.getPatientSelectorClassName()).newInstance();
+                BeanMap map = new BeanMap(selectorObject);
+                
+                for (String key : conf.getPatientSelectorProperties().keySet())
+                    map.put(key, conf.getPatientSelectorProperties().get(key));
+
+                return (PatientSelector) map.getBean();
+            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                throw new IllegalArgumentException("conf=" + conf, e);
+            }
     }
 }
