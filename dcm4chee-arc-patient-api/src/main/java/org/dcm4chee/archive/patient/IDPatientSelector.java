@@ -68,20 +68,31 @@ public class IDPatientSelector implements PatientSelector {
         if (candidates.size() == 1)
             return candidates.get(0);
 
-        ArrayList<Patient> matchingIssuer =
-                new ArrayList<Patient>(candidates.size());
-        for (Patient patient : candidates)
-            if (containsIDWithMatchingIssuer(patient.getPatientIDs(), pids))
-                matchingIssuer.add(patient);
-
-        if (matchingIssuer.size() == 1)
-            return matchingIssuer.get(0);
+        if (containsIssuer(pids)) {
+            ArrayList<Patient> matchingIssuer =
+                    new ArrayList<Patient>(candidates.size());
+            for (Patient patient : candidates)
+                if (containsIDWithMatchingIssuer(patient.getPatientIDs(), pids))
+                    matchingIssuer.add(patient);
+    
+            if (matchingIssuer.size() == 1)
+                return matchingIssuer.get(0);
+        }
  
         throw new NonUniquePatientException(
                 candidates.size() + " matching patients");
     }
 
-    private boolean containsIDWithMatchingIssuer(
+    static boolean containsIssuer(Collection<IDWithIssuer> pids) {
+
+        for (IDWithIssuer pid : pids)
+            if (pid.getIssuer() != null)
+                return true;
+
+        return false;
+    }
+
+    static boolean containsIDWithMatchingIssuer(
             Collection<PatientID> patientIDs, Collection<IDWithIssuer> pids) {
         for (PatientID patientID : patientIDs) {
             String id = patientID.getID();

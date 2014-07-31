@@ -47,11 +47,9 @@ import java.util.List;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.PersonName;
-import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.PersonName.Component;
-import org.dcm4chee.archive.entity.Issuer;
+import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.PatientID;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -79,12 +77,13 @@ public class DemographicsPatientSelector implements PatientSelector {
                 EnumSet.allOf(MatchDemographics.class);
         if (pids != null && !pids.isEmpty()) {
             matchDemographics.remove(MatchDemographics.NOID);
-            if (containsIssuer(pids)) {
+            if (IDPatientSelector.containsIssuer(pids)) {
                 // incoming has at least one id with issuer
                 List<Patient> patientsWithMatchingIssuer =
                         new ArrayList<Patient>(patients.size());
                 for (Patient pat : patients) {
-                    if (containsIDWithMatchingIssuer(pat.getPatientIDs(), pids))
+                    if (IDPatientSelector.containsIDWithMatchingIssuer(
+                            pat.getPatientIDs(), pids))
                         patientsWithMatchingIssuer.add(pat);
                 }
                 if (!patientsWithMatchingIssuer.isEmpty()) {
@@ -128,34 +127,6 @@ public class DemographicsPatientSelector implements PatientSelector {
                 iter.remove();
             }
         }
-    }
-
-    private boolean containsIssuer(Collection<IDWithIssuer> pids) {
-
-        for (IDWithIssuer pid : pids)
-            if (pid.getIssuer() != null)
-                return true;
-
-        return false;
-    }
-
-    private boolean containsIDWithMatchingIssuer(
-            Collection<PatientID> patientIDs, Collection<IDWithIssuer> pids) {
-        for (PatientID patientID : patientIDs) {
-            String id = patientID.getID();
-            Issuer issuer = patientID.getIssuer();
-            if (issuer == null)
-                continue;
-
-            for (IDWithIssuer pid : pids) {
-                if (id.equals(pid.getID())) {
-                    org.dcm4che3.data.Issuer issuer2 = pid.getIssuer();
-                    if (issuer2 != null && issuer2.matches(issuer))
-                        return true;
-                }
-            }
-        }
-        return false;
     }
 
     public void setForceIssuer(boolean forceIssuer) {
