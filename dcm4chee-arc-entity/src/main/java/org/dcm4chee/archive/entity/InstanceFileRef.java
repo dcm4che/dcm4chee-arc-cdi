@@ -87,8 +87,8 @@ public class InstanceFileRef {
     }
 
     public Attributes getAttributes(Attributes seriesAttrs) {
-        Attributes attrs = new Attributes(seriesAttrs);
-        Utils.decodeAttributes(attrs, instAttrs);
-        return attrs;
+        Attributes instance = new Attributes();
+        Utils.decodeAttributes(instance, instAttrs);
+        return Utils.mergeAndNormalize(seriesAttrs, instance);
     }
 }

@@ -60,6 +60,7 @@ import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
@@ -120,7 +121,7 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
             retrieveContext.getRetrieveService().coerceFileBeforeMerge(
                     archInst, retrieveContext, storeas.getRemoteAET(), attrs);
         }
-        attrs.addAll((Attributes) inst.getObject());
+        attrs = Utils.mergeAndNormalize(attrs,(Attributes) inst.getObject());
         if (!tsuid.equals(inst.tsuid))
             Decompressor.decompress(attrs, inst.tsuid);
 

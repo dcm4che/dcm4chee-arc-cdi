@@ -204,9 +204,10 @@ public class DefaultRetrieveService implements RetrieveService {
                 Attributes attrs;
                 if (fsuri != null) {
                     uri = fsuri + '/' + filePath;
-                    byte[] instAttrs = tuple.get(9, byte[].class);
-                    attrs = new Attributes(seriesAttrs);
-                    Utils.decodeAttributes(attrs, instAttrs);
+                    byte[] instByteAttrs = tuple.get(9, byte[].class);
+                    Attributes instanceAttrs = new Attributes();
+                    Utils.decodeAttributes(instanceAttrs, instByteAttrs);
+                    attrs = Utils.mergeAndNormalize(seriesAttrs, instanceAttrs);
                 } else {
                     StringBuilder sb = new StringBuilder();
                     sb.append("aet:");

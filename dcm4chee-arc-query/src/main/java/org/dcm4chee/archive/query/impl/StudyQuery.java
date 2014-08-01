@@ -140,11 +140,13 @@ class StudyQuery extends AbstractQuery<Study> {
         String retrieveAETs = results.getString(5);
         String externalRetrieveAET = results.getString(6);
         Availability availability = (Availability) results.get(7);
-        byte[] studyAttributes = results.getBinary(8);
-        byte[] patientAttributes = results.getBinary(9);
-        Attributes attrs = new Attributes();
-        Utils.decodeAttributes(attrs, patientAttributes);
-        Utils.decodeAttributes(attrs, studyAttributes);
+        byte[] studyByteAttributes = results.getBinary(8);
+        byte[] patientByteAttributes = results.getBinary(9);
+        Attributes patientAttrs = new Attributes();
+        Attributes studyAttrs = new Attributes();
+        Utils.decodeAttributes(patientAttrs, patientByteAttributes);
+        Utils.decodeAttributes(studyAttrs, studyByteAttributes);
+        Attributes attrs = Utils.mergeAndNormalize(patientAttrs, studyAttrs);
 
         Utils.setStudyQueryAttributes(attrs,
                 numberOfStudyRelatedSeries,

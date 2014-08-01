@@ -42,8 +42,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.SpecificCharacterSet;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
@@ -97,10 +99,8 @@ public class Utils {
     }
 
     public static void setStudyQueryAttributes(Attributes attrs,
-            int numberOfStudyRelatedSeries,
-            int numberOfStudyRelatedInstances,
-            String modalitiesInStudy,
-            String sopClassesInStudy) {
+            int numberOfStudyRelatedSeries, int numberOfStudyRelatedInstances,
+            String modalitiesInStudy, String sopClassesInStudy) {
         attrs.setInt(Tag.NumberOfStudyRelatedSeries, VR.IS,
                 numberOfStudyRelatedSeries);
         attrs.setInt(Tag.NumberOfStudyRelatedInstances, VR.IS,
@@ -118,9 +118,8 @@ public class Utils {
     }
 
     public static String[] decodeAETs(String s1, String s2) {
-        return StringUtils.split(
-                s1 == null ? s2 : s2 == null ? s1 : s1 + '\\' + s2,
-                '\\');
+        return StringUtils.split(s1 == null ? s2 : s2 == null ? s1 : s1 + '\\'
+                + s2, '\\');
     }
 
     public static void setRetrieveAET(Attributes attrs, String retrieveAETs,
@@ -134,14 +133,14 @@ public class Utils {
             } else
                 attrs.setString(Tag.RetrieveAETitle, VR.AE,
                         StringUtils.split(retrieveAETs, '\\'));
-        else
-            if (externalRetrieveAET != null)
-                attrs.setString(Tag.RetrieveAETitle, VR.AE,
-                        externalRetrieveAET);
+        else if (externalRetrieveAET != null)
+            attrs.setString(Tag.RetrieveAETitle, VR.AE, externalRetrieveAET);
     }
 
-    public static void setAvailability(Attributes attrs, Availability availability) {
-        attrs.setString(Tag.InstanceAvailability, VR.CS, availability.toString());
+    public static void setAvailability(Attributes attrs,
+            Availability availability) {
+        attrs.setString(Tag.InstanceAvailability, VR.CS,
+                availability.toString());
     }
 
     public static String[] intersection(String[] ss1, String[] ss2) {
@@ -157,5 +156,60 @@ public class Utils {
             if (s0.equals(s))
                 return true;
         return false;
+    }
+
+    public static Attributes mergeAndNormalize(Attributes... attrsList) {
+
+        SpecificCharacterSet globalCs = null;
+
+        for (Attributes attrs : attrsList) {
+
+            SpecificCharacterSet cs = attrs.getSpecificCharacterSet();
+
+            if (globalCs == null) {
+                globalCs = cs; // first
+            } else {
+
+                if (!cs.equals(globalCs)) {
+                    if (!(globalCs.containsASCII() && cs.isASCII())) {
+                        if (globalCs.isUTF8()) {
+                            // convert to UTF8
+                            convertToUTF8(attrsList);
+                            break;
+                        } else if (cs.isUTF8()) {
+                            globalCs = cs;
+                            convertToUTF8(attrsList);
+                            break;
+                        } else if (globalCs.isASCII() && cs.containsASCII()) {
+                            // do not decode
+                            globalCs = cs;
+                        } else {
+                            // incompatible codes, set all to UTF-8
+                            globalCs = SpecificCharacterSet
+                                    .valueOf("ISO_IR 192"); // UTF-8
+                            convertToUTF8(attrsList);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // merge
+        Attributes mergedAttrs = new Attributes();
+        for (Attributes attrs : attrsList)
+            mergedAttrs.addAll(attrs);
+
+        mergedAttrs.setString(Tag.SpecificCharacterSet, VR.CS,
+                globalCs.toCodes());
+
+        return mergedAttrs;
+    }
+
+    private static void convertToUTF8(Attributes... attrsList) {
+        for (Attributes attrs : attrsList) {
+            if (!attrs.getSpecificCharacterSet().isUTF8())
+                attrs.setSpecificCharacterSet("ISO_IR 192"); // UTF-8
+        }
     }
 }

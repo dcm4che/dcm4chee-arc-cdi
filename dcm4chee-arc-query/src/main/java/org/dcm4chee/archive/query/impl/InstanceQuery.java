@@ -121,14 +121,15 @@ class InstanceQuery extends AbstractQuery<Instance> {
         String retrieveAETs = results.getString(1);
         String externalRetrieveAET = results.getString(2);
         Availability availability = (Availability) results.get(3);
-        byte[] instAttributes = results.getBinary(4);
+        byte[] instByteAttributes = results.getBinary(4);
         if (!seriesPk.equals(this.seriesPk)) {
             this.seriesAttrs = context.getQueryService()
                     .getSeriesAttributes(seriesPk, context.getQueryParam());
             this.seriesPk = seriesPk;
         }
-        Attributes attrs = new Attributes(seriesAttrs);
-        Utils.decodeAttributes(attrs, instAttributes);
+        Attributes instanceAttrs = new Attributes();
+        Utils.decodeAttributes(instanceAttrs, instByteAttributes);
+        Attributes attrs = Utils.mergeAndNormalize(seriesAttrs, instanceAttrs);
         Utils.setRetrieveAET(attrs, retrieveAETs, externalRetrieveAET);
         Utils.setAvailability(attrs, availability);
         return attrs;

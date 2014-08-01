@@ -46,25 +46,27 @@ import org.dcm4che3.data.Attributes;
  */
 public class PatientStudySeriesAttributes {
     
-    private final byte[] seriesAttrs;
-    private final byte[] studyAttrs;
-    private final byte[] patientAttrs;
+    private final byte[] seriesBytes;
+    private final byte[] studyBytes;
+    private final byte[] patientBytes;
 
     public PatientStudySeriesAttributes(
             byte[] seriesAttributes,
             byte[] studyAttributes,
             byte[] patientAttributes) {
-        this.seriesAttrs = seriesAttributes;
-        this.studyAttrs = studyAttributes;
-        this.patientAttrs = patientAttributes;
+        this.seriesBytes = seriesAttributes;
+        this.studyBytes = studyAttributes;
+        this.patientBytes = patientAttributes;
     }
 
     public Attributes getAttributes() {
-        Attributes attrs = new Attributes();
-        Utils.decodeAttributes(attrs, patientAttrs);
-        Utils.decodeAttributes(attrs, studyAttrs);
-        Utils.decodeAttributes(attrs, seriesAttrs);
-        return attrs;
+        Attributes patientAttrs = new Attributes();
+        Attributes studyAttrs = new Attributes();
+        Attributes seriesAttrs = new Attributes();
+        Utils.decodeAttributes(patientAttrs, patientBytes);
+        Utils.decodeAttributes(studyAttrs, studyBytes);
+        Utils.decodeAttributes(seriesAttrs, seriesBytes);
+        return Utils.mergeAndNormalize(patientAttrs, studyAttrs, seriesAttrs);
     }
 
 }

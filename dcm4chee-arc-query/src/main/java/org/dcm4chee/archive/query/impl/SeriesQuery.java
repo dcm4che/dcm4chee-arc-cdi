@@ -154,8 +154,9 @@ class SeriesQuery extends AbstractQuery<Series> {
             this.studyAttrs = toStudyAttributes(studyPk, results);
             this.studyPk = studyPk;
         }
-        Attributes attrs = new Attributes(studyAttrs);
-        Utils.decodeAttributes(attrs, seriesAttributes);
+        Attributes seriesAttrs = new Attributes();
+        Utils.decodeAttributes(seriesAttrs, seriesAttributes);
+        Attributes attrs = Utils.mergeAndNormalize(studyAttrs, seriesAttrs);
         Utils.setSeriesQueryAttributes(attrs, numberOfSeriesRelatedInstances);
         Utils.setRetrieveAET(attrs, retrieveAETs, externalRetrieveAET);
         Utils.setAvailability(attrs, availability);
@@ -178,11 +179,13 @@ class SeriesQuery extends AbstractQuery<Series> {
         }
         String modalitiesInStudy = results.getString(5);
         String sopClassesInStudy = results.getString(6);
-        byte[] studyAttributes = results.getBinary(11);
-        byte[] patientAttributes = results.getBinary(12);
-        Attributes attrs = new Attributes();
-        Utils.decodeAttributes(attrs, patientAttributes);
-        Utils.decodeAttributes(attrs, studyAttributes);
+        byte[] studyByteAttributes = results.getBinary(11);
+        byte[] patientByteAttributes = results.getBinary(12);
+        Attributes patientAttrs = new Attributes();
+        Attributes studyAttrs = new Attributes();
+        Utils.decodeAttributes(patientAttrs, patientByteAttributes);
+        Utils.decodeAttributes(studyAttrs, studyByteAttributes);
+        Attributes attrs = Utils.mergeAndNormalize(patientAttrs, studyAttrs);
         Utils.setStudyQueryAttributes(attrs,
                 numberOfStudyRelatedSeries,
                 numberOfStudyRelatedInstances,
