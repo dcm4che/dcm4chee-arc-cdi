@@ -348,11 +348,11 @@ public class DemographicsPatientSelectorTest {
 
         DemographicsPatientSelector s = new DemographicsPatientSelector();
         s.setForceIssuer(mandatoryIssuer);
-        s.setDemographics(demog);
-        s.setFamilyName(family);
-        s.setGivenName(given);
-        s.setPatientBirthDate(birth);
-        s.setPatientSex(sex);
+        s.setDemographics(demog.toString());
+        s.setFamilyName(family.toString());
+        s.setGivenName(given.toString());
+        s.setPatientBirthDate(birth.toString());
+        s.setPatientSex(sex.toString());
 
         return s;
     }
