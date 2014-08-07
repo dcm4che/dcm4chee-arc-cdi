@@ -2,8 +2,9 @@ language: java
 jdk:
   - oraclejdk7
 before_install:
-  - git clone https://github.com/dcm4che/dcm4che.git tmp-dcm4che
+  - git clone --depth 1 https://github.com/dcm4che/dcm4che.git tmp-dcm4che
   - pushd tmp-dcm4che
+  - git show | head
   - mvn install -Dmaven.skip.test=true
   - popd
 
