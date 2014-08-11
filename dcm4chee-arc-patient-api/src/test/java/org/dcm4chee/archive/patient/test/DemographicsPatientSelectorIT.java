@@ -92,7 +92,7 @@ import org.junit.runner.RunWith;
  *
  */
 @RunWith(Arquillian.class)
-public class DemographicsPatientSelectorTest {
+public class DemographicsPatientSelectorIT {
 
     @Inject
     private PatientService service;
@@ -111,7 +111,7 @@ public class DemographicsPatientSelectorTest {
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        war.addClass(DemographicsPatientSelectorTest.class);
+        war.addClass(DemographicsPatientSelectorIT.class);
         JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies().resolve()
                 .withTransitivity().as(JavaArchive.class);
