@@ -9,18 +9,10 @@
     <version>4.4.0-SNAPSHOT</version>
   </parent>
   <artifactId>dcm4chee-arc-audit</artifactId>
-  <properties>
-    <skipTests>true</skipTests>
-  </properties>
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.8</version>
-        <configuration>
-          <skipTests>${skipTests}</skipTests>
-        </configuration>
+        <artifactId>maven-failsafe-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

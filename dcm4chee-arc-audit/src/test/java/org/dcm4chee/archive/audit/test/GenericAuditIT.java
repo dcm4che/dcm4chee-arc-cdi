@@ -54,7 +54,7 @@ import org.dcm4che3.net.audit.AuditRecordRepository;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class GenericAuditTest {
+public class GenericAuditIT {
     
     protected static String ARR_HOST =  "10.231.163.243";
     protected static int ARR_PORT_UNSECURE =  514;

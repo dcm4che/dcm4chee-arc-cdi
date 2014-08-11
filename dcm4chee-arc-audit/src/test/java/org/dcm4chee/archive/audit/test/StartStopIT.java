@@ -39,31 +39,21 @@
 package org.dcm4chee.archive.audit.test;
 
 import org.dcm4che.archive.audit.message.StartStopAudit;
-import org.dcm4che.archive.audit.message.StoreAudit;
 import org.dcm4che3.audit.AuditMessage;
-import org.dcm4che3.audit.SOPClass;
-import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4che3.util.UIDUtils;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.event.LocalSource;
-import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.archive.store.impl.StoreSessionImpl;
 import org.junit.Test;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public class StoreTest extends GenericAuditTest{
+public class StartStopIT extends GenericAuditIT{
     
     @Test
-    public void testStoreSampleSend () throws Exception {
+    public void testStartStopSampleSend () throws Exception {
 
         Device arr = getARRDevice();
 
@@ -75,16 +65,7 @@ public class StoreTest extends GenericAuditTest{
         test.addDeviceExtension(auditLogger);
             
         Participant source = new LocalSource();
-        String remoteAET = "remoteAET";
-        
-        Attributes testDicomObj = new Attributes();
-        testDicomObj.setString(Tag.StudyInstanceUID, VR.UI, UIDUtils.createUID());
-        testDicomObj.setString(Tag.SOPClassUID, VR.UI, "1.2.840.10008.1.1");
-        testDicomObj.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
-        testDicomObj.setString(Tag.PatientID, VR.LO, UIDUtils.createUID());
-        
-        AuditMessage auditMessage = new StoreAudit(remoteAET, source, 
-                testDicomObj, EventOutcomeIndicator.Success, auditLogger);
+        AuditMessage auditMessage = new StartStopAudit(true, auditLogger, source);
         sendAuditMessage(auditMessage, auditLogger);
     }
 
