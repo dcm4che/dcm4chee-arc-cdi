@@ -65,13 +65,13 @@ import org.junit.runner.RunWith;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @RunWith(Arquillian.class)
-public class InitDataForTest {
+public class InitDataForIT {
     
     private static final String SOURCE_AET = "SOURCE_AET";
 
     private static final String[] RETRIEVE_AETS = { "RETRIEVE_AET" };
 
-    private static final Logger log = Logger.getLogger(InitDataForTest.class);
+    private static final Logger log = Logger.getLogger(InitDataForIT.class);
     
     @Inject
     private StoreService storeService; 
@@ -125,7 +125,7 @@ public class InitDataForTest {
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive war= ShrinkWrap.create(WebArchive.class, "test.war");
-        war.addClass(InitDataForTest.class);
+        war.addClass(InitDataForIT.class);
         war.addClass(ParamFactory.class);
         JavaArchive[] archs =   Maven.resolver()
                 .loadPomFromFile("testpom.xml")

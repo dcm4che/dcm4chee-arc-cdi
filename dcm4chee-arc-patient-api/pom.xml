@@ -143,34 +143,31 @@
   <!-- <build> <plugins> <plugin> <artifactId>maven-jar-plugin</artifactId> 
     <version>2.3.2</version> <configuration> <archive> <manifestEntries> <Dependencies>org.dcm4che.core</Dependencies> 
     </manifestEntries> </archive> </configuration> </plugin> </plugins> </build> -->
+  <build>
+      <!-- <resources> <resource> <directory>src/main/resources/META-INF</directory> 
+        <includes> <include>**/*beans.xml</include> </includes> </resource> </resources> -->
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <archive>
+              <manifestEntries>
+                <Dependencies>org.dcm4che.core</Dependencies>
+                <Dependencies>org.apache.commons.beanutils</Dependencies>
+              </manifestEntries>
+            </archive>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
   <profiles>
-    <profile>
-      <id>default</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <skipTests>true</skipTests>
-      </properties>
-      <build>
-        <!-- <resources> <resource> <directory>src/main/resources/META-INF</directory> 
-          <includes> <include>**/*beans.xml</include> </includes> </resource> </resources> -->
-        <plugins>
-          <plugin>
-            <artifactId>maven-jar-plugin</artifactId>
-            <version>2.3.2</version>
-            <configuration>
-              <archive>
-                <manifestEntries>
-                  <Dependencies>org.dcm4che.core</Dependencies>
-                  <Dependencies>org.apache.commons.beanutils</Dependencies>
-                </manifestEntries>
-              </archive>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>jboss8</id>
       <properties>

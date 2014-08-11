@@ -74,9 +74,9 @@ import org.junit.runner.RunWith;
  * 
  */
 @RunWith(Arquillian.class)
-public class QueryServiceTest {
+public class QueryServiceIT {
 
-    private static final Logger log = Logger.getLogger(QueryServiceTest.class);
+    private static final Logger log = Logger.getLogger(QueryServiceIT.class);
     private Query query;
 
     @After
@@ -93,7 +93,7 @@ public class QueryServiceTest {
     public static WebArchive createDeployment() {
         WebArchive war= ShrinkWrap.create(WebArchive.class, "test.war"); 
         war.addClass(ParamFactory.class);
-        war.addClass(QueryServiceTest.class);
+        war.addClass(QueryServiceIT.class);
         JavaArchive[] archs =   Maven.resolver().loadPomFromFile("testpom.xml").importRuntimeAndTestDependencies().resolve().withTransitivity().as(JavaArchive.class);
         for(JavaArchive a: archs)
         {
