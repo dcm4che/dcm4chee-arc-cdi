@@ -80,7 +80,7 @@ import org.junit.runner.RunWith;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @RunWith(Arquillian.class)
-public class ClearDataForTest {
+public class ClearDataForIT {
 
     @Inject
     PatientService patientService;
@@ -131,7 +131,7 @@ public class ClearDataForTest {
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        war.addClass(InitDataForTest.class);
+        war.addClass(InitDataForIT.class);
         war.addClass(ParamFactory.class);
         JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies().resolve()
