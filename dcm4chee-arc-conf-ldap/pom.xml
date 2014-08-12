@@ -6,9 +6,6 @@
     <version>4.4.0-SNAPSHOT</version>
   </parent>
   <artifactId>dcm4chee-arc-conf-ldap</artifactId>
-  <properties>
-    <skipTests>true</skipTests>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
