@@ -157,6 +157,31 @@ public class PatientServiceEJB implements PatientService {
                 .getResultList();
     }
 
+//    private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
+//        BooleanBuilder builder = new BooleanBuilder();
+//        Collection<BooleanExpression> eqIDs = new ArrayList<BooleanExpression>(
+//                pids.size());
+//        for (IDWithIssuer pid : pids) {
+//            BooleanExpression eqID = QPatientID.patientID.id.eq(pid.getID());
+//            if (pid.getIssuer() == null) {
+//                builder.or(eqID);
+//            } else {
+//                builder.or(ExpressionUtils.and(eqID,
+//                        eqOrNoIssuer(pid.getIssuer())));
+//                eqIDs.add(eqID);
+//            }
+//        }
+//        BooleanExpression matchingIDs = new HibernateSubQuery()
+//                .from(QPatientID.patientID)
+//                .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
+//                .where(ExpressionUtils.and(
+//                        QPatientID.patientID.patient.eq(QPatient.patient),
+//                        builder)).exists();
+//        Session session = em.unwrap(Session.class);
+//        return new HibernateQuery(session).from(QPatient.patient)
+//                .where(matchingIDs).list(QPatient.patient);
+//    }
+    
     private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
         BooleanBuilder builder = new BooleanBuilder();
         Collection<BooleanExpression> eqIDs = new ArrayList<BooleanExpression>(
@@ -171,15 +196,13 @@ public class PatientServiceEJB implements PatientService {
                 eqIDs.add(eqID);
             }
         }
-        BooleanExpression matchingIDs = new HibernateSubQuery()
+        HibernateSubQuery matchingIDs = new HibernateSubQuery()
                 .from(QPatientID.patientID)
                 .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
-                .where(ExpressionUtils.and(
-                        QPatientID.patientID.patient.eq(QPatient.patient),
-                        builder)).exists();
+                .where(builder);
         Session session = em.unwrap(Session.class);
         return new HibernateQuery(session).from(QPatient.patient)
-                .where(matchingIDs).list(QPatient.patient);
+                .where(QPatient.patient.pk.in(matchingIDs.list(QPatientID.patientID.patient.pk))).list(QPatient.patient);
     }
 
     private Predicate eqOrNoIssuer(org.dcm4che3.data.Issuer issuer) {
