@@ -228,11 +228,6 @@
               <id>integration-test</id>
               <goals>
                 <goal>integration-test</goal>
-              </goals>
-            </execution>
-            <execution>
-              <id>verify</id>
-              <goals>
                 <goal>verify</goal>
               </goals>
             </execution>
@@ -244,6 +239,11 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+      </plugin>
+    </plugins>
   </build>
   <modules>
     <module>dcm4chee-arc-conf</module>

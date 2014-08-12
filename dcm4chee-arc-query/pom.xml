@@ -157,33 +157,34 @@
     </dependency>
     <!-- end testing dependencies -->
   </dependencies>
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <configuration>
-            <archive>
-              <manifestEntries>
-                <Dependencies>org.dcm4che.conf.api,org.dcm4che.net,org.dcm4che.soundex</Dependencies>
-              </manifestEntries>
-            </archive>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-    <plugins>
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
   <profiles>
     <profile>
-      <id>jboss8</id>
+      <id>default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
-        <skipTests>false</skipTests>
+        <skipITs>true</skipITs>
       </properties>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-jar-plugin</artifactId>
+              <configuration>
+                <archive>
+                  <manifestEntries>
+                    <Dependencies>org.dcm4che.conf.api,org.dcm4che.net,org.dcm4che.soundex</Dependencies>
+                  </manifestEntries>
+                </archive>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+    <profile>
+      <id>jboss8</id>
       <build>
         <plugins>
           <plugin>
@@ -205,9 +206,6 @@
     </profile>
     <profile>
       <id>jbossas-remote-7</id>
-      <properties>
-        <skipTests>false</skipTests>
-      </properties>
       <build>
         <resources>
           <resource>

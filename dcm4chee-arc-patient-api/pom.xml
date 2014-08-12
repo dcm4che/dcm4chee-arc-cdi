@@ -140,39 +140,37 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <!-- <build> <plugins> <plugin> <artifactId>maven-jar-plugin</artifactId> 
-    <version>2.3.2</version> <configuration> <archive> <manifestEntries> <Dependencies>org.dcm4che.core</Dependencies> 
-    </manifestEntries> </archive> </configuration> </plugin> </plugins> </build> -->
-  <build>
-      <!-- <resources> <resource> <directory>src/main/resources/META-INF</directory> 
-        <includes> <include>**/*beans.xml</include> </includes> </resource> </resources> -->
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <configuration>
-            <archive>
-              <manifestEntries>
-                <Dependencies>org.dcm4che.core</Dependencies>
-                <Dependencies>org.apache.commons.beanutils</Dependencies>
-              </manifestEntries>
-            </archive>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-    <plugins>
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
   <profiles>
     <profile>
-      <id>jboss8</id>
+      <id>default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
-        <skipTests>false</skipTests>
+        <skipITs>true</skipITs>
       </properties>
+      <build>
+        <!-- <resources> <resource> <directory>src/main/resources/META-INF</directory> 
+          <includes> <include>**/*beans.xml</include> </includes> </resource> </resources> -->
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-jar-plugin</artifactId>
+              <configuration>
+                <archive>
+                  <manifestEntries>
+                    <Dependencies>org.dcm4che.core</Dependencies>
+                    <Dependencies>org.apache.commons.beanutils</Dependencies>
+                  </manifestEntries>
+                </archive>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+    <profile>
+      <id>jboss8</id>
       <build>
         <plugins>
           <plugin>
@@ -205,9 +203,6 @@
     </profile>
     <profile>
       <id>jbossas-remote-7</id>
-      <properties>
-        <skipTests>false</skipTests>
-      </properties>
       <build>
         <resources>
           <resource>
