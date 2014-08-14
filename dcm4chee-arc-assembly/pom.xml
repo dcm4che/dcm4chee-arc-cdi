@@ -48,6 +48,12 @@
       <type>war</type>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>json-jboss-modules</artifactId>
+      <version>${project.version}</version>
+      <type>zip</type>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-jboss-modules</artifactId>
       <version>${dcm4che.version}</version>

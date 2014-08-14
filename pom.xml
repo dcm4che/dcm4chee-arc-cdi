@@ -157,6 +157,11 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
+        <groupId>org.glassfish</groupId>
+        <artifactId>javax.json</artifactId>
+        <version>1.0.3</version>
+      </dependency>
+      <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
@@ -285,5 +290,6 @@
     <module>dcm4chee-arc-war-skinny</module>
     <module>dcm4chee-arc-issuer</module>
     <module>dcm4chee-arc-entity-ext</module>
+    <module>json-jboss-modules</module>
   </modules>
 </project>
