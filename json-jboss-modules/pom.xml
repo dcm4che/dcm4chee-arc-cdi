@@ -1,8 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.dcm4che</groupId>
+  <parent>
+    <groupId>org.dcm4che.dcm4chee-arc</groupId>
+    <artifactId>dcm4chee-arc-parent</artifactId>
+    <version>4.4.0-SNAPSHOT</version>
+  </parent>
   <artifactId>json-jboss-modules</artifactId>
-  <version>1.0.3</version>
   <packaging>pom</packaging>
   <distributionManagement>
     <repository>
@@ -18,7 +21,6 @@
     <dependency>
       <groupId>org.glassfish</groupId>
       <artifactId>javax.json</artifactId>
-      <version>${project.version}</version>
     </dependency>
   </dependencies>
   <repositories>
