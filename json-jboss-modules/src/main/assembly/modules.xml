@@ -20,8 +20,7 @@
         <include>org.glassfish:javax.json</include>
       </includes>
       <useTransitiveDependencies>false</useTransitiveDependencies>
-      <useProjectArtifact>false</useProjectArtifact>
+      <useProjectArtifact>true</useProjectArtifact>
     </dependencySet>
-   
   </dependencySets>
 </assembly>
