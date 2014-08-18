@@ -35,8 +35,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.conf.api, org.dcm4che.imageio,
-                org.dcm4che.net-hl7, org.dcm4che.soundex</Dependencies>
+              <Dependencies>org.dcm4che.conf.api, org.dcm4che.imageio, org.dcm4che.net-hl7, org.dcm4che.soundex</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>
