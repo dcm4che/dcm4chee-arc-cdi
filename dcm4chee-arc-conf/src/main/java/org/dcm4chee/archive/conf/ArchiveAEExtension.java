@@ -40,6 +40,7 @@ package org.dcm4chee.archive.conf;
 
 import java.io.Serializable;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.transform.Templates;
@@ -192,8 +193,8 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmCheckTransferCapabilities", def = "false")
     private boolean checkTransferCapabilities;
 
-    @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSupressionCriteriaEntry")
-    private Map<String, String> supressionCriteriaMap;
+    @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSupressionCriteriaEntry", failIfNotPresent=false)
+    private Map<String, String> supressionCriteriaMap = new HashMap<String, String>();
 
     public boolean isCheckTransferCapabilities() {
         return checkTransferCapabilities;
@@ -213,8 +214,8 @@ public class ArchiveAEExtension extends AEExtension {
 
     }
     
-    @ConfigField(name = "dcmPatientSelector", def = "null")
-    private PatientSelectorConfig patientSelectorConfig;
+    @ConfigField(name = "dcmPatientSelector", def = "null", failIfNotPresent = false)
+    private PatientSelectorConfig patientSelectorConfig = new PatientSelectorConfig();
 
     public PatientSelectorConfig getPatientSelectorConfig() {
         return patientSelectorConfig;
