@@ -174,8 +174,8 @@ public class ArchiveAEExtension extends AEExtension {
 //    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
 //    private boolean timeZoneSupported;
 
-    @ConfigField(name = "dcmRetrieveSupressionCriteria", def = "null")
-    private RetrieveSupressionCriteria retrieveSupressionCriteria;
+    @ConfigField(name = "dcmRetrieveSupressionCriteria", def = "null", failIfNotPresent=false)
+    private RetrieveSupressionCriteria retrieveSupressionCriteria = new RetrieveSupressionCriteria();
 
     public RetrieveSupressionCriteria getRetrieveSupressionCriteria() {
         return retrieveSupressionCriteria;
