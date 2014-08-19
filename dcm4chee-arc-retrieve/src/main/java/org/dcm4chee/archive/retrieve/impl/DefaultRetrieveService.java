@@ -119,7 +119,6 @@ public class DefaultRetrieveService implements RetrieveService {
 
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        builder.and(QueryBuilder.hideRejectionNotes(queryParam));
         return query(builder);
     }
 
@@ -146,7 +145,6 @@ public class DefaultRetrieveService implements RetrieveService {
 
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        builder.and(QueryBuilder.hideRejectionNotes(queryParam));
         return query(builder);
     }
 

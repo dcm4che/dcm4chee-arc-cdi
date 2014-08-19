@@ -38,7 +38,6 @@
 
 package org.dcm4chee.archive.query.util;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
@@ -410,25 +409,6 @@ public class QueryBuilder {
                 true));
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(hideRejectedInstance(queryParam));
-        builder.and(hideRejectionNotes(queryParam));
-    }
-
-    public static Predicate hideRejectionNotes(QueryParam queryParam) {
-        ArrayList<Code> codes = new ArrayList<Code>(4);
-        if (!queryParam.isShowRejectedForQualityReasons()
-                && queryParam.getRejectedForQualityReasonsCode() != null)
-            codes.add((Code) queryParam.getRejectedForQualityReasonsCode());
-        if (queryParam.getRejectedForPatientSafetyReasonsCode() != null)
-            codes.add((Code) queryParam
-                    .getRejectedForPatientSafetyReasonsCode());
-        if (queryParam.getIncorrectModalityWorklistEntryCode() != null)
-            codes.add((Code) queryParam.getIncorrectModalityWorklistEntryCode());
-        if (queryParam.getDataRetentionPeriodExpiredCode() != null)
-            codes.add((Code) queryParam.getDataRetentionPeriodExpiredCode());
-        if (codes.isEmpty())
-            return null;
-        return QInstance.instance.conceptNameCode.isNull().or(
-                QInstance.instance.conceptNameCode.in(codes).not());
     }
 
     public static Predicate hideRejectedInstance(QueryParam queryParam) {

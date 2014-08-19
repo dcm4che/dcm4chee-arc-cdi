@@ -73,7 +73,6 @@ public class QueryServiceEJB {
                 QInstance.instance.series.eq(QSeries.series));
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        builder.and(QueryBuilder.hideRejectionNotes(queryParam));
         int num = (int) new HibernateQuery(em.unwrap(Session.class))
             .from(QSeries.series)
             .where(ExpressionUtils.and(
@@ -98,7 +97,6 @@ public class QueryServiceEJB {
                 new BooleanBuilder(QSeries.series.study.pk.eq(studyPk));
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        builder.and(QueryBuilder.hideRejectionNotes(queryParam));
         int num = (int) new HibernateQuery(em.unwrap(Session.class))
             .from(QInstance.instance)
             .innerJoin(QInstance.instance.series, QSeries.series)
@@ -119,7 +117,6 @@ public class QueryServiceEJB {
                 new BooleanBuilder(QInstance.instance.series.pk.eq(seriesPk));
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        builder.and(QueryBuilder.hideRejectionNotes(queryParam));
         int num = (int) new HibernateQuery(em.unwrap(Session.class))
             .from(QInstance.instance)
             .where(builder)
