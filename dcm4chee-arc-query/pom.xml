@@ -89,7 +89,7 @@
       <artifactId>powermock-api-easymock</artifactId>
       <version>${powermock.version}</version>
       <scope>test</scope>
-    </dependency>  
+    </dependency>
     <dependency>
       <groupId>org.jboss.shrinkwrap.resolver</groupId>
       <artifactId>shrinkwrap-resolver-bom</artifactId>
@@ -181,7 +181,7 @@
     <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-api-easymock</artifactId>
-    </dependency>  
+    </dependency>
     <!-- end testing dependencies -->
   </dependencies>
   <profiles>

@@ -39,6 +39,8 @@
 package org.dcm4chee.archive.query.impl;
 
 import javax.ejb.Stateless;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -51,12 +53,11 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
-import org.hibernate.Session;
 
 import com.mysema.query.BooleanBuilder;
-import com.mysema.query.jpa.hibernate.HibernateQuery;
-import com.mysema.query.jpa.hibernate.HibernateSubQuery;
+import com.mysema.query.jpa.hibernate.HibernateQueryFactory;
 import com.mysema.query.types.ExpressionUtils;
+import com.mysema.query.types.expr.BooleanExpression;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -66,38 +67,53 @@ import com.mysema.query.types.ExpressionUtils;
 public class QueryServiceEJB {
 
     @PersistenceContext(unitName="dcm4chee-arc")
-    private EntityManager em;
+    EntityManager em;
+    
+    @Inject
+    Instance<HibernateQueryFactory> hibernateQueryFactoryInstance;
+    
     public int calculateNumberOfStudyRelatedSeries(Long studyPk,
             QueryParam queryParam) {
-        BooleanBuilder builder = new BooleanBuilder(
-                QInstance.instance.series.eq(QSeries.series));
-        builder.and(QInstance.instance.replaced.isFalse());
-        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        int num = (int) new HibernateQuery(em.unwrap(Session.class))
+		HibernateQueryFactory hibernateQueryFactory = hibernateQueryFactoryInstance
+				.get();
+		BooleanBuilder builder = createBooleanBuilder(
+				QInstance.instance.series.eq(QSeries.series), queryParam);
+		
+		int num = (int) hibernateQueryFactory.query()
             .from(QSeries.series)
             .where(ExpressionUtils.and(
                 QSeries.series.study.pk.eq(studyPk),
-                new HibernateSubQuery()
+                hibernateQueryFactory.subQuery()
                     .from(QInstance.instance)
                     .where(builder)
                     .exists()))
             .count();
+		
         em.createNamedQuery(queryParam.isShowRejectedForQualityReasons()
                 ? Study.UPDATE_NUMBER_OF_SERIES_A
                 : Study.UPDATE_NUMBER_OF_SERIES)
             .setParameter(1, num)
             .setParameter(2, studyPk)
             .executeUpdate();
+        
         return num;
     }
 
-    public int calculateNumberOfStudyRelatedInstance(Long studyPk,
-            QueryParam queryParam) {
-        BooleanBuilder builder =
-                new BooleanBuilder(QSeries.series.study.pk.eq(studyPk));
+	BooleanBuilder createBooleanBuilder(BooleanExpression initial,
+			QueryParam queryParam) {
+		BooleanBuilder builder = new BooleanBuilder(
+                initial);
         builder.and(QInstance.instance.replaced.isFalse());
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        int num = (int) new HibernateQuery(em.unwrap(Session.class))
+
+		return builder;
+	}
+
+    public int calculateNumberOfStudyRelatedInstance(Long studyPk,
+            QueryParam queryParam) {
+		BooleanBuilder builder = createBooleanBuilder(
+				QSeries.series.study.pk.eq(studyPk), queryParam);
+        int num = (int) hibernateQueryFactoryInstance.get().query()
             .from(QInstance.instance)
             .innerJoin(QInstance.instance.series, QSeries.series)
             .where(builder)
@@ -113,11 +129,9 @@ public class QueryServiceEJB {
 
     public int calculateNumberOfSeriesRelatedInstance(Long seriesPk,
             QueryParam queryParam) {
-        BooleanBuilder builder =
-                new BooleanBuilder(QInstance.instance.series.pk.eq(seriesPk));
-        builder.and(QInstance.instance.replaced.isFalse());
-        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        int num = (int) new HibernateQuery(em.unwrap(Session.class))
+		BooleanBuilder builder = createBooleanBuilder(
+				QInstance.instance.series.pk.eq(seriesPk), queryParam);
+        int num = (int) hibernateQueryFactoryInstance.get().query()
             .from(QInstance.instance)
             .where(builder)
             .count();
@@ -162,5 +176,4 @@ public class QueryServiceEJB {
         Utils.setSeriesQueryAttributes(attrs, numberOfSeriesRelatedInstances);
         return attrs;
     }
-
 }
