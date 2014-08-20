@@ -38,20 +38,42 @@
 
 package org.dcm4chee.archive.query.impl;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import static org.easymock.EasyMock.expect;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertThat;
 
+import javax.persistence.EntityManager;
+
+import org.easymock.EasyMockSupport;
 import org.hibernate.Session;
+import org.junit.Before;
+import org.junit.Test;
 
-import com.mysema.query.jpa.hibernate.HibernateQueryFactory;
-
-public class HibernateQueryFactoryProducer {
-	@Inject
-	Instance<Session> sessionInstance;
+public class SessionProducerTest {
+	EasyMockSupport easyMockSupport;
+	EntityManager mockEntityManager;
+	SessionProducer cut;
 	
-	@Produces
-	HibernateQueryFactory produceHibernateQueryFactory() {
-		return new HibernateQueryFactory(sessionInstance);
+	@Before
+	public void before() {
+		easyMockSupport = new EasyMockSupport();
+		mockEntityManager = easyMockSupport.createMock(EntityManager.class);
+		
+		cut = new SessionProducer();
+		cut.em = mockEntityManager;
+	}
+
+	@Test
+	public void produceSession_unwrapsHibernateSession_always() {
+		Session mockSession = easyMockSupport.createNiceMock(Session.class);
+		
+		expect(mockEntityManager.unwrap(Session.class)).andReturn(mockSession);
+		
+		easyMockSupport.replayAll();
+		
+		assertThat(cut.produceSession(), is(sameInstance(mockSession)));
+		
+		easyMockSupport.verifyAll();
 	}
 }

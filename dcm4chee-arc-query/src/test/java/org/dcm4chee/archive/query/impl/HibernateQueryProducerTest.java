@@ -38,20 +38,45 @@
 
 package org.dcm4chee.archive.query.impl;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.powermock.reflect.Whitebox.getInternalState;
+
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import javax.inject.Provider;
 
+import org.easymock.EasyMockSupport;
 import org.hibernate.Session;
+import org.junit.Before;
+import org.junit.Test;
 
-import com.mysema.query.jpa.hibernate.HibernateQueryFactory;
+public class HibernateQueryProducerTest {
 
-public class HibernateQueryFactoryProducer {
-	@Inject
-	Instance<Session> sessionInstance;
-	
-	@Produces
-	HibernateQueryFactory produceHibernateQueryFactory() {
-		return new HibernateQueryFactory(sessionInstance);
+	EasyMockSupport easyMockSupport;
+	Instance<Session> mockInstance;
+	HibernateQueryFactoryProducer cut;
+
+	@SuppressWarnings("unchecked")
+	@Before
+	public void before() {
+		easyMockSupport = new EasyMockSupport();
+		mockInstance = easyMockSupport.createNiceMock(Instance.class);
+
+		cut = new HibernateQueryFactoryProducer();
+		cut.sessionInstance = mockInstance;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void produceHibernateQueryFactory_passesSessionInstanceToNewHibernateQueryFactory_always() {
+		easyMockSupport.replayAll();
+
+		assertThat(
+				(Instance<Session>) getInternalState(
+						cut.produceHibernateQueryFactory(), Provider.class),
+				is(sameInstance(mockInstance)));
+
+		easyMockSupport.verifyAll();
 	}
 }
