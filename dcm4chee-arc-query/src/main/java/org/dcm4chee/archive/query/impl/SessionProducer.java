@@ -7,7 +7,7 @@ import javax.persistence.PersistenceContext;
 import org.hibernate.Session;
 
 public class SessionProducer {
-	@PersistenceContext
+	@PersistenceContext(unitName="dcm4chee-arc")
 	EntityManager em;
 	
 	@Produces
