@@ -86,50 +86,50 @@ class MatchPersonName {
                      qpn.familyName,
                      qpn.givenName,
                      qpn.middleName, 
-                     pn, PersonName.Group.Alphabetic));
+                     pn, PersonName.Group.Alphabetic, true));
              builder.or(match(
                      qpn.ideographicFamilyName,
                      qpn.ideographicGivenName,
                      qpn.ideographicMiddleName,
-                     pn, PersonName.Group.Alphabetic));
+                     pn, PersonName.Group.Alphabetic, false));
              builder.or(match(
                      qpn.phoneticFamilyName,
                      qpn.phoneticGivenName,
                      qpn.phoneticMiddleName,
-                     pn, PersonName.Group.Alphabetic));
+                     pn, PersonName.Group.Alphabetic, false));
         } else {
             builder.and(match(
                     qpn.familyName,
                     qpn.givenName,
                     qpn.middleName, 
-                    pn, PersonName.Group.Alphabetic));
+                    pn, PersonName.Group.Alphabetic, true));
             builder.and(match(
                     qpn.ideographicFamilyName,
                     qpn.ideographicGivenName,
                     qpn.ideographicMiddleName,
-                    pn, PersonName.Group.Ideographic));
+                    pn, PersonName.Group.Ideographic, false));
             builder.and(match(
                     qpn.phoneticFamilyName,
                     qpn.phoneticGivenName,
                     qpn.phoneticMiddleName,
-                    pn, PersonName.Group.Phonetic));
+                    pn, PersonName.Group.Phonetic, false));
         }
         return builder;
     }
 
     private static Predicate match(StringPath familyName,
             StringPath givenName, StringPath middleName,
-            PersonName pn, PersonName.Group group) {
+            PersonName pn, PersonName.Group group, boolean ignoreCase) {
         if (!pn.contains(group))
             return null;
 
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(QueryBuilder.wildCard(familyName,
-                pn.get(group, PersonName.Component.FamilyName), false, true));
+                pn.get(group, PersonName.Component.FamilyName), false, ignoreCase));
         builder.and(QueryBuilder.wildCard(givenName,
-                pn.get(group, PersonName.Component.GivenName), false, true));
+                pn.get(group, PersonName.Component.GivenName), false, ignoreCase));
         builder.and(QueryBuilder.wildCard(middleName,
-                pn.get(group, PersonName.Component.MiddleName), false, true));
+                pn.get(group, PersonName.Component.MiddleName), false, ignoreCase));
         return builder;
     }
 
