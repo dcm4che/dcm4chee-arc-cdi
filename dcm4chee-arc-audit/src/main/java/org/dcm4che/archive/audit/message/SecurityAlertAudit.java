@@ -43,41 +43,28 @@ import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
-
+import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.audit.AuditMessages;
-import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
-import org.dcm4che3.audit.AuditMessages.EventTypeCode;
-import org.dcm4che3.audit.AuditMessages.ParticipantObjectIDTypeCode;
-import org.dcm4che3.audit.AuditMessages.ParticipantObjectTypeCodeRole;
-import org.dcm4che3.audit.ParticipantObjectDescription;
 import org.dcm4che3.audit.AuditMessages.EventActionCode;
 import org.dcm4che3.audit.AuditMessages.EventID;
-import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
+import org.dcm4che3.audit.AuditMessages.EventTypeCode;
+import org.dcm4che3.audit.AuditMessages.ParticipantObjectIDTypeCode;
 import org.dcm4che3.audit.AuditMessages.ParticipantObjectTypeCode;
+import org.dcm4che3.audit.AuditMessages.ParticipantObjectTypeCodeRole;
 import org.dcm4che3.audit.AuditMessages.RoleIDCode;
-import org.dcm4che3.audit.Instance;
 import org.dcm4che3.audit.ParticipantObjectDetail;
-import org.dcm4che3.audit.ParticipantObjectIdentification;
-import org.dcm4che3.audit.SOPClass;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4che3.audit.AuditMessage;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.store.StoreSession;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  * 
  */
 public class SecurityAlertAudit extends AuditMessage {
 
     private String node, eventOutcomeIndicator;
-    private Exception exception;
+    private Throwable exception;
     private AuditLogger logger;
     private Participant source;
 
@@ -85,7 +72,7 @@ public class SecurityAlertAudit extends AuditMessage {
      */
     public SecurityAlertAudit(String node, 
             String eventOutcomeIndicator, 
-            Exception exception, 
+            Throwable exception, 
             AuditLogger logger, 
             Participant source) {
         super();

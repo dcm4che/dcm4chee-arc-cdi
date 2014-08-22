@@ -46,12 +46,12 @@ import javax.inject.Inject;
 
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.ConnectionMonitor;
-import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.Participant;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
 @ApplicationScoped
@@ -76,7 +76,7 @@ public class ConnectionEventSource implements ConnectionMonitor {
 
     @Override
     public void onConnectionFailed(Connection conn, Connection remoteConn,
-            Socket s, Exception e) {
+            Socket s, Throwable e) {
         
         if (!remoteConn.getProtocol().isSyslog()) // no connection events for Syslog failures
         {
@@ -107,7 +107,7 @@ public class ConnectionEventSource implements ConnectionMonitor {
     }
 
     @Override
-    public void onConnectionRejected(Connection conn, Socket s, Exception e) {
+    public void onConnectionRejected(Connection conn, Socket s, Throwable e) {
         
         if (!conn.getProtocol().isSyslog()) // no connection events for Syslog failures
         {

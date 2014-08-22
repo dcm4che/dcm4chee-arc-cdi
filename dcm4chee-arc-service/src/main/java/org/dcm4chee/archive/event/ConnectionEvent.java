@@ -43,13 +43,14 @@ import org.dcm4chee.archive.dto.Participant;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
 public class ConnectionEvent {
 
     String node;
     boolean fail; 
-    Exception exception;
+    Throwable exception;
     Participant source;
     Device device;
     
@@ -60,7 +61,7 @@ public class ConnectionEvent {
      * @param source
      * @param device
      */
-    public ConnectionEvent(String node, boolean fail, Exception exception,
+    public ConnectionEvent(String node, boolean fail, Throwable exception,
             Participant source, Device device) {
         super();
         this.node = node;
@@ -82,7 +83,7 @@ public class ConnectionEvent {
     
 
 
-    public Exception getException() {
+    public Throwable getException() {
         return exception;
     }
 
