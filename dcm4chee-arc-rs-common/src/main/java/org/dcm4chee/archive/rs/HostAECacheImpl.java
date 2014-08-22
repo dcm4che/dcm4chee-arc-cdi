@@ -141,7 +141,8 @@ public class HostAECacheImpl implements HostAECache{
         try {
             return aeCache.get(fallBackAETitle);
         } catch (ConfigurationException e) {
-            return null;
+            //done to make sure if no fall back is configured an ae will be returned
+            return new ApplicationEntity(fallBackAETitle);
         }
     }
 
