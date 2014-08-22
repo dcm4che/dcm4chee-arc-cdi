@@ -269,7 +269,7 @@ public class WadoURI extends Wado {
             try {
                ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
                
-               if(sourceAE!=null)
+//               if(sourceAE!=null)
                context = retrieveService.createRetrieveContext(
                        retrieveService, sourceAE.getAETitle(), arcAE);
                context.setDestinationAE(sourceAE);
@@ -313,6 +313,11 @@ public class WadoURI extends Wado {
                 return retrieveJPEG(instance, attrs);
             }
 
+            if (mediaType == MediaTypes.IMAGE_GIF_TYPE) {
+                instscompleted.addAll(ref);
+                return retrieveGIF(instance, attrs);
+            }
+
             if (mediaType == MediaTypes.APPLICATION_PDF_TYPE) {
                 instscompleted.addAll(ref);
                 return retrievePDF(instance);
@@ -328,6 +333,10 @@ public class WadoURI extends Wado {
 
             throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
 
+            //Here we need to add support for GIF/PNG/Any other encapsulated type
+
+            //GIF
+            
         } finally {
             // audit
             retrieveEvent.fire(new RetrieveAfterSendEvent(
@@ -492,6 +501,28 @@ public class WadoURI extends Wado {
         }, mediaType).build();
     }
 
+    private Response retrieveGIF(final InstanceLocator ref,
+            final Attributes attrs) {
+
+        final MediaType mediaType = MediaTypes.IMAGE_GIF_TYPE;
+        return Response.ok(new StreamingOutput() {
+
+            @Override
+            public void write(OutputStream out) throws IOException,
+                    WebApplicationException {
+                ImageInputStream iis = ImageIO.createImageInputStream(ref
+                        .getFile());
+                BufferedImage bi;
+                try {
+                    bi = readImage(iis, attrs);
+                } finally {
+                    SafeClose.close(iis);
+                }
+                writeGIF(bi, new OutputStreamAdapter(out));
+            }
+        }, mediaType).build();
+    }
+
     private BufferedImage readImage(ImageInputStream iis, Attributes attrs)
             throws IOException {
         Iterator<ImageReader> readers = ImageIO
@@ -567,6 +598,29 @@ public class WadoURI extends Wado {
         }
     }
 
+    private void writeGIF(BufferedImage bi, ImageOutputStream ios)
+            throws IOException {
+        ColorModel cm = bi.getColorModel();
+        if (cm instanceof PaletteColorModel)
+            bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
+        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("GIF")
+                .next();
+        try {
+            ImageWriteParam imageWriteParam = imageWriter
+                    .getDefaultWriteParam();
+            if (imageQuality > 0) {
+                imageWriteParam
+                        .setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                imageWriteParam.setCompressionQuality(imageQuality / 100f);
+            }
+            imageWriter.setOutput(ios);
+            imageWriter.write(null, new IIOImage(bi, null, null),
+                    imageWriteParam);
+        } finally {
+            imageWriter.dispose();
+        }
+    }
+
     private void writeJPEG(BufferedImage bi, ImageOutputStream ios)
             throws IOException {
         ColorModel cm = bi.getColorModel();
@@ -624,11 +678,15 @@ public class WadoURI extends Wado {
                         || UID.MPEG4AVCH264BDCompatibleHighProfileLevel41
                                 .equals(transferSyntaxUID))
                     mediaType = MediaTypes.VIDEO_MP4_TYPE;
-                else
+                else{
                     mediaType = MediaTypes.IMAGE_JPEG_TYPE;
+                    //add gif
+                }
                 list.add(mediaType);
             } else {
                 list.add(MediaTypes.IMAGE_JPEG_TYPE);
+                //add gif 
+                list.add(MediaTypes.IMAGE_GIF_TYPE);
                 list.add(MediaTypes.APPLICATION_DICOM_TYPE);
             }
         } else if (isSupportedSR(sopClassUID)) {

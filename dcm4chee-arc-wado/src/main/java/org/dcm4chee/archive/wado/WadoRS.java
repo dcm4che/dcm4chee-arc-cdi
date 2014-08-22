@@ -195,11 +195,11 @@ public class WadoRS extends Wado {
             ApplicationEntity sourceAE = aeCache
                     .findAE(new HttpSource(request));
 
-            if (sourceAE != null) {
+//            if (sourceAE != null) {
                 context = retrieveService.createRetrieveContext(
                         retrieveService, sourceAE.getAETitle(), arcAE);
                 context.setDestinationAE(sourceAE);
-            }
+//            }
         } catch (ConfigurationNotFoundException e1) {
             LOG.error("Unable to find the mapped AE for this host or even the fallback AE, elimination/coercion will not be applied");
         }
