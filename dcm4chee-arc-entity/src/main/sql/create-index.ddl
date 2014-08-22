@@ -34,7 +34,7 @@ create index inst_availability on instance (availability);
 create index inst_custom1_idx on instance (inst_custom1);
 create index inst_custom2_idx on instance (inst_custom2);
 create index inst_custom3_idx on instance (inst_custom3);
-create index inst_replaced_idx on instance (replaced);
+--create index inst_replaced_idx on instance (replaced);
 
 create unique index pat_id_idx on patient_id (pat_id, issuer_fk);
 
