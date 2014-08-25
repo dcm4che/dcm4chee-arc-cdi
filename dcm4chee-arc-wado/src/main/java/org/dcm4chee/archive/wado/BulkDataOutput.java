@@ -65,6 +65,7 @@ public class BulkDataOutput implements StreamingOutput {
             WebApplicationException {
         InputStream in = bulkData.openStream();
         try {
+            StreamUtils.skipFully(in, bulkData.offset);
             StreamUtils.copy(in, out, bulkData.length);
         } finally {
             SafeClose.close(in);

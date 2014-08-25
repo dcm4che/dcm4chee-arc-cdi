@@ -315,7 +315,7 @@ public class WadoURI extends Wado {
 
             if (mediaType == MediaTypes.IMAGE_JPEG_TYPE) {
                 instscompleted.addAll(ref);
-                return retrieveSingleJPEGOrPNG(mediaType, instance, attrs);
+                return retrieveJPEG(instance, attrs);
             }
 
             if (mediaType == MediaTypes.IMAGE_GIF_TYPE) {
@@ -323,10 +323,6 @@ public class WadoURI extends Wado {
                 return retrieveGIF(instance, attrs);
             }
 
-            if (mediaType == MediaTypes.IMAGE_PNG_TYPE) {
-                instscompleted.addAll(ref);
-                return retrieveSingleJPEGOrPNG(mediaType, instance, attrs);
-            }
             if (mediaType == MediaTypes.APPLICATION_PDF_TYPE) {
                 instscompleted.addAll(ref);
                 return retrievePDF(instance);
@@ -488,10 +484,10 @@ public class WadoURI extends Wado {
                 : UID.ExplicitVRLittleEndian;
     }
 
-    private Response retrieveSingleJPEGOrPNG(final MediaType format, final InstanceLocator ref,
+    private Response retrieveJPEG(final InstanceLocator ref,
             final Attributes attrs) {
 
-        final MediaType mediaType = format;
+        final MediaType mediaType = MediaTypes.IMAGE_JPEG_TYPE;
         return Response.ok(new StreamingOutput() {
 
             @Override
@@ -505,7 +501,7 @@ public class WadoURI extends Wado {
                 } finally {
                     SafeClose.close(iis);
                 }
-                writeJPEGOrPNG(format, bi, new OutputStreamAdapter(out));
+                writeJPEG(bi, new OutputStreamAdapter(out));
             }
         }, mediaType).build();
     }
@@ -801,13 +797,13 @@ public class WadoURI extends Wado {
         }
     }
 
-    private void writeJPEGOrPNG(MediaType format, BufferedImage bi, ImageOutputStream ios)
+    private void writeJPEG(BufferedImage bi, ImageOutputStream ios)
             throws IOException {
         ColorModel cm = bi.getColorModel();
         if (cm instanceof PaletteColorModel)
             bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
-        ImageWriter imageWriter = (format.isCompatible(MediaTypes.IMAGE_JPEG_TYPE)?ImageIO.getImageWritersByFormatName("JPEG").next():ImageIO.getImageWritersByFormatName("PNG").next());
-
+        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("JPEG")
+                .next();
         try {
             ImageWriteParam imageWriteParam = imageWriter
                     .getDefaultWriteParam();
@@ -868,7 +864,6 @@ public class WadoURI extends Wado {
                 list.add(MediaTypes.IMAGE_JPEG_TYPE);
                 //add gif 
                 list.add(MediaTypes.IMAGE_GIF_TYPE);
-                list.add(MediaTypes.IMAGE_PNG_TYPE);
                 list.add(MediaTypes.APPLICATION_DICOM_TYPE);
             }
         } else if (isSupportedSR(sopClassUID)) {

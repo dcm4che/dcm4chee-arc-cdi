@@ -38,8 +38,12 @@
 
 package org.dcm4chee.archive.datamgmt.ejb;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,14 +61,16 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
@@ -447,233 +453,6 @@ public class DataMgmtEJB implements DataMgmtBean {
 
         em.flush();
 
-    }
-
-
-    @Override
-    public boolean moveStudy(String studyInstanceUID, IDWithIssuer id) {
-
-        boolean moved = false;
-        Study study = getStudy(studyInstanceUID);
-
-        if (study == null)
-            return false;
-
-        Patient previous = study.getPatient();
-        Patient current = getPatient(id);
-        if (previous == current)
-            return false;
-
-        Collection<Study> currentPatientStudies = current.getStudies();
-        Iterator<Study> previousPatientStudies = previous.getStudies()
-                .iterator();
-        while (previousPatientStudies.hasNext()) {
-            Study currentStudy = previousPatientStudies.next();
-            if (currentStudy.equals(study)) {
-                previousPatientStudies.remove();
-                currentStudy.setPatient(current);
-                currentPatientStudies.add(currentStudy);
-                moved = true;
-            }
-
-        }
-
-        em.flush();
-        return moved;
-    }
-
-    @Override
-    public boolean splitStudy(String studyInstanceUID,
-            String seriesInstanceUID, String targetStudyInstanceUID) {
-        boolean split = false;
-        Study study = getStudy(studyInstanceUID);
-        if (study == null)
-            return false;
-
-        Study targetStudy = getStudy(targetStudyInstanceUID);
-        if (targetStudy == null)
-            return false;
-
-        if (targetStudy == study)
-            return false;
-
-        Series series = getSeries(study, seriesInstanceUID);
-        if (series == null)
-            return false;
-
-        Collection<Series> targetStudySeries = targetStudy.getSeries();
-
-        Iterator<Series> currentStudySeries = study.getSeries().iterator();
-
-        while (currentStudySeries.hasNext()) {
-            Series current = currentStudySeries.next();
-            if (current == series) {
-                currentStudySeries.remove();
-                series.setStudy(targetStudy);
-                targetStudySeries.add(series);
-                split = true;
-            }
-        }
-        // update count
-        if (split) {
-            int numInstancesNew = study.getNumberOfInstances()
-                    - series.getNumberOfInstances();
-
-            if (numInstancesNew > 0)
-                study.setNumberOfInstances(numInstancesNew);
-            else
-                study.resetNumberOfInstances();
-
-            int numberOfSeries = study.getNumberOfSeries();
-
-            if (study.getNumberOfSeries() > 0)
-                study.setNumberOfSeries(numberOfSeries - 1);
-
-            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
-                    + series.getNumberOfInstances();
-
-            if (targetnumInstancesNew > 0)
-                targetStudy.setNumberOfInstances(targetnumInstancesNew);
-            else
-                targetStudy.resetNumberOfInstances();
-
-            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
-
-            if (targetStudy.getNumberOfSeries() > 0)
-                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
-        }
-        return split;
-    }
-
-    @Override
-    public boolean splitSeries(String studyInstanceUID,
-            String seriesInstanceUID, String sopInstanceUID,
-            String targetStudyInstanceUID, String targetSeriesInstanceUID) {
-        boolean split = false;
-        Study study = getStudy(studyInstanceUID);
-        if (study == null)
-            return false;
-
-        Study targetStudy = getStudy(targetStudyInstanceUID);
-        if (targetStudy == null)
-            return false;
-
-        if (targetStudy == study)
-            return false;
-
-        Series series = getSeries(study, seriesInstanceUID);
-        if (series == null)
-            return false;
-
-        Series targetSeries = getSeries(targetStudy, targetSeriesInstanceUID);
-        if (targetSeries == null)
-            return false;
-
-        if (targetSeries == series)
-            return false;
-
-        Instance instance = getInstance(series, sopInstanceUID);
-
-        if (instance == null)
-            return false;
-
-        Collection<Instance> targetSeriesInstances = targetSeries
-                .getInstances();
-
-        Iterator<Instance> currentSeriesInstances = series.getInstances()
-                .iterator();
-
-        while (currentSeriesInstances.hasNext()) {
-            Instance current = currentSeriesInstances.next();
-            if (current == instance) {
-                currentSeriesInstances.remove();
-                instance.setSeries(targetSeries);
-                targetSeriesInstances.add(instance);
-                split = true;
-            }
-        }
-        // update count
-        if (split) {
-            int numInstancesNewStudy = study.getNumberOfInstances() - 1;
-
-            if (numInstancesNewStudy > 0)
-                study.setNumberOfInstances(numInstancesNewStudy);
-            else
-                study.resetNumberOfInstances();
-
-            int numInstancesNewTargetStudy = targetStudy.getNumberOfInstances() + 1;
-
-            if (numInstancesNewTargetStudy > 0)
-                targetStudy.setNumberOfInstances(numInstancesNewTargetStudy);
-            else
-                targetStudy.resetNumberOfInstances();
-
-            int numInstancesNewSeries = series.getNumberOfInstances() - 1;
-
-            if (numInstancesNewSeries > 0)
-                series.setNumberOfInstances(numInstancesNewSeries);
-            else
-                series.resetNumberOfInstances();
-
-            int numInstancesNewTargetSeries = targetSeries
-                    .getNumberOfInstances() + 1;
-
-            if (numInstancesNewTargetSeries > 0)
-                targetSeries.setNumberOfInstances(numInstancesNewTargetSeries);
-            else
-                targetSeries.resetNumberOfInstances();
-        }
-        return split;
-    }
-
-    @Override
-    public boolean segmentStudy(String studyInstanceUID,
-            String seriesInstanceUID, String targetStudyInstanceUID,
-            ArchiveDeviceExtension arcDevExt) {
-        boolean segment = false;
-        Study study = getStudy(studyInstanceUID);
-        if (study == null)
-            return false;
-
-        Study targetStudy = getStudy(targetStudyInstanceUID);
-        if (targetStudy == null)
-            return false;
-
-        if (targetStudy == study)
-            return false;
-
-        Series series = getSeries(study, seriesInstanceUID);
-        if (series == null)
-            return false;
-
-        Collection<Series> targetStudySeries = targetStudy.getSeries();
-
-        try {
-            Series seriesCopy = (Series) seriesShallowCopy(series, targetStudy,
-                    arcDevExt);
-            targetStudySeries.add(seriesCopy);
-            em.flush();
-            segment = true;
-        } catch (Exception e) {
-            LOG.error("Error copying series, {}", e);
-            segment = false;
-        }
-        if (segment) {
-            // update count
-            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
-                    + series.getNumberOfInstances();
-
-            if (targetnumInstancesNew > 0)
-                targetStudy.setNumberOfInstances(targetnumInstancesNew);
-            else
-                targetStudy.resetNumberOfInstances();
-
-            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
-
-            if (targetStudy.getNumberOfSeries() > 0)
-                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
-        }
-        return segment;
     }
 
     private Collection<PatientID> getPatientIDs(Patient patient,
@@ -1069,6 +848,232 @@ public class DataMgmtEJB implements DataMgmtBean {
         return patient != null ? patient.getPk() : -1l;
     }
 
+    @Override
+    public boolean moveStudy(String studyInstanceUID, IDWithIssuer id) {
+
+        boolean moved = false;
+        Study study = getStudy(studyInstanceUID);
+
+        if (study == null)
+            return false;
+
+        Patient previous = study.getPatient();
+        Patient current = getPatient(id);
+        if (previous == current)
+            return false;
+
+        Collection<Study> currentPatientStudies = current.getStudies();
+        Iterator<Study> previousPatientStudies = previous.getStudies()
+                .iterator();
+        while (previousPatientStudies.hasNext()) {
+            Study currentStudy = previousPatientStudies.next();
+            if (currentStudy.equals(study)) {
+                previousPatientStudies.remove();
+                currentStudy.setPatient(current);
+                currentPatientStudies.add(currentStudy);
+                moved = true;
+            }
+
+        }
+
+        em.flush();
+        return moved;
+    }
+
+    @Override
+    public boolean splitStudy(String studyInstanceUID,
+            String seriesInstanceUID, String targetStudyInstanceUID) {
+        boolean split = false;
+        Study study = getStudy(studyInstanceUID);
+        if (study == null)
+            return false;
+
+        Study targetStudy = getStudy(targetStudyInstanceUID);
+        if (targetStudy == null)
+            return false;
+
+        if (targetStudy == study)
+            return false;
+
+        Series series = getSeries(study, seriesInstanceUID);
+        if (series == null)
+            return false;
+
+        Collection<Series> targetStudySeries = targetStudy.getSeries();
+
+        Iterator<Series> currentStudySeries = study.getSeries().iterator();
+
+        while (currentStudySeries.hasNext()) {
+            Series current = currentStudySeries.next();
+            if (current == series) {
+                currentStudySeries.remove();
+                series.setStudy(targetStudy);
+                targetStudySeries.add(series);
+                split = true;
+            }
+        }
+        // update count
+        if (split) {
+            int numInstancesNew = study.getNumberOfInstances()
+                    - series.getNumberOfInstances();
+
+            if (numInstancesNew > 0)
+                study.setNumberOfInstances(numInstancesNew);
+            else
+                study.resetNumberOfInstances();
+
+            int numberOfSeries = study.getNumberOfSeries();
+
+            if (study.getNumberOfSeries() > 0)
+                study.setNumberOfSeries(numberOfSeries - 1);
+
+            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
+                    + series.getNumberOfInstances();
+
+            if (targetnumInstancesNew > 0)
+                targetStudy.setNumberOfInstances(targetnumInstancesNew);
+            else
+                targetStudy.resetNumberOfInstances();
+
+            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
+
+            if (targetStudy.getNumberOfSeries() > 0)
+                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
+        }
+        return split;
+    }
+
+    @Override
+    public boolean splitSeries(String studyInstanceUID,
+            String seriesInstanceUID, String sopInstanceUID,
+            String targetStudyInstanceUID, String targetSeriesInstanceUID) {
+        boolean split = false;
+        Study study = getStudy(studyInstanceUID);
+        if (study == null)
+            return false;
+
+        Study targetStudy = getStudy(targetStudyInstanceUID);
+        if (targetStudy == null)
+            return false;
+
+        if (targetStudy == study)
+            return false;
+
+        Series series = getSeries(study, seriesInstanceUID);
+        if (series == null)
+            return false;
+
+        Series targetSeries = getSeries(targetStudy, targetSeriesInstanceUID);
+        if (targetSeries == null)
+            return false;
+
+        if (targetSeries == series)
+            return false;
+
+        Instance instance = getInstance(series, sopInstanceUID);
+
+        if (instance == null)
+            return false;
+
+        Collection<Instance> targetSeriesInstances = targetSeries
+                .getInstances();
+
+        Iterator<Instance> currentSeriesInstances = series.getInstances()
+                .iterator();
+
+        while (currentSeriesInstances.hasNext()) {
+            Instance current = currentSeriesInstances.next();
+            if (current == instance) {
+                currentSeriesInstances.remove();
+                instance.setSeries(targetSeries);
+                targetSeriesInstances.add(instance);
+                split = true;
+            }
+        }
+        // update count
+        if (split) {
+            int numInstancesNewStudy = study.getNumberOfInstances() - 1;
+
+            if (numInstancesNewStudy > 0)
+                study.setNumberOfInstances(numInstancesNewStudy);
+            else
+                study.resetNumberOfInstances();
+
+            int numInstancesNewTargetStudy = targetStudy.getNumberOfInstances() + 1;
+
+            if (numInstancesNewTargetStudy > 0)
+                targetStudy.setNumberOfInstances(numInstancesNewTargetStudy);
+            else
+                targetStudy.resetNumberOfInstances();
+
+            int numInstancesNewSeries = series.getNumberOfInstances() - 1;
+
+            if (numInstancesNewSeries > 0)
+                series.setNumberOfInstances(numInstancesNewSeries);
+            else
+                series.resetNumberOfInstances();
+
+            int numInstancesNewTargetSeries = targetSeries
+                    .getNumberOfInstances() + 1;
+
+            if (numInstancesNewTargetSeries > 0)
+                targetSeries.setNumberOfInstances(numInstancesNewTargetSeries);
+            else
+                targetSeries.resetNumberOfInstances();
+        }
+        return split;
+    }
+
+    @Override
+    public boolean segmentStudy(String studyInstanceUID,
+            String seriesInstanceUID, String targetStudyInstanceUID,
+            ArchiveDeviceExtension arcDevExt) {
+        boolean segment = false;
+        Study study = getStudy(studyInstanceUID);
+        if (study == null)
+            return false;
+
+        Study targetStudy = getStudy(targetStudyInstanceUID);
+        if (targetStudy == null)
+            return false;
+
+        if (targetStudy == study)
+            return false;
+
+        Series series = getSeries(study, seriesInstanceUID);
+        if (series == null)
+            return false;
+
+        Collection<Series> targetStudySeries = targetStudy.getSeries();
+
+        try {
+            Series seriesCopy = (Series) seriesShallowCopy(series, targetStudy,
+                    arcDevExt);
+            targetStudySeries.add(seriesCopy);
+            em.flush();
+            segment = true;
+        } catch (Exception e) {
+            LOG.error("Error copying series, {}", e);
+            segment = false;
+        }
+        if (segment) {
+            // update count
+            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
+                    + series.getNumberOfInstances();
+
+            if (targetnumInstancesNew > 0)
+                targetStudy.setNumberOfInstances(targetnumInstancesNew);
+            else
+                targetStudy.resetNumberOfInstances();
+
+            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
+
+            if (targetStudy.getNumberOfSeries() > 0)
+                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
+        }
+        return segment;
+    }
+
     private Series seriesShallowCopy(Series series, Study target,
             ArchiveDeviceExtension arcDevExt) {
         Attributes attrs = series.getAttributes();
@@ -1077,6 +1082,7 @@ public class DataMgmtEJB implements DataMgmtBean {
         attrs.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
         Series seriesCopy = new Series();
         seriesCopy.setStudy(target);
+
         seriesCopy.setSourceAET(series.getSourceAET());
         seriesCopy.setRetrieveAETs(series.getRetrieveAETs());
         seriesCopy.setExternalRetrieveAET(series.getExternalRetrieveAET());
@@ -1085,119 +1091,38 @@ public class DataMgmtEJB implements DataMgmtBean {
                 arcDevExt.getAttributeFilter(Entity.Series),
                 arcDevExt.getFuzzyStr());
         em.persist(seriesCopy);
-        addAllInstances(seriesCopy, series.getInstances(), arcDevExt);
         seriesCopy.setInstitutionCode(series.getInstitutionCode());
         seriesCopy.setRequestAttributes(copyRequestAttrs(series
-                .getRequestAttributes(),seriesCopy,arcDevExt,series));
+                .getRequestAttributes()));
+        Collection<Instance> instances = seriesCopy.getInstances();
+        addAllInstances(series, instances);
         LOG.info("Created Series Copy {}", seriesCopy);
         return seriesCopy;
     }
 
-    private void addAllInstances(Series series, Collection<Instance> instances, ArchiveDeviceExtension arcDevExt) {
+    private void addAllInstances(Series series, Collection<Instance> instances) {
 
         ArrayList<Instance> collOld = new ArrayList<Instance>(
-                instances);
+                series.getInstances());
         for (Instance instance : collOld) {
-            instanceShallowCopy(instance,series.getStudy(),series, arcDevExt);
+            Instance newInstance = instanceShallowCopy(instance);
+            instances.add(newInstance);
         }
     }
 
-    private Instance instanceShallowCopy(Instance instance,Study study,Series series, ArchiveDeviceExtension arcDevExt) {
-        Attributes attrs = instance.getAttributes();
-        attrs.setString(Tag.StudyInstanceUID, VR.UI, study.getStudyInstanceUID());
-        attrs.setString(Tag.SeriesInstanceUID, VR.UI,series.getSeriesInstanceUID());
-        attrs.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
-        Instance instanceCopy = new Instance();
-        instanceCopy.setSeries(series);
-        instanceCopy.setConceptNameCode(instance.getConceptNameCode());
-        instanceCopy.setRetrieveAETs(instance.getRetrieveAETs());
-        instanceCopy.setExternalRetrieveAET(instance.getExternalRetrieveAET());
-        instanceCopy.setAvailability(instance.getAvailability());
-        instanceCopy.setAttributes(attrs, arcDevExt.getAttributeFilter(Entity.Instance), arcDevExt.getFuzzyStr());
-        //currently copied fileRefs will refer to the same file (TODO - create new file refs and update sopinstanceUID and digest)
-        em.persist(instanceCopy);
-        copyFileRefs(instance.getFileRefs(),instanceCopy);
-        instanceCopy.setVerifyingObservers(copyVerifyingObservers(instanceCopy,arcDevExt,instance));
-        instanceCopy.setContentItems(copyContentItems(instance.getContentItems(),instanceCopy));
-        instanceCopy.setRejectionNoteCode(instance.getRejectionNoteCode());
-        return instanceCopy;
-    }
-
-    private Collection<FileRef> copyFileRefs(Collection<FileRef> fileRefs,
-            Instance instanceCopy) {
-        ArrayList<FileRef> refs = new ArrayList<FileRef>(fileRefs);
-        ArrayList<FileRef> newRefs = new ArrayList<FileRef>();
-        for(FileRef fileRef: refs)
-        {
-            FileRef newRef = new FileRef(fileRef.getFileSystem(),fileRef.getFilePath(),
-                    fileRef.getTransferSyntaxUID(),
-                    fileRef.getFileSize(),
-                    fileRef.getDigest());
-            newRef.setInstance(instanceCopy);
-            em.persist(newRef);
-            newRefs.add(newRef);
-        }
-        return newRefs;
-    }
-
-    private Collection<ContentItem> copyContentItems(
-            Collection<ContentItem> contentItems, Instance instance) {
-        ArrayList<ContentItem> items = new ArrayList<ContentItem>(contentItems);
-        ArrayList<ContentItem> newItems = new ArrayList<ContentItem>();
-        for(ContentItem item: items)
-        {
-            ContentItem newItem = null;
-            if(item.getConceptCode()!=null)
-                newItem = new ContentItem(item.getRelationshipType(),
-                    item.getConceptName(),item.getConceptCode());
-            else
-                newItem = new ContentItem(item.getRelationshipType(),
-                        item.getConceptName(),item.getTextValue());
-            newItem.setInstance(instance);
-            em.persist(newItem);
-            newItems.add(newItem);
-        }
-        return newItems;
-    }
-
-    private Collection<VerifyingObserver> copyVerifyingObservers(
-            Instance instanceCopy,ArchiveDeviceExtension arcDevExt, Instance instance) {
-        Sequence verifyingObserversSequence = instance.getAttributes().getSequence(Tag.VerifyingObserverSequence);
-        ArrayList<VerifyingObserver> newObservers = new ArrayList<VerifyingObserver>();
-        for(Attributes attrs : verifyingObserversSequence)
-        {
-            PersonName verifyingObserverName = PersonName.valueOf(
-                    attrs.getString(Tag.VerifyingObserverName),
-                    arcDevExt.getFuzzyStr(), null);
-            if (verifyingObserverName != null)
-                em.persist(verifyingObserverName);
-            VerifyingObserver newObserver = new VerifyingObserver(attrs,
-                    arcDevExt.getFuzzyStr());
-            em.persist(newObserver);
-            newObservers.add(newObserver);
-        }
-        return newObservers;
+    private Instance instanceShallowCopy(Instance instance) {
+        // TODO COPY Instances
+        return null;
     }
 
     private Collection<RequestAttributes> copyRequestAttrs(
-            Collection<RequestAttributes> requestAttributes,Series series, ArchiveDeviceExtension arcDevExt,Series oldSeries) {
-        ArrayList<RequestAttributes> newReqs= new ArrayList<RequestAttributes>();
-        Sequence requestAttributesSequence = series.getAttributes().getSequence(Tag.RequestAttributesSequence);
-        for(Attributes attr: requestAttributesSequence)
-        {
-            Issuer issuerOfAccessionNumber = getIssuerOfAccessionNumber(attr);
-            PersonName requestingPhysician = PersonName.valueOf(
-                    attr.getString(Tag.RequestingPhysician),
-                    arcDevExt.getFuzzyStr(), null);
-            if (requestingPhysician != null)
-                em.persist(requestingPhysician);
-            RequestAttributes newRequest = new RequestAttributes(attr,
-                    issuerOfAccessionNumber, arcDevExt.getFuzzyStr());
-            newRequest.setSeries(series);
-            em.persist(newRequest);
-            newReqs.add(newRequest);
+            Collection<RequestAttributes> requestAttributes) {
+        ArrayList<RequestAttributes> coll = new ArrayList<RequestAttributes>(
+                requestAttributes);
+        for (RequestAttributes req : coll) {
+            em.persist(req);
         }
-        return newReqs;
+        return coll;
 
     }
 
