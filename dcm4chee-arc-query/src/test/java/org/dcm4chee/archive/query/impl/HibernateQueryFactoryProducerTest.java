@@ -53,30 +53,32 @@ import org.junit.Test;
 
 public class HibernateQueryFactoryProducerTest {
 
-	EasyMockSupport easyMockSupport;
-	Instance<Session> mockInstance;
-	HibernateQueryFactoryProducer cut;
+    EasyMockSupport easyMockSupport;
 
-	@SuppressWarnings("unchecked")
-	@Before
-	public void before() {
-		easyMockSupport = new EasyMockSupport();
-		mockInstance = easyMockSupport.createNiceMock(Instance.class);
+    Instance<Session> mockInstance;
 
-		cut = new HibernateQueryFactoryProducer();
-		cut.sessionInstance = mockInstance;
-	}
+    HibernateQueryFactoryProducer cut;
 
-	@SuppressWarnings("unchecked")
-	@Test
-	public void produceHibernateQueryFactory_passesSessionInstanceToNewHibernateQueryFactory_always() {
-		easyMockSupport.replayAll();
+    @SuppressWarnings("unchecked")
+    @Before
+    public void before() {
+        easyMockSupport = new EasyMockSupport();
+        mockInstance = easyMockSupport.createNiceMock(Instance.class);
 
-		assertThat(
-				(Instance<Session>) getInternalState(
-						cut.produceHibernateQueryFactory(), Provider.class),
-				is(sameInstance(mockInstance)));
+        cut = new HibernateQueryFactoryProducer();
+        cut.sessionInstance = mockInstance;
+    }
 
-		easyMockSupport.verifyAll();
-	}
+    @SuppressWarnings("unchecked")
+    @Test
+    public void produceHibernateQueryFactory_passesSessionInstanceToNewHibernateQueryFactory_always() {
+        easyMockSupport.replayAll();
+
+        assertThat(
+                (Instance<Session>) getInternalState(
+                        cut.produceHibernateQueryFactory(), Provider.class),
+                is(sameInstance(mockInstance)));
+
+        easyMockSupport.verifyAll();
+    }
 }
