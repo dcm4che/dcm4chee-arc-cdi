@@ -51,7 +51,7 @@ import org.hibernate.Session;
 import org.junit.Before;
 import org.junit.Test;
 
-public class HibernateQueryProducerTest {
+public class HibernateQueryFactoryProducerTest {
 
 	EasyMockSupport easyMockSupport;
 	Instance<Session> mockInstance;

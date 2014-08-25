@@ -47,11 +47,11 @@ import org.hibernate.Session;
 import com.mysema.query.jpa.hibernate.HibernateQueryFactory;
 
 public class HibernateQueryFactoryProducer {
-	@Inject
-	Instance<Session> sessionInstance;
-	
-	@Produces
-	HibernateQueryFactory produceHibernateQueryFactory() {
-		return new HibernateQueryFactory(sessionInstance);
-	}
+    @Inject
+    Instance<Session> sessionInstance;
+
+    @Produces
+    HibernateQueryFactory produceHibernateQueryFactory() {
+        return new HibernateQueryFactory(sessionInstance);
+    }
 }

@@ -45,11 +45,11 @@ import javax.persistence.PersistenceContext;
 import org.hibernate.Session;
 
 public class SessionProducer {
-	@PersistenceContext(unitName="dcm4chee-arc")
-	EntityManager em;
-	
-	@Produces
-	Session produceSession() {
-		return em.unwrap(Session.class);
-	}
+    @PersistenceContext(unitName = "dcm4chee-arc")
+    EntityManager em;
+
+    @Produces
+    Session produceSession() {
+        return em.unwrap(Session.class);
+    }
 }

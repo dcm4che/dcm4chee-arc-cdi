@@ -51,29 +51,31 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class SessionProducerTest {
-	EasyMockSupport easyMockSupport;
-	EntityManager mockEntityManager;
-	SessionProducer cut;
-	
-	@Before
-	public void before() {
-		easyMockSupport = new EasyMockSupport();
-		mockEntityManager = easyMockSupport.createMock(EntityManager.class);
-		
-		cut = new SessionProducer();
-		cut.em = mockEntityManager;
-	}
+    EasyMockSupport easyMockSupport;
 
-	@Test
-	public void produceSession_unwrapsHibernateSession_always() {
-		Session mockSession = easyMockSupport.createNiceMock(Session.class);
-		
-		expect(mockEntityManager.unwrap(Session.class)).andReturn(mockSession);
-		
-		easyMockSupport.replayAll();
-		
-		assertThat(cut.produceSession(), is(sameInstance(mockSession)));
-		
-		easyMockSupport.verifyAll();
-	}
+    EntityManager mockEntityManager;
+
+    SessionProducer cut;
+
+    @Before
+    public void before() {
+        easyMockSupport = new EasyMockSupport();
+        mockEntityManager = easyMockSupport.createMock(EntityManager.class);
+
+        cut = new SessionProducer();
+        cut.em = mockEntityManager;
+    }
+
+    @Test
+    public void produceSession_unwrapsHibernateSession_always() {
+        Session mockSession = easyMockSupport.createNiceMock(Session.class);
+
+        expect(mockEntityManager.unwrap(Session.class)).andReturn(mockSession);
+
+        easyMockSupport.replayAll();
+
+        assertThat(cut.produceSession(), is(sameInstance(mockSession)));
+
+        easyMockSupport.verifyAll();
+    }
 }
