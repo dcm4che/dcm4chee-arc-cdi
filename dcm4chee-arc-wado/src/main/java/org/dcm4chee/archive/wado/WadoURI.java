@@ -46,6 +46,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -54,8 +55,12 @@ import javax.enterprise.event.Event;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.metadata.IIOInvalidTreeException;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.inject.Inject;
@@ -513,14 +518,185 @@ public class WadoURI extends Wado {
                 ImageInputStream iis = ImageIO.createImageInputStream(ref
                         .getFile());
                 BufferedImage bi;
-                try {
-                    bi = readImage(iis, attrs);
-                } finally {
-                    SafeClose.close(iis);
+                Collection<BufferedImage> bis;
+                if(attrs.getInt(Tag.NumberOfFrames,1) == 1)
+                {
+                    try {
+                        bi = readImage(iis, attrs);
+                    } finally {
+                        SafeClose.close(iis);
+                    }
+                    writeGIF(bi, new OutputStreamAdapter(out));
                 }
-                writeGIF(bi, new OutputStreamAdapter(out));
+                else
+                {
+                    if(frameNumber != 0)
+                    {
+                        //return desired frame
+                        try {
+                            bi = readImage(iis, attrs);
+                        } finally {
+                            SafeClose.close(iis);
+                        }
+                        writeGIF(bi, new OutputStreamAdapter(out));
+                    }
+                    else
+                    {
+                        //return all frames as GIF sequence
+                        try {
+                            bis = readImages(iis, attrs);
+                        } finally {
+                            SafeClose.close(iis);
+                        }
+                        writeGIFs(bis, new OutputStreamAdapter(out));
+                    }
+                    
+                }
             }
         }, mediaType).build();
+    }
+
+    private void writeGIFs(Collection<BufferedImage> bis, ImageOutputStream ios) {
+        ArrayList<BufferedImage> bufferedImages = (ArrayList<BufferedImage>) bis;
+        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("GIF")
+                .next();
+        ImageWriteParam imageWriteParam = imageWriter.getDefaultWriteParam();
+        if (imageQuality > 0) {
+            imageWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            imageWriteParam.setCompressionQuality(imageQuality / 100f);
+        }
+
+        imageWriter.setOutput(ios);
+        
+        try {
+            imageWriter.prepareWriteSequence(null);
+            for (int i = 0; i < bufferedImages.size(); i++) {
+
+                BufferedImage bi = bufferedImages.get(i);
+                ColorModel cm = bufferedImages.get(0).getColorModel();
+                if (cm instanceof PaletteColorModel) {
+                    bi = ((PaletteColorModel) cm)
+                            .convertToIntDiscrete(bufferedImages.get(i)
+                                    .getData());
+                }
+
+                try {
+                    IIOMetadata metadata = imageWriter.getDefaultImageMetadata(
+                            new ImageTypeSpecifier(bi), imageWriteParam);
+                    setGIFMetadata(metadata);
+                    imageWriter.writeToSequence(new IIOImage(bi, null, metadata),imageWriteParam);
+                } catch (IOException e) {
+                    LOG.error("Error writing GIF sequence {}", e);
+                }
+            }
+        }
+        catch(IOException e)
+        {
+            LOG.error("Error writing GIF sequence, error preparing sequence {} ", e);
+        }
+        finally {
+            imageWriter.dispose();
+        }
+    }
+    //returns a node in the Image Metadata
+    private static IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
+          int nNodes = rootNode.getLength();
+          for (int i = 0; i < nNodes; i++) {
+            if (rootNode.item(i).getNodeName().compareToIgnoreCase(nodeName)== 0) {
+              return((IIOMetadataNode) rootNode.item(i));
+            }
+          }
+          IIOMetadataNode node = new IIOMetadataNode(nodeName);
+          rootNode.appendChild(node);
+          return(node);
+        }
+
+    //configures metadata for the GIF Image
+    private void setGIFMetadata(IIOMetadata metadata) {
+        String metaFormatName = metadata.getNativeMetadataFormatName();
+
+        IIOMetadataNode root = (IIOMetadataNode)
+          metadata.getAsTree(metaFormatName);
+
+        IIOMetadataNode graphicsControlExtensionNode = getNode(
+          root,
+          "GraphicControlExtension");
+
+        graphicsControlExtensionNode.setAttribute("disposalMethod", "none");
+        graphicsControlExtensionNode.setAttribute("userInputFlag", "FALSE");
+        graphicsControlExtensionNode.setAttribute("transparentColorFlag","FALSE");
+        //in ms
+        graphicsControlExtensionNode.setAttribute("delayTime",Integer.toString(90 / 10));
+        graphicsControlExtensionNode.setAttribute("transparentColorIndex","0");
+
+        IIOMetadataNode commentsNode = getNode(root, "CommentExtensions");
+        commentsNode.setAttribute("CommentExtension", "Created by Agfa HealthCare");
+
+        IIOMetadataNode appEntensionsNode = getNode(
+          root,
+          "ApplicationExtensions");
+
+        IIOMetadataNode child = new IIOMetadataNode("ApplicationExtension");
+
+        child.setAttribute("applicationID", "NETSCAPE");
+        child.setAttribute("authenticationCode", "2.0");
+        boolean loopContinuously = true;
+        int loop = loopContinuously ? 0 : 1;
+
+        child.setUserObject(new byte[]{ 0x1, (byte) (loop & 0xFF), (byte)
+          ((loop >> 8) & 0xFF)});
+        appEntensionsNode.appendChild(child);
+
+        try {
+            metadata.setFromTree(metaFormatName, root);
+        } catch (IIOInvalidTreeException e) {
+            LOG.error("Error setting metadata format tree {}", e);
+        }
+    }
+
+    private Collection<BufferedImage> readImages(ImageInputStream iis,
+            Attributes attrs) {
+        List<BufferedImage> imageList = new ArrayList<BufferedImage>();
+        Iterator<ImageReader> readers = ImageIO
+                .getImageReadersByFormatName("DICOM");
+        if (!readers.hasNext()) {
+            ImageIO.scanForPlugins();
+            readers = ImageIO.getImageReadersByFormatName("DICOM");
+        }
+        ImageReader reader = readers.next();
+        try {
+            reader.setInput(iis);
+            DicomMetaData metaData = null;
+            try {
+                metaData = (DicomMetaData) reader.getStreamMetadata();
+            } catch (IOException e) {
+                LOG.error("Error reading Image metadata stream  {}", e);
+            }
+            metaData.getAttributes().addAll(attrs);
+            DicomImageReadParam param = (DicomImageReadParam) reader
+                    .getDefaultReadParam();
+            int numOfFrames = attrs.getInt(Tag.NumberOfFrames, 1);
+            try {
+                init(param);
+            } catch (WebApplicationException e) {
+                LOG.error("Error initializing presentation states for DicomImageReader {}", e);
+            } catch (IOException e) {
+                LOG.error("Error reading DICOM file {}", e);
+            }
+            for(int i=0;i<numOfFrames;i++)
+            {
+            try {
+                imageList.add(rescale(
+                        reader.read(i, param),
+                        metaData.getAttributes(), param.getPresentationState()));
+            } catch (IOException e) {
+                LOG.error("Error reading frame {}, {}", i, e);
+            }
+            }
+        } finally {
+            reader.dispose();
+        }
+        return imageList;
     }
 
     private BufferedImage readImage(ImageInputStream iis, Attributes attrs)
@@ -681,6 +857,7 @@ public class WadoURI extends Wado {
                 else{
                     mediaType = MediaTypes.IMAGE_JPEG_TYPE;
                     //add gif
+                    mediaType = MediaTypes.IMAGE_GIF_TYPE;
                 }
                 list.add(mediaType);
             } else {
