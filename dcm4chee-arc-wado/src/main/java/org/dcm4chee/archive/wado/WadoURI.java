@@ -90,6 +90,8 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.image.PaletteColorModel;
 import org.dcm4che3.image.PixelAspectRatio;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
+import org.dcm4che3.imageio.codec.ImageWriterFactory;
+import org.dcm4che3.imageio.codec.ImageWriterFactory.ImageWriterParam;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
 import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
 import org.dcm4che3.imageio.stream.OutputStreamAdapter;
@@ -98,6 +100,7 @@ import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.util.Property;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
@@ -110,6 +113,8 @@ import org.dcm4chee.archive.rs.HttpSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
+
+import com.sun.xml.fastinfoset.sax.Properties;
 
 /**
  * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.
@@ -341,10 +346,6 @@ public class WadoURI extends Wado {
             }
 
             throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
-
-            //Here we need to add support for GIF/PNG/Any other encapsulated type
-
-            //GIF
             
         } finally {
             // audit
@@ -552,7 +553,7 @@ public class WadoURI extends Wado {
                         } finally {
                             SafeClose.close(iis);
                         }
-                        writeGIFs(bis, new OutputStreamAdapter(out));
+                        writeGIFs(ref.tsuid,bis, new OutputStreamAdapter(out));
                     }
                     
                 }
@@ -560,9 +561,9 @@ public class WadoURI extends Wado {
         }, mediaType).build();
     }
 
-    private void writeGIFs(Collection<BufferedImage> bis, ImageOutputStream ios) {
+    private void writeGIFs(String tsuid, Collection<BufferedImage> bis, ImageOutputStream ios) {
         ArrayList<BufferedImage> bufferedImages = (ArrayList<BufferedImage>) bis;
-        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("GIF")
+        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("gif")
                 .next();
         ImageWriteParam imageWriteParam = imageWriter.getDefaultWriteParam();
         if (imageQuality > 0) {
@@ -585,9 +586,11 @@ public class WadoURI extends Wado {
                 }
 
                 try {
-                    IIOMetadata metadata = imageWriter.getDefaultImageMetadata(
+                    IIOMetadata metadata = ImageWriterFactory.getImageWriterParam(tsuid)!=null?
+                            getIIOMetadata(bi,imageWriter,imageWriteParam,ImageWriterFactory.getImageWriterParam(tsuid)):
+                            imageWriter.getDefaultImageMetadata(
                             new ImageTypeSpecifier(bi), imageWriteParam);
-                    setGIFMetadata(metadata);
+                    //setGIFMetadata(metadata);
                     imageWriter.writeToSequence(new IIOImage(bi, null, metadata),imageWriteParam);
                 } catch (IOException e) {
                     LOG.error("Error writing GIF sequence {}", e);
@@ -602,6 +605,24 @@ public class WadoURI extends Wado {
             imageWriter.dispose();
         }
     }
+    private IIOMetadata getIIOMetadata(BufferedImage bi, ImageWriter imageWriter, ImageWriteParam imageWriteParam, ImageWriterParam imageWriterParam) {
+        Property[] props = imageWriterParam.getIIOMetadata();
+        IIOMetadata metadata = imageWriter.getDefaultImageMetadata(new ImageTypeSpecifier(bi), imageWriteParam);
+        String metaFormatName = metadata.getNativeMetadataFormatName();
+        IIOMetadataNode root = (IIOMetadataNode)
+                metadata.getAsTree(metaFormatName);
+        for(Property prop: props)
+        {
+            String nodeName = prop.getName().split(":")[0];
+            String attributeName = prop.getName().split(":")[1];
+            String value = (String) prop.getValue();
+            IIOMetadataNode tmpNode = getNode(
+                    root,nodeName);
+            tmpNode.setAttribute(attributeName, value);
+        }
+        return metadata;
+    }
+
     //returns a node in the Image Metadata
     private static IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
           int nNodes = rootNode.getLength();
