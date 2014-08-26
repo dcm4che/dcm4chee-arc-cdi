@@ -114,8 +114,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import com.sun.xml.fastinfoset.sax.Properties;
-
 /**
  * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.
  * 
