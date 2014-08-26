@@ -1003,10 +1003,10 @@ public class ArchiveDeviceTest {
         
         // patient selector
         PatientSelectorConfig ps = new PatientSelectorConfig();
-        ps.setPatientSelectorClassName("TheClass");
+        ps.setPatientSelectorClassName("org.dcm4chee.archive.patient.DemographicsPatientSelector");
         Map<String,String> sels = new HashMap<>();
-        sels.put("prop1", "val1");
-        sels.put("prop2", "val2");
+        sels.put("familyName", "BROAD");
+        sels.put("givenName", "BROAD");
         ps.setPatientSelectorProperties(sels);
         aeExt.setPatientSelectorConfig(ps);
         

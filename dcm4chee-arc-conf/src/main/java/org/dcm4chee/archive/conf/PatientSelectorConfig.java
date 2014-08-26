@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.conf;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.dcm4che3.conf.api.generic.ConfigClass;
@@ -62,7 +63,7 @@ public class PatientSelectorConfig implements Serializable {
                   mapKey = "dcmPatientSelectorProperty",
                   name = "dcmPatientSelectorValue",
                   mapElementObjectClass = "dcmPatientSelectorEntry")
-    private Map<String, String> patientSelectorProperties;
+    private Map<String, String> patientSelectorProperties = new HashMap<String, String>();
 
     public String getPatientSelectorClassName() {
         return patientSelectorClassName;
