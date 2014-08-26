@@ -65,6 +65,7 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
@@ -264,6 +265,10 @@ public class WadoURI extends Wado {
 
     @QueryParam("transferSyntax")
     private List<String> transferSyntax;
+    
+    @DefaultValue("true")
+    @QueryParam("overlays")
+    private boolean overlays;
 
     @GET
     public Response retrieve() throws WebApplicationException {
@@ -776,6 +781,8 @@ public class WadoURI extends Wado {
     private void init(DicomImageReadParam param)
             throws WebApplicationException, IOException {
 
+        //set overlay activation mask
+        param.setOverlayActivationMask(overlays?0xf:0x0);
         param.setWindowCenter(windowCenter);
         param.setWindowWidth(windowWidth);
         if (presentationUID != null) {
