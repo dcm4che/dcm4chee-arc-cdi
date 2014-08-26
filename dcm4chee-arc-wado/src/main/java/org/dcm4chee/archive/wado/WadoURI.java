@@ -266,7 +266,6 @@ public class WadoURI extends Wado {
     @QueryParam("transferSyntax")
     private List<String> transferSyntax;
     
-    @DefaultValue("true")
     @QueryParam("overlays")
     private boolean overlays;
 
@@ -780,7 +779,9 @@ public class WadoURI extends Wado {
 
     private void init(DicomImageReadParam param)
             throws WebApplicationException, IOException {
-
+        
+        if(!request.getQueryString().contains("overlays"))
+        overlays = arcAE.isWadoOverlayRendering();
         //set overlay activation mask
         param.setOverlayActivationMask(overlays?0xf:0x0);
         param.setWindowCenter(windowCenter);

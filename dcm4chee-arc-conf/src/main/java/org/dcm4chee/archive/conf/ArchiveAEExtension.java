@@ -79,6 +79,9 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmWadoSupportedSRClasses")
     private String[] wadoSupportedSRClasses;
 
+    @ConfigField(name = "dcmWadoOverlayRendering", def="true")
+    private boolean wadoOverlayRendering;
+
     @ConfigField(name = "dcmRetrieveAET")
     private String[] retrieveAETs;
 
@@ -233,14 +236,14 @@ public class ArchiveAEExtension extends AEExtension {
     public void setWadoSupportedSRClasses(String[] wadoSupportedSRClasses) {
         this.wadoSupportedSRClasses = wadoSupportedSRClasses;
     }
-//
-//    public boolean isTimeZoneSupported() {
-//        return timeZoneSupported;
-//    }
-//
-//    public void setTimeZoneSupported(boolean timeZoneSupported) {
-//        this.timeZoneSupported = timeZoneSupported;
-//    }
+
+    public boolean isWadoOverlayRendering() {
+        return wadoOverlayRendering;
+    }
+
+    public void setWadoOverlayRendering(boolean wadoOverlayRendering) {
+        this.wadoOverlayRendering = wadoOverlayRendering;
+    }
 
     public AttributeCoercion getAttributeCoercion(String sopClass, Dimse dimse,
             Role role, String aeTitle) {

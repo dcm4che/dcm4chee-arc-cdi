@@ -333,6 +333,12 @@ attributetype ( 1.2.40.0.13.1.15.10.3.54 NAME 'dcmDeIdentifyLogs'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 
+attributetype ( 1.2.40.0.13.1.15.10.3.55 NAME 'dcmWadoOverlayRendering'
+  DESC 'Set default BMP overlays rendering in WADO'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+
 objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -384,7 +390,8 @@ objectclass ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
     hl7PIXManagerApplication $
     hl7PIXConsumerApplication $
     dcmQidoMaxNumberOfResults $
-    dcmWadoSupportedSRClasses) )
+    dcmWadoSupportedSRClasses $
+    dcmWadoOverlayRendering) )
 
 objectclass ( 1.2.40.0.13.1.15.10.4.10 NAME 'dcmAttributeFilter'
   DESC 'Attributes stored in the database'
