@@ -65,7 +65,6 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
@@ -334,9 +333,12 @@ public class WadoURI extends Wado {
                 instscompleted.addAll(ref);
                 return retrieveSingleJPEGOrPNG(mediaType, instance, attrs);
             }
-            if (mediaType == MediaTypes.APPLICATION_PDF_TYPE) {
+            if (mediaType.isCompatible(MediaTypes.APPLICATION_PDF_TYPE)
+                    || mediaType.isCompatible(MediaType.TEXT_XML_TYPE)
+                    || mediaType.isCompatible(MediaType.TEXT_PLAIN_TYPE)
+                    || mediaType.isCompatible(MediaTypes.TEXT_RTF_TYPE)) {
                 instscompleted.addAll(ref);
-                return retrievePDF(instance);
+                return retrievePDFXMLOrText(mediaType, instance);
             }
             if (mediaType == MediaType.TEXT_HTML_TYPE) {
                 try {
@@ -453,8 +455,8 @@ public class WadoURI extends Wado {
         }, MediaType.TEXT_HTML_TYPE).build();
     }
 
-    private Response retrievePDF(final InstanceLocator instance) {
-        final MediaType mediaType = MediaTypes.APPLICATION_PDF_TYPE;
+    private Response retrievePDFXMLOrText(MediaType mediaType, final InstanceLocator instance) {
+
         return Response.ok(new StreamingOutput() {
 
             @Override
@@ -893,7 +895,6 @@ public class WadoURI extends Wado {
                 list.add(mediaType);
             } else {
                 list.add(MediaTypes.IMAGE_JPEG_TYPE);
-                //add gif 
                 list.add(MediaTypes.IMAGE_GIF_TYPE);
                 list.add(MediaTypes.IMAGE_PNG_TYPE);
                 list.add(MediaTypes.APPLICATION_DICOM_TYPE);
@@ -901,7 +902,6 @@ public class WadoURI extends Wado {
         } else if (isSupportedSR(sopClassUID)) {
             list.add(MediaType.TEXT_HTML_TYPE);
             list.add(MediaType.TEXT_PLAIN_TYPE);
-            // list.add(APPLICATION_PDF_TYPE);
             list.add(MediaTypes.APPLICATION_DICOM_TYPE);
         } else {
             list.add(MediaTypes.APPLICATION_DICOM_TYPE);
@@ -909,6 +909,11 @@ public class WadoURI extends Wado {
                 list.add(MediaTypes.APPLICATION_PDF_TYPE);
             else if (UID.EncapsulatedCDAStorage.equals(sopClassUID))
                 list.add(MediaType.TEXT_XML_TYPE);
+            else{
+                MediaType mimeType = MediaType.valueOf(attrs.getString(Tag.MIMETypeOfEncapsulatedDocument));
+                if(mimeType !=null)
+                list.add(mimeType);
+            }
         }
         return list;
     }
