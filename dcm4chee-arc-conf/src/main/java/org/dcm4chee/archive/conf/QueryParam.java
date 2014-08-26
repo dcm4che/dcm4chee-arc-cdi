@@ -171,7 +171,7 @@ public class QueryParam {
         return attributeFilters[entity.ordinal()];
     }
 
-    public boolean isShowRejectedForQualityReasons() {
+    public final boolean isShowRejectedForQualityReasons() {
         return showRejectedForQualityReasons;
     }
 

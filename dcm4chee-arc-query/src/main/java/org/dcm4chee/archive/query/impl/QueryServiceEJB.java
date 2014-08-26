@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.query.impl;
 
 import javax.ejb.Stateless;
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -52,11 +51,12 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
+import org.hibernate.Session;
 
 import com.mysema.query.BooleanBuilder;
-import com.mysema.query.jpa.hibernate.HibernateQueryFactory;
+import com.mysema.query.jpa.hibernate.HibernateQuery;
+import com.mysema.query.jpa.hibernate.HibernateSubQuery;
 import com.mysema.query.types.ExpressionUtils;
-import com.mysema.query.types.expr.BooleanExpression;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -65,99 +65,102 @@ import com.mysema.query.types.expr.BooleanExpression;
 @Stateless
 public class QueryServiceEJB {
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
-    EntityManager em;
-
-    @Inject
-    HibernateQueryFactory hibernateQueryFactory;
-
+    @PersistenceContext(unitName="dcm4chee-arc")
+    private EntityManager em;
     public int calculateNumberOfStudyRelatedSeries(Long studyPk,
             QueryParam queryParam) {
-        BooleanBuilder builder = createBooleanBuilder(
-                QInstance.instance.series.eq(QSeries.series), queryParam);
-
-        int num = (int) hibernateQueryFactory
-                .query()
-                .from(QSeries.series)
-                .where(ExpressionUtils.and(
-                        QSeries.series.study.pk.eq(studyPk),
-                        hibernateQueryFactory.subQuery()
-                                .from(QInstance.instance).where(builder)
-                                .exists())).count();
-
-        em.createNamedQuery(
-                queryParam.isShowRejectedForQualityReasons() ? Study.UPDATE_NUMBER_OF_SERIES_A
-                        : Study.UPDATE_NUMBER_OF_SERIES).setParameter(1, num)
-                .setParameter(2, studyPk).executeUpdate();
-
+        BooleanBuilder builder = new BooleanBuilder(
+                QInstance.instance.series.eq(QSeries.series));
+        builder.and(QInstance.instance.replaced.isFalse());
+        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
+        int num = (int) new HibernateQuery(em.unwrap(Session.class))
+            .from(QSeries.series)
+            .where(ExpressionUtils.and(
+                QSeries.series.study.pk.eq(studyPk),
+                new HibernateSubQuery()
+                    .from(QInstance.instance)
+                    .where(builder)
+                    .exists()))
+            .count();
+        em.createNamedQuery(queryParam.isShowRejectedForQualityReasons()
+                ? Study.UPDATE_NUMBER_OF_SERIES_A
+                : Study.UPDATE_NUMBER_OF_SERIES)
+            .setParameter(1, num)
+            .setParameter(2, studyPk)
+            .executeUpdate();
         return num;
     }
 
     public int calculateNumberOfStudyRelatedInstance(Long studyPk,
             QueryParam queryParam) {
-        BooleanBuilder builder = createBooleanBuilder(
-                QSeries.series.study.pk.eq(studyPk), queryParam);
-        int num = (int) hibernateQueryFactory.query().from(QInstance.instance)
-                .innerJoin(QInstance.instance.series, QSeries.series)
-                .where(builder).count();
-        em.createNamedQuery(
-                queryParam.isShowRejectedForQualityReasons() ? Study.UPDATE_NUMBER_OF_INSTANCES_A
-                        : Study.UPDATE_NUMBER_OF_INSTANCES)
-                .setParameter(1, num).setParameter(2, studyPk).executeUpdate();
+        BooleanBuilder builder =
+                new BooleanBuilder(QSeries.series.study.pk.eq(studyPk));
+        builder.and(QInstance.instance.replaced.isFalse());
+        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
+        int num = (int) new HibernateQuery(em.unwrap(Session.class))
+            .from(QInstance.instance)
+            .innerJoin(QInstance.instance.series, QSeries.series)
+            .where(builder)
+            .count();
+        em.createNamedQuery(queryParam.isShowRejectedForQualityReasons()
+                ? Study.UPDATE_NUMBER_OF_INSTANCES_A
+                : Study.UPDATE_NUMBER_OF_INSTANCES)
+            .setParameter(1, num)
+            .setParameter(2, studyPk)
+            .executeUpdate();
         return num;
     }
 
     public int calculateNumberOfSeriesRelatedInstance(Long seriesPk,
             QueryParam queryParam) {
-        BooleanBuilder builder = createBooleanBuilder(
-                QInstance.instance.series.pk.eq(seriesPk), queryParam);
-        int num = (int) hibernateQueryFactory.query().from(QInstance.instance)
-                .where(builder).count();
-        em.createNamedQuery(
-                queryParam.isShowRejectedForQualityReasons() ? Series.UPDATE_NUMBER_OF_INSTANCES_A
-                        : Series.UPDATE_NUMBER_OF_INSTANCES)
-                .setParameter(1, num).setParameter(2, seriesPk).executeUpdate();
+        BooleanBuilder builder =
+                new BooleanBuilder(QInstance.instance.series.pk.eq(seriesPk));
+        builder.and(QInstance.instance.replaced.isFalse());
+        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
+        int num = (int) new HibernateQuery(em.unwrap(Session.class))
+            .from(QInstance.instance)
+            .where(builder)
+            .count();
+        em.createNamedQuery(queryParam.isShowRejectedForQualityReasons()
+                ? Series.UPDATE_NUMBER_OF_INSTANCES_A
+                : Series.UPDATE_NUMBER_OF_INSTANCES)
+            .setParameter(1, num)
+            .setParameter(2, seriesPk)
+            .executeUpdate();
         return num;
     }
 
     public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
-        QueryPatientStudySeriesAttributes result = (QueryPatientStudySeriesAttributes) em
-                .createNamedQuery(
-                        queryParam.isShowRejectedForQualityReasons() ? Series.QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES_A
-                                : Series.QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES)
-                .setParameter(1, seriesPk).getSingleResult();
+        QueryPatientStudySeriesAttributes result = (QueryPatientStudySeriesAttributes)
+                 em.createNamedQuery(queryParam.isShowRejectedForQualityReasons()
+                        ? Series.QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES_A
+                        : Series.QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES)
+                  .setParameter(1, seriesPk)
+                  .getSingleResult();
         Attributes attrs = result.getAttributes();
         Long studyPk = result.getStudyPk();
         int numberOfStudyRelatedSeries = result.getNumberOfStudyRelatedSeries();
         if (numberOfStudyRelatedSeries < 0)
-            numberOfStudyRelatedSeries = calculateNumberOfStudyRelatedSeries(
-                    studyPk, queryParam);
+            numberOfStudyRelatedSeries =
+                calculateNumberOfStudyRelatedSeries(studyPk, queryParam);
 
-        int numberOfStudyRelatedInstances = result
-                .getNumberOfStudyRelatedInstances();
+        int numberOfStudyRelatedInstances = result.getNumberOfStudyRelatedInstances();
         if (numberOfStudyRelatedInstances < 0)
-            numberOfStudyRelatedInstances = calculateNumberOfStudyRelatedInstance(
-                    studyPk, queryParam);
+            numberOfStudyRelatedInstances = 
+                calculateNumberOfStudyRelatedInstance(studyPk, queryParam);
 
-        int numberOfSeriesRelatedInstances = result
-                .getNumberOfSeriesRelatedInstances();
+        int numberOfSeriesRelatedInstances = result.getNumberOfSeriesRelatedInstances();
         if (numberOfSeriesRelatedInstances < 0)
-            numberOfSeriesRelatedInstances = calculateNumberOfSeriesRelatedInstance(
-                    seriesPk, queryParam);
+            numberOfSeriesRelatedInstances =
+                calculateNumberOfSeriesRelatedInstance(seriesPk, queryParam);
 
-        Utils.setStudyQueryAttributes(attrs, numberOfStudyRelatedSeries,
-                numberOfStudyRelatedInstances, result.getModalitiesInStudy(),
+        Utils.setStudyQueryAttributes(attrs,
+                numberOfStudyRelatedSeries,
+                numberOfStudyRelatedInstances,
+                result.getModalitiesInStudy(),
                 result.getSopClassesInStudy());
         Utils.setSeriesQueryAttributes(attrs, numberOfSeriesRelatedInstances);
         return attrs;
     }
 
-    BooleanBuilder createBooleanBuilder(BooleanExpression initial,
-            QueryParam queryParam) {
-        BooleanBuilder builder = new BooleanBuilder(initial);
-        builder.and(QInstance.instance.replaced.isFalse());
-        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-
-        return builder;
-    }
 }
