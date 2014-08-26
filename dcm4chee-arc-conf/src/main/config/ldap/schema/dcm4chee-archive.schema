@@ -328,7 +328,7 @@ attributetype ( 1.2.40.0.13.1.15.10.3.53 NAME 'dcmPersonNameComponentOrderInsens
   SINGLE-VALUE )
   
 attributetype ( 1.2.40.0.13.1.15.10.3.54 NAME 'dcmDeIdentifyLogs'
-  DESC 'Avoid logging Protected health information (PHI)'
+  DESC 'Avoid logging Protected health information (PHI); Default is false (PHi is shown)'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )

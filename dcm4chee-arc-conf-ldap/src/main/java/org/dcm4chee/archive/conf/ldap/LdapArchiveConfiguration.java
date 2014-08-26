@@ -239,7 +239,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         arcdev.setWadoAttributesStaleTimeout(LdapUtils.intValue(
                 attrs.get("dcmWadoAttributesStaleTimeout"), 0));
         arcdev.setHostnameAEresoultion(LdapUtils.booleanValue(attrs.get("dcmHostNameAEResolution"), true));
-        arcdev.setDeIdentifyLogs(LdapUtils.booleanValue(attrs.get("dcmDeIdentifyLogs"), true));
+        arcdev.setDeIdentifyLogs(LdapUtils.booleanValue(attrs.get("dcmDeIdentifyLogs"), false));
 
     }
 

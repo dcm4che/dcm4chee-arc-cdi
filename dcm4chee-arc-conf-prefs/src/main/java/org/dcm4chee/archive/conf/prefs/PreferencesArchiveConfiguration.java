@@ -218,7 +218,7 @@ public class PreferencesArchiveConfiguration extends
         arcdev.setHostnameAEresoultion(prefs.getBoolean(
                 "dcmHostNameAEResolution", true));
         arcdev.setDeIdentifyLogs(prefs.getBoolean(
-                "dcmDeIdentifyLogs", true));        
+                "dcmDeIdentifyLogs", false));        
     }
 
     @Override
