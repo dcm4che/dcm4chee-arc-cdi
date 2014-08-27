@@ -96,15 +96,15 @@ public class DataMgmt {
 
     @Inject
     DataMgmtBean dataManager;
-
+    
     // Patient Level
     // update
     @POST
-    @Path("updatexml/patients/{PatientID}/{issuer:.*}")
+    @Path("updatexml/patients/{PatientID}/{Issuer:.*}")
     @Consumes({ "application/xml" })
     public Response updateXMLPatient(@Context UriInfo uriInfo, InputStream in,
             @PathParam("PatientID") String patientID,
-            @PathParam("issuer") String issuer) throws Exception {
+            @PathParam("Issuer") String issuer) throws Exception {
         String[] issuerVals = issuer.split("/");
         Issuer matchingIssuer = null;
         if (issuerVals.length > 0) {
@@ -125,11 +125,11 @@ public class DataMgmt {
     }
 
     @POST
-    @Path("updatejson/patients/{PatientID}/{issuer:.*}")
+    @Path("updatejson/patients/{PatientID}/{Issuer:.*}")
     @Consumes({ "application/json" })
     public Response updateJSONPatient(@Context UriInfo uriInfo, InputStream in,
             @PathParam("PatientID") String patientID,
-            @PathParam("issuer") String issuer) throws Exception {
+            @PathParam("Issuer") String issuer) throws Exception {
         String[] issuerVals = issuer.split("/");
         Issuer matchingIssuer = null;
         if (issuerVals.length > 0) {
@@ -149,13 +149,62 @@ public class DataMgmt {
         return updateJSON("PATIENT", id, null, null, null, in);
     }
 
+    @GET
+    @Path("mergepatients/{AETitle}/patients/{PatientID}/{Issuer:.*}/targetpatients/{TargetPatientID}/{TargetIssuer:.*}")
+    public Response mergePatients(@Context UriInfo uriInfo, InputStream in,
+            @PathParam("PatientID") String patientID,
+            @PathParam("Issuer") String issuer,
+            @PathParam("TargetPatientID") String targetPatientID,
+            @PathParam("TargetIssuer") String targetIssuer,
+            @PathParam("AETitle") String aeTitle) {
+        String[] issuerVals = issuer.split("/");
+        Issuer matchingIssuer = null;
+        if (issuerVals.length > 0) {
+            if (issuerVals.length == 1) {
+                matchingIssuer = dataManager.getIssuer(issuerVals[0], null,
+                        null);
+            } else if (issuerVals.length == 2) {
+                matchingIssuer = dataManager.getIssuer(null, issuerVals[0],
+                        issuerVals[1]);
+            } else if (issuerVals.length == 3) {
+                matchingIssuer = dataManager.getIssuer(issuerVals[0],
+                        issuerVals[1], issuerVals[2]);
+            }
+            
+        }
+
+        String[] targetIssuerVals = targetIssuer.split("/");
+        Issuer targetMatchingIssuer = null;
+        if (targetIssuerVals.length > 0) {
+            if (targetIssuerVals.length == 1) {
+                targetMatchingIssuer = dataManager.getIssuer(
+                        targetIssuerVals[0], null, null);
+            } else if (targetIssuerVals.length == 2) {
+                targetMatchingIssuer = dataManager.getIssuer(null,
+                        targetIssuerVals[0], targetIssuerVals[1]);
+            } else if (targetIssuerVals.length == 3) {
+                targetMatchingIssuer = dataManager.getIssuer(
+                        targetIssuerVals[0], targetIssuerVals[1],
+                        targetIssuerVals[2]);
+            }
+        }
+        IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
+        IDWithIssuer targetID = new IDWithIssuer(targetPatientID, targetMatchingIssuer);
+        return dataManager.mergePatient(id, targetID,
+                device.getApplicationEntity(aeTitle)) ? Response
+                .status(Status.OK).entity("Patient Merged Successfully")
+                .build() : Response.status(Status.CONFLICT)
+                .entity("Error - Unable to Merge Patient").build();
+    }
+    
+    // Study Level
     // move study
     @GET
-    @Path("movestudy/studies/{StudyInstanceUID}/patients/{PatientID}/{issuer:.*}")
+    @Path("movestudy/studies/{StudyInstanceUID}/patients/{PatientID}/{Issuer:.*}")
     public Response moveStudy(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("PatientID") String patientID,
-            @PathParam("issuer") String issuer) {
+            @PathParam("Issuer") String issuer) {
         String[] issuerVals = issuer.split("/");
         Issuer matchingIssuer = null;
         if (issuerVals.length > 0) {
@@ -183,8 +232,7 @@ public class DataMgmt {
                 .entity("Error: Study Not Moved").build();
         return moved ? rspMoved : rspError;
     }
-
-    // Study Level
+    
     @POST
     @Path("updatexml/studies/{StudyInstanceUID}")
     @Consumes({ "application/xml" })
@@ -342,7 +390,7 @@ public class DataMgmt {
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
-        return Respond();
+        return Response.status(Status.OK).entity("Successfully Processed Update").build();
     }
 
     public Response updateJSON(String level, IDWithIssuer id,
@@ -385,7 +433,7 @@ public class DataMgmt {
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
-        return Respond();
+        return Response.status(Status.OK).entity("Successfully Processed Update").build();
     }
 
     private void updateInstance(Attributes attrs, String studyInstanceUID,
@@ -475,17 +523,6 @@ public class DataMgmt {
         return ds;
     }
 
-    private Response Respond() {
-        try {
-            if (RSP == null) {
-                RSP = "Successfully processed request";
-                return Response.status(Status.OK).entity(RSP).build();
-            } else {
-                return Response.status(Status.NOT_MODIFIED).entity(RSP).build();
-            }
-        } catch (WebServiceException e) {
-            throw e;
-        }
-    }
+
 
 }

@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.ejb.Stateless;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
@@ -58,8 +59,10 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.UIDUtils;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.entity.Code;
@@ -74,6 +77,7 @@ import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
+import org.dcm4chee.archive.patient.PatientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,6 +95,9 @@ public class DataMgmtEJB implements DataMgmtBean {
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
+    @Inject
+    private PatientService patientService;
+    
     public Study deleteStudy(String studyInstanceUID) {
         TypedQuery<Study> query = em.createNamedQuery(
                 Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
@@ -207,8 +214,8 @@ public class DataMgmtEJB implements DataMgmtBean {
             throws EntityNotFoundException {
         Patient patient = getPatient(patientID);
         if (patient == null)
-            throw new EntityNotFoundException("Unable to find patient "
-                    + patientID);
+            throw new EntityNotFoundException("Unable to find patient with ID:"
+                    + patientID.getID()+ " issued by "+patientID.getIssuer().toString());
 
         Attributes original = patient.getAttributes();
 
@@ -253,6 +260,36 @@ public class DataMgmtEJB implements DataMgmtBean {
                 arcDevExt.getAttributeFilter(Entity.Patient),
                 arcDevExt.getFuzzyStr());
         em.flush();
+    }
+
+    public boolean mergePatient(IDWithIssuer id, IDWithIssuer targetID, ApplicationEntity arcAE)
+    {
+        ArchiveAEExtension arcAEExt = arcAE.getAEExtension(ArchiveAEExtension.class);
+        PatientID priorID = getPatientID(id.getID(), (Issuer)id.getIssuer());
+        PatientID dominantID = getPatientID(targetID.getID(), (Issuer)targetID.getIssuer());
+
+        if (priorID == null || dominantID == null) {
+            throw new EntityNotFoundException("Unable to find patient ID:"
+                    + priorID == null ? id.getID() : targetID.getID()
+                    + " issued by " + priorID == null ? id.getIssuer()
+                    .toString() : targetID.getIssuer().toString());
+        }
+        Patient priorPatient = priorID.getPatient();
+        Patient dominantPatient = dominantID.getPatient();
+        if (priorPatient == null || dominantPatient == null){
+            throw new EntityNotFoundException("Unable to find patient with ID:"
+                    + priorPatient == null ? id.getID() : targetID.getID()
+                            + " issued by " + priorPatient == null ? id.getIssuer()
+                            .toString() : targetID.getIssuer().toString());
+        }
+        try{
+        patientService.mergePatientByHL7(dominantPatient.getAttributes(), priorPatient.getAttributes(), arcAEExt.getStoreParam());
+        }
+        catch(Exception e)
+        {
+            return false;
+        }
+            return priorPatient.getMergedWith()==dominantPatient?true:false;
     }
 
     @Override
@@ -688,7 +725,7 @@ public class DataMgmtEJB implements DataMgmtBean {
         if (attrs.contains(Tag.PatientID)) {
             Issuer issuer = getIssuer(attrs, original);
             fallbackIssuer = issuer;
-            PatientID id = getPatientID(attrs.getString(Tag.PatientID), issuer);
+            PatientID id = findOrCreatePatientID(attrs.getString(Tag.PatientID), issuer);
             id.setPatient(patient);
             if (!oldIDs.contains(id))
                 oldIDs.add(id);
@@ -696,7 +733,7 @@ public class DataMgmtEJB implements DataMgmtBean {
         if (attrs.contains(Tag.OtherPatientIDs)) {
             Issuer issuer = getIssuer(attrs, original);
             fallbackIssuer = issuer;
-            PatientID id = getPatientID(attrs.getString(Tag.OtherPatientIDs),
+            PatientID id = findOrCreatePatientID(attrs.getString(Tag.OtherPatientIDs),
                     issuer);
             if (!oldIDs.contains(id))
                 oldIDs.add(id);
@@ -727,7 +764,7 @@ public class DataMgmtEJB implements DataMgmtBean {
                 }
                 if (issuer == null)
                     issuer = fallbackIssuer;
-                PatientID id = getPatientID(
+                PatientID id = findOrCreatePatientID(
                         otherPatientIDAttrs.getString(Tag.PatientID), issuer);
                 if (!oldIDs.contains(id))
                     oldIDs.add(id);
@@ -769,7 +806,7 @@ public class DataMgmtEJB implements DataMgmtBean {
         return issuer;
     }
 
-    private PatientID getPatientID(String string, Issuer issuer) {
+    private PatientID findOrCreatePatientID(String string, Issuer issuer) {
         Query query = em
                 .createQuery("Select pid from PatientID pid where (pid.id = ?1 AND pid.issuer = ?2) OR pid.id=?1");
         query.setParameter(1, string);
@@ -786,6 +823,20 @@ public class DataMgmtEJB implements DataMgmtBean {
             em.persist(foundID);
         }
         foundID.setIssuer(issuer);
+        return foundID;
+    }
+
+    private PatientID getPatientID(String string, Issuer issuer) {
+        Query query = em
+                .createQuery("Select pid from PatientID pid where (pid.id = ?1 AND pid.issuer = ?2) OR pid.id=?1");
+        query.setParameter(1, string);
+        query.setParameter(2, issuer);
+        PatientID foundID = null;
+        try {
+            foundID = (PatientID) query.getSingleResult();
+        } catch (Exception e) {
+        }
+
         return foundID;
     }
 
@@ -1059,7 +1110,7 @@ public class DataMgmtEJB implements DataMgmtBean {
         Patient patient = null;
         if (patientID.getIssuer() != null) {
             try {
-                PatientID id = getPatientID(patientID.getID(),
+                PatientID id = findOrCreatePatientID(patientID.getID(),
                         (Issuer) patientID.getIssuer());
                 patient = id.getPatient();
             } catch (Exception e) {

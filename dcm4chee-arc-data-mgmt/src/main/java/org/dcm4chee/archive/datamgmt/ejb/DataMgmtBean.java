@@ -46,6 +46,7 @@ import javax.persistence.EntityNotFoundException;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
@@ -86,4 +87,5 @@ public interface DataMgmtBean {
             String targetSeriesInstanceUID);
     boolean segmentStudy(String studyInstanceUID, String seriesInstanceUID,
             String targetStudyInstanceUID, ArchiveDeviceExtension arcDevExt);
+    boolean mergePatient(IDWithIssuer id, IDWithIssuer targetID,ApplicationEntity arcAE);
 }
