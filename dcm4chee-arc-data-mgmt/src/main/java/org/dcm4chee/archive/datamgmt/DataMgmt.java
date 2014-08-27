@@ -100,7 +100,7 @@ public class DataMgmt {
     // Patient Level
     // update
     @POST
-    @Path("updateXML/patients/{PatientID}/{issuer:.*}")
+    @Path("updatexml/patients/{PatientID}/{issuer:.*}")
     @Consumes({ "application/xml" })
     public Response updateXMLPatient(@Context UriInfo uriInfo, InputStream in,
             @PathParam("PatientID") String patientID,
@@ -125,7 +125,7 @@ public class DataMgmt {
     }
 
     @POST
-    @Path("updateJSON/patients/{PatientID}/{issuer:.*}")
+    @Path("updatejson/patients/{PatientID}/{issuer:.*}")
     @Consumes({ "application/json" })
     public Response updateJSONPatient(@Context UriInfo uriInfo, InputStream in,
             @PathParam("PatientID") String patientID,
@@ -151,7 +151,7 @@ public class DataMgmt {
 
     // move study
     @GET
-    @Path("moveStudy/studies/{StudyInstanceUID}/patients/{PatientID}/{issuer:.*}")
+    @Path("movestudy/studies/{StudyInstanceUID}/patients/{PatientID}/{issuer:.*}")
     public Response moveStudy(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("PatientID") String patientID,
@@ -186,7 +186,7 @@ public class DataMgmt {
 
     // Study Level
     @POST
-    @Path("updateXML/studies/{StudyInstanceUID}")
+    @Path("updatexml/studies/{StudyInstanceUID}")
     @Consumes({ "application/xml" })
     public Response updateXMLStudies(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID)
@@ -204,7 +204,7 @@ public class DataMgmt {
     }
 
     @GET
-    @Path("splitStudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
+    @Path("splitstudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
     public Response splitStudy(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
@@ -219,7 +219,7 @@ public class DataMgmt {
     }
 
     @GET
-    @Path("segmentStudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
+    @Path("segmentstudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
     public Response segmentStudy(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
@@ -237,7 +237,7 @@ public class DataMgmt {
 
     // Series Level
     @POST
-    @Path("updateXML/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
+    @Path("updatexml/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
     @Consumes({ "application/xml" })
     public Response updateXMLSeries(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
@@ -248,7 +248,7 @@ public class DataMgmt {
     }
 
     @POST
-    @Path("updateJSON/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
+    @Path("updatejson/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
     @Consumes({ "application/json" })
     public Response updateJSONSeries(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
@@ -259,7 +259,7 @@ public class DataMgmt {
     }
 
     @GET
-    @Path("splitSeries/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}/targetstudies/{TargetStudyInstanceUID}/targetseries/{TargetSeriesInstanceUID}")
+    @Path("splitseries/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}/targetstudies/{TargetStudyInstanceUID}/targetseries/{TargetSeriesInstanceUID}")
     public Response splitSeries(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
@@ -278,7 +278,7 @@ public class DataMgmt {
 
     // Instance Level
     @POST
-    @Path("updateXML/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
+    @Path("updatexml/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
     @Consumes({ "application/xml" })
     public Response updateXMLInstances(@Context UriInfo uriInfo,
             InputStream in,
@@ -291,7 +291,7 @@ public class DataMgmt {
     }
 
     @POST
-    @Path("updateJSON/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
+    @Path("updatejson/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
     @Consumes({ "application/json" })
     public Response updateJSONInstances(@Context UriInfo uriInfo,
             InputStream in,

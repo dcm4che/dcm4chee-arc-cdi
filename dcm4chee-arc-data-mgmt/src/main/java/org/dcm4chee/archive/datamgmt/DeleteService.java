@@ -55,7 +55,7 @@ import org.dcm4chee.archive.datamgmt.ejb.DataMgmtBean;
  * 
  */
 
-@Path("/datamgmgt")
+@Path("/manage")
 @RequestScoped
 public class DeleteService {
 
