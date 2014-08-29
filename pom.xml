@@ -291,5 +291,6 @@
     <module>dcm4chee-arc-issuer</module>
     <module>dcm4chee-arc-entity-ext</module>
     <module>json-jboss-modules</module>
+    <module>dcm4chee-arc-performance</module>
   </modules>
 </project>
