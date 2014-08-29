@@ -48,6 +48,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.PatientCommands;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Series;
@@ -77,6 +78,8 @@ public interface DataMgmtBean {
             String sopInstanceUID, Attributes attrs) throws EntityNotFoundException;
     void updatePatient(ArchiveDeviceExtension arcDevExt, IDWithIssuer id,
             Attributes attrs) throws EntityNotFoundException;
+    Issuer findOrCreateIssuer(String local, String universal,
+            String universalType);
     Issuer getIssuer(String local, String universal,
             String universalType);
     boolean moveStudy(String studyInstanceUID, IDWithIssuer id);
@@ -87,5 +90,5 @@ public interface DataMgmtBean {
             String targetSeriesInstanceUID);
     boolean segmentStudy(String studyInstanceUID, String seriesInstanceUID,
             String targetStudyInstanceUID, ArchiveDeviceExtension arcDevExt);
-    boolean mergePatient(IDWithIssuer id, IDWithIssuer targetID,ApplicationEntity arcAE);
+    boolean patientOperation(Attributes sourcePatientAttributes, Attributes targetPatientAttributes,ApplicationEntity arcAE, PatientCommands command);
 }

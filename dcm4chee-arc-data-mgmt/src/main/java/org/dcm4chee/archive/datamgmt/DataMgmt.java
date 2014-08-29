@@ -41,6 +41,7 @@ package org.dcm4chee.archive.datamgmt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.enterprise.context.RequestScoped;
@@ -59,10 +60,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.Status;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.ws.WebServiceException;
 
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.json.JSONReader;
+import org.dcm4che3.json.JSONReader.Callback;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4che3.data.Attributes;
@@ -71,6 +72,7 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtBean;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB;
+import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.PatientCommands;
 import org.dcm4chee.archive.entity.Issuer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,8 +90,6 @@ public class DataMgmt {
             .getLogger(DataMgmtEJB.class);
     @Context
     private HttpServletRequest request;
-
-    private static String RSP;
 
     @Inject
     Device device;
@@ -149,52 +149,49 @@ public class DataMgmt {
         return updateJSON("PATIENT", id, null, null, null, in);
     }
 
-    @GET
-    @Path("mergepatients/{AETitle}/patients/{PatientID}/{Issuer:.*}/targetpatients/{TargetPatientID}/{TargetIssuer:.*}")
-    public Response mergePatients(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("PatientID") String patientID,
-            @PathParam("Issuer") String issuer,
-            @PathParam("TargetPatientID") String targetPatientID,
-            @PathParam("TargetIssuer") String targetIssuer,
-            @PathParam("AETitle") String aeTitle) {
-        String[] issuerVals = issuer.split("/");
-        Issuer matchingIssuer = null;
-        if (issuerVals.length > 0) {
-            if (issuerVals.length == 1) {
-                matchingIssuer = dataManager.getIssuer(issuerVals[0], null,
-                        null);
-            } else if (issuerVals.length == 2) {
-                matchingIssuer = dataManager.getIssuer(null, issuerVals[0],
-                        issuerVals[1]);
-            } else if (issuerVals.length == 3) {
-                matchingIssuer = dataManager.getIssuer(issuerVals[0],
-                        issuerVals[1], issuerVals[2]);
+    @POST
+    @Path("{PatientOperation}/{AETitle}")
+    public Response patientOperation(@Context UriInfo uriInfo, InputStream in,
+            @PathParam("AETitle") String aeTitle,
+            @PathParam("PatientOperation") String patientOperation) {
+        PatientCommands command = patientOperation.compareTo("merge") == 0 ? PatientCommands.PATIENT_MERGE
+                : patientOperation.compareTo("link") == 0 ? PatientCommands.PATIENT_LINK
+                        : patientOperation.compareTo("unlink") == 0 ? PatientCommands.PATIENT_UNLINK
+                                : patientOperation.compareTo("updateids") == 0 ? PatientCommands.PATIENT_UPDATE_ID
+                                : null;
+        
+        if (command == null)
+            throw new WebApplicationException(
+                    "Unable to decide patient command - supported commands {merge, link, unlink}");
+        ArrayList<HashMap<String, String>> query = new ArrayList<HashMap<String, String>>();
+        ArrayList<Attributes> attrs = null;
+        try {
+            attrs = parseJSONAttributesToList(in, query);
+            LOG.info("Received JSON request for DICOM Header Object Update");
+            if (query.size()<2)
+                throw new WebApplicationException(new Exception(
+                        "Unable to decide request data"), Response.Status.BAD_REQUEST);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Received Attributes for patient operation - "+patientOperation);
+                for(int i=0; i< query.size();i++){
+                    LOG.debug(i==0 ? "Source data: ":"Target data: ");
+                for (String key : query.get(i).keySet()) {
+                    LOG.debug(key + "=" + query.get(i).get(key));
+                }
+                }
             }
-            
+        }
+        catch(Exception e)
+        {
+            throw new WebApplicationException(
+                    "Unable to process patient operation request data");
         }
 
-        String[] targetIssuerVals = targetIssuer.split("/");
-        Issuer targetMatchingIssuer = null;
-        if (targetIssuerVals.length > 0) {
-            if (targetIssuerVals.length == 1) {
-                targetMatchingIssuer = dataManager.getIssuer(
-                        targetIssuerVals[0], null, null);
-            } else if (targetIssuerVals.length == 2) {
-                targetMatchingIssuer = dataManager.getIssuer(null,
-                        targetIssuerVals[0], targetIssuerVals[1]);
-            } else if (targetIssuerVals.length == 3) {
-                targetMatchingIssuer = dataManager.getIssuer(
-                        targetIssuerVals[0], targetIssuerVals[1],
-                        targetIssuerVals[2]);
-            }
-        }
-        IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
-        IDWithIssuer targetID = new IDWithIssuer(targetPatientID, targetMatchingIssuer);
-        return dataManager.mergePatient(id, targetID,
-                device.getApplicationEntity(aeTitle)) ? Response
-                .status(Status.OK).entity("Patient Merged Successfully")
+        return dataManager.patientOperation(attrs.get(0), attrs.get(1),
+                device.getApplicationEntity(aeTitle), command) ? Response
+                .status(Status.OK).entity("Patient operation successful - "+patientOperation)
                 .build() : Response.status(Status.CONFLICT)
-                .entity("Error - Unable to Merge Patient").build();
+                .entity("Error - Unable to perform patient operation - "+patientOperation).build();
     }
     
     // Study Level
@@ -221,16 +218,9 @@ public class DataMgmt {
         }
 
         IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
-        return moveStudy(studyInstanceUID, id);
-    }
-
-    private Response moveStudy(String studyInstanceUID, IDWithIssuer id) {
-        boolean moved = dataManager.moveStudy(studyInstanceUID, id);
-        Response rspMoved = Response.status(Status.OK)
-                .entity("Study Moved Successfully").build();
-        Response rspError = Response.status(Status.CONFLICT)
-                .entity("Error: Study Not Moved").build();
-        return moved ? rspMoved : rspError;
+        return dataManager.moveStudy(studyInstanceUID, id)?
+        Response.status(Status.OK).entity("Study Moved Successfully").build():
+        Response.status(Status.CONFLICT).entity("Error: Study Not Moved").build();
     }
     
     @POST
@@ -491,7 +481,44 @@ public class DataMgmt {
         }
         return ds;
     }
+    
+    private ArrayList<Attributes> parseJSONAttributesToList(InputStream in,
+            ArrayList<HashMap<String, String>> query) throws IOException {
 
+        JSONReader reader = new JSONReader(
+                Json.createParser(new InputStreamReader(in, "UTF-8")));
+        final ArrayList<Attributes> attributesList = new ArrayList<Attributes>();
+        
+        reader.readDatasets(new Callback() {
+            
+            @Override
+            public void onDataset(Attributes fmi, Attributes dataset) {
+                attributesList.add(dataset);
+            }
+        });
+        ElementDictionary dict = ElementDictionary
+                .getStandardElementDictionary();
+
+        for (int i = 0; i < attributesList.size(); i++){
+            HashMap<String, String> tmpQMap = new HashMap<String, String>(); 
+        for (int j = 0; j < attributesList.get(i).tags().length; j++) {
+            Attributes ds = attributesList.get(i);
+            if (TagUtils.isPrivateTag(ds.tags()[j])) {
+                dict = ElementDictionary.getElementDictionary(ds
+                        .getPrivateCreator(ds.tags()[j]));
+                query.get(i).put(dict.keywordOf(ds.tags()[j]),
+                        ds.getString(ds.tags()[j]));
+            } else {
+                dict = ElementDictionary.getStandardElementDictionary();
+                tmpQMap.put(dict.keywordOf(ds.tags()[j]),
+                        ds.getString(ds.tags()[j]));
+            }
+        }
+        query.add(tmpQMap);
+        }
+
+        return attributesList;
+    }
     private Attributes parseXMLAttributes(InputStream in,
             HashMap<String, String> query) throws SAXException,
             ParserConfigurationException, IOException {

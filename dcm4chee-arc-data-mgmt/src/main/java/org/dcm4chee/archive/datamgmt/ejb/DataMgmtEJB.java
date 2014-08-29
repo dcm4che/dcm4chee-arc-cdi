@@ -92,6 +92,9 @@ public class DataMgmtEJB implements DataMgmtBean {
     private static final Logger LOG = LoggerFactory
             .getLogger(DataMgmtEJB.class);
 
+public enum PatientCommands{
+    PATIENT_LINK,PATIENT_MERGE,PATIENT_UNLINK,PATIENT_UPDATE_ID;
+}
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
@@ -219,17 +222,6 @@ public class DataMgmtEJB implements DataMgmtBean {
 
         Attributes original = patient.getAttributes();
 
-        // relations
-        // patient if (add Only)
-        if (attrs.contains(Tag.PatientID)
-                || attrs.contains(Tag.OtherPatientIDs)
-                || attrs.contains(Tag.OtherPatientIDsSequence)) {
-            Collection<PatientID> patientIDs = getPatientIDs(patient, original,
-                    attrs, arcDevExt);
-            if (patientIDs != null && patientIDs.size() > 0) {
-                patient.setPatientIDs(patientIDs);
-            }
-        }
         // name
         if (attrs.contains(Tag.PatientName)) {
             PersonName name = PersonName.valueOf(
@@ -262,34 +254,31 @@ public class DataMgmtEJB implements DataMgmtBean {
         em.flush();
     }
 
-    public boolean mergePatient(IDWithIssuer id, IDWithIssuer targetID, ApplicationEntity arcAE)
+    public boolean patientOperation(Attributes srcPatientAttrs, Attributes targetPatientAttrs, ApplicationEntity arcAE, PatientCommands command)
     {
         ArchiveAEExtension arcAEExt = arcAE.getAEExtension(ArchiveAEExtension.class);
-        PatientID priorID = getPatientID(id.getID(), (Issuer)id.getIssuer());
-        PatientID dominantID = getPatientID(targetID.getID(), (Issuer)targetID.getIssuer());
-
-        if (priorID == null || dominantID == null) {
-            throw new EntityNotFoundException("Unable to find patient ID:"
-                    + priorID == null ? id.getID() : targetID.getID()
-                    + " issued by " + priorID == null ? id.getIssuer()
-                    .toString() : targetID.getIssuer().toString());
-        }
-        Patient priorPatient = priorID.getPatient();
-        Patient dominantPatient = dominantID.getPatient();
-        if (priorPatient == null || dominantPatient == null){
-            throw new EntityNotFoundException("Unable to find patient with ID:"
-                    + priorPatient == null ? id.getID() : targetID.getID()
-                            + " issued by " + priorPatient == null ? id.getIssuer()
-                            .toString() : targetID.getIssuer().toString());
-        }
-        try{
-        patientService.mergePatientByHL7(dominantPatient.getAttributes(), priorPatient.getAttributes(), arcAEExt.getStoreParam());
+        try {
+            
+            if(command == PatientCommands.PATIENT_UPDATE_ID)
+                patientService.updatePatientID(srcPatientAttrs,targetPatientAttrs,arcAEExt.getStoreParam());
+            if (command == PatientCommands.PATIENT_LINK)
+                patientService.linkPatient(targetPatientAttrs,
+                        srcPatientAttrs, arcAEExt.getStoreParam());
+            else if (command == PatientCommands.PATIENT_UNLINK)
+                patientService.unlinkPatient(targetPatientAttrs,
+                        srcPatientAttrs, arcAEExt.getStoreParam());
+            else if (command == PatientCommands.PATIENT_MERGE)
+            {
+                patientService.mergePatientByHL7(
+                        targetPatientAttrs,
+                        srcPatientAttrs, arcAEExt.getStoreParam());
+            }
+            return true;
         }
         catch(Exception e)
         {
             return false;
         }
-            return priorPatient.getMergedWith()==dominantPatient?true:false;
     }
 
     @Override
@@ -713,99 +702,6 @@ public class DataMgmtEJB implements DataMgmtBean {
         return segment;
     }
 
-    private Collection<PatientID> getPatientIDs(Patient patient,
-            Attributes original, Attributes attrs,
-            ArchiveDeviceExtension arcDevExt) {
-        Collection<PatientID> oldIDs = patient.getPatientIDs();
-        Sequence newOtherPatientIDsSeq = attrs
-                .getSequence(Tag.OtherPatientIDsSequence);
-        // used in case the item in the OtherPatientIDsSequence has no issuer
-        Issuer fallbackIssuer = null;
-        // add missing ones
-        if (attrs.contains(Tag.PatientID)) {
-            Issuer issuer = getIssuer(attrs, original);
-            fallbackIssuer = issuer;
-            PatientID id = findOrCreatePatientID(attrs.getString(Tag.PatientID), issuer);
-            id.setPatient(patient);
-            if (!oldIDs.contains(id))
-                oldIDs.add(id);
-        }
-        if (attrs.contains(Tag.OtherPatientIDs)) {
-            Issuer issuer = getIssuer(attrs, original);
-            fallbackIssuer = issuer;
-            PatientID id = findOrCreatePatientID(attrs.getString(Tag.OtherPatientIDs),
-                    issuer);
-            if (!oldIDs.contains(id))
-                oldIDs.add(id);
-        }
-        if (newOtherPatientIDsSeq != null)
-            for (Attributes otherPatientIDAttrs : newOtherPatientIDsSeq) {
-
-                Issuer issuer = null;
-                if (otherPatientIDAttrs.contains(Tag.IssuerOfPatientID)
-                        || otherPatientIDAttrs
-                                .contains(Tag.IssuerOfPatientIDQualifiersSequence)) {
-                    String local, universal = null, universalType = null;
-                    if (otherPatientIDAttrs
-                            .getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
-                            && otherPatientIDAttrs.getSequence(
-                                    Tag.IssuerOfPatientIDQualifiersSequence)
-                                    .size() > 0) {
-                        Sequence tmp = otherPatientIDAttrs
-                                .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
-                        universal = tmp.get(0).getString(Tag.UniversalEntityID);
-                        universalType = tmp.get(0).getString(
-                                Tag.UniversalEntityIDType);
-                    }
-                    local = otherPatientIDAttrs
-                            .getString(Tag.IssuerOfPatientID);
-                    issuer = getIssuer(local, universal, universalType);
-
-                }
-                if (issuer == null)
-                    issuer = fallbackIssuer;
-                PatientID id = findOrCreatePatientID(
-                        otherPatientIDAttrs.getString(Tag.PatientID), issuer);
-                if (!oldIDs.contains(id))
-                    oldIDs.add(id);
-            }
-
-        return oldIDs;
-    }
-
-    private Issuer getIssuer(Attributes attrs, Attributes original) {
-        Issuer issuer = null;
-        if (attrs.contains(Tag.IssuerOfPatientID)
-                || attrs.contains(Tag.IssuerOfPatientIDQualifiersSequence)) {
-            String local, universal = null, universalType = null;
-            if (attrs.getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
-                    && attrs.getSequence(
-                            Tag.IssuerOfPatientIDQualifiersSequence).size() > 0) {
-                Sequence tmp = attrs
-                        .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
-                universal = tmp.get(0).getString(Tag.UniversalEntityID);
-                universalType = tmp.get(0).getString(Tag.UniversalEntityIDType);
-            }
-            local = attrs.getString(Tag.IssuerOfPatientID);
-            issuer = getIssuer(local, universal, universalType);
-
-        } else if (original.contains(Tag.IssuerOfPatientID)) {
-            String local, universal = null, universalType = null;
-            if (original.getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
-                    && original.getSequence(
-                            Tag.IssuerOfPatientIDQualifiersSequence).size() > 0) {
-                Sequence tmp = original
-                        .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
-                universal = tmp.get(0).getString(Tag.UniversalEntityID);
-                universalType = tmp.get(0).getString(Tag.UniversalEntityIDType);
-            }
-            local = original.getString(Tag.IssuerOfPatientID);
-            issuer = getIssuer(local, universal, universalType);
-
-        }
-        return issuer;
-    }
-
     private PatientID findOrCreatePatientID(String string, Issuer issuer) {
         Query query = em
                 .createQuery("Select pid from PatientID pid where (pid.id = ?1 AND pid.issuer = ?2) OR pid.id=?1");
@@ -823,20 +719,6 @@ public class DataMgmtEJB implements DataMgmtBean {
             em.persist(foundID);
         }
         foundID.setIssuer(issuer);
-        return foundID;
-    }
-
-    private PatientID getPatientID(String string, Issuer issuer) {
-        Query query = em
-                .createQuery("Select pid from PatientID pid where (pid.id = ?1 AND pid.issuer = ?2) OR pid.id=?1");
-        query.setParameter(1, string);
-        query.setParameter(2, issuer);
-        PatientID foundID = null;
-        try {
-            foundID = (PatientID) query.getSingleResult();
-        } catch (Exception e) {
-        }
-
         return foundID;
     }
 
@@ -1019,13 +901,20 @@ public class DataMgmtEJB implements DataMgmtBean {
         return issuer;
     }
 
-    public Issuer getIssuer(String local, String universal, String universalType) {
+    public Issuer findOrCreateIssuer(String local, String universal, String universalType) {
         Issuer issuer = em.find(Issuer.class,
                 getIssuerPK(local, universal, universalType));
         if (issuer == null) {
             issuer = new Issuer(local, universal, universalType);
             em.persist(issuer);
         }
+
+        return issuer;
+    }
+
+    public Issuer getIssuer(String local, String universal, String universalType) {
+        Issuer issuer = em.find(Issuer.class,
+                getIssuerPK(local, universal, universalType));
 
         return issuer;
     }
@@ -1066,19 +955,6 @@ public class DataMgmtEJB implements DataMgmtBean {
         return null;
     }
 
-    private long getInstancePK(String sopInstanceUID) {
-        Instance inst = null;
-        try {
-            inst = (Instance) em
-                    .createQuery(
-                            "SELECT i FROM Instance i "
-                                    + "WHERE i.sopInstanceUID = ?1 ")
-                    .setParameter(1, sopInstanceUID).getSingleResult();
-        } catch (Exception e) {
-        }
-        return inst != null ? inst.getPk() : -1l;
-    }
-
     private long getStudyPK(String studyInstanceUID) {
         Study study = null;
         try {
@@ -1091,19 +967,6 @@ public class DataMgmtEJB implements DataMgmtBean {
         }
 
         return study != null ? study.getPk() : -1l;
-    }
-
-    private long getSeriesPK(String seriesInstanceUID) {
-        Series series = null;
-        try {
-            series = (Series) em
-                    .createQuery(
-                            "SELECT i FROM Series i "
-                                    + "WHERE i.seriesInstanceUID = ?1 ")
-                    .setParameter(1, seriesInstanceUID).getSingleResult();
-        } catch (Exception e) {
-        }
-        return series != null ? series.getPk() : -1l;
     }
 
     private long getPatientPK(IDWithIssuer patientID) {
