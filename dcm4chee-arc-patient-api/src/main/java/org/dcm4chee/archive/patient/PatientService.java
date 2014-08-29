@@ -118,4 +118,7 @@ public interface PatientService {
             StoreParam storeParam) throws NonUniquePatientException,
             PatientMergedException;
 
+    void updatePatientID(Attributes srcPatientAttrs,
+            Attributes targetPatientAttrs, StoreParam storeParam) throws NonUniquePatientException;
+
 }
