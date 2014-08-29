@@ -48,12 +48,10 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.PersonName;
-import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
@@ -626,7 +624,7 @@ public class PatientServiceEJB implements PatientService {
 
             Patient patient = srcPatient.get(0);
             otherPatient = findPatientByIDs(otherPids);
-            if(!srcPatient.isEmpty())
+            if(!otherPatient.isEmpty())
                 throw new IllegalArgumentException("One or more patients found for target update attributes - expected 0 match");
             //check if original ids have links
             ArrayList<IDWithIssuer> linkedPatientsIDs =  new ArrayList<IDWithIssuer>();
@@ -636,20 +634,26 @@ public class PatientServiceEJB implements PatientService {
             }
             Collection<Patient> linkedPatients = findPatientByIDs(linkedPatientsIDs);
             Iterator<Patient> linkedPatientsIterator = linkedPatients.iterator();
+            try{
             while(linkedPatientsIterator.hasNext())
             {
                 Patient other = linkedPatientsIterator.next();
                 unlinkPatientIDs(patient, other, storeParam.isDeIdentifyLogs());
+                unlinkPatientIDs(other, patient, storeParam.isDeIdentifyLogs());
             }
-
-            //remove orphan ids
-            for(PatientID id: patient.getPatientIDs())
-            em.remove(id);
             
-            if(createPatientIDs(otherPids, patient, storeParam.isDeIdentifyLogs()).isEmpty())
+            patient.getPatientIDs().clear();
+          
+            Collection<PatientID> newPatientIDs = createPatientIDs(otherPids, patient, storeParam.isDeIdentifyLogs());
+            for(PatientID id: newPatientIDs){
+                patient.getPatientIDs().add(id);
+            }
+            }
+            catch(Exception e)
+            {
+                em.clear();
                 LOG.info("failed to update ID {} with {} ",pids, otherPids);
-            else
-                LOG.info("Update ID {} with {} ",pids, otherPids);
+            }
 
             //set blob data
             Attributes patientAttrs = patient.getAttributes();
@@ -657,7 +661,8 @@ public class PatientServiceEJB implements PatientService {
             if (patientAttrs.updateSelected(otherPatientAttrs, null, filter.getSelection())) {
                 patient.setAttributes(patientAttrs, filter,
                         storeParam.getFuzzyStr());
-
+                em.flush();
+                LOG.info("Update ID {} with {} ",pids, otherPids);
             }
     }
 }
