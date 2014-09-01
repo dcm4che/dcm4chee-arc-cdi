@@ -269,7 +269,7 @@ public class Instance implements Serializable {
     @JoinColumn(name = "instance_fk")
     private Collection<ContentItem> contentItems;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = false)
     @JoinColumn(name = "instance_fk")
     private Collection<FileRef> fileRefs;
 

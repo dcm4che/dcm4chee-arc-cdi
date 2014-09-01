@@ -350,28 +350,28 @@ public class StoreServiceImpl implements StoreService {
         final StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         Attributes attrs = context.getAttributes();
-        try{
+        try {
             Attributes modified = context.getCoercedOriginalAttributes();
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
                     TransferCapability.Role.SCP, session.getRemoteAET());
             if (tpl != null) {
-                attrs.update(
-                        SAXTransformer.transform(attrs, tpl, false, false, new SetupTransformer() {
-                            
+                attrs.update(SAXTransformer.transform(attrs, tpl, false, false,
+                        new SetupTransformer() {
+
                             @Override
                             public void setup(Transformer transformer) {
                                 setParameters(transformer, session);
                             }
-                        }),
-                        modified);
+                        }), modified);
             }
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-            //store service time zone support moved to decorator
-            
+        // store service time zone support moved to decorator
+
     }
+
     private void setParameters(Transformer tr, StoreSession session) {
         Date date = new Date();
         String currentDate = DateUtils.formatDA(null, date);
@@ -381,7 +381,7 @@ public class StoreServiceImpl implements StoreService {
         tr.setParameter("calling", session.getRemoteAET());
         tr.setParameter("called", session.getLocalAET());
     }
-    
+
     @Override
     public void processFile(StoreContext context) throws DicomServiceException {
         try {
@@ -509,6 +509,7 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
         Collection<FileRef> replaced = new ArrayList<FileRef>();
+
         try {
             Attributes attrs = context.getAttributes();
             Instance inst = em
@@ -525,10 +526,12 @@ public class StoreServiceImpl implements StoreService {
             case IGNORE:
                 return inst;
             case REPLACE:
-                for (FileRef fileRef : inst.getFileRefs()) {
+                for (Iterator<FileRef> iter = inst.getFileRefs().iterator(); iter
+                        .hasNext();) {
+                    FileRef fileRef = iter.next();
                     fileRef.setReplaced(true);
-                    fileRef.setInstance(null);
                     replaced.add(fileRef);
+                    iter.remove();
                 }
                 em.remove(inst);
             }
@@ -539,14 +542,12 @@ public class StoreServiceImpl implements StoreService {
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-        
+
         Instance newInst = service.createInstance(em, context);
-        
-        for (FileRef replacedRef : replaced) {
+
+        for (FileRef replacedRef : replaced)
             replacedRef.setInstance(newInst);
-            newInst.getFileRefs().add(replacedRef);
-        }
-        
+
         return newInst;
     }
 
@@ -596,16 +597,18 @@ public class StoreServiceImpl implements StoreService {
     public Patient findOrCreatePatient(EntityManager em, StoreContext context)
             throws DicomServiceException {
         try {
-            ArchiveAEExtension arcAE = context.getStoreSession().getArchiveAEExtension();
-//            PatientSelector selector = arcAE.getPatientSelector();
-//            System.out.println("Selector Class Name:"+selector.getPatientSelectorClassName());
-//            for (String key : selector.getPatientSelectorProperties().keySet())
-//                System.out.println("Property:("+key+","+selector.getPatientSelectorProperties().get(key)+")");
-            
+            ArchiveAEExtension arcAE = context.getStoreSession()
+                    .getArchiveAEExtension();
+            // PatientSelector selector = arcAE.getPatientSelector();
+            // System.out.println("Selector Class Name:"+selector.getPatientSelectorClassName());
+            // for (String key :
+            // selector.getPatientSelectorProperties().keySet())
+            // System.out.println("Property:("+key+","+selector.getPatientSelectorProperties().get(key)+")");
+
             StoreSession session = context.getStoreSession();
-            return patientService.updateOrCreatePatientOnCStore(
-                    context.getAttributes(),
-                    PatientSelectorFactory.createSelector(context.getStoreSession().getStoreParam()),
+            return patientService.updateOrCreatePatientOnCStore(context
+                    .getAttributes(), PatientSelectorFactory
+                    .createSelector(context.getStoreSession().getStoreParam()),
                     session.getStoreParam());
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
@@ -630,16 +633,15 @@ public class StoreServiceImpl implements StoreService {
         study.setAvailability(fs.getAvailability());
         study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
                 storeParam.getFuzzyStr());
-        study.setIssuerOfAccessionNumber(findOrCreateIssuer(
-                attrs.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
+        study.setIssuerOfAccessionNumber(findOrCreateIssuer(attrs
+                .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         em.persist(study);
         LOG.info("{}: Create {}", session, study);
         return study;
     }
 
     private Issuer findOrCreateIssuer(Attributes item) {
-        return item != null
-                ? issuerService.findOrCreate(new Issuer(item))
+        return item != null ? issuerService.findOrCreate(new Issuer(item))
                 : null;
     }
 
@@ -747,8 +749,7 @@ public class StoreServiceImpl implements StoreService {
     public void updatePatient(EntityManager em, StoreContext context,
             Patient patient) {
         StoreSession session = context.getStoreSession();
-        patientService.updatePatientByCStore(patient, 
-                context.getAttributes(),
+        patientService.updatePatientByCStore(patient, context.getAttributes(),
                 session.getStoreParam());
     }
 
@@ -801,9 +802,8 @@ public class StoreServiceImpl implements StoreService {
         ArrayList<RequestAttributes> list = new ArrayList<RequestAttributes>(
                 seq.size());
         for (Attributes item : seq)
-            list.add(new RequestAttributes(item,
-                    findOrCreateIssuer(
-                            item.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
+            list.add(new RequestAttributes(item, findOrCreateIssuer(item
+                    .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
                     fuzzyStr));
         return list;
     }
