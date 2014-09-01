@@ -77,11 +77,11 @@ import org.dcm4chee.archive.conf.AttributeFilter;
 @NamedQuery(
     name="Instance.findBySOPInstanceUID",
     query="SELECT i FROM Instance i "
-            + "WHERE i.sopInstanceUID = ?1 AND i.replaced = FALSE"),
+            + "WHERE i.sopInstanceUID = ?1"),
 @NamedQuery(
     name="Instance.findBySeriesInstanceUID",
     query="SELECT i FROM Instance i "
-            + "WHERE i.series.seriesInstanceUID = ?1 AND i.replaced = FALSE"),
+            + "WHERE i.series.seriesInstanceUID = ?1"),
 @NamedQuery(
     name="Instance.sopInstanceReferenceBySeriesInstanceUID",
     query="SELECT NEW org.dcm4chee.archive.entity.SOPInstanceReference("
@@ -95,7 +95,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "i.retrieveAETs,"
             + "i.externalRetrieveAET) "
             + "FROM Instance i "
-            + "WHERE i.series.seriesInstanceUID = ?1 AND i.replaced = FALSE"),
+            + "WHERE i.series.seriesInstanceUID = ?1"),
 @NamedQuery(
     name="Instance.sopInstanceReferenceByStudyInstanceUID",
     query="SELECT NEW org.dcm4chee.archive.entity.SOPInstanceReference("
@@ -109,7 +109,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "i.retrieveAETs,"
             + "i.externalRetrieveAET) "
             + "FROM Instance i "
-            + "WHERE i.series.study.studyInstanceUID = ?1 AND i.replaced = FALSE"),
+            + "WHERE i.series.study.studyInstanceUID = ?1"),
 @NamedQuery(
     name="Instance.instanceFileRefBySOPInstanceUID",
     query="SELECT NEW org.dcm4chee.archive.entity.InstanceFileRef("
@@ -126,7 +126,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "i.encodedAttributes) "
             + "FROM Instance i "
             + "LEFT JOIN i.fileRefs f "
-            + "WHERE i.sopInstanceUID = ?1 AND i.replaced = FALSE"),
+            + "WHERE i.sopInstanceUID = ?1"),
 @NamedQuery(
     name="Instance.instanceFileRefByStudyInstanceUID",
     query="SELECT NEW org.dcm4chee.archive.entity.InstanceFileRef("
@@ -143,7 +143,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "i.encodedAttributes) "
             + "FROM Instance i "
             + "LEFT JOIN i.fileRefs f "
-            + "WHERE i.series.study.studyInstanceUID = ?1 AND i.replaced = FALSE"),
+            + "WHERE i.series.study.studyInstanceUID = ?1"),
 @NamedQuery(
     name="Instance.instanceFileRefBySeriesInstanceUID",
     query="SELECT NEW org.dcm4chee.archive.entity.InstanceFileRef("
@@ -160,7 +160,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "i.encodedAttributes) "
             + "FROM Instance i "
             + "LEFT JOIN i.fileRefs f "
-            + "WHERE i.series.seriesInstanceUID = ?1 AND i.replaced = FALSE")})
+            + "WHERE i.series.seriesInstanceUID = ?1")})
 @Entity
 @Table(name = "instance")
 public class Instance implements Serializable {
@@ -244,10 +244,6 @@ public class Instance implements Serializable {
     @Basic(optional = false)
     @Column(name = "availability")
     private Availability availability;
-
-    @Basic(optional = false)
-    @Column(name = "replaced")
-    private boolean replaced;
 
     @Basic(optional = false)
     @Column(name = "archived")
@@ -409,14 +405,6 @@ public class Instance implements Serializable {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
-    }
-
-    public boolean isReplaced() {
-        return replaced;
-    }
-
-    public void setReplaced(boolean replaced) {
-        this.replaced = replaced;
     }
 
     public byte[] getEncodedAttributes() {

@@ -132,7 +132,7 @@ public class DefaultRetrieveService implements RetrieveService {
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                 keys.getStrings(Tag.SOPInstanceUID), false));
 
-        builder.and(QInstance.instance.replaced.isFalse());
+        builder.and(QFileRef.fileRef.replaced.isFalse());        
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         return query(builder);
     }
@@ -158,8 +158,9 @@ public class DefaultRetrieveService implements RetrieveService {
             builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                     new String[] { objectUID }, false));
 
-        builder.and(QInstance.instance.replaced.isFalse());
+        builder.and(QFileRef.fileRef.replaced.isFalse());        
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
+        
         return query(builder);
     }
 

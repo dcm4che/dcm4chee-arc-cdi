@@ -76,7 +76,6 @@ public class StgCmtEJB  {
             sopIUIDs[i] = requestSeq.get(i).getString(Tag.ReferencedSOPInstanceUID);
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(QInstance.instance.sopInstanceUID.in(sopIUIDs));
-        builder.and(QInstance.instance.replaced.isFalse());
         List<Tuple> list = new HibernateQuery(em.unwrap(Session.class))
             .from(QInstance.instance)
             .where(builder)

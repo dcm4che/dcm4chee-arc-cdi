@@ -50,9 +50,11 @@ import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.TimeZone;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -60,6 +62,7 @@ import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.criteria.From;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 
@@ -505,6 +508,7 @@ public class StoreServiceImpl implements StoreService {
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
+        Collection<FileRef> replaced = new ArrayList<FileRef>();
         try {
             Attributes attrs = context.getAttributes();
             Instance inst = em
@@ -521,7 +525,12 @@ public class StoreServiceImpl implements StoreService {
             case IGNORE:
                 return inst;
             case REPLACE:
-                inst.setReplaced(true);
+                for (FileRef fileRef : inst.getFileRefs()) {
+                    fileRef.setReplaced(true);
+                    fileRef.setInstance(null);
+                    replaced.add(fileRef);
+                }
+                em.remove(inst);
             }
         } catch (NoResultException e) {
             context.setStoreAction(StoreAction.STORE);
@@ -530,7 +539,15 @@ public class StoreServiceImpl implements StoreService {
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-        return service.createInstance(em, context);
+        
+        Instance newInst = service.createInstance(em, context);
+        
+        for (FileRef replacedRef : replaced) {
+            replacedRef.setInstance(newInst);
+            newInst.getFileRefs().add(replacedRef);
+        }
+        
+        return newInst;
     }
 
     @Override
@@ -687,7 +704,7 @@ public class StoreServiceImpl implements StoreService {
         Path filePath = context.getFinalFile();
         FileRef fileRef = new FileRef(fs, unixFilePath(fs.getPath(), filePath),
                 context.getTransferSyntax(), filePath.toFile().length(),
-                context.getFinalFileDigest());
+                context.getFinalFileDigest(), false);
         // Time zone store adjustments
         TimeZone sourceTimeZone = session.getSourceTimeZone();
         if (sourceTimeZone != null)

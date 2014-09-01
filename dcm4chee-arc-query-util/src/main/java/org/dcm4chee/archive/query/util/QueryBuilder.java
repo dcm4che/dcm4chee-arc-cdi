@@ -407,7 +407,6 @@ public class QueryBuilder {
                 AttributeFilter.selectStringValue(keys,
                         attrFilter.getCustomAttribute3(), "*"), matchUnknown,
                 true));
-        builder.and(QInstance.instance.replaced.isFalse());
         builder.and(hideRejectedInstance(queryParam));
     }
 

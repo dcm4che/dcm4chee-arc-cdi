@@ -93,6 +93,10 @@ public class FileRef implements Serializable {
     @Basic(optional = true)
     @Column(name = "file_digest", updatable = false)
     private String digest;
+    
+    @Basic(optional = false)
+    @Column(name = "replaced")
+    private boolean replaced;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "instance_fk", updatable = false)
@@ -105,12 +109,13 @@ public class FileRef implements Serializable {
     public FileRef() {};
 
     public FileRef(FileSystem fileSystem, String filePath, String transferSyntaxUID,
-            long fileSize, String digest) {
+            long fileSize, String digest, boolean replaced) {
         this.fileSystem = fileSystem;
         this.filePath = filePath;
         this.transferSyntaxUID = transferSyntaxUID;
         this.fileSize = fileSize;
         this.digest = digest;
+        this.replaced = replaced;
     }
 
     @PrePersist
@@ -153,6 +158,14 @@ public class FileRef implements Serializable {
 
     public FileSystem getFileSystem() {
         return fileSystem;
+    }
+    
+    public boolean isReplaced() {
+        return replaced;
+    }
+
+    public void setReplaced(boolean replaced) {
+        this.replaced = replaced;
     }
 
     @Override

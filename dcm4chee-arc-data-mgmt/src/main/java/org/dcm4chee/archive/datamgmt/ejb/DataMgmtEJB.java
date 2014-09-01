@@ -1046,7 +1046,7 @@ public enum PatientCommands{
             FileRef newRef = new FileRef(fileRef.getFileSystem(),fileRef.getFilePath(),
                     fileRef.getTransferSyntaxUID(),
                     fileRef.getFileSize(),
-                    fileRef.getDigest());
+                    fileRef.getDigest(), fileRef.isReplaced());
             newRef.setInstance(instanceCopy);
             em.persist(newRef);
             newRefs.add(newRef);
