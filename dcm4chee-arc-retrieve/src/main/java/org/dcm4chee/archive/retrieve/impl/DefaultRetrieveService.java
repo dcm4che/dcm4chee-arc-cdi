@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.retrieve.impl;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -47,17 +49,27 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
+import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.io.SAXWriter;
+import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.DateUtils;
+import org.dcm4che3.util.SafeClose;
+import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.PatientStudySeriesAttributes;
@@ -73,6 +85,7 @@ import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.hibernate.Session;
+import org.jboss.logging.Logger;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.Tuple;
@@ -86,6 +99,8 @@ import com.mysema.query.jpa.hibernate.HibernateQuery;
  */
 @ApplicationScoped
 public class DefaultRetrieveService implements RetrieveService {
+
+    private static final Logger LOG = Logger.getLogger(DefaultRetrieveService.class);
 
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
@@ -277,19 +292,111 @@ public class DefaultRetrieveService implements RetrieveService {
             throws DicomServiceException {
     }
 
-    public String timeOffsetInMillisToDICOMTimeOffset(int millis) {
-        int mns = millis / (1000 * 60);
-        String h = "" + (int) mns / 60;
-        if (h.length() == 1) {
-            String tmp = h;
-            h = "0" + tmp;
+    //supression criteria and elimination of objects by sop class and transfer syntax methods (Can be decorated)
+    //sop class and transfer syntax filter
+
+    public List<ArchiveInstanceLocator> applySuppressionCriteria(
+            List<ArchiveInstanceLocator> refs,
+            String supressionCriteriaTemplateURI,
+            List<ArchiveInstanceLocator> instsfailed,
+            final RetrieveContext retrieveContext) {
+
+        List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
+
+        for (ArchiveInstanceLocator ref : refs) {
+            Attributes attrs = getFileAttributes(ref);
+            try {
+                Templates tpl = SAXTransformer
+                        .newTemplates(new StreamSource(
+                                StringUtils
+                                        .replaceSystemProperties(supressionCriteriaTemplateURI)));
+                if (tpl != null) {
+                    boolean eliminate;
+                    StringWriter resultWriter = new StringWriter();
+                    SAXWriter wr = SAXTransformer.getSAXWriter(tpl,
+                            new StreamResult(resultWriter), new SetupTransformer() {
+                                
+                                @Override
+                                public void setup(Transformer transformer) {
+                                    setParameters(transformer, retrieveContext);
+                                }
+                            });
+                    wr.write(attrs);
+                    eliminate = (resultWriter.toString().compareToIgnoreCase(
+                            "true") == 0 ? true : false);
+                    if (!eliminate) {
+                        adjustedRefs.add(ref);
+                    } else {
+                        instsfailed.add(ref);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Applying Suppression Criteria on WADO request, using template: "
+                                    + StringUtils
+                                    .replaceSystemProperties(supressionCriteriaTemplateURI)
+                                    + "\nRemoving Referenced Instance: "
+                                    + ref.iuid + " from response");
+                        }
+                    }
+                }
+
+            } catch (Exception e) {
+                LOG.error("Error applying supression criteria, {}", e);
+            }
         }
-        String m = "" + (int) (mns % 60);
-        if (m.length() == 1) {
-            String tmp = m;
-            m = "0" + tmp;
+        return adjustedRefs;
+    }
+
+    public List<ArchiveInstanceLocator> eliminateUnSupportedSOPClasses(
+            List<ArchiveInstanceLocator> refs,
+            List<ArchiveInstanceLocator> instsfailed,
+            RetrieveContext retrieveContext)
+            throws ConfigurationNotFoundException {
+
+        List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
+
+        try {
+            // here in wado source and destination are the same
+            ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                    retrieveContext.getDestinationAE().getTransferCapabilitiesWithRole(
+                            Role.SCU));
+            for (ArchiveInstanceLocator ref : refs) {
+                for (TransferCapability supportedTC : aeTCs)
+                    if (supportedTC.getSopClass().compareTo(ref.cuid) == 0) {
+                        if (supportedTC.containsTransferSyntax(ref.tsuid)) {
+                            adjustedRefs.add(ref);
+                        }
+                    }
+                if (!adjustedRefs.contains(ref)) {
+                    instsfailed.add(ref);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Applying UnSupported SOP Class Elimination on WADO request"
+                                + "\nRemoving Referenced Instance: "
+                                + ref.iuid
+                                + " from response");
+                    }
+                }
+            }
+
+            return adjustedRefs;
+        } catch (Exception e) {
+            LOG.error("Exception while applying elimination, {}", e);
+            return refs;
         }
-        String sign = (int) Math.signum(mns) > 0 ? "+" : "-";
-        return sign + h + m;
+    }
+
+    private Attributes getFileAttributes(InstanceLocator ref) {
+        DicomInputStream dis = null;
+        try {
+            dis = new DicomInputStream(ref.getFile());
+            dis.setIncludeBulkData(IncludeBulkData.URI);
+            Attributes dataset = dis.readDataset(-1, -1);
+            return dataset;
+        } catch (IOException e) {
+            LOG.error(
+                    "Unable to read file, Exception {}, using the blob for coercion - (Incomplete Coercion)",
+                    e);
+            return (Attributes) ref.getObject();
+        } finally {
+            SafeClose.close(dis);
+        }
     }
 }

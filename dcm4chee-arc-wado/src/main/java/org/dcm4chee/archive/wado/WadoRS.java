@@ -441,7 +441,7 @@ public class WadoRS extends Wado {
             // check for SOP classes elimination
             if (arcAE.getRetrieveSupressionCriteria()
                     .isCheckTransferCapabilities())
-                refs = eliminateUnSupportedSOPClasses(refs, instsfailed);
+                refs = retrieveService.eliminateUnSupportedSOPClasses(refs, instsfailed,context);
 
             // check for suppression criteria
             Map<String, String> suppressionCriteriaMap = arcAE
@@ -450,8 +450,8 @@ public class WadoRS extends Wado {
                 String supressionCriteriaTemplateURI = suppressionCriteriaMap
                         .get(context.getSourceAET());
                 if (supressionCriteriaTemplateURI != null) {
-                    refs = applySuppressionCriteria(refs,
-                            supressionCriteriaTemplateURI, instsfailed);
+                    refs = retrieveService.applySuppressionCriteria(refs,
+                            supressionCriteriaTemplateURI, instsfailed,context);
                 }
             }
             if (acceptDicom || acceptBulkdata) {
@@ -501,106 +501,6 @@ public class WadoRS extends Wado {
                             .getLocalAddr(), null), new GenericParticipant(
                             request.getRemoteAddr(), request.getRemoteUser()),
                     device, insts, instscompleted, instswarning, instsfailed));
-        }
-    }
-
-    private List<ArchiveInstanceLocator> applySuppressionCriteria(
-            List<ArchiveInstanceLocator> refs,
-            String supressionCriteriaTemplateURI,
-            List<ArchiveInstanceLocator> instsfailed) {
-
-        List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
-
-        for (ArchiveInstanceLocator ref : refs) {
-            Attributes attrs = getFileAttributes(ref);
-            try {
-                Templates tpl = SAXTransformer
-                        .newTemplates(new StreamSource(
-                                StringUtils
-                                        .replaceSystemProperties(supressionCriteriaTemplateURI)));
-                if (tpl != null) {
-                    boolean eliminate;
-                    StringWriter resultWriter = new StringWriter();
-                    SAXWriter wr = SAXTransformer.getSAXWriter(tpl,
-                            new StreamResult(resultWriter));
-                    wr.write(attrs);
-                    eliminate = (resultWriter.toString().compareToIgnoreCase(
-                            "true") == 0 ? true : false);
-                    if (!eliminate) {
-                        adjustedRefs.add(ref);
-                    } else {
-                        instsfailed.add(ref);
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Applying Suppression Criteria on WADO request, using template: "
-                                    + StringUtils
-                                    .replaceSystemProperties(supressionCriteriaTemplateURI)
-                                    + "\nRemoving Referenced Instance: "
-                                    + ref.iuid + " from response");
-                        }
-                    }
-                }
-
-            } catch (Exception e) {
-                LOG.error("Error applying supression criteria, {}", e);
-            }
-        }
-        return adjustedRefs;
-    }
-
-    private List<ArchiveInstanceLocator> eliminateUnSupportedSOPClasses(
-            List<ArchiveInstanceLocator> refs,
-            List<ArchiveInstanceLocator> instsfailed)
-            throws ConfigurationNotFoundException {
-
-        List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
-
-        try {
-            if (context == null)
-                throw new ConfigurationNotFoundException(
-                        "Neither AE nor Fall Back AE for Web Service Device is configured, SOPClass/TransferSyntax Elimination not applied");
-            // here in wado source and destination are the same
-            ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                    context.getDestinationAE().getTransferCapabilitiesWithRole(
-                            Role.SCU));
-            for (ArchiveInstanceLocator ref : refs) {
-                for (TransferCapability supportedTC : aeTCs)
-                    if (supportedTC.getSopClass().compareTo(ref.cuid) == 0) {
-                        if (supportedTC.containsTransferSyntax(ref.tsuid)) {
-                            adjustedRefs.add(ref);
-                        }
-                    }
-                if (!adjustedRefs.contains(ref)) {
-                    instsfailed.add(ref);
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Applying UnSupported SOP Class Elimination on WADO request"
-                                + "\nRemoving Referenced Instance: "
-                                + ref.iuid
-                                + " from response");
-                    }
-                }
-            }
-
-            return adjustedRefs;
-        } catch (Exception e) {
-            LOG.error("Exception while applying elimination, {}", e);
-            return refs;
-        }
-    }
-
-    private Attributes getFileAttributes(InstanceLocator ref) {
-        DicomInputStream dis = null;
-        try {
-            dis = new DicomInputStream(ref.getFile());
-            dis.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes dataset = dis.readDataset(-1, -1);
-            return dataset;
-        } catch (IOException e) {
-            LOG.error(
-                    "Unable to read file, Exception {}, using the blob for coercion - (Incomplete Coercion)",
-                    e);
-            return (Attributes) ref.getObject();
-        } finally {
-            SafeClose.close(dis);
         }
     }
 
