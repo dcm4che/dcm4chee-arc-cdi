@@ -237,6 +237,7 @@ public class WadoRS extends Wado {
 
     private String selectDicomTransferSyntaxes(InstanceLocator ref) {
         List<String> supportedTransferSyntaxes = acceptedTransferSyntaxes;
+        if(context.getDestinationAE()!=null)
         if (arcAE.getRetrieveSuppressionCriteria()
                 .isCheckTransferCapabilities()){
         if(confSupportsTransferSyntax(ref)!=null)
