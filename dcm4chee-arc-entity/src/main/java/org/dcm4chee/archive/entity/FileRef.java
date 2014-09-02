@@ -99,7 +99,7 @@ public class FileRef implements Serializable {
     private boolean replaced;
 
     @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name = "instance_fk", updatable = false)
+    @JoinColumn(name = "instance_fk", updatable = true)
     private Instance instance;
 
     @ManyToOne(fetch=FetchType.LAZY)
