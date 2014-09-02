@@ -50,7 +50,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
@@ -84,16 +83,12 @@ public class HostAECacheImpl implements HostAECache{
         arcDevExt.setHostNameAEList(currentList);
     }
 
-    public ApplicationEntity findAE(HttpSource source)
-            throws ConfigurationNotFoundException {
+    public ApplicationEntity findAE(HttpSource source){
         arcDevExt = device
                 .getDeviceExtension(ArchiveDeviceExtension.class);
         ApplicationEntity ae = getAE(source);
-        if (ae != null)
             return ae;
-        else
-            throw new ConfigurationNotFoundException(
-                    "FallBacK AE is not configured");
+        
     }
 
     public ApplicationEntity getAE(HttpSource source) {
@@ -141,8 +136,8 @@ public class HostAECacheImpl implements HostAECache{
         try {
             return aeCache.get(fallBackAETitle);
         } catch (ConfigurationException e) {
-            //done to make sure if no fall back is configured an ae will be returned
-            return new ApplicationEntity(fallBackAETitle);
+            //null on no configuration
+            return null;
         }
     }
 

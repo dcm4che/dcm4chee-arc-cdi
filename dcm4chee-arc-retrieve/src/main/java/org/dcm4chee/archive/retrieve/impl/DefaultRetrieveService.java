@@ -339,6 +339,7 @@ public class DefaultRetrieveService implements RetrieveService {
     public ArchiveInstanceLocator eliminateUnSupportedSOPClasses(
             ArchiveInstanceLocator ref,
             RetrieveContext retrieveContext) {
+        if(retrieveContext.getDestinationAE()!=null)
         try {
             // here in wado source and destination are the same
             ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
@@ -362,6 +363,7 @@ public class DefaultRetrieveService implements RetrieveService {
             LOG.error("Exception while applying elimination, {}", e);
             return ref;
         }
+            return ref;
     }
 
 

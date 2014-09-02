@@ -277,16 +277,15 @@ public class WadoURI extends Wado {
         List<ArchiveInstanceLocator> instsfailed = new ArrayList<ArchiveInstanceLocator>();
 
         try {
-            try {
-               ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
-               
-//               if(sourceAE!=null)
-               context = retrieveService.createRetrieveContext(
-                       retrieveService, sourceAE.getAETitle(), arcAE);
-               context.setDestinationAE(sourceAE);
-            } catch (ConfigurationNotFoundException e1) {
-                LOG.error("Unable to find the mapped AE for this host or even the fallback AE, coercion will not be applied");
+            
+            ApplicationEntity sourceAE = aeCache
+                    .findAE(new HttpSource(request));
+            if (sourceAE == null) {
+                LOG.error("Unable to find the mapped AE for this host or even the fallback AE, elimination/coercion will not be applied");
             }
+                context = retrieveService.createRetrieveContext(
+                        retrieveService, sourceAE!=null?sourceAE.getAETitle():null, arcAE);
+                context.setDestinationAE(sourceAE);
 
             checkRequest();
 

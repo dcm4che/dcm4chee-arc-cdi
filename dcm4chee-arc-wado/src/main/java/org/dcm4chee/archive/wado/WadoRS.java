@@ -178,18 +178,15 @@ public class WadoRS extends Wado {
 
     private void init(String method) {
 
-        try {
+
             ApplicationEntity sourceAE = aeCache
                     .findAE(new HttpSource(request));
-
-//            if (sourceAE != null) {
+            if (sourceAE == null) {
+                LOG.error("Unable to find the mapped AE for this host or even the fallback AE, elimination/coercion will not be applied");
+            }
                 context = retrieveService.createRetrieveContext(
-                        retrieveService, sourceAE.getAETitle(), arcAE);
+                        retrieveService, sourceAE!=null?sourceAE.getAETitle():null, arcAE);
                 context.setDestinationAE(sourceAE);
-//            }
-        } catch (ConfigurationNotFoundException e1) {
-            LOG.error("Unable to find the mapped AE for this host or even the fallback AE, elimination/coercion will not be applied");
-        }
 
         this.method = method;
         List<MediaType> acceptableMediaTypes = headers
