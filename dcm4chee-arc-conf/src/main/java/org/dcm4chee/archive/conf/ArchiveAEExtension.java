@@ -218,7 +218,7 @@ public class ArchiveAEExtension extends AEExtension {
     }
     
     @ConfigField(name = "dcmPatientSelector", def = "null", failIfNotPresent = false)
-    private PatientSelectorConfig patientSelectorConfig = new PatientSelectorConfig();
+    private PatientSelectorConfig patientSelectorConfig;
 
     public PatientSelectorConfig getPatientSelectorConfig() {
         return patientSelectorConfig;
