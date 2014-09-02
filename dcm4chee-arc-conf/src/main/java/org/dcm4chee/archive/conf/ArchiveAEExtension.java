@@ -193,7 +193,7 @@ public class ArchiveAEExtension extends AEExtension {
     public static class RetrieveSuppressionCriteria implements Serializable {
     private static final long serialVersionUID = -7215371541145445328L;
     
-    @ConfigField(name = "dcmCheckTransferCapabilities", def = "false")
+    @ConfigField(name = "dcmCheckTransferCapabilities")
     private boolean checkTransferCapabilities;
 
     @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSuppressionCriteriaEntry", failIfNotPresent=false)
