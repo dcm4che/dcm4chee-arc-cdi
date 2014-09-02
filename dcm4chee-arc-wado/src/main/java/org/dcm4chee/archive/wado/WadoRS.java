@@ -240,7 +240,7 @@ public class WadoRS extends Wado {
 
     private String selectDicomTransferSyntaxes(InstanceLocator ref) {
         List<String> supportedTransferSyntaxes = acceptedTransferSyntaxes;
-        if (arcAE.getRetrieveSupressionCriteria()
+        if (arcAE.getRetrieveSuppressionCriteria()
                 .isCheckTransferCapabilities()){
         if(confSupportsTransferSyntax(ref)!=null)
             return ref.tsuid;
@@ -460,7 +460,7 @@ public class WadoRS extends Wado {
             else
                 insts.addAll(refs);
             // check for SOP classes elimination
-            if (arcAE.getRetrieveSupressionCriteria()
+            if (arcAE.getRetrieveSuppressionCriteria()
                     .isCheckTransferCapabilities())
             {
                 List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
@@ -475,7 +475,7 @@ public class WadoRS extends Wado {
             }
             // check for suppression criteria
             Map<String, String> suppressionCriteriaMap = arcAE
-                    .getRetrieveSupressionCriteria().getSupressionCriteriaMap();
+                    .getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
             if (suppressionCriteriaMap.containsKey(context.getSourceAET())) {
                 String supressionCriteriaTemplateURI = suppressionCriteriaMap
                         .get(context.getSourceAET());

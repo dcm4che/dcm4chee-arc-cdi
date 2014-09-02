@@ -101,7 +101,7 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
         RetrieveService retrieveService = retrieveContext.getRetrieveService();
         Set<String> acceptedTransferSyntax = storeas.getTransferSyntaxesFor(inst.cuid);
         // check for SOP classes elimination
-        if (arcAEExt.getRetrieveSupressionCriteria()
+        if (arcAEExt.getRetrieveSuppressionCriteria()
                 .isCheckTransferCapabilities()){
             inst = retrieveService.eliminateUnSupportedSOPClasses(inst, retrieveContext);
         //check if eliminated then throw exception
@@ -146,7 +146,7 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
 
         // check for suppression criteria
         Map<String, String> suppressionCriteriaMap = arcAE
-                .getRetrieveSupressionCriteria().getSupressionCriteriaMap();
+                .getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
         if (suppressionCriteriaMap.containsKey(retrieveContext.getDestinationAE().getAETitle())) {
             String supressionCriteriaTemplateURI = suppressionCriteriaMap
                     .get(retrieveContext.getDestinationAE().getAETitle());
