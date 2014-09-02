@@ -177,27 +177,27 @@ public class ArchiveAEExtension extends AEExtension {
 //    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
 //    private boolean timeZoneSupported;
 
-    @ConfigField(name = "dcmRetrieveSupressionCriteria", def = "null", failIfNotPresent=false)
-    private RetrieveSupressionCriteria retrieveSupressionCriteria = new RetrieveSupressionCriteria();
+    @ConfigField(name = "dcmRetrieveSuppressionCriteria", def = "null", failIfNotPresent=false)
+    private RetrieveSuppressionCriteria retrieveSuppressionCriteria = new RetrieveSuppressionCriteria();
 
-    public RetrieveSupressionCriteria getRetrieveSupressionCriteria() {
-        return retrieveSupressionCriteria;
+    public RetrieveSuppressionCriteria getRetrieveSuppressionCriteria() {
+        return retrieveSuppressionCriteria;
     }
 
-    public void setRetrieveSupressionCriteria(
-            RetrieveSupressionCriteria retrieveSupressionCriteria) {
-        this.retrieveSupressionCriteria = retrieveSupressionCriteria;
+    public void setRetrieveSuppressionCriteria(
+            RetrieveSuppressionCriteria retrieveSuppressionCriteria) {
+        this.retrieveSuppressionCriteria = retrieveSuppressionCriteria;
     }
 
-    @ConfigClass(objectClass = "dcmRetrieveSupressionCriteria")
-    public static class RetrieveSupressionCriteria implements Serializable {
+    @ConfigClass(objectClass = "dcmRetrieveSuppressionCriteria")
+    public static class RetrieveSuppressionCriteria implements Serializable {
     private static final long serialVersionUID = -7215371541145445328L;
     
     @ConfigField(name = "dcmCheckTransferCapabilities", def = "false")
     private boolean checkTransferCapabilities;
 
-    @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSupressionCriteriaEntry", failIfNotPresent=false)
-    private Map<String, String> supressionCriteriaMap = new HashMap<String, String>();
+    @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSuppressionCriteriaEntry", failIfNotPresent=false)
+    private Map<String, String> suppressionCriteriaMap = new HashMap<String, String>();
 
     public boolean isCheckTransferCapabilities() {
         return checkTransferCapabilities;
@@ -207,12 +207,12 @@ public class ArchiveAEExtension extends AEExtension {
         this.checkTransferCapabilities = checkTransferCapabilities;
     }
 
-    public Map<String, String> getSupressionCriteriaMap() {
-        return supressionCriteriaMap;
+    public Map<String, String> getSuppressionCriteriaMap() {
+        return suppressionCriteriaMap;
     }
 
-    public void setSupressionCriteriaMap(Map<String, String> supressionCriteriaMap) {
-        this.supressionCriteriaMap = supressionCriteriaMap;
+    public void setSuppressionCriteriaMap(Map<String, String> suppressionCriteriaMap) {
+        this.suppressionCriteriaMap = suppressionCriteriaMap;
     }
 
     }
