@@ -80,29 +80,26 @@ public interface RetrieveService {
 	    throws DicomServiceException;
     /**
      * Used to eliminate unsupported SOP classes or transfer syntaxes 
-     * @param refs
-     * @param instsfailed
+     * @param ref
      * @param context
-     * @return List<ArchiveInstanceLocator>
-     * @throws ConfigurationNotFoundException
+     * @return
      */
-     List<ArchiveInstanceLocator> eliminateUnSupportedSOPClasses(
-            List<ArchiveInstanceLocator> refs,
-            List<ArchiveInstanceLocator> instsfailed,
-            RetrieveContext context)
-            throws ConfigurationNotFoundException;
+     ArchiveInstanceLocator eliminateUnSupportedSOPClasses(
+            ArchiveInstanceLocator ref,
+            RetrieveContext context);
 
-     /**
-      * Applies template filters on the retrieved instances to remove undesired ones according to stylesheet
-      * @param refs
-      * @param supressionCriteriaTemplateURI
-      * @param instsfailed
-      * @return
-      */
-     List<ArchiveInstanceLocator> applySuppressionCriteria(
-             List<ArchiveInstanceLocator> refs,
+    /**
+     * Applies template filters on the retrieved instance to remove if undesired according to stylesheet
+     * @param ref
+     * @param attrs
+     * @param supressionCriteriaTemplateURI
+     * @param retrieveContext
+     * @return
+     */
+     ArchiveInstanceLocator applySuppressionCriteria(
+             ArchiveInstanceLocator ref,
+             Attributes attrs,
              String supressionCriteriaTemplateURI,
-             List<ArchiveInstanceLocator> instsfailed,
-             RetrieveContext context);
+             final RetrieveContext retrieveContext);
 
 }
