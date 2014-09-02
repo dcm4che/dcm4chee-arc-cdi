@@ -278,7 +278,7 @@ attributeTypes: ( 1.2.40.0.13.1.15.10.3.53 NAME 'dcmPersonNameComponentOrderInse
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 attributeTypes: ( 1.2.40.0.13.1.15.10.3.54 NAME 'dcmDeIdentifyLogs'
-  DESC 'Avoid logging Protected health information (PHI)'
+  DESC 'Avoid logging Protected health information (PHI); Default is false (PHi is shown)'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
@@ -394,7 +394,8 @@ objectClasses: ( 1.2.40.0.13.1.15.10.4.17 NAME 'dcmRetrieveSuppressionCriteria'
   SUP top
   STRUCTURAL
   MUST (
-    cn $
+    cn )
+  MAY (
     dcmCheckTransferCapabilities ) )
 objectClasses: ( 1.2.40.0.13.1.15.10.4.18 NAME 'dcmRetrieveSuppressionCriteriaEntry'
   DESC 'Specifies one association application entity to URI for suppression criteria xsl'
