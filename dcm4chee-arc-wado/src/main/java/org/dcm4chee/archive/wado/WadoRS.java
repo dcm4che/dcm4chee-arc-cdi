@@ -462,8 +462,7 @@ public class WadoRS extends Wado {
             {
                 List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
                 for(ArchiveInstanceLocator ref: refs){
-                    ref = retrieveService.eliminateUnSupportedSOPClasses(ref, context);
-                    if(ref == null)
+                    if(retrieveService.eliminateUnSupportedSOPClasses(ref, context) == null)
                         instsfailed.add(ref);
                     else
                         adjustedRefs.add(ref);
@@ -480,9 +479,8 @@ public class WadoRS extends Wado {
                     List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
                     for(ArchiveInstanceLocator ref: refs){
                         Attributes attrs = getFileAttributes(ref);
-                    ref = retrieveService.applySuppressionCriteria(ref, attrs,
-                            supressionCriteriaTemplateURI, context);
-                    if(ref == null)
+                    if(retrieveService.applySuppressionCriteria(ref, attrs,
+                            supressionCriteriaTemplateURI, context) == null)
                         instsfailed.add(ref);
                     else
                         adjustedRefs.add(ref);
