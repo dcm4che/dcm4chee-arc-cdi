@@ -294,6 +294,8 @@ public class WadoURI extends Wado {
                     .calculateMatches(studyUID, seriesUID, objectUID,
                             queryParam);
 
+            //TODO - supression criteria and sop class supression
+
             if (ref == null || ref.size() == 0)
                 throw new WebApplicationException(Status.NOT_FOUND);
             else

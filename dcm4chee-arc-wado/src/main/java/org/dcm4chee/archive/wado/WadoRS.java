@@ -40,13 +40,10 @@ package org.dcm4chee.archive.wado;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -69,11 +66,6 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
-import javax.xml.transform.Result;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.data.Attributes;
@@ -84,12 +76,8 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.imageio.codec.Decompressor;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
@@ -108,7 +96,6 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.jboss.resteasy.plugins.providers.multipart.OutputPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Service implementing DICOM Supplement 161: WADO by RESTful Services
@@ -251,22 +238,56 @@ public class WadoRS extends Wado {
         }
     }
 
-    private String selectDicomTransferSyntaxes(String ts) {
-        for (String ts1 : acceptedTransferSyntaxes) {
-            if (ts1 == null || ts1.equals(ts))
-                return ts;
+    private String selectDicomTransferSyntaxes(InstanceLocator ref) {
+        List<String> supportedTransferSyntaxes = acceptedTransferSyntaxes;
+        if (arcAE.getRetrieveSupressionCriteria()
+                .isCheckTransferCapabilities()){
+        if(confSupportsTransferSyntax(ref)!=null)
+            return ref.tsuid;
+        else
+            return getDefaultConfiguredTransferSyntax(ref);
         }
-        if (ImageReaderFactory.canDecompress(ts)) {
-            if (acceptedTransferSyntaxes.contains(UID.ExplicitVRLittleEndian)) {
+        for (String ts1 : supportedTransferSyntaxes) {
+            if (ts1 == null || ts1.equals(ref.tsuid))
+                return ref.tsuid;
+        }
+        if (ImageReaderFactory.canDecompress(ref.tsuid)) {
+            if (supportedTransferSyntaxes.contains(UID.ExplicitVRLittleEndian)) {
                 return UID.ExplicitVRLittleEndian;
             }
-            if (acceptedTransferSyntaxes.contains(UID.ImplicitVRLittleEndian)) {
+            if (supportedTransferSyntaxes.contains(UID.ImplicitVRLittleEndian)) {
                 return UID.ImplicitVRLittleEndian;
             }
         }
         return null;
     }
 
+    private String confSupportsTransferSyntax(InstanceLocator ref) {
+        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                context.getDestinationAE().getTransferCapabilitiesWithRole(
+                        Role.SCU));
+            for (TransferCapability supportedTC : aeTCs){
+                if (ref.cuid == supportedTC.getSopClass() && 
+                        supportedTC.containsTransferSyntax(ref.tsuid)) {
+                    return ref.tsuid;
+                }
+            }
+            return null;
+    }
+
+    private String getDefaultConfiguredTransferSyntax(InstanceLocator ref)
+    {
+        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                context.getDestinationAE().getTransferCapabilitiesWithRole(
+                        Role.SCU));
+        for (TransferCapability supportedTC : aeTCs){
+            if (ref.cuid == supportedTC.getSopClass() ) {
+                return supportedTC.containsTransferSyntax(UID.ExplicitVRLittleEndian)?
+                        UID.ExplicitVRLittleEndian:UID.ImplicitVRLittleEndian;
+            }
+        }
+        return UID.ImplicitVRLittleEndian;
+    }
     private MediaType selectBulkdataMediaTypeForTransferSyntax(String ts) {
         MediaType requiredMediaType = null;
         try {
@@ -441,8 +462,17 @@ public class WadoRS extends Wado {
             // check for SOP classes elimination
             if (arcAE.getRetrieveSupressionCriteria()
                     .isCheckTransferCapabilities())
-                refs = retrieveService.eliminateUnSupportedSOPClasses(refs, instsfailed,context);
-
+            {
+                List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
+                for(ArchiveInstanceLocator ref: refs){
+                    ref = retrieveService.eliminateUnSupportedSOPClasses(ref, context);
+                    if(ref == null)
+                        instsfailed.add(ref);
+                    else
+                        adjustedRefs.add(ref);
+                }
+                refs = adjustedRefs;
+            }
             // check for suppression criteria
             Map<String, String> suppressionCriteriaMap = arcAE
                     .getRetrieveSupressionCriteria().getSupressionCriteriaMap();
@@ -450,10 +480,20 @@ public class WadoRS extends Wado {
                 String supressionCriteriaTemplateURI = suppressionCriteriaMap
                         .get(context.getSourceAET());
                 if (supressionCriteriaTemplateURI != null) {
-                    refs = retrieveService.applySuppressionCriteria(refs,
-                            supressionCriteriaTemplateURI, instsfailed,context);
+                    List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
+                    for(ArchiveInstanceLocator ref: refs){
+                        Attributes attrs = getFileAttributes(ref);
+                    ref = retrieveService.applySuppressionCriteria(ref, attrs,
+                            supressionCriteriaTemplateURI, context);
+                    if(ref == null)
+                        instsfailed.add(ref);
+                    else
+                        adjustedRefs.add(ref);
+                    }
+                    refs = adjustedRefs;
                 }
             }
+
             if (acceptDicom || acceptBulkdata) {
                 MultipartRelatedOutput output = new MultipartRelatedOutput();
                 int failed = 0;
@@ -561,7 +601,7 @@ public class WadoRS extends Wado {
 
     private boolean addDicomObjectTo(InstanceLocator ref,
             MultipartRelatedOutput output) {
-        String tsuid = selectDicomTransferSyntaxes(ref.tsuid);
+        String tsuid = selectDicomTransferSyntaxes(ref);
         if (tsuid == null) {
             return false;
         }
@@ -761,4 +801,20 @@ public class WadoRS extends Wado {
                 || mediaType.getSubtype().equalsIgnoreCase("dicom+jpeg-jpx");
     }
 
+    private Attributes getFileAttributes(InstanceLocator ref) {
+        DicomInputStream dis = null;
+        try {
+            dis = new DicomInputStream(ref.getFile());
+            dis.setIncludeBulkData(IncludeBulkData.URI);
+            Attributes dataset = dis.readDataset(-1, -1);
+            return dataset;
+        } catch (IOException e) {
+            LOG.error(
+                    "Unable to read file, Exception {}, using the blob for coercion - (Incomplete Coercion)",
+                    e);
+            return (Attributes) ref.getObject();
+        } finally {
+            SafeClose.close(dis);
+        }
+    }
 }
