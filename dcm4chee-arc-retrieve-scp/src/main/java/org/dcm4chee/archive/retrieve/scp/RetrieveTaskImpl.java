@@ -190,7 +190,7 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
                 retrieveContext.getDestinationAE().getTransferCapabilitiesWithRole(
                         Role.SCU));
             for (TransferCapability supportedTC : aeTCs){
-                if (ref.cuid == supportedTC.getSopClass() && 
+                if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0 && 
                         supportedTC.containsTransferSyntax(ref.tsuid) && negotiated.contains(ref.tsuid)) {
                     return true;
                 }
@@ -204,7 +204,7 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
                 retrieveContext.getDestinationAE().getTransferCapabilitiesWithRole(
                         Role.SCU));
         for (TransferCapability supportedTC : aeTCs){
-            if (ref.cuid == supportedTC.getSopClass() ) {
+            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0) {
                 return supportedTC.containsTransferSyntax(UID.ExplicitVRLittleEndian)?
                         UID.ExplicitVRLittleEndian:UID.ImplicitVRLittleEndian;
             }

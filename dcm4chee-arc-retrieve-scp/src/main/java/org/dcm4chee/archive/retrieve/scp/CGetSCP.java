@@ -44,6 +44,7 @@ import java.util.List;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
@@ -92,6 +93,9 @@ public class CGetSCP extends BasicCGetSCP {
     @Inject
     private Event<RetrieveAfterSendEvent> retrieveAfterEvent;
     
+    @Inject
+    private IApplicationEntityCache aeCache;
+    
     public CGetSCP(String sopClass, String... qrLevels) {
         super(sopClass);
         this.qrLevels = qrLevels;
@@ -127,6 +131,7 @@ public class CGetSCP extends BasicCGetSCP {
 //                    : IDWithIssuer.EMPTY;
             RetrieveContext context = retrieveService.createRetrieveContext(
                     retrieveService, as.getRemoteAET(), aeExt);
+            context.setDestinationAE(aeCache.findApplicationEntity(as.getRemoteAET()));
             IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
             List<ArchiveInstanceLocator> matches = 
                     (List<ArchiveInstanceLocator>) retrieveService.calculateMatches(pids, keys, queryParam);
