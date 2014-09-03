@@ -51,6 +51,7 @@ import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.generic.ConfigClass;
 import org.dcm4che3.conf.api.generic.ConfigField;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
+import org.dcm4che3.data.Code;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.io.TemplatesCache;
@@ -161,8 +162,14 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmReturnOtherPatientNames", def = "false")
     private boolean returnOtherPatientNames;
 
-    @ConfigField(name = "dcmShowRejectedInstances", def = "false")
-    private boolean showRejectedForQualityReasons;
+    @ConfigField(name = "dcmShowOnlyRejectedInstances", def = "false")
+    private boolean showOnlyRejectedInstances;
+
+    @ConfigField(name = "dcmShowInstancesRejectedByCode")
+    private Code[] showInstancesRejectedByCodes = {};
+
+    @ConfigField(name = "dcmNumberOfInstancesCacheSlot", def = "0")
+    private int numberOfInstancesCacheSlot;
 
     @ConfigField(name = "hl7PIXManagerApplication")
     private String remotePIXManagerApplication;
@@ -193,7 +200,7 @@ public class ArchiveAEExtension extends AEExtension {
     public static class RetrieveSuppressionCriteria implements Serializable {
     private static final long serialVersionUID = -7215371541145445328L;
     
-    @ConfigField(name = "dcmCheckTransferCapabilities")
+    @ConfigField(name = "dcmCheckTransferCapabilities", def = "false")
     private boolean checkTransferCapabilities;
 
     @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSuppressionCriteriaEntry", failIfNotPresent=false)
@@ -515,13 +522,29 @@ public class ArchiveAEExtension extends AEExtension {
         this.returnOtherPatientNames = returnOtherPatientNames;
     }
 
-    public boolean isShowRejectedForQualityReasons() {
-        return showRejectedForQualityReasons;
+    public boolean isShowOnlyRejectedInstances() {
+        return showOnlyRejectedInstances;
     }
 
-    public void setShowRejectedForQualityReasons(
-            boolean showRejectedForQualityReasons) {
-        this.showRejectedForQualityReasons = showRejectedForQualityReasons;
+    public void setShowOnlyRejectedInstances(boolean showOnlyRejectedInstances) {
+        this.showOnlyRejectedInstances = showOnlyRejectedInstances;
+    }
+
+    public Code[] getShowInstancesRejectedByCodes() {
+        return showInstancesRejectedByCodes;
+    }
+
+    public void setShowInstancesRejectedByCodes(
+            Code... showInstancesRejectedByCodes) {
+        this.showInstancesRejectedByCodes = showInstancesRejectedByCodes;
+    }
+
+    public int getNumberOfInstancesCacheSlot() {
+        return numberOfInstancesCacheSlot;
+    }
+
+    public void setNumberOfInstancesCacheSlot(int numberOfInstancesCacheSlot) {
+        this.numberOfInstancesCacheSlot = numberOfInstancesCacheSlot;
     }
 
     public String getRemotePIXManagerApplication() {
@@ -583,8 +606,9 @@ public class ArchiveAEExtension extends AEExtension {
         queryParam.setMatchUnknown(matchUnknown);
         queryParam.setMatchLinkedPatientIDs(matchLinkedPatientIDs);
         queryParam.setAccessControlIDs(accessControlIDs);
-        queryParam
-                .setShowRejectedForQualityReasons(showRejectedForQualityReasons);
+        queryParam.setShowOnlyRejectedInstances(showOnlyRejectedInstances);
+        queryParam.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
+        queryParam.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         return queryParam;
     }
 

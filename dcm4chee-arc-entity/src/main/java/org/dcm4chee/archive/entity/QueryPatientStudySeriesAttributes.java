@@ -44,16 +44,22 @@ package org.dcm4chee.archive.entity;
 public class QueryPatientStudySeriesAttributes extends PatientStudySeriesAttributes {
     
     private final Long studyPk;
-    private int numberOfStudyRelatedSeries;
-    private int numberOfStudyRelatedInstances;
-    private int numberOfSeriesRelatedInstances;
-    private String modalitiesInStudy;
-    private String sopClassesInStudy;
+    private final int[] numberOfStudyRelatedSeries;
+    private final int[] numberOfStudyRelatedInstances;
+    private final int[] numberOfSeriesRelatedInstances;
+    private final String modalitiesInStudy;
+    private final String sopClassesInStudy;
 
     public QueryPatientStudySeriesAttributes(Long studyPk,
-            int numberOfStudyRelatedSeries,
-            int numberOfStudyRelatedInstances,
-            int numberOfSeriesRelatedInstances,
+            int numberOfStudyRelatedSeries1,
+            int numberOfStudyRelatedSeries2,
+            int numberOfStudyRelatedSeries3,
+            int numberOfStudyRelatedInstances1,
+            int numberOfStudyRelatedInstances2,
+            int numberOfStudyRelatedInstances3,
+            int numberOfSeriesRelatedInstances1,
+            int numberOfSeriesRelatedInstances2,
+            int numberOfSeriesRelatedInstances3,
             String modalitiesInStudy,
             String sopClassesInStudy,
             byte[] seriesAttributes,
@@ -61,9 +67,18 @@ public class QueryPatientStudySeriesAttributes extends PatientStudySeriesAttribu
             byte[] patientAttributes) {
         super(seriesAttributes, studyAttributes, patientAttributes);
         this.studyPk = studyPk;
-        this.numberOfStudyRelatedSeries = numberOfStudyRelatedSeries;
-        this.numberOfStudyRelatedInstances = numberOfStudyRelatedInstances;
-        this.numberOfSeriesRelatedInstances = numberOfSeriesRelatedInstances;
+        this.numberOfStudyRelatedSeries = new int[] {
+                numberOfStudyRelatedSeries1,
+                numberOfStudyRelatedSeries2,
+                numberOfStudyRelatedSeries3 };
+        this.numberOfStudyRelatedInstances = new int[] {
+                numberOfStudyRelatedInstances1,
+                numberOfStudyRelatedInstances2,
+                numberOfStudyRelatedInstances3 };
+        this.numberOfSeriesRelatedInstances = new int[] {
+                numberOfSeriesRelatedInstances1,
+                numberOfSeriesRelatedInstances2,
+                numberOfSeriesRelatedInstances3 };
         this.modalitiesInStudy = modalitiesInStudy;
         this.sopClassesInStudy = sopClassesInStudy;
     }
@@ -72,16 +87,16 @@ public class QueryPatientStudySeriesAttributes extends PatientStudySeriesAttribu
         return studyPk;
     }
 
-    public int getNumberOfStudyRelatedSeries() {
-        return numberOfStudyRelatedSeries;
+    public int getNumberOfStudyRelatedSeries(int slot) {
+        return slot <= 0 ? -1 : numberOfStudyRelatedSeries[slot-1];
     }
 
-    public int getNumberOfStudyRelatedInstances() {
-        return numberOfStudyRelatedInstances;
+    public int getNumberOfStudyRelatedInstances(int slot) {
+        return slot <= 0 ? -1 : numberOfStudyRelatedInstances[slot-1];
     }
 
-    public int getNumberOfSeriesRelatedInstances() {
-        return numberOfSeriesRelatedInstances;
+    public int getNumberOfSeriesRelatedInstances(int slot) {
+        return slot <= 0 ? -1 : numberOfSeriesRelatedInstances[slot-1];
     }
 
     public String getModalitiesInStudy() {

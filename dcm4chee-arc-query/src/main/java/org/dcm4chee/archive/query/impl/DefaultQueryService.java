@@ -48,7 +48,6 @@ import javax.persistence.PersistenceContext;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.io.SAXTransformer;
@@ -84,9 +83,6 @@ public class DefaultQueryService implements QueryService {
 
     @Inject
     QueryServiceEJB ejb;
-
-    @Inject
-    private IApplicationEntityCache aeCache;
 
     StatelessSession openStatelessSession() {
         return em.unwrap(Session.class).getSessionFactory()

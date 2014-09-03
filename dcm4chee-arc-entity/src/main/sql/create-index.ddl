@@ -23,7 +23,7 @@ create index sx_pn_comp_part_idx on soundex_code (sx_pn_comp_part);
 create index fs_group_id_idx on filesystem (fs_group_id);
 create index fs_status_idx on filesystem (fs_status);
 
-create index inst_sop_iuid_idx on instance (sop_iuid);
+create unique index inst_sop_iuid_idx on instance (sop_iuid);
 create index inst_sop_cuid_idx on instance (sop_cuid);
 create index inst_no_idx on instance (inst_no);
 create index inst_content_date_idx on instance (content_date);

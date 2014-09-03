@@ -216,6 +216,7 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.41 NAME 'dcmDataRetentionPeriodExpire
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.42 NAME 'dcmShowRejectedInstances'
   DESC 'Specifies to show instances rejected for quality reasons; disable if absent'
+  OBSOLETE
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
@@ -286,6 +287,21 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.55 NAME 'dcmWadoOverlayRendering'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.56 NAME 'dcmShowOnlyRejectedInstances'
+  DESC 'Indicates if the Q/R Services shall hide instances not rejected by any reason; disabled if absent'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.57 NAME 'dcmShowInstancesRejectedByCode'
+  DESC 'Indicates if the Q/R Services shall show instances rejected by the specified code'
+  EQUALITY caseExactMatch
+  SUBSTR caseExactSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.58 NAME 'dcmNumberOfInstancesCacheSlot'
+  DESC 'Specifies Slot # used to cache number of series and instances in Study and Series table. Currently 3 slots (1-3) are available. If absent, number of series and instances are not cached in the Study and Series table'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -333,6 +349,9 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
     dcmReturnOtherPatientIDs $
     dcmReturnOtherPatientNames $
     dcmShowRejectedInstances $
+    dcmShowOnlyRejectedInstances $
+    dcmShowInstancesRejectedByCode $
+    dcmNumberOfInstancesCacheSlot $
     hl7PIXManagerApplication $
     hl7PIXConsumerApplication $
     dcmQidoMaxNumberOfResults $

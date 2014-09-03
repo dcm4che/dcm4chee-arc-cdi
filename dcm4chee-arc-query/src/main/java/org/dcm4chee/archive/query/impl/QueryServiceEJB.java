@@ -67,6 +67,7 @@ public class QueryServiceEJB {
 
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
+
     public int calculateNumberOfStudyRelatedSeries(Long studyPk,
             QueryParam queryParam) {
         BooleanBuilder builder = new BooleanBuilder(
@@ -81,12 +82,12 @@ public class QueryServiceEJB {
                     .where(builder)
                     .exists()))
             .count();
-        em.createNamedQuery(queryParam.isShowRejectedForQualityReasons()
-                ? Study.UPDATE_NUMBER_OF_SERIES_A
-                : Study.UPDATE_NUMBER_OF_SERIES)
-            .setParameter(1, num)
-            .setParameter(2, studyPk)
-            .executeUpdate();
+        int cacheSlot = queryParam.getNumberOfInstancesCacheSlot();
+        if (cacheSlot > 0)
+            em.createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES[cacheSlot-1])
+                .setParameter(1, num)
+                .setParameter(2, studyPk)
+                .executeUpdate();
         return num;
     }
 
@@ -100,12 +101,12 @@ public class QueryServiceEJB {
             .innerJoin(QInstance.instance.series, QSeries.series)
             .where(builder)
             .count();
-        em.createNamedQuery(queryParam.isShowRejectedForQualityReasons()
-                ? Study.UPDATE_NUMBER_OF_INSTANCES_A
-                : Study.UPDATE_NUMBER_OF_INSTANCES)
-            .setParameter(1, num)
-            .setParameter(2, studyPk)
-            .executeUpdate();
+        int cacheSlot = queryParam.getNumberOfInstancesCacheSlot();
+        if (cacheSlot > 0)
+            em.createNamedQuery(Study.UPDATE_NUMBER_OF_INSTANCES[cacheSlot-1])
+                .setParameter(1, num)
+                .setParameter(2, studyPk)
+                .executeUpdate();
         return num;
     }
 
@@ -118,35 +119,34 @@ public class QueryServiceEJB {
             .from(QInstance.instance)
             .where(builder)
             .count();
-        em.createNamedQuery(queryParam.isShowRejectedForQualityReasons()
-                ? Series.UPDATE_NUMBER_OF_INSTANCES_A
-                : Series.UPDATE_NUMBER_OF_INSTANCES)
-            .setParameter(1, num)
-            .setParameter(2, seriesPk)
-            .executeUpdate();
+        int cacheSlot = queryParam.getNumberOfInstancesCacheSlot();
+        if (cacheSlot > 0)
+            em.createNamedQuery(Series.UPDATE_NUMBER_OF_INSTANCES[cacheSlot-1])
+                .setParameter(1, num)
+                .setParameter(2, seriesPk)
+                .executeUpdate();
         return num;
     }
 
     public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
         QueryPatientStudySeriesAttributes result = (QueryPatientStudySeriesAttributes)
-                 em.createNamedQuery(queryParam.isShowRejectedForQualityReasons()
-                        ? Series.QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES_A
-                        : Series.QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES)
+                 em.createNamedQuery(Series.QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES)
                   .setParameter(1, seriesPk)
                   .getSingleResult();
+        int cacheSlot = queryParam.getNumberOfInstancesCacheSlot();
         Attributes attrs = result.getAttributes();
         Long studyPk = result.getStudyPk();
-        int numberOfStudyRelatedSeries = result.getNumberOfStudyRelatedSeries();
+        int numberOfStudyRelatedSeries = result.getNumberOfStudyRelatedSeries(cacheSlot);
         if (numberOfStudyRelatedSeries < 0)
             numberOfStudyRelatedSeries =
                 calculateNumberOfStudyRelatedSeries(studyPk, queryParam);
 
-        int numberOfStudyRelatedInstances = result.getNumberOfStudyRelatedInstances();
+        int numberOfStudyRelatedInstances = result.getNumberOfStudyRelatedInstances(cacheSlot);
         if (numberOfStudyRelatedInstances < 0)
             numberOfStudyRelatedInstances = 
                 calculateNumberOfStudyRelatedInstance(studyPk, queryParam);
 
-        int numberOfSeriesRelatedInstances = result.getNumberOfSeriesRelatedInstances();
+        int numberOfSeriesRelatedInstances = result.getNumberOfSeriesRelatedInstances(cacheSlot);
         if (numberOfSeriesRelatedInstances < 0)
             numberOfSeriesRelatedInstances =
                 calculateNumberOfSeriesRelatedInstance(seriesPk, queryParam);

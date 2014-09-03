@@ -216,7 +216,7 @@ public class PreferencesArchiveConfiguration extends
         arcdev.setWadoAttributesStaleTimeout(prefs.getInt(
                 "dcmWadoAttributesStaleTimeout", 0));
         arcdev.setHostnameAEresoultion(prefs.getBoolean(
-                "dcmHostNameAEResolution", true));
+                "dcmHostNameAEResolution", false));
         arcdev.setDeIdentifyLogs(prefs.getBoolean(
                 "dcmDeIdentifyLogs", false));        
     }
@@ -343,9 +343,9 @@ public class PreferencesArchiveConfiguration extends
                 aa.getWadoAttributesStaleTimeout(),
                 bb.getWadoAttributesStaleTimeout(), 0);
         PreferencesUtils.storeDiff(prefs, "dcmHostNameAEResolution",
-                aa.isHostnameAEresoultion(), bb.isHostnameAEresoultion());
+                aa.isHostnameAEresoultion(), bb.isHostnameAEresoultion(), false);
         PreferencesUtils.storeDiff(prefs, "dcmDeIdentifyLogs",
-                aa.isDeIdentifyLogs(), bb.isDeIdentifyLogs());
+                aa.isDeIdentifyLogs(), bb.isDeIdentifyLogs(), false);
     }
 
     @Override

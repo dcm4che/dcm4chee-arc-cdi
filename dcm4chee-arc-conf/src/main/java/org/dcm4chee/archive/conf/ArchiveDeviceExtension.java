@@ -245,16 +245,6 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     public QueryParam getQueryParam() {
         QueryParam queryParam = new QueryParam();
-        queryParam.setIncorrectWorklistEntrySelectedCode(
-                incorrectWorklistEntrySelectedCode);
-        queryParam.setRejectedForQualityReasonsCode(
-                rejectedForQualityReasonsCode);
-        queryParam.setRejectedForPatientSafetyReasonsCode(
-                rejectedForPatientSafetyReasonsCode);
-        queryParam.setIncorrectModalityWorklistEntryCode(
-                incorrectModalityWorklistEntryCode);
-        queryParam.setDataRetentionPeriodExpiredCode(
-                dataRetentionPeriodExpiredCode);
         queryParam.setFuzzyStr(getFuzzyStr());
         queryParam.setAttributeFilters(attributeFilters);
         queryParam.setDeIdentifyLogs(isDeIdentifyLogs());

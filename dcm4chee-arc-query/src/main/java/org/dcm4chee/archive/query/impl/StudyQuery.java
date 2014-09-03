@@ -59,37 +59,30 @@ import com.mysema.query.types.Predicate;
  */
 class StudyQuery extends AbstractQuery<Study> {
 
+    static final Expression<?>[] SELECT = {
+        QStudy.study.pk,                        // (0)
+        QStudy.study.numberOfSeries1,           // (1)
+        QStudy.study.numberOfSeries2,           // (2)
+        QStudy.study.numberOfSeries3,           // (3)
+        QStudy.study.numberOfInstances1,        // (4)
+        QStudy.study.numberOfInstances2,        // (5)
+        QStudy.study.numberOfInstances3,        // (6)
+        QStudy.study.modalitiesInStudy,         // (7)
+        QStudy.study.sopClassesInStudy,         // (8)
+        QStudy.study.retrieveAETs,              // (9)
+        QStudy.study.externalRetrieveAET,       // (10)
+        QStudy.study.availability,              // (11)
+        QStudy.study.encodedAttributes,         // (12)
+        QPatient.patient.encodedAttributes      // (13)
+    };
+
     public StudyQuery(QueryContext context, StatelessSession session) {
         super(context, session, QStudy.study);
     }
 
     @Override
     protected Expression<?>[] select() {
-        return context.getQueryParam().isShowRejectedForQualityReasons()
-                ? new Expression<?>[] {
-                    QStudy.study.pk,                        // (0)
-                    QStudy.study.numberOfSeriesA,           // (1)
-                    QStudy.study.numberOfInstancesA,        // (2)
-                    QStudy.study.modalitiesInStudy,         // (3)
-                    QStudy.study.sopClassesInStudy,         // (4)
-                    QStudy.study.retrieveAETs,              // (5)
-                    QStudy.study.externalRetrieveAET,       // (6)
-                    QStudy.study.availability,              // (7)
-                    QStudy.study.encodedAttributes,         // (8)
-                    QPatient.patient.encodedAttributes      // (9)
-                }
-                : new Expression<?>[] {
-                    QStudy.study.pk,                        // (0)
-                    QStudy.study.numberOfSeries,            // (1)
-                    QStudy.study.numberOfInstances,         // (2)
-                    QStudy.study.modalitiesInStudy,         // (3)
-                    QStudy.study.sopClassesInStudy,         // (4)
-                    QStudy.study.retrieveAETs,              // (5)
-                    QStudy.study.externalRetrieveAET,       // (6)
-                    QStudy.study.availability,              // (7)
-                    QStudy.study.encodedAttributes,         // (8)
-                    QPatient.patient.encodedAttributes      // (9)
-                };
+        return SELECT;
     }
 
     @Override
@@ -119,29 +112,37 @@ class StudyQuery extends AbstractQuery<Study> {
     @Override
     public Attributes toAttributes(ScrollableResults results) {
         Long studyPk = results.getLong(0);
-        int numberOfStudyRelatedSeries = results.getInteger(1);
-        if (numberOfStudyRelatedSeries < 0) {
-            numberOfStudyRelatedSeries = context.getQueryService()
-                    .calculateNumberOfStudyRelatedSeries(studyPk,
-                                context.getQueryParam());
-        }
-        // skip match for empty Study
-        if (numberOfStudyRelatedSeries == 0)
-            return null;
+        int cacheSlot = context.getQueryParam().getNumberOfInstancesCacheSlot();
 
-        int numberOfStudyRelatedInstances = results.getInteger(2);
+        int numberOfStudyRelatedInstances = cacheSlot > 0
+                ? results.getInteger(cacheSlot+3)
+                : -1;
         if (numberOfStudyRelatedInstances < 0) {
             numberOfStudyRelatedInstances = context.getQueryService()
                     .calculateNumberOfStudyRelatedInstance(studyPk,
                         context.getQueryParam());
         }
-        String modalitiesInStudy = results.getString(3);
-        String sopClassesInStudy = results.getString(4);
-        String retrieveAETs = results.getString(5);
-        String externalRetrieveAET = results.getString(6);
-        Availability availability = (Availability) results.get(7);
-        byte[] studyByteAttributes = results.getBinary(8);
-        byte[] patientByteAttributes = results.getBinary(9);
+
+        // skip match for empty Study
+        if (numberOfStudyRelatedInstances == 0)
+            return null;
+
+        int numberOfStudyRelatedSeries = cacheSlot > 0 
+                ? results.getInteger(cacheSlot)
+                : -1;
+        if (numberOfStudyRelatedSeries < 0) {
+            numberOfStudyRelatedSeries = context.getQueryService()
+                    .calculateNumberOfStudyRelatedSeries(studyPk,
+                                context.getQueryParam());
+        }
+
+        String modalitiesInStudy = results.getString(7);
+        String sopClassesInStudy = results.getString(8);
+        String retrieveAETs = results.getString(9);
+        String externalRetrieveAET = results.getString(10);
+        Availability availability = (Availability) results.get(11);
+        byte[] studyByteAttributes = results.getBinary(12);
+        byte[] patientByteAttributes = results.getBinary(13);
         Attributes patientAttrs = new Attributes();
         Attributes studyAttrs = new Attributes();
         Utils.decodeAttributes(patientAttrs, patientByteAttributes);

@@ -60,6 +60,28 @@ import com.mysema.query.types.Predicate;
  */
 class SeriesQuery extends AbstractQuery<Series> {
 
+    private static final Expression<?>[] SELECT = {
+        QStudy.study.pk,                        // (0)
+        QSeries.series.pk,                      // (1)
+        QStudy.study.numberOfSeries1,           // (2)
+        QStudy.study.numberOfSeries2,           // (3)
+        QStudy.study.numberOfSeries3,           // (4)
+        QStudy.study.numberOfInstances1,        // (5)
+        QStudy.study.numberOfInstances2,        // (6)
+        QStudy.study.numberOfInstances3,        // (7)
+        QSeries.series.numberOfInstances1,      // (8)
+        QSeries.series.numberOfInstances2,      // (9)
+        QSeries.series.numberOfInstances3,      // (10)
+        QStudy.study.modalitiesInStudy,         // (11)
+        QStudy.study.sopClassesInStudy,         // (12)
+        QSeries.series.retrieveAETs,            // (13)
+        QSeries.series.externalRetrieveAET,     // (14)
+        QSeries.series.availability,            // (15)
+        QSeries.series.encodedAttributes,       // (16)
+        QStudy.study.encodedAttributes,         // (17)
+        QPatient.patient.encodedAttributes      // (18)
+    };
+
     private Long studyPk;
     private Attributes studyAttrs;
 
@@ -69,37 +91,7 @@ class SeriesQuery extends AbstractQuery<Series> {
 
     @Override
     protected Expression<?>[] select() {
-        return context.getQueryParam().isShowRejectedForQualityReasons()
-            ? new Expression<?>[] {
-                    QStudy.study.pk,                         // (0)
-                    QSeries.series.pk,                       // (1)
-                    QStudy.study.numberOfSeriesA,            // (2)
-                    QStudy.study.numberOfInstancesA,         // (3)
-                    QSeries.series.numberOfInstancesA,       // (4)
-                    QStudy.study.modalitiesInStudy,          // (5)
-                    QStudy.study.sopClassesInStudy,          // (6)
-                    QSeries.series.retrieveAETs,             // (7)
-                    QSeries.series.externalRetrieveAET,      // (8)
-                    QSeries.series.availability,             // (9)
-                    QSeries.series.encodedAttributes,        // (10)
-                    QStudy.study.encodedAttributes,          // (11)
-                    QPatient.patient.encodedAttributes       // (12)
-                }
-            : new Expression<?>[] {
-                    QStudy.study.pk,                         // (0)
-                    QSeries.series.pk,                       // (1)
-                    QStudy.study.numberOfSeries,             // (2)
-                    QStudy.study.numberOfInstances,          // (3)
-                    QSeries.series.numberOfInstances,        // (4)
-                    QStudy.study.modalitiesInStudy,          // (5)
-                    QStudy.study.sopClassesInStudy,          // (6)
-                    QSeries.series.retrieveAETs,             // (7)
-                    QSeries.series.externalRetrieveAET,      // (8)
-                    QSeries.series.availability,             // (9)
-                    QSeries.series.encodedAttributes,        // (10)
-                    QStudy.study.encodedAttributes,          // (11)
-                    QPatient.patient.encodedAttributes       // (12)
-                };
+        return SELECT;
     }
 
     @Override
@@ -136,7 +128,11 @@ class SeriesQuery extends AbstractQuery<Series> {
     public Attributes toAttributes(ScrollableResults results) {
         Long studyPk = results.getLong(0);
         Long seriesPk = results.getLong(1);
-        int numberOfSeriesRelatedInstances = results.getInteger(4);
+        int cacheSlot = context.getQueryParam().getNumberOfInstancesCacheSlot();
+
+        int numberOfSeriesRelatedInstances = cacheSlot > 0
+                ? results.getInteger(cacheSlot+7)
+                : -1;
         if (numberOfSeriesRelatedInstances < 0) {
             numberOfSeriesRelatedInstances = context.getQueryService()
                     .calculateNumberOfSeriesRelatedInstance(seriesPk,
@@ -146,10 +142,10 @@ class SeriesQuery extends AbstractQuery<Series> {
         if (numberOfSeriesRelatedInstances == 0)
             return null;
 
-        String retrieveAETs = results.getString(7);
-        String externalRetrieveAET = results.getString(8);
-        Availability availability = (Availability) results.get(9);
-        byte[] seriesAttributes = results.getBinary(10);
+        String retrieveAETs = results.getString(13);
+        String externalRetrieveAET = results.getString(14);
+        Availability availability = (Availability) results.get(15);
+        byte[] seriesAttributes = results.getBinary(16);
         if (!studyPk.equals(this.studyPk)) {
             this.studyAttrs = toStudyAttributes(studyPk, results);
             this.studyPk = studyPk;
@@ -165,22 +161,28 @@ class SeriesQuery extends AbstractQuery<Series> {
     }
 
     private Attributes toStudyAttributes(Long studyPk, ScrollableResults results) {
-        int numberOfStudyRelatedSeries = results.getInteger(2);
+        int cacheSlot = context.getQueryParam().getNumberOfInstancesCacheSlot();
+        int numberOfStudyRelatedSeries = cacheSlot > 0
+                ? results.getInteger(cacheSlot+1)
+                : -1;
         if (numberOfStudyRelatedSeries < 0) {
             numberOfStudyRelatedSeries = context.getQueryService()
                     .calculateNumberOfStudyRelatedSeries(studyPk,
                             context.getQueryParam());
         }
-        int numberOfStudyRelatedInstances = results.getInteger(3);
+
+        int numberOfStudyRelatedInstances = cacheSlot > 0
+                ? results.getInteger(cacheSlot+4)
+                : -1;
         if (numberOfStudyRelatedInstances < 0) {
             numberOfStudyRelatedInstances = context.getQueryService()
                     .calculateNumberOfStudyRelatedInstance(studyPk,
                             context.getQueryParam());
         }
-        String modalitiesInStudy = results.getString(5);
-        String sopClassesInStudy = results.getString(6);
-        byte[] studyByteAttributes = results.getBinary(11);
-        byte[] patientByteAttributes = results.getBinary(12);
+        String modalitiesInStudy = results.getString(11);
+        String sopClassesInStudy = results.getString(12);
+        byte[] studyByteAttributes = results.getBinary(17);
+        byte[] patientByteAttributes = results.getBinary(18);
         Attributes patientAttrs = new Attributes();
         Attributes studyAttrs = new Attributes();
         Utils.decodeAttributes(patientAttrs, patientByteAttributes);

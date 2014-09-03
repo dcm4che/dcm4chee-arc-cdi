@@ -407,6 +407,13 @@ public class ArchiveDeviceTest {
             new Code("113038", "DCM", null, "Incorrect Modality Worklist Entry");
     private static final Code DATA_RETENTION_POLICY_EXPIRED =
             new Code("113038", "DCM", null, "Data Retention Policy Expired");
+    private static final Code[] REJECTION_CODES = {
+        INCORRECT_WORKLIST_ENTRY_SELECTED,
+        REJECTED_FOR_QUALITY_REASONS,
+        REJECT_FOR_PATIENT_SAFETY_REASONS,
+        INCORRECT_MODALITY_WORKLIST_ENTRY,
+        DATA_RETENTION_POLICY_EXPIRED
+    };
 
     private static final String[] OTHER_DEVICES = {
         "dcmqrscp",
@@ -784,7 +791,6 @@ public class ArchiveDeviceTest {
         arcDevExt.setConfigurationStaleTimeout(CONFIGURATION_STALE_TIMEOUT);
         arcDevExt.setWadoAttributesStaleTimeout(WADO_ATTRIBUTES_STALE_TIMEOUT);
         setAttributeFilters(arcDevExt);
-        arcDevExt.setHostnameAEresoultion(true);
         arcDevExt.setHostNameAEFallBackEntry(new HostNameAEEntry("*", "FALLBACK"));
         device.setManufacturer("dcm4che.org");
         device.setManufacturerModelName("dcm4chee-arc");
@@ -805,19 +811,30 @@ public class ArchiveDeviceTest {
         dicomTLS.setMaxOpsInvoked(0);
         dicomTLS.setMaxOpsPerformed(0);
         dicomTLS.setTlsCipherSuites(
-                Connection.TLS_RSA_WITH_AES_128_CBC_SHA, 
+                Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
         device.addConnection(dicomTLS);
         ApplicationEntity ae = createAE("DCM4CHEE",
-                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS, null, PIX_MANAGER);
+                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                false, new Code[0], 1,
+                null, PIX_MANAGER);
         device.addApplicationEntity(ae);
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
-        ApplicationEntity adminAE = createAdminAE("DCM4CHEE_ADMIN",
-                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS, null, PIX_MANAGER);
+        ApplicationEntity adminAE = createQRAE("DCM4CHEE_ADMIN",
+                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                false, new Code[] { REJECTED_FOR_QUALITY_REASONS }, 2,
+                null, PIX_MANAGER);
         device.addApplicationEntity(adminAE);
         adminAE.addConnection(dicom);
         adminAE.addConnection(dicomTLS);
+        ApplicationEntity trashAE = createQRAE("DCM4CHEE_TRASH",
+                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                true, REJECTION_CODES, 3,
+                null, PIX_MANAGER);
+        device.addApplicationEntity(trashAE);
+        trashAE.addConnection(dicom);
+        trashAE.addConnection(dicomTLS);
         HL7Application hl7App = new HL7Application("*");
         ArchiveHL7ApplicationExtension hl7AppExt = new ArchiveHL7ApplicationExtension();
         hl7App.addHL7ApplicationExtension(hl7AppExt);
@@ -869,6 +886,9 @@ public class ArchiveDeviceTest {
 
     private ApplicationEntity createAE(String aet,
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
+            boolean showOnlyRejectedInstances,
+            Code[] showInstancesRejectedByCodes,
+            int numberOfInstancesCacheSlot,
             String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
@@ -887,6 +907,9 @@ public class ArchiveDeviceTest {
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
+        aeExt.setShowOnlyRejectedInstances(showOnlyRejectedInstances);
+        aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
+        aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
         aeExt.addAttributeCoercion(new AttributeCoercion(
                 "Supplement missing PID",
@@ -1119,8 +1142,11 @@ public class ArchiveDeviceTest {
     }
     
     
-    private ApplicationEntity createAdminAE(String aet,
+    private ApplicationEntity createQRAE(String aet,
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
+            boolean showOnlyRejectedInstances,
+            Code[] showInstancesRejectedByCodes,
+            int numberOfInstancesCacheSlot,
             String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
@@ -1130,7 +1156,9 @@ public class ArchiveDeviceTest {
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
-        aeExt.setShowRejectedForQualityReasons(true);
+        aeExt.setShowOnlyRejectedInstances(showOnlyRejectedInstances);
+        aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
+        aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
         addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
         addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);

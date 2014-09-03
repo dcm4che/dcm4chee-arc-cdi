@@ -82,24 +82,34 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     name="Study.findByStudyInstanceUID",
     query="SELECT s FROM Study s WHERE s.studyInstanceUID = ?1"),
 @NamedQuery(
-    name="Study.updateNumberOfSeries",
+    name="Study.updateNumberOfSeries1",
     query="UPDATE Study s "
-        + "SET s.numberOfSeries = ?1 "
+        + "SET s.numberOfSeries1 = ?1 "
         + "WHERE s.pk = ?2"),
 @NamedQuery(
-    name="Study.updateNumberOfSeriesA",
+    name="Study.updateNumberOfSeries2",
     query="UPDATE Study s "
-        + "SET s.numberOfSeriesA = ?1 "
+        + "SET s.numberOfSeries2 = ?1 "
         + "WHERE s.pk = ?2"),
 @NamedQuery(
-    name="Study.updateNumberOfInstances",
+    name="Study.updateNumberOfSeries3",
     query="UPDATE Study s "
-        + "SET s.numberOfInstances = ?1 "
+        + "SET s.numberOfSeries3 = ?1 "
         + "WHERE s.pk = ?2"),
 @NamedQuery(
-        name="Study.updateNumberOfInstancesA",
+    name="Study.updateNumberOfInstances1",
+    query="UPDATE Study s "
+        + "SET s.numberOfInstances1 = ?1 "
+        + "WHERE s.pk = ?2"),
+@NamedQuery(
+        name="Study.updateNumberOfInstances2",
         query="UPDATE Study s "
-        + "SET s.numberOfInstancesA = ?1 "
+        + "SET s.numberOfInstances2 = ?1 "
+        + "WHERE s.pk = ?2"),
+@NamedQuery(
+        name="Study.updateNumberOfInstances3",
+        query="UPDATE Study s "
+        + "SET s.numberOfInstances3 = ?1 "
         + "WHERE s.pk = ?2")
 })
 @Entity
@@ -109,10 +119,16 @@ public class Study implements Serializable {
     private static final long serialVersionUID = -6358525535057418771L;
 
     public static final String FIND_BY_STUDY_INSTANCE_UID = "Study.findByStudyInstanceUID";
-    public static final String UPDATE_NUMBER_OF_SERIES = "Study.updateNumberOfSeries";
-    public static final String UPDATE_NUMBER_OF_SERIES_A = "Study.updateNumberOfSeriesA";
-    public static final String UPDATE_NUMBER_OF_INSTANCES = "Study.updateNumberOfInstances";
-    public static final String UPDATE_NUMBER_OF_INSTANCES_A = "Study.updateNumberOfInstancesA";
+    public static final String[] UPDATE_NUMBER_OF_SERIES = {
+        "Study.updateNumberOfSeries1",
+        "Study.updateNumberOfSeries2",
+        "Study.updateNumberOfSeries3"
+    };
+    public static final String[] UPDATE_NUMBER_OF_INSTANCES = {
+        "Study.updateNumberOfInstances1",
+        "Study.updateNumberOfInstances2",
+        "Study.updateNumberOfInstances3"
+    };
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -167,20 +183,28 @@ public class Study implements Serializable {
     private String accessControlID;
 
     @Basic(optional = false)
-    @Column(name = "num_series")
-    private int numberOfSeries = -1;
+    @Column(name = "num_series1")
+    private int numberOfSeries1 = -1;
 
     @Basic(optional = false)
-    @Column(name = "num_series_a")
-    private int numberOfSeriesA = -1;
+    @Column(name = "num_series2")
+    private int numberOfSeries2 = -1;
 
     @Basic(optional = false)
-    @Column(name = "num_instances")
-    private int numberOfInstances = -1;
+    @Column(name = "num_series3")
+    private int numberOfSeries3 = -1;
 
     @Basic(optional = false)
-    @Column(name = "num_instances_a")
-    private int numberOfInstancesA = -1;
+    @Column(name = "num_instances1")
+    private int numberOfInstances1 = -1;
+
+    @Basic(optional = false)
+    @Column(name = "num_instances2")
+    private int numberOfInstances2 = -1;
+
+    @Basic(optional = false)
+    @Column(name = "num_instances3")
+    private int numberOfInstances3 = -1;
 
     @Column(name = "mods_in_study")
     private String modalitiesInStudy;
@@ -232,11 +256,13 @@ public class Study implements Serializable {
                 + ", uid=" + studyInstanceUID
                 + ", id=" + studyID
                 + ", mods=" + modalitiesInStudy
-                + ", numS=" + numberOfSeries
-                + "(" + numberOfSeriesA
-                + "), numI=" + numberOfInstances
-                + "(" + numberOfInstancesA
-                + ")]";
+                + ", numS=" + numberOfSeries1
+                + "/" + numberOfSeries2
+                + "/" + numberOfSeries3
+                + ", numI=" + numberOfInstances1
+                + "/" + numberOfInstances2
+                + "/" + numberOfInstances3
+                + "]";
     }
 
     @PrePersist
@@ -317,44 +343,65 @@ public class Study implements Serializable {
         return studyCustomAttribute3;
     }
 
-    public int getNumberOfSeries() {
-        return numberOfSeries;
+    public int getNumberOfSeries(int slot) {
+        switch(slot) {
+        case 1:
+            return numberOfSeries1;
+        case 2:
+            return numberOfSeries2;
+        }
+        throw new IllegalArgumentException("slot:" + slot);
     }
 
-    public void setNumberOfSeries(int numberOfSeries) {
-        this.numberOfSeries = numberOfSeries;
+    public void setNumberOfSeries(int slot, int num) {
+        switch(slot) {
+        case 1:
+            numberOfSeries1 = num;
+            break;
+        case 2:
+            numberOfSeries2 = num;
+            break;
+        default:
+            throw new IllegalArgumentException("slot:" + slot);
+        }
     }
 
-    public int getNumberOfSeriesA() {
-        return numberOfSeriesA;
+    public int getNumberOfInstances(int slot) {
+        switch(slot) {
+        case 1:
+            return numberOfInstances1;
+        case 2:
+            return numberOfInstances2;
+        case 3:
+            return numberOfInstances3;
+        }
+        throw new IllegalArgumentException("slot:" + slot);
     }
 
-    public void setNumberOfSeriesA(int numberOfSeriesA) {
-        this.numberOfSeriesA = numberOfSeriesA;
-    }
-
-    public int getNumberOfInstances() {
-        return numberOfInstances;
-    }
-
-    public void setNumberOfInstances(int numberOfInstances) {
-        this.numberOfInstances = numberOfInstances;
-    }
-
-    public int getNumberOfInstancesA() {
-        return numberOfInstancesA;
-    }
-
-    public void setNumberOfInstancesA(int numberOfInstancesA) {
-        this.numberOfInstancesA = numberOfInstancesA;
+    public void setNumberOfInstances(int slot, int num) {
+        switch(slot) {
+        case 1:
+            numberOfInstances1 = num;
+            break;
+        case 2:
+            numberOfInstances2 = num;
+            break;
+        case 3:
+            numberOfInstances3 = num;
+            break;
+        default:
+            throw new IllegalArgumentException("slot:" + slot);
+        }
     }
 
     public void resetNumberOfInstances() {
-        this.numberOfSeries = -1;
-        this.numberOfSeriesA = -1;
-        this.numberOfInstances = -1;
-        this.numberOfInstancesA = -1;
-    }
+        this.numberOfSeries1 = -1;
+        this.numberOfSeries2 = -1;
+        this.numberOfSeries3 = -1;
+        this.numberOfInstances1 = -1;
+        this.numberOfInstances2 = -1;
+        this.numberOfInstances3 = -1;
+   }
 
     public String[] getModalitiesInStudy() {
         return StringUtils.split(modalitiesInStudy, '\\');

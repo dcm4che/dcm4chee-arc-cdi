@@ -411,13 +411,26 @@ public class QueryBuilder {
     }
 
     public static Predicate hideRejectedInstance(QueryParam queryParam) {
-        BooleanExpression result = QInstance.instance.rejectionNoteCode
-                .isNull();
-        if (queryParam.isShowRejectedForQualityReasons()
-                && queryParam.getRejectedForQualityReasonsCode() != null)
-            result = result.or(QInstance.instance.rejectionNoteCode
-                    .eq((Code) queryParam.getRejectedForQualityReasonsCode()));
+        Code[] codes = toCodes(queryParam.getShowInstancesRejectedByCodes());
+        BooleanExpression result = null;
+        if (codes.length > 0)
+            result = QInstance.instance.rejectionNoteCode.in(codes);
+
+        if (queryParam.isShowOnlyRejectedInstances()) {
+            if (result == null)
+                result = QInstance.instance.rejectionNoteCode.isNotNull();
+        } else {
+            result = QInstance.instance.rejectionNoteCode.isNull().or(result);
+        }
         return result;
+    }
+
+    private static Code[] toCodes(org.dcm4che3.data.Code[] in) {
+        Code[] out = new Code[in.length];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = (Code) in[i];
+        }
+        return out;
     }
 
     public static Predicate pids(IDWithIssuer[] pids,

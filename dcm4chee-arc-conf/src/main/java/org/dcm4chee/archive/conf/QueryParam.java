@@ -48,11 +48,6 @@ import org.dcm4che3.soundex.FuzzyStr;
  */
 public class QueryParam {
 
-    private Code incorrectWorklistEntrySelectedCode;
-    private Code rejectedForQualityReasonsCode;
-    private Code rejectedForPatientSafetyReasonsCode;
-    private Code incorrectModalityWorklistEntryCode;
-    private Code dataRetentionPeriodExpiredCode;
     private FuzzyStr fuzzyStr;
     private AttributeFilter[] attributeFilters;
     private boolean combinedDatetimeMatching;
@@ -63,8 +58,10 @@ public class QueryParam {
     private String[] accessControlIDs;
     private Issuer defaultIssuerOfPatientID;
     private Issuer defaultIssuerOfAccessionNumber;
-    private boolean showRejectedForQualityReasons;
     private boolean deIdentifyLogs = false;
+    private boolean showOnlyRejectedInstances;
+    private Code[] showInstancesRejectedByCodes;
+    private int numberOfInstancesCacheSlot;
 
     public final boolean isCombinedDatetimeMatching() {
         return combinedDatetimeMatching;
@@ -115,46 +112,6 @@ public class QueryParam {
         this.accessControlIDs = accessControlIDs;
     }
 
-    public Code getIncorrectWorklistEntrySelectedCode() {
-        return incorrectWorklistEntrySelectedCode;
-    }
-
-    public void setIncorrectWorklistEntrySelectedCode(Code code) {
-        this.incorrectWorklistEntrySelectedCode = code;
-    }
-
-    public final Code getRejectedForQualityReasonsCode() {
-        return rejectedForQualityReasonsCode;
-    }
-
-    public final void setRejectedForQualityReasonsCode(Code code) {
-        this.rejectedForQualityReasonsCode = code;
-    }
-
-    public final Code getRejectedForPatientSafetyReasonsCode() {
-        return rejectedForPatientSafetyReasonsCode;
-    }
-
-    public final void setRejectedForPatientSafetyReasonsCode(Code code) {
-        this.rejectedForPatientSafetyReasonsCode = code;
-    }
-
-    public final Code getIncorrectModalityWorklistEntryCode() {
-        return incorrectModalityWorklistEntryCode;
-    }
-
-    public final void setIncorrectModalityWorklistEntryCode(Code code) {
-        this.incorrectModalityWorklistEntryCode = code;
-    }
-
-    public final Code getDataRetentionPeriodExpiredCode() {
-        return dataRetentionPeriodExpiredCode;
-    }
-
-    public final void setDataRetentionPeriodExpiredCode(Code code) {
-        this.dataRetentionPeriodExpiredCode = code;
-    }
-
     public final void setFuzzyStr(FuzzyStr fuzzyStr) {
         this.fuzzyStr = fuzzyStr;
     }
@@ -169,15 +126,6 @@ public class QueryParam {
 
     public final AttributeFilter getAttributeFilter(Entity entity) {
         return attributeFilters[entity.ordinal()];
-    }
-
-    public final boolean isShowRejectedForQualityReasons() {
-        return showRejectedForQualityReasons;
-    }
-
-    public void setShowRejectedForQualityReasons(
-            boolean showRejectedForQualityReasons) {
-        this.showRejectedForQualityReasons = showRejectedForQualityReasons;
     }
 
     public Issuer getDefaultIssuerOfPatientID() {
@@ -203,4 +151,30 @@ public class QueryParam {
     public void setDeIdentifyLogs(boolean deIdentifyLogs) {
         this.deIdentifyLogs = deIdentifyLogs;
     }
+
+    public boolean isShowOnlyRejectedInstances() {
+        return showOnlyRejectedInstances;
+    }
+
+    public void setShowOnlyRejectedInstances(boolean showOnlyRejectedInstances) {
+        this.showOnlyRejectedInstances = showOnlyRejectedInstances;
+    }
+
+    public Code[] getShowInstancesRejectedByCodes() {
+        return showInstancesRejectedByCodes;
+    }
+
+    public void setShowInstancesRejectedByCodes(
+            Code[] showInstancesRejectedByCodes) {
+        this.showInstancesRejectedByCodes = showInstancesRejectedByCodes;
+    }
+
+    public int getNumberOfInstancesCacheSlot() {
+        return numberOfInstancesCacheSlot;
+    }
+
+    public void setNumberOfInstancesCacheSlot(int numberOfInstancesCacheSlot) {
+        this.numberOfInstancesCacheSlot = numberOfInstancesCacheSlot;
+    }
+
 }

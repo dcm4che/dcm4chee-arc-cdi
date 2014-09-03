@@ -118,17 +118,8 @@ public enum PatientCommands{
                 1, seriesInstanceUID);
         Series series = query.getSingleResult();
         Study study = series.getStudy();
-        int numInstancesNew = study.getNumberOfInstances()
-                - series.getNumberOfInstances();
         em.remove(series);
-        if (numInstancesNew > 0)
-            study.setNumberOfInstances(numInstancesNew);
-        else
-            study.resetNumberOfInstances();
-
-        if (study.getNumberOfSeries() > 0)
-            study.setNumberOfSeries(study.getNumberOfSeries() - 1);
-
+        study.resetNumberOfInstances();
         LOG.info("Removed series entity - " + seriesInstanceUID);
         return series;
     }
@@ -142,18 +133,10 @@ public enum PatientCommands{
         Series series = inst.getSeries();
         Study study = series.getStudy();
 
-        int numInstancesNew = series.getNumberOfInstances() - 1;
-        int numInstancesNewStudy = study.getNumberOfInstances() - 1;
         em.remove(inst);
         LOG.info("Removed instance entity - " + sopInstanceUID);
-        if (numInstancesNew > 0)
-            series.setNumberOfInstances(numInstancesNew);
-        else
-            series.resetNumberOfInstances();
-        if (numInstancesNewStudy > 0)
-            study.setNumberOfInstances(numInstancesNewStudy);
-        else
-            study.resetNumberOfInstances();
+        series.resetNumberOfInstances();
+        study.resetNumberOfInstances();
         List<FileRef> fileRef = (List<FileRef>) inst.getFileRefs();
         for (FileRef file : fileRef) {
 
@@ -176,33 +159,33 @@ public enum PatientCommands{
     @Override
     public boolean deleteSeriesIfEmpty(String seriesInstanceUID,
             String studyInstanceUID) {
-        TypedQuery<Series> query = em.createNamedQuery(
-                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(
-                1, seriesInstanceUID);
-        Series series = query.getSingleResult();
-
-        if (series.getNumberOfInstances() == -1) {
-            em.remove(series);
-            LOG.info("Removed series entity - " + seriesInstanceUID);
-            return true;
-        }
-
+//        TypedQuery<Series> query = em.createNamedQuery(
+//                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(
+//                1, seriesInstanceUID);
+//        Series series = query.getSingleResult();
+//
+//        if (series.getNumberOfInstances1() == -1) {
+//            em.remove(series);
+//            LOG.info("Removed series entity - " + seriesInstanceUID);
+//            return true;
+//        }
+//
         return false;
     }
 
     @Override
     public boolean deleteStudyIfEmpty(String studyInstanceUID) {
-        TypedQuery<Study> query = em.createNamedQuery(
-                Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
-                studyInstanceUID);
-        Study study = query.getSingleResult();
-
-        if (study.getNumberOfInstances() == -1) {
-            em.remove(study);
-            LOG.info("Removed study entity - " + studyInstanceUID);
-            return true;
-        }
-
+//        TypedQuery<Study> query = em.createNamedQuery(
+//                Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
+//                studyInstanceUID);
+//        Study study = query.getSingleResult();
+//
+//        if (study.getNumberOfInstances1() == -1) {
+//            em.remove(study);
+//            LOG.info("Removed study entity - " + studyInstanceUID);
+//            return true;
+//        }
+//
         return false;
     }
 
@@ -542,31 +525,8 @@ public enum PatientCommands{
         }
         // update count
         if (split) {
-            int numInstancesNew = study.getNumberOfInstances()
-                    - series.getNumberOfInstances();
-
-            if (numInstancesNew > 0)
-                study.setNumberOfInstances(numInstancesNew);
-            else
-                study.resetNumberOfInstances();
-
-            int numberOfSeries = study.getNumberOfSeries();
-
-            if (study.getNumberOfSeries() > 0)
-                study.setNumberOfSeries(numberOfSeries - 1);
-
-            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
-                    + series.getNumberOfInstances();
-
-            if (targetnumInstancesNew > 0)
-                targetStudy.setNumberOfInstances(targetnumInstancesNew);
-            else
-                targetStudy.resetNumberOfInstances();
-
-            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
-
-            if (targetStudy.getNumberOfSeries() > 0)
-                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
+            study.resetNumberOfInstances();
+            targetStudy.resetNumberOfInstances();
         }
         return split;
     }
@@ -620,34 +580,10 @@ public enum PatientCommands{
         }
         // update count
         if (split) {
-            int numInstancesNewStudy = study.getNumberOfInstances() - 1;
-
-            if (numInstancesNewStudy > 0)
-                study.setNumberOfInstances(numInstancesNewStudy);
-            else
-                study.resetNumberOfInstances();
-
-            int numInstancesNewTargetStudy = targetStudy.getNumberOfInstances() + 1;
-
-            if (numInstancesNewTargetStudy > 0)
-                targetStudy.setNumberOfInstances(numInstancesNewTargetStudy);
-            else
-                targetStudy.resetNumberOfInstances();
-
-            int numInstancesNewSeries = series.getNumberOfInstances() - 1;
-
-            if (numInstancesNewSeries > 0)
-                series.setNumberOfInstances(numInstancesNewSeries);
-            else
-                series.resetNumberOfInstances();
-
-            int numInstancesNewTargetSeries = targetSeries
-                    .getNumberOfInstances() + 1;
-
-            if (numInstancesNewTargetSeries > 0)
-                targetSeries.setNumberOfInstances(numInstancesNewTargetSeries);
-            else
-                targetSeries.resetNumberOfInstances();
+            study.resetNumberOfInstances();
+            targetStudy.resetNumberOfInstances();
+            series.resetNumberOfInstances();
+            targetSeries.resetNumberOfInstances();
         }
         return split;
     }
@@ -686,18 +622,7 @@ public enum PatientCommands{
         }
         if (segment) {
             // update count
-            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
-                    + series.getNumberOfInstances();
-
-            if (targetnumInstancesNew > 0)
-                targetStudy.setNumberOfInstances(targetnumInstancesNew);
-            else
-                targetStudy.resetNumberOfInstances();
-
-            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
-
-            if (targetStudy.getNumberOfSeries() > 0)
-                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
+            targetStudy.resetNumberOfInstances();
         }
         return segment;
     }
