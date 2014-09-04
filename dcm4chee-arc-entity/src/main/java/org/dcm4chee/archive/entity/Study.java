@@ -349,6 +349,8 @@ public class Study implements Serializable {
             return numberOfSeries1;
         case 2:
             return numberOfSeries2;
+        case 3:
+            return numberOfSeries3;
         }
         throw new IllegalArgumentException("slot:" + slot);
     }
@@ -360,6 +362,9 @@ public class Study implements Serializable {
             break;
         case 2:
             numberOfSeries2 = num;
+            break;
+        case 3:
+            numberOfSeries3 = num;
             break;
         default:
             throw new IllegalArgumentException("slot:" + slot);
