@@ -242,6 +242,7 @@ attributeTypes: ( 1.2.40.0.13.1.15.10.3.46 NAME 'dcmHostNameAEResolution'
   SINGLE-VALUE)
 attributeTypes: ( 1.2.40.0.13.1.15.10.3.47 NAME 'dcmHostNameAEFallBackAE'
   DESC 'Defines the fallback AETitle for Hostname AE Title mapping'
+  OBSOLETE
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
@@ -385,8 +386,7 @@ objectClasses: ( 1.2.40.0.13.1.15.10.4.13 NAME 'dcmHostNameAEMap'
   SUP top
   STRUCTURAL
   MUST (
-    cn $
-    dcmHostNameAEFallBackAE ) )
+    cn ) )
 objectClasses: ( 1.2.40.0.13.1.15.10.4.14 NAME 'dcmHostNameAEEntry'
   DESC 'Specifies one association of web client hostname with an application entity'
   SUP top
