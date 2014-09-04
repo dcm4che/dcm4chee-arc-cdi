@@ -886,7 +886,7 @@ public class ArchiveDeviceTest {
 
     private ApplicationEntity createAE(String aet,
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
-            boolean showOnlyRejectedInstances,
+            boolean hideInstances,
             Code[] showInstancesRejectedByCodes,
             int numberOfInstancesCacheSlot,
             String pixConsumer, String pixManager) {
@@ -907,7 +907,7 @@ public class ArchiveDeviceTest {
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
-        aeExt.setShowOnlyRejectedInstances(showOnlyRejectedInstances);
+        aeExt.setHideInstances(hideInstances);
         aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
         aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
@@ -1144,7 +1144,7 @@ public class ArchiveDeviceTest {
     
     private ApplicationEntity createQRAE(String aet,
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
-            boolean showOnlyRejectedInstances,
+            boolean hideInstances,
             Code[] showInstancesRejectedByCodes,
             int numberOfInstancesCacheSlot,
             String pixConsumer, String pixManager) {
@@ -1156,7 +1156,7 @@ public class ArchiveDeviceTest {
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
-        aeExt.setShowOnlyRejectedInstances(showOnlyRejectedInstances);
+        aeExt.setHideInstances(hideInstances);
         aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
         aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);

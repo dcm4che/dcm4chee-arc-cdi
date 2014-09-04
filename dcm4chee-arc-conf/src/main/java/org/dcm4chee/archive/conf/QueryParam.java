@@ -59,7 +59,7 @@ public class QueryParam {
     private Issuer defaultIssuerOfPatientID;
     private Issuer defaultIssuerOfAccessionNumber;
     private boolean deIdentifyLogs = false;
-    private boolean showOnlyRejectedInstances;
+    private boolean hideInstances;
     private Code[] showInstancesRejectedByCodes;
     private int numberOfInstancesCacheSlot;
 
@@ -152,12 +152,12 @@ public class QueryParam {
         this.deIdentifyLogs = deIdentifyLogs;
     }
 
-    public boolean isShowOnlyRejectedInstances() {
-        return showOnlyRejectedInstances;
+    public boolean isHideInstances() {
+        return hideInstances;
     }
 
-    public void setShowOnlyRejectedInstances(boolean showOnlyRejectedInstances) {
-        this.showOnlyRejectedInstances = showOnlyRejectedInstances;
+    public void setHideInstances(boolean hideInstances) {
+        this.hideInstances = hideInstances;
     }
 
     public Code[] getShowInstancesRejectedByCodes() {

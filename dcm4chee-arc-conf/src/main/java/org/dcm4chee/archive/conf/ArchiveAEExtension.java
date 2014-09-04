@@ -162,8 +162,8 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmReturnOtherPatientNames", def = "false")
     private boolean returnOtherPatientNames;
 
-    @ConfigField(name = "dcmShowOnlyRejectedInstances", def = "false")
-    private boolean showOnlyRejectedInstances;
+    @ConfigField(name = "dcmHideInstances", def = "false")
+    private boolean hideInstances;
 
     @ConfigField(name = "dcmShowInstancesRejectedByCode")
     private Code[] showInstancesRejectedByCodes = {};
@@ -522,12 +522,12 @@ public class ArchiveAEExtension extends AEExtension {
         this.returnOtherPatientNames = returnOtherPatientNames;
     }
 
-    public boolean isShowOnlyRejectedInstances() {
-        return showOnlyRejectedInstances;
+    public boolean isHideInstances() {
+        return hideInstances;
     }
 
-    public void setShowOnlyRejectedInstances(boolean showOnlyRejectedInstances) {
-        this.showOnlyRejectedInstances = showOnlyRejectedInstances;
+    public void setHideInstances(boolean hideInstances) {
+        this.hideInstances = hideInstances;
     }
 
     public Code[] getShowInstancesRejectedByCodes() {
@@ -606,7 +606,7 @@ public class ArchiveAEExtension extends AEExtension {
         queryParam.setMatchUnknown(matchUnknown);
         queryParam.setMatchLinkedPatientIDs(matchLinkedPatientIDs);
         queryParam.setAccessControlIDs(accessControlIDs);
-        queryParam.setShowOnlyRejectedInstances(showOnlyRejectedInstances);
+        queryParam.setHideInstances(hideInstances);
         queryParam.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
         queryParam.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         return queryParam;
