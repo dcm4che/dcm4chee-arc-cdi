@@ -39,6 +39,8 @@
 package org.dcm4chee.archive.conf;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
@@ -73,16 +75,8 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     
     private boolean hostnameAEresoultion=false;
     private boolean deIdentifyLogs=false;
-    private ArrayList<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
-    private HostNameAEEntry hostNameAEFallBackEntry;
+    private Collection<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
     
-    public HostNameAEEntry getHostNameAEFallBackEntry() {
-        return hostNameAEFallBackEntry;
-    }
-
-    public void setHostNameAEFallBackEntry(HostNameAEEntry hostNameAEFallBackEntry) {
-        this.hostNameAEFallBackEntry = hostNameAEFallBackEntry;
-    }
 
     public boolean isHostnameAEresoultion() {
         return hostnameAEresoultion;
@@ -92,11 +86,12 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.hostnameAEresoultion = hostnameAEresoultion;
     }
 
-    public ArrayList<HostNameAEEntry> getHostNameAEList() {
-        return hostNameAEList;
+    @SuppressWarnings("unchecked")
+    public Collection<HostNameAEEntry> getHostNameAEList() {
+        return hostNameAEList==null?Collections.EMPTY_LIST:hostNameAEList;
     }
 
-    public void setHostNameAEList(ArrayList<HostNameAEEntry> hostNameAEList) {
+    public void setHostNameAEList(Collection<HostNameAEEntry> hostNameAEList) {
         this.hostNameAEList = hostNameAEList;
     }
 
@@ -231,7 +226,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         hostNameAEList = new ArrayList<HostNameAEEntry>();
         for(HostNameAEEntry newEntry: arcdev.getHostNameAEList())
         hostNameAEList.add(newEntry);
-        setHostNameAEFallBackEntry(arcdev.getHostNameAEFallBackEntry());
+        setHostnameAEresoultion(arcdev.isHostnameAEresoultion());
     }
 
     public StoreParam getStoreParam() {

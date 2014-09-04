@@ -281,7 +281,7 @@ public class WadoURI extends Wado {
             ApplicationEntity sourceAE = aeCache
                     .findAE(new HttpSource(request));
             if (sourceAE == null) {
-                LOG.error("Unable to find the mapped AE for this host or even the fallback AE, elimination/coercion will not be applied");
+                LOG.info("Unable to find the mapped AE for this host or even the fallback AE, coercion will not be applied");
             }
                 context = retrieveService.createRetrieveContext(
                         retrieveService, sourceAE!=null?sourceAE.getAETitle():null, arcAE);

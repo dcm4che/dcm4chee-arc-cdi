@@ -41,6 +41,7 @@ package org.dcm4chee.archive.conf.prefs;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -122,17 +123,10 @@ public class PreferencesArchiveConfiguration extends
 
         Preferences hostNameMap = deviceNode
                 .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
-        hostNameMap.put("dcmHostNameAEFallBackAE", arcDev
-                .getHostNameAEFallBackEntry().getAeTitle());
-        HostNameAEEntry[] tmpMap = new HostNameAEEntry[arcDev.getHostNameAEList().size()];
-        for(int i=0;i<arcDev.getHostNameAEList().size();i++)
-        {
-            tmpMap[i]=arcDev.getHostNameAEList().get(i);
-        }
-        storeTo(tmpMap, hostNameMap);
+        storeTo(arcDev.getHostNameAEList(), hostNameMap);
     }
 
-    private void storeTo(HostNameAEEntry[] entries, Preferences prefs) {
+    private void storeTo(Collection<HostNameAEEntry> entries, Preferences prefs) {
         for (HostNameAEEntry entry : entries)
             storeTo(entry, prefs.node(entry.getHostName()));
     }
@@ -232,11 +226,8 @@ public class PreferencesArchiveConfiguration extends
         loadAttributeFilters(arcdev, deviceNode);
         Preferences prefs = deviceNode
                 .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
-        ArrayList<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
-        if (prefs.get("dcmHostNameAEFallBackAE", null) == null)
-            prefs.put("dcmHostNameAEFallBackAE", "FALLBACK");
-        arcdev.setHostNameAEFallBackEntry(new HostNameAEEntry("*",
-                (String) prefs.get("dcmHostNameAEFallBackAE", "FALLBACK")));
+        Collection<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
+       
         for (String hostname : prefs.childrenNames())
             hostNameAEList.add(loadHostNameAEEntry(prefs.node(hostname)));
 
@@ -384,21 +375,14 @@ public class PreferencesArchiveConfiguration extends
 
         Preferences hostNameAEMap = deviceNode
                 .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
-        if (aa.getHostNameAEFallBackEntry() != null) {
-            PreferencesUtils.storeDiff(hostNameAEMap,
-                    "dcmHostNameAEFallBackAE", aa.getHostNameAEFallBackEntry()
-                            .getAeTitle(), bb.getHostNameAEFallBackEntry()
-                            .getAeTitle());
-        } else
-            hostNameAEMap.put("dcmHostNameAEFallBackAE", bb
-                    .getHostNameAEFallBackEntry().getAeTitle());
+
         storeDiffs(hostNameAEMap, aa.getHostNameAEList(),
                 bb.getHostNameAEList());
     }
 
     private void storeDiffs(Preferences prefs,
-            ArrayList<HostNameAEEntry> prevList,
-            ArrayList<HostNameAEEntry> current) throws BackingStoreException {
+            Collection<HostNameAEEntry> prevList,
+            Collection<HostNameAEEntry> current) throws BackingStoreException {
         for (HostNameAEEntry entry : prevList) {
             String host = entry.getHostName();
             if (!current.contains(host)) {
@@ -409,13 +393,16 @@ public class PreferencesArchiveConfiguration extends
         }
         for (HostNameAEEntry entry : current) {
             String host = entry.getHostName();
+            if(!prevList.contains(entry))
+                storeTo(entry, prefs);
+            else
             storeDiffs(prefs.node(host), getMatchingEntry(entry, prevList),
                     entry);
         }
     }
 
     private HostNameAEEntry getMatchingEntry(HostNameAEEntry entry,
-            ArrayList<HostNameAEEntry> lst) {
+            Collection<HostNameAEEntry> lst) {
         for (HostNameAEEntry item : lst)
             if (entry.getHostName().compareTo(item.getHostName()) == 0)
                 return item;

@@ -106,6 +106,7 @@ public class ArchiveCtrl {
         
         HttpSource source = new HttpSource(request);
         ApplicationEntity ae = cache.findAE(source);
+        if(ae!=null){
         Device callerDevice = ae.getDevice();
         
         return Response.ok(
@@ -113,7 +114,11 @@ public class ArchiveCtrl {
                         + "<br>AETitle: " + ae.getAETitle()
                         + "<br>Device Name: " + callerDevice.getDeviceName()
                         + "</div>").build();
-
+        }
+        return Response.ok("<div>Calling Device: <br>Host:" + request.getRemoteHost() +
+                         "<br>AETitle: Not configured" + 
+                         "<br>Device Name: Not configured" +
+                         "</div>").build();
     }
 
 }

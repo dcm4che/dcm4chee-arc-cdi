@@ -791,7 +791,6 @@ public class ArchiveDeviceTest {
         arcDevExt.setConfigurationStaleTimeout(CONFIGURATION_STALE_TIMEOUT);
         arcDevExt.setWadoAttributesStaleTimeout(WADO_ATTRIBUTES_STALE_TIMEOUT);
         setAttributeFilters(arcDevExt);
-        arcDevExt.setHostNameAEFallBackEntry(new HostNameAEEntry("*", "FALLBACK"));
         device.setManufacturer("dcm4che.org");
         device.setManufacturerModelName("dcm4chee-arc");
         device.setSoftwareVersions("4.2.0.Alpha3");

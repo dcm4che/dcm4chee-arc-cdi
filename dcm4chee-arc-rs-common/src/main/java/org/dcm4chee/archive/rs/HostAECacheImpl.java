@@ -43,9 +43,10 @@ package org.dcm4chee.archive.rs;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -78,7 +79,7 @@ public class HostAECacheImpl implements HostAECache{
     }
 
     public void addHostAEEntry(HostNameAEEntry entry) {
-        ArrayList<HostNameAEEntry> currentList = arcDevExt.getHostNameAEList();
+        Collection<HostNameAEEntry> currentList = arcDevExt.getHostNameAEList();
         currentList.add(entry);
         arcDevExt.setHostNameAEList(currentList);
     }
@@ -99,14 +100,14 @@ public class HostAECacheImpl implements HostAECache{
             if (source.getHost() != Participant.UNKNOWN) {
                 return lookupAE(source.getHost());
             } else {
-                return getFallBack();
+                return lookupAE("*");
             }
         } else {
             // no resolution expect ip
             if (source.getIP() != Participant.UNKNOWN) {
                 return lookupAE(source.getIP());
             } else {
-                return getFallBack();
+                return lookupAE("*");
             }
         }
     }
@@ -123,22 +124,11 @@ public class HostAECacheImpl implements HostAECache{
                 try {
                     return aeCache.findApplicationEntity(entry.getAeTitle());
                 } catch (ConfigurationException e) {
-                    return getFallBack();
+                    return null;
                 }
             }
         }
-        return getFallBack();
-    }
-
-    private ApplicationEntity getFallBack() {
-        String fallBackAETitle = arcDevExt.getHostNameAEFallBackEntry()
-                .getAeTitle();
-        try {
-            return aeCache.get(fallBackAETitle);
-        } catch (ConfigurationException e) {
-            //null on no configuration
-            return null;
-        }
+        return null;
     }
 
 }

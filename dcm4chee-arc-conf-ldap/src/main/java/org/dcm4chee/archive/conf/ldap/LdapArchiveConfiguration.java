@@ -41,6 +41,7 @@ package org.dcm4chee.archive.conf.ldap;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import javax.naming.NameNotFoundException;
@@ -127,10 +128,12 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                     LdapUtils.dnOf("dcmEntity", entity.toString(), deviceDN),
                     storeTo(arcDev.getAttributeFilter(entity), entity,
                             new BasicAttributes(true)));
-        Attributes attrs = new BasicAttributes();
-        attrs.put("objectclass","dcmArchiveDevice");
-        LdapUtils.storeNotNull(attrs, "dcmHostNameAEResolution",
-                arcDev.getHostNameAEFallBackEntry().getAeTitle());
+        
+        Attributes attrs = new BasicAttributes(false);
+        attrs.put("objectclass", "dcmHostNameAEMap");
+        config.createSubcontext(LdapUtils.dnOf("cn",
+                ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN), attrs);
+        
         for (HostNameAEEntry entry : arcDev.getHostNameAEList()) {
             attrs = new BasicAttributes(false);
             attrs.put("objectclass", "dcmHostNameAEEntry");
@@ -283,21 +286,11 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
     private void loadWebClientMappings(ArchiveDeviceExtension device,
             String deviceDN) throws NamingException {
         NamingEnumeration<SearchResult> map = null;
-        Attributes mapParentAttrs = null;
-        
         try{
-            mapParentAttrs = config.getAttributes(LdapUtils.dnOf("cn", ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN));
-            device.setHostNameAEFallBackEntry(new HostNameAEEntry("*", (String)mapParentAttrs.get("dcmHostNameAEFallBackAE").get()));
+            config.getAttributes(LdapUtils.dnOf("cn", ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN));
         }
         catch(NameNotFoundException e)
         {
-            Attributes attrs = new BasicAttributes(false);
-            attrs.put("dcmHostNameAEFallBackAE", "FALLBACK");
-            attrs.put("objectclass", "dcmHostNameAEMap");
-            config.createSubcontext(LdapUtils.dnOf("cn",
-                    ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN), attrs);
-            mapParentAttrs = config.getAttributes(LdapUtils.dnOf("cn", ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN));
-            device.setHostNameAEFallBackEntry(new HostNameAEEntry("*", (String)mapParentAttrs.get("dcmHostNameAEFallBackAE").get()));
             return;
         }
         try {
@@ -445,17 +438,44 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                     storeDiffs(aa.getAttributeFilter(entity),
                             bb.getAttributeFilter(entity),
                             new ArrayList<ModificationItem>()));
-        
-        config.modifyAttributes(LdapUtils.dnOf("cn",
-                ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN), storeDiffs(aa.getHostNameAEFallBackEntry(), bb.getHostNameAEFallBackEntry(), new ArrayList<ModificationItem>()));
+
         
         for (HostNameAEEntry entry : aa.getHostNameAEList()) {
-            for(HostNameAEEntry entryNew: bb.getHostNameAEList())
+            if(!bb.getHostNameAEList().contains(entry))
+                config.destroySubcontext(LdapUtils.dnOf("dicomHostname",entry.getHostName(),LdapUtils.dnOf("cn",
+                    ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN).toString()));
+        }
+            for(HostNameAEEntry entryNew: bb.getHostNameAEList()){
+                if(!aa.getHostNameAEList().contains(entryNew)){
+                    config.createSubcontext(LdapUtils.dnOf("dicomHostname",entryNew.getHostName(),LdapUtils.dnOf("cn",
+                            ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN).toString()),toAttributess(entryNew));
+                }
+                else{
+                    HostNameAEEntry entry = getmatchingEntry(entryNew,aa.getHostNameAEList());
             config.modifyAttributes(LdapUtils.dnOf("dicomHostname",entry.getHostName(),LdapUtils.dnOf("cn",
                     ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN).toString()), storeDiffs(entry, entryNew, new ArrayList<ModificationItem>()));
-        }
+                }
+            }
+        
     }
 
+    private HostNameAEEntry getmatchingEntry(HostNameAEEntry entryNew,
+            Collection<HostNameAEEntry> hostNameAEList) {
+        HostNameAEEntry resultEntry=null;
+        for(HostNameAEEntry entry : hostNameAEList)
+        if(entry.getHostName().compareTo(entryNew.getHostName())==0)
+            resultEntry = entry;
+            return resultEntry;
+    }
+
+    private Attributes toAttributess(HostNameAEEntry entry)
+    {
+        Attributes attrs = new BasicAttributes();
+        attrs.put("objectclass", "dcmHostNameAEEntry");
+        attrs.put("dicomAETitle", entry.getAeTitle());
+        attrs.put("dicomHostname", entry.getHostName());
+        return attrs;
+    }
     @Override
     protected void mergeChilds(ApplicationEntity prev, ApplicationEntity ae,
             String aeDN) throws NamingException {

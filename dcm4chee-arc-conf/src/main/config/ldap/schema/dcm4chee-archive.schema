@@ -226,28 +226,28 @@ attributetype ( 1.2.40.0.13.1.15.10.3.37 NAME 'dcmIncorrectWorklistEntrySelected
   SINGLE-VALUE )
 
 attributetype ( 1.2.40.0.13.1.15.10.3.38 NAME 'dcmRejectedForQualityReasonsCode'
-  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for quality reasons: (113001, DCM, “Rejected for Quality Reasons”)'
+  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for quality reasons: (113001, DCM, "Rejected for Quality Reasons")'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 
 attributetype ( 1.2.40.0.13.1.15.10.3.39 NAME 'dcmRejectedForPatientSafetyReasonsCode'
-  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for patient safety reasons: (113037, DCM, “Rejected for Patient Safety Reasons”)'
+  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for patient safety reasons: (113037, DCM, "Rejected for Patient Safety Reasons")'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 
 attributetype ( 1.2.40.0.13.1.15.10.3.40 NAME 'dcmIncorrectModalityWorklistEntryCode'
-  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as associated with an incorrect modality worklist entry: (XXXXXX11, 99IHEIOCM, “Incorrect Modality Worklist Entry”)'
+  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as associated with an incorrect modality worklist entry: (XXXXXX11, 99IHEIOCM, "Incorrect Modality Worklist Entry")'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 
 attributetype ( 1.2.40.0.13.1.15.10.3.41 NAME 'dcmDataRetentionPeriodExpiredCode'
-  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as expired for data retention policy: (XXXXXX22, 99IHEIOCM, “Data Retention Period Expired”)'
+  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as expired for data retention policy: (XXXXXX22, 99IHEIOCM, "Data Retention Period Expired")'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
@@ -283,76 +283,69 @@ attributetype ( 1.2.40.0.13.1.15.10.3.46 NAME 'dcmHostNameAEResolution'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE)
 
-attributetype ( 1.2.40.0.13.1.15.10.3.47 NAME 'dcmHostNameAEFallBackAE'
-  DESC 'Defines the fallback AETitle for Hostname AE Title mapping'
-  EQUALITY caseExactMatch
-  SUBSTR caseExactSubstringsMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
-  SINGLE-VALUE )
-
-attributetype ( 1.2.40.0.13.1.15.10.3.48 NAME 'dcmPatientSelectorClassName'
+attributetype ( 1.2.40.0.13.1.15.10.3.47 NAME 'dcmPatientSelectorClassName'
   DESC 'dcmPatientSelectorClassName'
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
   SINGLE-VALUE )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.49 NAME 'dcmPatientSelectorProperty'
+attributetype ( 1.2.40.0.13.1.15.10.3.48 NAME 'dcmPatientSelectorProperty'
   DESC 'dcmPatientSelectorProperty'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.50 NAME 'dcmPatientSelectorValue'
+attributetype ( 1.2.40.0.13.1.15.10.3.49 NAME 'dcmPatientSelectorValue'
   DESC 'dcmPatientSelectorValue'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.51 NAME 'dcmMatchLinkedPatientIDs'
+attributetype ( 1.2.40.0.13.1.15.10.3.50 NAME 'dcmMatchLinkedPatientIDs'
   DESC 'Indicates if also linked Patient IDs are considered for matching; disabled if absent'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.52 NAME 'dcmCheckTransferCapabilities'
+attributetype ( 1.2.40.0.13.1.15.10.3.51 NAME 'dcmCheckTransferCapabilities'
   DESC 'Checks for transfer capabilities during retrieve and eliminate unsupported classes/transfer-syntax'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.53 NAME 'dcmPersonNameComponentOrderInsensitiveMatching'
+attributetype ( 1.2.40.0.13.1.15.10.3.52 NAME 'dcmPersonNameComponentOrderInsensitiveMatching'
   DESC 'Indicates if name component order insensitive matching is performed on fuzzy semantic matching of person names; disabled if absent'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
   
-attributetype ( 1.2.40.0.13.1.15.10.3.54 NAME 'dcmDeIdentifyLogs'
+attributetype ( 1.2.40.0.13.1.15.10.3.53 NAME 'dcmDeIdentifyLogs'
   DESC 'Avoid logging Protected health information (PHI); Default is false (PHi is shown)'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.55 NAME 'dcmWadoOverlayRendering'
+attributetype ( 1.2.40.0.13.1.15.10.3.54 NAME 'dcmWadoOverlayRendering'
   DESC 'Set default BMP overlays rendering in WADO'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.56 NAME 'dcmHideInstances'
+attributetype ( 1.2.40.0.13.1.15.10.3.55 NAME 'dcmHideInstances'
   DESC 'Indicates if the Q/R Services shall hide instances not rejected by any reason; disabled if absent'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.57 NAME 'dcmShowInstancesRejectedByCode'
+attributetype ( 1.2.40.0.13.1.15.10.3.56 NAME 'dcmShowInstancesRejectedByCode'
   DESC 'Indicates if the Q/R Services shall show instances rejected by the specified code'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.58 NAME 'dcmNumberOfInstancesCacheSlot'
+attributetype ( 1.2.40.0.13.1.15.10.3.57 NAME 'dcmNumberOfInstancesCacheSlot'
   DESC 'Specifies Slot # used to cache number of series and instances in Study and Series table. Currently 3 slots (1-3) are available. If absent, number of series and instances are not cached in the Study and Series table'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
@@ -445,8 +438,7 @@ objectclass ( 1.2.40.0.13.1.15.10.4.13 NAME 'dcmHostNameAEMap'
   SUP top
   STRUCTURAL
   MUST (
-    cn $
-    dcmHostNameAEFallBackAE ) )
+    cn ) )
 
 objectclass ( 1.2.40.0.13.1.15.10.4.14 NAME 'dcmHostNameAEEntry'
   DESC 'Specifies one association of web client hostname with an application entity'
