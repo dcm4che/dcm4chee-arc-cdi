@@ -36,6 +36,10 @@
       <artifactId>dcm4che-net-hl7</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-net-imageio</artifactId>
+    </dependency>
+    <dependency>
       <groupId>javax.enterprise</groupId>
       <artifactId>cdi-api</artifactId>
       <scope>provided</scope>
@@ -53,7 +57,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.conf.api, org.dcm4che.net-hl7</Dependencies>
+              <Dependencies>org.dcm4che.conf.api, org.dcm4che.net-hl7, org.dcm4che.net-imageio</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

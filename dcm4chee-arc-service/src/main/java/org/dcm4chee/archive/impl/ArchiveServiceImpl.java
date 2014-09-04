@@ -57,11 +57,15 @@ import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Code;
+import org.dcm4che3.imageio.codec.ImageReaderFactory;
+import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.hl7.service.HL7Service;
 import org.dcm4che3.net.hl7.service.HL7ServiceRegistry;
+import org.dcm4che3.net.imageio.ImageReaderExtension;
+import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.net.service.BasicCEchoSCP;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceRegistry;
@@ -160,6 +164,8 @@ public class ArchiveServiceImpl implements ArchiveService {
             device = findDevice();
             device.setConnectionMonitor(connectionEventSource);
             findOrCreateRejectionCodes(device);
+            initImageReaderFactory();
+            initImageWriterFactory();
             device.setExecutor(executor);
             device.setScheduledExecutor(scheduledExecutor);
             serviceRegistry.addDicomService(echoscp);
@@ -228,6 +234,8 @@ public class ArchiveServiceImpl implements ArchiveService {
         aeCache.clear();
         device.reconfigure(findDevice());
         findOrCreateRejectionCodes(device);
+        initImageReaderFactory();
+        initImageWriterFactory();
         device.rebindConnections();
     }
 
@@ -281,4 +289,19 @@ public class ArchiveServiceImpl implements ArchiveService {
         }
     }
 
+    private void initImageReaderFactory() {
+        ImageReaderExtension ext = device.getDeviceExtension(ImageReaderExtension.class);
+        if (ext != null)
+            ImageReaderFactory.setDefault(ext.getImageReaderFactory());
+        else
+            ImageReaderFactory.resetDefault();
+    }
+
+    private void initImageWriterFactory() {
+        ImageWriterExtension ext = device.getDeviceExtension(ImageWriterExtension.class);
+        if (ext != null)
+            ImageWriterFactory.setDefault(ext.getImageWriterFactory());
+        else
+            ImageWriterFactory.resetDefault();
+    }
 }
