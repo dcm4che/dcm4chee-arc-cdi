@@ -385,7 +385,7 @@ public class PreferencesArchiveConfiguration extends
             Collection<HostNameAEEntry> current) throws BackingStoreException {
         for (HostNameAEEntry entry : prevList) {
             String host = entry.getHostName();
-            if (!current.contains(host)) {
+            if (!contains(current,host)) {
                 Preferences node = prefs.node(host);
                 node.removeNode();
                 node.flush();
@@ -393,12 +393,20 @@ public class PreferencesArchiveConfiguration extends
         }
         for (HostNameAEEntry entry : current) {
             String host = entry.getHostName();
-            if(!prevList.contains(entry))
+            if(!contains(prevList,host))
                 storeTo(entry, prefs);
             else
             storeDiffs(prefs.node(host), getMatchingEntry(entry, prevList),
                     entry);
         }
+    }
+
+    
+    private boolean contains(Collection<HostNameAEEntry> list, String host) {
+        for(HostNameAEEntry e: list)
+            if(e.getHostName().compareToIgnoreCase(host)==0)
+                return true;
+        return false;
     }
 
     private HostNameAEEntry getMatchingEntry(HostNameAEEntry entry,

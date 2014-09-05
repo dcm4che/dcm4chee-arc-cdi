@@ -129,18 +129,18 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                     storeTo(arcDev.getAttributeFilter(entity), entity,
                             new BasicAttributes(true)));
         
-        Attributes attrs = new BasicAttributes(false);
+        Attributes attrs = new BasicAttributes(true);
         attrs.put("objectclass", "dcmHostNameAEMap");
-        config.createSubcontext(LdapUtils.dnOf("cn",
-                ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN), attrs);
+        String dnOfArchiveHostAEMapNode = LdapUtils.dnOf("cn",
+                ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN);
+        config.createSubcontext(dnOfArchiveHostAEMapNode, attrs);
         
         for (HostNameAEEntry entry : arcDev.getHostNameAEList()) {
-            attrs = new BasicAttributes(false);
+            attrs = new BasicAttributes(true);
             attrs.put("objectclass", "dcmHostNameAEEntry");
             attrs.put("dicomAETitle", entry.getAeTitle());
             attrs.put("dicomHostname", entry.getHostName());
-            config.createSubcontext(LdapUtils.dnOf("dicomHostname",entry.getHostName(),LdapUtils.dnOf("cn",
-                    ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN)), attrs);
+            config.createSubcontext(LdapUtils.dnOf("dicomHostname",entry.getHostName(),dnOfArchiveHostAEMapNode), attrs);
         }
     }
 
@@ -439,24 +439,30 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                             bb.getAttributeFilter(entity),
                             new ArrayList<ModificationItem>()));
 
-        
+        String dnOfArchiveAEHostMap = LdapUtils.dnOf("cn",
+                ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN);
         for (HostNameAEEntry entry : aa.getHostNameAEList()) {
-            if(!bb.getHostNameAEList().contains(entry))
-                config.destroySubcontext(LdapUtils.dnOf("dicomHostname",entry.getHostName(),LdapUtils.dnOf("cn",
-                    ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN).toString()));
+            if(!contains(bb.getHostNameAEList(),entry.getHostName()))
+                config.destroySubcontext(LdapUtils.dnOf("dicomHostname",entry.getHostName(),dnOfArchiveAEHostMap));
         }
             for(HostNameAEEntry entryNew: bb.getHostNameAEList()){
-                if(!aa.getHostNameAEList().contains(entryNew)){
-                    config.createSubcontext(LdapUtils.dnOf("dicomHostname",entryNew.getHostName(),LdapUtils.dnOf("cn",
-                            ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN).toString()),toAttributess(entryNew));
+                if(!contains(aa.getHostNameAEList(),entryNew.getHostName())){
+                    config.createSubcontext(LdapUtils.dnOf("dicomHostname",entryNew.getHostName(),dnOfArchiveAEHostMap),toAttributess(entryNew));
                 }
                 else{
                     HostNameAEEntry entry = getmatchingEntry(entryNew,aa.getHostNameAEList());
-            config.modifyAttributes(LdapUtils.dnOf("dicomHostname",entry.getHostName(),LdapUtils.dnOf("cn",
-                    ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN).toString()), storeDiffs(entry, entryNew, new ArrayList<ModificationItem>()));
+            config.modifyAttributes(LdapUtils.dnOf("dicomHostname",entry.getHostName(),dnOfArchiveAEHostMap), storeDiffs(entry, entryNew, new ArrayList<ModificationItem>()));
                 }
             }
         
+    }
+
+    private boolean contains(Collection<HostNameAEEntry> hostNameAEList,
+            String host) {
+        for(HostNameAEEntry e: hostNameAEList)
+            if(e.getHostName().compareToIgnoreCase(host)==0)
+                return true;
+        return false;
     }
 
     private HostNameAEEntry getmatchingEntry(HostNameAEEntry entryNew,
