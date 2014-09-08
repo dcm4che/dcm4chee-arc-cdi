@@ -90,7 +90,7 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
             if (archiveTimeZone != null) {
                 try {
                     ApplicationEntity remoteAE =aeCache.get(session.getRemoteAET()); 
-                    remoteAETimeZone = remoteAE.getDevice().getTimeZoneOfDevice();
+                    remoteAETimeZone = remoteAE!=null?remoteAE.getDevice().getTimeZoneOfDevice():null;
                     if(remoteAETimeZone!=null){
                     LOG.debug("(TimeZone Support):Loaded Device for remote Application entity AETitle: "
                             + remoteAE.getAETitle()

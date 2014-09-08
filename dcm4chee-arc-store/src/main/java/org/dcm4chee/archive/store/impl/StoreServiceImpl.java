@@ -352,9 +352,9 @@ public class StoreServiceImpl implements StoreService {
         Attributes attrs = context.getAttributes();
         try {
             Attributes modified = context.getCoercedOriginalAttributes();
-            Templates tpl = arcAE.getAttributeCoercionTemplates(
+            Templates tpl = session.getRemoteAET()!=null?arcAE.getAttributeCoercionTemplates(
                     attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
-                    TransferCapability.Role.SCP, session.getRemoteAET());
+                    TransferCapability.Role.SCP, session.getRemoteAET()):null;
             if (tpl != null) {
                 attrs.update(SAXTransformer.transform(attrs, tpl, false, false,
                         new SetupTransformer() {
