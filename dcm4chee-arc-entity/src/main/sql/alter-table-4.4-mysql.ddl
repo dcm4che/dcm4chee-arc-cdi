@@ -228,7 +228,10 @@ alter table series
     modify num_instances3 integer not null;
 
 alter table file_ref
-    add replaced bit;
+    add replaced bit.
+    add status integer;
+
+update file_ref set status = 0;
 
 update file_ref, instance
     set file_ref.replaced=instance.replaced

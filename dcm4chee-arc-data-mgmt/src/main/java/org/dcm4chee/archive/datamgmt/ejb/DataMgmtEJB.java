@@ -38,13 +38,9 @@
 
 package org.dcm4chee.archive.datamgmt.ejb;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -77,6 +73,7 @@ import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
+import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.patient.PatientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,23 +97,37 @@ public enum PatientCommands{
 
     @Inject
     private PatientService patientService;
-    
-    public Study deleteStudy(String studyInstanceUID) {
+
+    @Inject
+    private FileMgmt fileManager;
+
+    public Study deleteStudy(String studyInstanceUID) throws Exception {
         TypedQuery<Study> query = em.createNamedQuery(
                 Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
                 studyInstanceUID);
         Study study = query.getSingleResult();
+
+        Collection<Series> allSeries = study.getSeries();
+        for(Series series: allSeries)
+        for(Instance inst : series.getInstances())
+            deleteInstance(inst.getSopInstanceUID());
+
         em.remove(study);
         LOG.info("Removed study entity - " + studyInstanceUID);
         return study;
     }
 
     @Override
-    public Series deleteSeries(String seriesInstanceUID) {
+    public Series deleteSeries(String seriesInstanceUID) throws Exception {
         TypedQuery<Series> query = em.createNamedQuery(
-                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(
-                1, seriesInstanceUID);
+                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class)
+                .setParameter(1, seriesInstanceUID);
         Series series = query.getSingleResult();
+
+        Collection<Instance> insts = series.getInstances();
+        for(Instance inst : insts)
+            deleteInstance(inst.getSopInstanceUID());
+
         Study study = series.getStudy();
         em.remove(series);
         study.resetNumberOfInstances();
@@ -127,65 +138,81 @@ public enum PatientCommands{
     @Override
     public Instance deleteInstance(String sopInstanceUID) throws Exception {
         TypedQuery<Instance> query = em.createNamedQuery(
-                Instance.FIND_BY_SOP_INSTANCE_UID, Instance.class)
+                Instance.FIND_BY_SOP_INSTANCE_UID_FETCH_FILE_REFS_AND_FS, Instance.class)
                 .setParameter(1, sopInstanceUID);
         Instance inst = query.getSingleResult();
+
+        scheduleDelete(inst);
+
         Series series = inst.getSeries();
         Study study = series.getStudy();
-
         em.remove(inst);
         LOG.info("Removed instance entity - " + sopInstanceUID);
         series.resetNumberOfInstances();
         study.resetNumberOfInstances();
-        List<FileRef> fileRef = (List<FileRef>) inst.getFileRefs();
-        for (FileRef file : fileRef) {
 
-            try {
-                LOG.info("Deleted file: " + file.getFilePath());
-                if (!new File(file.getFileSystem().getPath().toFile(),
-                        file.getFilePath()).delete())
-                    throw new Exception();
-            } catch (NoSuchFileException e) {
-                LOG.error("No such file or directory\n"
-                        + e.getStackTrace().toString());
-            } catch (IOException e1) {
-                LOG.error("No sufficient permissions to delete file\n"
-                        + e1.getStackTrace().toString());
-            }
-        }
         return inst;
+    }
+
+    private void scheduleDelete(Instance inst) {
+        Collection<FileRef> tmpRefs = clone(inst.getFileRefs());
+
+        removefileReference(inst);
+        try {
+            fileManager.scheduleDelete(tmpRefs, "test", "DCM4CHEE", 2, "peep", 0);
+        } catch (Exception e) {
+            //ignore already handled by the EJB
+        }
+    }
+
+    private Collection<FileRef> clone(Collection<FileRef> refs)
+    {
+        ArrayList<FileRef> clone = new ArrayList<FileRef>();
+        Iterator<FileRef> iter = refs.iterator();
+        while(iter.hasNext())
+        {
+            FileRef ref = iter.next();
+            clone.add(ref);
+        }
+        return clone;
+    }
+
+    private void removefileReference(Instance inst) {
+        for(FileRef ref: inst.getFileRefs())
+            ref.setInstance(null);
+        inst.getFileRefs().clear();
+        
     }
 
     @Override
     public boolean deleteSeriesIfEmpty(String seriesInstanceUID,
             String studyInstanceUID) {
-//        TypedQuery<Series> query = em.createNamedQuery(
-//                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(
-//                1, seriesInstanceUID);
-//        Series series = query.getSingleResult();
-//
-//        if (series.getNumberOfInstances1() == -1) {
-//            em.remove(series);
-//            LOG.info("Removed series entity - " + seriesInstanceUID);
-//            return true;
-//        }
-//
+        TypedQuery<Series> query = em.createNamedQuery(
+                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(
+                1, seriesInstanceUID);
+        Series series = query.getSingleResult();
+        if(series.getInstances().isEmpty()) {
+            em.remove(series);
+            LOG.info("Removed series entity - " + seriesInstanceUID);
+            return true;
+        }
+
         return false;
     }
 
     @Override
     public boolean deleteStudyIfEmpty(String studyInstanceUID) {
-//        TypedQuery<Study> query = em.createNamedQuery(
-//                Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
-//                studyInstanceUID);
-//        Study study = query.getSingleResult();
-//
-//        if (study.getNumberOfInstances1() == -1) {
-//            em.remove(study);
-//            LOG.info("Removed study entity - " + studyInstanceUID);
-//            return true;
-//        }
-//
+        TypedQuery<Study> query = em.createNamedQuery(
+                Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
+                studyInstanceUID);
+        Study study = query.getSingleResult();
+
+        if (study.getSeries().isEmpty()) {
+            em.remove(study);
+            LOG.info("Removed study entity - " + studyInstanceUID);
+            return true;
+        }
+
         return false;
     }
 

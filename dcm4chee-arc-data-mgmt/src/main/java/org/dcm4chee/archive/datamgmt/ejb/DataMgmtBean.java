@@ -62,8 +62,8 @@ import org.dcm4chee.archive.entity.Study;
 public interface DataMgmtBean {
 
 
-    Study deleteStudy(String studyInstanceUID);
-    Series deleteSeries(String seriesInstanceUID);
+    Study deleteStudy(String studyInstanceUID) throws Exception;
+    Series deleteSeries(String seriesInstanceUID) throws Exception;
     Instance deleteInstance(String sopInstanceUID) throws FileNotFoundException, NoSuchFileException, IOException, Exception;
     
     boolean deleteSeriesIfEmpty(String seriesInstanceUID, String studyInstanceUID);

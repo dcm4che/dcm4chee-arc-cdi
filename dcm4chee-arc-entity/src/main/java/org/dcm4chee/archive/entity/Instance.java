@@ -79,6 +79,10 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     query="SELECT i FROM Instance i "
             + "WHERE i.sopInstanceUID = ?1"),
 @NamedQuery(
+    name="Instance.findBySopInstanceUIDFetchFileRefsAndFs",
+    query="SELECT i FROM Instance i LEFT JOIN FETCH i.fileRefs f LEFT JOIN FETCH f.fileSystem "
+            + "WHERE i.sopInstanceUID = ?1"),
+@NamedQuery(
     name="Instance.findBySeriesInstanceUID",
     query="SELECT i FROM Instance i "
             + "WHERE i.series.seriesInstanceUID = ?1"),
@@ -181,6 +185,8 @@ public class Instance implements Serializable {
             "Instance.instanceFileRefBySeriesInstanceUID";
     public static final String INSTANCE_FILE_REF_BY_STUDY_INSTANCE_UID =
             "Instance.instanceFileRefByStudyInstanceUID";
+    public static final String FIND_BY_SOP_INSTANCE_UID_FETCH_FILE_REFS_AND_FS =
+            "Instance.findBySopInstanceUIDFetchFileRefsAndFs";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

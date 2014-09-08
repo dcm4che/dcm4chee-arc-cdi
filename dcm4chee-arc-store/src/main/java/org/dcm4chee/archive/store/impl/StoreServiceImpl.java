@@ -94,6 +94,7 @@ import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.FileRef.FileRefStatus;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
@@ -711,6 +712,7 @@ public class StoreServiceImpl implements StoreService {
         TimeZone sourceTimeZone = session.getSourceTimeZone();
         if (sourceTimeZone != null)
             fileRef.setSourceTimeZone(sourceTimeZone.getID());
+        fileRef.setStatus(FileRefStatus.STATUS_OK);
         fileRef.setInstance(instance);
         em.persist(fileRef);
         LOG.info("{}: Create {}", session, fileRef);

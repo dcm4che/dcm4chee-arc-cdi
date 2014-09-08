@@ -40,11 +40,12 @@ package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.TimeZone;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -63,6 +64,7 @@ import javax.persistence.Table;
 @Table(name = "file_ref")
 public class FileRef implements Serializable {
 
+    public enum FileRefStatus {STATUS_OK, STATUS_DELETE_FAILED };
     private static final long serialVersionUID = 1735835006678974580L;
 
     @Id
@@ -93,7 +95,12 @@ public class FileRef implements Serializable {
     @Basic(optional = true)
     @Column(name = "file_digest", updatable = false)
     private String digest;
-    
+
+    @Basic(optional = false)
+    @Enumerated(EnumType.ORDINAL)
+    @Column(name = "status", updatable = true)
+    private FileRefStatus status;
+
     @Basic(optional = false)
     @Column(name = "replaced")
     private boolean replaced;
@@ -184,4 +191,13 @@ public class FileRef implements Serializable {
     public String getSourceTimeZone(){
 	return this.fileTimeZone;
     }
+
+    public FileRefStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(FileRefStatus status) {
+        this.status = status;
+    }
+
 }

@@ -42,12 +42,12 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
+import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtBean;
 
 /**
@@ -65,53 +65,24 @@ public class DeleteService {
     @Inject
     DataMgmtBean dataManager;
 
+    @Inject
+    Device device;
+    
     private String RSP;
-
-    @GET
-    @Path("/delete/studies/{StudyInstanceUID}")
-    public Response deleteStudyGet(
-            @PathParam("StudyInstanceUID") String studyInstanceUID) {
-        RSP = "Deleted Study with UID = "
-                + dataManager.deleteStudy(studyInstanceUID)
-                        .getStudyInstanceUID();
-
-        return Response.ok(RSP).build();
-    }
-
-    @GET
-    @Path("/delete/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
-    public Response deleteSeriesGet(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
-        RSP = "Deleted Series with UID = "
-                + dataManager.deleteSeries(seriesInstanceUID)
-                        .getSeriesInstanceUID();
-
-        return Response.ok(RSP).build();
-    }
-
-    @GET
-    @Path("/delete/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
-    public Response deleteInstanceGet(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID)
-            throws Exception {
-        RSP = "Deleted Instance with UID = "
-                + dataManager.deleteInstance(sopInstanceUID)
-                        .getSopInstanceUID();
-
-        return Response.ok(RSP).build();
-    }
 
     @DELETE
     @Path("/delete/studies/{StudyInstanceUID}")
     public Response deleteStudy(
             @PathParam("StudyInstanceUID") String studyInstanceUID) {
+        try {
         RSP = "Deleted Study with UID = "
                 + dataManager.deleteStudy(studyInstanceUID)
                         .getStudyInstanceUID();
-
+        }
+        catch (Exception e)
+        {
+            RSP = "Failed to delete study with UID = "+studyInstanceUID;
+        }
         return Response.ok(RSP).build();
 
     }
@@ -121,10 +92,15 @@ public class DeleteService {
     public Response deleteSeries(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
+        try {
         RSP = "Deleted Series with UID = "
                 + dataManager.deleteSeries(seriesInstanceUID)
                         .getSeriesInstanceUID();
-
+        }
+        catch(Exception e)
+        {
+            RSP = "Failed to delete series with UID = "+seriesInstanceUID;
+        }
         return Response.ok(RSP).build();
     }
 
@@ -133,37 +109,17 @@ public class DeleteService {
     public Response deleteInstance(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID)
-            throws Exception {
+            @PathParam("SOPInstanceUID") String sopInstanceUID) {
+        try{
         RSP = "Deleted Instance with UID = "
                 + dataManager.deleteInstance(sopInstanceUID)
                         .getSopInstanceUID();
-
-        return Response.ok(RSP).build();
-    }
-
-    @GET
-    @Path("/deleteifempty/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
-    public Response deleteSeriesIfEmptyGet(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
-        RSP = "Series with UID = "
-                + seriesInstanceUID
-                + " was empty and Deleted = "
-                + dataManager.deleteSeriesIfEmpty(seriesInstanceUID,
-                        studyInstanceUID);
-
-        return Response.ok(RSP).build();
-    }
-
-    @GET
-    @Path("/deleteifempty/studies/{StudyInstanceUID}")
-    public Response deleteStudyIfEmptyGet(
-            @PathParam("StudyInstanceUID") String studyInstanceUID) {
-        RSP = "Study with UID = " + studyInstanceUID
-                + " was empty and Deleted = "
-                + dataManager.deleteStudyIfEmpty(studyInstanceUID);
-
+        }
+        catch(Exception e)
+        {
+            RSP = "Failed to delete Instance with UID = "+sopInstanceUID;
+        }
+        
         return Response.ok(RSP).build();
     }
 
@@ -182,7 +138,7 @@ public class DeleteService {
     }
 
     @DELETE
-    @Path("/purge/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
+    @Path("/purge/studies/{StudyInstanceUID}")
     public Response deleteStudyIfEmpty(
             @PathParam("StudyInstanceUID") String studyInstanceUID) {
         RSP = "Study with UID = " + studyInstanceUID
