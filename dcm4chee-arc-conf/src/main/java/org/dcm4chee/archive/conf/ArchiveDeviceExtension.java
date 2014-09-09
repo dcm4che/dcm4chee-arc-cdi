@@ -40,7 +40,6 @@ package org.dcm4chee.archive.conf;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
@@ -60,10 +59,6 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private static final long serialVersionUID = -3611223780276386740L;
     public static final String ARCHIVE_HOST_AE_MAP_NODE="HostNameAETitleMap";
     private Code incorrectWorklistEntrySelectedCode;
-    private Code rejectedForQualityReasonsCode;
-    private Code rejectedForPatientSafetyReasonsCode;
-    private Code incorrectModalityWorklistEntryCode;
-    private Code dataRetentionPeriodExpiredCode;
     private String fuzzyAlgorithmClass;
     private final AttributeFilter[] attributeFilters =
             new AttributeFilter[Entity.values().length];
@@ -73,10 +68,11 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
     
-    private boolean hostnameAEresoultion=false;
-    private boolean deIdentifyLogs=false;
-    private Collection<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
-    
+    private boolean hostnameAEresoultion;
+    private boolean deIdentifyLogs;
+    private Collection<HostNameAEEntry> hostNameAEList =
+            new ArrayList<HostNameAEEntry>();
+    private RejectionParam[] rejectionParams = {};
 
     public boolean isHostnameAEresoultion() {
         return hostnameAEresoultion;
@@ -86,13 +82,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.hostnameAEresoultion = hostnameAEresoultion;
     }
 
-    @SuppressWarnings("unchecked")
     public Collection<HostNameAEEntry> getHostNameAEList() {
-        return hostNameAEList==null?Collections.EMPTY_LIST:hostNameAEList;
+        return hostNameAEList;
     }
 
     public void setHostNameAEList(Collection<HostNameAEEntry> hostNameAEList) {
-        this.hostNameAEList = hostNameAEList;
+        this.hostNameAEList = hostNameAEList != null
+                ? hostNameAEList
+                : new ArrayList<HostNameAEEntry>();
     }
 
     public Code getIncorrectWorklistEntrySelectedCode() {
@@ -103,39 +100,15 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.incorrectWorklistEntrySelectedCode = code;
     }
 
-    public Code getRejectedForQualityReasonsCode() {
-        return rejectedForQualityReasonsCode;
+    public RejectionParam[] getRejectionParams() {
+        return rejectionParams;
     }
 
-    public void setRejectedForQualityReasonsCode(Code code) {
-        this.rejectedForQualityReasonsCode = code;
+    public void setRejectionParams(RejectionParam... rejectionParams) {
+        this.rejectionParams = rejectionParams;
     }
 
-    public Code getRejectedForPatientSafetyReasonsCode() {
-        return rejectedForPatientSafetyReasonsCode;
-    }
-
-    public void setRejectedForPatientSafetyReasonsCode(Code code) {
-        this.rejectedForPatientSafetyReasonsCode = code;
-    }
-
-    public Code getIncorrectModalityWorklistEntryCode() {
-        return incorrectModalityWorklistEntryCode;
-    }
-
-    public void setIncorrectModalityWorklistEntryCode(Code code) {
-        this.incorrectModalityWorklistEntryCode = code;
-    }
-
-    public Code getDataRetentionPeriodExpiredCode() {
-        return dataRetentionPeriodExpiredCode;
-    }
-
-    public void setDataRetentionPeriodExpiredCode(Code code) {
-        this.dataRetentionPeriodExpiredCode = code;
-    }
-
-   public String getFuzzyAlgorithmClass() {
+    public String getFuzzyAlgorithmClass() {
         return fuzzyAlgorithmClass;
     }
 
@@ -215,18 +188,13 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     public void reconfigure(DeviceExtension from) {
         ArchiveDeviceExtension arcdev = (ArchiveDeviceExtension) from;
         setIncorrectWorklistEntrySelectedCode(arcdev.incorrectWorklistEntrySelectedCode);
-        setRejectedForQualityReasonsCode(arcdev.rejectedForQualityReasonsCode);
-        setRejectedForPatientSafetyReasonsCode(arcdev.rejectedForPatientSafetyReasonsCode);
-        setIncorrectModalityWorklistEntryCode(arcdev.incorrectModalityWorklistEntryCode);
-        setDataRetentionPeriodExpiredCode(arcdev.getDataRetentionPeriodExpiredCode());
         setFuzzyAlgorithmClass(arcdev.fuzzyAlgorithmClass);
         setConfigurationStaleTimeout(arcdev.configurationStaleTimeout);
         System.arraycopy(arcdev.attributeFilters, 0,
                 attributeFilters, 0, attributeFilters.length);
-        hostNameAEList = new ArrayList<HostNameAEEntry>();
-        for(HostNameAEEntry newEntry: arcdev.getHostNameAEList())
-        hostNameAEList.add(newEntry);
-        setHostnameAEresoultion(arcdev.isHostnameAEresoultion());
+        setHostNameAEList(hostNameAEList);
+        setHostnameAEresoultion(arcdev.hostnameAEresoultion);
+        setRejectionParams(arcdev.rejectionParams);
     }
 
     public StoreParam getStoreParam() {

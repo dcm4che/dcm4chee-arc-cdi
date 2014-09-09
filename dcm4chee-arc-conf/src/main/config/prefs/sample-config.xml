@@ -11,15 +11,11 @@
           <map>
             <entry key="dcmArchiveDevice" value="true"/>
             <entry key="dcmConfigurationStaleTimeout" value="60"/>
-            <entry key="dcmDataRetentionPeriodExpiredCode" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
             <entry key="dcmFuzzyAlgorithmClass" value="org.dcm4che3.soundex.ESoundex"/>
-            <entry key="dcmIncorrectModalityWorklistEntryCode" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
             <entry key="dcmIncorrectWorklistEntrySelectedCode" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
             <entry key="dcmKeyStorePin" value="secret"/>
             <entry key="dcmKeyStoreType" value="JKS"/>
             <entry key="dcmKeyStoreURL" value="${jboss.server.config.url}/dcm4chee-arc/key.jks"/>
-            <entry key="dcmRejectedForPatientSafetyReasonsCode" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
-            <entry key="dcmRejectedForQualityReasonsCode" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
             <entry key="dcmWadoAttributesStaleTimeout" value="60"/>
             <entry key="dicomAuthorizedNodeCertificateReference.#" value="11"/>
             <entry key="dicomAuthorizedNodeCertificateReference.1" value="dicomConfigurationRoot/dicomDevicesRoot/dcmqrscp"/>
@@ -44,9 +40,7 @@
             <entry key="userCertificate.1" value="MIIDdTCCAl2gAwIBAgIEOfFkgTANBgkqhkiG9w0BAQsFADBrMQswCQYDVQQGEwJBVDEPMA0GA1UECBMGVmllbm5hMQ8wDQYDVQQHEwZWaWVubmExEDAOBgNVBAoTB2RjbTRjaGUxETAPBgNVBAsTCGRjbTRjaGVlMRUwEwYDVQQDEwxkY200Y2hlZS1hcmMwHhcNMTQwMzExMTQzMzMwWhcNMTUwMzExMTQzMzMwWjBrMQswCQYDVQQGEwJBVDEPMA0GA1UECBMGVmllbm5hMQ8wDQYDVQQHEwZWaWVubmExEDAOBgNVBAoTB2RjbTRjaGUxETAPBgNVBAsTCGRjbTRjaGVlMRUwEwYDVQQDEwxkY200Y2hlZS1hcmMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDPZtlagXXTjuo/iVuZgnKUJY3Jz6csXFTEmPv+DSNhFPuC0D8meDNDuXbfpi3ykezAU/jv2ZBfEnsy6miEJMYiz6jVXXuIduB3rwaXrKMyE8lNoLhg+cEe11MFt0zaYw16nYBVEqoS6gs/cUYaHhjp3BhmbLoRW4JGQWk/QutltRSYjWRYdlN64JWd22tp6RNa+2G+twCKjyXmvB2K0Y/ID577QaSTszfZ8HDNM0ufDSTCnutJBlu5Ar1Z2Y4JsvgvnHS0nlp060xtcx5y0divDrN86DoqqdgQj5pvQ60vrS5lxzF93KVf7tWP8ZZEQV5yzReQYFhOEosPSIdFlz+3AgMBAAGjITAfMB0GA1UdDgQWBBQhuOgRYmoBJf2rBIMACM9VVFIB7zANBgkqhkiG9w0BAQsFAAOCAQEAKgd3V/6BuK2wJ674JZVQXxlFr60L9UOOqu/FFGOX5h0BTGf84YhsY+xoTS1FXzJdfJt05lAeLNVARYlTwoqsvTFQmB/rjDi4iN5H0NdLZvifaOvQXRB+c1dtsUAPkUUzhJDWVtiQgrCqsvhRJemqloOYAEU2F7Y8E99oI3F1WAZ/yIglVku3ciZyEwgtbr2UQIRCpv6sTS3E2YcenN00jmVMJ5a1nq/iP7N+MqQjmrrKdqwMy+/CUJbSrxTE4DV4TC1p9ehHTMrG6loolroH30mWj0ebiSaCZpnBCqNWQjvx23RiN93U6Qo1gVjUVI2NOXHZxysS/DXf99ObsizcSw=="/>
           </map>
           <node name="HostNameAETitleMap">
-            <map>
-              <entry key="dcmHostNameAEFallBackAE" value="FALLBACK"/>
-            </map>
+            <map/>
           </node>
           <node name="dcmAttributeFilter">
             <map/>
@@ -5226,6 +5220,7 @@
             <node name="DCM4CHEE_TRASH">
               <map>
                 <entry key="dcmArchiveNetworkAE" value="true"/>
+                <entry key="dcmHideInstances" value="true"/>
                 <entry key="dcmMatchUnknown" value="true"/>
                 <entry key="dcmNumberOfInstancesCacheSlot" value="3"/>
                 <entry key="dcmQidoMaxNumberOfResults" value="1000"/>
@@ -5239,7 +5234,6 @@
                 <entry key="dcmShowInstancesRejectedByCode.3" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
                 <entry key="dcmShowInstancesRejectedByCode.4" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
                 <entry key="dcmShowInstancesRejectedByCode.5" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
-                <entry key="dcmShowOnlyRejectedInstances" value="true"/>
                 <entry key="dcmWadoOverlayRendering" value="false"/>
                 <entry key="dicomAssociationAcceptor" value="true"/>
                 <entry key="dicomAssociationInitiator" value="true"/>
@@ -6909,6 +6903,56 @@
               </map>
             </node>
           </node>
+          <node name="dcmRejectionNote">
+            <map/>
+            <node name="1">
+              <map>
+                <entry key="dcmAcceptPreviousRejectedInstance" value="IGNORE"/>
+                <entry key="dcmRejectionNoteTitle" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+              </map>
+            </node>
+            <node name="2">
+              <map>
+                <entry key="dcmOverwritePreviousRejection.#" value="1"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
+              </map>
+            </node>
+            <node name="3">
+              <map>
+                <entry key="dcmOverwritePreviousRejection.#" value="1"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
+              </map>
+            </node>
+            <node name="4">
+              <map>
+                <entry key="dcmOverwritePreviousRejection.#" value="1"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
+              </map>
+            </node>
+            <node name="5">
+              <map>
+                <entry key="dcmAcceptPreviousRejectedInstance" value="REPLACE"/>
+                <entry key="dcmOverwritePreviousRejection.#" value="1"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+              </map>
+            </node>
+            <node name="6">
+              <map>
+                <entry key="dcmOverwritePreviousRejection.#" value="5"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmOverwritePreviousRejection.2" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
+                <entry key="dcmOverwritePreviousRejection.3" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
+                <entry key="dcmOverwritePreviousRejection.4" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
+                <entry key="dcmOverwritePreviousRejection.5" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(REVOKE_REJECTION, 99DCM4CHEE, &quot;Restore rejected Instances&quot;)"/>
+                <entry key="dcmRevokeRejection" value="true"/>
+              </map>
+            </node>
+          </node>
           <node name="hl7Application">
             <map/>
             <node name="*">
@@ -7581,6 +7625,9 @@
           <map/>
         </node>
         <node name="DCM4CHEE_ADMIN">
+          <map/>
+        </node>
+        <node name="DCM4CHEE_TRASH">
           <map/>
         </node>
         <node name="DCMQRSCP">

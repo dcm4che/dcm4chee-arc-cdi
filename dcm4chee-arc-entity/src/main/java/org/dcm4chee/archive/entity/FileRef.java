@@ -64,8 +64,9 @@ import javax.persistence.Table;
 @Table(name = "file_ref")
 public class FileRef implements Serializable {
 
-    public enum FileRefStatus {STATUS_OK, STATUS_DELETE_FAILED, STATUS_REPLACED };
     private static final long serialVersionUID = 1735835006678974580L;
+
+    public enum Status { OK, DELETE_FAILED, REPLACED };
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -98,8 +99,8 @@ public class FileRef implements Serializable {
 
     @Basic(optional = false)
     @Enumerated(EnumType.ORDINAL)
-    @Column(name = "status", updatable = true)
-    private FileRefStatus status;
+    @Column(name = "file_status", updatable = true)
+    private Status status;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "instance_fk", updatable = true)
@@ -112,7 +113,7 @@ public class FileRef implements Serializable {
     public FileRef() {};
 
     public FileRef(FileSystem fileSystem, String filePath, String transferSyntaxUID,
-            long fileSize, String digest, FileRefStatus status) {
+            long fileSize, String digest, Status status) {
         this.fileSystem = fileSystem;
         this.filePath = filePath;
         this.transferSyntaxUID = transferSyntaxUID;
@@ -169,6 +170,7 @@ public class FileRef implements Serializable {
                 + ", path=" + filePath
                 + ", tsuid=" + transferSyntaxUID
                 + ", size=" + fileSize
+                + ", status=" + status
                 + "]";
     }
 
@@ -180,11 +182,11 @@ public class FileRef implements Serializable {
 	return this.fileTimeZone;
     }
 
-    public FileRefStatus getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(FileRefStatus status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 

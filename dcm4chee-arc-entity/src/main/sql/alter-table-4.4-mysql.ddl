@@ -228,17 +228,16 @@ alter table series
     modify num_instances3 integer not null;
 
 alter table file_ref
-    add status integer;
+    add file_status integer;
 
 update file_ref set status = 0;
 
-update file_ref, instance
-    set file_ref.status=2
-    where instance.replaced=true and file_ref.instance_fk=instance.pk;
+alter table file_ref
+    modify file_status integer not null;
 
-update file_ref
-    set file_ref.instance_fk=null
-    where file_ref.replaced=2;
+update file_ref, instance
+    set file_ref.file_status=2, file_ref.instance_fk=null
+    where instance.replaced=true and file_ref.instance_fk=instance.pk;
 
 delete from instance
     where instance.replaced=true;

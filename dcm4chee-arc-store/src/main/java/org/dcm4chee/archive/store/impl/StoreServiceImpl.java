@@ -90,11 +90,11 @@ import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
-import org.dcm4chee.archive.entity.FileRef.FileRefStatus;
 import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
@@ -107,7 +107,6 @@ import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
-import org.dcm4chee.archive.store.StoreAction;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -530,7 +529,7 @@ public class StoreServiceImpl implements StoreService {
                 for (Iterator<FileRef> iter = inst.getFileRefs().iterator(); iter
                         .hasNext();) {
                     FileRef fileRef = iter.next();
-                    fileRef.setStatus(FileRefStatus.STATUS_REPLACED);
+                    fileRef.setStatus(FileRef.Status.REPLACED);
                     replaced.add(fileRef);
                     iter.remove();
                 }
@@ -707,7 +706,7 @@ public class StoreServiceImpl implements StoreService {
         Path filePath = context.getFinalFile();
         FileRef fileRef = new FileRef(fs, unixFilePath(fs.getPath(), filePath),
                 context.getTransferSyntax(), filePath.toFile().length(),
-                context.getFinalFileDigest(), FileRefStatus.STATUS_OK);
+                context.getFinalFileDigest(), FileRef.Status.OK);
         // Time zone store adjustments
         TimeZone sourceTimeZone = session.getSourceTimeZone();
         if (sourceTimeZone != null)

@@ -257,14 +257,6 @@ public class ArchiveServiceImpl implements ArchiveService {
                 dev.getDeviceExtensionNotNull(ArchiveDeviceExtension.class);
         arcDev.setIncorrectWorklistEntrySelectedCode(
                 findOrCreate(arcDev.getIncorrectWorklistEntrySelectedCode(), found));
-        arcDev.setRejectedForQualityReasonsCode(
-                findOrCreate(arcDev.getRejectedForQualityReasonsCode(), found));
-        arcDev.setRejectedForPatientSafetyReasonsCode(
-                findOrCreate(arcDev.getRejectedForPatientSafetyReasonsCode(), found));
-        arcDev.setIncorrectModalityWorklistEntryCode(
-                findOrCreate(arcDev.getIncorrectModalityWorklistEntryCode(), found));
-        arcDev.setDataRetentionPeriodExpiredCode(
-                findOrCreate(arcDev.getDataRetentionPeriodExpiredCode(), found));
         for (ApplicationEntity ae : dev.getApplicationEntities()) {
             ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
             Code[] codes = arcAE.getShowInstancesRejectedByCodes();

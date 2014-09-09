@@ -106,7 +106,7 @@ public class FileMgmtEJB implements FileMgmt{
 
     @Override
     public void failDelete(FileRef ref) {
-        ref.setStatus(FileRef.FileRefStatus.STATUS_DELETE_FAILED);
+        ref.setStatus(FileRef.Status.DELETE_FAILED);
         em.merge(ref);
         em.flush();
         LOG.warn("Failed to delete file {}, setting file reference status to {}",ref.getFilePath(),ref.getStatus() );

@@ -59,13 +59,10 @@ import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig.ConfigReader;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig.ConfigWriter;
-import org.dcm4che3.conf.api.generic.ReflectiveConfig.DiffWriter;
 import org.dcm4che3.conf.ldap.LdapDicomConfigurationExtension;
 import org.dcm4che3.conf.ldap.LdapUtils;
 import org.dcm4che3.conf.ldap.generic.LdapConfigIO;
-import org.dcm4che3.conf.ldap.generic.LdapConfigReader;
 import org.dcm4che3.conf.ldap.generic.LdapConfigWriter;
-import org.dcm4che3.conf.ldap.generic.LdapDiffWriter;
 import org.dcm4che3.conf.ldap.imageio.LdapCompressionRulesConfiguration;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.ValueSelector;
@@ -78,6 +75,8 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.HostNameAEEntry;
+import org.dcm4chee.archive.conf.RejectionParam;
+import org.dcm4chee.archive.conf.StoreAction;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -95,14 +94,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         attrs.get("objectclass").add("dcmArchiveDevice");
         LdapUtils.storeNotNull(attrs, "dcmIncorrectWorklistEntrySelectedCode",
                 arcDev.getIncorrectWorklistEntrySelectedCode());
-        LdapUtils.storeNotNull(attrs, "dcmRejectedForQualityReasonsCode",
-                arcDev.getRejectedForQualityReasonsCode());
-        LdapUtils.storeNotNull(attrs, "dcmRejectedForPatientSafetyReasonsCode",
-                arcDev.getRejectedForPatientSafetyReasonsCode());
-        LdapUtils.storeNotNull(attrs, "dcmIncorrectModalityWorklistEntryCode",
-                arcDev.getIncorrectModalityWorklistEntryCode());
-        LdapUtils.storeNotNull(attrs, "dcmDataRetentionPeriodExpiredCode",
-                arcDev.getDataRetentionPeriodExpiredCode());
         LdapUtils.storeNotNull(attrs, "dcmFuzzyAlgorithmClass",
                 arcDev.getFuzzyAlgorithmClass());
         LdapUtils.storeNotDef(attrs, "dcmConfigurationStaleTimeout",
@@ -123,25 +114,66 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         if (arcDev == null)
             return;
         
+        storeAttributeFilter(deviceDN, arcDev);
+        storeHostNameAEList(deviceDN, arcDev);
+        storeRejectionParams(deviceDN, arcDev);
+    }
+
+    private void storeAttributeFilter(String deviceDN,
+            ArchiveDeviceExtension arcDev) throws NamingException {
         for (Entity entity : Entity.values())
             config.createSubcontext(
                     LdapUtils.dnOf("dcmEntity", entity.toString(), deviceDN),
                     storeTo(arcDev.getAttributeFilter(entity), entity,
                             new BasicAttributes(true)));
-        
-        Attributes attrs = new BasicAttributes(true);
-        attrs.put("objectclass", "dcmHostNameAEMap");
-        String dnOfArchiveHostAEMapNode = LdapUtils.dnOf("cn",
+    }
+
+    private void storeHostNameAEList(String deviceDN,
+            ArchiveDeviceExtension arcDev) throws NamingException {
+        String containerDN = LdapUtils.dnOf("cn",
                 ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN);
-        config.createSubcontext(dnOfArchiveHostAEMapNode, attrs);
-        
+        config.createSubcontext(containerDN,
+                LdapUtils.attrs("dcmHostNameAEMap", "cn",
+                        ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE));
         for (HostNameAEEntry entry : arcDev.getHostNameAEList()) {
-            attrs = new BasicAttributes(true);
-            attrs.put("objectclass", "dcmHostNameAEEntry");
-            attrs.put("dicomAETitle", entry.getAeTitle());
-            attrs.put("dicomHostname", entry.getHostName());
-            config.createSubcontext(LdapUtils.dnOf("dicomHostname",entry.getHostName(),dnOfArchiveHostAEMapNode), attrs);
+            config.createSubcontext(
+                LdapUtils.dnOf("dicomHostname", entry.getHostName(), containerDN),
+                storeTo(entry, new BasicAttributes(true)));
         }
+    }
+
+    private Attributes storeTo(HostNameAEEntry entry, BasicAttributes attrs) {
+        attrs.put("objectclass", "dcmHostNameAEEntry");
+        attrs.put("dicomHostname", entry.getHostName());
+        attrs.put("dicomAETitle", entry.getAeTitle());
+        return attrs;
+    }
+
+    private void storeRejectionParams(String deviceDN,
+            ArchiveDeviceExtension arcDev) throws NamingException {
+        for (RejectionParam rejectionType : arcDev.getRejectionParams()) {
+            Code rejectionCode = rejectionType.getRejectionNoteTitle();
+            String cn = rejectionCode.getCodeMeaning();
+            config.createSubcontext(
+                    LdapUtils.dnOf("cn", cn, deviceDN),
+                    storeTo(rejectionType, new BasicAttributes(true)));
+        }
+    }
+
+    private Attributes storeTo(RejectionParam rejectionParam,
+            BasicAttributes attrs) {
+        Code rejectionCode = rejectionParam.getRejectionNoteTitle();
+        String cn = rejectionCode.getCodeMeaning();
+        attrs.put("objectclass", "dcmRejectionNote");
+        attrs.put("cn", cn);
+        attrs.put("dcmRejectionNoteTitle", rejectionCode.toString());
+        LdapUtils.storeNotDef(attrs, "dcmRevokeRejection",
+                rejectionParam.isRevokeRejection(), false);
+        LdapUtils.storeNotNull(attrs, "dcmAcceptPreviousRejectedInstance",
+                rejectionParam.getAcceptPreviousRejectedInstance());
+        LdapUtils.storeNotEmpty(attrs, "dcmOverwritePreviousRejection",
+                rejectionParam.getOverwritePreviousRejection());
+        return attrs;
     }
 
     @Override
@@ -222,19 +254,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 .stringValue(
                         attrs.get("dcmIncorrectWorklistEntrySelectedCode"),
                         null)));
-        arcdev.setRejectedForQualityReasonsCode(new Code(LdapUtils.stringValue(
-                attrs.get("dcmRejectedForQualityReasonsCode"), null)));
-        arcdev.setRejectedForPatientSafetyReasonsCode(new Code(LdapUtils
-                .stringValue(
-                        attrs.get("dcmRejectedForPatientSafetyReasonsCode"),
-                        null)));
-        arcdev.setIncorrectModalityWorklistEntryCode(new Code(LdapUtils
-                .stringValue(
-                        attrs.get("dcmIncorrectModalityWorklistEntryCode"),
-                        null)));
-        arcdev.setDataRetentionPeriodExpiredCode(new Code(LdapUtils
-                .stringValue(attrs.get("dcmDataRetentionPeriodExpiredCode"),
-                        null)));
         arcdev.setFuzzyAlgorithmClass(LdapUtils.stringValue(
                 attrs.get("dcmFuzzyAlgorithmClass"), null));
         arcdev.setConfigurationStaleTimeout(LdapUtils.intValue(
@@ -256,6 +275,40 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
 
         loadAttributeFilters(arcdev, deviceDN);
         loadWebClientMappings(arcdev, deviceDN);
+        loadRejectionParams(arcdev, deviceDN);
+    }
+
+    private void loadRejectionParams(ArchiveDeviceExtension arcdev,
+            String deviceDN) throws NamingException {
+        ArrayList<RejectionParam> list = new ArrayList<RejectionParam>();
+        NamingEnumeration<SearchResult> ne = config.search(deviceDN,
+                "(objectclass=dcmRejectionNote)");
+        try {
+            while (ne.hasMore()) {
+                SearchResult sr = ne.next();
+                Attributes attrs = sr.getAttributes();
+                RejectionParam param = new RejectionParam();
+                param.setRejectionNoteTitle(new Code(LdapUtils
+                        .stringValue(attrs.get("dcmRejectionNoteTitle"),
+                        null)));
+                param.setRevokeRejection(LdapUtils
+                        .booleanValue(attrs.get("dcmRevokeRejection"),
+                        false));
+                param.setAcceptPreviousRejectedInstance(
+                        storeActionOf(attrs.get("dcmAcceptPreviousRejectedInstance")));
+                param.setOverwritePreviousRejection(LdapUtils.codeArray(
+                        attrs.get("dcmOverwritePreviousRejection")));
+                list.add(param);
+            }
+        } finally {
+            LdapUtils.safeClose(ne);
+        }
+        arcdev.setRejectionParams(list.toArray(new RejectionParam[list.size()]));
+    }
+
+    protected StoreAction storeActionOf(Attribute attr)
+            throws NamingException {
+        return attr != null ? StoreAction.valueOf((String) attr.get()) : null;
     }
 
     private void loadAttributeFilters(ArchiveDeviceExtension device,
@@ -286,24 +339,22 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
     private void loadWebClientMappings(ArchiveDeviceExtension device,
             String deviceDN) throws NamingException {
         NamingEnumeration<SearchResult> map = null;
-        try{
-            config.getAttributes(LdapUtils.dnOf("cn", ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN));
-        }
-        catch(NameNotFoundException e)
-        {
+        String containerDN = LdapUtils.dnOf(
+                "cn", ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN);
+        try {
+            config.getAttributes(containerDN);
+        } catch (NameNotFoundException e)  {
             return;
         }
         try {
-            map = config.search(LdapUtils.dnOf("cn",
-                    ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN),
-                    "(objectclass=dcmHostNameAEEntry)");
+            map = config.search(containerDN, "(objectclass=dcmHostNameAEEntry)");
             ArrayList<HostNameAEEntry> tmpMap = new ArrayList<HostNameAEEntry>();
             while (map.hasMore()) {
                 SearchResult entry = map.next();
                 Attributes entryAttrs = entry.getAttributes();
-                tmpMap.add(new HostNameAEEntry((String) entryAttrs.get(
-                        "dicomHostname").get(), (String) entryAttrs.get(
-                        "dicomAETitle").get()));
+                tmpMap.add(new HostNameAEEntry(
+                        (String) entryAttrs.get("dicomHostname").get(),
+                        (String) entryAttrs.get("dicomAETitle").get()));
             }
             device.setHostNameAEList(tmpMap);
         }
@@ -375,18 +426,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         LdapUtils.storeDiff(mods, "dcmIncorrectWorklistEntrySelectedCode",
                 aa.getIncorrectWorklistEntrySelectedCode(),
                 bb.getIncorrectWorklistEntrySelectedCode());
-        LdapUtils.storeDiff(mods, "dcmRejectedForQualityReasonsCode",
-                aa.getRejectedForQualityReasonsCode(),
-                bb.getRejectedForQualityReasonsCode());
-        LdapUtils.storeDiff(mods, "dcmRejectedForPatientSafetyReasonsCode",
-                aa.getRejectedForPatientSafetyReasonsCode(),
-                bb.getRejectedForPatientSafetyReasonsCode());
-        LdapUtils.storeDiff(mods, "dcmIncorrectModalityWorklistEntryCode",
-                aa.getIncorrectModalityWorklistEntryCode(),
-                bb.getIncorrectModalityWorklistEntryCode());
-        LdapUtils.storeDiff(mods, "dcmDataRetentionPeriodExpiredCode",
-                aa.getDataRetentionPeriodExpiredCode(),
-                bb.getDataRetentionPeriodExpiredCode());
         LdapUtils.storeDiff(mods, "dcmFuzzyAlgorithmClass",
                 aa.getFuzzyAlgorithmClass(), bb.getFuzzyAlgorithmClass());
         LdapUtils.storeDiff(mods, "dcmConfigurationStaleTimeout",
@@ -439,49 +478,97 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                             bb.getAttributeFilter(entity),
                             new ArrayList<ModificationItem>()));
 
-        String dnOfArchiveAEHostMap = LdapUtils.dnOf("cn",
+        mergeHostNameAEList(aa, bb, deviceDN);
+        mergeRejectionParams(aa, bb, deviceDN);
+    }
+
+    private void mergeHostNameAEList(ArchiveDeviceExtension prev,
+            ArchiveDeviceExtension arcDev, String deviceDN)
+            throws NamingException {
+        String contatinerDN = LdapUtils.dnOf("cn",
                 ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE, deviceDN);
-        for (HostNameAEEntry entry : aa.getHostNameAEList()) {
-            if(!contains(bb.getHostNameAEList(),entry.getHostName()))
-                config.destroySubcontext(LdapUtils.dnOf("dicomHostname",entry.getHostName(),dnOfArchiveAEHostMap));
+        for (HostNameAEEntry entry : prev.getHostNameAEList()) {
+            String hostName = entry.getHostName();
+            if (findWithEqualHostname(arcDev.getHostNameAEList(), hostName) == null)
+                config.destroySubcontext(
+                        LdapUtils.dnOf("dicomHostname", hostName, contatinerDN));
         }
-            for(HostNameAEEntry entryNew: bb.getHostNameAEList()){
-                if(!contains(aa.getHostNameAEList(),entryNew.getHostName())){
-                    config.createSubcontext(LdapUtils.dnOf("dicomHostname",entryNew.getHostName(),dnOfArchiveAEHostMap),toAttributess(entryNew));
-                }
-                else{
-                    HostNameAEEntry entry = getmatchingEntry(entryNew,aa.getHostNameAEList());
-            config.modifyAttributes(LdapUtils.dnOf("dicomHostname",entry.getHostName(),dnOfArchiveAEHostMap), storeDiffs(entry, entryNew, new ArrayList<ModificationItem>()));
-                }
+        for (HostNameAEEntry entryNew : arcDev.getHostNameAEList()) {
+            String hostName = entryNew.getHostName();
+            String dn = LdapUtils.dnOf("dicomHostname", hostName, contatinerDN);
+            HostNameAEEntry entryOld = findWithEqualHostname(
+                    prev.getHostNameAEList(), hostName);
+            if (entryOld == null) {
+                config.createSubcontext(dn,
+                        storeTo(entryNew, new BasicAttributes(true)));
+            } else{
+                config.modifyAttributes(dn, 
+                        storeDiffs(entryOld, entryNew, new ArrayList<ModificationItem>()));
             }
-        
+        }
     }
 
-    private boolean contains(Collection<HostNameAEEntry> hostNameAEList,
-            String host) {
-        for(HostNameAEEntry e: hostNameAEList)
-            if(e.getHostName().compareToIgnoreCase(host)==0)
-                return true;
-        return false;
+    private HostNameAEEntry findWithEqualHostname(
+            Collection<HostNameAEEntry> from, String hostName) {
+        for(HostNameAEEntry e: from)
+            if(e.getHostName().equalsIgnoreCase(hostName))
+                return e;
+        return null;
     }
 
-    private HostNameAEEntry getmatchingEntry(HostNameAEEntry entryNew,
-            Collection<HostNameAEEntry> hostNameAEList) {
-        HostNameAEEntry resultEntry=null;
-        for(HostNameAEEntry entry : hostNameAEList)
-        if(entry.getHostName().compareTo(entryNew.getHostName())==0)
-            resultEntry = entry;
-            return resultEntry;
+    private void mergeRejectionParams(ArchiveDeviceExtension prev,
+            ArchiveDeviceExtension arcDev, String deviceDN) throws NamingException {
+        for (RejectionParam entry : prev.getRejectionParams()) {
+            Code code = entry.getRejectionNoteTitle();
+            String meaning = code.getCodeMeaning();
+            if (findWithCodeMeaning(arcDev.getRejectionParams(), meaning) == null)
+                config.destroySubcontext(
+                        LdapUtils.dnOf("cn", meaning, deviceDN));
+        }
+        for (RejectionParam entryNew : arcDev.getRejectionParams()) {
+            Code code = entryNew.getRejectionNoteTitle();
+            String meaning = code.getCodeMeaning();
+            String dn = LdapUtils.dnOf("cn", meaning, deviceDN);
+            RejectionParam entryOld = findWithCodeMeaning(
+                    prev.getRejectionParams(), meaning);
+            if (entryOld == null) {
+                config.createSubcontext(dn,
+                        storeTo(entryNew, new BasicAttributes(true)));
+            } else{
+                config.modifyAttributes(dn, 
+                        storeDiffs(entryOld, entryNew,
+                                new ArrayList<ModificationItem>()));
+            }
+        }
     }
 
-    private Attributes toAttributess(HostNameAEEntry entry)
-    {
-        Attributes attrs = new BasicAttributes();
-        attrs.put("objectclass", "dcmHostNameAEEntry");
-        attrs.put("dicomAETitle", entry.getAeTitle());
-        attrs.put("dicomHostname", entry.getHostName());
-        return attrs;
+    private List<ModificationItem> storeDiffs(RejectionParam prev,
+            RejectionParam rejectionType, ArrayList<ModificationItem> mods) {
+        LdapUtils.storeDiff(mods, "dcmRejectionNoteTitle",
+                prev.getRejectionNoteTitle(),
+                rejectionType.getRejectionNoteTitle());
+        LdapUtils.storeDiff(mods, "dcmRevokeRejection",
+                prev.isRevokeRejection(),
+                rejectionType.isRevokeRejection(),
+                false);
+        LdapUtils.storeDiff(mods, "dcmAcceptPreviousRejectedInstance",
+                prev.getAcceptPreviousRejectedInstance(),
+                rejectionType.getAcceptPreviousRejectedInstance());
+        LdapUtils.storeDiff(mods, "dcmOverwritePreviousRejection",
+                prev.getOverwritePreviousRejection(),
+                rejectionType.getOverwritePreviousRejection());
+        return null;
     }
+
+    private RejectionParam findWithCodeMeaning(RejectionParam[] rejectionTypes,
+            String meaning) {
+        for (RejectionParam type : rejectionTypes) {
+            if (type.getRejectionNoteTitle().getCodeMeaning().equals(meaning))
+                return type;
+        }
+        return null;
+    }
+
     @Override
     protected void mergeChilds(ApplicationEntity prev, ApplicationEntity ae,
             String aeDN) throws NamingException {
@@ -526,8 +613,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
 
     private List<ModificationItem> storeDiffs(HostNameAEEntry prev,
             HostNameAEEntry current, List<ModificationItem> mods) {
-        LdapUtils.storeDiff(mods, "dicomAETitle", prev.getAeTitle(),
-                current.getAeTitle());
         LdapUtils.storeDiff(mods, "dicomHostname", prev.getHostName(),
                 current.getHostName());
         return mods;
