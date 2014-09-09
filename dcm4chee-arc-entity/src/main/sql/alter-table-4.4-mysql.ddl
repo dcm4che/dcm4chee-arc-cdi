@@ -228,21 +228,17 @@ alter table series
     modify num_instances3 integer not null;
 
 alter table file_ref
-    add replaced bit.
     add status integer;
 
 update file_ref set status = 0;
 
 update file_ref, instance
-    set file_ref.replaced=instance.replaced
-    where file_ref.instance_fk=instance.pk;
-
-alter table file_ref
-    modify replaced bit not null;
+    set file_ref.status=2
+    where instance.replaced=true and file_ref.instance_fk=instance.pk;
 
 update file_ref
     set file_ref.instance_fk=null
-    where file_ref.replaced=true;
+    where file_ref.replaced=2;
 
 delete from instance
     where instance.replaced=true;

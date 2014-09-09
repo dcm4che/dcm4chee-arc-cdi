@@ -73,6 +73,7 @@ import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
+import org.dcm4chee.archive.entity.FileRef.FileRefStatus;
 import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.patient.PatientService;
 import org.slf4j.Logger;
@@ -998,7 +999,7 @@ public enum PatientCommands{
             FileRef newRef = new FileRef(fileRef.getFileSystem(),fileRef.getFilePath(),
                     fileRef.getTransferSyntaxUID(),
                     fileRef.getFileSize(),
-                    fileRef.getDigest(), fileRef.isReplaced());
+                    fileRef.getDigest(), FileRefStatus.STATUS_REPLACED);
             newRef.setInstance(instanceCopy);
             em.persist(newRef);
             newRefs.add(newRef);

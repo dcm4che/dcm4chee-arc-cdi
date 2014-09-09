@@ -66,6 +66,7 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.entity.FileRef.FileRefStatus;
 import org.dcm4chee.archive.entity.PatientStudySeriesAttributes;
 import org.dcm4chee.archive.entity.QFileRef;
 import org.dcm4chee.archive.entity.QFileSystem;
@@ -126,7 +127,7 @@ public class DefaultRetrieveService implements RetrieveService {
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                 keys.getStrings(Tag.SOPInstanceUID), false));
 
-        builder.and(QFileRef.fileRef.replaced.isFalse());        
+        builder.and(QFileRef.fileRef.status.ne(FileRefStatus.STATUS_REPLACED));
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         return query(builder);
     }
@@ -152,7 +153,7 @@ public class DefaultRetrieveService implements RetrieveService {
             builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                     new String[] { objectUID }, false));
 
-        builder.and(QFileRef.fileRef.replaced.isFalse());        
+        builder.and(QFileRef.fileRef.status.ne(FileRefStatus.STATUS_REPLACED));        
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         
         return query(builder);

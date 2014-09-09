@@ -530,7 +530,7 @@ public class StoreServiceImpl implements StoreService {
                 for (Iterator<FileRef> iter = inst.getFileRefs().iterator(); iter
                         .hasNext();) {
                     FileRef fileRef = iter.next();
-                    fileRef.setReplaced(true);
+                    fileRef.setStatus(FileRefStatus.STATUS_REPLACED);
                     replaced.add(fileRef);
                     iter.remove();
                 }
@@ -707,12 +707,11 @@ public class StoreServiceImpl implements StoreService {
         Path filePath = context.getFinalFile();
         FileRef fileRef = new FileRef(fs, unixFilePath(fs.getPath(), filePath),
                 context.getTransferSyntax(), filePath.toFile().length(),
-                context.getFinalFileDigest(), false);
+                context.getFinalFileDigest(), FileRefStatus.STATUS_OK);
         // Time zone store adjustments
         TimeZone sourceTimeZone = session.getSourceTimeZone();
         if (sourceTimeZone != null)
             fileRef.setSourceTimeZone(sourceTimeZone.getID());
-        fileRef.setStatus(FileRefStatus.STATUS_OK);
         fileRef.setInstance(instance);
         em.persist(fileRef);
         LOG.info("{}: Create {}", session, fileRef);
