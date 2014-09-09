@@ -38,15 +38,12 @@
 
 package org.dcm4chee.archive.datamgmt.ejb;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 import javax.ejb.Stateless;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
@@ -58,8 +55,10 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.UIDUtils;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.entity.Code;
@@ -74,6 +73,9 @@ import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
+import org.dcm4chee.archive.entity.FileRef.Status;
+import org.dcm4chee.archive.filemgmt.FileMgmt;
+import org.dcm4chee.archive.patient.PatientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,37 +90,48 @@ public class DataMgmtEJB implements DataMgmtBean {
     private static final Logger LOG = LoggerFactory
             .getLogger(DataMgmtEJB.class);
 
+public enum PatientCommands{
+    PATIENT_LINK,PATIENT_MERGE,PATIENT_UNLINK,PATIENT_UPDATE_ID;
+}
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
-    public Study deleteStudy(String studyInstanceUID) {
+    @Inject
+    private PatientService patientService;
+
+    @Inject
+    private FileMgmt fileManager;
+
+    public Study deleteStudy(String studyInstanceUID) throws Exception {
         TypedQuery<Study> query = em.createNamedQuery(
                 Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
                 studyInstanceUID);
         Study study = query.getSingleResult();
+
+        Collection<Series> allSeries = study.getSeries();
+        for(Series series: allSeries)
+        for(Instance inst : series.getInstances())
+            deleteInstance(inst.getSopInstanceUID());
+
         em.remove(study);
         LOG.info("Removed study entity - " + studyInstanceUID);
         return study;
     }
 
     @Override
-    public Series deleteSeries(String seriesInstanceUID) {
+    public Series deleteSeries(String seriesInstanceUID) throws Exception {
         TypedQuery<Series> query = em.createNamedQuery(
-                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(
-                1, seriesInstanceUID);
+                Series.FIND_BY_SERIES_INSTANCE_UID, Series.class)
+                .setParameter(1, seriesInstanceUID);
         Series series = query.getSingleResult();
+
+        Collection<Instance> insts = series.getInstances();
+        for(Instance inst : insts)
+            deleteInstance(inst.getSopInstanceUID());
+
         Study study = series.getStudy();
-        int numInstancesNew = study.getNumberOfInstances()
-                - series.getNumberOfInstances();
         em.remove(series);
-        if (numInstancesNew > 0)
-            study.setNumberOfInstances(numInstancesNew);
-        else
-            study.resetNumberOfInstances();
-
-        if (study.getNumberOfSeries() > 0)
-            study.setNumberOfSeries(study.getNumberOfSeries() - 1);
-
+        study.resetNumberOfInstances();
         LOG.info("Removed series entity - " + seriesInstanceUID);
         return series;
     }
@@ -126,41 +139,50 @@ public class DataMgmtEJB implements DataMgmtBean {
     @Override
     public Instance deleteInstance(String sopInstanceUID) throws Exception {
         TypedQuery<Instance> query = em.createNamedQuery(
-                Instance.FIND_BY_SOP_INSTANCE_UID, Instance.class)
+                Instance.FIND_BY_SOP_INSTANCE_UID_FETCH_FILE_REFS_AND_FS, Instance.class)
                 .setParameter(1, sopInstanceUID);
         Instance inst = query.getSingleResult();
+
+        scheduleDelete(inst);
+
         Series series = inst.getSeries();
         Study study = series.getStudy();
-
-        int numInstancesNew = series.getNumberOfInstances() - 1;
-        int numInstancesNewStudy = study.getNumberOfInstances() - 1;
         em.remove(inst);
         LOG.info("Removed instance entity - " + sopInstanceUID);
-        if (numInstancesNew > 0)
-            series.setNumberOfInstances(numInstancesNew);
-        else
-            series.resetNumberOfInstances();
-        if (numInstancesNewStudy > 0)
-            study.setNumberOfInstances(numInstancesNewStudy);
-        else
-            study.resetNumberOfInstances();
-        List<FileRef> fileRef = (List<FileRef>) inst.getFileRefs();
-        for (FileRef file : fileRef) {
+        series.resetNumberOfInstances();
+        study.resetNumberOfInstances();
 
-            try {
-                LOG.info("Deleted file: " + file.getFilePath());
-                if (!new File(file.getFileSystem().getPath().toFile(),
-                        file.getFilePath()).delete())
-                    throw new Exception();
-            } catch (NoSuchFileException e) {
-                LOG.error("No such file or directory\n"
-                        + e.getStackTrace().toString());
-            } catch (IOException e1) {
-                LOG.error("No sufficient permissions to delete file\n"
-                        + e1.getStackTrace().toString());
-            }
-        }
         return inst;
+    }
+
+    private void scheduleDelete(Instance inst) {
+        Collection<FileRef> tmpRefs = clone(inst.getFileRefs());
+
+        removefileReference(inst);
+        try {
+            fileManager.scheduleDelete(tmpRefs, "test", "DCM4CHEE", 2, "peep", 0);
+        } catch (Exception e) {
+            //ignore already handled by the EJB
+        }
+    }
+
+    private Collection<FileRef> clone(Collection<FileRef> refs)
+    {
+        ArrayList<FileRef> clone = new ArrayList<FileRef>();
+        Iterator<FileRef> iter = refs.iterator();
+        while(iter.hasNext())
+        {
+            FileRef ref = iter.next();
+            clone.add(ref);
+        }
+        return clone;
+    }
+
+    private void removefileReference(Instance inst) {
+        for(FileRef ref: inst.getFileRefs())
+            ref.setInstance(null);
+        inst.getFileRefs().clear();
+        
     }
 
     @Override
@@ -170,8 +192,7 @@ public class DataMgmtEJB implements DataMgmtBean {
                 Series.FIND_BY_SERIES_INSTANCE_UID, Series.class).setParameter(
                 1, seriesInstanceUID);
         Series series = query.getSingleResult();
-
-        if (series.getNumberOfInstances() == -1) {
+        if(series.getInstances().isEmpty()) {
             em.remove(series);
             LOG.info("Removed series entity - " + seriesInstanceUID);
             return true;
@@ -187,7 +208,7 @@ public class DataMgmtEJB implements DataMgmtBean {
                 studyInstanceUID);
         Study study = query.getSingleResult();
 
-        if (study.getNumberOfInstances() == -1) {
+        if (study.getSeries().isEmpty()) {
             em.remove(study);
             LOG.info("Removed study entity - " + studyInstanceUID);
             return true;
@@ -207,22 +228,11 @@ public class DataMgmtEJB implements DataMgmtBean {
             throws EntityNotFoundException {
         Patient patient = getPatient(patientID);
         if (patient == null)
-            throw new EntityNotFoundException("Unable to find patient "
-                    + patientID);
+            throw new EntityNotFoundException("Unable to find patient with ID:"
+                    + patientID.getID()+ " issued by "+patientID.getIssuer().toString());
 
         Attributes original = patient.getAttributes();
 
-        // relations
-        // patient if (add Only)
-        if (attrs.contains(Tag.PatientID)
-                || attrs.contains(Tag.OtherPatientIDs)
-                || attrs.contains(Tag.OtherPatientIDsSequence)) {
-            Collection<PatientID> patientIDs = getPatientIDs(patient, original,
-                    attrs, arcDevExt);
-            if (patientIDs != null && patientIDs.size() > 0) {
-                patient.setPatientIDs(patientIDs);
-            }
-        }
         // name
         if (attrs.contains(Tag.PatientName)) {
             PersonName name = PersonName.valueOf(
@@ -253,6 +263,33 @@ public class DataMgmtEJB implements DataMgmtBean {
                 arcDevExt.getAttributeFilter(Entity.Patient),
                 arcDevExt.getFuzzyStr());
         em.flush();
+    }
+
+    public boolean patientOperation(Attributes srcPatientAttrs, Attributes targetPatientAttrs, ApplicationEntity arcAE, PatientCommands command)
+    {
+        ArchiveAEExtension arcAEExt = arcAE.getAEExtension(ArchiveAEExtension.class);
+        try {
+            
+            if(command == PatientCommands.PATIENT_UPDATE_ID)
+                patientService.updatePatientID(srcPatientAttrs,targetPatientAttrs,arcAEExt.getStoreParam());
+            if (command == PatientCommands.PATIENT_LINK)
+                patientService.linkPatient(targetPatientAttrs,
+                        srcPatientAttrs, arcAEExt.getStoreParam());
+            else if (command == PatientCommands.PATIENT_UNLINK)
+                patientService.unlinkPatient(targetPatientAttrs,
+                        srcPatientAttrs, arcAEExt.getStoreParam());
+            else if (command == PatientCommands.PATIENT_MERGE)
+            {
+                patientService.mergePatientByHL7(
+                        targetPatientAttrs,
+                        srcPatientAttrs, arcAEExt.getStoreParam());
+            }
+            return true;
+        }
+        catch(Exception e)
+        {
+            return false;
+        }
     }
 
     @Override
@@ -516,31 +553,8 @@ public class DataMgmtEJB implements DataMgmtBean {
         }
         // update count
         if (split) {
-            int numInstancesNew = study.getNumberOfInstances()
-                    - series.getNumberOfInstances();
-
-            if (numInstancesNew > 0)
-                study.setNumberOfInstances(numInstancesNew);
-            else
-                study.resetNumberOfInstances();
-
-            int numberOfSeries = study.getNumberOfSeries();
-
-            if (study.getNumberOfSeries() > 0)
-                study.setNumberOfSeries(numberOfSeries - 1);
-
-            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
-                    + series.getNumberOfInstances();
-
-            if (targetnumInstancesNew > 0)
-                targetStudy.setNumberOfInstances(targetnumInstancesNew);
-            else
-                targetStudy.resetNumberOfInstances();
-
-            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
-
-            if (targetStudy.getNumberOfSeries() > 0)
-                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
+            study.resetNumberOfInstances();
+            targetStudy.resetNumberOfInstances();
         }
         return split;
     }
@@ -594,34 +608,10 @@ public class DataMgmtEJB implements DataMgmtBean {
         }
         // update count
         if (split) {
-            int numInstancesNewStudy = study.getNumberOfInstances() - 1;
-
-            if (numInstancesNewStudy > 0)
-                study.setNumberOfInstances(numInstancesNewStudy);
-            else
-                study.resetNumberOfInstances();
-
-            int numInstancesNewTargetStudy = targetStudy.getNumberOfInstances() + 1;
-
-            if (numInstancesNewTargetStudy > 0)
-                targetStudy.setNumberOfInstances(numInstancesNewTargetStudy);
-            else
-                targetStudy.resetNumberOfInstances();
-
-            int numInstancesNewSeries = series.getNumberOfInstances() - 1;
-
-            if (numInstancesNewSeries > 0)
-                series.setNumberOfInstances(numInstancesNewSeries);
-            else
-                series.resetNumberOfInstances();
-
-            int numInstancesNewTargetSeries = targetSeries
-                    .getNumberOfInstances() + 1;
-
-            if (numInstancesNewTargetSeries > 0)
-                targetSeries.setNumberOfInstances(numInstancesNewTargetSeries);
-            else
-                targetSeries.resetNumberOfInstances();
+            study.resetNumberOfInstances();
+            targetStudy.resetNumberOfInstances();
+            series.resetNumberOfInstances();
+            targetSeries.resetNumberOfInstances();
         }
         return split;
     }
@@ -660,116 +650,12 @@ public class DataMgmtEJB implements DataMgmtBean {
         }
         if (segment) {
             // update count
-            int targetnumInstancesNew = targetStudy.getNumberOfInstances()
-                    + series.getNumberOfInstances();
-
-            if (targetnumInstancesNew > 0)
-                targetStudy.setNumberOfInstances(targetnumInstancesNew);
-            else
-                targetStudy.resetNumberOfInstances();
-
-            int targetNumberOfSeries = targetStudy.getNumberOfSeries();
-
-            if (targetStudy.getNumberOfSeries() > 0)
-                targetStudy.setNumberOfSeries(targetNumberOfSeries + 1);
+            targetStudy.resetNumberOfInstances();
         }
         return segment;
     }
 
-    private Collection<PatientID> getPatientIDs(Patient patient,
-            Attributes original, Attributes attrs,
-            ArchiveDeviceExtension arcDevExt) {
-        Collection<PatientID> oldIDs = patient.getPatientIDs();
-        Sequence newOtherPatientIDsSeq = attrs
-                .getSequence(Tag.OtherPatientIDsSequence);
-        // used in case the item in the OtherPatientIDsSequence has no issuer
-        Issuer fallbackIssuer = null;
-        // add missing ones
-        if (attrs.contains(Tag.PatientID)) {
-            Issuer issuer = getIssuer(attrs, original);
-            fallbackIssuer = issuer;
-            PatientID id = getPatientID(attrs.getString(Tag.PatientID), issuer);
-            id.setPatient(patient);
-            if (!oldIDs.contains(id))
-                oldIDs.add(id);
-        }
-        if (attrs.contains(Tag.OtherPatientIDs)) {
-            Issuer issuer = getIssuer(attrs, original);
-            fallbackIssuer = issuer;
-            PatientID id = getPatientID(attrs.getString(Tag.OtherPatientIDs),
-                    issuer);
-            if (!oldIDs.contains(id))
-                oldIDs.add(id);
-        }
-        if (newOtherPatientIDsSeq != null)
-            for (Attributes otherPatientIDAttrs : newOtherPatientIDsSeq) {
-
-                Issuer issuer = null;
-                if (otherPatientIDAttrs.contains(Tag.IssuerOfPatientID)
-                        || otherPatientIDAttrs
-                                .contains(Tag.IssuerOfPatientIDQualifiersSequence)) {
-                    String local, universal = null, universalType = null;
-                    if (otherPatientIDAttrs
-                            .getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
-                            && otherPatientIDAttrs.getSequence(
-                                    Tag.IssuerOfPatientIDQualifiersSequence)
-                                    .size() > 0) {
-                        Sequence tmp = otherPatientIDAttrs
-                                .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
-                        universal = tmp.get(0).getString(Tag.UniversalEntityID);
-                        universalType = tmp.get(0).getString(
-                                Tag.UniversalEntityIDType);
-                    }
-                    local = otherPatientIDAttrs
-                            .getString(Tag.IssuerOfPatientID);
-                    issuer = getIssuer(local, universal, universalType);
-
-                }
-                if (issuer == null)
-                    issuer = fallbackIssuer;
-                PatientID id = getPatientID(
-                        otherPatientIDAttrs.getString(Tag.PatientID), issuer);
-                if (!oldIDs.contains(id))
-                    oldIDs.add(id);
-            }
-
-        return oldIDs;
-    }
-
-    private Issuer getIssuer(Attributes attrs, Attributes original) {
-        Issuer issuer = null;
-        if (attrs.contains(Tag.IssuerOfPatientID)
-                || attrs.contains(Tag.IssuerOfPatientIDQualifiersSequence)) {
-            String local, universal = null, universalType = null;
-            if (attrs.getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
-                    && attrs.getSequence(
-                            Tag.IssuerOfPatientIDQualifiersSequence).size() > 0) {
-                Sequence tmp = attrs
-                        .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
-                universal = tmp.get(0).getString(Tag.UniversalEntityID);
-                universalType = tmp.get(0).getString(Tag.UniversalEntityIDType);
-            }
-            local = attrs.getString(Tag.IssuerOfPatientID);
-            issuer = getIssuer(local, universal, universalType);
-
-        } else if (original.contains(Tag.IssuerOfPatientID)) {
-            String local, universal = null, universalType = null;
-            if (original.getSequence(Tag.IssuerOfPatientIDQualifiersSequence) != null
-                    && original.getSequence(
-                            Tag.IssuerOfPatientIDQualifiersSequence).size() > 0) {
-                Sequence tmp = original
-                        .getSequence(Tag.IssuerOfPatientIDQualifiersSequence);
-                universal = tmp.get(0).getString(Tag.UniversalEntityID);
-                universalType = tmp.get(0).getString(Tag.UniversalEntityIDType);
-            }
-            local = original.getString(Tag.IssuerOfPatientID);
-            issuer = getIssuer(local, universal, universalType);
-
-        }
-        return issuer;
-    }
-
-    private PatientID getPatientID(String string, Issuer issuer) {
+    private PatientID findOrCreatePatientID(String string, Issuer issuer) {
         Query query = em
                 .createQuery("Select pid from PatientID pid where (pid.id = ?1 AND pid.issuer = ?2) OR pid.id=?1");
         query.setParameter(1, string);
@@ -968,13 +854,20 @@ public class DataMgmtEJB implements DataMgmtBean {
         return issuer;
     }
 
-    public Issuer getIssuer(String local, String universal, String universalType) {
+    public Issuer findOrCreateIssuer(String local, String universal, String universalType) {
         Issuer issuer = em.find(Issuer.class,
                 getIssuerPK(local, universal, universalType));
         if (issuer == null) {
             issuer = new Issuer(local, universal, universalType);
             em.persist(issuer);
         }
+
+        return issuer;
+    }
+
+    public Issuer getIssuer(String local, String universal, String universalType) {
+        Issuer issuer = em.find(Issuer.class,
+                getIssuerPK(local, universal, universalType));
 
         return issuer;
     }
@@ -1015,19 +908,6 @@ public class DataMgmtEJB implements DataMgmtBean {
         return null;
     }
 
-    private long getInstancePK(String sopInstanceUID) {
-        Instance inst = null;
-        try {
-            inst = (Instance) em
-                    .createQuery(
-                            "SELECT i FROM Instance i "
-                                    + "WHERE i.sopInstanceUID = ?1 ")
-                    .setParameter(1, sopInstanceUID).getSingleResult();
-        } catch (Exception e) {
-        }
-        return inst != null ? inst.getPk() : -1l;
-    }
-
     private long getStudyPK(String studyInstanceUID) {
         Study study = null;
         try {
@@ -1042,24 +922,11 @@ public class DataMgmtEJB implements DataMgmtBean {
         return study != null ? study.getPk() : -1l;
     }
 
-    private long getSeriesPK(String seriesInstanceUID) {
-        Series series = null;
-        try {
-            series = (Series) em
-                    .createQuery(
-                            "SELECT i FROM Series i "
-                                    + "WHERE i.seriesInstanceUID = ?1 ")
-                    .setParameter(1, seriesInstanceUID).getSingleResult();
-        } catch (Exception e) {
-        }
-        return series != null ? series.getPk() : -1l;
-    }
-
     private long getPatientPK(IDWithIssuer patientID) {
         Patient patient = null;
         if (patientID.getIssuer() != null) {
             try {
-                PatientID id = getPatientID(patientID.getID(),
+                PatientID id = findOrCreatePatientID(patientID.getID(),
                         (Issuer) patientID.getIssuer());
                 patient = id.getPatient();
             } catch (Exception e) {
@@ -1132,7 +999,7 @@ public class DataMgmtEJB implements DataMgmtBean {
             FileRef newRef = new FileRef(fileRef.getFileSystem(),fileRef.getFilePath(),
                     fileRef.getTransferSyntaxUID(),
                     fileRef.getFileSize(),
-                    fileRef.getDigest());
+                    fileRef.getDigest(), Status.REPLACED);
             newRef.setInstance(instanceCopy);
             em.persist(newRef);
             newRefs.add(newRef);

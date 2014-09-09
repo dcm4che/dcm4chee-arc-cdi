@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.retrieve.impl;
 
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -47,19 +48,25 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
+import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.PatientStudySeriesAttributes;
 import org.dcm4chee.archive.entity.QFileRef;
 import org.dcm4chee.archive.entity.QFileSystem;
@@ -73,6 +80,7 @@ import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.hibernate.Session;
+import org.jboss.logging.Logger;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.Tuple;
@@ -86,6 +94,8 @@ import com.mysema.query.jpa.hibernate.HibernateQuery;
  */
 @ApplicationScoped
 public class DefaultRetrieveService implements RetrieveService {
+
+    private static final Logger LOG = Logger.getLogger(DefaultRetrieveService.class);
 
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
@@ -117,7 +127,7 @@ public class DefaultRetrieveService implements RetrieveService {
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                 keys.getStrings(Tag.SOPInstanceUID), false));
 
-        builder.and(QInstance.instance.replaced.isFalse());
+        builder.and(QFileRef.fileRef.status.ne(FileRef.Status.REPLACED));
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         return query(builder);
     }
@@ -143,8 +153,9 @@ public class DefaultRetrieveService implements RetrieveService {
             builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                     new String[] { objectUID }, false));
 
-        builder.and(QInstance.instance.replaced.isFalse());
+        builder.and(QFileRef.fileRef.status.ne(FileRef.Status.REPLACED));
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
+        
         return query(builder);
     }
 
@@ -277,19 +288,84 @@ public class DefaultRetrieveService implements RetrieveService {
             throws DicomServiceException {
     }
 
-    public String timeOffsetInMillisToDICOMTimeOffset(int millis) {
-        int mns = millis / (1000 * 60);
-        String h = "" + (int) mns / 60;
-        if (h.length() == 1) {
-            String tmp = h;
-            h = "0" + tmp;
-        }
-        String m = "" + (int) (mns % 60);
-        if (m.length() == 1) {
-            String tmp = m;
-            m = "0" + tmp;
-        }
-        String sign = (int) Math.signum(mns) > 0 ? "+" : "-";
-        return sign + h + m;
+    //supression criteria and elimination of objects by sop class and transfer syntax methods (Can be decorated)
+    //sop class and transfer syntax filter
+
+    public ArchiveInstanceLocator applySuppressionCriteria(
+            ArchiveInstanceLocator ref,
+            Attributes attrs,
+            String supressionCriteriaTemplateURI,
+            final RetrieveContext retrieveContext) {
+
+            try {
+                Templates tpl = SAXTransformer
+                        .newTemplates(new StreamSource(
+                                StringUtils
+                                        .replaceSystemProperties(supressionCriteriaTemplateURI)));
+                if (tpl != null) {
+                    boolean eliminate;
+                    StringWriter resultWriter = new StringWriter();
+                    SAXWriter wr = SAXTransformer.getSAXWriter(tpl,
+                            new StreamResult(resultWriter), new SetupTransformer() {
+                                
+                                @Override
+                                public void setup(Transformer transformer) {
+                                    setParameters(transformer, retrieveContext);
+                                }
+                            });
+                    wr.write(attrs);
+                    eliminate = (resultWriter.toString().compareToIgnoreCase(
+                            "true") == 0 ? true : false);
+                    if (!eliminate) {
+                        return ref;
+                    } 
+
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Applying Suppression Criteria on retrieve , using template: "
+                                    + StringUtils
+                                    .replaceSystemProperties(supressionCriteriaTemplateURI)
+                                    + "\nRemoving Referenced Instance: "
+                                    + ref.iuid + " from response");
+                        }
+                        return null;
+                }
+
+            } catch (Exception e) {
+                LOG.error("Error applying supression criteria, {}", e);
+                return ref;
+            }
+            return ref;
     }
+
+    public ArchiveInstanceLocator eliminateUnSupportedSOPClasses(
+            ArchiveInstanceLocator ref,
+            RetrieveContext retrieveContext) {
+        if(retrieveContext.getDestinationAE()!=null)
+        try {
+            // here in wado source and destination are the same
+            ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                    retrieveContext.getDestinationAE().getTransferCapabilitiesWithRole(
+                            Role.SCU));
+
+                for (TransferCapability supportedTC : aeTCs){
+                    if (supportedTC.getSopClass().compareTo(ref.cuid) == 0) {
+                        return ref;
+                    }
+                }
+
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Applying UnSupported SOP Class Elimination on retrieve"
+                                + "\nRemoving Referenced Instance: "
+                                + ref.iuid
+                                + " from response");
+                    }
+                    return null;
+        } catch (Exception e) {
+            LOG.error("Exception while applying elimination, {}", e);
+            return ref;
+        }
+            return ref;
+    }
+
+
 }

@@ -15,14 +15,19 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-file-mgmt</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-entity</artifactId>
       <version>${project.version}</version>
       <classifier>${db}</classifier>
       <scope>provided</scope>
     </dependency>
-        <dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-service</artifactId>
+      <artifactId>dcm4chee-arc-patient-api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

@@ -51,6 +51,7 @@ import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.generic.ConfigClass;
 import org.dcm4che3.conf.api.generic.ConfigField;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
+import org.dcm4che3.data.Code;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.io.TemplatesCache;
@@ -161,8 +162,14 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmReturnOtherPatientNames", def = "false")
     private boolean returnOtherPatientNames;
 
-    @ConfigField(name = "dcmShowRejectedInstances", def = "false")
-    private boolean showRejectedForQualityReasons;
+    @ConfigField(name = "dcmHideInstances", def = "false")
+    private boolean hideInstances;
+
+    @ConfigField(name = "dcmShowInstancesRejectedByCode")
+    private Code[] showInstancesRejectedByCodes = {};
+
+    @ConfigField(name = "dcmNumberOfInstancesCacheSlot", def = "0")
+    private int numberOfInstancesCacheSlot;
 
     @ConfigField(name = "hl7PIXManagerApplication")
     private String remotePIXManagerApplication;
@@ -177,27 +184,27 @@ public class ArchiveAEExtension extends AEExtension {
 //    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
 //    private boolean timeZoneSupported;
 
-    @ConfigField(name = "dcmRetrieveSupressionCriteria", def = "null", failIfNotPresent=false)
-    private RetrieveSupressionCriteria retrieveSupressionCriteria = new RetrieveSupressionCriteria();
+    @ConfigField(name = "dcmRetrieveSuppressionCriteria", def = "null", failIfNotPresent=false)
+    private RetrieveSuppressionCriteria retrieveSuppressionCriteria = new RetrieveSuppressionCriteria();
 
-    public RetrieveSupressionCriteria getRetrieveSupressionCriteria() {
-        return retrieveSupressionCriteria;
+    public RetrieveSuppressionCriteria getRetrieveSuppressionCriteria() {
+        return retrieveSuppressionCriteria;
     }
 
-    public void setRetrieveSupressionCriteria(
-            RetrieveSupressionCriteria retrieveSupressionCriteria) {
-        this.retrieveSupressionCriteria = retrieveSupressionCriteria;
+    public void setRetrieveSuppressionCriteria(
+            RetrieveSuppressionCriteria retrieveSuppressionCriteria) {
+        this.retrieveSuppressionCriteria = retrieveSuppressionCriteria;
     }
 
-    @ConfigClass(objectClass = "dcmRetrieveSupressionCriteria")
-    public static class RetrieveSupressionCriteria implements Serializable {
+    @ConfigClass(objectClass = "dcmRetrieveSuppressionCriteria")
+    public static class RetrieveSuppressionCriteria implements Serializable {
     private static final long serialVersionUID = -7215371541145445328L;
     
     @ConfigField(name = "dcmCheckTransferCapabilities", def = "false")
     private boolean checkTransferCapabilities;
 
-    @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSupressionCriteriaEntry", failIfNotPresent=false)
-    private Map<String, String> supressionCriteriaMap = new HashMap<String, String>();
+    @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSuppressionCriteriaEntry", failIfNotPresent=false)
+    private Map<String, String> suppressionCriteriaMap = new HashMap<String, String>();
 
     public boolean isCheckTransferCapabilities() {
         return checkTransferCapabilities;
@@ -207,18 +214,18 @@ public class ArchiveAEExtension extends AEExtension {
         this.checkTransferCapabilities = checkTransferCapabilities;
     }
 
-    public Map<String, String> getSupressionCriteriaMap() {
-        return supressionCriteriaMap;
+    public Map<String, String> getSuppressionCriteriaMap() {
+        return suppressionCriteriaMap;
     }
 
-    public void setSupressionCriteriaMap(Map<String, String> supressionCriteriaMap) {
-        this.supressionCriteriaMap = supressionCriteriaMap;
+    public void setSuppressionCriteriaMap(Map<String, String> suppressionCriteriaMap) {
+        this.suppressionCriteriaMap = suppressionCriteriaMap;
     }
 
     }
     
     @ConfigField(name = "dcmPatientSelector", def = "null", failIfNotPresent = false)
-    private PatientSelectorConfig patientSelectorConfig = new PatientSelectorConfig();
+    private PatientSelectorConfig patientSelectorConfig;
 
     public PatientSelectorConfig getPatientSelectorConfig() {
         return patientSelectorConfig;
@@ -515,13 +522,29 @@ public class ArchiveAEExtension extends AEExtension {
         this.returnOtherPatientNames = returnOtherPatientNames;
     }
 
-    public boolean isShowRejectedForQualityReasons() {
-        return showRejectedForQualityReasons;
+    public boolean isHideInstances() {
+        return hideInstances;
     }
 
-    public void setShowRejectedForQualityReasons(
-            boolean showRejectedForQualityReasons) {
-        this.showRejectedForQualityReasons = showRejectedForQualityReasons;
+    public void setHideInstances(boolean hideInstances) {
+        this.hideInstances = hideInstances;
+    }
+
+    public Code[] getShowInstancesRejectedByCodes() {
+        return showInstancesRejectedByCodes;
+    }
+
+    public void setShowInstancesRejectedByCodes(
+            Code... showInstancesRejectedByCodes) {
+        this.showInstancesRejectedByCodes = showInstancesRejectedByCodes;
+    }
+
+    public int getNumberOfInstancesCacheSlot() {
+        return numberOfInstancesCacheSlot;
+    }
+
+    public void setNumberOfInstancesCacheSlot(int numberOfInstancesCacheSlot) {
+        this.numberOfInstancesCacheSlot = numberOfInstancesCacheSlot;
     }
 
     public String getRemotePIXManagerApplication() {
@@ -583,8 +606,9 @@ public class ArchiveAEExtension extends AEExtension {
         queryParam.setMatchUnknown(matchUnknown);
         queryParam.setMatchLinkedPatientIDs(matchLinkedPatientIDs);
         queryParam.setAccessControlIDs(accessControlIDs);
-        queryParam
-                .setShowRejectedForQualityReasons(showRejectedForQualityReasons);
+        queryParam.setHideInstances(hideInstances);
+        queryParam.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
+        queryParam.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         return queryParam;
     }
 

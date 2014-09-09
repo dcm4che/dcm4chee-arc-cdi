@@ -39,7 +39,10 @@
 package org.dcm4chee.archive.retrieve.scp;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import javax.enterprise.event.Event;
@@ -54,16 +57,21 @@ import org.dcm4che3.net.Association;
 import org.dcm4che3.net.DataWriter;
 import org.dcm4che3.net.DataWriterAdapter;
 import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicRetrieveTask;
+import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
+import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
+import org.dcm4chee.archive.retrieve.impl.UnsupportedRetrieveException;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -88,17 +96,37 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
 
     @Override
     protected String selectTransferSyntaxFor(Association storeas,
-            ArchiveInstanceLocator inst) {
-        if (storeas.getTransferSyntaxesFor(inst.cuid).contains(inst.tsuid))
+            ArchiveInstanceLocator inst) throws UnsupportedRetrieveException {
+        ArchiveAEExtension arcAEExt = retrieveContext.getArchiveAEExtension();
+        RetrieveService retrieveService = retrieveContext.getRetrieveService();
+        Set<String> acceptedTransferSyntax = storeas.getTransferSyntaxesFor(inst.cuid);
+        // check for SOP classes elimination
+        if (arcAEExt.getRetrieveSuppressionCriteria()
+                .isCheckTransferCapabilities()){
+            inst = retrieveService.eliminateUnSupportedSOPClasses(inst, retrieveContext);
+        //check if eliminated then throw exception
+        if(inst == null)
+            throw new UnsupportedRetrieveException("Unable to retrieve instance, SOP class not configured");
+        
+        if(isConfiguredAndAccepted(inst, storeas.getTransferSyntaxesFor(inst.cuid)))
             return inst.tsuid;
-
-        return UID.ExplicitVRLittleEndian;
+        else
+            return getDefaultConfiguredTransferSyntax(inst);
+        }
+        
+            if (acceptedTransferSyntax.contains(inst.tsuid))
+                return inst.tsuid;
+            
+            return storeas.getTransferSyntaxesFor(inst.cuid).contains(
+                    UID.ExplicitVRLittleEndian) ? UID.ExplicitVRLittleEndian
+                    : UID.ImplicitVRLittleEndian;
     }
 
     @Override
     protected DataWriter createDataWriter(ArchiveInstanceLocator inst,
-            String tsuid) throws IOException {
+            String tsuid) throws IOException, UnsupportedRetrieveException {
         ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
+        RetrieveService retrieveService = retrieveContext.getRetrieveService();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                 .getTimeZoneOfDevice();
         Attributes attrs;
@@ -115,6 +143,21 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
         } finally {
             SafeClose.close(in);
         }
+
+        // check for suppression criteria
+        Map<String, String> suppressionCriteriaMap = arcAE
+                .getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
+        if (suppressionCriteriaMap.containsKey(retrieveContext.getDestinationAE().getAETitle())) {
+            String supressionCriteriaTemplateURI = suppressionCriteriaMap
+                    .get(retrieveContext.getDestinationAE().getAETitle());
+            if (supressionCriteriaTemplateURI != null) {
+                inst = retrieveService.applySuppressionCriteria(inst, attrs,
+                        supressionCriteriaTemplateURI, retrieveContext);
+            }
+        }
+
+        if(inst == null)
+            throw new UnsupportedRetrieveException("Unable to retrieve instance, Suppressed by Attributes");
 
         if (archiveTimeZone != null) {
             ArchiveInstanceLocator archInst = (ArchiveInstanceLocator) inst;
@@ -142,4 +185,30 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
                 warning, failed));
     }
 
+    private boolean isConfiguredAndAccepted(InstanceLocator ref, Set<String> negotiated) {
+        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                retrieveContext.getDestinationAE().getTransferCapabilitiesWithRole(
+                        Role.SCU));
+            for (TransferCapability supportedTC : aeTCs){
+                if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0 && 
+                        supportedTC.containsTransferSyntax(ref.tsuid) && negotiated.contains(ref.tsuid)) {
+                    return true;
+                }
+            }
+            return false;
+    }
+
+    private String getDefaultConfiguredTransferSyntax(InstanceLocator ref)
+    {
+        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                retrieveContext.getDestinationAE().getTransferCapabilitiesWithRole(
+                        Role.SCU));
+        for (TransferCapability supportedTC : aeTCs){
+            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0) {
+                return supportedTC.containsTransferSyntax(UID.ExplicitVRLittleEndian)?
+                        UID.ExplicitVRLittleEndian:UID.ImplicitVRLittleEndian;
+            }
+        }
+        return UID.ImplicitVRLittleEndian;
+    }
 }

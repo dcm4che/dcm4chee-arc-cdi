@@ -40,6 +40,7 @@ package org.dcm4chee.archive.retrieve;
 
 import java.util.List;
 
+import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.service.DicomServiceException;
@@ -77,5 +78,28 @@ public interface RetrieveService {
     void coerceFileBeforeMerge(ArchiveInstanceLocator inst,
 	    RetrieveContext retrieveContext, String remoteAET, Attributes attrs)
 	    throws DicomServiceException;
+    /**
+     * Used to eliminate unsupported SOP classes or transfer syntaxes 
+     * @param ref
+     * @param context
+     * @return
+     */
+     ArchiveInstanceLocator eliminateUnSupportedSOPClasses(
+            ArchiveInstanceLocator ref,
+            RetrieveContext context);
+
+    /**
+     * Applies template filters on the retrieved instance to remove if undesired according to stylesheet
+     * @param ref
+     * @param attrs
+     * @param supressionCriteriaTemplateURI
+     * @param retrieveContext
+     * @return
+     */
+     ArchiveInstanceLocator applySuppressionCriteria(
+             ArchiveInstanceLocator ref,
+             Attributes attrs,
+             String supressionCriteriaTemplateURI,
+             final RetrieveContext retrieveContext);
 
 }

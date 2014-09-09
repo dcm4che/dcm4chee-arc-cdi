@@ -11,15 +11,11 @@
           <map>
             <entry key="dcmArchiveDevice" value="true"/>
             <entry key="dcmConfigurationStaleTimeout" value="60"/>
-            <entry key="dcmDataRetentionPeriodExpiredCode" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
             <entry key="dcmFuzzyAlgorithmClass" value="org.dcm4che3.soundex.ESoundex"/>
-            <entry key="dcmIncorrectModalityWorklistEntryCode" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
             <entry key="dcmIncorrectWorklistEntrySelectedCode" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
             <entry key="dcmKeyStorePin" value="secret"/>
             <entry key="dcmKeyStoreType" value="JKS"/>
             <entry key="dcmKeyStoreURL" value="${jboss.server.config.url}/dcm4chee-arc/key.jks"/>
-            <entry key="dcmRejectedForPatientSafetyReasonsCode" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
-            <entry key="dcmRejectedForQualityReasonsCode" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
             <entry key="dcmWadoAttributesStaleTimeout" value="60"/>
             <entry key="dicomAuthorizedNodeCertificateReference.#" value="11"/>
             <entry key="dicomAuthorizedNodeCertificateReference.1" value="dicomConfigurationRoot/dicomDevicesRoot/dcmqrscp"/>
@@ -43,6 +39,9 @@
             <entry key="userCertificate.#" value="1"/>
             <entry key="userCertificate.1" value="MIIDdTCCAl2gAwIBAgIEOfFkgTANBgkqhkiG9w0BAQsFADBrMQswCQYDVQQGEwJBVDEPMA0GA1UECBMGVmllbm5hMQ8wDQYDVQQHEwZWaWVubmExEDAOBgNVBAoTB2RjbTRjaGUxETAPBgNVBAsTCGRjbTRjaGVlMRUwEwYDVQQDEwxkY200Y2hlZS1hcmMwHhcNMTQwMzExMTQzMzMwWhcNMTUwMzExMTQzMzMwWjBrMQswCQYDVQQGEwJBVDEPMA0GA1UECBMGVmllbm5hMQ8wDQYDVQQHEwZWaWVubmExEDAOBgNVBAoTB2RjbTRjaGUxETAPBgNVBAsTCGRjbTRjaGVlMRUwEwYDVQQDEwxkY200Y2hlZS1hcmMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDPZtlagXXTjuo/iVuZgnKUJY3Jz6csXFTEmPv+DSNhFPuC0D8meDNDuXbfpi3ykezAU/jv2ZBfEnsy6miEJMYiz6jVXXuIduB3rwaXrKMyE8lNoLhg+cEe11MFt0zaYw16nYBVEqoS6gs/cUYaHhjp3BhmbLoRW4JGQWk/QutltRSYjWRYdlN64JWd22tp6RNa+2G+twCKjyXmvB2K0Y/ID577QaSTszfZ8HDNM0ufDSTCnutJBlu5Ar1Z2Y4JsvgvnHS0nlp060xtcx5y0divDrN86DoqqdgQj5pvQ60vrS5lxzF93KVf7tWP8ZZEQV5yzReQYFhOEosPSIdFlz+3AgMBAAGjITAfMB0GA1UdDgQWBBQhuOgRYmoBJf2rBIMACM9VVFIB7zANBgkqhkiG9w0BAQsFAAOCAQEAKgd3V/6BuK2wJ674JZVQXxlFr60L9UOOqu/FFGOX5h0BTGf84YhsY+xoTS1FXzJdfJt05lAeLNVARYlTwoqsvTFQmB/rjDi4iN5H0NdLZvifaOvQXRB+c1dtsUAPkUUzhJDWVtiQgrCqsvhRJemqloOYAEU2F7Y8E99oI3F1WAZ/yIglVku3ciZyEwgtbr2UQIRCpv6sTS3E2YcenN00jmVMJ5a1nq/iP7N+MqQjmrrKdqwMy+/CUJbSrxTE4DV4TC1p9ehHTMrG6loolroH30mWj0ebiSaCZpnBCqNWQjvx23RiN93U6Qo1gVjUVI2NOXHZxysS/DXf99ObsizcSw=="/>
           </map>
+          <node name="HostNameAETitleMap">
+            <map/>
+          </node>
           <node name="dcmAttributeFilter">
             <map/>
             <node name="Instance">
@@ -197,6 +196,9 @@
               <entry key="dicomNetworkConnectionReference.#" value="1"/>
               <entry key="dicomNetworkConnectionReference.1" value="5"/>
             </map>
+            <node name="dcmAuditSuppressCriteria">
+              <map/>
+            </node>
           </node>
           <node name="dcmImageReaderFactory">
             <map/>
@@ -251,7 +253,7 @@
             <node name="1.2.840.10008.1.2.5">
               <map>
                 <entry key="dcmIIOFormatName" value="rle"/>
-                <entry key="dcmJavaClassName" value="org.dcm4che.imageio.plugins.rle.RLEImageReader"/>
+                <entry key="dcmJavaClassName" value="org.dcm4che3.imageio.plugins.rle.RLEImageReader"/>
               </map>
             </node>
           </node>
@@ -319,6 +321,7 @@
                 <entry key="dcmFileSystemGroupID" value="DEFAULT"/>
                 <entry key="dcmInitFileSystemURI" value="${jboss.server.data.url}"/>
                 <entry key="dcmMatchUnknown" value="true"/>
+                <entry key="dcmNumberOfInstancesCacheSlot" value="1"/>
                 <entry key="dcmPreserveSpoolFileOnFailure" value="true"/>
                 <entry key="dcmQidoMaxNumberOfResults" value="1000"/>
                 <entry key="dcmRetrieveAET.#" value="1"/>
@@ -329,6 +332,7 @@
                 <entry key="dcmSendPendingCMoveInterval" value="5000"/>
                 <entry key="dcmSpoolDirectoryPath" value="archive/spool"/>
                 <entry key="dcmStorageFilePathFormat" value="archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}"/>
+                <entry key="dcmWadoOverlayRendering" value="false"/>
                 <entry key="dicomAssociationAcceptor" value="true"/>
                 <entry key="dicomAssociationInitiator" value="true"/>
                 <entry key="dicomNetworkConnectionReference.#" value="2"/>
@@ -476,6 +480,30 @@
                   </map>
                 </node>
               </node>
+              <node name="dcmPatientSelector">
+                <map>
+                  <entry key="dcmPatientSelectorClassName" value="org.dcm4chee.archive.patient.DemographicsPatientSelector"/>
+                </map>
+                <node name="dcmPatientSelectorProperties">
+                  <map/>
+                  <node name="familyName">
+                    <map>
+                      <entry key="dcmPatientSelectorValue" value="BROAD"/>
+                    </map>
+                  </node>
+                  <node name="givenName">
+                    <map>
+                      <entry key="dcmPatientSelectorValue" value="BROAD"/>
+                    </map>
+                  </node>
+                </node>
+              </node>
+              <node name="dcmRetrieveSuppressionCriteria">
+                <map/>
+                <node name="dcmRetrieveSuppressionCriteriaMap">
+                  <map/>
+                </node>
+              </node>
               <node name="dicomTransferCapability">
                 <map/>
                 <node name="SCP">
@@ -598,7 +626,7 @@
                   </node>
                   <node name="1.2.840.10008.5.1.4.1.1.1.3">
                     <map>
-                      <entry key="cn" value="Digital Intra-oral X-Ray Image Storage - For Presentation SCP"/>
+                      <entry key="cn" value="Digital Intra-Oral X-Ray Image Storage - For Presentation SCP"/>
                       <entry key="dicomTransferSyntax.#" value="13"/>
                       <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
                       <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
@@ -617,7 +645,7 @@
                   </node>
                   <node name="1.2.840.10008.5.1.4.1.1.1.3.1">
                     <map>
-                      <entry key="cn" value="Digital Intra-oral X-Ray Image Storage - For Processing SCP"/>
+                      <entry key="cn" value="Digital Intra-Oral X-Ray Image Storage - For Processing SCP"/>
                       <entry key="dicomTransferSyntax.#" value="13"/>
                       <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
                       <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
@@ -2183,7 +2211,7 @@
                   </node>
                   <node name="1.2.840.10008.5.1.4.1.1.1.3">
                     <map>
-                      <entry key="cn" value="Digital Intra-oral X-Ray Image Storage - For Presentation SCU"/>
+                      <entry key="cn" value="Digital Intra-Oral X-Ray Image Storage - For Presentation SCU"/>
                       <entry key="dicomTransferSyntax.#" value="13"/>
                       <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
                       <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
@@ -2202,7 +2230,7 @@
                   </node>
                   <node name="1.2.840.10008.5.1.4.1.1.1.3.1">
                     <map>
-                      <entry key="cn" value="Digital Intra-oral X-Ray Image Storage - For Processing SCU"/>
+                      <entry key="cn" value="Digital Intra-Oral X-Ray Image Storage - For Processing SCU"/>
                       <entry key="dicomTransferSyntax.#" value="13"/>
                       <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
                       <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
@@ -3569,12 +3597,15 @@
               <map>
                 <entry key="dcmArchiveNetworkAE" value="true"/>
                 <entry key="dcmMatchUnknown" value="true"/>
+                <entry key="dcmNumberOfInstancesCacheSlot" value="2"/>
                 <entry key="dcmQidoMaxNumberOfResults" value="1000"/>
                 <entry key="dcmReturnOtherPatientIDs" value="true"/>
                 <entry key="dcmReturnOtherPatientNames" value="true"/>
                 <entry key="dcmSendPendingCGet" value="true"/>
                 <entry key="dcmSendPendingCMoveInterval" value="5000"/>
-                <entry key="dcmShowRejectedInstances" value="true"/>
+                <entry key="dcmShowInstancesRejectedByCode.#" value="1"/>
+                <entry key="dcmShowInstancesRejectedByCode.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmWadoOverlayRendering" value="false"/>
                 <entry key="dicomAssociationAcceptor" value="true"/>
                 <entry key="dicomAssociationInitiator" value="true"/>
                 <entry key="dicomNetworkConnectionReference.#" value="2"/>
@@ -3587,6 +3618,12 @@
               </node>
               <node name="dcmCompressionRule">
                 <map/>
+              </node>
+              <node name="dcmRetrieveSuppressionCriteria">
+                <map/>
+                <node name="dcmRetrieveSuppressionCriteriaMap">
+                  <map/>
+                </node>
               </node>
               <node name="dicomTransferCapability">
                 <map/>
@@ -3805,7 +3842,7 @@
                   </node>
                   <node name="1.2.840.10008.5.1.4.1.1.1.3">
                     <map>
-                      <entry key="cn" value="Digital Intra-oral X-Ray Image Storage - For Presentation SCU"/>
+                      <entry key="cn" value="Digital Intra-Oral X-Ray Image Storage - For Presentation SCU"/>
                       <entry key="dicomTransferSyntax.#" value="13"/>
                       <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
                       <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
@@ -3824,7 +3861,1636 @@
                   </node>
                   <node name="1.2.840.10008.5.1.4.1.1.1.3.1">
                     <map>
-                      <entry key="cn" value="Digital Intra-oral X-Ray Image Storage - For Processing SCU"/>
+                      <entry key="cn" value="Digital Intra-Oral X-Ray Image Storage - For Processing SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.10">
+                    <map>
+                      <entry key="cn" value="Standalone Modality LUT Storage (Retired) SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.104.1">
+                    <map>
+                      <entry key="cn" value="Encapsulated PDF Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.104.2">
+                    <map>
+                      <entry key="cn" value="Encapsulated CDA Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.11">
+                    <map>
+                      <entry key="cn" value="Standalone VOI LUT Storage (Retired) SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.11.1">
+                    <map>
+                      <entry key="cn" value="Grayscale Softcopy Presentation State Storage SOP Class SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.11.2">
+                    <map>
+                      <entry key="cn" value="Color Softcopy Presentation State Storage SOP Class SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.11.3">
+                    <map>
+                      <entry key="cn" value="Pseudo-Color Softcopy Presentation State Storage SOP Class SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.11.4">
+                    <map>
+                      <entry key="cn" value="Blending Softcopy Presentation State Storage SOP Class SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.11.5">
+                    <map>
+                      <entry key="cn" value="XA XRF Grayscale Softcopy Presentation State Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.12.1">
+                    <map>
+                      <entry key="cn" value="X-Ray Angiographic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.12.1.1">
+                    <map>
+                      <entry key="cn" value="Enhanced XA Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.12.2">
+                    <map>
+                      <entry key="cn" value="X-Ray Radiofluoroscopic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.12.2.1">
+                    <map>
+                      <entry key="cn" value="Enhanced XRF Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.12.3">
+                    <map>
+                      <entry key="cn" value="X-Ray Angiographic Bi-Plane Image Storage (Retired) SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.128">
+                    <map>
+                      <entry key="cn" value="Positron Emission Tomography Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.129">
+                    <map>
+                      <entry key="cn" value="Standalone PET Curve Storage (Retired) SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.13.1.1">
+                    <map>
+                      <entry key="cn" value="X-Ray 3D Angiographic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.13.1.2">
+                    <map>
+                      <entry key="cn" value="X-Ray 3D Craniofacial Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.13.1.3">
+                    <map>
+                      <entry key="cn" value="Breast Tomosynthesis Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.130">
+                    <map>
+                      <entry key="cn" value="Enhanced PET Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.131">
+                    <map>
+                      <entry key="cn" value="Basic Structured Display Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.14.1">
+                    <map>
+                      <entry key="cn" value="Intravascular Optical Coherence Tomography Image Storage - For Presentation SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.14.2">
+                    <map>
+                      <entry key="cn" value="Intravascular Optical Coherence Tomography Image Storage - For Processing SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.2">
+                    <map>
+                      <entry key="cn" value="CT Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.2.1">
+                    <map>
+                      <entry key="cn" value="Enhanced CT Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.20">
+                    <map>
+                      <entry key="cn" value="Nuclear Medicine Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.3">
+                    <map>
+                      <entry key="cn" value="Ultrasound Multi-frame Image Storage (Retired) SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.3.1">
+                    <map>
+                      <entry key="cn" value="Ultrasound Multi-frame Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.4">
+                    <map>
+                      <entry key="cn" value="MR Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.4.1">
+                    <map>
+                      <entry key="cn" value="Enhanced MR Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.4.2">
+                    <map>
+                      <entry key="cn" value="MR Spectroscopy Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.4.3">
+                    <map>
+                      <entry key="cn" value="Enhanced MR Color Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.481.1">
+                    <map>
+                      <entry key="cn" value="RT Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.481.2">
+                    <map>
+                      <entry key="cn" value="RT Dose Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.481.3">
+                    <map>
+                      <entry key="cn" value="RT Structure Set Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.481.4">
+                    <map>
+                      <entry key="cn" value="RT Beams Treatment Record Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.481.5">
+                    <map>
+                      <entry key="cn" value="RT Plan Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.481.6">
+                    <map>
+                      <entry key="cn" value="RT Brachy Treatment Record Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.481.7">
+                    <map>
+                      <entry key="cn" value="RT Treatment Summary Record Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.481.8">
+                    <map>
+                      <entry key="cn" value="RT Ion Plan Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.481.9">
+                    <map>
+                      <entry key="cn" value="RT Ion Beams Treatment Record Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.5">
+                    <map>
+                      <entry key="cn" value="Nuclear Medicine Image Storage (Retired) SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.6">
+                    <map>
+                      <entry key="cn" value="Ultrasound Image Storage (Retired) SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.6.1">
+                    <map>
+                      <entry key="cn" value="Ultrasound Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.6.2">
+                    <map>
+                      <entry key="cn" value="Enhanced US Volume Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.66">
+                    <map>
+                      <entry key="cn" value="Raw Data Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.66.1">
+                    <map>
+                      <entry key="cn" value="Spatial Registration Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.66.2">
+                    <map>
+                      <entry key="cn" value="Spatial Fiducials Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.66.3">
+                    <map>
+                      <entry key="cn" value="Deformable Spatial Registration Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.66.4">
+                    <map>
+                      <entry key="cn" value="Segmentation Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.66.5">
+                    <map>
+                      <entry key="cn" value="Surface Segmentation Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.67">
+                    <map>
+                      <entry key="cn" value="Real World Value Mapping Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.7">
+                    <map>
+                      <entry key="cn" value="Secondary Capture Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.7.1">
+                    <map>
+                      <entry key="cn" value="Multi-frame Single Bit Secondary Capture Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.7.2">
+                    <map>
+                      <entry key="cn" value="Multi-frame Grayscale Byte Secondary Capture Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.7.3">
+                    <map>
+                      <entry key="cn" value="Multi-frame Grayscale Word Secondary Capture Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.7.4">
+                    <map>
+                      <entry key="cn" value="Multi-frame True Color Secondary Capture Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.1">
+                    <map>
+                      <entry key="cn" value="VL Endoscopic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.1.1">
+                    <map>
+                      <entry key="cn" value="Video Endoscopic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="5"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.4.100"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.4.101"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.4.103"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.102"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.2">
+                    <map>
+                      <entry key="cn" value="VL Microscopic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.2.1">
+                    <map>
+                      <entry key="cn" value="Video Microscopic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="5"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.4.100"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.4.101"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.4.103"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.102"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.3">
+                    <map>
+                      <entry key="cn" value="VL Slide-Coordinates Microscopic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.4">
+                    <map>
+                      <entry key="cn" value="VL Photographic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.4.1">
+                    <map>
+                      <entry key="cn" value="Video Photographic Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="5"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.4.100"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.4.101"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.4.103"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.102"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.5.1">
+                    <map>
+                      <entry key="cn" value="Ophthalmic Photography 8 Bit Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.5.2">
+                    <map>
+                      <entry key="cn" value="Ophthalmic Photography 16 Bit Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.5.3">
+                    <map>
+                      <entry key="cn" value="Stereometric Relationship Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.5.4">
+                    <map>
+                      <entry key="cn" value="Ophthalmic Tomography Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.77.1.6">
+                    <map>
+                      <entry key="cn" value="VL Whole Slide Microscopy Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.78.1">
+                    <map>
+                      <entry key="cn" value="Lensometry Measurements Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.78.2">
+                    <map>
+                      <entry key="cn" value="Autorefraction Measurements Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.78.3">
+                    <map>
+                      <entry key="cn" value="Keratometry Measurements Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.78.4">
+                    <map>
+                      <entry key="cn" value="Subjective Refraction Measurements Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.78.5">
+                    <map>
+                      <entry key="cn" value="Visual Acuity Measurements Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.78.6">
+                    <map>
+                      <entry key="cn" value="Spectacle Prescription Report Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.78.7">
+                    <map>
+                      <entry key="cn" value="Ophthalmic Axial Measurements Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.78.8">
+                    <map>
+                      <entry key="cn" value="Intraocular Lens Calculations Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.79.1">
+                    <map>
+                      <entry key="cn" value="Macular Grid Thickness and Volume Report Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.8">
+                    <map>
+                      <entry key="cn" value="Standalone Overlay Storage (Retired) SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.80.1">
+                    <map>
+                      <entry key="cn" value="Ophthalmic Visual Field Static Perimetry Measurements Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.11">
+                    <map>
+                      <entry key="cn" value="Basic Text SR Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.22">
+                    <map>
+                      <entry key="cn" value="Enhanced SR Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.33">
+                    <map>
+                      <entry key="cn" value="Comprehensive SR Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.40">
+                    <map>
+                      <entry key="cn" value="Procedure Log Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.50">
+                    <map>
+                      <entry key="cn" value="Mammography CAD SR Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.59">
+                    <map>
+                      <entry key="cn" value="Key Object Selection Document Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.65">
+                    <map>
+                      <entry key="cn" value="Chest CAD SR Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.67">
+                    <map>
+                      <entry key="cn" value="X-Ray Radiation Dose SR Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.69">
+                    <map>
+                      <entry key="cn" value="Colon CAD SR Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.88.70">
+                    <map>
+                      <entry key="cn" value="Implantation Plan SR Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9">
+                    <map>
+                      <entry key="cn" value="Standalone Curve Storage (Retired) SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9.1.1">
+                    <map>
+                      <entry key="cn" value="12-lead ECG Waveform Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9.1.2">
+                    <map>
+                      <entry key="cn" value="General ECG Waveform Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9.1.3">
+                    <map>
+                      <entry key="cn" value="Ambulatory ECG Waveform Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9.2.1">
+                    <map>
+                      <entry key="cn" value="Hemodynamic Waveform Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9.3.1">
+                    <map>
+                      <entry key="cn" value="Cardiac Electrophysiology Waveform Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9.4.1">
+                    <map>
+                      <entry key="cn" value="Basic Voice Audio Waveform Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9.4.2">
+                    <map>
+                      <entry key="cn" value="General Audio Waveform Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9.5.1">
+                    <map>
+                      <entry key="cn" value="Arterial Pulse Waveform Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.9.6.1">
+                    <map>
+                      <entry key="cn" value="Respiratory Waveform Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="4"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                    </map>
+                  </node>
+                </node>
+              </node>
+            </node>
+            <node name="DCM4CHEE_TRASH">
+              <map>
+                <entry key="dcmArchiveNetworkAE" value="true"/>
+                <entry key="dcmHideInstances" value="true"/>
+                <entry key="dcmMatchUnknown" value="true"/>
+                <entry key="dcmNumberOfInstancesCacheSlot" value="3"/>
+                <entry key="dcmQidoMaxNumberOfResults" value="1000"/>
+                <entry key="dcmReturnOtherPatientIDs" value="true"/>
+                <entry key="dcmReturnOtherPatientNames" value="true"/>
+                <entry key="dcmSendPendingCGet" value="true"/>
+                <entry key="dcmSendPendingCMoveInterval" value="5000"/>
+                <entry key="dcmShowInstancesRejectedByCode.#" value="5"/>
+                <entry key="dcmShowInstancesRejectedByCode.1" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.2" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.3" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.4" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.5" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+                <entry key="dcmWadoOverlayRendering" value="false"/>
+                <entry key="dicomAssociationAcceptor" value="true"/>
+                <entry key="dicomAssociationInitiator" value="true"/>
+                <entry key="dicomNetworkConnectionReference.#" value="2"/>
+                <entry key="dicomNetworkConnectionReference.1" value="1"/>
+                <entry key="dicomNetworkConnectionReference.2" value="2"/>
+                <entry key="hl7PIXManagerApplication" value="HL7RCV^DCM4CHEE"/>
+              </map>
+              <node name="dcmAttributeCoercion">
+                <map/>
+              </node>
+              <node name="dcmCompressionRule">
+                <map/>
+              </node>
+              <node name="dcmRetrieveSuppressionCriteria">
+                <map/>
+                <node name="dcmRetrieveSuppressionCriteriaMap">
+                  <map/>
+                </node>
+              </node>
+              <node name="dicomTransferCapability">
+                <map/>
+                <node name="SCP">
+                  <map/>
+                  <node name="1.2.840.10008.1.1">
+                    <map>
+                      <entry key="cn" value="Verification SOP Class SCP"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.1.1">
+                    <map>
+                      <entry key="cn" value="Patient Root Query Retrieve Information Model - FIND SCP"/>
+                      <entry key="dcmCombinedDateTimeMatching" value="true"/>
+                      <entry key="dcmFuzzySemanticMatching" value="true"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dcmTimezoneQueryAdjustment" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.1.2">
+                    <map>
+                      <entry key="cn" value="Patient Root Query Retrieve Information Model - MOVE SCP"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.1.3">
+                    <map>
+                      <entry key="cn" value="Patient Root Query Retrieve Information Model - GET SCP"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.2.1">
+                    <map>
+                      <entry key="cn" value="Study Root Query Retrieve Information Model - FIND SCP"/>
+                      <entry key="dcmCombinedDateTimeMatching" value="true"/>
+                      <entry key="dcmFuzzySemanticMatching" value="true"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dcmTimezoneQueryAdjustment" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.2.2">
+                    <map>
+                      <entry key="cn" value="Study Root Query Retrieve Information Model - MOVE SCP"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.2.3">
+                    <map>
+                      <entry key="cn" value="Study Root Query Retrieve Information Model - GET SCP"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.3.1">
+                    <map>
+                      <entry key="cn" value="Patient Study Only Query Retrieve Information Model - FIND (Retired) SCP"/>
+                      <entry key="dcmCombinedDateTimeMatching" value="true"/>
+                      <entry key="dcmFuzzySemanticMatching" value="true"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dcmTimezoneQueryAdjustment" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.3.2">
+                    <map>
+                      <entry key="cn" value="Patient Study Only Query Retrieve Information Model - MOVE (Retired) SCP"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.3.3">
+                    <map>
+                      <entry key="cn" value="Patient Study Only Query Retrieve Information Model - GET (Retired) SCP"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.2.5.3">
+                    <map>
+                      <entry key="cn" value="Composite Instance Retrieve Without Bulk Data - GET SCP"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.31">
+                    <map>
+                      <entry key="cn" value="Modality Worklist Information Model - FIND SCP"/>
+                      <entry key="dcmCombinedDateTimeMatching" value="true"/>
+                      <entry key="dcmFuzzySemanticMatching" value="true"/>
+                      <entry key="dcmRelationalQueries" value="true"/>
+                      <entry key="dcmTimezoneQueryAdjustment" value="true"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                </node>
+                <node name="SCU">
+                  <map/>
+                  <node name="1.2.840.10008.1.1">
+                    <map>
+                      <entry key="cn" value="Verification SOP Class SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="1"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.1">
+                    <map>
+                      <entry key="cn" value="Computed Radiography Image Storage SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.1.1">
+                    <map>
+                      <entry key="cn" value="Digital X-Ray Image Storage - For Presentation SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.1.1.1">
+                    <map>
+                      <entry key="cn" value="Digital X-Ray Image Storage - For Processing SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.1.2">
+                    <map>
+                      <entry key="cn" value="Digital Mammography X-Ray Image Storage - For Presentation SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.1.2.1">
+                    <map>
+                      <entry key="cn" value="Digital Mammography X-Ray Image Storage - For Processing SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.1.3">
+                    <map>
+                      <entry key="cn" value="Digital Intra-Oral X-Ray Image Storage - For Presentation SCU"/>
+                      <entry key="dicomTransferSyntax.#" value="13"/>
+                      <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
+                      <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
+                      <entry key="dicomTransferSyntax.11" value="1.2.840.10008.1.2.4.90"/>
+                      <entry key="dicomTransferSyntax.12" value="1.2.840.10008.1.2.4.91"/>
+                      <entry key="dicomTransferSyntax.13" value="1.2.840.10008.1.2.5"/>
+                      <entry key="dicomTransferSyntax.2" value="1.2.840.10008.1.2.1"/>
+                      <entry key="dicomTransferSyntax.3" value="1.2.840.10008.1.2.1.99"/>
+                      <entry key="dicomTransferSyntax.4" value="1.2.840.10008.1.2.2"/>
+                      <entry key="dicomTransferSyntax.5" value="1.2.840.10008.1.2.4.50"/>
+                      <entry key="dicomTransferSyntax.6" value="1.2.840.10008.1.2.4.51"/>
+                      <entry key="dicomTransferSyntax.7" value="1.2.840.10008.1.2.4.70"/>
+                      <entry key="dicomTransferSyntax.8" value="1.2.840.10008.1.2.4.57"/>
+                      <entry key="dicomTransferSyntax.9" value="1.2.840.10008.1.2.4.80"/>
+                    </map>
+                  </node>
+                  <node name="1.2.840.10008.5.1.4.1.1.1.3.1">
+                    <map>
+                      <entry key="cn" value="Digital Intra-Oral X-Ray Image Storage - For Processing SCU"/>
                       <entry key="dicomTransferSyntax.#" value="13"/>
                       <entry key="dicomTransferSyntax.1" value="1.2.840.10008.1.2"/>
                       <entry key="dicomTransferSyntax.10" value="1.2.840.10008.1.2.4.81"/>
@@ -5237,6 +6903,56 @@
               </map>
             </node>
           </node>
+          <node name="dcmRejectionNote">
+            <map/>
+            <node name="1">
+              <map>
+                <entry key="dcmAcceptPreviousRejectedInstance" value="IGNORE"/>
+                <entry key="dcmRejectionNoteTitle" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+              </map>
+            </node>
+            <node name="2">
+              <map>
+                <entry key="dcmOverwritePreviousRejection.#" value="1"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
+              </map>
+            </node>
+            <node name="3">
+              <map>
+                <entry key="dcmOverwritePreviousRejection.#" value="1"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
+              </map>
+            </node>
+            <node name="4">
+              <map>
+                <entry key="dcmOverwritePreviousRejection.#" value="1"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
+              </map>
+            </node>
+            <node name="5">
+              <map>
+                <entry key="dcmAcceptPreviousRejectedInstance" value="REPLACE"/>
+                <entry key="dcmOverwritePreviousRejection.#" value="1"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+              </map>
+            </node>
+            <node name="6">
+              <map>
+                <entry key="dcmOverwritePreviousRejection.#" value="5"/>
+                <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmOverwritePreviousRejection.2" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
+                <entry key="dcmOverwritePreviousRejection.3" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
+                <entry key="dcmOverwritePreviousRejection.4" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
+                <entry key="dcmOverwritePreviousRejection.5" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(REVOKE_REJECTION, 99DCM4CHEE, &quot;Restore rejected Instances&quot;)"/>
+                <entry key="dcmRevokeRejection" value="true"/>
+              </map>
+            </node>
+          </node>
           <node name="hl7Application">
             <map/>
             <node name="*">
@@ -5256,6 +6972,49 @@
                 <entry key="hl7DefaultCharacterSet" value="8859/1"/>
                 <entry key="labeledURI.#" value="1"/>
                 <entry key="labeledURI.1" value="${jboss.server.config.url}/dcm4chee-arc/hl7-adt2dcm.xsl adt2dcm"/>
+              </map>
+            </node>
+          </node>
+        </node>
+        <node name="dcm4chee-arr">
+          <map>
+            <entry key="dcmKeyStoreKeyPin" value="secret"/>
+            <entry key="dcmKeyStoreType" value="JKS"/>
+            <entry key="dcmKeyStoreURL" value="${jboss.server.config.url}/dcm4chee-arr/key.jks"/>
+            <entry key="dicomInstalled" value="true"/>
+          </map>
+          <node name="dcmAuditRecordRepository">
+            <map>
+              <entry key="dicomNetworkConnectionReference.#" value="2"/>
+              <entry key="dicomNetworkConnectionReference.1" value="1"/>
+              <entry key="dicomNetworkConnectionReference.2" value="2"/>
+            </map>
+          </node>
+          <node name="dcmNetworkAE">
+            <map/>
+          </node>
+          <node name="dcmNetworkConnection">
+            <map/>
+            <node name="1">
+              <map>
+                <entry key="cn" value="audit-udp"/>
+                <entry key="dcmProtocol" value="SYSLOG_UDP"/>
+                <entry key="dicomHostname" value="host.dcm4che.org"/>
+                <entry key="dicomPort" value="514"/>
+              </map>
+            </node>
+            <node name="2">
+              <map>
+                <entry key="cn" value="audit-tls"/>
+                <entry key="dcmProtocol" value="SYSLOG_TLS"/>
+                <entry key="dcmTLSNeedClientAuth" value="false"/>
+                <entry key="dcmTLSProtocol.#" value="2"/>
+                <entry key="dcmTLSProtocol.1" value="TLSv1"/>
+                <entry key="dcmTLSProtocol.2" value="SSLv3"/>
+                <entry key="dicomHostname" value="host.dcm4che.org"/>
+                <entry key="dicomPort" value="6514"/>
+                <entry key="dicomTLSCipherSuite.#" value="1"/>
+                <entry key="dicomTLSCipherSuite.1" value="TLS_RSA_WITH_AES_128_CBC_SHA"/>
               </map>
             </node>
           </node>
@@ -5866,6 +7625,9 @@
           <map/>
         </node>
         <node name="DCM4CHEE_ADMIN">
+          <map/>
+        </node>
+        <node name="DCM4CHEE_TRASH">
           <map/>
         </node>
         <node name="DCMQRSCP">

@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.query.impl;
 
+import java.util.Date;
 import java.util.EnumSet;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -45,17 +46,19 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
 
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
+import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.Query;
@@ -80,9 +83,6 @@ public class DefaultQueryService implements QueryService {
 
     @Inject
     QueryServiceEJB ejb;
-
-    @Inject
-    private IApplicationEntityCache aeCache;
 
     StatelessSession openStatelessSession() {
         return em.unwrap(Session.class).getSessionFactory()
@@ -174,7 +174,7 @@ public class DefaultQueryService implements QueryService {
      * attributes in the keys per request
      */
     @Override
-    public void coerceRequestAttributes(QueryContext context)
+    public void coerceRequestAttributes(final QueryContext context)
             throws DicomServiceException {
 
         try {
@@ -186,7 +186,14 @@ public class DefaultQueryService implements QueryService {
                     TransferCapability.Role.SCP,
                     context.getRemoteAET());
             if (tpl != null) {
-                keys.addAll(SAXTransformer.transform(keys, tpl, false, false));
+                keys.addAll(
+                        SAXTransformer.transform(keys, tpl, false, false, new SetupTransformer() {
+                            
+                            @Override
+                            public void setup(Transformer transformer) {
+                                setParameters(transformer,context);
+                            }
+                        }));
             }
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
@@ -201,7 +208,7 @@ public class DefaultQueryService implements QueryService {
      * attributes in the keys per response
      */
     @Override
-    public void coerceResponseAttributes(QueryContext context, Attributes match)
+    public void coerceResponseAttributes(final QueryContext context, Attributes match)
             throws DicomServiceException {
         try {
             ArchiveAEExtension arcAE = context.getArchiveAEExtension();
@@ -212,12 +219,28 @@ public class DefaultQueryService implements QueryService {
                     TransferCapability.Role.SCU,
                     context.getRemoteAET());
             if (tpl != null) {
-                attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false));
+                attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false, new SetupTransformer() {
+                    
+                    @Override
+                    public void setup(Transformer transformer) {
+                            setParameters(transformer,context);
+                    }
+                }));
             }
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
        //time zone support moved to decorator
+    }
+
+    private void setParameters(Transformer transformer, QueryContext context) {
+        Date date = new Date();
+        String currentDate = DateUtils.formatDA(null, date);
+        String currentTime = DateUtils.formatTM(null, date);
+        transformer.setParameter("date", currentDate);
+        transformer.setParameter("time", currentTime);
+        transformer.setParameter("calling", context.getRemoteAET());
+        transformer.setParameter("called", context.getArchiveAEExtension().getApplicationEntity().getAETitle());
     }
 
 }

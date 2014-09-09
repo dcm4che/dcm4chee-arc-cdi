@@ -40,6 +40,7 @@ package org.dcm4chee.archive.iocm;
 
 import java.util.Collection;
 
+import org.dcm4chee.archive.conf.RejectionParam;
 import org.dcm4chee.archive.store.StoreContext;
 
 /**
@@ -49,13 +50,13 @@ import org.dcm4chee.archive.store.StoreContext;
 public class RejectionEvent {
 
     private final StoreContext storeContext;
-    private final RejectionType rejectionType;
+    private final RejectionParam rejectionNote;
     private final Collection<String> ppsIUIDs;
 
     public RejectionEvent(StoreContext storeContext,
-            RejectionType rejectionType, Collection<String> ppsIUIDs) {
+            RejectionParam rejectionNote, Collection<String> ppsIUIDs) {
         this.storeContext = storeContext;
-        this.rejectionType = rejectionType;
+        this.rejectionNote = rejectionNote;
         this.ppsIUIDs = ppsIUIDs;
     }
 
@@ -63,8 +64,8 @@ public class RejectionEvent {
         return storeContext;
     }
 
-    public RejectionType getRejectionType() {
-        return rejectionType;
+    public RejectionParam getRejectionNote() {
+        return rejectionNote;
     }
 
     public Collection<String> getPerformedProcedureStepIUIDs() {

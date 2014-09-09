@@ -90,9 +90,15 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     name="Series.queryPatientStudySeriesAttributes",
     query="SELECT NEW org.dcm4chee.archive.entity.QueryPatientStudySeriesAttributes("
             + "s.study.pk, "
-            + "s.study.numberOfSeries, "
-            + "s.study.numberOfInstances, "
-            + "s.numberOfInstances, "
+            + "s.study.numberOfSeries1, "
+            + "s.study.numberOfSeries2, "
+            + "s.study.numberOfSeries3, "
+            + "s.study.numberOfInstances1, "
+            + "s.study.numberOfInstances2, "
+            + "s.study.numberOfInstances3, "
+            + "s.numberOfInstances1, "
+            + "s.numberOfInstances2, "
+            + "s.numberOfInstances3, "
             + "s.study.modalitiesInStudy, "
             + "s.study.sopClassesInStudy, "
             + "s.encodedAttributes, "
@@ -100,27 +106,19 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "s.study.patient.encodedAttributes) "
             + "FROM Series s WHERE s.pk = ?1"),
 @NamedQuery(
-        name="Series.queryPatientStudySeriesAttributesA",
-        query="SELECT NEW org.dcm4chee.archive.entity.QueryPatientStudySeriesAttributes("
-                + "s.study.pk, "
-                + "s.study.numberOfSeriesA, "
-                + "s.study.numberOfInstancesA, "
-                + "s.numberOfInstancesA, "
-                + "s.study.modalitiesInStudy, "
-                + "s.study.sopClassesInStudy, "
-                + "s.encodedAttributes, "
-                + "s.study.encodedAttributes, "
-                + "s.study.patient.encodedAttributes) "
-                + "FROM Series s WHERE s.pk = ?1"),
-@NamedQuery(
-    name="Series.updateNumberOfInstances",
+    name="Series.updateNumberOfInstances1",
     query="UPDATE Series s "
-            + "SET s.numberOfInstances = ?1 "
+            + "SET s.numberOfInstances1 = ?1 "
             + "WHERE s.pk = ?2"),
 @NamedQuery(
-    name="Series.updateNumberOfInstancesA",
+    name="Series.updateNumberOfInstances2",
     query="UPDATE Series s "
-            + "SET s.numberOfInstancesA = ?1 "
+            + "SET s.numberOfInstances2 = ?1 "
+            + "WHERE s.pk = ?2"),
+@NamedQuery(
+    name="Series.updateNumberOfInstances3",
+    query="UPDATE Series s "
+            + "SET s.numberOfInstances3 = ?1 "
             + "WHERE s.pk = ?2")
 })
 @Entity
@@ -132,9 +130,11 @@ public class Series implements Serializable {
     public static final String FIND_BY_SERIES_INSTANCE_UID = "Series.findBySeriesInstanceUID";
     public static final String PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.patientStudySeriesAttributes";
     public static final String QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.queryPatientStudySeriesAttributes";
-    public static final String QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES_A = "Series.queryPatientStudySeriesAttributesA";
-    public static final String UPDATE_NUMBER_OF_INSTANCES = "Series.updateNumberOfInstances";
-    public static final String UPDATE_NUMBER_OF_INSTANCES_A = "Series.updateNumberOfInstancesA";
+    public static final String [] UPDATE_NUMBER_OF_INSTANCES = {
+            "Series.updateNumberOfInstances1",
+            "Series.updateNumberOfInstances2",
+            "Series.updateNumberOfInstances3"
+    };
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -214,12 +214,16 @@ public class Series implements Serializable {
     private String seriesCustomAttribute3;
 
     @Basic(optional = false)
-    @Column(name = "num_instances")
-    private int numberOfInstances = -1;
+    @Column(name = "num_instances1")
+    private int numberOfInstances1 = -1;
 
     @Basic(optional = false)
-    @Column(name = "num_instances_a")
-    private int numberOfInstancesA = -1;
+    @Column(name = "num_instances2")
+    private int numberOfInstances2 = -1;
+
+    @Basic(optional = false)
+    @Column(name = "num_instances3")
+    private int numberOfInstances3 = -1;
 
     @Column(name = "src_aet")
     private String sourceAET;
@@ -272,9 +276,10 @@ public class Series implements Serializable {
                 + ", uid=" + seriesInstanceUID
                 + ", no=" + seriesNumber
                 + ", mod=" + modality
-                + ", numI=" + numberOfInstances
-                + "(" + numberOfInstancesA
-                + ")]";
+                + ", numI=" + numberOfInstances1
+                + "/" + numberOfInstances2
+                + "/" + numberOfInstances3
+                + "]";
     }
 
     @PrePersist
@@ -375,25 +380,38 @@ public class Series implements Serializable {
         return seriesCustomAttribute3;
     }
 
-    public int getNumberOfInstances() {
-        return numberOfInstances;
+    public int getNumberOfInstances(int slot) {
+        switch(slot) {
+        case 1:
+            return numberOfInstances1;
+        case 2:
+            return numberOfInstances2;
+        case 3:
+            return numberOfInstances3;
+        }
+        throw new IllegalArgumentException("slot:" + slot);
     }
 
-    public void setNumberOfInstances(int numberOfInstances) {
-        this.numberOfInstances = numberOfInstances;
-    }
-
-    public int getNumberOfInstancesA() {
-        return numberOfInstancesA;
-    }
-
-    public void setNumberOfInstancesA(int numberOfInstancesA) {
-        this.numberOfInstancesA = numberOfInstancesA;
+    public void setNumberOfInstances(int slot, int num) {
+        switch(slot) {
+        case 1:
+            numberOfInstances1 = num;
+            break;
+        case 2:
+            numberOfInstances2 = num;
+            break;
+        case 3:
+            numberOfInstances3 = num;
+            break;
+        default:
+            throw new IllegalArgumentException("slot:" + slot);
+        }
     }
 
     public void resetNumberOfInstances() {
-        this.numberOfInstances = -1;
-        this.numberOfInstancesA = -1;
+        this.numberOfInstances1 = -1;
+        this.numberOfInstances2 = -1;
+        this.numberOfInstances3 = -1;
     }
 
     public String getSourceAET() {

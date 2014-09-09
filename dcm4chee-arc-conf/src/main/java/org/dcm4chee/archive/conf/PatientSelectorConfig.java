@@ -63,7 +63,7 @@ public class PatientSelectorConfig implements Serializable {
                   mapKey = "dcmPatientSelectorProperty",
                   name = "dcmPatientSelectorValue",
                   mapElementObjectClass = "dcmPatientSelectorEntry")
-    private Map<String, String> patientSelectorProperties = new HashMap<String, String>();
+    private Map<String, String> patientSelectorProperties;
 
     public String getPatientSelectorClassName() {
         return patientSelectorClassName;

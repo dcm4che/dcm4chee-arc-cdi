@@ -38,6 +38,8 @@
 package org.dcm4chee.archive.impl;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -55,10 +57,15 @@ import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Code;
+import org.dcm4che3.imageio.codec.ImageReaderFactory;
+import org.dcm4che3.imageio.codec.ImageWriterFactory;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.hl7.service.HL7Service;
 import org.dcm4che3.net.hl7.service.HL7ServiceRegistry;
+import org.dcm4che3.net.imageio.ImageReaderExtension;
+import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.net.service.BasicCEchoSCP;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceRegistry;
@@ -66,6 +73,7 @@ import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.code.CodeService;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.event.ConnectionEventSource;
@@ -155,7 +163,9 @@ public class ArchiveServiceImpl implements ArchiveService {
             scheduledExecutor = Executors.newScheduledThreadPool(10);
             device = findDevice();
             device.setConnectionMonitor(connectionEventSource);
-            findOrCreateRejectionCodes(device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class));
+            findOrCreateRejectionCodes(device);
+            initImageReaderFactory();
+            initImageWriterFactory();
             device.setExecutor(executor);
             device.setScheduledExecutor(scheduledExecutor);
             serviceRegistry.addDicomService(echoscp);
@@ -223,7 +233,9 @@ public class ArchiveServiceImpl implements ArchiveService {
     public void reload() throws Exception {
         aeCache.clear();
         device.reconfigure(findDevice());
-        findOrCreateRejectionCodes(device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class));
+        findOrCreateRejectionCodes(device);
+        initImageReaderFactory();
+        initImageWriterFactory();
         device.rebindConnections();
     }
 
@@ -238,26 +250,50 @@ public class ArchiveServiceImpl implements ArchiveService {
         return running;
     }
 
-    private void findOrCreateRejectionCodes(ArchiveDeviceExtension arcDev) {
+    private void findOrCreateRejectionCodes(Device dev) {
+        Collection<org.dcm4chee.archive.entity.Code> found =
+                new ArrayList<org.dcm4chee.archive.entity.Code>();
+        ArchiveDeviceExtension arcDev =
+                dev.getDeviceExtensionNotNull(ArchiveDeviceExtension.class);
         arcDev.setIncorrectWorklistEntrySelectedCode(
-                findOrCreate(arcDev.getIncorrectWorklistEntrySelectedCode()));
-        arcDev.setRejectedForQualityReasonsCode(
-                findOrCreate(arcDev.getRejectedForQualityReasonsCode()));
-        arcDev.setRejectedForPatientSafetyReasonsCode(
-                findOrCreate(arcDev.getRejectedForPatientSafetyReasonsCode()));
-        arcDev.setIncorrectModalityWorklistEntryCode(
-                findOrCreate(arcDev.getIncorrectModalityWorklistEntryCode()));
-        arcDev.setDataRetentionPeriodExpiredCode(
-                findOrCreate(arcDev.getDataRetentionPeriodExpiredCode()));
-    }
-
-    private Code findOrCreate(Code code) {
-        try {
-            return (org.dcm4chee.archive.entity.Code) code;
-        } catch (ClassCastException e) {
-             return codeService.findOrCreate(
-                        new org.dcm4chee.archive.entity.Code(code));
+                findOrCreate(arcDev.getIncorrectWorklistEntrySelectedCode(), found));
+        for (ApplicationEntity ae : dev.getApplicationEntities()) {
+            ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
+            Code[] codes = arcAE.getShowInstancesRejectedByCodes();
+            for (int i = 0; i < codes.length; i++) {
+                codes[i] = findOrCreate(codes[i], found);
+            }
         }
     }
 
+    private Code findOrCreate(Code code, Collection<org.dcm4chee.archive.entity.Code> found) {
+        try {
+            return (org.dcm4chee.archive.entity.Code) code;
+        } catch (ClassCastException e) {
+            for (org.dcm4chee.archive.entity.Code code2 : found) {
+                if (code2.equalsIgnoreMeaning(code))
+                    return code2;
+            }
+            org.dcm4chee.archive.entity.Code code2 = codeService.findOrCreate(
+                        new org.dcm4chee.archive.entity.Code(code));
+            found.add(code2);
+            return code2;
+        }
+    }
+
+    private void initImageReaderFactory() {
+        ImageReaderExtension ext = device.getDeviceExtension(ImageReaderExtension.class);
+        if (ext != null)
+            ImageReaderFactory.setDefault(ext.getImageReaderFactory());
+        else
+            ImageReaderFactory.resetDefault();
+    }
+
+    private void initImageWriterFactory() {
+        ImageWriterExtension ext = device.getDeviceExtension(ImageWriterExtension.class);
+        if (ext != null)
+            ImageWriterFactory.setDefault(ext.getImageWriterFactory());
+        else
+            ImageWriterFactory.resetDefault();
+    }
 }

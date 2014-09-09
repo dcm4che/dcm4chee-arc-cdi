@@ -228,7 +228,8 @@ public class StowRS {
         init();
         final StoreSession session = storeService.createStoreSession(storeService);
         session.setSource(new HttpSource(request));
-        session.setRemoteAET(aeCache.findAE(new HttpSource(request)).getAETitle()); //add AE for the web source
+        ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
+        session.setRemoteAET(sourceAE != null ? sourceAE.getAETitle():null); //add AE for the web source
         session.setArchiveAEExtension(arcAE);
         storeService.initStorageFileSystem(session);
         storeService.initSpoolDirectory(session);

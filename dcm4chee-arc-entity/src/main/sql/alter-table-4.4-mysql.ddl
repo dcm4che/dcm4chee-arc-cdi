@@ -203,3 +203,48 @@ alter table soundex_code
     foreign key (person_name_fk) 
     references person_name (pk);
 
+alter table study
+    change num_instances num_instances1 integer not null,
+    change num_instances_a num_instances2 integer not null,
+    change num_series num_series1 integer not null,
+    change num_series_a num_series2 integer not null,
+    add num_instances3 integer,
+    add num_series3 integer;
+
+update study set num_instances3 = -1, num_series3 = -1;
+
+alter table study
+    modify num_instances3 integer not null,
+    modify num_series3 integer not null;
+
+alter table series
+    change num_instances num_instances1 integer not null,
+    change num_instances_a num_instances2 integer not null,
+    add num_instances3 integer;
+
+update series set num_instances3 = -1;
+
+alter table series
+    modify num_instances3 integer not null;
+
+alter table file_ref
+    add file_status integer;
+
+update file_ref set status = 0;
+
+alter table file_ref
+    modify file_status integer not null;
+
+update file_ref, instance
+    set file_ref.file_status=2, file_ref.instance_fk=null
+    where instance.replaced=true and file_ref.instance_fk=instance.pk;
+
+delete from instance
+    where instance.replaced=true;
+
+alter table instance
+    drop replaced;
+
+drop index inst_sop_iuid_idx on instance;
+
+create unique index inst_sop_iuid_idx on instance (sop_iuid);

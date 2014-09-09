@@ -46,7 +46,9 @@ import javax.persistence.EntityNotFoundException;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.PatientCommands;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Series;
@@ -60,8 +62,8 @@ import org.dcm4chee.archive.entity.Study;
 public interface DataMgmtBean {
 
 
-    Study deleteStudy(String studyInstanceUID);
-    Series deleteSeries(String seriesInstanceUID);
+    Study deleteStudy(String studyInstanceUID) throws Exception;
+    Series deleteSeries(String seriesInstanceUID) throws Exception;
     Instance deleteInstance(String sopInstanceUID) throws FileNotFoundException, NoSuchFileException, IOException, Exception;
     
     boolean deleteSeriesIfEmpty(String seriesInstanceUID, String studyInstanceUID);
@@ -76,6 +78,8 @@ public interface DataMgmtBean {
             String sopInstanceUID, Attributes attrs) throws EntityNotFoundException;
     void updatePatient(ArchiveDeviceExtension arcDevExt, IDWithIssuer id,
             Attributes attrs) throws EntityNotFoundException;
+    Issuer findOrCreateIssuer(String local, String universal,
+            String universalType);
     Issuer getIssuer(String local, String universal,
             String universalType);
     boolean moveStudy(String studyInstanceUID, IDWithIssuer id);
@@ -86,4 +90,5 @@ public interface DataMgmtBean {
             String targetSeriesInstanceUID);
     boolean segmentStudy(String studyInstanceUID, String seriesInstanceUID,
             String targetStudyInstanceUID, ArchiveDeviceExtension arcDevExt);
+    boolean patientOperation(Attributes sourcePatientAttributes, Attributes targetPatientAttributes,ApplicationEntity arcAE, PatientCommands command);
 }

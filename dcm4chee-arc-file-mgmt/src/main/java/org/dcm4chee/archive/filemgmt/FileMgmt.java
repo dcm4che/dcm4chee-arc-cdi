@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2013
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,16 +36,30 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store;
+package org.dcm4chee.archive.filemgmt;
+
+import java.util.Collection;
+
+import org.dcm4chee.archive.entity.FileRef;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * 
  */
-public enum StoreAction {
-    STORE,
-    RESTORE,
-    REPLACE,
-    IGNORE,
-    FAIL
+
+public interface FileMgmt {
+
+    //deletes a file and returns true if deleted otherwise returns false
+    boolean doDelete(FileRef ref);
+
+    //send a file delete message to the queue
+    void scheduleDelete(Collection<FileRef> refs, String requestor, String localAET,
+            int retries, String remoteAET, int delay) throws Exception;
+
+    //sets file-ref status to delete failed
+    void failDelete(FileRef ref);
+
+    //remove file-ref after successful delete
+    void removeDeadFileRef(FileRef ref);
+
 }

@@ -41,6 +41,7 @@ package org.dcm4chee.archive.conf.prefs;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -48,12 +49,10 @@ import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig.ConfigReader;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig.ConfigWriter;
-import org.dcm4che3.conf.api.generic.ReflectiveConfig.DiffWriter;
 import org.dcm4che3.conf.prefs.PreferencesDicomConfigurationExtension;
 import org.dcm4che3.conf.prefs.PreferencesUtils;
 import org.dcm4che3.conf.prefs.generic.PrefsConfigReader;
 import org.dcm4che3.conf.prefs.generic.PrefsConfigWriter;
-import org.dcm4che3.conf.prefs.generic.PrefsDiffWriter;
 import org.dcm4che3.conf.prefs.imageio.PreferencesCompressionRulesConfiguration;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.ValueSelector;
@@ -65,6 +64,8 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.HostNameAEEntry;
+import org.dcm4chee.archive.conf.RejectionParam;
+import org.dcm4chee.archive.conf.StoreAction;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -84,18 +85,6 @@ public class PreferencesArchiveConfiguration extends
         PreferencesUtils.storeNotNull(prefs,
                 "dcmIncorrectWorklistEntrySelectedCode",
                 arcDev.getIncorrectWorklistEntrySelectedCode());
-        PreferencesUtils.storeNotNull(prefs,
-                "dcmRejectedForQualityReasonsCode",
-                arcDev.getRejectedForQualityReasonsCode());
-        PreferencesUtils.storeNotNull(prefs,
-                "dcmRejectedForPatientSafetyReasonsCode",
-                arcDev.getRejectedForPatientSafetyReasonsCode());
-        PreferencesUtils.storeNotNull(prefs,
-                "dcmIncorrectModalityWorklistEntryCode",
-                arcDev.getIncorrectModalityWorklistEntryCode());
-        PreferencesUtils.storeNotNull(prefs,
-                "dcmDataRetentionPeriodExpiredCode",
-                arcDev.getDataRetentionPeriodExpiredCode());
         PreferencesUtils.storeNotNull(prefs, "dcmFuzzyAlgorithmClass",
                 arcDev.getFuzzyAlgorithmClass());
         PreferencesUtils.storeNotDef(prefs, "dcmConfigurationStaleTimeout",
@@ -115,32 +104,51 @@ public class PreferencesArchiveConfiguration extends
         if (arcDev == null)
             return;
 
+        storeAttributeFilters(arcDev, deviceNode);
+        storeHostNameAEList(arcDev, deviceNode);
+        storeRejectionParams(arcDev, deviceNode);
+    }
+
+    private static void storeAttributeFilters(ArchiveDeviceExtension arcDev,
+            Preferences deviceNode) {
         Preferences afsNode = deviceNode.node("dcmAttributeFilter");
         for (Entity entity : Entity.values())
             storeTo(arcDev.getAttributeFilter(entity),
                     afsNode.node(entity.name()));
+    }
 
+    private static void storeHostNameAEList(ArchiveDeviceExtension arcDev,
+            Preferences deviceNode) {
         Preferences hostNameMap = deviceNode
                 .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
-        hostNameMap.put("dcmHostNameAEFallBackAE", arcDev
-                .getHostNameAEFallBackEntry().getAeTitle());
-        HostNameAEEntry[] tmpMap = new HostNameAEEntry[arcDev.getHostNameAEList().size()];
-        for(int i=0;i<arcDev.getHostNameAEList().size();i++)
-        {
-            tmpMap[i]=arcDev.getHostNameAEList().get(i);
-        }
-        storeTo(tmpMap, hostNameMap);
+        for (HostNameAEEntry entry : arcDev.getHostNameAEList())
+            storeTo(entry, hostNameMap.node(entry.getHostName()));
     }
 
-    private void storeTo(HostNameAEEntry[] entries, Preferences prefs) {
-        for (HostNameAEEntry entry : entries)
-            storeTo(entry, prefs.node(entry.getHostName()));
-    }
-
-    private void storeTo(HostNameAEEntry entry, Preferences prefs) {
+    private static void storeTo(HostNameAEEntry entry, Preferences prefs) {
         prefs.put("dicomAETitle", entry.getAeTitle());
         PreferencesUtils.storeNotNull(prefs, "dicomHostname",
                 entry.getHostName());
+    }
+
+    private static void storeRejectionParams(ArchiveDeviceExtension arcDev,
+            Preferences deviceNode) {
+        Preferences rnNode = deviceNode.node("dcmRejectionNote");
+        int rnIndex = 1;
+        RejectionParam[] rejectionNotes = arcDev.getRejectionParams();
+        for (RejectionParam rejectionNote : rejectionNotes)
+            storeTo(rejectionNote, rnNode.node("" + rnIndex++));
+    }
+
+    private static void storeTo(RejectionParam rn, Preferences prefs) {
+        PreferencesUtils.storeNotNull(prefs, "dcmRejectionNoteTitle",
+                rn.getRejectionNoteTitle());
+        PreferencesUtils.storeNotDef(prefs, "dcmRevokeRejection",
+                rn.isRevokeRejection(), false);
+        PreferencesUtils.storeNotNull(prefs, "dcmAcceptPreviousRejectedInstance",
+                rn.getAcceptPreviousRejectedInstance());
+        PreferencesUtils.storeNotEmpty(prefs, "dcmOverwritePreviousRejection",
+                rn.getOverwritePreviousRejection());
     }
 
     @Override
@@ -202,21 +210,13 @@ public class PreferencesArchiveConfiguration extends
 
         arcdev.setIncorrectWorklistEntrySelectedCode(new Code(prefs.get(
                 "dcmIncorrectWorklistEntrySelectedCode", null)));
-        arcdev.setRejectedForQualityReasonsCode(new Code(prefs.get(
-                "dcmRejectedForQualityReasonsCode", null)));
-        arcdev.setRejectedForPatientSafetyReasonsCode(new Code(prefs.get(
-                "dcmRejectedForPatientSafetyReasonsCode", null)));
-        arcdev.setIncorrectModalityWorklistEntryCode(new Code(prefs.get(
-                "dcmIncorrectModalityWorklistEntryCode", null)));
-        arcdev.setDataRetentionPeriodExpiredCode(new Code(prefs.get(
-                "dcmDataRetentionPeriodExpiredCode", null)));
         arcdev.setFuzzyAlgorithmClass(prefs.get("dcmFuzzyAlgorithmClass", null));
         arcdev.setConfigurationStaleTimeout(prefs.getInt(
                 "dcmConfigurationStaleTimeout", 0));
         arcdev.setWadoAttributesStaleTimeout(prefs.getInt(
                 "dcmWadoAttributesStaleTimeout", 0));
         arcdev.setHostnameAEresoultion(prefs.getBoolean(
-                "dcmHostNameAEResolution", true));
+                "dcmHostNameAEResolution", false));
         arcdev.setDeIdentifyLogs(prefs.getBoolean(
                 "dcmDeIdentifyLogs", false));        
     }
@@ -230,22 +230,53 @@ public class PreferencesArchiveConfiguration extends
             return;
 
         loadAttributeFilters(arcdev, deviceNode);
+        loadHostNameAEList(arcdev, deviceNode);
+        loadRejectionParams(arcdev, deviceNode);
+    }
+
+    private static void loadHostNameAEList(ArchiveDeviceExtension arcdev,
+            Preferences deviceNode) throws BackingStoreException {
         Preferences prefs = deviceNode
                 .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
-        ArrayList<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
-        if (prefs.get("dcmHostNameAEFallBackAE", null) == null)
-            prefs.put("dcmHostNameAEFallBackAE", "FALLBACK");
-        arcdev.setHostNameAEFallBackEntry(new HostNameAEEntry("*",
-                (String) prefs.get("dcmHostNameAEFallBackAE", "FALLBACK")));
+        Collection<HostNameAEEntry> hostNameAEList = new ArrayList<HostNameAEEntry>();
+       
         for (String hostname : prefs.childrenNames())
             hostNameAEList.add(loadHostNameAEEntry(prefs.node(hostname)));
 
         arcdev.setHostNameAEList(hostNameAEList);
     }
 
-    private HostNameAEEntry loadHostNameAEEntry(Preferences prefs) {
-        return new HostNameAEEntry(prefs.get("dicomHostname", null), prefs.get(
-                "dicomAETitle", null));
+    private static HostNameAEEntry loadHostNameAEEntry(Preferences prefs) {
+        return new HostNameAEEntry(
+                prefs.get("dicomHostname", null),
+                prefs.get("dicomAETitle", null));
+    }
+
+    private static void loadRejectionParams(ArchiveDeviceExtension arcdev,
+            Preferences deviceNode) throws BackingStoreException {
+        Preferences prefs = deviceNode.node("dcmRejectionNote");
+        Collection<RejectionParam> rejectionNotes = new ArrayList<RejectionParam>();
+        for (String nodeName : prefs.childrenNames())
+            rejectionNotes.add(loadRejectionNote(prefs.node(nodeName)));
+
+        arcdev.setRejectionParams(rejectionNotes.toArray(
+                new RejectionParam[rejectionNotes.size()]));
+    }
+
+    private static RejectionParam loadRejectionNote(Preferences prefs) {
+        RejectionParam param = new RejectionParam();
+        param.setRejectionNoteTitle(new Code(prefs.get("dcmRejectionNoteTitle", null)));
+        param.setRevokeRejection(prefs.getBoolean("dcmRevokeRejection", false));
+        param.setAcceptPreviousRejectedInstance(
+                storeActionOf(prefs, "dcmAcceptPreviousRejectedInstance"));
+        param.setOverwritePreviousRejection(
+                PreferencesUtils.codeArray(prefs, "dcmOverwritePreviousRejection"));
+        return param;
+    }
+
+    private static StoreAction storeActionOf(Preferences prefs, String key) {
+        String name = prefs.get(key, null);
+        return name != null ? StoreAction.valueOf(name) : null;
     }
 
     @Override
@@ -320,20 +351,6 @@ public class PreferencesArchiveConfiguration extends
                 "dcmIncorrectWorklistEntrySelectedCode",
                 aa.getIncorrectWorklistEntrySelectedCode(),
                 bb.getIncorrectWorklistEntrySelectedCode());
-        PreferencesUtils.storeDiff(prefs, "dcmRejectedForQualityReasonsCode",
-                aa.getRejectedForQualityReasonsCode(),
-                bb.getRejectedForQualityReasonsCode());
-        PreferencesUtils.storeDiff(prefs,
-                "dcmRejectedForPatientSafetyReasonsCode",
-                aa.getRejectedForPatientSafetyReasonsCode(),
-                bb.getRejectedForPatientSafetyReasonsCode());
-        PreferencesUtils.storeDiff(prefs,
-                "dcmIncorrectModalityWorklistEntryCode",
-                aa.getIncorrectModalityWorklistEntryCode(),
-                bb.getIncorrectModalityWorklistEntryCode());
-        PreferencesUtils.storeDiff(prefs, "dcmDataRetentionPeriodExpiredCode",
-                aa.getDataRetentionPeriodExpiredCode(),
-                bb.getDataRetentionPeriodExpiredCode());
         PreferencesUtils.storeDiff(prefs, "dcmFuzzyAlgorithmClass",
                 aa.getFuzzyAlgorithmClass(), bb.getFuzzyAlgorithmClass());
         PreferencesUtils.storeDiff(prefs, "dcmConfigurationStaleTimeout",
@@ -343,9 +360,9 @@ public class PreferencesArchiveConfiguration extends
                 aa.getWadoAttributesStaleTimeout(),
                 bb.getWadoAttributesStaleTimeout(), 0);
         PreferencesUtils.storeDiff(prefs, "dcmHostNameAEResolution",
-                aa.isHostnameAEresoultion(), bb.isHostnameAEresoultion());
+                aa.isHostnameAEresoultion(), bb.isHostnameAEresoultion(), false);
         PreferencesUtils.storeDiff(prefs, "dcmDeIdentifyLogs",
-                aa.isDeIdentifyLogs(), bb.isDeIdentifyLogs());
+                aa.isDeIdentifyLogs(), bb.isDeIdentifyLogs(), false);
     }
 
     @Override
@@ -376,32 +393,36 @@ public class PreferencesArchiveConfiguration extends
         if (aa == null || bb == null)
             return;
 
+        mergeAttributeFilters(aa, bb, deviceNode);
+        mergeHostnameAEList(aa, bb, deviceNode);
+        mergeRejectionParams(aa, bb, deviceNode);
+    }
+
+    private static void mergeHostnameAEList(ArchiveDeviceExtension prev,
+            ArchiveDeviceExtension arcDev, Preferences deviceNode)
+            throws BackingStoreException {
+        Preferences hostNameAEMap = deviceNode
+                .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
+
+        storeDiffs(hostNameAEMap, prev.getHostNameAEList(),
+                arcDev.getHostNameAEList());
+    }
+
+    private static void mergeAttributeFilters(ArchiveDeviceExtension prev,
+            ArchiveDeviceExtension arcDev, Preferences deviceNode) {
         Preferences afsNode = deviceNode.node("dcmAttributeFilter");
         for (Entity entity : Entity.values())
             storeDiffs(afsNode.node(entity.name()),
-                    aa.getAttributeFilter(entity),
-                    bb.getAttributeFilter(entity));
-
-        Preferences hostNameAEMap = deviceNode
-                .node(ArchiveDeviceExtension.ARCHIVE_HOST_AE_MAP_NODE);
-        if (aa.getHostNameAEFallBackEntry() != null) {
-            PreferencesUtils.storeDiff(hostNameAEMap,
-                    "dcmHostNameAEFallBackAE", aa.getHostNameAEFallBackEntry()
-                            .getAeTitle(), bb.getHostNameAEFallBackEntry()
-                            .getAeTitle());
-        } else
-            hostNameAEMap.put("dcmHostNameAEFallBackAE", bb
-                    .getHostNameAEFallBackEntry().getAeTitle());
-        storeDiffs(hostNameAEMap, aa.getHostNameAEList(),
-                bb.getHostNameAEList());
+                    prev.getAttributeFilter(entity),
+                    arcDev.getAttributeFilter(entity));
     }
 
-    private void storeDiffs(Preferences prefs,
-            ArrayList<HostNameAEEntry> prevList,
-            ArrayList<HostNameAEEntry> current) throws BackingStoreException {
+    private static void storeDiffs(Preferences prefs,
+            Collection<HostNameAEEntry> prevList,
+            Collection<HostNameAEEntry> current) throws BackingStoreException {
         for (HostNameAEEntry entry : prevList) {
             String host = entry.getHostName();
-            if (!current.contains(host)) {
+            if (findWithEqualHostname(current,host) == null) {
                 Preferences node = prefs.node(host);
                 node.removeNode();
                 node.flush();
@@ -409,21 +430,23 @@ public class PreferencesArchiveConfiguration extends
         }
         for (HostNameAEEntry entry : current) {
             String host = entry.getHostName();
-            storeDiffs(prefs.node(host), getMatchingEntry(entry, prevList),
-                    entry);
+            HostNameAEEntry entryOld = findWithEqualHostname(prevList,host);
+            if(entryOld == null)
+                storeTo(entry, prefs);
+            else
+                storeDiffs(prefs.node(host), entryOld, entry);
         }
     }
 
-    private HostNameAEEntry getMatchingEntry(HostNameAEEntry entry,
-            ArrayList<HostNameAEEntry> lst) {
-        for (HostNameAEEntry item : lst)
-            if (entry.getHostName().compareTo(item.getHostName()) == 0)
-                return item;
-
+    private static HostNameAEEntry findWithEqualHostname(
+            Collection<HostNameAEEntry> from, String hostName) {
+        for(HostNameAEEntry e: from)
+            if(e.getHostName().equalsIgnoreCase(hostName))
+                return e;
         return null;
     }
 
-    private void storeDiffs(Preferences prefs, HostNameAEEntry prev,
+    private static void storeDiffs(Preferences prefs, HostNameAEEntry prev,
             HostNameAEEntry current) {
         if (prev != null) {
             PreferencesUtils.storeDiff(prefs, "dicomHostname",
@@ -434,9 +457,49 @@ public class PreferencesArchiveConfiguration extends
             storeTo(current, prefs);
     }
 
-    private void storeDiffs(Preferences prefs, AttributeFilter prev,
+    private static void mergeRejectionParams(ArchiveDeviceExtension prev,
+            ArchiveDeviceExtension arcDev, Preferences deviceNode)
+                    throws BackingStoreException {
+        Preferences prefs = deviceNode.node("dcmRejectionNote");
+        storeDiffs(prefs, prev.getRejectionParams(),
+                arcDev.getRejectionParams());
+    }
+
+    private static void storeDiffs(Preferences prefs, RejectionParam[] prev,
+            RejectionParam[] rejectionNotes) throws BackingStoreException {
+        int n = Math.min(prev.length, rejectionNotes.length);
+        for (int i = 0; i < n; i++) {
+            storeDiffs(prev[i], rejectionNotes[i], prefs.node("" + (i+1)));
+        }
+        for (int i = n; i < rejectionNotes.length; i++) {
+            storeTo(rejectionNotes[i], prefs.node("" + (i+1)));
+        }
+        for (int i = n; i < prev.length; i++) {
+            Preferences node = prefs.node("" + (i+1));
+            node.removeNode();
+            node.flush();
+        }
+    }
+
+    private static void storeDiffs(RejectionParam prev, RejectionParam rn,
+            Preferences prefs) {
+        PreferencesUtils.storeDiff(prefs, "dcmRejectionNoteTitle",
+                prev.getRejectionNoteTitle(),
+                rn.getRejectionNoteTitle());
+        PreferencesUtils.storeDiff(prefs, "dcmRevokeRejection",
+                prev.isRevokeRejection(),
+                rn.isRevokeRejection(),
+                false);
+        PreferencesUtils.storeDiff(prefs, "dcmAcceptPreviousRejectedInstance",
+                prev.getAcceptPreviousRejectedInstance(),
+                rn.getAcceptPreviousRejectedInstance());
+        PreferencesUtils.storeDiff(prefs, "dcmAcceptPreviousRejectedInstance",
+                prev.getOverwritePreviousRejection(),
+                rn.getOverwritePreviousRejection());
+    }
+
+    private static void storeDiffs(Preferences prefs, AttributeFilter prev,
             AttributeFilter filter) {
-        storeTags(prefs, "dcmTag", filter.getSelection());
         storeDiffTags(prefs, "dcmTag", prev.getSelection(),
                 filter.getSelection());
         PreferencesUtils.storeDiff(prefs, "dcmCustomAttribute1",
@@ -447,8 +510,8 @@ public class PreferencesArchiveConfiguration extends
                 prev.getCustomAttribute3(), filter.getCustomAttribute3());
     }
 
-    private void storeDiffTags(Preferences prefs, String key, int[] prevs,
-            int[] vals) {
+    private static void storeDiffTags(Preferences prefs, String key,
+            int[] prevs, int[] vals) {
         if (!Arrays.equals(prevs, vals)) {
             PreferencesUtils.removeKeys(prefs, key, vals.length, prevs.length);
             storeTags(prefs, key, vals);

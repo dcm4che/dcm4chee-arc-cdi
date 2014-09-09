@@ -41,6 +41,7 @@ package org.dcm4chee.archive.datamgmt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.enterprise.context.RequestScoped;
@@ -59,10 +60,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.Status;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.ws.WebServiceException;
 
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.json.JSONReader;
+import org.dcm4che3.json.JSONReader.Callback;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4che3.data.Attributes;
@@ -71,6 +72,7 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtBean;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB;
+import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.PatientCommands;
 import org.dcm4chee.archive.entity.Issuer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,22 +91,20 @@ public class DataMgmt {
     @Context
     private HttpServletRequest request;
 
-    private static String RSP;
-
     @Inject
     Device device;
 
     @Inject
     DataMgmtBean dataManager;
-
+    
     // Patient Level
     // update
     @POST
-    @Path("updateXML/patients/{PatientID}/{issuer:.*}")
+    @Path("updatexml/patients/{PatientID}/{Issuer:.*}")
     @Consumes({ "application/xml" })
     public Response updateXMLPatient(@Context UriInfo uriInfo, InputStream in,
             @PathParam("PatientID") String patientID,
-            @PathParam("issuer") String issuer) throws Exception {
+            @PathParam("Issuer") String issuer) throws Exception {
         String[] issuerVals = issuer.split("/");
         Issuer matchingIssuer = null;
         if (issuerVals.length > 0) {
@@ -125,11 +125,11 @@ public class DataMgmt {
     }
 
     @POST
-    @Path("updateJSON/patients/{PatientID}/{issuer:.*}")
+    @Path("updatejson/patients/{PatientID}/{Issuer:.*}")
     @Consumes({ "application/json" })
     public Response updateJSONPatient(@Context UriInfo uriInfo, InputStream in,
             @PathParam("PatientID") String patientID,
-            @PathParam("issuer") String issuer) throws Exception {
+            @PathParam("Issuer") String issuer) throws Exception {
         String[] issuerVals = issuer.split("/");
         Issuer matchingIssuer = null;
         if (issuerVals.length > 0) {
@@ -149,13 +149,59 @@ public class DataMgmt {
         return updateJSON("PATIENT", id, null, null, null, in);
     }
 
+    @POST
+    @Path("{PatientOperation}/{AETitle}")
+    public Response patientOperation(@Context UriInfo uriInfo, InputStream in,
+            @PathParam("AETitle") String aeTitle,
+            @PathParam("PatientOperation") String patientOperation) {
+        PatientCommands command = patientOperation.compareTo("merge") == 0 ? PatientCommands.PATIENT_MERGE
+                : patientOperation.compareTo("link") == 0 ? PatientCommands.PATIENT_LINK
+                        : patientOperation.compareTo("unlink") == 0 ? PatientCommands.PATIENT_UNLINK
+                                : patientOperation.compareTo("updateids") == 0 ? PatientCommands.PATIENT_UPDATE_ID
+                                : null;
+        
+        if (command == null)
+            throw new WebApplicationException(
+                    "Unable to decide patient command - supported commands {merge, link, unlink}");
+        ArrayList<HashMap<String, String>> query = new ArrayList<HashMap<String, String>>();
+        ArrayList<Attributes> attrs = null;
+        try {
+            attrs = parseJSONAttributesToList(in, query);
+            LOG.info("Received JSON request for DICOM Header Object Update");
+            if (query.size()<2)
+                throw new WebApplicationException(new Exception(
+                        "Unable to decide request data"), Response.Status.BAD_REQUEST);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Received Attributes for patient operation - "+patientOperation);
+                for(int i=0; i< query.size();i++){
+                    LOG.debug(i==0 ? "Source data: ":"Target data: ");
+                for (String key : query.get(i).keySet()) {
+                    LOG.debug(key + "=" + query.get(i).get(key));
+                }
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            throw new WebApplicationException(
+                    "Unable to process patient operation request data");
+        }
+
+        return dataManager.patientOperation(attrs.get(0), attrs.get(1),
+                device.getApplicationEntity(aeTitle), command) ? Response
+                .status(Status.OK).entity("Patient operation successful - "+patientOperation)
+                .build() : Response.status(Status.CONFLICT)
+                .entity("Error - Unable to perform patient operation - "+patientOperation).build();
+    }
+    
+    // Study Level
     // move study
     @GET
-    @Path("moveStudy/studies/{StudyInstanceUID}/patients/{PatientID}/{issuer:.*}")
+    @Path("movestudy/studies/{StudyInstanceUID}/patients/{PatientID}/{Issuer:.*}")
     public Response moveStudy(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("PatientID") String patientID,
-            @PathParam("issuer") String issuer) {
+            @PathParam("Issuer") String issuer) {
         String[] issuerVals = issuer.split("/");
         Issuer matchingIssuer = null;
         if (issuerVals.length > 0) {
@@ -172,21 +218,13 @@ public class DataMgmt {
         }
 
         IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
-        return moveStudy(studyInstanceUID, id);
+        return dataManager.moveStudy(studyInstanceUID, id)?
+        Response.status(Status.OK).entity("Study Moved Successfully").build():
+        Response.status(Status.CONFLICT).entity("Error: Study Not Moved").build();
     }
-
-    private Response moveStudy(String studyInstanceUID, IDWithIssuer id) {
-        boolean moved = dataManager.moveStudy(studyInstanceUID, id);
-        Response rspMoved = Response.status(Status.OK)
-                .entity("Study Moved Successfully").build();
-        Response rspError = Response.status(Status.CONFLICT)
-                .entity("Error: Study Not Moved").build();
-        return moved ? rspMoved : rspError;
-    }
-
-    // Study Level
+    
     @POST
-    @Path("updateXML/studies/{StudyInstanceUID}")
+    @Path("updatexml/studies/{StudyInstanceUID}")
     @Consumes({ "application/xml" })
     public Response updateXMLStudies(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID)
@@ -204,7 +242,7 @@ public class DataMgmt {
     }
 
     @GET
-    @Path("splitStudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
+    @Path("splitstudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
     public Response splitStudy(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
@@ -219,7 +257,7 @@ public class DataMgmt {
     }
 
     @GET
-    @Path("segmentStudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
+    @Path("segmentstudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
     public Response segmentStudy(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
@@ -237,7 +275,7 @@ public class DataMgmt {
 
     // Series Level
     @POST
-    @Path("updateXML/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
+    @Path("updatexml/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
     @Consumes({ "application/xml" })
     public Response updateXMLSeries(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
@@ -248,7 +286,7 @@ public class DataMgmt {
     }
 
     @POST
-    @Path("updateJSON/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
+    @Path("updatejson/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
     @Consumes({ "application/json" })
     public Response updateJSONSeries(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
@@ -259,7 +297,7 @@ public class DataMgmt {
     }
 
     @GET
-    @Path("splitSeries/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}/targetstudies/{TargetStudyInstanceUID}/targetseries/{TargetSeriesInstanceUID}")
+    @Path("splitseries/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}/targetstudies/{TargetStudyInstanceUID}/targetseries/{TargetSeriesInstanceUID}")
     public Response splitSeries(@Context UriInfo uriInfo, InputStream in,
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
@@ -278,7 +316,7 @@ public class DataMgmt {
 
     // Instance Level
     @POST
-    @Path("updateXML/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
+    @Path("updatexml/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
     @Consumes({ "application/xml" })
     public Response updateXMLInstances(@Context UriInfo uriInfo,
             InputStream in,
@@ -291,7 +329,7 @@ public class DataMgmt {
     }
 
     @POST
-    @Path("updateJSON/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
+    @Path("updatejson/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
     @Consumes({ "application/json" })
     public Response updateJSONInstances(@Context UriInfo uriInfo,
             InputStream in,
@@ -342,7 +380,7 @@ public class DataMgmt {
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
-        return Respond();
+        return Response.status(Status.OK).entity("Successfully Processed Update").build();
     }
 
     public Response updateJSON(String level, IDWithIssuer id,
@@ -385,7 +423,7 @@ public class DataMgmt {
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
-        return Respond();
+        return Response.status(Status.OK).entity("Successfully Processed Update").build();
     }
 
     private void updateInstance(Attributes attrs, String studyInstanceUID,
@@ -443,7 +481,44 @@ public class DataMgmt {
         }
         return ds;
     }
+    
+    private ArrayList<Attributes> parseJSONAttributesToList(InputStream in,
+            ArrayList<HashMap<String, String>> query) throws IOException {
 
+        JSONReader reader = new JSONReader(
+                Json.createParser(new InputStreamReader(in, "UTF-8")));
+        final ArrayList<Attributes> attributesList = new ArrayList<Attributes>();
+        
+        reader.readDatasets(new Callback() {
+            
+            @Override
+            public void onDataset(Attributes fmi, Attributes dataset) {
+                attributesList.add(dataset);
+            }
+        });
+        ElementDictionary dict = ElementDictionary
+                .getStandardElementDictionary();
+
+        for (int i = 0; i < attributesList.size(); i++){
+            HashMap<String, String> tmpQMap = new HashMap<String, String>(); 
+        for (int j = 0; j < attributesList.get(i).tags().length; j++) {
+            Attributes ds = attributesList.get(i);
+            if (TagUtils.isPrivateTag(ds.tags()[j])) {
+                dict = ElementDictionary.getElementDictionary(ds
+                        .getPrivateCreator(ds.tags()[j]));
+                query.get(i).put(dict.keywordOf(ds.tags()[j]),
+                        ds.getString(ds.tags()[j]));
+            } else {
+                dict = ElementDictionary.getStandardElementDictionary();
+                tmpQMap.put(dict.keywordOf(ds.tags()[j]),
+                        ds.getString(ds.tags()[j]));
+            }
+        }
+        query.add(tmpQMap);
+        }
+
+        return attributesList;
+    }
     private Attributes parseXMLAttributes(InputStream in,
             HashMap<String, String> query) throws SAXException,
             ParserConfigurationException, IOException {
@@ -475,17 +550,6 @@ public class DataMgmt {
         return ds;
     }
 
-    private Response Respond() {
-        try {
-            if (RSP == null) {
-                RSP = "Successfully processed request";
-                return Response.status(Status.OK).entity(RSP).build();
-            } else {
-                return Response.status(Status.NOT_MODIFIED).entity(RSP).build();
-            }
-        } catch (WebServiceException e) {
-            throw e;
-        }
-    }
+
 
 }

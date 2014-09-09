@@ -609,4 +609,60 @@ public class PatientServiceEJB implements PatientService {
         return false;
     }
 
+    @Override
+    public void updatePatientID(Attributes srcPatientAttrs,
+            Attributes otherPatientAttrs, StoreParam storeParam) throws NonUniquePatientException {
+        Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(srcPatientAttrs);
+        Collection<IDWithIssuer> otherPids = IDWithIssuer.pidsOf(otherPatientAttrs);
+        List<Patient> srcPatient;
+        List<Patient> otherPatient;
+        srcPatient = findPatientByIDs(pids);
+            if(srcPatient.isEmpty())
+                throw new IllegalArgumentException("No patient found for source attributes - expected 1 match");
+            else if(srcPatient.size()>1)
+                throw new IllegalArgumentException("More than one patient found for source attributes - expected 1 match");
+
+            Patient patient = srcPatient.get(0);
+            otherPatient = findPatientByIDs(otherPids);
+            if(!otherPatient.isEmpty())
+                throw new IllegalArgumentException("One or more patients found for target update attributes - expected 0 match");
+            //check if original ids have links
+            ArrayList<IDWithIssuer> linkedPatientsIDs =  new ArrayList<IDWithIssuer>();
+            for(PatientID linkedID : patient.getLinkedPatientIDs())
+            {
+                linkedPatientsIDs.add(linkedID.toIDWithIssuer());
+            }
+            Collection<Patient> linkedPatients = findPatientByIDs(linkedPatientsIDs);
+            Iterator<Patient> linkedPatientsIterator = linkedPatients.iterator();
+            try{
+            while(linkedPatientsIterator.hasNext())
+            {
+                Patient other = linkedPatientsIterator.next();
+                unlinkPatientIDs(patient, other, storeParam.isDeIdentifyLogs());
+                unlinkPatientIDs(other, patient, storeParam.isDeIdentifyLogs());
+            }
+            
+            patient.getPatientIDs().clear();
+          
+            Collection<PatientID> newPatientIDs = createPatientIDs(otherPids, patient, storeParam.isDeIdentifyLogs());
+            for(PatientID id: newPatientIDs){
+                patient.getPatientIDs().add(id);
+            }
+            }
+            catch(Exception e)
+            {
+                em.clear();
+                LOG.info("failed to update ID {} with {} ",pids, otherPids);
+            }
+
+            //set blob data
+            Attributes patientAttrs = patient.getAttributes();
+            AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
+            if (patientAttrs.updateSelected(otherPatientAttrs, null, filter.getSelection())) {
+                patient.setAttributes(patientAttrs, filter,
+                        storeParam.getFuzzyStr());
+                em.flush();
+                LOG.info("Update ID {} with {} ",pids, otherPids);
+            }
+    }
 }

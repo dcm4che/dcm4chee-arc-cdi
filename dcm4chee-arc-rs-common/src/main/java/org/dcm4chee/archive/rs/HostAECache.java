@@ -42,11 +42,10 @@ package org.dcm4chee.archive.rs;
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.net.ApplicationEntity;
 
 public interface HostAECache {
 
-    ApplicationEntity findAE(HttpSource source) throws ConfigurationNotFoundException;
+    ApplicationEntity findAE(HttpSource source);
 
 }

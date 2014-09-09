@@ -116,103 +116,133 @@ public class QueryServiceEJBTest {
     }
 
     @Test
-    public void calculateNumberOfStudyRelatedSeries_shouldUpdateSeriesA_whenIsShowRejectedForQualityReasonsIsTrue() {
+    public void calculateNumberOfStudyRelatedSeries_shouldNotUpdateNumberOfSeries_whenNumberOfInstancesCacheSlotIs0() {
         QueryParam mockQueryParam = easyMockSupport
                 .createMock(QueryParam.class);
-        Query mockQuery = easyMockSupport.createMock(Query.class);
 
-        expect(mockQueryParam.isShowRejectedForQualityReasons())
-                .andReturn(true);
-        expect(
-                mockEntityManager
-                        .createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES_A))
-                .andReturn(mockQuery);
+        expect(mockQueryParam.getNumberOfInstancesCacheSlot()).andReturn(0);
 
-        calculateNumbeOfStudyRelatedSeries(mockQueryParam, mockQuery);
+        calculateNumbeOfStudyRelatedSeries(mockQueryParam);
     }
 
     @Test
-    public void calculateNumberOfStudyRelatedSeries_shouldUpdateSeries_whenIsShowRejectedForQualityReasonsIsFalse() {
+    public void calculateNumberOfStudyRelatedSeries_shouldNotUpdateNumberOfSeries_whenNumberOfInstancesCacheSlotIsMinus1() {
         QueryParam mockQueryParam = easyMockSupport
                 .createMock(QueryParam.class);
-        Query mockQuery = easyMockSupport.createMock(Query.class);
 
-        expect(mockQueryParam.isShowRejectedForQualityReasons()).andReturn(
-                false);
-        expect(
-                mockEntityManager
-                        .createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES))
-                .andReturn(mockQuery);
+        expect(mockQueryParam.getNumberOfInstancesCacheSlot()).andReturn(-1);
 
-        calculateNumbeOfStudyRelatedSeries(mockQueryParam, mockQuery);
+        calculateNumbeOfStudyRelatedSeries(mockQueryParam);
     }
 
     @Test
-    public void calculateNumberOfStudyRelatedInstance_shouldUpdateInstancesA_whenIsShowRejectedForQualityReasonsIsTrue() {
+    public void calculateNumberOfStudyRelatedSeries_shouldUpdateNumberOfSeries1_whenNumberOfInstancesCacheSlotIs1() {
         QueryParam mockQueryParam = easyMockSupport
                 .createMock(QueryParam.class);
         Query mockQuery = easyMockSupport.createMock(Query.class);
 
-        expect(mockQueryParam.isShowRejectedForQualityReasons())
-                .andReturn(true);
+        expect(mockQueryParam.getNumberOfInstancesCacheSlot()).andReturn(1);
         expect(
                 mockEntityManager
-                        .createNamedQuery(Study.UPDATE_NUMBER_OF_INSTANCES_A))
+                        .createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES[0]))
                 .andReturn(mockQuery);
 
-        calculateNumberOfStudyRelatedInstance(mockQueryParam, mockQuery);
+        expect(
+                mockQuery.setParameter(eq(1),
+                        eq(NUMBER_OF_STUDY_RELATED_SERIES))).andReturn(
+                mockQuery);
+        expect(mockQuery.setParameter(2, STUDY_PK)).andReturn(mockQuery);
+        expect(mockQuery.executeUpdate()).andReturn(UPDATED_ROW_COUNT);
+
+        calculateNumbeOfStudyRelatedSeries(mockQueryParam);
     }
 
     @Test
-    public void calculateNumberOfStudyRelatedInstance_shouldUpdateInstances_whenIsShowRejectedForQualityReasonsIsFalse() {
+    public void calculateNumberOfStudyRelatedInstance_shouldNotUpdateNumberOfInstances_whenNumberOfInstancesCacheSlotIs0() {
         QueryParam mockQueryParam = easyMockSupport
                 .createMock(QueryParam.class);
-        Query mockQuery = easyMockSupport.createMock(Query.class);
 
-        expect(mockQueryParam.isShowRejectedForQualityReasons()).andReturn(
-                false);
-        expect(
-                mockEntityManager
-                        .createNamedQuery(Study.UPDATE_NUMBER_OF_INSTANCES))
-                .andReturn(mockQuery);
+        expect(mockQueryParam.getNumberOfInstancesCacheSlot()).andReturn(0);
 
-        calculateNumberOfStudyRelatedInstance(mockQueryParam, mockQuery);
+        calculateNumberOfStudyRelatedInstance(mockQueryParam);
     }
 
     @Test
-    public void calculateNumberOfSeriesRelatedInstance_shouldUpdateInstancesA_whenIsShowRejectedForQualityReasonsIsTrue() {
+    public void calculateNumberOfStudyRelatedInstance_shouldNotUpdateNumberOfInstances_whenNumberOfInstancesCacheSlotIsMinus1() {
         QueryParam mockQueryParam = easyMockSupport
                 .createMock(QueryParam.class);
-        Query mockQuery = easyMockSupport.createMock(Query.class);
 
-        expect(mockQueryParam.isShowRejectedForQualityReasons())
-                .andReturn(true);
-        expect(
-                mockEntityManager
-                        .createNamedQuery(Series.UPDATE_NUMBER_OF_INSTANCES_A))
-                .andReturn(mockQuery);
+        expect(mockQueryParam.getNumberOfInstancesCacheSlot()).andReturn(-1);
 
-        calculateNumberOfSeriesRelatedInstance(mockQueryParam, mockQuery);
+        calculateNumberOfStudyRelatedInstance(mockQueryParam);
     }
 
     @Test
-    public void calculateNumberOfSeriesRelatedInstance_shouldUpdateInstances_whenIsShowRejectedForQualityReasonsIsFalse() {
+    public void calculateNumberOfStudyRelatedInstance_shouldUpdateNumberOfInstances2_whenNumberOfInstancesCacheSlotIs2() {
         QueryParam mockQueryParam = easyMockSupport
                 .createMock(QueryParam.class);
         Query mockQuery = easyMockSupport.createMock(Query.class);
 
-        expect(mockQueryParam.isShowRejectedForQualityReasons()).andReturn(
-                false);
+        expect(mockQueryParam.getNumberOfInstancesCacheSlot()).andReturn(2);
+
         expect(
                 mockEntityManager
-                        .createNamedQuery(Series.UPDATE_NUMBER_OF_INSTANCES))
+                        .createNamedQuery(Study.UPDATE_NUMBER_OF_INSTANCES[1]))
                 .andReturn(mockQuery);
 
-        calculateNumberOfSeriesRelatedInstance(mockQueryParam, mockQuery);
+        expect(
+                mockQuery.setParameter(eq(1),
+                        eq(NUMBER_OF_STUDY_RELATED_INSTANCES))).andReturn(
+                mockQuery);
+        expect(mockQuery.setParameter(2, STUDY_PK)).andReturn(mockQuery);
+        expect(mockQuery.executeUpdate()).andReturn(UPDATED_ROW_COUNT);
+
+        calculateNumberOfStudyRelatedInstance(mockQueryParam);
     }
 
-    void calculateNumbeOfStudyRelatedSeries(QueryParam mockQueryParam,
-            Query mockQuery) {
+    @Test
+    public void calculateNumberOfSeriesRelatedInstance_shouldNotUpdateNumberOfInstances_whenNumberOfInstancesCacheSlotIs0() {
+        QueryParam mockQueryParam = easyMockSupport
+                .createMock(QueryParam.class);
+
+        expect(mockQueryParam.getNumberOfInstancesCacheSlot()).andReturn(0);
+
+        calculateNumberOfSeriesRelatedInstance(mockQueryParam);
+    }
+
+    @Test
+    public void calculateNumberOfSeriesRelatedInstance_shouldNotUpdateNumberOfInstances_whenNumberOfInstancesCacheSlotIsMinus1() {
+        QueryParam mockQueryParam = easyMockSupport
+                .createMock(QueryParam.class);
+
+        expect(mockQueryParam.getNumberOfInstancesCacheSlot()).andReturn(-1);
+
+        calculateNumberOfSeriesRelatedInstance(mockQueryParam);
+    }
+
+    @Test
+    public void calculateNumberOfSeriesRelatedInstance_shouldNotUpdateNumberOfInstances3_whenNumberOfInstancesCacheSlotIs3() {
+        QueryParam mockQueryParam = easyMockSupport
+                .createMock(QueryParam.class);
+        Query mockQuery = easyMockSupport.createMock(Query.class);
+
+        expect(mockQueryParam.getNumberOfInstancesCacheSlot()).andReturn(3);
+        expect(
+                mockEntityManager
+                        .createNamedQuery(Series.UPDATE_NUMBER_OF_INSTANCES[2]))
+                .andReturn(mockQuery);
+
+        expect(
+                mockQuery.setParameter(eq(1),
+                        eq(NUMBER_OF_SERIES_RELATED_INSTANCES))).andReturn(
+                mockQuery);
+        expect(mockQuery.setParameter(2, SERIES_PK)).andReturn(mockQuery);
+        expect(mockQuery.executeUpdate()).andReturn(UPDATED_ROW_COUNT);
+
+        calculateNumberOfSeriesRelatedInstance(mockQueryParam);
+    }
+
+    void calculateNumbeOfStudyRelatedSeries(QueryParam mockQueryParam) {
         HibernateSubQuery mockHibernateSubQuery = PowerMock
                 .createMock(HibernateSubQuery.class);
         Predicate mockPredicate = easyMockSupport
@@ -246,13 +276,6 @@ public class QueryServiceEJBTest {
                 ExpressionUtils.and(isA(Predicate.class),
                         same(mockBooleanExpression))).andReturn(mockPredicate);
 
-        expect(
-                mockQuery.setParameter(eq(1),
-                        eq(NUMBER_OF_STUDY_RELATED_SERIES))).andReturn(
-                mockQuery);
-        expect(mockQuery.setParameter(2, STUDY_PK)).andReturn(mockQuery);
-        expect(mockQuery.executeUpdate()).andReturn(UPDATED_ROW_COUNT);
-
         easyMockSupport.replayAll();
         PowerMock.replayAll();
 
@@ -264,8 +287,7 @@ public class QueryServiceEJBTest {
     }
 
     @SuppressWarnings("unchecked")
-    void calculateNumberOfStudyRelatedInstance(QueryParam mockQueryParam,
-            Query mockQuery) {
+    void calculateNumberOfStudyRelatedInstance(QueryParam mockQueryParam) {
         expect(
                 cut.createBooleanBuilder(isA(BooleanExpression.class),
                         same(mockQueryParam))).andReturn(mockBooleanBuilder);
@@ -281,13 +303,6 @@ public class QueryServiceEJBTest {
         expect(mockHibernateQuery.count()).andReturn(
                 (long) NUMBER_OF_STUDY_RELATED_INSTANCES);
 
-        expect(
-                mockQuery.setParameter(eq(1),
-                        eq(NUMBER_OF_STUDY_RELATED_INSTANCES))).andReturn(
-                mockQuery);
-        expect(mockQuery.setParameter(2, STUDY_PK)).andReturn(mockQuery);
-        expect(mockQuery.executeUpdate()).andReturn(UPDATED_ROW_COUNT);
-
         easyMockSupport.replayAll();
         PowerMock.replayAll();
 
@@ -298,8 +313,7 @@ public class QueryServiceEJBTest {
         easyMockSupport.verifyAll();
     }
 
-    void calculateNumberOfSeriesRelatedInstance(QueryParam mockQueryParam,
-            Query mockQuery) {
+    void calculateNumberOfSeriesRelatedInstance(QueryParam mockQueryParam) {
         expect(
                 cut.createBooleanBuilder(isA(BooleanExpression.class),
                         same(mockQueryParam))).andReturn(mockBooleanBuilder);
@@ -311,13 +325,6 @@ public class QueryServiceEJBTest {
                 mockHibernateQuery);
         expect(mockHibernateQuery.count()).andReturn(
                 (long) NUMBER_OF_SERIES_RELATED_INSTANCES);
-
-        expect(
-                mockQuery.setParameter(eq(1),
-                        eq(NUMBER_OF_SERIES_RELATED_INSTANCES))).andReturn(
-                mockQuery);
-        expect(mockQuery.setParameter(2, SERIES_PK)).andReturn(mockQuery);
-        expect(mockQuery.executeUpdate()).andReturn(UPDATED_ROW_COUNT);
 
         easyMockSupport.replayAll();
         PowerMock.replayAll();

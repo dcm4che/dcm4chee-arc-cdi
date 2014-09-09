@@ -40,11 +40,12 @@ package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.TimeZone;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -64,6 +65,8 @@ import javax.persistence.Table;
 public class FileRef implements Serializable {
 
     private static final long serialVersionUID = 1735835006678974580L;
+
+    public enum Status { OK, DELETE_FAILED, REPLACED };
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -94,8 +97,13 @@ public class FileRef implements Serializable {
     @Column(name = "file_digest", updatable = false)
     private String digest;
 
+    @Basic(optional = false)
+    @Enumerated(EnumType.ORDINAL)
+    @Column(name = "file_status", updatable = true)
+    private Status status;
+
     @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name = "instance_fk", updatable = false)
+    @JoinColumn(name = "instance_fk", updatable = true)
     private Instance instance;
 
     @ManyToOne(fetch=FetchType.LAZY)
@@ -105,12 +113,13 @@ public class FileRef implements Serializable {
     public FileRef() {};
 
     public FileRef(FileSystem fileSystem, String filePath, String transferSyntaxUID,
-            long fileSize, String digest) {
+            long fileSize, String digest, Status status) {
         this.fileSystem = fileSystem;
         this.filePath = filePath;
         this.transferSyntaxUID = transferSyntaxUID;
         this.fileSize = fileSize;
         this.digest = digest;
+        this.status = status;
     }
 
     @PrePersist
@@ -161,6 +170,7 @@ public class FileRef implements Serializable {
                 + ", path=" + filePath
                 + ", tsuid=" + transferSyntaxUID
                 + ", size=" + fileSize
+                + ", status=" + status
                 + "]";
     }
 
@@ -171,4 +181,13 @@ public class FileRef implements Serializable {
     public String getSourceTimeZone(){
 	return this.fileTimeZone;
     }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
 }
