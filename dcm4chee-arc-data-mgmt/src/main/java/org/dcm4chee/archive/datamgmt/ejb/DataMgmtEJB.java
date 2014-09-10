@@ -56,6 +56,7 @@ import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -93,6 +94,12 @@ public class DataMgmtEJB implements DataMgmtBean {
 public enum PatientCommands{
     PATIENT_LINK,PATIENT_MERGE,PATIENT_UNLINK,PATIENT_UPDATE_ID;
 }
+public enum StudyCommands{
+    STUDY_MOVE, STUDY_SPLIT, STUDY_SEGMENT
+}
+public enum SeriesCommands{
+    SERIES_SPLIT
+}
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
@@ -101,6 +108,9 @@ public enum PatientCommands{
 
     @Inject
     private FileMgmt fileManager;
+    
+    @Inject
+    private Device device;
 
     public Study deleteStudy(String studyInstanceUID) throws Exception {
         TypedQuery<Study> query = em.createNamedQuery(
@@ -217,8 +227,7 @@ public enum PatientCommands{
         return false;
     }
 
-    @Override
-    public Study getStudy(String studyInstanceUID) {
+   private Study getStudy(String studyInstanceUID) {
         return em.find(Study.class, getStudyPK(studyInstanceUID));
     }
 
@@ -486,6 +495,34 @@ public enum PatientCommands{
 
     }
 
+    @Override
+    public boolean studyOperation(Attributes sourceAttributes,
+            Attributes targetAttributes, StudyCommands command) {
+        try {
+            ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+            String studyInstanceUID = sourceAttributes.getString(Tag.StudyInstanceUID);
+            String seriesInstanceUID = sourceAttributes.getString(Tag.SeriesInstanceUID);
+            String targetStudyInstanceUID = targetAttributes.getString(Tag.StudyInstanceUID);
+        switch (command) {
+        case STUDY_MOVE:
+            IDWithIssuer id = IDWithIssuer.pidOf(sourceAttributes);
+            moveStudy(studyInstanceUID, id);
+            break;
+        case STUDY_SPLIT:
+            splitStudy(studyInstanceUID, seriesInstanceUID, targetStudyInstanceUID);
+            break;
+        case STUDY_SEGMENT:
+            segmentStudy(studyInstanceUID, seriesInstanceUID, targetStudyInstanceUID, arcDevExt);
+            break;
+        }    
+            return true;
+        }
+        catch(Exception e)
+        {
+            return false;
+        }
+    }
+
 
     @Override
     public boolean moveStudy(String studyInstanceUID, IDWithIssuer id) {
@@ -512,7 +549,6 @@ public enum PatientCommands{
                 currentPatientStudies.add(currentStudy);
                 moved = true;
             }
-
         }
 
         em.flush();
@@ -557,6 +593,29 @@ public enum PatientCommands{
             targetStudy.resetNumberOfInstances();
         }
         return split;
+    }
+
+
+    @Override
+    public boolean seriesOperation(Attributes sourceAttributes,
+            Attributes targetAttributes, SeriesCommands command) {
+        try {
+            String studyInstanceUID = sourceAttributes.getString(Tag.StudyInstanceUID);
+            String seriesInstanceUID = sourceAttributes.getString(Tag.SeriesInstanceUID);
+            String sopInstanceUID = sourceAttributes.getString(Tag.SOPInstanceStatus);
+            String targetStudyInstanceUID = targetAttributes.getString(Tag.StudyInstanceUID);
+            String targetSeriesInstanceUID = targetAttributes.getString(Tag.SeriesInstanceUID);
+        switch (command) {
+        case SERIES_SPLIT:
+           splitSeries(studyInstanceUID, seriesInstanceUID, sopInstanceUID, targetStudyInstanceUID, targetSeriesInstanceUID);
+            break;
+        }    
+            return true;
+        }
+        catch(Exception e)
+        {
+            return false;
+        }
     }
 
     @Override
@@ -854,17 +913,6 @@ public enum PatientCommands{
         return issuer;
     }
 
-    public Issuer findOrCreateIssuer(String local, String universal, String universalType) {
-        Issuer issuer = em.find(Issuer.class,
-                getIssuerPK(local, universal, universalType));
-        if (issuer == null) {
-            issuer = new Issuer(local, universal, universalType);
-            em.persist(issuer);
-        }
-
-        return issuer;
-    }
-
     public Issuer getIssuer(String local, String universal, String universalType) {
         Issuer issuer = em.find(Issuer.class,
                 getIssuerPK(local, universal, universalType));
@@ -1067,7 +1115,6 @@ public enum PatientCommands{
         return newReqs;
 
     }
-
 }
 /*
  * 

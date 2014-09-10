@@ -49,8 +49,9 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.PatientCommands;
+import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.StudyCommands;
+import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.SeriesCommands;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 
@@ -64,12 +65,13 @@ public interface DataMgmtBean {
 
     Study deleteStudy(String studyInstanceUID) throws Exception;
     Series deleteSeries(String seriesInstanceUID) throws Exception;
-    Instance deleteInstance(String sopInstanceUID) throws FileNotFoundException, NoSuchFileException, IOException, Exception;
-    
+    Instance deleteInstance(String sopInstanceUID) throws FileNotFoundException,
+    NoSuchFileException, IOException, Exception;
+
     boolean deleteSeriesIfEmpty(String seriesInstanceUID, String studyInstanceUID);
     boolean deleteStudyIfEmpty(String studyInstanceUID);
 
-    Study getStudy(String studyInstanceUID);
+//    Study getStudy(String studyInstanceUID);
     void updateStudy(ArchiveDeviceExtension arcDevExt, String studyInstanceUID, Attributes attrs) throws EntityNotFoundException;
     void updateSeries(ArchiveDeviceExtension arcDevExt,
             String studyInstanceUID, String seriesInstanceUID, Attributes attrs) throws EntityNotFoundException;
@@ -78,10 +80,10 @@ public interface DataMgmtBean {
             String sopInstanceUID, Attributes attrs) throws EntityNotFoundException;
     void updatePatient(ArchiveDeviceExtension arcDevExt, IDWithIssuer id,
             Attributes attrs) throws EntityNotFoundException;
-    Issuer findOrCreateIssuer(String local, String universal,
-            String universalType);
-    Issuer getIssuer(String local, String universal,
-            String universalType);
+//    Issuer findOrCreateIssuer(String local, String universal,
+//            String universalType);
+//    Issuer getIssuer(String local, String universal,
+//            String universalType);
     boolean moveStudy(String studyInstanceUID, IDWithIssuer id);
     boolean splitStudy(String studyInstanceUID, String seriesInstanceUID,
             String targetStudyInstanceUID);
@@ -91,4 +93,10 @@ public interface DataMgmtBean {
     boolean segmentStudy(String studyInstanceUID, String seriesInstanceUID,
             String targetStudyInstanceUID, ArchiveDeviceExtension arcDevExt);
     boolean patientOperation(Attributes sourcePatientAttributes, Attributes targetPatientAttributes,ApplicationEntity arcAE, PatientCommands command);
+    
+    boolean studyOperation(Attributes attributes, Attributes attributes2,
+            StudyCommands command);
+    
+    boolean seriesOperation(Attributes attributes, Attributes attributes2,
+            SeriesCommands command);
 }
