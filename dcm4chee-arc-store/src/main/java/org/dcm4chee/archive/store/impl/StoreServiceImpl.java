@@ -514,7 +514,7 @@ public class StoreServiceImpl implements StoreService {
         try {
             Attributes attrs = context.getAttributes();
             Instance inst = em
-                    .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID,
+                    .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
                             Instance.class)
                     .setParameter(1, attrs.getString(Tag.SOPInstanceUID))
                     .getSingleResult();
@@ -560,7 +560,7 @@ public class StoreServiceImpl implements StoreService {
         Attributes attrs = context.getAttributes();
         try {
             Series series = em
-                    .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID,
+                    .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID_EAGER,
                             Series.class)
                     .setParameter(1, attrs.getString(Tag.SeriesInstanceUID))
                     .getSingleResult();
@@ -581,7 +581,7 @@ public class StoreServiceImpl implements StoreService {
         Attributes attrs = context.getAttributes();
         try {
             Study study = em
-                    .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID,
+                    .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID_EAGER,
                             Study.class)
                     .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
                     .getSingleResult();

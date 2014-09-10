@@ -79,6 +79,15 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     name="Series.findBySeriesInstanceUID",
     query="SELECT s FROM Series s WHERE s.seriesInstanceUID = ?1"),
 @NamedQuery(
+        name="Series.findBySeriesInstanceUID.eager",
+        query="SELECT se FROM Series se "
+                + "JOIN FETCH se.study st "
+                + "JOIN FETCH st.patient p "
+                + "JOIN FETCH se.attributesBlob "
+                + "JOIN FETCH st.attributesBlob "                
+                + "JOIN FETCH p.attributesBlob "
+                + "WHERE se.seriesInstanceUID = ?1"),    
+@NamedQuery(
     name="Series.patientStudySeriesAttributes",
     query="SELECT NEW org.dcm4chee.archive.entity.PatientStudySeriesAttributes("
             + "s.attributesBlob.encodedAttributes, "
@@ -127,6 +136,7 @@ public class Series implements Serializable {
     private static final long serialVersionUID = -8317105475421750944L;
 
     public static final String FIND_BY_SERIES_INSTANCE_UID = "Series.findBySeriesInstanceUID";
+    public static final String FIND_BY_SERIES_INSTANCE_UID_EAGER = "Series.findBySeriesInstanceUID.eager";    
     public static final String PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.patientStudySeriesAttributes";
     public static final String QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.queryPatientStudySeriesAttributes";
     public static final String [] UPDATE_NUMBER_OF_INSTANCES = {
