@@ -55,6 +55,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
@@ -127,7 +128,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "f.filePath, "
             + "f.transferSyntaxUID, "
             + "f.fileSystem.availability, "
-            + "i.encodedAttributes) "
+            + "i.attributesBlob.encodedAttributes) "
             + "FROM Instance i "
             + "LEFT JOIN i.fileRefs f "
             + "WHERE i.sopInstanceUID = ?1"),
@@ -144,7 +145,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "f.filePath, "
             + "f.transferSyntaxUID, "
             + "f.fileSystem.availability, "
-            + "i.encodedAttributes) "
+            + "i.attributesBlob.encodedAttributes) "
             + "FROM Instance i "
             + "LEFT JOIN i.fileRefs f "
             + "WHERE i.series.study.studyInstanceUID = ?1"),
@@ -161,7 +162,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "f.filePath, "
             + "f.transferSyntaxUID, "
             + "f.fileSystem.availability, "
-            + "i.encodedAttributes) "
+            + "i.attributesBlob.encodedAttributes) "
             + "FROM Instance i "
             + "LEFT JOIN i.fileRefs f "
             + "WHERE i.series.seriesInstanceUID = ?1")})
@@ -255,9 +256,9 @@ public class Instance implements Serializable {
     @Column(name = "archived")
     private boolean archived;
 
-    @Basic(optional = false)
-    @Column(name = "inst_attrs")
-    private byte[] encodedAttributes;
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "attrs_fk")
+    private AttributesBlob attributesBlob;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "srcode_fk")
@@ -307,10 +308,12 @@ public class Instance implements Serializable {
         updatedTime = new Date();
     }
 
+    public AttributesBlob getAttributesBlob() {
+        return attributesBlob;
+    }
+    
     public Attributes getAttributes() throws BlobCorruptedException {
-        if (cachedAttributes == null)
-            cachedAttributes = Utils.decodeAttributes(encodedAttributes);
-        return cachedAttributes;
+        return attributesBlob.getAttributes();
     }
 
     public long getPk() {
@@ -413,10 +416,6 @@ public class Instance implements Serializable {
         this.archived = archived;
     }
 
-    public byte[] getEncodedAttributes() {
-        return encodedAttributes;
-    }
-
     public Code getConceptNameCode() {
         return conceptNameCode;
     }
@@ -487,7 +486,6 @@ public class Instance implements Serializable {
         instanceCustomAttribute3 =
                 AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        encodedAttributes = Utils.encodeAttributes(
-                cachedAttributes = new Attributes(attrs, filter.getSelection()));
+        attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
     }
 }

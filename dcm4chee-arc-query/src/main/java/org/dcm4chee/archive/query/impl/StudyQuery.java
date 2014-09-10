@@ -60,20 +60,20 @@ import com.mysema.query.types.Predicate;
 class StudyQuery extends AbstractQuery<Study> {
 
     static final Expression<?>[] SELECT = {
-        QStudy.study.pk,                        // (0)
-        QStudy.study.numberOfSeries1,           // (1)
-        QStudy.study.numberOfSeries2,           // (2)
-        QStudy.study.numberOfSeries3,           // (3)
-        QStudy.study.numberOfInstances1,        // (4)
-        QStudy.study.numberOfInstances2,        // (5)
-        QStudy.study.numberOfInstances3,        // (6)
-        QStudy.study.modalitiesInStudy,         // (7)
-        QStudy.study.sopClassesInStudy,         // (8)
-        QStudy.study.retrieveAETs,              // (9)
-        QStudy.study.externalRetrieveAET,       // (10)
-        QStudy.study.availability,              // (11)
-        QStudy.study.encodedAttributes,         // (12)
-        QPatient.patient.encodedAttributes      // (13)
+        QStudy.study.pk,                                   // (0)
+        QStudy.study.numberOfSeries1,                      // (1)
+        QStudy.study.numberOfSeries2,                      // (2)
+        QStudy.study.numberOfSeries3,                      // (3)
+        QStudy.study.numberOfInstances1,                   // (4)
+        QStudy.study.numberOfInstances2,                   // (5)
+        QStudy.study.numberOfInstances3,                   // (6)
+        QStudy.study.modalitiesInStudy,                    // (7)
+        QStudy.study.sopClassesInStudy,                    // (8)
+        QStudy.study.retrieveAETs,                         // (9)
+        QStudy.study.externalRetrieveAET,                  // (10)
+        QStudy.study.availability,                         // (11)
+        QStudy.study.attributesBlob.encodedAttributes,     // (12)
+        QPatient.patient.attributesBlob.encodedAttributes  // (13)
     };
 
     public StudyQuery(QueryContext context, StatelessSession session) {

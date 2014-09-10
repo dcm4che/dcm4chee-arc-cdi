@@ -178,7 +178,7 @@ public class DefaultRetrieveService implements RetrieveService {
                         QInstance.instance.sopInstanceUID,
                         QInstance.instance.retrieveAETs,
                         QInstance.instance.externalRetrieveAET,
-                        QInstance.instance.encodedAttributes,
+                        QInstance.instance.attributesBlob.encodedAttributes,
                         QFileRef.fileRef.fileTimeZone);
 
         return locate(query);

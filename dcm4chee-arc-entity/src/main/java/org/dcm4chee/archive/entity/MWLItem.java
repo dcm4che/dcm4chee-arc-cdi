@@ -128,9 +128,9 @@ public class MWLItem implements Serializable {
     @Column(name = "sps_status")
     private String status;
 
-    @Basic(optional = false)
-    @Column(name = "item_attrs")
-    private byte[] encodedAttributes;
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "attrs_fk")
+    private AttributesBlob attributesBlob;
 
     @Transient
     private Attributes cachedAttributes;
@@ -229,14 +229,12 @@ public class MWLItem implements Serializable {
         updatedTime = new Date();
     }
 
-    public byte[] getEncodedAttributes() {
-        return encodedAttributes;
+    public AttributesBlob getAttributesBlob() {
+        return attributesBlob;
     }
-
+    
     public Attributes getAttributes() throws BlobCorruptedException {
-        if (cachedAttributes == null)
-            cachedAttributes = Utils.decodeAttributes(encodedAttributes);
-        return cachedAttributes;
+        return attributesBlob.getAttributes();
     }
 
     public void setAttributes(Attributes attrs, FuzzyStr fuzzyStr) {
@@ -267,6 +265,6 @@ public class MWLItem implements Serializable {
         studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
         accessionNumber = attrs.getString(Tag.AccessionNumber);
 
-        encodedAttributes = Utils.encodeAttributes(cachedAttributes = attrs);
+        attributesBlob = new AttributesBlob(attrs);
     }
 }
