@@ -580,6 +580,7 @@ Setup WildFly
         [standalone@localhost:9999 /] jms-queue add --queue-address=ianscu --entries=queue/ianscu
         [standalone@localhost:9999 /] jms-queue add --queue-address=mppsscu --entries=queue/mppsscu
         [standalone@localhost:9999 /] jms-queue add --queue-address=stgcmtscp --entries=queue/stgcmtscp
+        [standalone@localhost:9999 /] jms-queue add --queue-address=delete --entries=queue/delete
 
 11. Set system property `org.dcm4chee.archive.ldap` to the location of the LDAP Connection configuration file,
     using WildFly CLI, e.g.:
