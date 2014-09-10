@@ -53,7 +53,9 @@ import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.mysema.query.jpa.hibernate.DetachedHibernateQueryFactory;
 import org.easymock.EasyMockSupport;
+import org.hibernate.Session;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,7 +65,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
-import com.mysema.query.jpa.hibernate.HibernateQueryFactory;
 import com.mysema.query.jpa.hibernate.HibernateSubQuery;
 import com.mysema.query.types.EntityPath;
 import com.mysema.query.types.ExpressionUtils;
@@ -93,7 +94,7 @@ public class QueryServiceEJBTest {
 
     BooleanBuilder mockBooleanBuilder;
 
-    HibernateQueryFactory mockHibernateQueryFactory;
+    DetachedHibernateQueryFactory mockDetachedHibernateQueryFactory;
 
     HibernateQuery mockHibernateQuery;
 
@@ -105,14 +106,14 @@ public class QueryServiceEJBTest {
 
         mockEntityManager = easyMockSupport.createMock(EntityManager.class);
         mockBooleanBuilder = PowerMock.createMock(BooleanBuilder.class);
-        mockHibernateQueryFactory = easyMockSupport
-                .createMock(HibernateQueryFactory.class);
+        mockDetachedHibernateQueryFactory = easyMockSupport
+                .createMock(DetachedHibernateQueryFactory.class);
         mockHibernateQuery = PowerMock.createMock(HibernateQuery.class);
 
         cut = easyMockSupport.createMockBuilder(QueryServiceEJB.class)
                 .addMockedMethod("createBooleanBuilder").createMock();
         cut.em = mockEntityManager;
-        cut.hibernateQueryFactory = mockHibernateQueryFactory;
+        cut.queryFactory = mockDetachedHibernateQueryFactory;
     }
 
     @Test
@@ -249,6 +250,7 @@ public class QueryServiceEJBTest {
                 .createNiceMock(Predicate.class);
         BooleanExpression mockBooleanExpression = easyMockSupport
                 .createNiceMock(BooleanExpression.class);
+        Session mockSession = easyMockSupport.createNiceMock(Session.class);
 
         PowerMock.mockStatic(ExpressionUtils.class);
 
@@ -256,7 +258,11 @@ public class QueryServiceEJBTest {
                 cut.createBooleanBuilder(isA(BooleanExpression.class),
                         same(mockQueryParam))).andReturn(mockBooleanBuilder);
 
-        expect(mockHibernateQueryFactory.query()).andReturn(mockHibernateQuery);
+        expect(mockEntityManager.unwrap(Session.class)).andReturn(
+                mockSession);
+
+        expect(mockDetachedHibernateQueryFactory.query(mockSession)).andReturn(
+                mockHibernateQuery);
         expect(mockHibernateQuery.from(QSeries.series)).andReturn(
                 mockHibernateQuery);
         expect(mockHibernateQuery.where(mockPredicate)).andReturn(
@@ -264,7 +270,7 @@ public class QueryServiceEJBTest {
         expect(mockHibernateQuery.count()).andReturn(
                 (long) NUMBER_OF_STUDY_RELATED_SERIES);
 
-        expect(mockHibernateQueryFactory.subQuery()).andReturn(
+        expect(mockDetachedHibernateQueryFactory.subQuery()).andReturn(
                 mockHibernateSubQuery);
         expect(mockHibernateSubQuery.from(QInstance.instance)).andReturn(
                 mockHibernateSubQuery);
@@ -288,11 +294,17 @@ public class QueryServiceEJBTest {
 
     @SuppressWarnings("unchecked")
     void calculateNumberOfStudyRelatedInstance(QueryParam mockQueryParam) {
+        Session mockSession = easyMockSupport.createNiceMock(Session.class);
+
         expect(
                 cut.createBooleanBuilder(isA(BooleanExpression.class),
                         same(mockQueryParam))).andReturn(mockBooleanBuilder);
 
-        expect(mockHibernateQueryFactory.query()).andReturn(mockHibernateQuery);
+        expect(mockEntityManager.unwrap(Session.class)).andReturn(
+                mockSession);
+
+        expect(mockDetachedHibernateQueryFactory.query(mockSession)).andReturn(
+                mockHibernateQuery);
         expect(mockHibernateQuery.from(QInstance.instance)).andReturn(
                 mockHibernateQuery);
         expect(
@@ -314,11 +326,17 @@ public class QueryServiceEJBTest {
     }
 
     void calculateNumberOfSeriesRelatedInstance(QueryParam mockQueryParam) {
+        Session mockSession = easyMockSupport.createNiceMock(Session.class);
+
         expect(
                 cut.createBooleanBuilder(isA(BooleanExpression.class),
                         same(mockQueryParam))).andReturn(mockBooleanBuilder);
 
-        expect(mockHibernateQueryFactory.query()).andReturn(mockHibernateQuery);
+        expect(mockEntityManager.unwrap(Session.class)).andReturn(
+                mockSession);
+
+        expect(mockDetachedHibernateQueryFactory.query(mockSession)).andReturn(
+                mockHibernateQuery);
         expect(mockHibernateQuery.from(QInstance.instance)).andReturn(
                 mockHibernateQuery);
         expect(mockHibernateQuery.where(mockBooleanBuilder)).andReturn(

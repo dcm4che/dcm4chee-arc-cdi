@@ -64,16 +64,19 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.json.JSONReader;
 import org.dcm4che3.json.JSONReader.Callback;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.ElementDictionary;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtBean;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB;
 import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.PatientCommands;
-import org.dcm4chee.archive.entity.Issuer;
+import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.SeriesCommands;
+import org.dcm4chee.archive.datamgmt.ejb.DataMgmtEJB.StudyCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -100,64 +103,28 @@ public class DataMgmt {
     // Patient Level
     // update
     @POST
-    @Path("updatexml/patients/{PatientID}/{Issuer:.*}")
+    @Path("updatexml/patients/")
     @Consumes({ "application/xml" })
-    public Response updateXMLPatient(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("PatientID") String patientID,
-            @PathParam("Issuer") String issuer) throws Exception {
-        String[] issuerVals = issuer.split("/");
-        Issuer matchingIssuer = null;
-        if (issuerVals.length > 0) {
-            if (issuerVals.length == 1) {
-                matchingIssuer = dataManager.getIssuer(issuerVals[0], null,
-                        null);
-            } else if (issuerVals.length == 2) {
-                matchingIssuer = dataManager.getIssuer(null, issuerVals[0],
-                        issuerVals[1]);
-            } else if (issuerVals.length == 3) {
-                matchingIssuer = dataManager.getIssuer(issuerVals[0],
-                        issuerVals[1], issuerVals[2]);
-            }
-        }
-
-        IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
-        return updateXML("PATIENT", id, null, null, null, in);
+    public Response updateXMLPatient(@Context UriInfo uriInfo, InputStream in) throws Exception {
+        return updateXML("PATIENT", in);
     }
 
     @POST
-    @Path("updatejson/patients/{PatientID}/{Issuer:.*}")
+    @Path("updatejson/patients")
     @Consumes({ "application/json" })
-    public Response updateJSONPatient(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("PatientID") String patientID,
-            @PathParam("Issuer") String issuer) throws Exception {
-        String[] issuerVals = issuer.split("/");
-        Issuer matchingIssuer = null;
-        if (issuerVals.length > 0) {
-            if (issuerVals.length == 1) {
-                matchingIssuer = dataManager.getIssuer(issuerVals[0], null,
-                        null);
-            } else if (issuerVals.length == 2) {
-                matchingIssuer = dataManager.getIssuer(null, issuerVals[0],
-                        issuerVals[1]);
-            } else if (issuerVals.length == 3) {
-                matchingIssuer = dataManager.getIssuer(issuerVals[0],
-                        issuerVals[1], issuerVals[2]);
-            }
-        }
-
-        IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
-        return updateJSON("PATIENT", id, null, null, null, in);
+    public Response updateJSONPatient(@Context UriInfo uriInfo, InputStream in) throws Exception {
+        return updateJSON("PATIENT", in);
     }
 
     @POST
-    @Path("{PatientOperation}/{AETitle}")
+    @Path("{AETitle}/{PatientOperation}/patients")
     public Response patientOperation(@Context UriInfo uriInfo, InputStream in,
             @PathParam("AETitle") String aeTitle,
             @PathParam("PatientOperation") String patientOperation) {
-        PatientCommands command = patientOperation.compareTo("merge") == 0 ? PatientCommands.PATIENT_MERGE
-                : patientOperation.compareTo("link") == 0 ? PatientCommands.PATIENT_LINK
-                        : patientOperation.compareTo("unlink") == 0 ? PatientCommands.PATIENT_UNLINK
-                                : patientOperation.compareTo("updateids") == 0 ? PatientCommands.PATIENT_UPDATE_ID
+        PatientCommands command = patientOperation.equalsIgnoreCase("merge")? PatientCommands.PATIENT_MERGE
+                : patientOperation.equalsIgnoreCase("link")? PatientCommands.PATIENT_LINK
+                        : patientOperation.equalsIgnoreCase("unlink")? PatientCommands.PATIENT_UNLINK
+                                : patientOperation.equalsIgnoreCase("updateids")? PatientCommands.PATIENT_UPDATE_ID
                                 : null;
         
         if (command == null)
@@ -167,14 +134,14 @@ public class DataMgmt {
         ArrayList<Attributes> attrs = null;
         try {
             attrs = parseJSONAttributesToList(in, query);
-            LOG.info("Received JSON request for DICOM Header Object Update");
-            if (query.size()<2)
+
+            if (query.size()%2!=0)
                 throw new WebApplicationException(new Exception(
                         "Unable to decide request data"), Response.Status.BAD_REQUEST);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Received Attributes for patient operation - "+patientOperation);
                 for(int i=0; i< query.size();i++){
-                    LOG.debug(i==0 ? "Source data: ":"Target data: ");
+                    LOG.debug(i%2==0 ? "Source data[{}]: ":"Target data[{}]: ",(i/2)+1);
                 for (String key : query.get(i).keySet()) {
                     LOG.debug(key + "=" + query.get(i).get(key));
                 }
@@ -187,163 +154,191 @@ public class DataMgmt {
                     "Unable to process patient operation request data");
         }
 
-        return dataManager.patientOperation(attrs.get(0), attrs.get(1),
-                device.getApplicationEntity(aeTitle), command) ? Response
-                .status(Status.OK).entity("Patient operation successful - "+patientOperation)
-                .build() : Response.status(Status.CONFLICT)
-                .entity("Error - Unable to perform patient operation - "+patientOperation).build();
+        return aggregatePatientOpResponse(attrs,device.getApplicationEntity(aeTitle),command, patientOperation);
     }
     
-    // Study Level
-    // move study
-    @GET
-    @Path("movestudy/studies/{StudyInstanceUID}/patients/{PatientID}/{Issuer:.*}")
-    public Response moveStudy(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("PatientID") String patientID,
-            @PathParam("Issuer") String issuer) {
-        String[] issuerVals = issuer.split("/");
-        Issuer matchingIssuer = null;
-        if (issuerVals.length > 0) {
-            if (issuerVals.length == 1) {
-                matchingIssuer = dataManager.getIssuer(issuerVals[0], null,
-                        null);
-            } else if (issuerVals.length == 2) {
-                matchingIssuer = dataManager.getIssuer(null, issuerVals[0],
-                        issuerVals[1]);
-            } else if (issuerVals.length == 3) {
-                matchingIssuer = dataManager.getIssuer(issuerVals[0],
-                        issuerVals[1], issuerVals[2]);
-            }
-        }
-
-        IDWithIssuer id = new IDWithIssuer(patientID, matchingIssuer);
-        return dataManager.moveStudy(studyInstanceUID, id)?
-        Response.status(Status.OK).entity("Study Moved Successfully").build():
-        Response.status(Status.CONFLICT).entity("Error: Study Not Moved").build();
+    private Response aggregatePatientOpResponse(ArrayList<Attributes> attrs,
+            ApplicationEntity applicationEntity, PatientCommands command, String patientOperation) {
+        ArrayList<Boolean> listRSP = new ArrayList<Boolean>();
+        for(int i=0;i<attrs.size();i++)
+        listRSP.add(dataManager.patientOperation(attrs.get(i), attrs.get(++i),
+                applicationEntity, command));
+        int trueCount=0;
+        
+        for(boolean rsp: listRSP)
+        if(rsp)
+        trueCount++;
+        return trueCount==listRSP.size()?
+                Response.status(Status.OK).entity
+                ("Patient operation successful - "+patientOperation).build():
+                trueCount==0?Response.status(Status.CONFLICT).entity
+                ("Error - Unable to perform patient operation - "+patientOperation).build():
+                Response.status(Status.CONFLICT).entity
+                ("Warning - Unable to perform some operations - "+patientOperation).build();
     }
+
+    // Study Level
     
     @POST
     @Path("updatexml/studies/{StudyInstanceUID}")
     @Consumes({ "application/xml" })
-    public Response updateXMLStudies(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID)
+    public Response updateXMLStudies(@Context UriInfo uriInfo, InputStream in)
             throws Exception {
-        return updateXML("STUDY", null, studyInstanceUID, null, null, in);
+        return updateXML("STUDY", in);
     }
 
     @POST
-    @Path("updateJSON/studies/{StudyInstanceUID}")
+    @Path("updateJSON/studies/")
     @Consumes({ "application/json" })
-    public Response updateJSONStudies(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID)
+    public Response updateJSONStudies(@Context UriInfo uriInfo, InputStream in)
             throws Exception {
-        return updateJSON("STUDY", null, studyInstanceUID, null, null, in);
+        return updateJSON("STUDY", in);
     }
 
-    @GET
-    @Path("splitstudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
-    public Response splitStudy(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("TargetStudyInstanceUID") String targetStudyInstanceUID) {
-        boolean split = dataManager.splitStudy(studyInstanceUID,
-                seriesInstanceUID, targetStudyInstanceUID);
-        Response rspSplit = Response.status(Status.OK)
-                .entity("Study Split Successfully").build();
-        Response rspError = Response.status(Status.CONFLICT)
-                .entity("Error: Study Not Split").build();
-        return split ? rspSplit : rspError;
-    }
+    @POST
+    @Path("{StudyOperation}/studies")
+    public Response studyOperation(@Context UriInfo uriInfo, InputStream in,
+            @PathParam("StudyOperation") String studyOperation) {
+        StudyCommands command = studyOperation.equalsIgnoreCase("move")? StudyCommands.STUDY_MOVE
+                : studyOperation.equalsIgnoreCase("split")? StudyCommands.STUDY_SPLIT
+                        : studyOperation.equalsIgnoreCase("segment")? StudyCommands.STUDY_SEGMENT: null;
 
-    @GET
-    @Path("segmentstudy/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/targetstudies/{TargetStudyInstanceUID}")
-    public Response segmentStudy(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("TargetStudyInstanceUID") String targetStudyInstanceUID) {
-        ArchiveDeviceExtension arcDevExt = device
-                .getDeviceExtension(ArchiveDeviceExtension.class);
-        boolean segment = dataManager.segmentStudy(studyInstanceUID,
-                seriesInstanceUID, targetStudyInstanceUID,arcDevExt);
-        Response rspSegment = Response.status(Status.OK)
-                .entity("Study Segmented Successfully").build();
-        Response rspError = Response.status(Status.CONFLICT)
-                .entity("Error: Study Not Segmented").build();
-        return segment ? rspSegment : rspError;
-    }
+        if (command == null)
+            throw new WebApplicationException(
+                    "Unable to decide study command - supported commands {move, split, segment}");
+        ArrayList<HashMap<String, String>> query = new ArrayList<HashMap<String, String>>();
+        ArrayList<Attributes> attrs = null;
+        try {
+            attrs = parseJSONAttributesToList(in, query);
 
+            if (query.size()%2!=0)
+                throw new WebApplicationException(new Exception(
+                        "Unable to decide request data"), Response.Status.BAD_REQUEST);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Received Attributes for study operation - "+studyOperation);
+                for(int i=0; i< query.size();i++){
+                    LOG.debug(i%2==0 ? "Source data[{}]: ":"Target data[{}]: ",(i/2)+1);
+                for (String key : query.get(i).keySet()) {
+                    LOG.debug(key + "=" + query.get(i).get(key));
+                }
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            throw new WebApplicationException(
+                    "Unable to process study operation request data");
+        }
+        return aggregateStudyOpResponse(attrs, command, studyOperation);
+    }
+    private Response aggregateStudyOpResponse(ArrayList<Attributes> attrs,
+            StudyCommands command, String studyOperation) {
+        ArrayList<Boolean> listRSP = new ArrayList<Boolean>();
+        for(int i=0;i<attrs.size();i++)
+        listRSP.add(dataManager.studyOperation(attrs.get(i), attrs.get(++i),command));
+        int trueCount=0;
+        
+        for(boolean rsp: listRSP)
+        if(rsp)
+        trueCount++;
+        return trueCount==listRSP.size()?
+                Response.status(Status.OK).entity
+                ("Study operation successful - "+studyOperation).build():
+                trueCount==0?Response.status(Status.CONFLICT).entity
+                ("Error - Unable to perform study operation - "+studyOperation).build():
+                Response.status(Status.CONFLICT).entity
+                ("Warning - Unable to perform some operations - "+studyOperation).build();
+    }
+    
     // Series Level
     @POST
-    @Path("updatexml/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
+    @Path("updatexml/series")
     @Consumes({ "application/xml" })
-    public Response updateXMLSeries(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID)
+    public Response updateXMLSeries(@Context UriInfo uriInfo, InputStream in)
             throws Exception {
-        return updateXML("SERIES", null, studyInstanceUID, seriesInstanceUID,
-                null, in);
+        return updateXML("SERIES", in);
     }
 
     @POST
-    @Path("updatejson/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
+    @Path("updatejson/series")
     @Consumes({ "application/json" })
-    public Response updateJSONSeries(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID)
+    public Response updateJSONSeries(@Context UriInfo uriInfo, InputStream in)
             throws Exception {
-        return updateJSON("SERIES", null, studyInstanceUID, seriesInstanceUID,
-                null, in);
+        return updateJSON("SERIES", in);
     }
 
     @GET
-    @Path("splitseries/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}/targetstudies/{TargetStudyInstanceUID}/targetseries/{TargetSeriesInstanceUID}")
+    @Path("{SeriesOperation}/series")
     public Response splitSeries(@Context UriInfo uriInfo, InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID,
-            @PathParam("TargetStudyInstanceUID") String targetStudyInstanceUID,
-            @PathParam("TargetSeriesInstanceUID") String targetSeriesInstanceUID) {
-        boolean split = dataManager.splitSeries(studyInstanceUID,
-                seriesInstanceUID, sopInstanceUID, targetStudyInstanceUID,
-                targetSeriesInstanceUID);
-        Response rspSplit = Response.status(Status.OK)
-                .entity("Series Split Successfully").build();
-        Response rspError = Response.status(Status.CONFLICT)
-                .entity("Error: Series Not Split").build();
-        return split ? rspSplit : rspError;
+            @PathParam("SeriesOperation") String seriesOperation) {
+        SeriesCommands command = seriesOperation.equalsIgnoreCase("split")? SeriesCommands.SERIES_SPLIT: null;
+
+        if (command == null)
+            throw new WebApplicationException(
+                    "Unable to decide series command - supported commands {split}");
+        ArrayList<HashMap<String, String>> query = new ArrayList<HashMap<String, String>>();
+        ArrayList<Attributes> attrs = null;
+        try {
+            attrs = parseJSONAttributesToList(in, query);
+
+            if (query.size()%2!=0)
+                throw new WebApplicationException(new Exception(
+                        "Unable to decide request data"), Response.Status.BAD_REQUEST);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Received Attributes for series operation - "+seriesOperation);
+                for(int i=0; i< query.size();i++){
+                    LOG.debug(i%2==0 ? "Source data[{}]: ":"Target data[{}]: ",(i/2)+1);
+                for (String key : query.get(i).keySet()) {
+                    LOG.debug(key + "=" + query.get(i).get(key));
+                }
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            throw new WebApplicationException(
+                    "Unable to process series operation request data");
+        }
+        return aggregateSeriesOpResponse(attrs, command, seriesOperation);
+    }
+
+    private Response aggregateSeriesOpResponse(ArrayList<Attributes> attrs,
+            SeriesCommands command, String seriesOperation) {
+        ArrayList<Boolean> listRSP = new ArrayList<Boolean>();
+        for(int i=0;i<attrs.size();i++)
+        listRSP.add(dataManager.seriesOperation(attrs.get(i), attrs.get(++i),command));
+        int trueCount=0;
+        
+        for(boolean rsp: listRSP)
+        if(rsp)
+        trueCount++;
+        return trueCount==listRSP.size()?
+                Response.status(Status.OK).entity
+                ("Series operation successful - "+seriesOperation).build():
+                trueCount==0?Response.status(Status.CONFLICT).entity
+                ("Error - Unable to perform series operation - "+seriesOperation).build():
+                Response.status(Status.CONFLICT).entity
+                ("Warning - Unable to perform some operations - "+seriesOperation).build();
     }
 
     // Instance Level
     @POST
-    @Path("updatexml/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
+    @Path("updatexml/instances")
     @Consumes({ "application/xml" })
-    public Response updateXMLInstances(@Context UriInfo uriInfo,
-            InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID)
+    public Response updateXMLInstances(@Context UriInfo uriInfo, InputStream in)
             throws Exception {
-        return updateXML("IMAGE", null, studyInstanceUID, seriesInstanceUID,
-                sopInstanceUID, in);
+        return updateXML("IMAGE", in);
     }
 
     @POST
-    @Path("updatejson/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
+    @Path("updatejson/instances")
     @Consumes({ "application/json" })
-    public Response updateJSONInstances(@Context UriInfo uriInfo,
-            InputStream in,
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID)
+    public Response updateJSONInstances(@Context UriInfo uriInfo, InputStream in)
             throws Exception {
-        return updateJSON("IMAGE", null, studyInstanceUID, seriesInstanceUID,
-                sopInstanceUID, in);
+        return updateJSON("IMAGE", in);
     }
 
-    public Response updateXML(String level, IDWithIssuer id,
-            String studyInstanceUID, String seriesInstanceUID,
-            String sopInstanceUID, InputStream in) throws Exception {
+    private Response updateXML(String level, InputStream in) throws Exception {
         HashMap<String, String> query = new HashMap<String, String>();
         try {
             Attributes attrs = parseXMLAttributes(in, query);
@@ -358,20 +353,32 @@ public class DataMgmt {
                 }
             }
             LOG.info("Performing Update on Level = " + level);
+            String studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
+            String seriesInstanceUID = attrs.getString(Tag.SeriesInstanceUID);
+            String sopInstanceUID = attrs.getString(Tag.SOPInstanceUID);
+            IDWithIssuer id = IDWithIssuer.pidOf(attrs);
             switch (level) {
             case "PATIENT":
+                if(id == null)
+                    throw new WebApplicationException("No patient id specified in the request data");
                 LOG.info("Updating patient with uid=" + id);
                 updatePatient(attrs, id);
                 break;
             case "STUDY":
+                if(studyInstanceUID == null)
+                    throw new WebApplicationException("No study UID specified in the request data");
                 LOG.info("Updating study with uid=" + studyInstanceUID);
                 updateStudy(attrs, studyInstanceUID);
                 break;
             case "SERIES":
+                if(studyInstanceUID == null || seriesInstanceUID == null)
+                    throw new WebApplicationException("Either study or series UID was not specified in the request data");
                 LOG.info("Updating series with uid=" + seriesInstanceUID);
                 updateSeries(attrs, studyInstanceUID, seriesInstanceUID);
                 break;
             case "IMAGE":
+                if(studyInstanceUID == null || seriesInstanceUID == null || sopInstanceUID == null)
+                    throw new WebApplicationException("Either study or series UID was not specified in the request data");
                 LOG.info("Updating image with uid=" + sopInstanceUID);
                 updateInstance(attrs, studyInstanceUID, seriesInstanceUID,
                         sopInstanceUID);
@@ -383,9 +390,7 @@ public class DataMgmt {
         return Response.status(Status.OK).entity("Successfully Processed Update").build();
     }
 
-    public Response updateJSON(String level, IDWithIssuer id,
-            String studyInstanceUID, String seriesInstanceUID,
-            String sopInstanceUID, InputStream in) throws Exception {
+    private Response updateJSON(String level, InputStream in) throws Exception {
         HashMap<String, String> query = new HashMap<String, String>();
         try {
             Attributes attrs = parseJSONAttributes(in, query);
@@ -400,20 +405,32 @@ public class DataMgmt {
                 }
             }
             LOG.info("Performing Update on Level = " + level);
+            String studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
+            String seriesInstanceUID = attrs.getString(Tag.SeriesInstanceUID);
+            String sopInstanceUID = attrs.getString(Tag.SOPInstanceUID);
+            IDWithIssuer id = IDWithIssuer.pidOf(attrs);
             switch (level) {
             case "PATIENT":
+                if(id == null)
+                    throw new WebApplicationException("No patient id specified in the request data");
                 LOG.info("Updating patient with uid=" + id);
                 updatePatient(attrs, id);
                 break;
             case "STUDY":
+                if(studyInstanceUID == null)
+                    throw new WebApplicationException("No study UID specified in the request data");
                 LOG.info("Updating study with uid=" + studyInstanceUID);
                 updateStudy(attrs, studyInstanceUID);
                 break;
             case "SERIES":
+                if(studyInstanceUID == null || seriesInstanceUID == null)
+                    throw new WebApplicationException("Either study or series UID was not specified in the request data");
                 LOG.info("Updating series with uid=" + seriesInstanceUID);
                 updateSeries(attrs, studyInstanceUID, seriesInstanceUID);
                 break;
             case "IMAGE":
+                if(studyInstanceUID == null || seriesInstanceUID == null || sopInstanceUID == null)
+                    throw new WebApplicationException("Either study or series UID was not specified in the request data");
                 LOG.info("Updating image with uid=" + sopInstanceUID);
                 updateInstance(attrs, studyInstanceUID, seriesInstanceUID,
                         sopInstanceUID);

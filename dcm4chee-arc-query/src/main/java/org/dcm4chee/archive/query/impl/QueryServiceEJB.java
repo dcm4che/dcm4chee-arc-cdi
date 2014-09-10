@@ -52,9 +52,10 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
+import org.dcm4chee.mysema.query.jpa.hibernate.DetachedHibernateQueryFactory;
+import org.hibernate.Session;
 
 import com.mysema.query.BooleanBuilder;
-import com.mysema.query.jpa.hibernate.HibernateQueryFactory;
 import com.mysema.query.types.ExpressionUtils;
 import com.mysema.query.types.expr.BooleanExpression;
 
@@ -69,17 +70,17 @@ public class QueryServiceEJB {
     EntityManager em;
 
     @Inject
-    HibernateQueryFactory hibernateQueryFactory;
+    DetachedHibernateQueryFactory queryFactory;
 
     public int calculateNumberOfStudyRelatedSeries(Long studyPk,
             QueryParam queryParam) {
         BooleanBuilder builder = createBooleanBuilder(
                 QInstance.instance.series.eq(QSeries.series), queryParam);
-        int num = (int) hibernateQueryFactory.query()
+        int num = (int) queryFactory.query(em.unwrap(Session.class))
             .from(QSeries.series)
             .where(ExpressionUtils.and(
                 QSeries.series.study.pk.eq(studyPk),
-                hibernateQueryFactory.subQuery()
+                queryFactory.subQuery()
                     .from(QInstance.instance)
                     .where(builder)
                     .exists()))
@@ -97,7 +98,7 @@ public class QueryServiceEJB {
             QueryParam queryParam) {
         BooleanBuilder builder = createBooleanBuilder(
                 QSeries.series.study.pk.eq(studyPk), queryParam);
-        int num = (int) hibernateQueryFactory.query()
+        int num = (int) queryFactory.query(em.unwrap(Session.class))
             .from(QInstance.instance)
             .innerJoin(QInstance.instance.series, QSeries.series)
             .where(builder)
@@ -115,7 +116,7 @@ public class QueryServiceEJB {
             QueryParam queryParam) {
         BooleanBuilder builder = createBooleanBuilder(
                 QInstance.instance.series.pk.eq(seriesPk), queryParam);
-        int num = (int) hibernateQueryFactory.query()
+        int num = (int) queryFactory.query(em.unwrap(Session.class))
             .from(QInstance.instance)
             .where(builder)
             .count();
