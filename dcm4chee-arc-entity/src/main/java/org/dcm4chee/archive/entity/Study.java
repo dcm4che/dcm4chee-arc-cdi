@@ -47,6 +47,7 @@ import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -61,7 +62,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -221,13 +221,10 @@ public class Study implements Serializable {
     @Basic(optional = false)
     @Column(name = "availability")
     private Availability availability;
-
-    @Basic(optional = false)
-    @Column(name = "study_attrs")
-    private byte[] encodedAttributes;
-
-    @Transient
-    private Attributes cachedAttributes;
+    
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "attrs_fk")
+    private AttributesBlob attributesBlob;
 
     @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "ref_phys_name_fk")
@@ -277,12 +274,6 @@ public class Study implements Serializable {
         updatedTime = new Date();
     }
 
-    public Attributes getAttributes() throws BlobCorruptedException {
-        if (cachedAttributes == null)
-            cachedAttributes = Utils.decodeAttributes(encodedAttributes);
-        return cachedAttributes;
-    }
-
     public long getPk() {
         return pk;
     }
@@ -325,6 +316,14 @@ public class Study implements Serializable {
 
     public PersonName getReferringPhysicianName() {
         return referringPhysicianName;
+    }
+    
+    public AttributesBlob getAttributesBlob() {
+        return attributesBlob;
+    }
+    
+    public Attributes getAttributes() throws BlobCorruptedException {
+        return attributesBlob.getAttributes();
     }
 
     public String getStudyDescription() {
@@ -487,10 +486,6 @@ public class Study implements Serializable {
         this.accessControlID = accessControlID;
     }
 
-    public byte[] getEncodedAttributes() {
-        return encodedAttributes;
-    }
-
     public Collection<Code> getProcedureCodes() {
         return procedureCodes;
     }
@@ -536,7 +531,6 @@ public class Study implements Serializable {
         studyCustomAttribute3 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        encodedAttributes = Utils.encodeAttributes(
-                cachedAttributes = new Attributes(attrs, filter.getSelection()));
+        attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
     }
 }

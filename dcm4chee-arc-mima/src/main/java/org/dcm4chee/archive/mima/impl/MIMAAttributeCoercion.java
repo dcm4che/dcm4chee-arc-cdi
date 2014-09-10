@@ -215,7 +215,7 @@ class MIMAAttributeCoercion {
         builder.and(QPatient.patient.mergedWith.isNull());
         List<Tuple> tuples = new HibernateQuery(em.unwrap(Session.class))
                 .from(QPatient.patient).where(builder)
-                .list(QPatient.patient.pk, QPatient.patient.encodedAttributes);
+                .list(QPatient.patient.pk, QPatient.patient.attributesBlob.encodedAttributes);
         for (Tuple tuple : tuples)
             c.add(Utils.decodeAttributes(tuple.get(1, byte[].class)).getString(
                     Tag.PatientName));
