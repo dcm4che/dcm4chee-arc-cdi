@@ -80,6 +80,17 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     query="SELECT i FROM Instance i "
             + "WHERE i.sopInstanceUID = ?1"),
 @NamedQuery(
+        name="Instance.findBySOPInstanceUID.eager",
+        query="SELECT i FROM Instance i "
+                + "JOIN FETCH i.series se "
+                + "JOIN FETCH se.study st "
+                + "JOIN FETCH st.patient p "
+                + "JOIN FETCH i.attributesBlob "
+                + "JOIN FETCH se.attributesBlob "                
+                + "JOIN FETCH st.attributesBlob "                
+                + "JOIN FETCH p.attributesBlob "
+                + "WHERE i.sopInstanceUID = ?1"),            
+@NamedQuery(
     name="Instance.findBySopInstanceUIDFetchFileRefsAndFs",
     query="SELECT i FROM Instance i LEFT JOIN FETCH i.fileRefs f LEFT JOIN FETCH f.fileSystem "
             + "WHERE i.sopInstanceUID = ?1"),
@@ -174,6 +185,8 @@ public class Instance implements Serializable {
 
     public static final String FIND_BY_SOP_INSTANCE_UID =
             "Instance.findBySOPInstanceUID";
+    public static final String FIND_BY_SOP_INSTANCE_UID_EAGER =
+            "Instance.findBySOPInstanceUID.eager";    
     public static final String FIND_BY_SERIES_INSTANCE_UID =
             "Instance.findBySeriesInstanceUID";
     public static final String SOP_INSTANCE_REFERENCE_BY_SERIES_INSTANCE_UID =

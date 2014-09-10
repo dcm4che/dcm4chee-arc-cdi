@@ -82,6 +82,13 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     name="Study.findByStudyInstanceUID",
     query="SELECT s FROM Study s WHERE s.studyInstanceUID = ?1"),
 @NamedQuery(
+        name="Study.findByStudyInstanceUID.eager",
+        query="SELECT st FROM Study st "
+                + "JOIN FETCH st.attributesBlob "
+                + "JOIN FETCH st.patient "
+                + "p JOIN FETCH p.attributesBlob "
+                + "WHERE st.studyInstanceUID = ?1"),
+@NamedQuery(
     name="Study.updateNumberOfSeries1",
     query="UPDATE Study s "
         + "SET s.numberOfSeries1 = ?1 "
@@ -119,6 +126,7 @@ public class Study implements Serializable {
     private static final long serialVersionUID = -6358525535057418771L;
 
     public static final String FIND_BY_STUDY_INSTANCE_UID = "Study.findByStudyInstanceUID";
+    public static final String FIND_BY_STUDY_INSTANCE_UID_EAGER = "Study.findByStudyInstanceUID.eager";
     public static final String[] UPDATE_NUMBER_OF_SERIES = {
         "Study.updateNumberOfSeries1",
         "Study.updateNumberOfSeries2",

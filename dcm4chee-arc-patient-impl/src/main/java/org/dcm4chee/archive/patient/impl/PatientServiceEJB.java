@@ -61,6 +61,7 @@ import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.MWLItem;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
+import org.dcm4chee.archive.entity.QAttributesBlob;
 import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QPatientID;
@@ -157,31 +158,31 @@ public class PatientServiceEJB implements PatientService {
                 .getResultList();
     }
 
-//    private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
-//        BooleanBuilder builder = new BooleanBuilder();
-//        Collection<BooleanExpression> eqIDs = new ArrayList<BooleanExpression>(
-//                pids.size());
-//        for (IDWithIssuer pid : pids) {
-//            BooleanExpression eqID = QPatientID.patientID.id.eq(pid.getID());
-//            if (pid.getIssuer() == null) {
-//                builder.or(eqID);
-//            } else {
-//                builder.or(ExpressionUtils.and(eqID,
-//                        eqOrNoIssuer(pid.getIssuer())));
-//                eqIDs.add(eqID);
-//            }
-//        }
-//        BooleanExpression matchingIDs = new HibernateSubQuery()
-//                .from(QPatientID.patientID)
-//                .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
-//                .where(ExpressionUtils.and(
-//                        QPatientID.patientID.patient.eq(QPatient.patient),
-//                        builder)).exists();
-//        Session session = em.unwrap(Session.class);
-//        return new HibernateQuery(session).from(QPatient.patient)
-//                .where(matchingIDs).list(QPatient.patient);
-//    }
-    
+    // private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
+    // BooleanBuilder builder = new BooleanBuilder();
+    // Collection<BooleanExpression> eqIDs = new ArrayList<BooleanExpression>(
+    // pids.size());
+    // for (IDWithIssuer pid : pids) {
+    // BooleanExpression eqID = QPatientID.patientID.id.eq(pid.getID());
+    // if (pid.getIssuer() == null) {
+    // builder.or(eqID);
+    // } else {
+    // builder.or(ExpressionUtils.and(eqID,
+    // eqOrNoIssuer(pid.getIssuer())));
+    // eqIDs.add(eqID);
+    // }
+    // }
+    // BooleanExpression matchingIDs = new HibernateSubQuery()
+    // .from(QPatientID.patientID)
+    // .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
+    // .where(ExpressionUtils.and(
+    // QPatientID.patientID.patient.eq(QPatient.patient),
+    // builder)).exists();
+    // Session session = em.unwrap(Session.class);
+    // return new HibernateQuery(session).from(QPatient.patient)
+    // .where(matchingIDs).list(QPatient.patient);
+    // }
+
     private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
         BooleanBuilder builder = new BooleanBuilder();
         Collection<BooleanExpression> eqIDs = new ArrayList<BooleanExpression>(
@@ -201,8 +202,14 @@ public class PatientServiceEJB implements PatientService {
                 .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
                 .where(builder);
         Session session = em.unwrap(Session.class);
-        return new HibernateQuery(session).from(QPatient.patient)
-                .where(QPatient.patient.pk.in(matchingIDs.list(QPatientID.patientID.patient.pk))).list(QPatient.patient);
+        return new HibernateQuery(session)
+                .from(QPatient.patient)
+                .leftJoin(QPatient.patient.attributesBlob,
+                        QAttributesBlob.attributesBlob)
+                .fetch()
+                .where(QPatient.patient.pk.in(matchingIDs
+                        .list(QPatientID.patientID.patient.pk)))
+                .list(QPatient.patient);
     }
 
     private Predicate eqOrNoIssuer(org.dcm4che3.data.Issuer issuer) {
@@ -377,9 +384,10 @@ public class PatientServiceEJB implements PatientService {
     @Override
     public Patient updateOrCreatePatientByHL7(Attributes attrs,
             StoreParam storeParam) throws NonUniquePatientException,
-            PatientMergedException{
+            PatientMergedException {
         // TODO make PatientSelector configurable
-        PatientSelector selector = PatientSelectorFactory.createSelector(storeParam);
+        PatientSelector selector = PatientSelectorFactory
+                .createSelector(storeParam);
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         return updateOrCreatePatientByHL7(attrs, storeParam, selector, pids);
     }
@@ -403,7 +411,8 @@ public class PatientServiceEJB implements PatientService {
     public void mergePatientByHL7(Attributes attrs, Attributes priorAttrs,
             StoreParam storeParam) throws NonUniquePatientException,
             PatientMergedException {
-        PatientSelector selector = PatientSelectorFactory.createSelector(storeParam);
+        PatientSelector selector = PatientSelectorFactory
+                .createSelector(storeParam);
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         Collection<IDWithIssuer> priorPIDs = IDWithIssuer.pidsOf(priorAttrs);
         Patient prior = updateOrCreatePatientByHL7(priorAttrs, storeParam,
@@ -489,7 +498,8 @@ public class PatientServiceEJB implements PatientService {
             StoreParam storeParam) throws NonUniquePatientException,
             PatientMergedException {
         // TODO make PatientSelector configurable
-        PatientSelector selector = PatientSelectorFactory.createSelector(storeParam);
+        PatientSelector selector = PatientSelectorFactory
+                .createSelector(storeParam);
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         Patient pat = selector.select(findPatientByIDs(pids), attrs, pids);
         if (pat == null)
@@ -611,58 +621,61 @@ public class PatientServiceEJB implements PatientService {
 
     @Override
     public void updatePatientID(Attributes srcPatientAttrs,
-            Attributes otherPatientAttrs, StoreParam storeParam) throws NonUniquePatientException {
+            Attributes otherPatientAttrs, StoreParam storeParam)
+            throws NonUniquePatientException {
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(srcPatientAttrs);
-        Collection<IDWithIssuer> otherPids = IDWithIssuer.pidsOf(otherPatientAttrs);
+        Collection<IDWithIssuer> otherPids = IDWithIssuer
+                .pidsOf(otherPatientAttrs);
         List<Patient> srcPatient;
         List<Patient> otherPatient;
         srcPatient = findPatientByIDs(pids);
-            if(srcPatient.isEmpty())
-                throw new IllegalArgumentException("No patient found for source attributes - expected 1 match");
-            else if(srcPatient.size()>1)
-                throw new IllegalArgumentException("More than one patient found for source attributes - expected 1 match");
+        if (srcPatient.isEmpty())
+            throw new IllegalArgumentException(
+                    "No patient found for source attributes - expected 1 match");
+        else if (srcPatient.size() > 1)
+            throw new IllegalArgumentException(
+                    "More than one patient found for source attributes - expected 1 match");
 
-            Patient patient = srcPatient.get(0);
-            otherPatient = findPatientByIDs(otherPids);
-            if(!otherPatient.isEmpty())
-                throw new IllegalArgumentException("One or more patients found for target update attributes - expected 0 match");
-            //check if original ids have links
-            ArrayList<IDWithIssuer> linkedPatientsIDs =  new ArrayList<IDWithIssuer>();
-            for(PatientID linkedID : patient.getLinkedPatientIDs())
-            {
-                linkedPatientsIDs.add(linkedID.toIDWithIssuer());
-            }
-            Collection<Patient> linkedPatients = findPatientByIDs(linkedPatientsIDs);
-            Iterator<Patient> linkedPatientsIterator = linkedPatients.iterator();
-            try{
-            while(linkedPatientsIterator.hasNext())
-            {
+        Patient patient = srcPatient.get(0);
+        otherPatient = findPatientByIDs(otherPids);
+        if (!otherPatient.isEmpty())
+            throw new IllegalArgumentException(
+                    "One or more patients found for target update attributes - expected 0 match");
+        // check if original ids have links
+        ArrayList<IDWithIssuer> linkedPatientsIDs = new ArrayList<IDWithIssuer>();
+        for (PatientID linkedID : patient.getLinkedPatientIDs()) {
+            linkedPatientsIDs.add(linkedID.toIDWithIssuer());
+        }
+        Collection<Patient> linkedPatients = findPatientByIDs(linkedPatientsIDs);
+        Iterator<Patient> linkedPatientsIterator = linkedPatients.iterator();
+        try {
+            while (linkedPatientsIterator.hasNext()) {
                 Patient other = linkedPatientsIterator.next();
                 unlinkPatientIDs(patient, other, storeParam.isDeIdentifyLogs());
                 unlinkPatientIDs(other, patient, storeParam.isDeIdentifyLogs());
             }
-            
+
             patient.getPatientIDs().clear();
-          
-            Collection<PatientID> newPatientIDs = createPatientIDs(otherPids, patient, storeParam.isDeIdentifyLogs());
-            for(PatientID id: newPatientIDs){
+
+            Collection<PatientID> newPatientIDs = createPatientIDs(otherPids,
+                    patient, storeParam.isDeIdentifyLogs());
+            for (PatientID id : newPatientIDs) {
                 patient.getPatientIDs().add(id);
             }
-            }
-            catch(Exception e)
-            {
-                em.clear();
-                LOG.info("failed to update ID {} with {} ",pids, otherPids);
-            }
+        } catch (Exception e) {
+            em.clear();
+            LOG.info("failed to update ID {} with {} ", pids, otherPids);
+        }
 
-            //set blob data
-            Attributes patientAttrs = patient.getAttributes();
-            AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-            if (patientAttrs.updateSelected(otherPatientAttrs, null, filter.getSelection())) {
-                patient.setAttributes(patientAttrs, filter,
-                        storeParam.getFuzzyStr());
-                em.flush();
-                LOG.info("Update ID {} with {} ",pids, otherPids);
-            }
+        // set blob data
+        Attributes patientAttrs = patient.getAttributes();
+        AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
+        if (patientAttrs.updateSelected(otherPatientAttrs, null,
+                filter.getSelection())) {
+            patient.setAttributes(patientAttrs, filter,
+                    storeParam.getFuzzyStr());
+            em.flush();
+            LOG.info("Update ID {} with {} ", pids, otherPids);
+        }
     }
 }
