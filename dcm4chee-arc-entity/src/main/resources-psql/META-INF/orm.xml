@@ -117,9 +117,6 @@
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
-      <basic name="encodedAttributes" optional="false">
-        <column name="pat_attrs" column-definition="bytea" />
-      </basic>
     </attributes>
   </entity>
 
@@ -142,9 +139,6 @@
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
-      <basic name="encodedAttributes" optional="false">
-        <column name="study_attrs" column-definition="bytea" />
-      </basic>
     </attributes>
   </entity>
 
@@ -156,9 +150,6 @@
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
-      <basic name="encodedAttributes" optional="false">
-        <column name="series_attrs" column-definition="bytea" />
-      </basic>
     </attributes>
   </entity>
 
@@ -181,9 +172,6 @@
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
-      <basic name="encodedAttributes" optional="false">
-        <column name="inst_attrs" column-definition="bytea" />
-      </basic>
     </attributes>
   </entity>
 
@@ -228,9 +216,6 @@
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
-      <basic name="encodedAttributes" optional="false">
-        <column name="item_attrs" column-definition="bytea" />
-      </basic>
     </attributes>
   </entity>
 
@@ -253,8 +238,19 @@
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
+    </attributes>
+  </entity>
+  
+  <entity class="AttributesBlob">
+    <table name="attributesblob" />
+    <sequence-generator name="seq" sequence-name="attrs_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
       <basic name="encodedAttributes" optional="false">
-        <column name="mpps_attrs" column-definition="bytea" />
+        <column name="attrs" column-definition="bytea" />
       </basic>
     </attributes>
   </entity>
