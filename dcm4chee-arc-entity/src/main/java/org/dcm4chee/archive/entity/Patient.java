@@ -65,7 +65,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
@@ -134,15 +133,12 @@ public class Patient implements Serializable {
     @Column(name = "pat_custom3")
     private String patientCustomAttribute3;
 
-    @Basic(optional = false)
-    @Column(name = "pat_attrs")
-    private byte[] encodedAttributes;
-
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "attrs_fk")
+    private AttributesBlob attributesBlob;
+    
     @Embedded
     private PatientExtension extension;
-
-    @Transient
-    private Attributes cachedAttributes;
 
     @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "pat_name_fk")
@@ -299,14 +295,12 @@ public class Patient implements Serializable {
         return modalityWorklistItems;
     }
 
-    public byte[] getEncodedAttributes() {
-        return encodedAttributes;
+    public AttributesBlob getAttributesBlob() {
+        return attributesBlob;
     }
 
     public Attributes getAttributes() throws BlobCorruptedException {
-        if (cachedAttributes == null)
-            cachedAttributes = Utils.decodeAttributes(encodedAttributes);
-        return cachedAttributes;
+        return attributesBlob.getAttributes();
     }
 
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
@@ -322,12 +316,11 @@ public class Patient implements Serializable {
         patientCustomAttribute3 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        encodedAttributes = Utils.encodeAttributes(
-                cachedAttributes = new Attributes(attrs, filter.getSelection()));
+        attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
     }
 
     public void updateOtherPatientIDs() {
-        Attributes attrs = getAttributes();
+        Attributes attrs = getAttributesBlob().getAttributes();
         IDWithIssuer pid0 = IDWithIssuer.pidOf(attrs);
         attrs.remove(Tag.IssuerOfPatientID);
         attrs.remove(Tag.IssuerOfPatientIDQualifiersSequence);
@@ -355,7 +348,7 @@ public class Patient implements Serializable {
                 }
             }
         }
-        encodedAttributes = Utils.encodeAttributes(attrs);
+        getAttributesBlob().setAttributes(attrs);
     }
 
     private Collection<PatientID> getAllPatientIDs() {

@@ -60,7 +60,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -80,11 +79,20 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     name="Series.findBySeriesInstanceUID",
     query="SELECT s FROM Series s WHERE s.seriesInstanceUID = ?1"),
 @NamedQuery(
+        name="Series.findBySeriesInstanceUID.eager",
+        query="SELECT se FROM Series se "
+                + "JOIN FETCH se.study st "
+                + "JOIN FETCH st.patient p "
+                + "JOIN FETCH se.attributesBlob "
+                + "JOIN FETCH st.attributesBlob "                
+                + "JOIN FETCH p.attributesBlob "
+                + "WHERE se.seriesInstanceUID = ?1"),    
+@NamedQuery(
     name="Series.patientStudySeriesAttributes",
     query="SELECT NEW org.dcm4chee.archive.entity.PatientStudySeriesAttributes("
-            + "s.encodedAttributes, "
-            + "s.study.encodedAttributes, "
-            + "s.study.patient.encodedAttributes) "
+            + "s.attributesBlob.encodedAttributes, "
+            + "s.study.attributesBlob.encodedAttributes, "
+            + "s.study.patient.attributesBlob.encodedAttributes) "
             + "FROM Series s WHERE s.pk = ?1"),
 @NamedQuery(
     name="Series.queryPatientStudySeriesAttributes",
@@ -101,9 +109,9 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "s.numberOfInstances3, "
             + "s.study.modalitiesInStudy, "
             + "s.study.sopClassesInStudy, "
-            + "s.encodedAttributes, "
-            + "s.study.encodedAttributes, "
-            + "s.study.patient.encodedAttributes) "
+            + "s.attributesBlob.encodedAttributes, "
+            + "s.study.attributesBlob.encodedAttributes, "
+            + "s.study.patient.attributesBlob.encodedAttributes) "
             + "FROM Series s WHERE s.pk = ?1"),
 @NamedQuery(
     name="Series.updateNumberOfInstances1",
@@ -128,6 +136,7 @@ public class Series implements Serializable {
     private static final long serialVersionUID = -8317105475421750944L;
 
     public static final String FIND_BY_SERIES_INSTANCE_UID = "Series.findBySeriesInstanceUID";
+    public static final String FIND_BY_SERIES_INSTANCE_UID_EAGER = "Series.findBySeriesInstanceUID.eager";    
     public static final String PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.patientStudySeriesAttributes";
     public static final String QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.queryPatientStudySeriesAttributes";
     public static final String [] UPDATE_NUMBER_OF_INSTANCES = {
@@ -238,12 +247,9 @@ public class Series implements Serializable {
     @Column(name = "availability")
     private Availability availability;
 
-    @Basic(optional = false)
-    @Column(name = "series_attrs")
-    private byte[] encodedAttributes;
-
-    @Transient
-    private Attributes cachedAttributes;
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "attrs_fk")
+    private AttributesBlob attributesBlob;
 
     @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "perf_phys_name_fk")
@@ -294,10 +300,12 @@ public class Series implements Serializable {
         updatedTime = new Date();
     }
 
+    public AttributesBlob getAttributesBlob() {
+        return attributesBlob;
+    }
+    
     public Attributes getAttributes() throws BlobCorruptedException {
-        if (cachedAttributes == null)
-            cachedAttributes = Utils.decodeAttributes(encodedAttributes);
-        return cachedAttributes;
+        return attributesBlob.getAttributes();
     }
 
     public long getPk() {
@@ -467,10 +475,6 @@ public class Series implements Serializable {
             this.availability = availability;
     }
 
-    public byte[] getEncodedAttributes() {
-        return encodedAttributes;
-    }
-
     public Code getInstitutionCode() {
         return institutionCode;
     }
@@ -547,8 +551,7 @@ public class Series implements Serializable {
         seriesCustomAttribute3 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        encodedAttributes = Utils.encodeAttributes(
-                cachedAttributes = new Attributes(attrs, filter.getSelection()));
+        attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
         
     }
 }

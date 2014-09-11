@@ -175,7 +175,7 @@ public class PatientServiceIT {
             throws Exception {
         Patient[] patients = initupdateOrCreatePatientOnCStore(true, true,
                 true, 1);
-        Attributes attrs = decodeAttributes(patients[0].getEncodedAttributes());
+        Attributes attrs = decodeAttributes(patients[0].getAttributesBlob().getEncodedAttributes());
         Assert.assertSame(patients[0], patients[1]);
         PersonName pn = patients[0].getPatientName();
         Assert.assertEquals("Bugs", pn.getFamilyName());
@@ -223,7 +223,7 @@ public class PatientServiceIT {
             throws Exception {
         Patient[] patients = initupdateOrCreatePatientOnCStore(true, true,
                 true, 2);
-        Attributes attrs = decodeAttributes(patients[0].getEncodedAttributes());
+        Attributes attrs = decodeAttributes(patients[0].getAttributesBlob().getEncodedAttributes());
         Assert.assertSame(patients[0], patients[1]);
         PersonName pn = patients[0].getPatientName();
         Assert.assertEquals("Bugs", pn.getFamilyName());
@@ -277,7 +277,7 @@ public class PatientServiceIT {
             throws Exception {
         Patient[] patients = initupdateOrCreatePatientOnCStore(false, true,
                 true, 3);
-        Attributes attrs = decodeAttributes(patients[0].getEncodedAttributes());
+        Attributes attrs = decodeAttributes(patients[0].getAttributesBlob().getEncodedAttributes());
         Assert.assertTrue(((PatientID) patients[0].getPatientIDs().toArray()[0])
                 .getIssuer().toString().contains("G12345&G12345&ISO"));
         Set<IDWithIssuer> ids = IDWithIssuer.pidsOf(attrs);
@@ -342,7 +342,7 @@ public class PatientServiceIT {
                 createStoreParam());
 
         Patient[] patients = { patientOne, patientTwo };
-        Attributes attrs = decodeAttributes(patients[0].getEncodedAttributes());
+        Attributes attrs = decodeAttributes(patients[0].getAttributesBlob().getEncodedAttributes());
         Assert.assertTrue(((PatientID) patients[0].getPatientIDs().toArray()[0])
                 .getIssuer().toString().contains("G12345&G12345&ISO"));
         Set<IDWithIssuer> ids = IDWithIssuer.pidsOf(attrs);
@@ -422,11 +422,11 @@ public class PatientServiceIT {
             throws Exception {
         Patient[] patients = initupdateOrCreatePatientOnCStore(true, true,
                 false, 1);
-        Attributes attrs0 = decodeAttributes(patients[0].getEncodedAttributes());
+        Attributes attrs0 = decodeAttributes(patients[0].getAttributesBlob().getEncodedAttributes());
         Assert.assertTrue(attrs0.getString(Tag.PatientName).contains(
                 "Bugs^Bunny"));
         Assert.assertTrue(attrs0.getString(Tag.PatientID).contains("123"));
-        Attributes attrs1 = decodeAttributes(patients[1].getEncodedAttributes());
+        Attributes attrs1 = decodeAttributes(patients[1].getAttributesBlob().getEncodedAttributes());
         Assert.assertTrue(attrs0.getString(Tag.PatientName).contains(
                 "Bugs^Bunny"));
         Assert.assertTrue(attrs1.getString(Tag.PatientName).contains(
@@ -479,11 +479,11 @@ public class PatientServiceIT {
             throws Exception {
         Patient[] patients = initupdateOrCreatePatientOnCStore(true, true,
                 false, 2);
-        Attributes attrs0 = decodeAttributes(patients[0].getEncodedAttributes());
+        Attributes attrs0 = decodeAttributes(patients[0].getAttributesBlob().getEncodedAttributes());
         Assert.assertTrue(attrs0.getString(Tag.PatientName).contains(
                 "Bugs^Bunny"));
         Assert.assertTrue(attrs0.getString(Tag.PatientID).contains("123"));
-        Attributes attrs1 = decodeAttributes(patients[1].getEncodedAttributes());
+        Attributes attrs1 = decodeAttributes(patients[1].getAttributesBlob().getEncodedAttributes());
         Assert.assertTrue(attrs1.getString(Tag.PatientName).contains(
                 "Lola^Bunny"));
         Assert.assertTrue(attrs1.getString(Tag.PatientID).contains("444"));
@@ -581,12 +581,12 @@ public class PatientServiceIT {
         Patient patientTwo = service.updateOrCreatePatientOnCStore(
                 patientTwoAttributes, new IDPatientSelector(),
                 createStoreParam());
-        Attributes attrs0 = decodeAttributes(patientOne.getEncodedAttributes());
+        Attributes attrs0 = decodeAttributes(patientOne.getAttributesBlob().getEncodedAttributes());
         Set<IDWithIssuer> priorIDs = IDWithIssuer.pidsOf(attrs0);
         priorIDs.remove(IDWithIssuer.pidOf(attrs0));
         service.mergePatientByHL7(patientTwoAttributes, patientOneAttributes,
                 createStoreParam());
-        Attributes attrs1 = decodeAttributes(patientTwo.getEncodedAttributes());
+        Attributes attrs1 = decodeAttributes(patientTwo.getAttributesBlob().getEncodedAttributes());
         Set<IDWithIssuer> DominantIDs = IDWithIssuer.pidsOf(attrs1);
         for (Iterator<IDWithIssuer> iter = priorIDs.iterator(); iter.hasNext();) {
             IDWithIssuer id = iter.next();

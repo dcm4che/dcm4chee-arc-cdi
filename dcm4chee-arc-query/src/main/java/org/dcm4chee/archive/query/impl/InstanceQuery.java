@@ -64,7 +64,7 @@ class InstanceQuery extends AbstractQuery<Instance> {
         QInstance.instance.retrieveAETs,
         QInstance.instance.externalRetrieveAET,
         QInstance.instance.availability,
-        QInstance.instance.encodedAttributes
+        QInstance.instance.attributesBlob.encodedAttributes
     };
 
     private Long seriesPk;
