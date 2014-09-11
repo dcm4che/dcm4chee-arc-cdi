@@ -53,57 +53,12 @@
       </basic>
     </attributes>
   </mapped-superclass>
-
-  <entity class="Patient">
-    <table name="patient" />
+  
+  <entity class="AttributesBlob">
+    <table name="attributesblob" />
     <attributes>
       <basic name="encodedAttributes" optional="false">
-        <column name="pat_attrs" column-definition="longblob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="Study">
-    <table name="study" />
-    <attributes>
-      <basic name="encodedAttributes" optional="false">
-        <column name="study_attrs" column-definition="longblob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="Series">
-    <table name="series" />
-    <attributes>
-      <basic name="encodedAttributes" optional="false">
-        <column name="series_attrs" column-definition="longblob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="Instance">
-    <table name="instance" />
-    <attributes>
-      <basic name="encodedAttributes" optional="false">
-        <column name="inst_attrs" column-definition="longblob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="MWLItem">
-    <table name="mwl_item" />
-    <attributes>
-      <basic name="encodedAttributes" optional="false">
-        <column name="item_attrs" column-definition="longblob" />
-      </basic>
-    </attributes>
-  </entity>
-
-  <entity class="MPPS">
-    <table name="mpps" />
-    <attributes>
-      <basic name="encodedAttributes" optional="false">
-        <column name="mpps_attrs" column-definition="longblob" />
+        <column name="attrs" column-definition="longblob" />
       </basic>
     </attributes>
   </entity>

@@ -36,63 +36,73 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.query.impl;
+package org.dcm4chee.archive.entity;
+
+import java.io.Serializable;
+
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.QPatient;
-import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.query.QueryContext;
-import org.dcm4chee.archive.query.util.QueryBuilder;
-import org.hibernate.ScrollableResults;
-import org.hibernate.StatelessSession;
-
-import com.mysema.query.BooleanBuilder;
-import com.mysema.query.jpa.hibernate.HibernateQuery;
-import com.mysema.query.types.Expression;
-import com.mysema.query.types.Predicate;
+import org.dcm4che3.data.Tag;
+import org.dcm4chee.archive.entity.MPPS.Status;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
-class PatientQuery extends AbstractQuery<Patient> {
+@Entity
+@Table(name = "attributesblob")
+public class AttributesBlob {
 
-    private static final Expression<?>[] SELECT = {
-        QPatient.patient.pk,
-        QPatient.patient.attributesBlob.encodedAttributes
-    };
+    private static final long serialVersionUID = 559808958147016008L;
 
-    public PatientQuery(QueryContext context, StatelessSession session) {
-        super(context, session, QPatient.patient);
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name = "pk")
+    private long pk;
+    
+    @Basic(optional = false)
+    @Column(name = "attrs")
+    private byte[] encodedAttributes;
+    
+    @Transient
+    private Attributes cachedAttributes;
+
+    public AttributesBlob(Attributes attrs) {
+        setAttributes(attrs);
     }
+    
+    AttributesBlob() {}
 
+    public boolean equals(AttributesBlob other) {
+        return other != null && other.pk == pk;
+    }
+    
     @Override
-    protected Expression<?>[] select() {
-        return SELECT;
+    public String toString() {
+        return "BLOB[pk=" + pk + "]";
+    }
+    
+    public Attributes getAttributes() throws BlobCorruptedException {
+        if (cachedAttributes == null)
+            cachedAttributes = Utils.decodeAttributes(encodedAttributes);
+        return cachedAttributes;
     }
 
-    @Override
-    protected HibernateQuery applyJoins(HibernateQuery query) {
-        return QueryBuilder.applyPatientLevelJoins(query,
-                context.getKeys(),
-                context.getQueryParam());
+    public void setAttributes(Attributes attrs) {
+        encodedAttributes = Utils.encodeAttributes(cachedAttributes = attrs);
     }
 
-    @Override
-    protected Predicate predicate() {
-        BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addPatientLevelPredicates(builder,
-                context.getPatientIDs(),
-                context.getKeys(), 
-                context.getQueryParam());
-        return builder;
+    public byte[] getEncodedAttributes() {
+        return encodedAttributes;
     }
-
-    @Override
-    public Attributes toAttributes(ScrollableResults results) {
-        Attributes attrs = new Attributes();
-        Utils.decodeAttributes(attrs, results.getBinary(1));
-        return attrs;
-    }
-
+    
 }

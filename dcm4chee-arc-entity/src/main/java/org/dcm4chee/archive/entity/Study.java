@@ -47,6 +47,7 @@ import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -61,7 +62,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -81,6 +81,13 @@ import org.dcm4chee.archive.conf.AttributeFilter;
 @NamedQuery(
     name="Study.findByStudyInstanceUID",
     query="SELECT s FROM Study s WHERE s.studyInstanceUID = ?1"),
+@NamedQuery(
+        name="Study.findByStudyInstanceUID.eager",
+        query="SELECT st FROM Study st "
+                + "JOIN FETCH st.attributesBlob "
+                + "JOIN FETCH st.patient "
+                + "p JOIN FETCH p.attributesBlob "
+                + "WHERE st.studyInstanceUID = ?1"),
 @NamedQuery(
     name="Study.updateNumberOfSeries1",
     query="UPDATE Study s "
@@ -119,6 +126,7 @@ public class Study implements Serializable {
     private static final long serialVersionUID = -6358525535057418771L;
 
     public static final String FIND_BY_STUDY_INSTANCE_UID = "Study.findByStudyInstanceUID";
+    public static final String FIND_BY_STUDY_INSTANCE_UID_EAGER = "Study.findByStudyInstanceUID.eager";
     public static final String[] UPDATE_NUMBER_OF_SERIES = {
         "Study.updateNumberOfSeries1",
         "Study.updateNumberOfSeries2",
@@ -221,13 +229,10 @@ public class Study implements Serializable {
     @Basic(optional = false)
     @Column(name = "availability")
     private Availability availability;
-
-    @Basic(optional = false)
-    @Column(name = "study_attrs")
-    private byte[] encodedAttributes;
-
-    @Transient
-    private Attributes cachedAttributes;
+    
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "attrs_fk")
+    private AttributesBlob attributesBlob;
 
     @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "ref_phys_name_fk")
@@ -277,12 +282,6 @@ public class Study implements Serializable {
         updatedTime = new Date();
     }
 
-    public Attributes getAttributes() throws BlobCorruptedException {
-        if (cachedAttributes == null)
-            cachedAttributes = Utils.decodeAttributes(encodedAttributes);
-        return cachedAttributes;
-    }
-
     public long getPk() {
         return pk;
     }
@@ -325,6 +324,14 @@ public class Study implements Serializable {
 
     public PersonName getReferringPhysicianName() {
         return referringPhysicianName;
+    }
+    
+    public AttributesBlob getAttributesBlob() {
+        return attributesBlob;
+    }
+    
+    public Attributes getAttributes() throws BlobCorruptedException {
+        return attributesBlob.getAttributes();
     }
 
     public String getStudyDescription() {
@@ -487,10 +494,6 @@ public class Study implements Serializable {
         this.accessControlID = accessControlID;
     }
 
-    public byte[] getEncodedAttributes() {
-        return encodedAttributes;
-    }
-
     public Collection<Code> getProcedureCodes() {
         return procedureCodes;
     }
@@ -536,7 +539,6 @@ public class Study implements Serializable {
         studyCustomAttribute3 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        encodedAttributes = Utils.encodeAttributes(
-                cachedAttributes = new Attributes(attrs, filter.getSelection()));
+        attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
     }
 }

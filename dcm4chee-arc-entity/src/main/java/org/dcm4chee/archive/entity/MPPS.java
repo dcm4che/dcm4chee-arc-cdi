@@ -41,8 +41,10 @@ import java.io.Serializable;
 import java.util.Date;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -50,6 +52,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
@@ -127,9 +130,9 @@ public class MPPS implements Serializable {
     @Column(name = "mpps_status")
     private Status status;
 
-    @Basic(optional = false)
-    @Column(name = "mpps_attrs")
-    private byte[] encodedAttributes;
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "attrs_fk")
+    private AttributesBlob attributesBlob;
 
     @ManyToOne
     @JoinColumn(name = "drcode_fk")
@@ -186,10 +189,6 @@ public class MPPS implements Serializable {
         return status;
     }
 
-    public byte[] getEncodedAttributes() {
-        return encodedAttributes;
-    }
-
     public Code getDiscontinuationReasonCode() {
         return discontinuationReasonCode;
     }
@@ -231,10 +230,12 @@ public class MPPS implements Serializable {
         updatedTime = new Date();
     }
 
-    public Attributes getAttributes() {
-        if (cachedAttributes == null)
-            cachedAttributes = Utils.decodeAttributes(encodedAttributes);
-        return cachedAttributes;
+    public AttributesBlob getAttributesBlob() {
+        return attributesBlob;
+    }
+    
+    public Attributes getAttributes() throws BlobCorruptedException {
+        return attributesBlob.getAttributes();
     }
 
     public void setAttributes(Attributes attrs) {
@@ -249,6 +250,7 @@ public class MPPS implements Serializable {
         String s = attrs.getString(Tag.PerformedProcedureStepStatus);
         if (s != null)
             status = Status.valueOf(s.replace(' ', '_'));
-        encodedAttributes = Utils.encodeAttributes(cachedAttributes = attrs);
+        
+        attributesBlob = new AttributesBlob(attrs);
     }
 }
