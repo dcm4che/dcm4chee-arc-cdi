@@ -57,6 +57,7 @@ import org.hibernate.Session;
 
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.types.ExpressionUtils;
+import com.mysema.query.types.expr.BooleanExpression;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -65,19 +66,17 @@ import com.mysema.query.types.ExpressionUtils;
 @Stateless
 public class QueryServiceEJB {
 
-    @PersistenceContext(unitName="dcm4chee-arc")
-    private EntityManager em;
+    @PersistenceContext(unitName = "dcm4chee-arc")
+    EntityManager em;
 
     @Inject
-    private DetachedHibernateQueryFactory queryFactory;
+    DetachedHibernateQueryFactory queryFactory;
 
     public int calculateNumberOfStudyRelatedSeries(Long studyPk,
             QueryParam queryParam) {
-        BooleanBuilder builder = new BooleanBuilder(
-                QInstance.instance.series.eq(QSeries.series));
-        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        int num = (int) queryFactory
-            .query(em.unwrap(Session.class))
+        BooleanBuilder builder = createBooleanBuilder(
+                QInstance.instance.series.eq(QSeries.series), queryParam);
+        int num = (int) queryFactory.query(em.unwrap(Session.class))
             .from(QSeries.series)
             .where(ExpressionUtils.and(
                 QSeries.series.study.pk.eq(studyPk),
@@ -97,11 +96,9 @@ public class QueryServiceEJB {
 
     public int calculateNumberOfStudyRelatedInstance(Long studyPk,
             QueryParam queryParam) {
-        BooleanBuilder builder =
-                new BooleanBuilder(QSeries.series.study.pk.eq(studyPk));
-        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        int num = (int) queryFactory
-            .query(em.unwrap(Session.class))
+        BooleanBuilder builder = createBooleanBuilder(
+                QSeries.series.study.pk.eq(studyPk), queryParam);
+        int num = (int) queryFactory.query(em.unwrap(Session.class))
             .from(QInstance.instance)
             .innerJoin(QInstance.instance.series, QSeries.series)
             .where(builder)
@@ -117,11 +114,9 @@ public class QueryServiceEJB {
 
     public int calculateNumberOfSeriesRelatedInstance(Long seriesPk,
             QueryParam queryParam) {
-        BooleanBuilder builder =
-                new BooleanBuilder(QInstance.instance.series.pk.eq(seriesPk));
-        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        int num = (int) queryFactory
-            .query(em.unwrap(Session.class))
+        BooleanBuilder builder = createBooleanBuilder(
+                QInstance.instance.series.pk.eq(seriesPk), queryParam);
+        int num = (int) queryFactory.query(em.unwrap(Session.class))
             .from(QInstance.instance)
             .where(builder)
             .count();
@@ -144,26 +139,31 @@ public class QueryServiceEJB {
         Long studyPk = result.getStudyPk();
         int numberOfStudyRelatedSeries = result.getNumberOfStudyRelatedSeries(cacheSlot);
         if (numberOfStudyRelatedSeries < 0)
-            numberOfStudyRelatedSeries =
-                calculateNumberOfStudyRelatedSeries(studyPk, queryParam);
+            numberOfStudyRelatedSeries = calculateNumberOfStudyRelatedSeries(
+                    studyPk, queryParam);
 
         int numberOfStudyRelatedInstances = result.getNumberOfStudyRelatedInstances(cacheSlot);
         if (numberOfStudyRelatedInstances < 0)
-            numberOfStudyRelatedInstances = 
-                calculateNumberOfStudyRelatedInstance(studyPk, queryParam);
+            numberOfStudyRelatedInstances = calculateNumberOfStudyRelatedInstance(
+                    studyPk, queryParam);
 
         int numberOfSeriesRelatedInstances = result.getNumberOfSeriesRelatedInstances(cacheSlot);
         if (numberOfSeriesRelatedInstances < 0)
-            numberOfSeriesRelatedInstances =
-                calculateNumberOfSeriesRelatedInstance(seriesPk, queryParam);
+            numberOfSeriesRelatedInstances = calculateNumberOfSeriesRelatedInstance(
+                    seriesPk, queryParam);
 
-        Utils.setStudyQueryAttributes(attrs,
-                numberOfStudyRelatedSeries,
-                numberOfStudyRelatedInstances,
-                result.getModalitiesInStudy(),
+        Utils.setStudyQueryAttributes(attrs, numberOfStudyRelatedSeries,
+                numberOfStudyRelatedInstances, result.getModalitiesInStudy(),
                 result.getSopClassesInStudy());
         Utils.setSeriesQueryAttributes(attrs, numberOfSeriesRelatedInstances);
         return attrs;
     }
 
+    BooleanBuilder createBooleanBuilder(BooleanExpression initial,
+            QueryParam queryParam) {
+        BooleanBuilder builder = new BooleanBuilder(initial);
+        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
+
+        return builder;
+    }
 }
