@@ -329,6 +329,12 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.62 NAME 'dcmRevokeRejection'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.63 NAME 'dcmWadoSRTemplateURI'
+  DESC 'Specifies URI for the style sheet used to render structured reports to html'
+  EQUALITY caseExactMatch
+  SUBSTR caseExactSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -379,7 +385,8 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
     hl7PIXConsumerApplication $
     dcmQidoMaxNumberOfResults $
     dcmWadoSupportedSRClasses $
-    dcmWadoOverlayRendering) )
+    dcmWadoOverlayRendering $
+    dcmWadoSRTemplateURI) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.10 NAME 'dcmAttributeFilter'
   DESC 'Attributes stored in the database'
   SUP top STRUCTURAL
