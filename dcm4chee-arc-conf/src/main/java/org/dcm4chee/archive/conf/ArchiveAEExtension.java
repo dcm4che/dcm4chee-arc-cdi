@@ -180,6 +180,9 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmQidoMaxNumberOfResults", def = "0")
     private int QIDOMaxNumberOfResults;
 
+    @ConfigField(name = "dcmWadoSRTemplateURI")
+    private String wadoSRTemplateURI;
+
 //removed from schema, irrelevant
 //    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
 //    private boolean timeZoneSupported;
@@ -610,6 +613,14 @@ public class ArchiveAEExtension extends AEExtension {
         queryParam.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
         queryParam.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         return queryParam;
+    }
+
+    public String getWadoSRTemplateURI() {
+        return wadoSRTemplateURI;
+    }
+
+    public void setWadoSRTemplateURI(String wadoSRTemplateURI) {
+        this.wadoSRTemplateURI = wadoSRTemplateURI;
     }
 
 }

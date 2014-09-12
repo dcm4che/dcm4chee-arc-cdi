@@ -346,7 +346,7 @@ public class WadoURI extends Wado {
                     instscompleted.addAll(ref);
                     return retrieveSRHTML(instance);
                 } catch (TransformerConfigurationException e) {
-                    e.printStackTrace();
+                    return retrieveNativeDicomObject(instance, attrs);
                 }
             }
 
@@ -425,12 +425,13 @@ public class WadoURI extends Wado {
                 TransformerHandler th = null;
                 ClassLoader cl = this.getClass().getClassLoader();
                 try {
-                    File stylesheet = new File(cl.getResource(
-                            "sr-report-html-dicom-native.xsl").toString());
+                    File stylesheet = new File(arcAE.getWadoSRTemplateURI());
                     templates = TemplatesCache.getDefault().get(
                             stylesheet.getPath());
                 } catch (TransformerConfigurationException e) {
-                    e.printStackTrace();
+                    
+                    LOG.error("Unable to apply transformation for SR - check archive AE Configuration {}",e);
+                    
                 }
                 try {
                     th = factory.newTransformerHandler(templates);

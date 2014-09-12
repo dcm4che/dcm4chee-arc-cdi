@@ -930,6 +930,7 @@ public class ArchiveDeviceTest {
         ae.setAssociationInitiator(true);
         aeExt.setFileSystemGroupID("DEFAULT");
         aeExt.setInitFileSystemURI("${jboss.server.data.url}");
+        aeExt.setWadoSRTemplateURI("${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl");
         aeExt.setSpoolDirectoryPath("archive/spool");
         aeExt.setStorageFilePathFormat(new AttributesFormat(
                 "archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
