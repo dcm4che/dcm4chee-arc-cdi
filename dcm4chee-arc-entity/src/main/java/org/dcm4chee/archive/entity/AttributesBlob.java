@@ -46,21 +46,17 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4chee.archive.entity.MPPS.Status;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
 @Entity
-@Table(name = "attributesblob")
-public class AttributesBlob {
+@Table(name = "dicomattrs")
+public class AttributesBlob implements Serializable {
 
     private static final long serialVersionUID = 559808958147016008L;
 

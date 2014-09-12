@@ -299,7 +299,7 @@
   </entity>
   
     <entity class="AttributesBlob">
-    <table name="attributesblob" />
+    <table name="dicomattrs" />
     <sequence-generator name="seq" sequence-name="atts_pk_seq" allocation-size="1" />
     <attributes>
       <id name="pk">

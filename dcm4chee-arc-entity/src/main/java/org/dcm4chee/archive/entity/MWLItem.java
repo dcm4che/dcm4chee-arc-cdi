@@ -129,7 +129,7 @@ public class MWLItem implements Serializable {
     private String status;
 
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "attrs_fk")
+    @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
     @Transient

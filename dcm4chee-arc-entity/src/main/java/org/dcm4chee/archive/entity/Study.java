@@ -231,7 +231,7 @@ public class Study implements Serializable {
     private Availability availability;
     
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "attrs_fk")
+    @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
     @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)

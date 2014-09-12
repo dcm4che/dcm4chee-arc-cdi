@@ -134,7 +134,7 @@ public class Patient implements Serializable {
     private String patientCustomAttribute3;
 
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "attrs_fk")
+    @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
     
     @Embedded

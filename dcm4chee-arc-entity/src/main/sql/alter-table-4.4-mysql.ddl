@@ -248,3 +248,114 @@ alter table instance
 drop index inst_sop_iuid_idx on instance;
 
 create unique index inst_sop_iuid_idx on instance (sop_iuid);
+
+create dicomattrs (
+    pk bigint not null auto_increment,
+    attrs longblob not null,
+    patient_fk bigint,
+    study_fk bigint,
+    series_fk bigint,
+    instance_fk bigint,
+    mpps_fk bigint,
+    mwl_item_fk bigint,
+    primary key (pk)
+) ENGINE=InnoDB;
+
+alter table patient
+    add dicomattrs_fk bigint;
+
+alter table study
+    add dicomattrs_fk bigint;
+
+alter table series
+    add dicomattrs_fk bigint;
+
+alter table instance
+    add dicomattrs_fk bigint;
+
+alter table mwl_item
+    add dicomattrs_fk bigint;
+
+alter table mpps
+    add dicomattrs_fk bigint;
+
+alter table patient 
+    add constraint FKD0D3EB0585AF69D8 
+    foreign key (dicomattrs_fk) 
+    references dicomattrs (pk);
+
+alter table study 
+    add constraint FK68B0DC985AF69D8 
+    foreign key (dicomattrs_fk) 
+    references dicomattrs (pk);
+
+alter table series 
+    add constraint FKCA01FE7785AF69D8 
+    foreign key (dicomattrs_fk) 
+    references dicomattrs (pk);
+
+alter table instance 
+    add constraint FK2116949585AF69D8 
+    foreign key (dicomattrs_fk) 
+    references dicomattrs (pk);
+
+alter table mpps 
+    add constraint FK333EE685AF69D8 
+    foreign key (dicomattrs_fk) 
+    references dicomattrs (pk);
+
+alter table mwl_item 
+    add constraint FK8F9D3D3085AF69D8 
+    foreign key (dicomattrs_fk) 
+    references dicomattrs (pk);
+
+insert into dicomattrs (attrs, patient_fk)
+    select pat_attrs, pk from patient;
+
+insert into dicomattrs (attrs, study_fk)
+    select study_attrs, pk from study;
+
+insert into dicomattrs (attrs, series_fk)
+    select series_attrs, pk from series;
+
+insert into dicomattrs (attrs, instance_fk)
+    select inst_attrs, pk from instance;
+
+insert into dicomattrs (attrs, mpps_fk)
+    select mpps_attrs, pk from mpps;
+
+insert into dicomattrs (attrs, mwl_item_fk)
+    select item_attrs, pk from mwl_item;
+
+update patient, dicomattrs
+    set dicomattrs_fk = dicomattrs.pk
+    where patient.pk = dicomattrs.patient_fk;
+
+update study, dicomattrs
+    set dicomattrs_fk = dicomattrs.pk
+    where study.pk = dicomattrs.study_fk;
+
+update series, dicomattrs
+    set dicomattrs_fk = dicomattrs.pk
+    where series.pk = dicomattrs.series_fk;
+
+update instance, dicomattrs
+    set dicomattrs_fk = dicomattrs.pk
+    where instance.pk = dicomattrs.instance_fk;
+
+update mpps, dicomattrs
+    set dicomattrs_fk = dicomattrs.pk
+    where mpps.pk = dicomattrs.mpps_fk;
+
+update mwl_item, dicomattrs
+    set dicomattrs_fk = dicomattrs.pk
+    where mwl_item.pk = dicomattrs.mwl_item_fk;
+
+alter table dicomattrs
+    drop patient_fk,
+    drop study_fk,
+    drop series_fk,
+    drop instance_fk,
+    drop mpps_fk,
+    drop mwl_item_fk;
+
