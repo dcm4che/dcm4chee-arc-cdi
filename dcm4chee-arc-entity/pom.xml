@@ -39,12 +39,6 @@
       <artifactId>dcm4chee-arc-junit</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.oracle</groupId>
-          <artifactId>ojdbc6</artifactId>
-            <version>11.2.0.3.0</version>
-            <scope>test</scope>
-          </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>

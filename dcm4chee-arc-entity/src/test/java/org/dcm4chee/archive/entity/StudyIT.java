@@ -42,25 +42,18 @@ import static org.dcm4chee.archive.entity.Study.FIND_BY_STUDY_INSTANCE_UID;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.concurrent.Callable;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 
-import org.dbunit.DatabaseUnitException;
-import org.dbunit.database.DatabaseConfig;
-import org.dbunit.database.DatabaseConnection;
 import org.dbunit.database.IDatabaseConnection;
 import org.dbunit.dataset.IDataSet;
-import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
-import org.dbunit.ext.hsqldb.HsqldbDataTypeFactory;
 import org.dbunit.operation.DatabaseOperation;
 import org.dcm4chee.archive.junit.rules.EntityManagerFactoryRule;
 import org.dcm4chee.archive.junit.rules.EntityManagerRule;
-import org.hibernate.Session;
-import org.hibernate.jdbc.Work;
+import org.dcm4chee.archive.junit.rules.IDatabaseConnectionRule;
+import org.dcm4chee.archive.junit.rules.IDatasetRule;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -75,9 +68,17 @@ public class StudyIT {
     public static final EntityManagerRule ENTITY_MANAGER_RULE = new EntityManagerRule(
             ENTITY_MANAGER_FACTORY_RULE);
 
+    public static final IDatabaseConnectionRule I_DATABASE_CONNECTION_RULE = new IDatabaseConnectionRule(
+            ENTITY_MANAGER_RULE);
+
     @ClassRule
-    public static TestRule TEST_RULE = RuleChain.outerRule(
-            ENTITY_MANAGER_FACTORY_RULE).around(ENTITY_MANAGER_RULE);
+    public static TestRule TEST_RULE = RuleChain
+            .outerRule(ENTITY_MANAGER_FACTORY_RULE).around(ENTITY_MANAGER_RULE)
+            .around(I_DATABASE_CONNECTION_RULE);
+
+    @ClassRule
+    public static final IDatasetRule I_DATASET_RULE = new IDatasetRule(
+            "study-it-dataset.xml");
 
     static IDatabaseConnection iDatabaseConnection;
 
@@ -87,65 +88,16 @@ public class StudyIT {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        FlatXmlDataSetBuilder flatXmlDataSetBuilder = new FlatXmlDataSetBuilder();
-        flatXmlDataSetBuilder.setColumnSensing(true);
-
-        iDataSet = flatXmlDataSetBuilder.build(Thread.currentThread()
-                .getContextClassLoader()
-                .getResourceAsStream("study-it-dataset.xml"));
-
+        iDataSet = I_DATASET_RULE.getiDataSet();
         entityManager = ENTITY_MANAGER_RULE.getEntityManager();
-        ((Session) entityManager.unwrap(Session.class)).doWork(new Work() {
-            @Override
-            public void execute(Connection connection) throws SQLException {
-                try {
-                    iDatabaseConnection = new DatabaseConnection(connection);
-                } catch (DatabaseUnitException e) {
-                    throw new IllegalStateException(e);
-                }
-            }
-        });
-
-        iDatabaseConnection.getConfig().setProperty(
-                DatabaseConfig.PROPERTY_DATATYPE_FACTORY,
-                new HsqldbDataTypeFactory());
+        iDatabaseConnection = I_DATABASE_CONNECTION_RULE
+                .getiDatabaseConnection();
     }
 
     @Before
-    public void before1() throws Exception {
+    public void before() throws Exception {
         DatabaseOperation.CLEAN_INSERT.execute(iDatabaseConnection, iDataSet);
     }
-
-    // @Test
-    // public void test() throws Exception {
-    // // database connection
-    // Class driverClass = Class.forName("oracle.jdbc.OracleDriver");
-    // Connection jdbcConnection = DriverManager.getConnection(
-    // "jdbc:oracle:thin:@idc-database.mitra.com:1521:impax", "crcsp",
-    // "crcsp");
-    // IDatabaseConnection connection = new
-    // DatabaseConnection(jdbcConnection);
-    //
-    // // partial database export
-    // QueryDataSet partialDataSet = new QueryDataSet(connection);
-    // partialDataSet.addTable("STUDY");
-    // FlatXmlDataSet.write(partialDataSet, new
-    // FileOutputStream("study-it-dataset.xml"));
-    //
-    // // full database export
-    // IDataSet fullDataSet = connection.createDataSet();
-    // FlatXmlDataSet.write(fullDataSet, new FileOutputStream("full.xml"));
-    //
-    // // dependent tables database export: export table X and all tables
-    // that
-    // // have a PK which is a FK on X, in the right order for insertion
-    // String[] depTableNames =
-    // TablesDependencyHelper.getAllDependentTables( connection, "X" );
-    // IDataSet depDataset = connection.createDataSet( depTableNames );
-    // FlatXmlDataSet.write(depDataSet, new
-    // FileOutputStream("dependents.xml"));
-    // *
-    // }
 
     @Test
     public void findByStudyInstanceUID_shouldSelectStudy_whenStudyInstanceUIDMatches() {
