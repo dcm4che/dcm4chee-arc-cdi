@@ -44,17 +44,18 @@ import static org.junit.Assert.assertThat;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.concurrent.Callable;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 
 import org.dbunit.DatabaseUnitException;
+import org.dbunit.database.DatabaseConfig;
 import org.dbunit.database.DatabaseConnection;
 import org.dbunit.database.IDatabaseConnection;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+import org.dbunit.ext.hsqldb.HsqldbDataTypeFactory;
 import org.dbunit.operation.DatabaseOperation;
 import org.dcm4chee.archive.junit.rules.EntityManagerFactoryRule;
 import org.dcm4chee.archive.junit.rules.EntityManagerRule;
@@ -68,14 +69,14 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 
 public class StudyIT {
-    private static final EntityManagerFactoryRule ENTITY_MANAGER_FACTORY_RULE = new EntityManagerFactoryRule(
+    public static final EntityManagerFactoryRule ENTITY_MANAGER_FACTORY_RULE = new EntityManagerFactoryRule(
             "study-it");
 
-    private static final EntityManagerRule ENTITY_MANAGER_RULE = new EntityManagerRule(
+    public static final EntityManagerRule ENTITY_MANAGER_RULE = new EntityManagerRule(
             ENTITY_MANAGER_FACTORY_RULE);
 
     @ClassRule
-    public static final TestRule TEST_RULE = RuleChain.outerRule(
+    public static TestRule TEST_RULE = RuleChain.outerRule(
             ENTITY_MANAGER_FACTORY_RULE).around(ENTITY_MANAGER_RULE);
 
     static IDatabaseConnection iDatabaseConnection;
@@ -86,6 +87,13 @@ public class StudyIT {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
+        FlatXmlDataSetBuilder flatXmlDataSetBuilder = new FlatXmlDataSetBuilder();
+        flatXmlDataSetBuilder.setColumnSensing(true);
+
+        iDataSet = flatXmlDataSetBuilder.build(Thread.currentThread()
+                .getContextClassLoader()
+                .getResourceAsStream("study-it-dataset.xml"));
+
         entityManager = ENTITY_MANAGER_RULE.getEntityManager();
         ((Session) entityManager.unwrap(Session.class)).doWork(new Work() {
             @Override
@@ -98,49 +106,46 @@ public class StudyIT {
             }
         });
 
-        FlatXmlDataSetBuilder flatXmlDataSetBuilder = new FlatXmlDataSetBuilder();
-        flatXmlDataSetBuilder.setColumnSensing(true);
-
-        iDataSet = flatXmlDataSetBuilder.build(Thread.currentThread()
-                .getContextClassLoader()
-                .getResourceAsStream("study-it-dataset.xml"));
+        iDatabaseConnection.getConfig().setProperty(
+                DatabaseConfig.PROPERTY_DATATYPE_FACTORY,
+                new HsqldbDataTypeFactory());
     }
 
     @Before
-    public void before() throws Exception {
+    public void before1() throws Exception {
         DatabaseOperation.CLEAN_INSERT.execute(iDatabaseConnection, iDataSet);
     }
 
-    @Test
-    public void test() throws Exception {
-        // // database connection
-        // Class driverClass = Class.forName("oracle.jdbc.OracleDriver");
-        // Connection jdbcConnection = DriverManager.getConnection(
-        // "jdbc:oracle:thin:@idc-database.mitra.com:1521:impax", "crcsp",
-        // "crcsp");
-        // IDatabaseConnection connection = new
-        // DatabaseConnection(jdbcConnection);
-        //
-        // // partial database export
-        // QueryDataSet partialDataSet = new QueryDataSet(connection);
-        // partialDataSet.addTable("STUDY");
-        // FlatXmlDataSet.write(partialDataSet, new
-        // FileOutputStream("study-it-dataset.xml"));
-        //
-        // // full database export
-        // IDataSet fullDataSet = connection.createDataSet();
-        // FlatXmlDataSet.write(fullDataSet, new FileOutputStream("full.xml"));
-        //
-        // // dependent tables database export: export table X and all tables
-        // that
-        // // have a PK which is a FK on X, in the right order for insertion
-        // String[] depTableNames =
-        // TablesDependencyHelper.getAllDependentTables( connection, "X" );
-        // IDataSet depDataset = connection.createDataSet( depTableNames );
-        // FlatXmlDataSet.write(depDataSet, new
-        // FileOutputStream("dependents.xml"));
-        // *
-    }
+    // @Test
+    // public void test() throws Exception {
+    // // database connection
+    // Class driverClass = Class.forName("oracle.jdbc.OracleDriver");
+    // Connection jdbcConnection = DriverManager.getConnection(
+    // "jdbc:oracle:thin:@idc-database.mitra.com:1521:impax", "crcsp",
+    // "crcsp");
+    // IDatabaseConnection connection = new
+    // DatabaseConnection(jdbcConnection);
+    //
+    // // partial database export
+    // QueryDataSet partialDataSet = new QueryDataSet(connection);
+    // partialDataSet.addTable("STUDY");
+    // FlatXmlDataSet.write(partialDataSet, new
+    // FileOutputStream("study-it-dataset.xml"));
+    //
+    // // full database export
+    // IDataSet fullDataSet = connection.createDataSet();
+    // FlatXmlDataSet.write(fullDataSet, new FileOutputStream("full.xml"));
+    //
+    // // dependent tables database export: export table X and all tables
+    // that
+    // // have a PK which is a FK on X, in the right order for insertion
+    // String[] depTableNames =
+    // TablesDependencyHelper.getAllDependentTables( connection, "X" );
+    // IDataSet depDataset = connection.createDataSet( depTableNames );
+    // FlatXmlDataSet.write(depDataSet, new
+    // FileOutputStream("dependents.xml"));
+    // *
+    // }
 
     @Test
     public void findByStudyInstanceUID_shouldSelectStudy_whenStudyInstanceUIDMatches() {
@@ -156,33 +161,57 @@ public class StudyIT {
         assertThat(executeInTransaction(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                return entityManager
+                Integer integer = entityManager
                         .createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES[0])
-                        .setParameter(1, 7).setParameter(2, 2L)
-                        .executeUpdate();
+                        .setParameter(1, 7).setParameter(2, 2L).executeUpdate();
+
+                assertSeriesInstanceCounts(entityManager.find(Study.class, 1L),
+                        110, 120, 130);
+                assertSeriesInstanceCounts(entityManager.find(Study.class, 2L),
+                        7, 220, 230);
+
+                return integer;
             }
         }), is(1));
-        
-        assertSeriesInstanceCounts(entityManager.find(Study.class, 1L), 110, 120, 130);
-        assertSeriesInstanceCounts(entityManager.find(Study.class, 2L), 7, 220, 230);
+    }
+
+    @Test
+    public void updateSeries2_shouldSeries2_whenPkMatches() throws Exception {
+        assertThat(executeInTransaction(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                Integer integer = entityManager
+                        .createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES[1])
+                        .setParameter(1, 7).setParameter(2, 2L).executeUpdate();
+
+                assertSeriesInstanceCounts(entityManager.find(Study.class, 1L),
+                        110, 120, 130);
+                assertSeriesInstanceCounts(entityManager.find(Study.class, 2L),
+                        210, 7, 230);
+
+                return integer;
+            }
+        }), is(1));
     }
 
     private void assertSeriesInstanceCounts(Study study, int... seriesCounts) {
+        entityManager.refresh(study);
+
         assertThat(study.getNumberOfSeries(1), is(seriesCounts[0]));
         assertThat(study.getNumberOfSeries(2), is(seriesCounts[1]));
         assertThat(study.getNumberOfSeries(3), is(seriesCounts[2]));
     }
 
-     private <T> T executeInTransaction(Callable<T> callable) throws Exception {
+    private <T> T executeInTransaction(Callable<T> callable) throws Exception {
         EntityTransaction entityTransaction = entityManager.getTransaction();
 
         try {
             entityTransaction.begin();
 
             T t = callable.call();
-            
+
             entityTransaction.commit();
-            
+
             return t;
         } catch (RuntimeException e) {
             if (entityTransaction != null && entityTransaction.isActive()) {
