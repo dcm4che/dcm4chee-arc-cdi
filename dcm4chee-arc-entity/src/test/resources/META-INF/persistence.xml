@@ -6,6 +6,25 @@
   <persistence-unit name="study-it" transaction-type="RESOURCE_LOCAL">
     <provider>org.hibernate.ejb.HibernatePersistence</provider>
   
+  	<class>org.dcm4chee.archive.entity.Study</class>
+  	<class>org.dcm4chee.archive.entity.AttributesBlob</class>
+  	<class>org.dcm4chee.archive.entity.Issuer</class>
+  	<class>org.dcm4chee.archive.entity.Patient</class>
+  	<class>org.dcm4chee.archive.entity.PersonName</class>
+  	<class>org.dcm4chee.archive.entity.SoundexCode</class>
+  	<class>org.dcm4chee.archive.entity.PatientID</class>
+  	<class>org.dcm4chee.archive.entity.Code</class>
+  	<class>org.dcm4chee.archive.entity.Series</class>
+  	<class>org.dcm4chee.archive.entity.RequestAttributes</class>
+  	<class>org.dcm4chee.archive.entity.MPPS</class>
+  	<class>org.dcm4chee.archive.entity.MWLItem</class>
+  	<class>org.dcm4chee.archive.entity.ScheduledStationAETitle</class>
+  	<class>org.dcm4chee.archive.entity.Instance</class>
+  	<class>org.dcm4chee.archive.entity.VerifyingObserver</class>
+  	<class>org.dcm4chee.archive.entity.FileRef</class>
+  	<class>org.dcm4chee.archive.entity.FileSystem</class>
+  	<class>org.dcm4chee.archive.entity.ContentItem</class>
+  	
     <properties>
       <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect" />
       <property name="hibernate.hbm2ddl.auto" value="create-drop" />

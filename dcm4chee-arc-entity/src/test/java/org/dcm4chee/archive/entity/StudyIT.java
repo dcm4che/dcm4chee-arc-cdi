@@ -38,10 +38,19 @@
 
 package org.dcm4chee.archive.entity;
 
-/**
- * 
- *
- */
+import org.dcm4chee.archive.junit.rules.EntityManagerFactoryRule;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.rules.RuleChain;
+import org.junit.rules.TestRule;
+
 public class StudyIT {
+    @ClassRule
+    public static final TestRule TEST_RULE = RuleChain.outerRule(new EntityManagerFactoryRule("study-it"));
+    
+    @Test
+    public void test() {
+        
+    }
 
 }
