@@ -63,4 +63,8 @@ public class EntityManagerRule extends ExternalResource {
             entityManager.close();
         }
     }
+
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
 }
