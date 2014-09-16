@@ -7,4 +7,4 @@ before_install:
   - git show | head
   - mvn install -Dmaven.skip.test=true
   - popd
-
+script: "mvn -B verify"
