@@ -117,14 +117,14 @@ public class StudyIT {
                         .createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES[0])
                         .setParameter(1, 7).setParameter(2, 2L).executeUpdate();
 
-                assertSeriesInstanceCounts(entityManager.find(Study.class, 1L),
-                        110, 120, 130);
-                assertSeriesInstanceCounts(entityManager.find(Study.class, 2L),
-                        7, 220, 230);
-
                 return integer;
             }
         }), is(1));
+
+        assertSeriesInstanceCounts(entityManager.find(Study.class, 1L),
+                110, 120, 130);
+        assertSeriesInstanceCounts(entityManager.find(Study.class, 2L),
+                7, 220, 230);
     }
 
     @Test
@@ -136,14 +136,14 @@ public class StudyIT {
                         .createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES[1])
                         .setParameter(1, 7).setParameter(2, 2L).executeUpdate();
 
-                assertSeriesInstanceCounts(entityManager.find(Study.class, 1L),
-                        110, 120, 130);
-                assertSeriesInstanceCounts(entityManager.find(Study.class, 2L),
-                        210, 7, 230);
-
                 return integer;
             }
         }), is(1));
+
+        assertSeriesInstanceCounts(entityManager.find(Study.class, 1L),
+                110, 120, 130);
+        assertSeriesInstanceCounts(entityManager.find(Study.class, 2L),
+                210, 7, 230);
     }
 
     private void assertSeriesInstanceCounts(Study study, int... seriesCounts) {
