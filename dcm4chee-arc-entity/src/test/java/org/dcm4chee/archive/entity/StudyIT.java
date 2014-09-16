@@ -62,6 +62,14 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 
 public class StudyIT {
+    private static final int NEW_COUNT = 7;
+
+    private static final int[] INITIAL_STUDY_1_SERIES_COUNTS = new int[] { 110,
+            120, 130 };
+
+    private static final int[] INITIAL_STUDY_2_INSTANCE_COUNTS = new int[] {
+            201, 202, 203 };
+
     public static final EntityManagerFactoryRule ENTITY_MANAGER_FACTORY_RULE = new EntityManagerFactoryRule(
             "study-it");
 
@@ -109,49 +117,130 @@ public class StudyIT {
     }
 
     @Test
-    public void updateSeries1_shouldSeries1_whenPkMatches() throws Exception {
-        assertThat(executeInTransaction(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                Integer integer = entityManager
-                        .createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES[0])
-                        .setParameter(1, 7).setParameter(2, 2L).executeUpdate();
+    public void updateNumberOfSeries1_shouldUpdateNumberOfSeries1_whenPkMatches()
+            throws Exception {
+        assertThat(
+                executeInTransaction(createUpdateNumberOfSeriesCallable(2L, 0,
+                        NEW_COUNT)), is(1));
 
-                return integer;
-            }
-        }), is(1));
-
-        assertSeriesInstanceCounts(entityManager.find(Study.class, 1L),
-                110, 120, 130);
-        assertSeriesInstanceCounts(entityManager.find(Study.class, 2L),
-                7, 220, 230);
+        assertNumberOfSeries(entityManager.find(Study.class, 1L),
+                INITIAL_STUDY_1_SERIES_COUNTS);
+        assertNumberOfSeries(entityManager.find(Study.class, 2L), NEW_COUNT,
+                220, 230);
     }
 
     @Test
-    public void updateSeries2_shouldSeries2_whenPkMatches() throws Exception {
-        assertThat(executeInTransaction(new Callable<Integer>() {
+    public void updateNumberOfSeries2_shouldUpdateNumberOfSeries2_whenPkMatches()
+            throws Exception {
+        assertThat(
+                executeInTransaction(createUpdateNumberOfSeriesCallable(2L, 1,
+                        NEW_COUNT)), is(1));
+
+        assertNumberOfSeries(entityManager.find(Study.class, 1L),
+                INITIAL_STUDY_1_SERIES_COUNTS);
+        assertNumberOfSeries(entityManager.find(Study.class, 2L), 210,
+                NEW_COUNT, 230);
+    }
+
+    @Test
+    public void updateNumberOfSeries3_shouldUpdateNumberOfSeries3_whenPkMatches()
+            throws Exception {
+        assertThat(
+                executeInTransaction(createUpdateNumberOfSeriesCallable(2L, 2,
+                        NEW_COUNT)), is(1));
+
+        assertNumberOfSeries(entityManager.find(Study.class, 1L),
+                INITIAL_STUDY_1_SERIES_COUNTS);
+        assertNumberOfSeries(entityManager.find(Study.class, 2L), 210, 220,
+                NEW_COUNT);
+    }
+
+    @Test
+    public void updateNumberOfInstances1_shouldUpdateNumberOfInstances1_whenPkMatches()
+            throws Exception {
+        assertThat(
+                executeInTransaction(createUpdateNumberOfInstancesCallable(1L,
+                        0, NEW_COUNT)), is(1));
+
+        assertNumberOfInstances(entityManager.find(Study.class, 1L), NEW_COUNT,
+                102, 103);
+        assertNumberOfInstances(entityManager.find(Study.class, 2L),
+                INITIAL_STUDY_2_INSTANCE_COUNTS);
+    }
+
+    @Test
+    public void updateNumberOfInstances2_shouldUpdateNumberOfInstances2_whenPkMatches()
+            throws Exception {
+        assertThat(
+                executeInTransaction(createUpdateNumberOfInstancesCallable(1L,
+                        1, NEW_COUNT)), is(1));
+
+        assertNumberOfInstances(entityManager.find(Study.class, 1L), 101,
+                NEW_COUNT, 103);
+        assertNumberOfInstances(entityManager.find(Study.class, 2L),
+                INITIAL_STUDY_2_INSTANCE_COUNTS);
+    }
+
+    @Test
+    public void updateNumberOfInstances3_shouldUpdateNumberOfInstances3_whenPkMatches()
+            throws Exception {
+        assertThat(
+                executeInTransaction(createUpdateNumberOfInstancesCallable(1L,
+                        2, NEW_COUNT)), is(1));
+
+        assertNumberOfInstances(entityManager.find(Study.class, 1L), 101, 102,
+                NEW_COUNT);
+        assertNumberOfInstances(entityManager.find(Study.class, 2L),
+                INITIAL_STUDY_2_INSTANCE_COUNTS);
+    }
+
+    private Callable<Integer> createUpdateNumberOfSeriesCallable(final long pk,
+            final int queryIndex, final int seriesCount) throws Exception {
+        return new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
                 Integer integer = entityManager
-                        .createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES[1])
-                        .setParameter(1, 7).setParameter(2, 2L).executeUpdate();
+                        .createNamedQuery(
+                                Study.UPDATE_NUMBER_OF_SERIES[queryIndex])
+                        .setParameter(1, seriesCount).setParameter(2, pk)
+                        .executeUpdate();
 
                 return integer;
             }
-        }), is(1));
-
-        assertSeriesInstanceCounts(entityManager.find(Study.class, 1L),
-                110, 120, 130);
-        assertSeriesInstanceCounts(entityManager.find(Study.class, 2L),
-                210, 7, 230);
+        };
     }
 
-    private void assertSeriesInstanceCounts(Study study, int... seriesCounts) {
+    private Callable<Integer> createUpdateNumberOfInstancesCallable(
+            final long pk, final int queryIndex, final int instanceCount)
+            throws Exception {
+        return new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                Integer integer = entityManager
+                        .createNamedQuery(
+                                Study.UPDATE_NUMBER_OF_INSTANCES[queryIndex])
+                        .setParameter(1, instanceCount).setParameter(2, pk)
+                        .executeUpdate();
+
+                return integer;
+            }
+        };
+    }
+
+    private void assertNumberOfSeries(Study study, int... numberOfSeries) {
         entityManager.refresh(study);
 
-        assertThat(study.getNumberOfSeries(1), is(seriesCounts[0]));
-        assertThat(study.getNumberOfSeries(2), is(seriesCounts[1]));
-        assertThat(study.getNumberOfSeries(3), is(seriesCounts[2]));
+        assertThat(study.getNumberOfSeries(1), is(numberOfSeries[0]));
+        assertThat(study.getNumberOfSeries(2), is(numberOfSeries[1]));
+        assertThat(study.getNumberOfSeries(3), is(numberOfSeries[2]));
+    }
+
+    private void assertNumberOfInstances(Study study, int... numberOfInstances) {
+        entityManager.refresh(study);
+
+        assertThat(study.getNumberOfInstances(1), is(numberOfInstances[0]));
+        assertThat(study.getNumberOfInstances(2), is(numberOfInstances[1]));
+        assertThat(study.getNumberOfInstances(3), is(numberOfInstances[2]));
     }
 
     private <T> T executeInTransaction(Callable<T> callable) throws Exception {
