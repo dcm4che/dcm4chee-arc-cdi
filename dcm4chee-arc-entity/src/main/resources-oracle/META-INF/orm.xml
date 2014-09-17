@@ -77,7 +77,7 @@
   </entity>
 
   <entity class="Issuer">
-    <table name="issuer" />
+    <table name="id_issuer" />
     <sequence-generator name="seq" sequence-name="issuer_pk_seq" allocation-size="1" />
     <attributes>
       <id name="pk">
