@@ -69,7 +69,7 @@ import org.dcm4che3.data.Attributes;
           "OR (i.universalEntityID = ?2 AND i.universalEntityIDType = ?3)")
 })
 @Entity
-@Table(name = "issuer")
+@Table(name = "id_issuer")
 public class Issuer extends org.dcm4che3.data.Issuer {
 
     private static final long serialVersionUID = -3985937520970392728L;
