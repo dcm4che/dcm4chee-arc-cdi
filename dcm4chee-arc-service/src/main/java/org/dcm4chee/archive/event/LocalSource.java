@@ -76,4 +76,10 @@ public class LocalSource implements Participant {
            return Participant.UNKNOWN;
         }
     }
+
+    @Override
+    public Object unwrap() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

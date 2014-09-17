@@ -52,4 +52,6 @@ public interface Participant {
     
     public String getIP();
     
+    public Object unwrap();
+    
 }

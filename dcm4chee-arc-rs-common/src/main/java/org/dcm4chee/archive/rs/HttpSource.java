@@ -85,4 +85,9 @@ public class HttpSource implements Participant {
     private static String unknownIfNull(String value) {
         return value != null ? value : Participant.UNKNOWN;
     }
+
+    @Override
+    public Object unwrap() {
+        return request;
+    }
 }

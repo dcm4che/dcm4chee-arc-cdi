@@ -91,4 +91,9 @@ public class RemoteAssociationParticipant implements Participant {
                 return UNKNOWN;
     }
 
+    @Override
+    public Object unwrap() {
+        return association;
+    }
+
 }

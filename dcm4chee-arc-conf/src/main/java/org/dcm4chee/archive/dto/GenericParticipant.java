@@ -70,5 +70,11 @@ public class GenericParticipant implements Participant {
         return host;
     }
 
+    @Override
+    public Object unwrap() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     
 }

@@ -425,7 +425,9 @@ public class WadoURI extends Wado {
                 TransformerHandler th = null;
                 ClassLoader cl = this.getClass().getClassLoader();
                 try {
-                    File stylesheet = new File(arcAE.getWadoSRTemplateURI());
+                    File stylesheet = new File(
+                            StringUtils.replaceSystemProperties(
+                                    arcAE.getWadoSRTemplateURI()));
                     templates = TemplatesCache.getDefault().get(
                             stylesheet.getPath());
                 } catch (TransformerConfigurationException e) {
