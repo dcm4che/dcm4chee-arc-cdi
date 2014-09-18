@@ -148,6 +148,11 @@
       <artifactId>dcm4chee-arc-timezone</artifactId>
       <version>${project.version}</version>
     </dependency>
+       <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-dyndec</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <profiles>
     <profile>

@@ -308,6 +308,7 @@
     <module>dcm4chee-arc-ctrl</module>
     <module>dcm4chee-arc-data-mgmt</module>
 	<module>dcm4chee-arc-file-mgmt</module>
+	<module>dcm4chee-arc-dyndec</module>
     <module>dcm4chee-arc-war</module>
     <module>dcm4chee-arc-compress</module>
     <module>dcm4chee-arc-stgcmt-scp</module>

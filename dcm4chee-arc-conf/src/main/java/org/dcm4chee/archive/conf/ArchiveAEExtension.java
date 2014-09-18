@@ -187,6 +187,38 @@ public class ArchiveAEExtension extends AEExtension {
 //    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
 //    private boolean timeZoneSupported;
 
+//Configuration for prototype for limited composability
+
+    @ConfigField(name = "dcmComposition", def = "null", failIfNotPresent=false)
+    private Composition composition = new Composition();
+
+    public Composition getComposition() {
+        return composition;
+    }
+
+    public void setComposition(Composition composition) {
+        this.composition = composition;
+    }
+
+    @ConfigClass(objectClass = "dcmComposition")
+    public static class Composition implements Serializable {
+    private static final long serialVersionUID = -7215371541145445328L;
+
+    @ConfigField(mapName = "dcmCompositionMap", mapKey = "dicomAETitle", name = "dcmCompositionClass", mapElementObjectClass = "dcmComposable", failIfNotPresent=false)
+    private Map<String, String> compositionMap = new HashMap<String, String>();
+
+	public Map<String, String> getCompositionMap() {
+		return compositionMap;
+	}
+
+	public void setCompositionMap(Map<String, String> compositionMap) {
+		this.compositionMap = compositionMap;
+	}
+    }
+
+//End configuration for limited composability prototype
+
+    
     @ConfigField(name = "dcmRetrieveSuppressionCriteria", def = "null", failIfNotPresent=false)
     private RetrieveSuppressionCriteria retrieveSuppressionCriteria = new RetrieveSuppressionCriteria();
 
