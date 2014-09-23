@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import javax.ejb.Stateless;
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
@@ -62,6 +63,8 @@ import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.datamgmt.DataMgmtEvent;
+import org.dcm4chee.archive.datamgmt.DataMgmtNotification;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
@@ -111,6 +114,10 @@ public enum SeriesCommands{
     
     @Inject
     private Device device;
+
+    @Inject
+    @DataMgmtNotification
+    Event<DataMgmtEvent> internalNotification;
 
     public Study deleteStudy(String studyInstanceUID) throws Exception {
         TypedQuery<Study> query = em.createNamedQuery(
@@ -1114,6 +1121,11 @@ public enum SeriesCommands{
         }
         return newReqs;
 
+    }
+
+    @Override
+    public void notifyChangesInternally(DataMgmtEvent event) {
+        internalNotification.fire(event);
     }
 }
 /*
