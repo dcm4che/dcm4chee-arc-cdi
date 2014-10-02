@@ -58,10 +58,11 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.RejectionParam;
 import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.iocm.InstanceAlreadyRejectedException;
 import org.dcm4chee.archive.iocm.RejectionEvent;
+import org.dcm4chee.archive.iocm.RejectionService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.slf4j.Logger;
@@ -87,6 +88,8 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
     static Logger LOG = LoggerFactory.getLogger(StoreServiceIOCMDecorator.class);
 
     @Inject @Delegate StoreService storeService;
+
+    @Inject RejectionService rejectionService;
 
     @Inject Event<RejectionEvent> event;
 
@@ -139,10 +142,9 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
                 code, arcDev.getRejectionParams());
         if (rejectionParam != null) {
             HashSet<String> affectedMPPS = new HashSet<String>();
-            applyRejectionNote(em, context, inst, rejectionParam, affectedMPPS);
+            processRejectionNote(em, context, inst, rejectionParam, affectedMPPS);
             context.setProperty(RejectionParam.class.getName(), rejectionParam);
             context.setProperty("org.dcm4chee.archive.iocm.mppsiuids", affectedMPPS);
-            inst.setAvailability(Availability.UNAVAILABLE);
         }
         return inst;
     }
@@ -160,7 +162,7 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
         }
     }
 
-    private void applyRejectionNote(EntityManager em, StoreContext context,
+    private void processRejectionNote(EntityManager em, StoreContext context,
             Instance rejectionNote, RejectionParam rejectionParam,
             HashSet<String> affectedMPPS) throws DicomServiceException {
         HashSet<String> mppsIUIDs = new HashSet<String>();
@@ -182,41 +184,21 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
                 mppsIUIDs.add(ppsIUID);
             }
         }
-        for (Instance rejectedInst : rejectedInstances) {
+        try {
             if (rejectionParam.isRevokeRejection())
-                restore(context, rejectedInst);
+                rejectionService.restore(context.getStoreSession(), rejectedInstances,
+                        rejectionParam.getOverwritePreviousRejection());
             else
-                reject(context, rejectedInst, rejectionCode);
-        }
-        for (Series series : affectedSeries) {
-            series.resetNumberOfInstances();
-        }
-        if (!affectedSeries.isEmpty()) {
-            affectedSeries.get(0).getStudy().resetNumberOfInstances();
-        }
-    }
-
-    private void reject(StoreContext context, Instance inst,
-            org.dcm4chee.archive.entity.Code rejectionCode) {
-        inst.setRejectionNoteCode(rejectionCode);
-        inst.setAvailability(Availability.UNAVAILABLE);
-        LOG.info("{}: Reject Instance[pk={}, iuid={}] for {}]",
-                context.getStoreSession(),
-                inst.getPk(),
-                inst.getSopInstanceUID(),
-                rejectionCode);
-    }
-
-    private void restore(StoreContext context, Instance inst) {
-        org.dcm4chee.archive.entity.Code rejectionCode = inst.getRejectionNoteCode();
-        if (rejectionCode != null) {
-            inst.setRejectionNoteCode(null);
-            inst.setAvailability(Availability.ONLINE);
-            LOG.info("{}: Restore Instance[pk={}, iuid={}] rejected by {}]",
+                rejectionService.reject(context.getStoreSession(), rejectedInstances,
+                        rejectionCode,
+                        rejectionParam.getOverwritePreviousRejection());
+        } catch (InstanceAlreadyRejectedException e) {
+            Instance inst = e.getInstance();
+            LOG.info("{}: referenced {} was already rejected with {} - Rejection Note not applied",
                     context.getStoreSession(),
-                    inst.getPk(),
-                    inst.getSopInstanceUID(),
-                    rejectionCode);
+                    inst, inst.getRejectionNoteCode());
+            throw new DicomServiceException(DUPLICATE_REJECTION,
+                    "referenced SOP instance already rejected");
         }
     }
 
@@ -266,15 +248,6 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
                             throw new DicomServiceException(CLASS_INSTANCE_CONFLICT,
                                     "referenced SOP instance is not a member of the referenced SOP class");
                         }
-                        if (!checkAlreadyRejected(rejectionParam, inst)) {
-                            LOG.info("{}: referenced Instance[iuid={}, cuid={}] "
-                                    + "was already rejected with Code {} - Rejection Note not applied",
-                                    context.getStoreSession(),
-                                    inst.getSopInstanceUID(), inst.getSopClassUID(),
-                                    inst.getRejectionNoteCode());
-                            throw new DicomServiceException(DUPLICATE_REJECTION,
-                                    "referenced SOP instance already rejected");
-                        }
                         result.add(inst);
                     }
                 }
@@ -287,19 +260,6 @@ public abstract class StoreServiceIOCMDecorator implements StoreService {
             }
         }
         return result;
-    }
-
-    private static boolean checkAlreadyRejected(RejectionParam rejectionParam,
-            Instance inst) {
-        Code prev = inst.getRejectionNoteCode();
-        if (prev == null)
-            return true;
-
-        for (Code code : rejectionParam.getOverwritePreviousRejection()) {
-            if (prev.equalsIgnoreMeaning(code))
-                return true;
-        }
-        return false;
     }
 
 }
