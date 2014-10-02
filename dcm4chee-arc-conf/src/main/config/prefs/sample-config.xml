@@ -334,6 +334,19 @@
                 <entry key="dcmStorageFilePathFormat" value="archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}"/>
                 <entry key="dcmWadoOverlayRendering" value="false"/>
                 <entry key="dcmWadoSRTemplateURI" value="${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl"/>
+                <entry key="dcmWadoSupportedSRClasses.#" value="12"/>
+                <entry key="dcmWadoSupportedSRClasses.1" value="1.2.840.10008.5.1.4.1.1.88.11"/>
+                <entry key="dcmWadoSupportedSRClasses.10" value="1.2.840.10008.5.1.4.1.1.88.68"/>
+                <entry key="dcmWadoSupportedSRClasses.11" value="1.2.840.10008.5.1.4.1.1.88.69"/>
+                <entry key="dcmWadoSupportedSRClasses.12" value="1.2.840.10008.5.1.4.1.1.88.70"/>
+                <entry key="dcmWadoSupportedSRClasses.2" value="1.2.840.10008.5.1.4.1.1.88.22"/>
+                <entry key="dcmWadoSupportedSRClasses.3" value="1.2.840.10008.5.1.4.1.1.88.33"/>
+                <entry key="dcmWadoSupportedSRClasses.4" value="1.2.840.10008.5.1.4.1.1.88.34"/>
+                <entry key="dcmWadoSupportedSRClasses.5" value="1.2.840.10008.5.1.4.1.1.88.40"/>
+                <entry key="dcmWadoSupportedSRClasses.6" value="1.2.840.10008.5.1.4.1.1.88.50"/>
+                <entry key="dcmWadoSupportedSRClasses.7" value="1.2.840.10008.5.1.4.1.1.88.59"/>
+                <entry key="dcmWadoSupportedSRClasses.8" value="1.2.840.10008.5.1.4.1.1.88.65"/>
+                <entry key="dcmWadoSupportedSRClasses.9" value="1.2.840.10008.5.1.4.1.1.88.67"/>
                 <entry key="dicomAssociationAcceptor" value="true"/>
                 <entry key="dicomAssociationInitiator" value="true"/>
                 <entry key="dicomNetworkConnectionReference.#" value="2"/>
@@ -3607,6 +3620,20 @@
                 <entry key="dcmShowInstancesRejectedByCode.#" value="1"/>
                 <entry key="dcmShowInstancesRejectedByCode.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
                 <entry key="dcmWadoOverlayRendering" value="false"/>
+                <entry key="dcmWadoSRTemplateURI" value="${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl"/>
+                <entry key="dcmWadoSupportedSRClasses.#" value="12"/>
+                <entry key="dcmWadoSupportedSRClasses.1" value="1.2.840.10008.5.1.4.1.1.88.11"/>
+                <entry key="dcmWadoSupportedSRClasses.10" value="1.2.840.10008.5.1.4.1.1.88.68"/>
+                <entry key="dcmWadoSupportedSRClasses.11" value="1.2.840.10008.5.1.4.1.1.88.69"/>
+                <entry key="dcmWadoSupportedSRClasses.12" value="1.2.840.10008.5.1.4.1.1.88.70"/>
+                <entry key="dcmWadoSupportedSRClasses.2" value="1.2.840.10008.5.1.4.1.1.88.22"/>
+                <entry key="dcmWadoSupportedSRClasses.3" value="1.2.840.10008.5.1.4.1.1.88.33"/>
+                <entry key="dcmWadoSupportedSRClasses.4" value="1.2.840.10008.5.1.4.1.1.88.34"/>
+                <entry key="dcmWadoSupportedSRClasses.5" value="1.2.840.10008.5.1.4.1.1.88.40"/>
+                <entry key="dcmWadoSupportedSRClasses.6" value="1.2.840.10008.5.1.4.1.1.88.50"/>
+                <entry key="dcmWadoSupportedSRClasses.7" value="1.2.840.10008.5.1.4.1.1.88.59"/>
+                <entry key="dcmWadoSupportedSRClasses.8" value="1.2.840.10008.5.1.4.1.1.88.65"/>
+                <entry key="dcmWadoSupportedSRClasses.9" value="1.2.840.10008.5.1.4.1.1.88.67"/>
                 <entry key="dicomAssociationAcceptor" value="true"/>
                 <entry key="dicomAssociationInitiator" value="true"/>
                 <entry key="dicomNetworkConnectionReference.#" value="2"/>
@@ -5234,8 +5261,22 @@
                 <entry key="dcmShowInstancesRejectedByCode.2" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
                 <entry key="dcmShowInstancesRejectedByCode.3" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
                 <entry key="dcmShowInstancesRejectedByCode.4" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
-                <entry key="dcmShowInstancesRejectedByCode.5" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.5" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
                 <entry key="dcmWadoOverlayRendering" value="false"/>
+                <entry key="dcmWadoSRTemplateURI" value="${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl"/>
+                <entry key="dcmWadoSupportedSRClasses.#" value="12"/>
+                <entry key="dcmWadoSupportedSRClasses.1" value="1.2.840.10008.5.1.4.1.1.88.11"/>
+                <entry key="dcmWadoSupportedSRClasses.10" value="1.2.840.10008.5.1.4.1.1.88.68"/>
+                <entry key="dcmWadoSupportedSRClasses.11" value="1.2.840.10008.5.1.4.1.1.88.69"/>
+                <entry key="dcmWadoSupportedSRClasses.12" value="1.2.840.10008.5.1.4.1.1.88.70"/>
+                <entry key="dcmWadoSupportedSRClasses.2" value="1.2.840.10008.5.1.4.1.1.88.22"/>
+                <entry key="dcmWadoSupportedSRClasses.3" value="1.2.840.10008.5.1.4.1.1.88.33"/>
+                <entry key="dcmWadoSupportedSRClasses.4" value="1.2.840.10008.5.1.4.1.1.88.34"/>
+                <entry key="dcmWadoSupportedSRClasses.5" value="1.2.840.10008.5.1.4.1.1.88.40"/>
+                <entry key="dcmWadoSupportedSRClasses.6" value="1.2.840.10008.5.1.4.1.1.88.50"/>
+                <entry key="dcmWadoSupportedSRClasses.7" value="1.2.840.10008.5.1.4.1.1.88.59"/>
+                <entry key="dcmWadoSupportedSRClasses.8" value="1.2.840.10008.5.1.4.1.1.88.65"/>
+                <entry key="dcmWadoSupportedSRClasses.9" value="1.2.840.10008.5.1.4.1.1.88.67"/>
                 <entry key="dicomAssociationAcceptor" value="true"/>
                 <entry key="dicomAssociationInitiator" value="true"/>
                 <entry key="dicomNetworkConnectionReference.#" value="2"/>
@@ -6938,7 +6979,7 @@
                 <entry key="dcmAcceptPreviousRejectedInstance" value="REPLACE"/>
                 <entry key="dcmOverwritePreviousRejection.#" value="1"/>
                 <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
-                <entry key="dcmRejectionNoteTitle" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+                <entry key="dcmRejectionNoteTitle" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
               </map>
             </node>
             <node name="6">
@@ -6948,7 +6989,7 @@
                 <entry key="dcmOverwritePreviousRejection.2" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
                 <entry key="dcmOverwritePreviousRejection.3" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
                 <entry key="dcmOverwritePreviousRejection.4" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
-                <entry key="dcmOverwritePreviousRejection.5" value="(113038, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+                <entry key="dcmOverwritePreviousRejection.5" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
                 <entry key="dcmRejectionNoteTitle" value="(REVOKE_REJECTION, 99DCM4CHEE, &quot;Restore rejected Instances&quot;)"/>
                 <entry key="dcmRevokeRejection" value="true"/>
               </map>

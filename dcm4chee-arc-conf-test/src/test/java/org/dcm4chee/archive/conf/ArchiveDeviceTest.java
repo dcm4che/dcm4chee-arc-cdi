@@ -397,6 +397,17 @@ public class ArchiveDeviceTest {
         UID.PatientStudyOnlyQueryRetrieveInformationModelMOVERetired
     };
 
+    private static final String ATTRIBUTE_COERCION_ENSURE_PID_XSL =
+            "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl";
+    private static final String ATTRIBUTE_COERCION_NULLIFY_PN_XSL =
+            "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl";
+    private static final String WADO_SR_TEMPLATE_URI =
+            "${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl";
+    private static final String DCM4CHEE_ARC_KEY_JKS =
+            "${jboss.server.config.url}/dcm4chee-arc/key.jks";
+    private static final String HL7_ADT2DCM_XSL =
+            "${jboss.server.config.url}/dcm4chee-arc/hl7-adt2dcm.xsl";
+
     private static final Code INCORRECT_WORKLIST_ENTRY_SELECTED =
             new Code("110514", "DCM", null, "Incorrect worklist entry selected");
     private static final Code REJECTED_FOR_QUALITY_REASONS =
@@ -406,7 +417,7 @@ public class ArchiveDeviceTest {
     private static final Code INCORRECT_MODALITY_WORKLIST_ENTRY =
             new Code("113038", "DCM", null, "Incorrect Modality Worklist Entry");
     private static final Code DATA_RETENTION_POLICY_EXPIRED =
-            new Code("113038", "DCM", null, "Data Retention Policy Expired");
+            new Code("113039", "DCM", null, "Data Retention Policy Expired");
     private static final Code REVOKE_REJECTION =
             new Code("REVOKE_REJECTION", "99DCM4CHEE", null, "Restore rejected Instances");
 
@@ -416,6 +427,21 @@ public class ArchiveDeviceTest {
         REJECT_FOR_PATIENT_SAFETY_REASONS,
         INCORRECT_MODALITY_WORKLIST_ENTRY,
         DATA_RETENTION_POLICY_EXPIRED
+    };
+
+    private final String[] WADO_SUPPORTED_SR_SOP_CLASSES = {
+        UID.BasicTextSRStorage,
+        UID.EnhancedSRStorage,
+        UID.ComprehensiveSRStorage,
+        UID.Comprehensive3DSRStorage,
+        UID.ProcedureLogStorage,
+        UID.MammographyCADSRStorage,
+        UID.KeyObjectSelectionDocumentStorage,
+        UID.ChestCADSRStorage,
+        UID.XRayRadiationDoseSRStorage,
+        UID.RadiopharmaceuticalRadiationDoseSRStorage,
+        UID.ColonCADSRStorage,
+        UID.ImplantationPlanSRStorage
     };
 
     private static final String[] OTHER_DEVICES = {
@@ -796,7 +822,7 @@ public class ArchiveDeviceTest {
         device.setManufacturer("dcm4che.org");
         device.setManufacturerModelName("dcm4chee-arc");
         device.setSoftwareVersions("4.2.0.Alpha3");
-        device.setKeyStoreURL("${jboss.server.config.url}/dcm4chee-arc/key.jks");
+        device.setKeyStoreURL(DCM4CHEE_ARC_KEY_JKS);
         device.setKeyStoreType("JKS");
         device.setKeyStorePin("secret");
         device.setThisNodeCertificates(config.deviceRef(name),
@@ -841,8 +867,7 @@ public class ArchiveDeviceTest {
         hl7App.addHL7ApplicationExtension(hl7AppExt);
         hl7App.setAcceptedMessageTypes(HL7_MESSAGE_TYPES);
         hl7App.setHL7DefaultCharacterSet("8859/1");
-        hl7AppExt.addTemplatesURI("adt2dcm",
-                "${jboss.server.config.url}/dcm4chee-arc/hl7-adt2dcm.xsl");
+        hl7AppExt.addTemplatesURI("adt2dcm", HL7_ADT2DCM_XSL);
         hl7DevExt.addHL7Application(hl7App);
         Connection hl7 = new Connection("hl7", "localhost", 2575);
         hl7.setProtocol(Protocol.HL7);
@@ -930,7 +955,6 @@ public class ArchiveDeviceTest {
         ae.setAssociationInitiator(true);
         aeExt.setFileSystemGroupID("DEFAULT");
         aeExt.setInitFileSystemURI("${jboss.server.data.url}");
-        aeExt.setWadoSRTemplateURI("${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl");
         aeExt.setSpoolDirectoryPath("archive/spool");
         aeExt.setStorageFilePathFormat(new AttributesFormat(
                 "archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
@@ -938,27 +962,31 @@ public class ArchiveDeviceTest {
         aeExt.setRetrieveAETs(aet);
         aeExt.setPreserveSpoolFileOnFailure(true);
         aeExt.setSuppressWarningCoercionOfDataElements(false);
+
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
         aeExt.setHideInstances(hideInstances);
         aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
         aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
+        aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
+        aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
+
         aeExt.addAttributeCoercion(new AttributeCoercion(
                 "Supplement missing PID",
                 null, 
                 Dimse.C_STORE_RQ, 
                 SCP,
                 new String[]{"ENSURE_PID"},
-                "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl"));
+                ATTRIBUTE_COERCION_ENSURE_PID_XSL));
         aeExt.addAttributeCoercion(new AttributeCoercion(
                 "Remove person names",
                 null,
                 Dimse.C_STORE_RQ, 
                 SCU,
                 new String[]{"WITHOUT_PN"},
-                "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl"));
+                ATTRIBUTE_COERCION_NULLIFY_PN_XSL));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG 8-bit Lossy",
                 new String[] {
@@ -1097,14 +1125,14 @@ public class ArchiveDeviceTest {
                 Dimse.C_ECHO_RQ, 
                 SCU,
                 new String[]{"ENSURE_PID"},
-                "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl"));
+                ATTRIBUTE_COERCION_ENSURE_PID_XSL));
         aeExt.addAttributeCoercion(new AttributeCoercion(
                 "Remove person names",
                 null,
                 Dimse.C_STORE_RQ, 
                 SCP,
                 new String[]{"WITHOUT_PN"},
-                "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl"));
+                ATTRIBUTE_COERCION_NULLIFY_PN_XSL));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG Lossless",
                 new String[] {
@@ -1193,7 +1221,11 @@ public class ArchiveDeviceTest {
         aeExt.setHideInstances(hideInstances);
         aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
         aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
+
+        aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
+        aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
+
         addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
         addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);
         addTCs(ae, null, SCU, OTHER_CUIDS, other_tsuids);

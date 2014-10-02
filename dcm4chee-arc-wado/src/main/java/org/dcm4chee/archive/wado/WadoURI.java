@@ -42,7 +42,6 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -83,7 +82,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -136,14 +134,6 @@ public class WadoURI extends Wado {
     private HostAECache aeCache;
 
     private RetrieveContext context;
-    
-    private final String[] standardSRSopClasses = {
-            "1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22",
-            "1.2.840.10008.5.1.4.1.1.88.33", "1.2.840.10008.5.1.4.1.1.88.34",
-            "1.2.840.10008.5.1.4.1.1.88.40", "1.2.840.10008.5.1.4.1.1.88.50",
-            "1.2.840.10008.5.1.4.1.1.88.59", "1.2.840.10008.5.1.4.1.1.88.65",
-            "1.2.840.10008.5.1.4.1.1.88.67", "1.2.840.10008.5.1.4.1.1.88.69",
-            "1.2.840.10008.5.1.4.1.1.88.70" };
 
     private static final int STATUS_NOT_IMPLEMENTED = 501;
 
@@ -365,13 +355,8 @@ public class WadoURI extends Wado {
     }
 
     private boolean isSupportedSR(String cuid) {
-        String[] supportedSRClasses = arcAE.getWadoSupportedSRClasses();
-        if (supportedSRClasses == null || supportedSRClasses.length==0) {
-            supportedSRClasses = this.standardSRSopClasses;
-        }
-
-        for (String c_uid : supportedSRClasses) {
-            if (c_uid.compareToIgnoreCase(cuid) == 0)
+        for (String c_uid : arcAE.getWadoSupportedSRClasses()) {
+            if (c_uid.equals(cuid))
                 return true;
         }
         return false;
@@ -423,16 +408,13 @@ public class WadoURI extends Wado {
                 Templates templates = null;
                 SAXTransformerFactory factory = (SAXTransformerFactory) TransformerFactory.newInstance();
                 TransformerHandler th = null;
-                ClassLoader cl = this.getClass().getClassLoader();
                 try {
-                    File stylesheet = new File(
-                            StringUtils.replaceSystemProperties(
-                                    arcAE.getWadoSRTemplateURI()));
-                    templates = TemplatesCache.getDefault().get(
-                            stylesheet.getPath());
+                    String uri = StringUtils.replaceSystemProperties(
+                                    arcAE.getWadoSRTemplateURI());
+                    templates = TemplatesCache.getDefault().get(uri);
                 } catch (TransformerConfigurationException e) {
                     
-                    LOG.error("Unable to apply transformation for SR - check archive AE Configuration {}",e);
+                    LOG.error("Unable to apply transformation for SR - check archive AE Configuration",e);
                     
                 }
                 try {
@@ -441,7 +423,6 @@ public class WadoURI extends Wado {
                     e2.printStackTrace();
                 }
                 Transformer tr = th.getTransformer();
-
                 String wado = request.getRequestURL().toString();
                 tr.setParameter("wadoURL", wado);
                 SAXWriter w = null;

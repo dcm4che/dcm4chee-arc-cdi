@@ -728,7 +728,7 @@ dn: cn=Data Retention Policy Expired,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=
 dcmAcceptPreviousRejectedInstance: REPLACE
 objectClass: dcmRejectionNote
 dcmOverwritePreviousRejection: (113001, DCM, "Rejected for Quality Reasons")
-dcmRejectionNoteTitle: (113038, DCM, "Data Retention Policy Expired")
+dcmRejectionNoteTitle: (113039, DCM, "Data Retention Policy Expired")
 cn: Data Retention Policy Expired
 
 dn: cn=Restore rejected Instances,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -738,7 +738,7 @@ dcmOverwritePreviousRejection: (113001, DCM, "Rejected for Quality Reasons")
 dcmOverwritePreviousRejection: (113037, DCM, "Rejected for Patient Safety Reasons")
 dcmOverwritePreviousRejection: (110514, DCM, "Incorrect worklist entry selected")
 dcmOverwritePreviousRejection: (113038, DCM, "Incorrect Modality Worklist Entry")
-dcmOverwritePreviousRejection: (113038, DCM, "Data Retention Policy Expired")
+dcmOverwritePreviousRejection: (113039, DCM, "Data Retention Policy Expired")
 dcmRejectionNoteTitle: (REVOKE_REJECTION, 99DCM4CHEE, "Restore rejected Instances")
 cn: Restore rejected Instances
 
@@ -882,6 +882,18 @@ dcmMatchUnknown: TRUE
 dcmSendPendingCGet: TRUE
 dicomAETitle: DCM4CHEE
 dcmReturnOtherPatientIDs: TRUE
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.11
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.22
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.33
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.34
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.40
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.50
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.59
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.65
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.67
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.68
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.69
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.70
 dcmPreserveSpoolFileOnFailure: TRUE
 dcmWadoSRTemplateURI: ${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl
 dicomAssociationInitiator: TRUE
@@ -4333,6 +4345,18 @@ cn: JPEG 8-bit Lossy
 dn: dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.11
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.22
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.33
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.34
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.40
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.50
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.59
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.65
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.67
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.68
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.69
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.70
 dcmQidoMaxNumberOfResults: 1000
 dcmReturnOtherPatientNames: TRUE
 dcmReturnOtherPatientIDs: TRUE
@@ -4348,6 +4372,7 @@ objectClass: dcmArchiveNetworkAE
 dcmSendPendingCMoveInterval: 5000
 dcmWadoOverlayRendering: FALSE
 hl7PIXManagerApplication: HL7RCV^DCM4CHEE
+dcmWadoSRTemplateURI: ${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl
 dcmShowInstancesRejectedByCode: (113001, DCM, "Rejected for Quality Reasons")
 
 dn: cn=Composite Instance Retrieve Without Bulk Data - GET SCP,dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -6061,29 +6086,42 @@ objectClass: dcmCollection
 cn: dcmRetrieveSuppressionCriteriaMap
 
 dn: dicomAETitle=DCM4CHEE_TRASH,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmNumberOfInstancesCacheSlot: 3
 dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmHideInstances: TRUE
-dcmQidoMaxNumberOfResults: 1000
-dcmReturnOtherPatientNames: TRUE
-dcmReturnOtherPatientIDs: TRUE
-dcmSendPendingCGet: TRUE
-dcmNumberOfInstancesCacheSlot: 3
-dcmMatchUnknown: TRUE
-dicomAssociationInitiator: TRUE
 dicomAssociationAcceptor: TRUE
-dicomAETitle: DCM4CHEE_TRASH
 objectClass: dicomNetworkAE
 objectClass: dcmNetworkAE
 objectClass: dcmArchiveNetworkAE
-dcmSendPendingCMoveInterval: 5000
 dcmWadoOverlayRendering: FALSE
+dcmHideInstances: TRUE
+dcmSendPendingCMoveInterval: 5000
+dcmQidoMaxNumberOfResults: 1000
 hl7PIXManagerApplication: HL7RCV^DCM4CHEE
+dcmReturnOtherPatientNames: TRUE
 dcmShowInstancesRejectedByCode: (110514, DCM, "Incorrect worklist entry selected")
 dcmShowInstancesRejectedByCode: (113001, DCM, "Rejected for Quality Reasons")
 dcmShowInstancesRejectedByCode: (113037, DCM, "Rejected for Patient Safety Reasons")
 dcmShowInstancesRejectedByCode: (113038, DCM, "Incorrect Modality Worklist Entry")
-dcmShowInstancesRejectedByCode: (113038, DCM, "Data Retention Policy Expired")
+dcmShowInstancesRejectedByCode: (113039, DCM, "Data Retention Policy Expired")
+dcmMatchUnknown: TRUE
+dcmSendPendingCGet: TRUE
+dicomAETitle: DCM4CHEE_TRASH
+dcmReturnOtherPatientIDs: TRUE
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.11
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.22
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.33
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.34
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.40
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.50
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.59
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.65
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.67
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.68
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.69
+dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.70
+dcmWadoSRTemplateURI: ${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl
+dicomAssociationInitiator: TRUE
 
 dn: cn=Composite Instance Retrieve Without Bulk Data - GET SCP,dicomAETitle=DCM4CHEE_TRASH,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomSOPClass: 1.2.840.10008.5.1.4.1.2.5.3

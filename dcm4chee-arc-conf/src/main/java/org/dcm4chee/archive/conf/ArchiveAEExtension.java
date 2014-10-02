@@ -78,13 +78,13 @@ public class ArchiveAEExtension extends AEExtension {
     private String modifyingSystem;
 
     @ConfigField(name = "dcmWadoSupportedSRClasses")
-    private String[] wadoSupportedSRClasses;
+    private String[] wadoSupportedSRClasses = {};
 
     @ConfigField(name = "dcmWadoOverlayRendering", def="true")
     private boolean wadoOverlayRendering;
 
     @ConfigField(name = "dcmRetrieveAET")
-    private String[] retrieveAETs;
+    private String[] retrieveAETs = {};
 
     @ConfigField(name = "dcmExternalRetrieveAET")
     private String externalRetrieveAET;
