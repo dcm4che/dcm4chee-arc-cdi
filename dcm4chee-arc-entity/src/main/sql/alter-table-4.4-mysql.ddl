@@ -359,3 +359,6 @@ alter table dicomattrs
     drop mpps_fk,
     drop mwl_item_fk;
 
+alter table issuer
+    rename id_issuer;
+
