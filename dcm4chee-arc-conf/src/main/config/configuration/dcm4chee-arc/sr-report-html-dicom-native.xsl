@@ -5,7 +5,7 @@
   <xsl:output method="html" indent="yes" media-type="text/html"
     encoding="UTF-8" />
   <xsl:param name="wadoURL" />
-  <xsl:variable name="and"><![CDATA[&]]></xsl:variable>
+  <!-- <xsl:variable name="and"><![CDATA[&]]></xsl:variable> -->
   <!-- <xsl:param name="srImageRows" /> -->
 
   <!-- the stylesheet processing entry point -->
@@ -167,15 +167,16 @@
   <xsl:template match="Item" mode="imageref">
     Image
     <img align="top">
-      <xsl:attribute name="src"><xsl:value-of select="$wadoURL" />?requestType=WADO<xsl:value-of select="concat($and, 'seriesUID=')"/>
-        <xsl:value-of select="../../DicomAttribute[@tag='0020000E']/Value"/>
-        <xsl:value-of select="concat($and, 'studyUID=')"/>
+      <xsl:attribute name="src">
+        <xsl:value-of select="$wadoURL" />
+        <xsl:text disable-output-escaping="yes">?requestType=WADO&amp;studyUID=</xsl:text>
         <xsl:value-of select="../../../../DicomAttribute[@tag='0020000D']/Value"/>
-			<xsl:value-of
-        select="concat( $and,'objectUID=',DicomAttribute[@tag='00081155']/Value)"
-        disable-output-escaping="yes" />
+        <xsl:text>&amp;seriesUID=</xsl:text>
+        <xsl:value-of select="../../DicomAttribute[@tag='0020000E']/Value"/>
+        <xsl:text>&amp;objectUID=</xsl:text>
+        <xsl:value-of select="DicomAttribute[@tag='00081155']/Value"/>
 			<!-- 	<xsl:if test="$srImageRows">&amp;rows=<xsl:value-of select="$srImageRows" /></xsl:if> -->
-			</xsl:attribute>
+        </xsl:attribute>
     </img>
     <br />
   </xsl:template>
