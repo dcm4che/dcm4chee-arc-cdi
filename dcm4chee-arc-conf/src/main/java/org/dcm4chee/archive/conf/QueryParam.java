@@ -61,6 +61,7 @@ public class QueryParam {
     private boolean deIdentifyLogs = false;
     private boolean hideInstances;
     private Code[] showInstancesRejectedByCodes;
+    private Code[] hideRejectionNoteCodes;
     private int numberOfInstancesCacheSlot;
 
     public final boolean isCombinedDatetimeMatching() {
@@ -167,6 +168,14 @@ public class QueryParam {
     public void setShowInstancesRejectedByCodes(
             Code[] showInstancesRejectedByCodes) {
         this.showInstancesRejectedByCodes = showInstancesRejectedByCodes;
+    }
+
+    public Code[] getHideRejectionNoteCodes() {
+        return hideRejectionNoteCodes;
+    }
+
+    public void setHideRejectionNoteCodes(Code[] hideRejectionNoteCodes) {
+        this.hideRejectionNoteCodes = hideRejectionNoteCodes;
     }
 
     public int getNumberOfInstancesCacheSlot() {

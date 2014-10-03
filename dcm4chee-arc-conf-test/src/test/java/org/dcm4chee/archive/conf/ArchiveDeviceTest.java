@@ -843,21 +843,23 @@ public class ArchiveDeviceTest {
         device.addConnection(dicomTLS);
         ApplicationEntity ae = createAE("DCM4CHEE",
                 IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                false, new Code[0], 1,
+                false, new Code[0],
+                new Code[] { DATA_RETENTION_POLICY_EXPIRED }, 1,
                 null, PIX_MANAGER);
         device.addApplicationEntity(ae);
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
         ApplicationEntity adminAE = createQRAE("DCM4CHEE_ADMIN",
                 IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                false, new Code[] { REJECTED_FOR_QUALITY_REASONS }, 2,
+                false, new Code[] { REJECTED_FOR_QUALITY_REASONS },
+                new Code[] { DATA_RETENTION_POLICY_EXPIRED }, 2,
                 null, PIX_MANAGER);
         device.addApplicationEntity(adminAE);
         adminAE.addConnection(dicom);
         adminAE.addConnection(dicomTLS);
         ApplicationEntity trashAE = createQRAE("DCM4CHEE_TRASH",
                 IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                true, REJECTION_CODES, 3,
+                true, REJECTION_CODES, new Code[0], 3,
                 null, PIX_MANAGER);
         device.addApplicationEntity(trashAE);
         trashAE.addConnection(dicom);
@@ -946,6 +948,7 @@ public class ArchiveDeviceTest {
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
             boolean hideInstances,
             Code[] showInstancesRejectedByCodes,
+            Code[] hideRejectionNoteCodes,
             int numberOfInstancesCacheSlot,
             String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
@@ -968,6 +971,7 @@ public class ArchiveDeviceTest {
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
         aeExt.setHideInstances(hideInstances);
         aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
+        aeExt.setHideRejectionNoteCodes(hideRejectionNoteCodes);
         aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
@@ -1208,6 +1212,7 @@ public class ArchiveDeviceTest {
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
             boolean hideInstances,
             Code[] showInstancesRejectedByCodes,
+            Code[] hideRejectionNoteCodes,
             int numberOfInstancesCacheSlot,
             String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
@@ -1220,6 +1225,7 @@ public class ArchiveDeviceTest {
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
         aeExt.setHideInstances(hideInstances);
         aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
+        aeExt.setHideRejectionNoteCodes(hideRejectionNoteCodes);
         aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
 
         aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);

@@ -408,19 +408,31 @@ public class QueryBuilder {
                         attrFilter.getCustomAttribute3(), "*"), matchUnknown,
                 true));
         builder.and(hideRejectedInstance(queryParam));
+        builder.and(hideRejectionNote(queryParam));
     }
 
     public static Predicate hideRejectedInstance(QueryParam queryParam) {
-        Code[] codes = toCodes(queryParam.getShowInstancesRejectedByCodes());
-        BooleanExpression showRejected = null;
-        if (codes.length > 0)
-            showRejected = QInstance.instance.rejectionNoteCode.in(codes);
+        org.dcm4che3.data.Code[] codes = 
+                queryParam.getShowInstancesRejectedByCodes();
+        if (codes.length == 0)
+            return queryParam.isHideInstances()
+                    ? QInstance.instance.rejectionNoteCode.isNotNull()
+                    : QInstance.instance.rejectionNoteCode.isNull();
 
+        BooleanExpression showRejected =
+                QInstance.instance.rejectionNoteCode.in(toCodes(codes));
         return queryParam.isHideInstances()
-            ? (showRejected != null
                 ? showRejected
-                : QInstance.instance.rejectionNoteCode.isNotNull())
-            : QInstance.instance.rejectionNoteCode.isNull().or(showRejected);
+                : QInstance.instance.rejectionNoteCode.isNull().or(showRejected);
+    }
+
+    public static Predicate hideRejectionNote(QueryParam queryParam) {
+        org.dcm4che3.data.Code[] codes = queryParam.getHideRejectionNoteCodes();
+        if (codes.length == 0)
+            return null;
+
+        return QInstance.instance.conceptNameCode.isNull().or(
+                QInstance.instance.conceptNameCode.notIn(toCodes(codes)));
     }
 
     private static Code[] toCodes(org.dcm4che3.data.Code[] in) {

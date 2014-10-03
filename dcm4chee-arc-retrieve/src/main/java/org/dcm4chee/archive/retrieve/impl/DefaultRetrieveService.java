@@ -129,7 +129,8 @@ public class DefaultRetrieveService implements RetrieveService {
 
         builder.and(QFileRef.fileRef.status.ne(FileRef.Status.REPLACED));
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        return query(builder);
+        builder.and(QueryBuilder.hideRejectionNote(queryParam));
+       return query(builder);
     }
 
     /**
@@ -155,7 +156,7 @@ public class DefaultRetrieveService implements RetrieveService {
 
         builder.and(QFileRef.fileRef.status.ne(FileRef.Status.REPLACED));
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        
+        builder.and(QueryBuilder.hideRejectionNote(queryParam));
         return query(builder);
     }
 

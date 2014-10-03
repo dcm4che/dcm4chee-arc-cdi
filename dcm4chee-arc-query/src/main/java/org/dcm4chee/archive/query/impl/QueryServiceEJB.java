@@ -163,7 +163,7 @@ public class QueryServiceEJB {
             QueryParam queryParam) {
         BooleanBuilder builder = new BooleanBuilder(initial);
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-
+        builder.and(QueryBuilder.hideRejectionNote(queryParam));
         return builder;
     }
 }

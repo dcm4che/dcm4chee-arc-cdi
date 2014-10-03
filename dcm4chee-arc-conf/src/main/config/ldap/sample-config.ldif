@@ -1,5 +1,21 @@
 version: 1
 
+dn: cn=DICOM Configuration,dc=example,dc=com
+objectClass: dicomConfigurationRoot
+cn: DICOM Configuration
+
+dn: cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dicomDevicesRoot
+cn: Devices
+
+dn: cn=Unique AE Titles Registry,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dicomUniqueAETitlesRegistryRoot
+cn: Unique AE Titles Registry
+
+dn: cn=Unique HL7 Application Names Registry,cn=DICOM Configuration,dc=example,dc=com
+objectClass: hl7UniqueApplicationNamesRegistryRoot
+cn: Unique HL7 Application Names Registry
+
 dn: dicomAETitle=DCMQRSCP,cn=Unique AE Titles Registry,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dicomUniqueAETitle
 dicomAETitle: DCMQRSCP
@@ -873,6 +889,7 @@ objectClass: dcmArchiveNetworkAE
 dcmWadoOverlayRendering: FALSE
 dcmStorageFilePathFormat: archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
 dcmRetrieveAET: DCM4CHEE
+dcmHideRejectionNoteCode: (113039, DCM, "Data Retention Policy Expired")
 dcmSendPendingCMoveInterval: 5000
 dcmSpoolDirectoryPath: archive/spool
 dcmQidoMaxNumberOfResults: 1000
@@ -4343,8 +4360,24 @@ dcmBitsStored: 8
 cn: JPEG 8-bit Lossy
 
 dn: dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmNumberOfInstancesCacheSlot: 2
 dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dicomAssociationAcceptor: TRUE
+objectClass: dicomNetworkAE
+objectClass: dcmNetworkAE
+objectClass: dcmArchiveNetworkAE
+dcmWadoOverlayRendering: FALSE
+dcmHideRejectionNoteCode: (113039, DCM, "Data Retention Policy Expired")
+dcmSendPendingCMoveInterval: 5000
+dcmQidoMaxNumberOfResults: 1000
+hl7PIXManagerApplication: HL7RCV^DCM4CHEE
+dcmReturnOtherPatientNames: TRUE
+dcmShowInstancesRejectedByCode: (113001, DCM, "Rejected for Quality Reasons")
+dcmMatchUnknown: TRUE
+dcmSendPendingCGet: TRUE
+dicomAETitle: DCM4CHEE_ADMIN
+dcmReturnOtherPatientIDs: TRUE
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.11
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.22
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.33
@@ -4357,23 +4390,8 @@ dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.67
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.68
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.69
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.70
-dcmQidoMaxNumberOfResults: 1000
-dcmReturnOtherPatientNames: TRUE
-dcmReturnOtherPatientIDs: TRUE
-dcmSendPendingCGet: TRUE
-dcmNumberOfInstancesCacheSlot: 2
-dcmMatchUnknown: TRUE
-dicomAssociationInitiator: TRUE
-dicomAssociationAcceptor: TRUE
-dicomAETitle: DCM4CHEE_ADMIN
-objectClass: dicomNetworkAE
-objectClass: dcmNetworkAE
-objectClass: dcmArchiveNetworkAE
-dcmSendPendingCMoveInterval: 5000
-dcmWadoOverlayRendering: FALSE
-hl7PIXManagerApplication: HL7RCV^DCM4CHEE
 dcmWadoSRTemplateURI: ${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl
-dcmShowInstancesRejectedByCode: (113001, DCM, "Rejected for Quality Reasons")
+dicomAssociationInitiator: TRUE
 
 dn: cn=Composite Instance Retrieve Without Bulk Data - GET SCP,dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomSOPClass: 1.2.840.10008.5.1.4.1.2.5.3

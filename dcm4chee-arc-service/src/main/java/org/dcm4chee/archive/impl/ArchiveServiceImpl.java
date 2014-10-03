@@ -56,7 +56,6 @@ import javax.inject.Inject;
 import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
-import org.dcm4che3.data.Code;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.net.ApplicationEntity;
@@ -76,6 +75,7 @@ import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.Participant;
+import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.event.ConnectionEventSource;
 import org.dcm4chee.archive.event.LocalSource;
 import org.dcm4chee.archive.event.StartStopEvent;
@@ -251,31 +251,35 @@ public class ArchiveServiceImpl implements ArchiveService {
     }
 
     private void findOrCreateRejectionCodes(Device dev) {
-        Collection<org.dcm4chee.archive.entity.Code> found =
-                new ArrayList<org.dcm4chee.archive.entity.Code>();
+        Collection<Code> found = new ArrayList<Code>();
         ArchiveDeviceExtension arcDev =
                 dev.getDeviceExtensionNotNull(ArchiveDeviceExtension.class);
         arcDev.setIncorrectWorklistEntrySelectedCode(
                 findOrCreate(arcDev.getIncorrectWorklistEntrySelectedCode(), found));
         for (ApplicationEntity ae : dev.getApplicationEntities()) {
             ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-            Code[] codes = arcAE.getShowInstancesRejectedByCodes();
-            for (int i = 0; i < codes.length; i++) {
-                codes[i] = findOrCreate(codes[i], found);
-            }
+            findOrCreate(arcAE.getShowInstancesRejectedByCodes(), found);
+            findOrCreate(arcAE.getHideRejectionNoteCodes(), found);
         }
     }
 
-    private Code findOrCreate(Code code, Collection<org.dcm4chee.archive.entity.Code> found) {
+    private void findOrCreate(org.dcm4che3.data.Code[] codes,
+            Collection<Code> found) {
+        for (int i = 0; i < codes.length; i++) {
+            codes[i] = findOrCreate(codes[i], found);
+        }
+    }
+
+    private Code findOrCreate(org.dcm4che3.data.Code code,
+            Collection<Code> found) {
         try {
-            return (org.dcm4chee.archive.entity.Code) code;
+            return (Code) code;
         } catch (ClassCastException e) {
-            for (org.dcm4chee.archive.entity.Code code2 : found) {
+            for (Code code2 : found) {
                 if (code2.equalsIgnoreMeaning(code))
                     return code2;
             }
-            org.dcm4chee.archive.entity.Code code2 = codeService.findOrCreate(
-                        new org.dcm4chee.archive.entity.Code(code));
+            Code code2 = codeService.findOrCreate(new Code(code));
             found.add(code2);
             return code2;
         }

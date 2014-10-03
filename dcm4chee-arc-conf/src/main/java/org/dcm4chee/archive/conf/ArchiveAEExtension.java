@@ -168,6 +168,9 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmShowInstancesRejectedByCode")
     private Code[] showInstancesRejectedByCodes = {};
 
+    @ConfigField(name = "dcmHideRejectionNoteCode")
+    private Code[] hideRejectionNoteCodes = {};
+
     @ConfigField(name = "dcmNumberOfInstancesCacheSlot", def = "0")
     private int numberOfInstancesCacheSlot;
 
@@ -542,6 +545,14 @@ public class ArchiveAEExtension extends AEExtension {
         this.showInstancesRejectedByCodes = showInstancesRejectedByCodes;
     }
 
+    public Code[] getHideRejectionNoteCodes() {
+        return hideRejectionNoteCodes;
+    }
+
+    public void setHideRejectionNoteCodes(Code[] hideRejectionNoteCodes) {
+        this.hideRejectionNoteCodes = hideRejectionNoteCodes;
+    }
+
     public int getNumberOfInstancesCacheSlot() {
         return numberOfInstancesCacheSlot;
     }
@@ -611,6 +622,7 @@ public class ArchiveAEExtension extends AEExtension {
         queryParam.setAccessControlIDs(accessControlIDs);
         queryParam.setHideInstances(hideInstances);
         queryParam.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
+        queryParam.setHideRejectionNoteCodes(hideRejectionNoteCodes);
         queryParam.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
         return queryParam;
     }
