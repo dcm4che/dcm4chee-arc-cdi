@@ -283,8 +283,6 @@ public class WadoURI extends Wado {
                     .calculateMatches(studyUID, seriesUID, objectUID,
                             queryParam);
 
-            //TODO - supression criteria and sop class supression
-
             if (ref == null || ref.size() == 0)
                 throw new WebApplicationException(Status.NOT_FOUND);
             else
@@ -552,13 +550,9 @@ public class WadoURI extends Wado {
 
     private void writeGIFs(String tsuid, Collection<BufferedImage> bis, ImageOutputStream ios) {
         ArrayList<BufferedImage> bufferedImages = (ArrayList<BufferedImage>) bis;
-        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("gif")
+        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("GIF")
                 .next();
-        ImageWriteParam imageWriteParam = imageWriter.getDefaultWriteParam();
-        if (imageQuality > 0) {
-            imageWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-            imageWriteParam.setCompressionQuality(imageQuality / 100f);
-        }
+        ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
 
         imageWriter.setOutput(ios);
         
@@ -624,49 +618,6 @@ public class WadoURI extends Wado {
           rootNode.appendChild(node);
           return(node);
         }
-
-    //configures metadata for the GIF Image
-    private void setGIFMetadata(IIOMetadata metadata) {
-        String metaFormatName = metadata.getNativeMetadataFormatName();
-
-        IIOMetadataNode root = (IIOMetadataNode)
-          metadata.getAsTree(metaFormatName);
-
-        IIOMetadataNode graphicsControlExtensionNode = getNode(
-          root,
-          "GraphicControlExtension");
-
-        graphicsControlExtensionNode.setAttribute("disposalMethod", "none");
-        graphicsControlExtensionNode.setAttribute("userInputFlag", "FALSE");
-        graphicsControlExtensionNode.setAttribute("transparentColorFlag","FALSE");
-        //in ms
-        graphicsControlExtensionNode.setAttribute("delayTime",Integer.toString(90 / 10));
-        graphicsControlExtensionNode.setAttribute("transparentColorIndex","0");
-
-        IIOMetadataNode commentsNode = getNode(root, "CommentExtensions");
-        commentsNode.setAttribute("CommentExtension", "Created by Agfa HealthCare");
-
-        IIOMetadataNode appEntensionsNode = getNode(
-          root,
-          "ApplicationExtensions");
-
-        IIOMetadataNode child = new IIOMetadataNode("ApplicationExtension");
-
-        child.setAttribute("applicationID", "NETSCAPE");
-        child.setAttribute("authenticationCode", "2.0");
-        boolean loopContinuously = true;
-        int loop = loopContinuously ? 0 : 1;
-
-        child.setUserObject(new byte[]{ 0x1, (byte) (loop & 0xFF), (byte)
-          ((loop >> 8) & 0xFF)});
-        appEntensionsNode.appendChild(child);
-
-        try {
-            metadata.setFromTree(metaFormatName, root);
-        } catch (IIOInvalidTreeException e) {
-            LOG.error("Error setting metadata format tree {}", e);
-        }
-    }
 
     private Collection<BufferedImage> readImages(ImageInputStream iis,
             Attributes attrs) {
@@ -800,13 +751,7 @@ public class WadoURI extends Wado {
         ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("GIF")
                 .next();
         try {
-            ImageWriteParam imageWriteParam = imageWriter
-                    .getDefaultWriteParam();
-            if (imageQuality > 0) {
-                imageWriteParam
-                        .setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-                imageWriteParam.setCompressionQuality(imageQuality / 100f);
-            }
+            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
             imageWriter.setOutput(ios);
             imageWriter.write(null, new IIOImage(bi, null, null),
                     imageWriteParam);
@@ -815,21 +760,28 @@ public class WadoURI extends Wado {
         }
     }
 
+    private ImageWriteParam getImageWriterParam(ImageWriter imageWriter) {
+        ImageWriteParam imageWriteParam = imageWriter
+                .getDefaultWriteParam();
+        if (imageQuality > 0) {
+            imageWriteParam
+                    .setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            imageWriteParam.setCompressionQuality(imageQuality / 100f);
+        }
+        return imageWriteParam;
+    }
+
     private void writeJPEGOrPNG(MediaType format, BufferedImage bi, ImageOutputStream ios)
             throws IOException {
         ColorModel cm = bi.getColorModel();
         if (cm instanceof PaletteColorModel)
             bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
-        ImageWriter imageWriter = (format.isCompatible(MediaTypes.IMAGE_JPEG_TYPE)?ImageIO.getImageWritersByFormatName("JPEG").next():ImageIO.getImageWritersByFormatName("PNG").next());
+        ImageWriter imageWriter = (format.isCompatible(MediaTypes.IMAGE_JPEG_TYPE)?
+                ImageIO.getImageWritersByFormatName("JPEG").next():
+                ImageIO.getImageWritersByFormatName("PNG").next());
 
         try {
-            ImageWriteParam imageWriteParam = imageWriter
-                    .getDefaultWriteParam();
-            if (imageQuality > 0) {
-                imageWriteParam
-                        .setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-                imageWriteParam.setCompressionQuality(imageQuality / 100f);
-            }
+            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
             imageWriter.setOutput(ios);
             imageWriter.write(null, new IIOImage(bi, null, null),
                     imageWriteParam);
@@ -874,7 +826,6 @@ public class WadoURI extends Wado {
                     mediaType = MediaTypes.VIDEO_MP4_TYPE;
                 else{
                     mediaType = MediaTypes.IMAGE_JPEG_TYPE;
-                    //add gif
                     mediaType = MediaTypes.IMAGE_GIF_TYPE;
                 }
                 list.add(mediaType);
