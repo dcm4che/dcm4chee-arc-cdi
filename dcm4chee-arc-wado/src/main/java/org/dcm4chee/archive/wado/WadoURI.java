@@ -310,7 +310,7 @@ public class WadoURI extends Wado {
 
             if (mediaType == MediaTypes.IMAGE_JPEG_TYPE) {
                 instscompleted.addAll(ref);
-                return retrieveSingleJPEGOrPNG(mediaType, instance, attrs);
+                return retrieveJPEG(instance, attrs);
             }
 
             if (mediaType == MediaTypes.IMAGE_GIF_TYPE) {
@@ -320,11 +320,11 @@ public class WadoURI extends Wado {
 
             if (mediaType == MediaTypes.IMAGE_PNG_TYPE) {
                 instscompleted.addAll(ref);
-                return retrieveSingleJPEGOrPNG(mediaType, instance, attrs);
+                return retrievePNG(instance, attrs);
             }
             if (mediaType.isCompatible(MediaTypes.APPLICATION_PDF_TYPE)
                     || mediaType.isCompatible(MediaType.TEXT_XML_TYPE)
-                    || mediaType.isCompatible(MediaType.TEXT_PLAIN_TYPE)
+//                  || mediaType.isCompatible(MediaType.TEXT_PLAIN_TYPE)
                     || mediaType.isCompatible(MediaTypes.TEXT_RTF_TYPE)) {
                 instscompleted.addAll(ref);
                 return retrievePDFXMLOrText(mediaType, instance);
@@ -476,26 +476,62 @@ public class WadoURI extends Wado {
                 : UID.ExplicitVRLittleEndian;
     }
 
-    private Response retrieveSingleJPEGOrPNG(final MediaType format, final InstanceLocator ref,
-            final Attributes attrs) {
+    private Response retrieveJPEG(final InstanceLocator ref, final Attributes attrs) {
 
-        final MediaType mediaType = format;
         return Response.ok(new StreamingOutput() {
 
             @Override
             public void write(OutputStream out) throws IOException,
                     WebApplicationException {
-                ImageInputStream iis = ImageIO.createImageInputStream(ref
-                        .getFile());
-                BufferedImage bi;
-                try {
-                    bi = readImage(iis, attrs);
-                } finally {
-                    SafeClose.close(iis);
-                }
-                writeJPEGOrPNG(format, bi, new OutputStreamAdapter(out));
+                BufferedImage bi = getBufferedImage(ref, attrs);
+                writeImage("JPEG", bi, new OutputStreamAdapter(out));
             }
-        }, mediaType).build();
+        }, MediaTypes.IMAGE_JPEG_TYPE).build();
+    }
+
+    private Response retrievePNG(final InstanceLocator ref, final Attributes attrs) {
+
+        return Response.ok(new StreamingOutput() {
+
+            @Override
+            public void write(OutputStream out) throws IOException,
+                    WebApplicationException {
+                BufferedImage bi = getBufferedImage(ref, attrs);
+                writeImage("PNG", bi, new OutputStreamAdapter(out));
+            }
+        }, MediaTypes.IMAGE_PNG_TYPE).build();
+    }
+
+    private void writeImage(String format, BufferedImage bi, ImageOutputStream ios)
+            throws IOException {
+        ColorModel cm = bi.getColorModel();
+        if (cm instanceof PaletteColorModel)
+            bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
+        ImageWriter imageWriter = (format.equalsIgnoreCase("JPEG")?
+                ImageIO.getImageWritersByFormatName("JPEG").next():
+                ImageIO.getImageWritersByFormatName("PNG").next());
+
+        try {
+            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
+            imageWriter.setOutput(ios);
+            imageWriter.write(null, new IIOImage(bi, null, null),
+                    imageWriteParam);
+        } finally {
+            imageWriter.dispose();
+        }
+    }
+
+    private BufferedImage getBufferedImage(final InstanceLocator ref,
+            final Attributes attrs) throws IOException {
+        ImageInputStream iis = ImageIO.createImageInputStream(ref
+                .getFile());
+        BufferedImage bi;
+        try {
+            bi = readImage(iis, attrs);
+        } finally {
+            SafeClose.close(iis);
+        }
+        return bi;
     }
 
     private Response retrieveGIF(final InstanceLocator ref,
@@ -507,39 +543,23 @@ public class WadoURI extends Wado {
             @Override
             public void write(OutputStream out) throws IOException,
                     WebApplicationException {
-                ImageInputStream iis = ImageIO.createImageInputStream(ref
-                        .getFile());
-                BufferedImage bi;
                 Collection<BufferedImage> bis;
                 if(attrs.getInt(Tag.NumberOfFrames,1) == 1)
                 {
-                    try {
-                        bi = readImage(iis, attrs);
-                    } finally {
-                        SafeClose.close(iis);
-                    }
+                    BufferedImage bi = getBufferedImage(ref, attrs);
                     writeGIF(bi, new OutputStreamAdapter(out));
                 }
                 else
                 {
                     if(frameNumber != 0)
                     {
-                        //return desired frame
-                        try {
-                            bi = readImage(iis, attrs);
-                        } finally {
-                            SafeClose.close(iis);
-                        }
+                        BufferedImage bi = getBufferedImage(ref, attrs);
                         writeGIF(bi, new OutputStreamAdapter(out));
                     }
                     else
                     {
                         //return all frames as GIF sequence
-                        try {
-                            bis = readImages(iis, attrs);
-                        } finally {
-                            SafeClose.close(iis);
-                        }
+                        bis = readImages(ref, attrs);
                         writeGIFs(ref.tsuid,bis, new OutputStreamAdapter(out));
                     }
                     
@@ -619,8 +639,14 @@ public class WadoURI extends Wado {
           return(node);
         }
 
-    private Collection<BufferedImage> readImages(ImageInputStream iis,
-            Attributes attrs) {
+    private Collection<BufferedImage> readImages(InstanceLocator ref, Attributes attrs) {
+        ImageInputStream iis = null;
+        try {
+            iis = ImageIO.createImageInputStream(ref
+                    .getFile());
+        } catch (IOException e) {
+            LOG.error("Error creating image input stream  {}", e);
+        }
         List<BufferedImage> imageList = new ArrayList<BufferedImage>();
         Iterator<ImageReader> readers = ImageIO
                 .getImageReadersByFormatName("DICOM");
@@ -660,6 +686,7 @@ public class WadoURI extends Wado {
             }
         } finally {
             reader.dispose();
+            SafeClose.close(iis);
         }
         return imageList;
     }
@@ -769,25 +796,6 @@ public class WadoURI extends Wado {
             imageWriteParam.setCompressionQuality(imageQuality / 100f);
         }
         return imageWriteParam;
-    }
-
-    private void writeJPEGOrPNG(MediaType format, BufferedImage bi, ImageOutputStream ios)
-            throws IOException {
-        ColorModel cm = bi.getColorModel();
-        if (cm instanceof PaletteColorModel)
-            bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
-        ImageWriter imageWriter = (format.isCompatible(MediaTypes.IMAGE_JPEG_TYPE)?
-                ImageIO.getImageWritersByFormatName("JPEG").next():
-                ImageIO.getImageWritersByFormatName("PNG").next());
-
-        try {
-            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
-            imageWriter.setOutput(ios);
-            imageWriter.write(null, new IIOImage(bi, null, null),
-                    imageWriteParam);
-        } finally {
-            imageWriter.dispose();
-        }
     }
 
     /**

@@ -43,7 +43,6 @@ package org.dcm4chee.archive.rs;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 
-import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,14 +73,8 @@ public class HostAECacheImpl implements HostAECache{
 
     private ArchiveDeviceExtension arcDevExt;
 
-    public boolean resolve() {
+    private boolean resolve() {
         return arcDevExt.isHostnameAEresoultion();
-    }
-
-    public void addHostAEEntry(HostNameAEEntry entry) {
-        Collection<HostNameAEEntry> currentList = arcDevExt.getHostNameAEList();
-        currentList.add(entry);
-        arcDevExt.setHostNameAEList(currentList);
     }
 
     public ApplicationEntity findAE(HttpSource source){
@@ -92,7 +85,7 @@ public class HostAECacheImpl implements HostAECache{
         
     }
 
-    public ApplicationEntity getAE(HttpSource source) {
+    private ApplicationEntity getAE(HttpSource source) {
 
         // check if resoultion is enabled
         if (resolve()) {
@@ -112,13 +105,13 @@ public class HostAECacheImpl implements HostAECache{
         }
     }
 
-    public boolean isIP(String str) {
+    private boolean isIP(String str) {
         Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
         Matcher matcher = pattern.matcher(str);
         return matcher.matches();
     }
 
-    public ApplicationEntity lookupAE(String host) {
+    private ApplicationEntity lookupAE(String host) {
         for (HostNameAEEntry entry : arcDevExt.getHostNameAEList()) {
             if (entry.getHostName().compareToIgnoreCase(host) == 0) {
                 try {
