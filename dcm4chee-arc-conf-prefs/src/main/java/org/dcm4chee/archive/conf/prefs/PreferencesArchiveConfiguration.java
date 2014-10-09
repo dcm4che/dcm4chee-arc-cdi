@@ -64,6 +64,7 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.HostNameAEEntry;
+import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.conf.RejectionParam;
 import org.dcm4chee.archive.conf.StoreAction;
 
@@ -107,6 +108,7 @@ public class PreferencesArchiveConfiguration extends
         storeAttributeFilters(arcDev, deviceNode);
         storeHostNameAEList(arcDev, deviceNode);
         storeRejectionParams(arcDev, deviceNode);
+        storeQueryRetrieveViews(arcDev, deviceNode);
     }
 
     private static void storeAttributeFilters(ArchiveDeviceExtension arcDev,
@@ -135,8 +137,7 @@ public class PreferencesArchiveConfiguration extends
             Preferences deviceNode) {
         Preferences rnNode = deviceNode.node("dcmRejectionNote");
         int rnIndex = 1;
-        RejectionParam[] rejectionNotes = arcDev.getRejectionParams();
-        for (RejectionParam rejectionNote : rejectionNotes)
+        for (RejectionParam rejectionNote : arcDev.getRejectionParams())
             storeTo(rejectionNote, rnNode.node("" + rnIndex++));
     }
 
@@ -149,6 +150,23 @@ public class PreferencesArchiveConfiguration extends
                 rn.getAcceptPreviousRejectedInstance());
         PreferencesUtils.storeNotEmpty(prefs, "dcmOverwritePreviousRejection",
                 rn.getOverwritePreviousRejection());
+    }
+
+    private void storeQueryRetrieveViews(ArchiveDeviceExtension arcDev,
+            Preferences deviceNode) {
+        Preferences prefs = deviceNode.node("dcmQueryRetrieveView");
+        for (QueryRetrieveView view : arcDev.getQueryRetrieveViews()) {
+            storeTo(view, prefs.node(view.getViewID()));
+        }
+    }
+
+    private void storeTo(QueryRetrieveView view, Preferences prefs) {
+        PreferencesUtils.storeNotEmpty(prefs, "dcmShowInstancesRejectedByCode",
+                view.getShowInstancesRejectedByCodes());
+        PreferencesUtils.storeNotEmpty(prefs, "dcmHideRejectionNoteWithCode",
+                view.getHideRejectionNotesWithCodes());
+        PreferencesUtils.storeNotDef(prefs, "dcmHideNotRejectedInstances",
+                view.isHideNotRejectedInstances(), false);
     }
 
     @Override
@@ -232,6 +250,7 @@ public class PreferencesArchiveConfiguration extends
         loadAttributeFilters(arcdev, deviceNode);
         loadHostNameAEList(arcdev, deviceNode);
         loadRejectionParams(arcdev, deviceNode);
+        loadQueryRetrieveViews(arcdev, deviceNode);
     }
 
     private static void loadHostNameAEList(ArchiveDeviceExtension arcdev,
@@ -277,6 +296,29 @@ public class PreferencesArchiveConfiguration extends
     private static StoreAction storeActionOf(Preferences prefs, String key) {
         String name = prefs.get(key, null);
         return name != null ? StoreAction.valueOf(name) : null;
+    }
+
+    private void loadQueryRetrieveViews(ArchiveDeviceExtension arcdev,
+            Preferences deviceNode) throws BackingStoreException {
+        Preferences prefs = deviceNode.node("dcmQueryRetrieveView");
+        Collection<QueryRetrieveView> views = new ArrayList<QueryRetrieveView>();
+        for (String viewID : prefs.childrenNames())
+            views.add(loadQueryRetrieveView(prefs.node(viewID)));
+
+        arcdev.setQueryRetrieveViews(
+                views.toArray(new QueryRetrieveView[views.size()]));
+    }
+
+    private QueryRetrieveView loadQueryRetrieveView(Preferences prefs) {
+        QueryRetrieveView view = new QueryRetrieveView();
+        view.setViewID(prefs.name());
+        view.setShowInstancesRejectedByCodes(PreferencesUtils.codeArray(
+                prefs, "dcmShowInstancesRejectedByCode"));
+        view.setHideRejectionNotesWithCodes(PreferencesUtils.codeArray(
+                prefs, "dcmHideRejectionNoteWithCode"));
+        view.setHideNotRejectedInstances(
+                prefs.getBoolean("dcmHideNotRejectedInstances", false));
+        return view;
     }
 
     @Override
@@ -396,6 +438,7 @@ public class PreferencesArchiveConfiguration extends
         mergeAttributeFilters(aa, bb, deviceNode);
         mergeHostnameAEList(aa, bb, deviceNode);
         mergeRejectionParams(aa, bb, deviceNode);
+        mergeQueryRetrieveViews(aa, bb, deviceNode);
     }
 
     private static void mergeHostnameAEList(ArchiveDeviceExtension prev,
@@ -496,6 +539,43 @@ public class PreferencesArchiveConfiguration extends
         PreferencesUtils.storeDiff(prefs, "dcmAcceptPreviousRejectedInstance",
                 prev.getOverwritePreviousRejection(),
                 rn.getOverwritePreviousRejection());
+    }
+
+    private void mergeQueryRetrieveViews(ArchiveDeviceExtension prev,
+            ArchiveDeviceExtension arcDev, Preferences deviceNode)
+                    throws BackingStoreException {
+        Preferences prefs = deviceNode.node("dcmQueryRetrieveView");
+        for (QueryRetrieveView entry : prev.getQueryRetrieveViews()) {
+            String viewID = entry.getViewID();
+            if (arcDev.getQueryRetrieveView(viewID) == null)
+                prefs.node(viewID).removeNode();
+        }
+        for (QueryRetrieveView entryNew : arcDev.getQueryRetrieveViews()) {
+            String viewID = entryNew.getViewID();
+            Preferences node = prefs.node(viewID);
+            QueryRetrieveView entryOld = prev.getQueryRetrieveView(viewID);
+            if (entryOld == null) {
+                storeTo(entryNew, node);
+            } else{
+                storeDiffs(node, entryOld, entryNew);
+            }
+        }
+        prefs.flush();
+    }
+
+    private void storeDiffs(Preferences prefs, QueryRetrieveView prev,
+            QueryRetrieveView view) {
+        PreferencesUtils.storeDiff(prefs, "dcmShowInstancesRejectedByCode",
+                prev.getShowInstancesRejectedByCodes(),
+                view.getShowInstancesRejectedByCodes());
+        PreferencesUtils.storeDiff(prefs, "dcmHideRejectionNoteWithCode",
+                prev.getHideRejectionNotesWithCodes(),
+                view.getHideRejectionNotesWithCodes());
+        PreferencesUtils.storeDiff(prefs, "dcmHideNotRejectedInstances",
+                prev.isHideNotRejectedInstances(),
+                view.isHideNotRejectedInstances(),
+                false);
+        
     }
 
     private static void storeDiffs(Preferences prefs, AttributeFilter prev,

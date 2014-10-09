@@ -319,13 +319,11 @@
                 <entry key="dcmArchiveNetworkAE" value="true"/>
                 <entry key="dcmDigestAlgorithm" value="MD5"/>
                 <entry key="dcmFileSystemGroupID" value="DEFAULT"/>
-                <entry key="dcmHideRejectionNoteCode.#" value="1"/>
-                <entry key="dcmHideRejectionNoteCode.1" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
                 <entry key="dcmInitFileSystemURI" value="${jboss.server.data.url}"/>
                 <entry key="dcmMatchUnknown" value="true"/>
-                <entry key="dcmNumberOfInstancesCacheSlot" value="1"/>
                 <entry key="dcmPreserveSpoolFileOnFailure" value="true"/>
                 <entry key="dcmQidoMaxNumberOfResults" value="1000"/>
+                <entry key="dcmQueryRetrieveViewID" value="hideRejected"/>
                 <entry key="dcmRetrieveAET.#" value="1"/>
                 <entry key="dcmRetrieveAET.1" value="DCM4CHEE"/>
                 <entry key="dcmReturnOtherPatientIDs" value="true"/>
@@ -3612,17 +3610,13 @@
             <node name="DCM4CHEE_ADMIN">
               <map>
                 <entry key="dcmArchiveNetworkAE" value="true"/>
-                <entry key="dcmHideRejectionNoteCode.#" value="1"/>
-                <entry key="dcmHideRejectionNoteCode.1" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
                 <entry key="dcmMatchUnknown" value="true"/>
-                <entry key="dcmNumberOfInstancesCacheSlot" value="2"/>
                 <entry key="dcmQidoMaxNumberOfResults" value="1000"/>
+                <entry key="dcmQueryRetrieveViewID" value="regularUse"/>
                 <entry key="dcmReturnOtherPatientIDs" value="true"/>
                 <entry key="dcmReturnOtherPatientNames" value="true"/>
                 <entry key="dcmSendPendingCGet" value="true"/>
                 <entry key="dcmSendPendingCMoveInterval" value="5000"/>
-                <entry key="dcmShowInstancesRejectedByCode.#" value="1"/>
-                <entry key="dcmShowInstancesRejectedByCode.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
                 <entry key="dcmWadoOverlayRendering" value="false"/>
                 <entry key="dcmWadoSRTemplateURI" value="${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl"/>
                 <entry key="dcmWadoSupportedSRClasses.#" value="12"/>
@@ -5252,20 +5246,13 @@
             <node name="DCM4CHEE_TRASH">
               <map>
                 <entry key="dcmArchiveNetworkAE" value="true"/>
-                <entry key="dcmHideInstances" value="true"/>
                 <entry key="dcmMatchUnknown" value="true"/>
-                <entry key="dcmNumberOfInstancesCacheSlot" value="3"/>
                 <entry key="dcmQidoMaxNumberOfResults" value="1000"/>
+                <entry key="dcmQueryRetrieveViewID" value="trashView"/>
                 <entry key="dcmReturnOtherPatientIDs" value="true"/>
                 <entry key="dcmReturnOtherPatientNames" value="true"/>
                 <entry key="dcmSendPendingCGet" value="true"/>
                 <entry key="dcmSendPendingCMoveInterval" value="5000"/>
-                <entry key="dcmShowInstancesRejectedByCode.#" value="5"/>
-                <entry key="dcmShowInstancesRejectedByCode.1" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
-                <entry key="dcmShowInstancesRejectedByCode.2" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
-                <entry key="dcmShowInstancesRejectedByCode.3" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
-                <entry key="dcmShowInstancesRejectedByCode.4" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
-                <entry key="dcmShowInstancesRejectedByCode.5" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
                 <entry key="dcmWadoOverlayRendering" value="false"/>
                 <entry key="dcmWadoSRTemplateURI" value="${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl"/>
                 <entry key="dcmWadoSupportedSRClasses.#" value="12"/>
@@ -6946,6 +6933,34 @@
                 <entry key="cn" value="audit-udp"/>
                 <entry key="dcmProtocol" value="SYSLOG_UDP"/>
                 <entry key="dicomHostname" value="localhost"/>
+              </map>
+            </node>
+          </node>
+          <node name="dcmQueryRetrieveView">
+            <map/>
+            <node name="hideRejected">
+              <map>
+                <entry key="dcmHideRejectionNoteWithCode.#" value="1"/>
+                <entry key="dcmHideRejectionNoteWithCode.1" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+              </map>
+            </node>
+            <node name="regularUse">
+              <map>
+                <entry key="dcmHideRejectionNoteWithCode.#" value="1"/>
+                <entry key="dcmHideRejectionNoteWithCode.1" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.#" value="1"/>
+                <entry key="dcmShowInstancesRejectedByCode.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+              </map>
+            </node>
+            <node name="trashView">
+              <map>
+                <entry key="dcmHideNotRejectedInstances" value="true"/>
+                <entry key="dcmShowInstancesRejectedByCode.#" value="5"/>
+                <entry key="dcmShowInstancesRejectedByCode.1" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.2" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.3" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.4" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
+                <entry key="dcmShowInstancesRejectedByCode.5" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
               </map>
             </node>
           </node>

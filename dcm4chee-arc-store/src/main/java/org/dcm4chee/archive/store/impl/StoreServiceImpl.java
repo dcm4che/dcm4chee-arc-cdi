@@ -50,7 +50,6 @@ import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -62,7 +61,6 @@ import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
-import javax.persistence.criteria.From;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 
@@ -104,7 +102,6 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.issuer.IssuerService;
-import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreContext;
@@ -622,15 +619,9 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
-        FileSystem fs = session.getStorageFileSystem();
         Study study = new Study();
         study.setPatient(service.findOrCreatePatient(em, context));
         study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
-        study.setModalitiesInStudy(attrs.getString(Tag.Modality, null));
-        study.setSOPClassesInStudy(attrs.getString(Tag.SOPClassUID, null));
-        study.setRetrieveAETs(storeParam.getRetrieveAETs());
-        study.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
-        study.setAvailability(fs.getAvailability());
         study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
                 storeParam.getFuzzyStr());
         study.setIssuerOfAccessionNumber(findOrCreateIssuer(attrs
@@ -652,7 +643,6 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
-        FileSystem fs = session.getStorageFileSystem();
         Series series = new Series();
         series.setStudy(service.findOrCreateStudy(em, context));
         series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
@@ -660,9 +650,6 @@ public class StoreServiceImpl implements StoreService {
                 data.getSequence(Tag.RequestAttributesSequence),
                 storeParam.getFuzzyStr()));
         series.setSourceAET(session.getRemoteAET());
-        series.setRetrieveAETs(storeParam.getRetrieveAETs());
-        series.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
-        series.setAvailability(fs.getAvailability());
         series.setAttributes(data,
                 storeParam.getAttributeFilter(Entity.Series),
                 storeParam.getFuzzyStr());
@@ -728,9 +715,7 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
-        study.addModalityInStudy(data.getString(Tag.Modality, null));
-        study.addSOPClassInStudy(data.getString(Tag.SOPClassUID, null));
-        study.resetNumberOfInstances();
+        study.clearQueryAttributes();
         AttributeFilter studyFilter = storeParam
                 .getAttributeFilter(Entity.Study);
         Attributes studyAttrs = study.getAttributes();
@@ -760,7 +745,7 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
-        series.resetNumberOfInstances();
+        series.clearQueryAttributes();
         Attributes seriesAttrs = series.getAttributes();
         AttributeFilter seriesFilter = storeParam
                 .getAttributeFilter(Entity.Series);

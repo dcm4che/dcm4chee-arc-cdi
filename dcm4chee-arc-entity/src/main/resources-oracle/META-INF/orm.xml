@@ -190,6 +190,17 @@
     </attributes>
   </entity>
 
+  <entity class="StudyQueryAttributes">
+    <table name="study_query_attrs" />
+    <sequence-generator name="seq" sequence-name="study_query_attrs_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
   <entity class="Series">
     <table name="series" />
     <sequence-generator name="seq" sequence-name="series_pk_seq" allocation-size="1" />
@@ -204,6 +215,17 @@
       <basic name="institutionName" optional="false">
         <column name="institution" column-definition="nvarchar2(255)" />
       </basic>
+    </attributes>
+  </entity>
+
+  <entity class="SeriesQueryAttributes">
+    <table name="series_query_attrs" />
+    <sequence-generator name="seq" sequence-name="series_query_attrs_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
     </attributes>
   </entity>
 

@@ -68,13 +68,13 @@ import org.dcm4che3.data.Code;
 import org.dcm4che3.data.ValueSelector;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.HostNameAEEntry;
+import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.conf.RejectionParam;
 import org.dcm4chee.archive.conf.StoreAction;
 
@@ -117,6 +117,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         storeAttributeFilter(deviceDN, arcDev);
         storeHostNameAEList(deviceDN, arcDev);
         storeRejectionParams(deviceDN, arcDev);
+        storeQueryRetrieveViews(deviceDN, arcDev);
     }
 
     private void storeAttributeFilter(String deviceDN,
@@ -140,6 +141,27 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 LdapUtils.dnOf("dicomHostname", entry.getHostName(), containerDN),
                 storeTo(entry, new BasicAttributes(true)));
         }
+    }
+
+    private void storeQueryRetrieveViews(String deviceDN,
+           ArchiveDeviceExtension arcDev) throws NamingException {
+        for (QueryRetrieveView view : arcDev.getQueryRetrieveViews())
+            config.createSubcontext(
+                    LdapUtils.dnOf("dcmQueryRetrieveViewID",
+                            view.getViewID(), deviceDN),
+                    storeTo(view, new BasicAttributes(true)));
+    }
+
+    private Attributes storeTo(QueryRetrieveView qrView, BasicAttributes attrs) {
+        attrs.put("objectclass", "dcmQueryRetrieveView");
+        attrs.put("dcmQueryRetrieveViewID", qrView.getViewID());
+        LdapUtils.storeNotEmpty(attrs, "dcmShowInstancesRejectedByCode",
+                qrView.getShowInstancesRejectedByCodes());
+        LdapUtils.storeNotEmpty(attrs, "dcmHideRejectionNoteWithCode",
+                qrView.getHideRejectionNotesWithCodes());
+        LdapUtils.storeNotDef(attrs, "dcmHideNotRejectedInstances",
+                qrView.isHideNotRejectedInstances(), false);
+        return attrs;
     }
 
     private Attributes storeTo(HostNameAEEntry entry, BasicAttributes attrs) {
@@ -276,6 +298,34 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         loadAttributeFilters(arcdev, deviceDN);
         loadWebClientMappings(arcdev, deviceDN);
         loadRejectionParams(arcdev, deviceDN);
+        loadQueryRetrieveViews(arcdev, deviceDN);
+    }
+
+    private void loadQueryRetrieveViews(ArchiveDeviceExtension arcdev,
+            String deviceDN) throws NamingException {
+        ArrayList<QueryRetrieveView> views = new ArrayList<QueryRetrieveView>();
+        NamingEnumeration<SearchResult> ne = config.search(deviceDN,
+                "(objectclass=dcmQueryRetrieveView)");
+        try {
+            while (ne.hasMore()) {
+                SearchResult sr = ne.next();
+                Attributes attrs = sr.getAttributes();
+                QueryRetrieveView view = new QueryRetrieveView();
+                view.setViewID(LdapUtils
+                        .stringValue(attrs.get("dcmQueryRetrieveViewID"), null));
+                view.setShowInstancesRejectedByCodes(LdapUtils.codeArray(
+                        attrs.get("dcmShowInstancesRejectedByCode")));
+                view.setHideRejectionNotesWithCodes(LdapUtils.codeArray(
+                        attrs.get("dcmHideRejectionNoteWithCode")));
+                view.setHideNotRejectedInstances(LdapUtils.booleanValue(
+                        attrs.get("dcmHideNotRejectedInstances"), false));
+                views.add(view);
+            }
+        } finally {
+            LdapUtils.safeClose(ne);
+        }
+        arcdev.setQueryRetrieveViews(
+                views.toArray(new QueryRetrieveView[views.size()]));
     }
 
     private void loadRejectionParams(ArchiveDeviceExtension arcdev,
@@ -366,11 +416,6 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
     private static ValueSelector valueSelector(Attribute attr)
             throws NamingException {
         return attr != null ? ValueSelector.valueOf((String) attr.get()) : null;
-    }
-
-    private static AttributesFormat attributesFormat(Attribute attr)
-            throws NamingException {
-        return attr != null ? new AttributesFormat((String) attr.get()) : null;
     }
 
     protected static int[] tags(Attribute attr) throws NamingException {
@@ -480,6 +525,7 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
 
         mergeHostNameAEList(aa, bb, deviceDN);
         mergeRejectionParams(aa, bb, deviceDN);
+        mergeQueryRetrieveViews(aa, bb, deviceDN);
     }
 
     private void mergeHostNameAEList(ArchiveDeviceExtension prev,
@@ -557,7 +603,45 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         LdapUtils.storeDiff(mods, "dcmOverwritePreviousRejection",
                 prev.getOverwritePreviousRejection(),
                 rejectionType.getOverwritePreviousRejection());
-        return null;
+        return mods;
+    }
+
+    private void mergeQueryRetrieveViews(ArchiveDeviceExtension prev,
+            ArchiveDeviceExtension arcDev, String deviceDN) throws NamingException {
+        for (QueryRetrieveView entry : prev.getQueryRetrieveViews()) {
+            String viewID = entry.getViewID();
+            if (arcDev.getQueryRetrieveView(viewID) == null)
+                config.destroySubcontext(
+                        LdapUtils.dnOf("dcmQueryRetrieveViewID", viewID, deviceDN));
+        }
+        for (QueryRetrieveView entryNew : arcDev.getQueryRetrieveViews()) {
+            String viewID = entryNew.getViewID();
+            String dn = LdapUtils.dnOf("dcmQueryRetrieveViewID", viewID, deviceDN);
+            QueryRetrieveView entryOld = prev.getQueryRetrieveView(viewID);
+            if (entryOld == null) {
+                config.createSubcontext(dn,
+                        storeTo(entryNew, new BasicAttributes(true)));
+            } else{
+                config.modifyAttributes(dn, 
+                        storeDiffs(entryOld, entryNew,
+                                new ArrayList<ModificationItem>()));
+            }
+        }
+    }
+
+    private List<ModificationItem> storeDiffs(QueryRetrieveView prev,
+            QueryRetrieveView view, ArrayList<ModificationItem> mods) {
+        LdapUtils.storeDiff(mods, "dcmShowInstancesRejectedByCode",
+                prev.getShowInstancesRejectedByCodes(),
+                view.getShowInstancesRejectedByCodes());
+        LdapUtils.storeDiff(mods, "dcmHideRejectionNoteWithCode",
+                prev.getHideRejectionNotesWithCodes(),
+                view.getHideRejectionNotesWithCodes());
+        LdapUtils.storeDiff(mods, "dcmHideNotRejectedInstances",
+                prev.isHideNotRejectedInstances(),
+                view.isHideNotRejectedInstances(),
+                false);
+        return mods;
     }
 
     private RejectionParam findWithCodeMeaning(RejectionParam[] rejectionTypes,

@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,63 +36,51 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.query.impl;
+package org.dcm4chee.archive.conf;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.QPatient;
-import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.query.QueryContext;
-import org.dcm4chee.archive.query.util.QueryBuilder;
-import org.hibernate.ScrollableResults;
-import org.hibernate.StatelessSession;
-
-import com.mysema.query.BooleanBuilder;
-import com.mysema.query.jpa.hibernate.HibernateQuery;
-import com.mysema.query.types.Expression;
-import com.mysema.query.types.Predicate;
+import org.dcm4che3.data.Code;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
-class PatientQuery extends AbstractQuery<Patient> {
+public class QueryRetrieveView {
 
-    private static final Expression<?>[] SELECT = {
-        QPatient.patient.pk,
-        QueryBuilder.patientAttributesBlob.encodedAttributes
-    };
+    private String viewID;
+    private Code[] showInstancesRejectedByCode = {};
+    private Code[] hideRejectionNotesWithCode = {};
+    private boolean hideNotRejectedInstances;
 
-    public PatientQuery(QueryContext context, StatelessSession session) {
-        super(context, session, QPatient.patient);
+    public final String getViewID() {
+        return viewID;
     }
 
-    @Override
-    protected Expression<?>[] select() {
-        return SELECT;
+    public final void setViewID(String viewID) {
+        this.viewID = viewID;
     }
 
-    @Override
-    protected HibernateQuery applyJoins(HibernateQuery query) {
-        return QueryBuilder.applyPatientLevelJoins(query,
-                context.getKeys(),
-                context.getQueryParam());
+    public final Code[] getShowInstancesRejectedByCodes() {
+        return showInstancesRejectedByCode;
     }
 
-    @Override
-    protected Predicate predicate() {
-        BooleanBuilder builder = new BooleanBuilder();
-        QueryBuilder.addPatientLevelPredicates(builder,
-                context.getPatientIDs(),
-                context.getKeys(), 
-                context.getQueryParam());
-        return builder;
+    public final void setShowInstancesRejectedByCodes(Code... codes) {
+        this.showInstancesRejectedByCode = codes;
     }
 
-    @Override
-    public Attributes toAttributes(ScrollableResults results) {
-        Attributes attrs = new Attributes();
-        Utils.decodeAttributes(attrs, results.getBinary(1));
-        return attrs;
+    public final Code[] getHideRejectionNotesWithCodes() {
+        return hideRejectionNotesWithCode;
+    }
+
+    public final void setHideRejectionNotesWithCodes(Code... codes) {
+        this.hideRejectionNotesWithCode = codes;
+    }
+
+    public final boolean isHideNotRejectedInstances() {
+        return hideNotRejectedInstances;
+    }
+
+    public final void setHideNotRejectedInstances(boolean hideNotRejectedInstances) {
+        this.hideNotRejectedInstances = hideNotRejectedInstances;
     }
 
 }

@@ -148,7 +148,7 @@ public enum SeriesCommands{
 
         Study study = series.getStudy();
         em.remove(series);
-        study.resetNumberOfInstances();
+        study.clearQueryAttributes();
         LOG.info("Removed series entity - " + seriesInstanceUID);
         return series;
     }
@@ -166,8 +166,8 @@ public enum SeriesCommands{
         Study study = series.getStudy();
         em.remove(inst);
         LOG.info("Removed instance entity - " + sopInstanceUID);
-        series.resetNumberOfInstances();
-        study.resetNumberOfInstances();
+        series.clearQueryAttributes();
+        study.clearQueryAttributes();
 
         return inst;
     }
@@ -596,8 +596,8 @@ public enum SeriesCommands{
         }
         // update count
         if (split) {
-            study.resetNumberOfInstances();
-            targetStudy.resetNumberOfInstances();
+            study.clearQueryAttributes();
+            targetStudy.clearQueryAttributes();
         }
         return split;
     }
@@ -674,10 +674,10 @@ public enum SeriesCommands{
         }
         // update count
         if (split) {
-            study.resetNumberOfInstances();
-            targetStudy.resetNumberOfInstances();
-            series.resetNumberOfInstances();
-            targetSeries.resetNumberOfInstances();
+            study.clearQueryAttributes();
+            targetStudy.clearQueryAttributes();
+            series.clearQueryAttributes();
+            targetSeries.clearQueryAttributes();
         }
         return split;
     }
@@ -716,7 +716,7 @@ public enum SeriesCommands{
         }
         if (segment) {
             // update count
-            targetStudy.resetNumberOfInstances();
+            targetStudy.clearQueryAttributes();
         }
         return segment;
     }
@@ -1000,9 +1000,6 @@ public enum SeriesCommands{
         Series seriesCopy = new Series();
         seriesCopy.setStudy(target);
         seriesCopy.setSourceAET(series.getSourceAET());
-        seriesCopy.setRetrieveAETs(series.getRetrieveAETs());
-        seriesCopy.setExternalRetrieveAET(series.getExternalRetrieveAET());
-        seriesCopy.setAvailability(series.getAvailability());
         seriesCopy.setAttributes(attrs,
                 arcDevExt.getAttributeFilter(Entity.Series),
                 arcDevExt.getFuzzyStr());

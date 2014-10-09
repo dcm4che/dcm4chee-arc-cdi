@@ -51,7 +51,9 @@ import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.archive.entity.QAttributesBlob;
 import org.dcm4chee.archive.entity.QCode;
 import org.dcm4chee.archive.entity.QContentItem;
 import org.dcm4chee.archive.entity.QInstance;
@@ -61,7 +63,9 @@ import org.dcm4chee.archive.entity.QPatientID;
 import org.dcm4chee.archive.entity.QPersonName;
 import org.dcm4chee.archive.entity.QRequestAttributes;
 import org.dcm4chee.archive.entity.QSeries;
+import org.dcm4chee.archive.entity.QSeriesQueryAttributes;
 import org.dcm4chee.archive.entity.QStudy;
+import org.dcm4chee.archive.entity.QStudyQueryAttributes;
 import org.dcm4chee.archive.entity.QVerifyingObserver;
 
 import com.mysema.query.BooleanBuilder;
@@ -92,8 +96,16 @@ public class QueryBuilder {
             new QPersonName("performingPhysicianName");
     public static final QPersonName verifyingObserverName =
             new QPersonName("verifyingObserverName");
-    private static QPersonName requestingPhysician =
+    public static final QPersonName requestingPhysician =
             new QPersonName("requestingPhysician");
+    public static final QAttributesBlob patientAttributesBlob =
+            new QAttributesBlob("patientAttributesBlob");
+    public static final QAttributesBlob studyAttributesBlob =
+            new QAttributesBlob("studyAttributesBlob");
+    public static final QAttributesBlob seriesAttributesBlob =
+            new QAttributesBlob("seriesAttributesBlob");
+    public static final QAttributesBlob instanceAttributesBlob =
+            new QAttributesBlob("instanceAttributesBlob");
 
     private QueryBuilder() {
     }
@@ -167,8 +179,6 @@ public class QueryBuilder {
                 return arrayOf(QStudy.study.studyDescription);
             case Tag.AccessionNumber:
                 return arrayOf(QStudy.study.accessionNumber);
-            case Tag.ModalitiesInStudy:
-                return arrayOf(QStudy.study.modalitiesInStudy);
             }
         case PATIENT:
             switch (tag) {
@@ -295,65 +305,64 @@ public class QueryBuilder {
 
     public static void addSeriesLevelPredicates(BooleanBuilder builder,
             Attributes keys, QueryParam queryParam) {
-        if (keys == null)
-            return;
-
-        boolean matchUnknown = queryParam.isMatchUnknown();
-        builder.and(uids(QSeries.series.seriesInstanceUID,
-                keys.getStrings(Tag.SeriesInstanceUID), false));
-        builder.and(wildCard(QSeries.series.seriesNumber,
-                keys.getString(Tag.SeriesNumber, "*"), matchUnknown, false));
-        builder.and(wildCard(QSeries.series.modality,
-                keys.getString(Tag.Modality, "*").toUpperCase(), matchUnknown,
-                false));
-        builder.and(wildCard(QSeries.series.bodyPartExamined,
-                keys.getString(Tag.BodyPartExamined, "*").toUpperCase(),
-                matchUnknown, false));
-        builder.and(wildCard(QSeries.series.laterality,
-                keys.getString(Tag.Laterality, "*").toUpperCase(),
-                matchUnknown, false));
-        builder.and(MatchDateTimeRange.rangeMatch(
-                QSeries.series.performedProcedureStepStartDate,
-                QSeries.series.performedProcedureStepStartTime,
-                Tag.PerformedProcedureStepStartDate,
-                Tag.PerformedProcedureStepStartTime,
-                Tag.PerformedProcedureStepStartDateAndTime, keys,
-                queryParam.isCombinedDatetimeMatching(), matchUnknown));
-        builder.and(MatchPersonName.match(
-                QueryBuilder.performingPhysicianName,
-                keys.getString(Tag.PerformingPhysicianName, "*"), queryParam));
-        builder.and(wildCard(QSeries.series.seriesDescription,
-                keys.getString(Tag.SeriesDescription, "*"), matchUnknown, true));
-        builder.and(wildCard(QSeries.series.stationName,
-                keys.getString(Tag.StationName, "*"), matchUnknown, true));
-        builder.and(wildCard(QSeries.series.institutionName,
-                keys.getString(Tag.InstitutionalDepartmentName, "*"),
-                matchUnknown, true));
-        builder.and(wildCard(QSeries.series.institutionalDepartmentName,
-                keys.getString(Tag.InstitutionName, "*"), matchUnknown, true));
-        builder.and(requestAttributes(
-                keys.getNestedDataset(Tag.RequestAttributesSequence),
-                queryParam));
-        builder.and(code(QSeries.series.institutionCode,
-                keys.getNestedDataset(Tag.InstitutionCodeSequence),
-                matchUnknown));
-        AttributeFilter attrFilter = queryParam
-                .getAttributeFilter(Entity.Series);
-        builder.and(wildCard(
-                QSeries.series.seriesCustomAttribute1,
-                AttributeFilter.selectStringValue(keys,
-                        attrFilter.getCustomAttribute1(), "*"), matchUnknown,
-                true));
-        builder.and(wildCard(
-                QSeries.series.seriesCustomAttribute2,
-                AttributeFilter.selectStringValue(keys,
-                        attrFilter.getCustomAttribute2(), "*"), matchUnknown,
-                true));
-        builder.and(wildCard(
-                QSeries.series.seriesCustomAttribute3,
-                AttributeFilter.selectStringValue(keys,
-                        attrFilter.getCustomAttribute3(), "*"), matchUnknown,
-                true));
+        if (keys != null) {
+            boolean matchUnknown = queryParam.isMatchUnknown();
+            builder.and(uids(QSeries.series.seriesInstanceUID,
+                    keys.getStrings(Tag.SeriesInstanceUID), false));
+            builder.and(wildCard(QSeries.series.seriesNumber,
+                    keys.getString(Tag.SeriesNumber, "*"), matchUnknown, false));
+            builder.and(wildCard(QSeries.series.modality,
+                    keys.getString(Tag.Modality, "*").toUpperCase(), matchUnknown,
+                    false));
+            builder.and(wildCard(QSeries.series.bodyPartExamined,
+                    keys.getString(Tag.BodyPartExamined, "*").toUpperCase(),
+                    matchUnknown, false));
+            builder.and(wildCard(QSeries.series.laterality,
+                    keys.getString(Tag.Laterality, "*").toUpperCase(),
+                    matchUnknown, false));
+            builder.and(MatchDateTimeRange.rangeMatch(
+                    QSeries.series.performedProcedureStepStartDate,
+                    QSeries.series.performedProcedureStepStartTime,
+                    Tag.PerformedProcedureStepStartDate,
+                    Tag.PerformedProcedureStepStartTime,
+                    Tag.PerformedProcedureStepStartDateAndTime, keys,
+                    queryParam.isCombinedDatetimeMatching(), matchUnknown));
+            builder.and(MatchPersonName.match(
+                    QueryBuilder.performingPhysicianName,
+                    keys.getString(Tag.PerformingPhysicianName, "*"), queryParam));
+            builder.and(wildCard(QSeries.series.seriesDescription,
+                    keys.getString(Tag.SeriesDescription, "*"), matchUnknown, true));
+            builder.and(wildCard(QSeries.series.stationName,
+                    keys.getString(Tag.StationName, "*"), matchUnknown, true));
+            builder.and(wildCard(QSeries.series.institutionName,
+                    keys.getString(Tag.InstitutionalDepartmentName, "*"),
+                    matchUnknown, true));
+            builder.and(wildCard(QSeries.series.institutionalDepartmentName,
+                    keys.getString(Tag.InstitutionName, "*"), matchUnknown, true));
+            builder.and(requestAttributes(
+                    keys.getNestedDataset(Tag.RequestAttributesSequence),
+                    queryParam));
+            builder.and(code(QSeries.series.institutionCode,
+                    keys.getNestedDataset(Tag.InstitutionCodeSequence),
+                    matchUnknown));
+            AttributeFilter attrFilter = queryParam
+                    .getAttributeFilter(Entity.Series);
+            builder.and(wildCard(
+                    QSeries.series.seriesCustomAttribute1,
+                    AttributeFilter.selectStringValue(keys,
+                            attrFilter.getCustomAttribute1(), "*"), matchUnknown,
+                    true));
+            builder.and(wildCard(
+                    QSeries.series.seriesCustomAttribute2,
+                    AttributeFilter.selectStringValue(keys,
+                            attrFilter.getCustomAttribute2(), "*"), matchUnknown,
+                    true));
+            builder.and(wildCard(
+                    QSeries.series.seriesCustomAttribute3,
+                    AttributeFilter.selectStringValue(keys,
+                            attrFilter.getCustomAttribute3(), "*"), matchUnknown,
+                    true));
+        }
     }
 
     public static void addInstanceLevelPredicates(BooleanBuilder builder,
@@ -412,22 +421,24 @@ public class QueryBuilder {
     }
 
     public static Predicate hideRejectedInstance(QueryParam queryParam) {
+        QueryRetrieveView queryRetrieveView = queryParam.getQueryRetrieveView();
         org.dcm4che3.data.Code[] codes = 
-                queryParam.getShowInstancesRejectedByCodes();
+                queryRetrieveView.getShowInstancesRejectedByCodes();
         if (codes.length == 0)
-            return queryParam.isHideInstances()
+            return queryRetrieveView.isHideNotRejectedInstances()
                     ? QInstance.instance.rejectionNoteCode.isNotNull()
                     : QInstance.instance.rejectionNoteCode.isNull();
 
         BooleanExpression showRejected =
                 QInstance.instance.rejectionNoteCode.in(toCodes(codes));
-        return queryParam.isHideInstances()
+        return queryRetrieveView.isHideNotRejectedInstances()
                 ? showRejected
                 : QInstance.instance.rejectionNoteCode.isNull().or(showRejected);
     }
 
     public static Predicate hideRejectionNote(QueryParam queryParam) {
-        org.dcm4che3.data.Code[] codes = queryParam.getHideRejectionNoteCodes();
+        QueryRetrieveView queryRetrieveView = queryParam.getQueryRetrieveView();
+        org.dcm4che3.data.Code[] codes = queryRetrieveView.getHideRejectionNotesWithCodes();
         if (codes.length == 0)
             return null;
 
@@ -775,6 +786,7 @@ public class QueryBuilder {
 
     public static HibernateQuery applyPatientLevelJoins(HibernateQuery query,
             Attributes keys, QueryParam queryParam) {
+        query = query.join(QPatient.patient.attributesBlob, QueryBuilder.patientAttributesBlob);
         return joinIfMatchingKey(query, keys, Tag.PatientName,
                 QPatient.patient.patientName, QueryBuilder.patientName,
                 queryParam.isMatchUnknown());
@@ -783,6 +795,11 @@ public class QueryBuilder {
     public static HibernateQuery applyStudyLevelJoins(HibernateQuery query,
             Attributes keys, QueryParam queryParam) {
         query = query.innerJoin(QStudy.study.patient, QPatient.patient);
+        query = query.leftJoin(QStudy.study.queryAttributes,
+                QStudyQueryAttributes.studyQueryAttributes)
+                     .on(QStudyQueryAttributes.studyQueryAttributes.viewID.eq(
+                             queryParam.getQueryRetrieveView().getViewID()));
+        query = query.join(QStudy.study.attributesBlob, QueryBuilder.studyAttributesBlob);
 
         if (!isUniversalMatching(keys, Tag.AccessionNumber)
                 && !isUniversalMatching(keys.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)))
@@ -796,6 +813,12 @@ public class QueryBuilder {
     public static HibernateQuery applySeriesLevelJoins(HibernateQuery query,
             Attributes keys, QueryParam queryParam) {
         query = query.innerJoin(QSeries.series.study, QStudy.study);
+        query = query.leftJoin(QSeries.series.queryAttributes,
+                QSeriesQueryAttributes.seriesQueryAttributes)
+                    .on(QSeriesQueryAttributes.seriesQueryAttributes.viewID.eq(
+                             queryParam.getQueryRetrieveView().getViewID()));
+        query = query.join(QSeries.series.attributesBlob, QueryBuilder.seriesAttributesBlob);
+
         return joinIfMatchingKey(query, keys, Tag.PerformingPhysicianName,
                 QSeries.series.performingPhysicianName, QueryBuilder.performingPhysicianName,
                 queryParam.isMatchUnknown());
@@ -803,7 +826,9 @@ public class QueryBuilder {
 
     public static HibernateQuery applyInstanceLevelJoins(HibernateQuery query,
             Attributes keys, QueryParam queryParam) {
-        return query.innerJoin(QInstance.instance.series, QSeries.series);
+        query = query.innerJoin(QInstance.instance.series, QSeries.series);
+        query = query.join(QInstance.instance.attributesBlob, QueryBuilder.instanceAttributesBlob);
+        return query;
     }
 
     static boolean isUniversalMatching(Attributes keys, int tag) {

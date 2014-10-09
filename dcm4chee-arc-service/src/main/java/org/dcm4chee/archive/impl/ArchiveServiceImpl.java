@@ -74,6 +74,7 @@ import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.event.ConnectionEventSource;
@@ -256,10 +257,9 @@ public class ArchiveServiceImpl implements ArchiveService {
                 dev.getDeviceExtensionNotNull(ArchiveDeviceExtension.class);
         arcDev.setIncorrectWorklistEntrySelectedCode(
                 findOrCreate(arcDev.getIncorrectWorklistEntrySelectedCode(), found));
-        for (ApplicationEntity ae : dev.getApplicationEntities()) {
-            ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-            findOrCreate(arcAE.getShowInstancesRejectedByCodes(), found);
-            findOrCreate(arcAE.getHideRejectionNoteCodes(), found);
+        for (QueryRetrieveView view : arcDev.getQueryRetrieveViews()) {
+            findOrCreate(view.getShowInstancesRejectedByCodes(), found);
+            findOrCreate(view.getHideRejectionNotesWithCodes(), found);
         }
     }
 

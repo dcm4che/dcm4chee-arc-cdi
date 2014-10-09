@@ -73,7 +73,6 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreContext;
@@ -223,8 +222,8 @@ public class MPPSServiceImpl implements MPPSService {
                     }
                     inst.setRejectionNoteCode(pps.getDiscontinuationReasonCode());
                     inst.setAvailability(Availability.UNAVAILABLE);
-                    series.resetNumberOfInstances();
-                    study.resetNumberOfInstances();
+                    series.clearQueryAttributes();
+                    study.clearQueryAttributes();
                     LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
                             as, inst.getPk(), iuid,
                             pps.getDiscontinuationReasonCode());

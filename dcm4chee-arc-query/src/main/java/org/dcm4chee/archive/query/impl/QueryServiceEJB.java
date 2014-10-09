@@ -38,25 +38,37 @@
 
 package org.dcm4chee.archive.query.impl;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QSeries;
-import org.dcm4chee.archive.entity.QueryPatientStudySeriesAttributes;
+import org.dcm4chee.archive.entity.QSeriesQueryAttributes;
+import org.dcm4chee.archive.entity.QStudy;
+import org.dcm4chee.archive.entity.QStudyQueryAttributes;
 import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.SeriesQueryAttributes;
 import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.StudyQueryAttributes;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.mysema.query.jpa.hibernate.DetachedHibernateQueryFactory;
 import org.hibernate.Session;
 
+import com.mysema.commons.lang.CloseableIterator;
 import com.mysema.query.BooleanBuilder;
-import com.mysema.query.types.ExpressionUtils;
+import com.mysema.query.Tuple;
+import com.mysema.query.types.Expression;
 import com.mysema.query.types.expr.BooleanExpression;
 
 /**
@@ -66,95 +78,100 @@ import com.mysema.query.types.expr.BooleanExpression;
 @Stateless
 public class QueryServiceEJB {
 
+    private static final Expression<?>[] PATIENT_STUDY_SERIES_ATTRS = {
+        QStudy.study.pk,
+        QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances,
+        QStudyQueryAttributes.studyQueryAttributes.numberOfInstances,
+        QStudyQueryAttributes.studyQueryAttributes.numberOfSeries,
+        QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy,
+        QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy,
+        QueryBuilder.seriesAttributesBlob.encodedAttributes,
+        QueryBuilder.studyAttributesBlob.encodedAttributes,
+        QueryBuilder.patientAttributesBlob.encodedAttributes
+    };
+
+    private static final Expression<?>[] CALC_STUDY_QUERY_ATTRS = {
+        QSeries.series.pk,
+        QSeries.series.modality,
+        QInstance.instance.sopClassUID,
+        QInstance.instance.retrieveAETs,
+        QInstance.instance.externalRetrieveAET,
+        QInstance.instance.availability
+    };
+
+    private static final Expression<?>[] CALC_SERIES_QUERY_ATTRS = {
+        QInstance.instance.retrieveAETs,
+        QInstance.instance.externalRetrieveAET,
+        QInstance.instance.availability
+    };
+
     @PersistenceContext(unitName = "dcm4chee-arc")
     EntityManager em;
 
     @Inject
     DetachedHibernateQueryFactory queryFactory;
 
-    public int calculateNumberOfStudyRelatedSeries(Long studyPk,
-            QueryParam queryParam) {
-        BooleanBuilder builder = createBooleanBuilder(
-                QInstance.instance.series.eq(QSeries.series), queryParam);
-        int num = (int) queryFactory.query(em.unwrap(Session.class))
-            .from(QSeries.series)
-            .where(ExpressionUtils.and(
-                QSeries.series.study.pk.eq(studyPk),
-                queryFactory.subQuery()
-                    .from(QInstance.instance)
-                    .where(builder)
-                    .exists()))
-            .count();
-        int cacheSlot = queryParam.getNumberOfInstancesCacheSlot();
-        if (cacheSlot > 0)
-            em.createNamedQuery(Study.UPDATE_NUMBER_OF_SERIES[cacheSlot-1])
-                .setParameter(1, num)
-                .setParameter(2, studyPk)
-                .executeUpdate();
-        return num;
-    }
-
-    public int calculateNumberOfStudyRelatedInstance(Long studyPk,
-            QueryParam queryParam) {
-        BooleanBuilder builder = createBooleanBuilder(
-                QSeries.series.study.pk.eq(studyPk), queryParam);
-        int num = (int) queryFactory.query(em.unwrap(Session.class))
-            .from(QInstance.instance)
-            .innerJoin(QInstance.instance.series, QSeries.series)
-            .where(builder)
-            .count();
-        int cacheSlot = queryParam.getNumberOfInstancesCacheSlot();
-        if (cacheSlot > 0)
-            em.createNamedQuery(Study.UPDATE_NUMBER_OF_INSTANCES[cacheSlot-1])
-                .setParameter(1, num)
-                .setParameter(2, studyPk)
-                .executeUpdate();
-        return num;
-    }
-
-    public int calculateNumberOfSeriesRelatedInstance(Long seriesPk,
-            QueryParam queryParam) {
-        BooleanBuilder builder = createBooleanBuilder(
-                QInstance.instance.series.pk.eq(seriesPk), queryParam);
-        int num = (int) queryFactory.query(em.unwrap(Session.class))
-            .from(QInstance.instance)
-            .where(builder)
-            .count();
-        int cacheSlot = queryParam.getNumberOfInstancesCacheSlot();
-        if (cacheSlot > 0)
-            em.createNamedQuery(Series.UPDATE_NUMBER_OF_INSTANCES[cacheSlot-1])
-                .setParameter(1, num)
-                .setParameter(2, seriesPk)
-                .executeUpdate();
-        return num;
-    }
-
     public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
-        QueryPatientStudySeriesAttributes result = (QueryPatientStudySeriesAttributes)
-                 em.createNamedQuery(Series.QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES)
-                  .setParameter(1, seriesPk)
-                  .getSingleResult();
-        int cacheSlot = queryParam.getNumberOfInstancesCacheSlot();
-        Attributes attrs = result.getAttributes();
-        Long studyPk = result.getStudyPk();
-        int numberOfStudyRelatedSeries = result.getNumberOfStudyRelatedSeries(cacheSlot);
-        if (numberOfStudyRelatedSeries < 0)
-            numberOfStudyRelatedSeries = calculateNumberOfStudyRelatedSeries(
-                    studyPk, queryParam);
+        String viewID = queryParam.getQueryRetrieveView().getViewID();
+        Tuple result = queryFactory.query(em.unwrap(Session.class))
+            .from(QSeries.series)
+            .join(QSeries.series.attributesBlob, QueryBuilder.seriesAttributesBlob)
+            .leftJoin(QSeries.series.queryAttributes, QSeriesQueryAttributes.seriesQueryAttributes)
+                .on(QSeriesQueryAttributes.seriesQueryAttributes.viewID.eq(viewID))
+            .join(QSeries.series.study, QStudy.study)
+            .join(QStudy.study.attributesBlob, QueryBuilder.studyAttributesBlob)
+            .leftJoin(QStudy.study.queryAttributes, QStudyQueryAttributes.studyQueryAttributes)
+                .on(QStudyQueryAttributes.studyQueryAttributes.viewID.eq(viewID))
+            .join(QStudy.study.patient, QPatient.patient)
+            .join(QPatient.patient.attributesBlob, QueryBuilder.patientAttributesBlob)
+            .where(QSeries.series.pk.eq(seriesPk))
+            .singleResult(PATIENT_STUDY_SERIES_ATTRS);
 
-        int numberOfStudyRelatedInstances = result.getNumberOfStudyRelatedInstances(cacheSlot);
-        if (numberOfStudyRelatedInstances < 0)
-            numberOfStudyRelatedInstances = calculateNumberOfStudyRelatedInstance(
-                    studyPk, queryParam);
+        Integer numberOfSeriesRelatedInstances =
+                result.get(QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances);
+        if (numberOfSeriesRelatedInstances == null) {
+            SeriesQueryAttributes seriesQueryAttributes =
+                    calculateSeriesQueryAttributes(seriesPk, queryParam);
+            numberOfSeriesRelatedInstances = seriesQueryAttributes.getNumberOfInstances();
+        }
 
-        int numberOfSeriesRelatedInstances = result.getNumberOfSeriesRelatedInstances(cacheSlot);
-        if (numberOfSeriesRelatedInstances < 0)
-            numberOfSeriesRelatedInstances = calculateNumberOfSeriesRelatedInstance(
-                    seriesPk, queryParam);
+        int numberOfStudyRelatedSeries;
+        String modalitiesInStudy;
+        String sopClassesInStudy;
+        Integer numberOfStudyRelatedInstances =
+                result.get(QStudyQueryAttributes.studyQueryAttributes.numberOfInstances);
+        if (numberOfStudyRelatedInstances == null) {
+            StudyQueryAttributes studyQueryAttributes =
+                    calculateStudyQueryAttributes(result.get(QStudy.study.pk), queryParam);
+            numberOfStudyRelatedInstances = studyQueryAttributes.getNumberOfInstances();
+            numberOfStudyRelatedSeries = studyQueryAttributes.getNumberOfSeries();
+            modalitiesInStudy = studyQueryAttributes.getRawModalitiesInStudy();
+            sopClassesInStudy = studyQueryAttributes.getRawSOPClassesInStudy();
+        } else {
+            numberOfStudyRelatedSeries =
+                    result.get(QStudyQueryAttributes.studyQueryAttributes.numberOfSeries);
+            modalitiesInStudy = 
+                    result.get(QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy);
+            sopClassesInStudy = 
+                    result.get(QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy);
+        }
+        byte[] seriesBytes =
+                result.get(QueryBuilder.seriesAttributesBlob.encodedAttributes);
+        byte[] studyBytes =
+                result.get(QueryBuilder.studyAttributesBlob.encodedAttributes);
+        byte[] patientBytes =
+                result.get(QueryBuilder.patientAttributesBlob.encodedAttributes);
 
+        Attributes patientAttrs = new Attributes();
+        Attributes studyAttrs = new Attributes();
+        Attributes seriesAttrs = new Attributes();
+        Utils.decodeAttributes(patientAttrs, patientBytes);
+        Utils.decodeAttributes(studyAttrs, studyBytes);
+        Utils.decodeAttributes(seriesAttrs, seriesBytes);
+        Attributes attrs = Utils.mergeAndNormalize(patientAttrs, studyAttrs, seriesAttrs);
         Utils.setStudyQueryAttributes(attrs, numberOfStudyRelatedSeries,
-                numberOfStudyRelatedInstances, result.getModalitiesInStudy(),
-                result.getSopClassesInStudy());
+                numberOfStudyRelatedInstances, modalitiesInStudy,
+                sopClassesInStudy);
         Utils.setSeriesQueryAttributes(attrs, numberOfSeriesRelatedInstances);
         return attrs;
     }
@@ -165,5 +182,116 @@ public class QueryServiceEJB {
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNote(queryParam));
         return builder;
+    }
+
+    public StudyQueryAttributes calculateStudyQueryAttributes(
+            Long studyPk, QueryParam queryParam) {
+        int numberOfInstances = 0;
+        Set<Long> seriesPKs = new HashSet<Long>();
+        Set<String> mods = new HashSet<String>();
+        Set<String> cuids = new HashSet<String>();
+        String[] retrieveAETs = null;
+        String externalRetrieveAET = null;
+        Availability availability = null;
+        try (
+            CloseableIterator<Tuple> results = queryFactory.query(em.unwrap(Session.class))
+                .from(QInstance.instance)
+                .innerJoin(QInstance.instance.series, QSeries.series)
+                .where(createBooleanBuilder(
+                        QSeries.series.study.pk.eq(studyPk), queryParam))
+                .iterate(CALC_STUDY_QUERY_ATTRS)) {
+            while (results.hasNext()) {
+                Tuple result = results.next();
+                if (seriesPKs.add(result.get(QSeries.series.pk))) {
+                    String modality1 = result.get(QSeries.series.modality);
+                    if (modality1 != null)
+                        mods.add(modality1);
+                }
+                cuids.add(result.get(QInstance.instance.sopClassUID));
+                String[] retrieveAETs1 = StringUtils.split(
+                        result.get(QInstance.instance.retrieveAETs),
+                        '\\');
+                String externalRetrieveAET1 =
+                        result.get(QInstance.instance.externalRetrieveAET);
+                Availability availability1 =
+                        result.get(QInstance.instance.availability);
+                if (numberOfInstances++ == 0) {
+                    retrieveAETs = retrieveAETs1;
+                    externalRetrieveAET = externalRetrieveAET1;
+                    availability = availability1;
+                } else {
+                    retrieveAETs = Utils.intersection(
+                            retrieveAETs, retrieveAETs1);
+                    if (externalRetrieveAET != null
+                            && !externalRetrieveAET.equals(externalRetrieveAET1))
+                        externalRetrieveAET = null;
+                    if (availability.compareTo(availability1) < 0)
+                        availability = availability1;
+                }
+            }
+        }
+        StudyQueryAttributes studyView = new StudyQueryAttributes();
+        studyView.setViewID(queryParam.getQueryRetrieveView().getViewID());
+        studyView.setStudy(em.getReference(Study.class, studyPk));
+        studyView.setNumberOfInstances(numberOfInstances);
+        if (numberOfInstances > 0) {
+            studyView.setNumberOfSeries(seriesPKs.size());
+            studyView.setModalitiesInStudy(mods.toArray(new String[mods.size()]));
+            studyView.setSOPClassesInStudy(cuids.toArray(new String[cuids.size()]));
+            studyView.setRetrieveAETs(retrieveAETs);
+            studyView.setExternalRetrieveAET(externalRetrieveAET);
+            studyView.setAvailability(availability);
+        }
+        em.persist(studyView);
+        return studyView;
+    }
+
+    public SeriesQueryAttributes calculateSeriesQueryAttributes(
+            Long seriesPk, QueryParam queryParam) {
+        int numberOfInstances = 0;
+        String retrieveAETs[] = null;
+        String externalRetrieveAET = null;
+        Availability availability = null;
+        try (
+            CloseableIterator<Tuple> results = queryFactory.query(em.unwrap(Session.class))
+                .from(QInstance.instance)
+                .where(createBooleanBuilder(
+                        QInstance.instance.series.pk.eq(seriesPk), queryParam))
+                .iterate(CALC_SERIES_QUERY_ATTRS)) {
+            while (results.hasNext()) {
+                Tuple result = results.next();
+                String[] retrieveAETs1 = StringUtils.split(
+                        result.get(QInstance.instance.retrieveAETs),
+                        '\\');
+                String externalRetrieveAET1 =
+                        result.get(QInstance.instance.externalRetrieveAET);
+                Availability availability1 =
+                        result.get(QInstance.instance.availability);
+                if (numberOfInstances++ == 0) {
+                    retrieveAETs = retrieveAETs1;
+                    externalRetrieveAET = externalRetrieveAET1;
+                    availability = availability1;
+                } else {
+                    retrieveAETs = Utils.intersection(
+                            retrieveAETs, retrieveAETs1);
+                    if (externalRetrieveAET != null
+                            && !externalRetrieveAET.equals(externalRetrieveAET1))
+                        externalRetrieveAET = null;
+                    if (availability.compareTo(availability1) < 0)
+                        availability = availability1;
+                }
+            }
+        }
+        SeriesQueryAttributes seriesView = new SeriesQueryAttributes();
+        seriesView.setSeries(em.getReference(Series.class, seriesPk));
+        seriesView.setViewID(queryParam.getQueryRetrieveView().getViewID());
+        seriesView.setNumberOfInstances(numberOfInstances);
+        if (numberOfInstances > 0) {
+            seriesView.setRetrieveAETs(retrieveAETs);
+            seriesView.setExternalRetrieveAET(externalRetrieveAET);
+            seriesView.setAvailability(availability);
+        }
+        em.persist(seriesView);
+        return seriesView;
     }
 }

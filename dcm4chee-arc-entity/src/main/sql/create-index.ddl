@@ -90,3 +90,6 @@ create index mwl_item_sps_start_time_idx on mwl_item (sps_start_time);
 create index mwl_item_modality_idx on mwl_item (modality);
 
 create index sps_station_aet_idx on sps_station_aet (station_aet);
+
+create index study_view_id_idx on study_query_attrs(view_id);
+create index series_view_id_idx on series_query_attrs(view_id);

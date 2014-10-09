@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 
@@ -67,7 +66,6 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
-import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 
 
@@ -87,37 +85,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
                 + "JOIN FETCH st.attributesBlob "
                 + "JOIN FETCH st.patient "
                 + "p JOIN FETCH p.attributesBlob "
-                + "WHERE st.studyInstanceUID = ?1"),
-@NamedQuery(
-    name="Study.updateNumberOfSeries1",
-    query="UPDATE Study s "
-        + "SET s.numberOfSeries1 = ?1 "
-        + "WHERE s.pk = ?2"),
-@NamedQuery(
-    name="Study.updateNumberOfSeries2",
-    query="UPDATE Study s "
-        + "SET s.numberOfSeries2 = ?1 "
-        + "WHERE s.pk = ?2"),
-@NamedQuery(
-    name="Study.updateNumberOfSeries3",
-    query="UPDATE Study s "
-        + "SET s.numberOfSeries3 = ?1 "
-        + "WHERE s.pk = ?2"),
-@NamedQuery(
-    name="Study.updateNumberOfInstances1",
-    query="UPDATE Study s "
-        + "SET s.numberOfInstances1 = ?1 "
-        + "WHERE s.pk = ?2"),
-@NamedQuery(
-        name="Study.updateNumberOfInstances2",
-        query="UPDATE Study s "
-        + "SET s.numberOfInstances2 = ?1 "
-        + "WHERE s.pk = ?2"),
-@NamedQuery(
-        name="Study.updateNumberOfInstances3",
-        query="UPDATE Study s "
-        + "SET s.numberOfInstances3 = ?1 "
-        + "WHERE s.pk = ?2")
+                + "WHERE st.studyInstanceUID = ?1")
 })
 @Entity
 @Table(name = "study")
@@ -127,16 +95,6 @@ public class Study implements Serializable {
 
     public static final String FIND_BY_STUDY_INSTANCE_UID = "Study.findByStudyInstanceUID";
     public static final String FIND_BY_STUDY_INSTANCE_UID_EAGER = "Study.findByStudyInstanceUID.eager";
-    public static final String[] UPDATE_NUMBER_OF_SERIES = {
-        "Study.updateNumberOfSeries1",
-        "Study.updateNumberOfSeries2",
-        "Study.updateNumberOfSeries3"
-    };
-    public static final String[] UPDATE_NUMBER_OF_INSTANCES = {
-        "Study.updateNumberOfInstances1",
-        "Study.updateNumberOfInstances2",
-        "Study.updateNumberOfInstances3"
-    };
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -190,46 +148,6 @@ public class Study implements Serializable {
     @Column(name = "access_control_id")
     private String accessControlID;
 
-    @Basic(optional = false)
-    @Column(name = "num_series1")
-    private int numberOfSeries1 = -1;
-
-    @Basic(optional = false)
-    @Column(name = "num_series2")
-    private int numberOfSeries2 = -1;
-
-    @Basic(optional = false)
-    @Column(name = "num_series3")
-    private int numberOfSeries3 = -1;
-
-    @Basic(optional = false)
-    @Column(name = "num_instances1")
-    private int numberOfInstances1 = -1;
-
-    @Basic(optional = false)
-    @Column(name = "num_instances2")
-    private int numberOfInstances2 = -1;
-
-    @Basic(optional = false)
-    @Column(name = "num_instances3")
-    private int numberOfInstances3 = -1;
-
-    @Column(name = "mods_in_study")
-    private String modalitiesInStudy;
-
-    @Column(name = "cuids_in_study")
-    private String sopClassesInStudy;
-
-    @Column(name = "retrieve_aets")
-    private String retrieveAETs;
-
-    @Column(name = "ext_retr_aet")
-    private String externalRetrieveAET;
-
-    @Basic(optional = false)
-    @Column(name = "availability")
-    private Availability availability;
-    
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
@@ -255,18 +173,14 @@ public class Study implements Serializable {
     @OneToMany(mappedBy = "study", orphanRemoval = true)
     private Collection<Series> series;
 
+    @OneToMany(mappedBy = "study", cascade=CascadeType.ALL, orphanRemoval = true)
+    private Collection<StudyQueryAttributes> queryAttributes;
+
     @Override
     public String toString() {
         return "Study[pk=" + pk
                 + ", uid=" + studyInstanceUID
                 + ", id=" + studyID
-                + ", mods=" + modalitiesInStudy
-                + ", numS=" + numberOfSeries1
-                + "/" + numberOfSeries2
-                + "/" + numberOfSeries3
-                + ", numI=" + numberOfInstances1
-                + "/" + numberOfInstances2
-                + "/" + numberOfInstances3
                 + "]";
     }
 
@@ -350,142 +264,6 @@ public class Study implements Serializable {
         return studyCustomAttribute3;
     }
 
-    public int getNumberOfSeries(int slot) {
-        switch(slot) {
-        case 1:
-            return numberOfSeries1;
-        case 2:
-            return numberOfSeries2;
-        case 3:
-            return numberOfSeries3;
-        }
-        throw new IllegalArgumentException("slot:" + slot);
-    }
-
-    public void setNumberOfSeries(int slot, int num) {
-        switch(slot) {
-        case 1:
-            numberOfSeries1 = num;
-            break;
-        case 2:
-            numberOfSeries2 = num;
-            break;
-        case 3:
-            numberOfSeries3 = num;
-            break;
-        default:
-            throw new IllegalArgumentException("slot:" + slot);
-        }
-    }
-
-    public int getNumberOfInstances(int slot) {
-        switch(slot) {
-        case 1:
-            return numberOfInstances1;
-        case 2:
-            return numberOfInstances2;
-        case 3:
-            return numberOfInstances3;
-        }
-        throw new IllegalArgumentException("slot:" + slot);
-    }
-
-    public void setNumberOfInstances(int slot, int num) {
-        switch(slot) {
-        case 1:
-            numberOfInstances1 = num;
-            break;
-        case 2:
-            numberOfInstances2 = num;
-            break;
-        case 3:
-            numberOfInstances3 = num;
-            break;
-        default:
-            throw new IllegalArgumentException("slot:" + slot);
-        }
-    }
-
-    public void resetNumberOfInstances() {
-        this.numberOfSeries1 = -1;
-        this.numberOfSeries2 = -1;
-        this.numberOfSeries3 = -1;
-        this.numberOfInstances1 = -1;
-        this.numberOfInstances2 = -1;
-        this.numberOfInstances3 = -1;
-   }
-
-    public String[] getModalitiesInStudy() {
-        return StringUtils.split(modalitiesInStudy, '\\');
-    }
-
-    public void setModalitiesInStudy(String... modalitiesInStudy) {
-        this.modalitiesInStudy = StringUtils.concat(modalitiesInStudy, '\\');
-    }
-
-    public void addModalityInStudy(String modality) {
-        if (modality != null && !Utils.contains(getModalitiesInStudy(), modality))
-            this.modalitiesInStudy = this.modalitiesInStudy + '\\' + modality;
-    }
-
-    public String[] getSOPClassesInStudy() {
-        return StringUtils.split(sopClassesInStudy, '\\');
-    }
-
-    public void setSOPClassesInStudy(String... sopClassesInStudy) {
-        this.sopClassesInStudy = StringUtils.concat(sopClassesInStudy, '\\');
-    }
-
-    public void addSOPClassInStudy(String sopClass) {
-        if (!Utils.contains(getSOPClassesInStudy(), sopClass))
-            this.sopClassesInStudy = this.sopClassesInStudy + '\\' + sopClass;
-    }
-
-    public String[] getRetrieveAETs() {
-        return StringUtils.split(retrieveAETs, '\\');
-    }
-
-    public void setRetrieveAETs(String... retrieveAETs) {
-        this.retrieveAETs = StringUtils.concat(retrieveAETs, '\\');
-    }
-
-    public void retainRetrieveAETs(String[] retrieveAETs) {
-        String[] aets = getRetrieveAETs();
-        if (!Arrays.equals(aets, retrieveAETs))
-            setRetrieveAETs(Utils.intersection(aets, retrieveAETs));
-    }
-
-    public String getExternalRetrieveAET() {
-        return externalRetrieveAET;
-    }
-
-    public void setExternalRetrieveAET(String externalRetrieveAET) {
-        this.externalRetrieveAET = externalRetrieveAET;
-    }
-
-    public void retainExternalRetrieveAET(String retrieveAET) {
-        if (this.externalRetrieveAET!= null
-                && !this.externalRetrieveAET.equals(retrieveAET))
-            setExternalRetrieveAET(null);
-    }
-
-    public String[] getAllRetrieveAETs() {
-        return Utils.decodeAETs(retrieveAETs, externalRetrieveAET);
-    }
-
-    public Availability getAvailability() {
-        return availability;
-    }
-
-    public void setAvailability(Availability availability) {
-        this.availability = availability;
-    }
-
-    public void floorAvailability(Availability availability) {
-        if (this.availability.compareTo(availability) < 0)
-            this.availability = availability;
-    }
-
     public String getAccessControlID() {
         return accessControlID;
     }
@@ -512,6 +290,15 @@ public class Study implements Serializable {
 
     public Collection<Series> getSeries() {
         return series;
+    }
+
+    public final Collection<StudyQueryAttributes> getQueryAttributes() {
+        return queryAttributes;
+    }
+
+    public void clearQueryAttributes() {
+        if (queryAttributes != null)
+            queryAttributes.clear();
     }
 
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
@@ -541,4 +328,5 @@ public class Study implements Serializable {
 
         attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
     }
+
 }

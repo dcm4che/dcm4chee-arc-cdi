@@ -38,7 +38,6 @@
 
 package org.dcm4chee.archive.conf;
 
-import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Issuer;
 import org.dcm4che3.soundex.FuzzyStr;
 
@@ -59,10 +58,7 @@ public class QueryParam {
     private Issuer defaultIssuerOfPatientID;
     private Issuer defaultIssuerOfAccessionNumber;
     private boolean deIdentifyLogs = false;
-    private boolean hideInstances;
-    private Code[] showInstancesRejectedByCodes;
-    private Code[] hideRejectionNoteCodes;
-    private int numberOfInstancesCacheSlot;
+    private QueryRetrieveView queryRetrieveView;
 
     public final boolean isCombinedDatetimeMatching() {
         return combinedDatetimeMatching;
@@ -153,37 +149,12 @@ public class QueryParam {
         this.deIdentifyLogs = deIdentifyLogs;
     }
 
-    public boolean isHideInstances() {
-        return hideInstances;
+    public QueryRetrieveView getQueryRetrieveView() {
+        return queryRetrieveView;
     }
 
-    public void setHideInstances(boolean hideInstances) {
-        this.hideInstances = hideInstances;
-    }
-
-    public Code[] getShowInstancesRejectedByCodes() {
-        return showInstancesRejectedByCodes;
-    }
-
-    public void setShowInstancesRejectedByCodes(
-            Code[] showInstancesRejectedByCodes) {
-        this.showInstancesRejectedByCodes = showInstancesRejectedByCodes;
-    }
-
-    public Code[] getHideRejectionNoteCodes() {
-        return hideRejectionNoteCodes;
-    }
-
-    public void setHideRejectionNoteCodes(Code[] hideRejectionNoteCodes) {
-        this.hideRejectionNoteCodes = hideRejectionNoteCodes;
-    }
-
-    public int getNumberOfInstancesCacheSlot() {
-        return numberOfInstancesCacheSlot;
-    }
-
-    public void setNumberOfInstancesCacheSlot(int numberOfInstancesCacheSlot) {
-        this.numberOfInstancesCacheSlot = numberOfInstancesCacheSlot;
+    public void setQueryRetrieveView(QueryRetrieveView queryRetrieveView) {
+        this.queryRetrieveView = queryRetrieveView;
     }
 
 }

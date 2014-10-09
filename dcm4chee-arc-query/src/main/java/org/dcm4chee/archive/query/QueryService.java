@@ -46,6 +46,8 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.entity.SeriesQueryAttributes;
+import org.dcm4chee.archive.entity.StudyQueryAttributes;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -75,18 +77,13 @@ public interface QueryService {
 
     void adjustMatch(QueryContext query, Attributes match);
 
-    int calculateNumberOfSeriesRelatedInstance(Long seriesPk,
-            QueryParam queryParam);
-
-    int calculateNumberOfStudyRelatedSeries(Long studyPk,
-            QueryParam queryParam);
-
-    int calculateNumberOfStudyRelatedInstance(Long studyPk,
-            QueryParam queryParam);
-    
     void coerceRequestAttributes(QueryContext context)
             throws DicomServiceException;
 
     void coerceResponseAttributes(QueryContext context, Attributes match)
             throws DicomServiceException;
+
+    StudyQueryAttributes createStudyView(Long studyPk, QueryParam queryParam);
+
+    SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam);
 }

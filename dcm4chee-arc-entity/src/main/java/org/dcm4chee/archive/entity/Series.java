@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 
@@ -65,7 +64,6 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
-import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 
 /**
@@ -79,55 +77,21 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     name="Series.findBySeriesInstanceUID",
     query="SELECT s FROM Series s WHERE s.seriesInstanceUID = ?1"),
 @NamedQuery(
-        name="Series.findBySeriesInstanceUID.eager",
-        query="SELECT se FROM Series se "
-                + "JOIN FETCH se.study st "
-                + "JOIN FETCH st.patient p "
-                + "JOIN FETCH se.attributesBlob "
-                + "JOIN FETCH st.attributesBlob "                
-                + "JOIN FETCH p.attributesBlob "
-                + "WHERE se.seriesInstanceUID = ?1"),    
+    name="Series.findBySeriesInstanceUID.eager",
+    query="SELECT se FROM Series se "
+            + "JOIN FETCH se.study st "
+            + "JOIN FETCH st.patient p "
+            + "JOIN FETCH se.attributesBlob "
+            + "JOIN FETCH st.attributesBlob "
+            + "JOIN FETCH p.attributesBlob "
+            + "WHERE se.seriesInstanceUID = ?1"),
 @NamedQuery(
     name="Series.patientStudySeriesAttributes",
     query="SELECT NEW org.dcm4chee.archive.entity.PatientStudySeriesAttributes("
             + "s.attributesBlob.encodedAttributes, "
             + "s.study.attributesBlob.encodedAttributes, "
             + "s.study.patient.attributesBlob.encodedAttributes) "
-            + "FROM Series s WHERE s.pk = ?1"),
-@NamedQuery(
-    name="Series.queryPatientStudySeriesAttributes",
-    query="SELECT NEW org.dcm4chee.archive.entity.QueryPatientStudySeriesAttributes("
-            + "s.study.pk, "
-            + "s.study.numberOfSeries1, "
-            + "s.study.numberOfSeries2, "
-            + "s.study.numberOfSeries3, "
-            + "s.study.numberOfInstances1, "
-            + "s.study.numberOfInstances2, "
-            + "s.study.numberOfInstances3, "
-            + "s.numberOfInstances1, "
-            + "s.numberOfInstances2, "
-            + "s.numberOfInstances3, "
-            + "s.study.modalitiesInStudy, "
-            + "s.study.sopClassesInStudy, "
-            + "s.attributesBlob.encodedAttributes, "
-            + "s.study.attributesBlob.encodedAttributes, "
-            + "s.study.patient.attributesBlob.encodedAttributes) "
-            + "FROM Series s WHERE s.pk = ?1"),
-@NamedQuery(
-    name="Series.updateNumberOfInstances1",
-    query="UPDATE Series s "
-            + "SET s.numberOfInstances1 = ?1 "
-            + "WHERE s.pk = ?2"),
-@NamedQuery(
-    name="Series.updateNumberOfInstances2",
-    query="UPDATE Series s "
-            + "SET s.numberOfInstances2 = ?1 "
-            + "WHERE s.pk = ?2"),
-@NamedQuery(
-    name="Series.updateNumberOfInstances3",
-    query="UPDATE Series s "
-            + "SET s.numberOfInstances3 = ?1 "
-            + "WHERE s.pk = ?2")
+            + "FROM Series s WHERE s.pk = ?1")
 })
 @Entity
 @Table(name = "series")
@@ -138,12 +102,6 @@ public class Series implements Serializable {
     public static final String FIND_BY_SERIES_INSTANCE_UID = "Series.findBySeriesInstanceUID";
     public static final String FIND_BY_SERIES_INSTANCE_UID_EAGER = "Series.findBySeriesInstanceUID.eager";    
     public static final String PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.patientStudySeriesAttributes";
-    public static final String QUERY_PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.queryPatientStudySeriesAttributes";
-    public static final String [] UPDATE_NUMBER_OF_INSTANCES = {
-            "Series.updateNumberOfInstances1",
-            "Series.updateNumberOfInstances2",
-            "Series.updateNumberOfInstances3"
-    };
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -222,30 +180,8 @@ public class Series implements Serializable {
     @Column(name = "series_custom3")
     private String seriesCustomAttribute3;
 
-    @Basic(optional = false)
-    @Column(name = "num_instances1")
-    private int numberOfInstances1 = -1;
-
-    @Basic(optional = false)
-    @Column(name = "num_instances2")
-    private int numberOfInstances2 = -1;
-
-    @Basic(optional = false)
-    @Column(name = "num_instances3")
-    private int numberOfInstances3 = -1;
-
     @Column(name = "src_aet")
     private String sourceAET;
-
-    @Column(name = "retrieve_aets")
-    private String retrieveAETs;
-
-    @Column(name = "ext_retr_aet")
-    private String externalRetrieveAET;
-
-    @Basic(optional = false)
-    @Column(name = "availability")
-    private Availability availability;
 
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "dicomattrs_fk")
@@ -269,6 +205,7 @@ public class Series implements Serializable {
 //        inverseJoinColumns = @JoinColumn(name = "sps_fk", referencedColumnName = "pk"))
 //    private Collection<ScheduledProcedureStep> scheduledProcedureSteps;
 
+
     @ManyToOne
     @JoinColumn(name = "study_fk")
     private Study study;
@@ -276,15 +213,15 @@ public class Series implements Serializable {
     @OneToMany(mappedBy = "series", orphanRemoval = true)
     private Collection<Instance> instances;
 
+    @OneToMany(mappedBy = "series", cascade=CascadeType.ALL, orphanRemoval = true)
+    private Collection<SeriesQueryAttributes> queryAttributes;
+
     @Override
     public String toString() {
         return "Series[pk=" + pk
                 + ", uid=" + seriesInstanceUID
                 + ", no=" + seriesNumber
                 + ", mod=" + modality
-                + ", numI=" + numberOfInstances1
-                + "/" + numberOfInstances2
-                + "/" + numberOfInstances3
                 + "]";
     }
 
@@ -388,91 +325,12 @@ public class Series implements Serializable {
         return seriesCustomAttribute3;
     }
 
-    public int getNumberOfInstances(int slot) {
-        switch(slot) {
-        case 1:
-            return numberOfInstances1;
-        case 2:
-            return numberOfInstances2;
-        case 3:
-            return numberOfInstances3;
-        }
-        throw new IllegalArgumentException("slot:" + slot);
-    }
-
-    public void setNumberOfInstances(int slot, int num) {
-        switch(slot) {
-        case 1:
-            numberOfInstances1 = num;
-            break;
-        case 2:
-            numberOfInstances2 = num;
-            break;
-        case 3:
-            numberOfInstances3 = num;
-            break;
-        default:
-            throw new IllegalArgumentException("slot:" + slot);
-        }
-    }
-
-    public void resetNumberOfInstances() {
-        this.numberOfInstances1 = -1;
-        this.numberOfInstances2 = -1;
-        this.numberOfInstances3 = -1;
-    }
-
     public String getSourceAET() {
         return sourceAET;
     }
 
     public void setSourceAET(String sourceAET) {
         this.sourceAET = sourceAET;
-    }
-
-    public String[] getRetrieveAETs() {
-        return StringUtils.split(retrieveAETs, '\\');
-    }
-
-    public void setRetrieveAETs(String... retrieveAETs) {
-        this.retrieveAETs = StringUtils.concat(retrieveAETs, '\\');
-    }
-
-    public void retainRetrieveAETs(String[] retrieveAETs) {
-        String[] aets = getRetrieveAETs();
-        if (!Arrays.equals(aets, retrieveAETs))
-            setRetrieveAETs(Utils.intersection(aets, retrieveAETs));
-    }
-
-    public String getExternalRetrieveAET() {
-        return externalRetrieveAET;
-    }
-
-    public void setExternalRetrieveAET(String externalRetrieveAET) {
-        this.externalRetrieveAET = externalRetrieveAET;
-    }
-
-    public void retainExternalRetrieveAET(String retrieveAET) {
-        if (this.externalRetrieveAET != null
-                && !this.externalRetrieveAET.equals(retrieveAET))
-            setExternalRetrieveAET(null);
-    }
-
-    public String[] getAllRetrieveAETs() {
-        return Utils.decodeAETs(retrieveAETs, externalRetrieveAET);
-    }
-
-    public Availability getAvailability() {
-        return availability;
-    }
-
-    public void setAvailability(Availability availability) {
-        this.availability = availability;
-    }
-
-    public void floorAvailability(Availability availability) {
-        if (this.availability.compareTo(availability) < 0)
-            this.availability = availability;
     }
 
     public Code getInstitutionCode() {
@@ -510,6 +368,15 @@ public class Series implements Serializable {
 
     public Collection<Instance> getInstances() {
         return instances;
+    }
+
+    public Collection<SeriesQueryAttributes> getQueryAttributes() {
+        return queryAttributes;
+    }
+
+    public void clearQueryAttributes() {
+        if (queryAttributes != null)
+            queryAttributes.clear();
     }
 
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
@@ -554,4 +421,5 @@ public class Series implements Serializable {
         attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
         
     }
+
 }

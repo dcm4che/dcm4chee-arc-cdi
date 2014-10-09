@@ -73,6 +73,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private Collection<HostNameAEEntry> hostNameAEList =
             new ArrayList<HostNameAEEntry>();
     private RejectionParam[] rejectionParams = {};
+    private QueryRetrieveView[] queryRetrieveViews = {};
 
     public boolean isHostnameAEresoultion() {
         return hostnameAEresoultion;
@@ -184,6 +185,23 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         return attributeFilters;
     }
 
+    public QueryRetrieveView[] getQueryRetrieveViews() {
+        return queryRetrieveViews;
+    }
+
+    public void setQueryRetrieveViews(QueryRetrieveView... queryRetrieveViews) {
+        this.queryRetrieveViews = queryRetrieveViews;
+    }
+
+    public QueryRetrieveView getQueryRetrieveView(String viewID) {
+        for (QueryRetrieveView view : queryRetrieveViews) {
+            if (view.getViewID().equals(viewID))
+                return view;
+        }
+        return null;
+    }
+
+
     @Override
     public void reconfigure(DeviceExtension from) {
         ArchiveDeviceExtension arcdev = (ArchiveDeviceExtension) from;
@@ -195,6 +213,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         setHostNameAEList(hostNameAEList);
         setHostnameAEresoultion(arcdev.hostnameAEresoultion);
         setRejectionParams(arcdev.rejectionParams);
+        setQueryRetrieveViews(arcdev.getQueryRetrieveViews());
     }
 
     public StoreParam getStoreParam() {

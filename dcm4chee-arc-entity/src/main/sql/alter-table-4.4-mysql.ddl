@@ -362,3 +362,61 @@ alter table dicomattrs
 alter table issuer
     rename id_issuer;
 
+create table study_query_attrs (
+    pk bigint not null auto_increment,
+    availability integer,
+    ext_retr_aet varchar(255),
+    mods_in_study varchar(255),
+    num_instances integer,
+    num_series integer,
+    retrieve_aets varchar(255),
+    cuids_in_study varchar(255),
+    view_id varchar(255),
+    study_fk bigint,
+    primary key (pk)
+) ENGINE=InnoDB;
+
+create table series_query_attrs (
+    pk bigint not null auto_increment,
+    availability integer,
+    ext_retr_aet varchar(255),
+    num_instances integer,
+    retrieve_aets varchar(255),
+    view_id varchar(255),
+    series_fk bigint,
+    primary key (pk)
+) ENGINE=InnoDB;
+
+alter table study_query_attrs 
+    add constraint FK1D7130F54BDB761E 
+    foreign key (study_fk) 
+    references study (pk);
+
+alter table series_query_attrs 
+    add constraint FK530E8CA38151AFEA 
+    foreign key (series_fk) 
+    references series (pk);
+
+alter table study
+    drop num_instances1,
+    drop num_instances2,
+    drop num_instances3,
+    drop num_series1,
+    drop num_series2,
+    drop num_series3,
+    drop mods_in_study,
+    drop cuids_in_study,
+    drop retrieve_aets,
+    drop ext_retr_aet,
+    drop availability;
+
+alter table series
+    drop num_instances1,
+    drop num_instances2,
+    drop num_instances3,
+    drop retrieve_aets,
+    drop ext_retr_aet,
+    drop availability;
+
+create index study_view_id_idx on study_query_attrs(view_id);
+create index series_view_id_idx on series_query_attrs(view_id);

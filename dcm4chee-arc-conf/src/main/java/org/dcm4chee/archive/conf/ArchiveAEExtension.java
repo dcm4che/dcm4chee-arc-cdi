@@ -51,7 +51,6 @@ import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.generic.ConfigClass;
 import org.dcm4che3.conf.api.generic.ConfigField;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
-import org.dcm4che3.data.Code;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.io.TemplatesCache;
@@ -162,18 +161,6 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmReturnOtherPatientNames", def = "false")
     private boolean returnOtherPatientNames;
 
-    @ConfigField(name = "dcmHideInstances", def = "false")
-    private boolean hideInstances;
-
-    @ConfigField(name = "dcmShowInstancesRejectedByCode")
-    private Code[] showInstancesRejectedByCodes = {};
-
-    @ConfigField(name = "dcmHideRejectionNoteCode")
-    private Code[] hideRejectionNoteCodes = {};
-
-    @ConfigField(name = "dcmNumberOfInstancesCacheSlot", def = "0")
-    private int numberOfInstancesCacheSlot;
-
     @ConfigField(name = "hl7PIXManagerApplication")
     private String remotePIXManagerApplication;
 
@@ -186,7 +173,11 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmWadoSRTemplateURI")
     private String wadoSRTemplateURI;
 
-//removed from schema, irrelevant
+
+    @ConfigField(name = "dcmQueryRetrieveViewID")
+    private String queryRetrieveViewID;
+
+    //removed from schema, irrelevant
 //    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
 //    private boolean timeZoneSupported;
 
@@ -528,39 +519,6 @@ public class ArchiveAEExtension extends AEExtension {
         this.returnOtherPatientNames = returnOtherPatientNames;
     }
 
-    public boolean isHideInstances() {
-        return hideInstances;
-    }
-
-    public void setHideInstances(boolean hideInstances) {
-        this.hideInstances = hideInstances;
-    }
-
-    public Code[] getShowInstancesRejectedByCodes() {
-        return showInstancesRejectedByCodes;
-    }
-
-    public void setShowInstancesRejectedByCodes(
-            Code... showInstancesRejectedByCodes) {
-        this.showInstancesRejectedByCodes = showInstancesRejectedByCodes;
-    }
-
-    public Code[] getHideRejectionNoteCodes() {
-        return hideRejectionNoteCodes;
-    }
-
-    public void setHideRejectionNoteCodes(Code[] hideRejectionNoteCodes) {
-        this.hideRejectionNoteCodes = hideRejectionNoteCodes;
-    }
-
-    public int getNumberOfInstancesCacheSlot() {
-        return numberOfInstancesCacheSlot;
-    }
-
-    public void setNumberOfInstancesCacheSlot(int numberOfInstancesCacheSlot) {
-        this.numberOfInstancesCacheSlot = numberOfInstancesCacheSlot;
-    }
-
     public String getRemotePIXManagerApplication() {
         return remotePIXManagerApplication;
     }
@@ -608,9 +566,9 @@ public class ArchiveAEExtension extends AEExtension {
 
     public QueryParam getQueryParam(EnumSet<QueryOption> queryOpts,
             String[] accessControlIDs) {
-        QueryParam queryParam = ae.getDevice()
-                .getDeviceExtension(ArchiveDeviceExtension.class)
-                .getQueryParam();
+        ArchiveDeviceExtension arcDev = ae.getDevice()
+                        .getDeviceExtension(ArchiveDeviceExtension.class);
+        QueryParam queryParam = arcDev.getQueryParam();
         queryParam.setCombinedDatetimeMatching(queryOpts
                 .contains(QueryOption.DATETIME));
         queryParam.setFuzzySemanticMatching(queryOpts
@@ -620,10 +578,8 @@ public class ArchiveAEExtension extends AEExtension {
         queryParam.setMatchUnknown(matchUnknown);
         queryParam.setMatchLinkedPatientIDs(matchLinkedPatientIDs);
         queryParam.setAccessControlIDs(accessControlIDs);
-        queryParam.setHideInstances(hideInstances);
-        queryParam.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
-        queryParam.setHideRejectionNoteCodes(hideRejectionNoteCodes);
-        queryParam.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
+        queryParam.setQueryRetrieveView(
+                arcDev.getQueryRetrieveView(queryRetrieveViewID));
         return queryParam;
     }
 
@@ -633,6 +589,14 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setWadoSRTemplateURI(String wadoSRTemplateURI) {
         this.wadoSRTemplateURI = wadoSRTemplateURI;
+    }
+
+    public String getQueryRetrieveViewID() {
+        return queryRetrieveViewID;
+    }
+
+    public void setQueryRetrieveViewID(String queryRetrieveViewID) {
+        this.queryRetrieveViewID = queryRetrieveViewID;
     }
 
 }

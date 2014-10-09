@@ -429,6 +429,38 @@ public class ArchiveDeviceTest {
         DATA_RETENTION_POLICY_EXPIRED
     };
 
+    private static final QueryRetrieveView REGULAR_USE_VIEW =
+            createQueryRetrieveView("regularUse",
+                new Code[] { REJECTED_FOR_QUALITY_REASONS },
+                new Code[] { DATA_RETENTION_POLICY_EXPIRED },
+                false);
+    private static final QueryRetrieveView HIDE_REJECTED_VIEW =
+            createQueryRetrieveView("hideRejected",
+                new Code[0],
+                new Code[] { DATA_RETENTION_POLICY_EXPIRED },
+                false);
+    private static final QueryRetrieveView TRASH_VIEW = 
+            createQueryRetrieveView("trashView",
+                REJECTION_CODES,
+                new Code[0],
+                true);
+
+    private static QueryRetrieveView[] QUERY_RETRIEVE_VIEWS = {
+            HIDE_REJECTED_VIEW,
+            REGULAR_USE_VIEW,
+            TRASH_VIEW };
+
+    private static QueryRetrieveView createQueryRetrieveView(String viewID,
+            Code[] showInstancesRejectedByCodes, Code[] hideRejectionNoteCodes,
+            boolean hideNotRejectedInstances) {
+        QueryRetrieveView view = new QueryRetrieveView();
+        view.setViewID(viewID);
+        view.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
+        view.setHideRejectionNotesWithCodes(hideRejectionNoteCodes);
+        view.setHideNotRejectedInstances(hideNotRejectedInstances);
+        return view;
+    }
+
     private final String[] WADO_SUPPORTED_SR_SOP_CLASSES = {
         UID.BasicTextSRStorage,
         UID.EnhancedSRStorage,
@@ -818,6 +850,7 @@ public class ArchiveDeviceTest {
         arcDevExt.setConfigurationStaleTimeout(CONFIGURATION_STALE_TIMEOUT);
         arcDevExt.setWadoAttributesStaleTimeout(WADO_ATTRIBUTES_STALE_TIMEOUT);
         arcDevExt.setRejectionParams(createRejectionNotes());
+        arcDevExt.setQueryRetrieveViews(QUERY_RETRIEVE_VIEWS);
         setAttributeFilters(arcDevExt);
         device.setManufacturer("dcm4che.org");
         device.setManufacturerModelName("dcm4chee-arc");
@@ -843,24 +876,19 @@ public class ArchiveDeviceTest {
         device.addConnection(dicomTLS);
         ApplicationEntity ae = createAE("DCM4CHEE",
                 IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                false, new Code[0],
-                new Code[] { DATA_RETENTION_POLICY_EXPIRED }, 1,
-                null, PIX_MANAGER);
+                HIDE_REJECTED_VIEW, null, PIX_MANAGER);
         device.addApplicationEntity(ae);
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
         ApplicationEntity adminAE = createQRAE("DCM4CHEE_ADMIN",
                 IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                false, new Code[] { REJECTED_FOR_QUALITY_REASONS },
-                new Code[] { DATA_RETENTION_POLICY_EXPIRED }, 2,
-                null, PIX_MANAGER);
+                REGULAR_USE_VIEW, null, PIX_MANAGER);
         device.addApplicationEntity(adminAE);
         adminAE.addConnection(dicom);
         adminAE.addConnection(dicomTLS);
         ApplicationEntity trashAE = createQRAE("DCM4CHEE_TRASH",
                 IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                true, REJECTION_CODES, new Code[0], 3,
-                null, PIX_MANAGER);
+                TRASH_VIEW, null, PIX_MANAGER);
         device.addApplicationEntity(trashAE);
         trashAE.addConnection(dicom);
         trashAE.addConnection(dicomTLS);
@@ -946,10 +974,7 @@ public class ArchiveDeviceTest {
 
     private ApplicationEntity createAE(String aet,
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
-            boolean hideInstances,
-            Code[] showInstancesRejectedByCodes,
-            Code[] hideRejectionNoteCodes,
-            int numberOfInstancesCacheSlot,
+            QueryRetrieveView queryRetrieveView,
             String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
@@ -969,10 +994,7 @@ public class ArchiveDeviceTest {
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
-        aeExt.setHideInstances(hideInstances);
-        aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
-        aeExt.setHideRejectionNoteCodes(hideRejectionNoteCodes);
-        aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
+        aeExt.setQueryRetrieveViewID(queryRetrieveView.getViewID());
         aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
@@ -1210,10 +1232,7 @@ public class ArchiveDeviceTest {
     
     private ApplicationEntity createQRAE(String aet,
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
-            boolean hideInstances,
-            Code[] showInstancesRejectedByCodes,
-            Code[] hideRejectionNoteCodes,
-            int numberOfInstancesCacheSlot,
+            QueryRetrieveView queryRetrieveView,
             String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
@@ -1223,10 +1242,7 @@ public class ArchiveDeviceTest {
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);
         aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
-        aeExt.setHideInstances(hideInstances);
-        aeExt.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
-        aeExt.setHideRejectionNoteCodes(hideRejectionNoteCodes);
-        aeExt.setNumberOfInstancesCacheSlot(numberOfInstancesCacheSlot);
+        aeExt.setQueryRetrieveViewID(queryRetrieveView.getViewID());
 
         aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);

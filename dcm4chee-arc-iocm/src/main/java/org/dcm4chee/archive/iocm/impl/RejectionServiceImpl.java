@@ -40,7 +40,8 @@ package org.dcm4chee.archive.iocm.impl;
 
 import java.util.Collection;
 
-import org.dcm4chee.archive.entity.Availability;
+import javax.enterprise.context.ApplicationScoped;
+
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Series;
@@ -54,6 +55,7 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
+@ApplicationScoped
 public class RejectionServiceImpl implements RejectionService {
 
     static Logger LOG = LoggerFactory.getLogger(RejectionServiceImpl.class);
@@ -71,7 +73,7 @@ public class RejectionServiceImpl implements RejectionService {
                 throw new InstanceAlreadyRejectedException(inst);
 
             LOG.debug("{}: Apply rejection {} to {}", source, rejectionCode, inst);
-            updateInstance(inst, rejectionCode, Availability.UNAVAILABLE);
+            updateInstance(inst, rejectionCode);
             count++;
         }
         return count;
@@ -90,7 +92,7 @@ public class RejectionServiceImpl implements RejectionService {
                 throw new InstanceAlreadyRejectedException(inst);
 
             LOG.debug("{}: Revoke rejection {} of {}", source, prevRejectionCode, inst);
-            updateInstance(inst, null, Availability.ONLINE);
+            updateInstance(inst, null);
             count++;
         }
         return count;
@@ -108,14 +110,12 @@ public class RejectionServiceImpl implements RejectionService {
         return false;
     }
 
-    private void updateInstance(Instance inst, Code rejectionCode,
-            Availability availability) {
+    private void updateInstance(Instance inst, Code rejectionCode) {
         inst.setRejectionNoteCode(rejectionCode);
-        inst.setAvailability(availability);
         Series series = inst.getSeries();
         Study study = series.getStudy();
-        series.resetNumberOfInstances();
-        study.resetNumberOfInstances();
+        series.clearQueryAttributes();
+        study.clearQueryAttributes();
     }
 
 }

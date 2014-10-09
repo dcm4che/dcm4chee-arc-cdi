@@ -40,10 +40,13 @@ package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.Availability;
-import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QSeries;
+import org.dcm4chee.archive.entity.QSeriesQueryAttributes;
 import org.dcm4chee.archive.entity.QStudy;
+import org.dcm4chee.archive.entity.QStudyQueryAttributes;
 import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.SeriesQueryAttributes;
+import org.dcm4chee.archive.entity.StudyQueryAttributes;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.util.QueryBuilder;
@@ -61,25 +64,19 @@ import com.mysema.query.types.Predicate;
 class SeriesQuery extends AbstractQuery<Series> {
 
     private static final Expression<?>[] SELECT = {
-        QStudy.study.pk,                                   // (0)
-        QSeries.series.pk,                                 // (1)
-        QStudy.study.numberOfSeries1,                      // (2)
-        QStudy.study.numberOfSeries2,                      // (3)
-        QStudy.study.numberOfSeries3,                      // (4)
-        QStudy.study.numberOfInstances1,                   // (5)
-        QStudy.study.numberOfInstances2,                   // (6)
-        QStudy.study.numberOfInstances3,                   // (7)
-        QSeries.series.numberOfInstances1,                 // (8)
-        QSeries.series.numberOfInstances2,                 // (9)
-        QSeries.series.numberOfInstances3,                 // (10)
-        QStudy.study.modalitiesInStudy,                    // (11)
-        QStudy.study.sopClassesInStudy,                    // (12)
-        QSeries.series.retrieveAETs,                       // (13)
-        QSeries.series.externalRetrieveAET,                // (14)
-        QSeries.series.availability,                       // (15)
-        QSeries.series.attributesBlob.encodedAttributes,   // (16)
-        QStudy.study.attributesBlob.encodedAttributes,     // (17)
-        QPatient.patient.attributesBlob.encodedAttributes  // (18)
+        QStudy.study.pk,                                                        // (0)
+        QSeries.series.pk,                                                      // (1)
+        QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances,         // (2)
+        QStudyQueryAttributes.studyQueryAttributes.numberOfInstances,           // (3)
+        QStudyQueryAttributes.studyQueryAttributes.numberOfSeries,              // (4)
+        QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy,           // (5)
+        QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy,           // (6)
+        QSeriesQueryAttributes.seriesQueryAttributes.retrieveAETs,              // (7)
+        QSeriesQueryAttributes.seriesQueryAttributes.externalRetrieveAET,       // (8)
+        QSeriesQueryAttributes.seriesQueryAttributes.availability,              // (9)
+        QueryBuilder.seriesAttributesBlob.encodedAttributes,                    // (10)
+        QueryBuilder.studyAttributesBlob.encodedAttributes,                     // (11)
+        QueryBuilder.patientAttributesBlob.encodedAttributes                    // (12)
     };
 
     private Long studyPk;
@@ -128,24 +125,32 @@ class SeriesQuery extends AbstractQuery<Series> {
     public Attributes toAttributes(ScrollableResults results) {
         Long studyPk = results.getLong(0);
         Long seriesPk = results.getLong(1);
-        int cacheSlot = context.getQueryParam().getNumberOfInstancesCacheSlot();
+        Integer numberOfInstancesI = results.getInteger(2);
+        int numberOfSeriesRelatedInstances;
+        String retrieveAETs;
+        String externalRetrieveAET;
+        Availability availability;
+        if (numberOfInstancesI != null) {
+            numberOfSeriesRelatedInstances = numberOfInstancesI;
+            if (numberOfSeriesRelatedInstances == 0)
+                return null;
 
-        int numberOfSeriesRelatedInstances = cacheSlot > 0
-                ? results.getInteger(cacheSlot+7)
-                : -1;
-        if (numberOfSeriesRelatedInstances < 0) {
-            numberOfSeriesRelatedInstances = context.getQueryService()
-                    .calculateNumberOfSeriesRelatedInstance(seriesPk,
-                            context.getQueryParam());
+            retrieveAETs = results.getString(7);
+            externalRetrieveAET = results.getString(8);
+            availability = (Availability) results.get(9);
+        } else {
+            SeriesQueryAttributes seriesView = context.getQueryService()
+                    .createSeriesView(seriesPk,  context.getQueryParam());
+            numberOfSeriesRelatedInstances = seriesView.getNumberOfInstances();
+            if (numberOfSeriesRelatedInstances == 0)
+                return null;
+
+            retrieveAETs = seriesView.getRawRetrieveAETs();
+            externalRetrieveAET = seriesView.getExternalRetrieveAET();
+            availability = seriesView.getAvailability();
         }
-        // skip match for empty Series
-        if (numberOfSeriesRelatedInstances == 0)
-            return null;
 
-        String retrieveAETs = results.getString(13);
-        String externalRetrieveAET = results.getString(14);
-        Availability availability = (Availability) results.get(15);
-        byte[] seriesAttributes = results.getBinary(16);
+        byte[] seriesAttributes = results.getBinary(10);
         if (!studyPk.equals(this.studyPk)) {
             this.studyAttrs = toStudyAttributes(studyPk, results);
             this.studyPk = studyPk;
@@ -161,28 +166,27 @@ class SeriesQuery extends AbstractQuery<Series> {
     }
 
     private Attributes toStudyAttributes(Long studyPk, ScrollableResults results) {
-        int cacheSlot = context.getQueryParam().getNumberOfInstancesCacheSlot();
-        int numberOfStudyRelatedSeries = cacheSlot > 0
-                ? results.getInteger(cacheSlot+1)
-                : -1;
-        if (numberOfStudyRelatedSeries < 0) {
-            numberOfStudyRelatedSeries = context.getQueryService()
-                    .calculateNumberOfStudyRelatedSeries(studyPk,
-                            context.getQueryParam());
+        Integer numberOfInstancesI = results.getInteger(3);
+        int numberOfStudyRelatedInstances;
+        int numberOfStudyRelatedSeries;
+        String modalitiesInStudy;
+        String sopClassesInStudy;
+        if (numberOfInstancesI != null) {
+            numberOfStudyRelatedInstances = numberOfInstancesI;
+            numberOfStudyRelatedSeries = results.getInteger(4);
+            modalitiesInStudy = results.getString(5);
+            sopClassesInStudy = results.getString(6);
+        } else {
+            StudyQueryAttributes studyView = context.getQueryService()
+                    .createStudyView(studyPk,  context.getQueryParam());
+            numberOfStudyRelatedInstances = studyView.getNumberOfInstances();
+            numberOfStudyRelatedSeries = studyView.getNumberOfSeries();
+            modalitiesInStudy = studyView.getRawModalitiesInStudy();
+            sopClassesInStudy = studyView.getRawSOPClassesInStudy();
         }
 
-        int numberOfStudyRelatedInstances = cacheSlot > 0
-                ? results.getInteger(cacheSlot+4)
-                : -1;
-        if (numberOfStudyRelatedInstances < 0) {
-            numberOfStudyRelatedInstances = context.getQueryService()
-                    .calculateNumberOfStudyRelatedInstance(studyPk,
-                            context.getQueryParam());
-        }
-        String modalitiesInStudy = results.getString(11);
-        String sopClassesInStudy = results.getString(12);
-        byte[] studyByteAttributes = results.getBinary(17);
-        byte[] patientByteAttributes = results.getBinary(18);
+        byte[] studyByteAttributes = results.getBinary(11);
+        byte[] patientByteAttributes = results.getBinary(12);
         Attributes patientAttrs = new Attributes();
         Attributes studyAttrs = new Attributes();
         Utils.decodeAttributes(patientAttrs, patientByteAttributes);

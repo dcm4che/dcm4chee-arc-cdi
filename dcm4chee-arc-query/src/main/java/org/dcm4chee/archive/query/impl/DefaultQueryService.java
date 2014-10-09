@@ -61,6 +61,8 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.entity.SeriesQueryAttributes;
+import org.dcm4chee.archive.entity.StudyQueryAttributes;
 import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
@@ -131,21 +133,6 @@ public class DefaultQueryService implements QueryService {
 
     public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
         return ejb.getSeriesAttributes(seriesPk, queryParam);
-    }
-
-    public int calculateNumberOfSeriesRelatedInstance(Long seriesPk,
-            QueryParam queryParam) {
-        return ejb.calculateNumberOfSeriesRelatedInstance(seriesPk, queryParam);
-    }
-
-    public int calculateNumberOfStudyRelatedSeries(Long studyPk,
-            QueryParam queryParam) {
-        return ejb.calculateNumberOfStudyRelatedSeries(studyPk, queryParam);
-    }
-
-    public int calculateNumberOfStudyRelatedInstance(Long studyPk,
-            QueryParam queryParam) {
-        return ejb.calculateNumberOfStudyRelatedInstance(studyPk, queryParam);
     }
 
     @Override
@@ -241,6 +228,16 @@ public class DefaultQueryService implements QueryService {
         transformer.setParameter("time", currentTime);
         transformer.setParameter("calling", context.getRemoteAET());
         transformer.setParameter("called", context.getArchiveAEExtension().getApplicationEntity().getAETitle());
+    }
+
+    @Override
+    public StudyQueryAttributes createStudyView(Long studyPk, QueryParam queryParam) {
+        return ejb.calculateStudyQueryAttributes(studyPk, queryParam);
+    }
+
+    @Override
+    public SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam) {
+        return ejb.calculateSeriesQueryAttributes(seriesPk, queryParam);
     }
 
 }
