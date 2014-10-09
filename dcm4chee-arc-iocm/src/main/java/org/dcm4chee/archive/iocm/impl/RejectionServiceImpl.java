@@ -38,14 +38,22 @@
 
 package org.dcm4chee.archive.iocm.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.iocm.InstanceAlreadyRejectedException;
 import org.dcm4chee.archive.iocm.RejectionService;
 import org.slf4j.Logger;
@@ -60,6 +68,12 @@ public class RejectionServiceImpl implements RejectionService {
 
     static Logger LOG = LoggerFactory.getLogger(RejectionServiceImpl.class);
 
+    @Inject
+    FileMgmt fileManager;
+    
+    @PersistenceContext(unitName = "dcm4chee-arc")
+    private EntityManager em;
+    
     @Override
     public int reject(Object source, Collection<Instance> instances,
             Code rejectionCode, org.dcm4che3.data.Code[] prevRejectionCodes) {
@@ -98,6 +112,8 @@ public class RejectionServiceImpl implements RejectionService {
         return count;
     }
 
+    
+
     private boolean canOverwritePrevRejectionCode(Code prevRejectionCode,
             org.dcm4che3.data.Code[] prevRejectionCodes) {
         if (prevRejectionCode == null || prevRejectionCodes == null)
@@ -118,4 +134,47 @@ public class RejectionServiceImpl implements RejectionService {
         study.clearQueryAttributes();
     }
 
+    @Override
+    public void deleteRejected(Object source, Collection<Instance> instances) {
+        for(Instance inst: instances) {
+            if(isRejected(inst)){
+                Collection<FileRef> tmpRefs = clone(inst.getFileRefs());
+                detachReferences(inst);
+                try {
+                    fileManager.scheduleDelete(tmpRefs, 0);
+                    LOG.debug("{}: Scheduled delete for rejected {}", source, inst);
+                    em.remove(inst);
+                    LOG.info("Removed {}" + inst);
+                    inst.getSeries().clearQueryAttributes();
+                    inst.getSeries().getStudy().clearQueryAttributes();
+                }
+                catch(Exception e) {
+                    LOG.error("{}: Error deleting rejected object {}, {}", source, inst, e);
+                }
+            }
+        }
+    }
+
+    private boolean isRejected(Instance inst) {
+        return inst.getRejectionNoteCode()!=null;
+    }
+
+    private Collection<FileRef> clone(Collection<FileRef> refs)
+    {
+        ArrayList<FileRef> clone = new ArrayList<FileRef>();
+        Iterator<FileRef> iter = refs.iterator();
+        while(iter.hasNext())
+        {
+            FileRef ref = iter.next();
+            ref.getFileSystem();
+            clone.add(ref);
+        }
+        return clone;
+    }
+
+    private void detachReferences(Instance inst) {
+        for(FileRef ref: inst.getFileRefs())
+            ref.setInstance(null);
+        inst.getFileRefs().clear();
+    }
 }

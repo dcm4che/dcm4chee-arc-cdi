@@ -54,4 +54,6 @@ public interface RejectionService {
 
     public int restore(Object source, Collection<Instance> instances,
             org.dcm4che3.data.Code[] prevRejectionCodes);
+
+    public void deleteRejected(Object source, Collection<Instance> instances);
 }

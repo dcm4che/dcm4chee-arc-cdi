@@ -71,12 +71,9 @@ public class FileMgmtMDB implements MessageListener{
     @Override
     public void onMessage(Message message) {
         try {
-            String requestor = message.getStringProperty("Requestor");
-            String locaAET = message.getStringProperty("LocalAET");
-            int retries = message.getIntProperty("Retries");
             //TODO - AUDIT here using provided properties
             FileRef ref = (FileRef)((ObjectMessage) message).getObject();
-            if(fileManager.doDelete(ref)){
+            if(fileManager.doDelete(ref.getPk())){
                 LOG.info("Delete {} ",ref.getFilePath());
                 fileManager.removeDeadFileRef(ref);
             }

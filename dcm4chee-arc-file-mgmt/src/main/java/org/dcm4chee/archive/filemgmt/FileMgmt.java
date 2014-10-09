@@ -50,11 +50,10 @@ import org.dcm4chee.archive.entity.FileRef;
 public interface FileMgmt {
 
     //deletes a file and returns true if deleted otherwise returns false
-    boolean doDelete(FileRef ref);
+    boolean doDelete(long l);
 
     //send a file delete message to the queue
-    void scheduleDelete(Collection<FileRef> refs, String requestor, String localAET,
-            int retries, String remoteAET, int delay) throws Exception;
+    void scheduleDelete(Collection<FileRef> refs, int delay) throws Exception;
 
     //sets file-ref status to delete failed
     void failDelete(FileRef ref);

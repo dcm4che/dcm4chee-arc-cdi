@@ -80,7 +80,7 @@ public class FileMgmtEJB implements FileMgmt{
     private EntityManager em;
 
     @Override
-    public void scheduleDelete(Collection<FileRef> refs, String requestor, String localAET, int retries, String remoteAET, int delay) throws Exception {
+    public void scheduleDelete(Collection<FileRef> refs, int delay) throws Exception {
         
     for(FileRef ref: refs)
         try {
@@ -89,9 +89,6 @@ public class FileMgmtEJB implements FileMgmt{
                 Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 MessageProducer producer = session.createProducer(deleteQueue);
                 ObjectMessage msg = session.createObjectMessage(ref);
-                msg.setStringProperty("Requestor", requestor);
-                msg.setStringProperty("LocalAET", localAET);
-                msg.setIntProperty("Retries", retries);
                 if (delay > 0)
                     msg.setLongProperty("_HQ_SCHED_DELIVERY",
                             System.currentTimeMillis() + delay);
@@ -130,7 +127,8 @@ public class FileMgmtEJB implements FileMgmt{
     }
 
     @Override
-    public boolean doDelete(FileRef ref) {
+    public boolean doDelete(long refPK) {
+        FileRef ref = em.find(FileRef.class, refPK);
         File tmp = new File(ref.getFileSystem().getPath().toString(),ref.getFilePath());
         try{
             Files.delete(tmp.toPath());
