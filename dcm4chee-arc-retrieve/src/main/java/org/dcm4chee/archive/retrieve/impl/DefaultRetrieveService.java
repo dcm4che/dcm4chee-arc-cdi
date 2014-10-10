@@ -44,8 +44,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import javax.inject.Inject;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.stream.StreamResult;
@@ -55,8 +54,8 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
+import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
@@ -66,25 +65,18 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.FileRef;
-import org.dcm4chee.archive.entity.PatientStudySeriesAttributes;
 import org.dcm4chee.archive.entity.QFileRef;
 import org.dcm4chee.archive.entity.QFileSystem;
 import org.dcm4chee.archive.entity.QInstance;
-import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QSeries;
-import org.dcm4chee.archive.entity.QStudy;
-import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.hibernate.Session;
 import org.jboss.logging.Logger;
 
-import com.mysema.query.BooleanBuilder;
 import com.mysema.query.Tuple;
-import com.mysema.query.jpa.hibernate.HibernateQuery;
+import com.mysema.query.types.Expression;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -97,10 +89,23 @@ public class DefaultRetrieveService implements RetrieveService {
 
     private static final Logger LOG = Logger.getLogger(DefaultRetrieveService.class);
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
-    private EntityManager em;
+    private static final Expression<?>[] SELECT = {
+        QFileRef.fileRef.transferSyntaxUID,
+        QFileRef.fileRef.filePath,
+        QFileSystem.fileSystem.uri,
+        QSeries.series.pk,
+        QInstance.instance.pk,
+        QInstance.instance.sopClassUID,
+        QInstance.instance.sopInstanceUID,
+        QInstance.instance.retrieveAETs,
+        QInstance.instance.externalRetrieveAET,
+        QueryBuilder.instanceAttributesBlob,
+        QFileRef.fileRef.fileTimeZone
+    };
 
-    @Override
+    @Inject
+    private RetrieveServiceEJB ejb;
+
     public RetrieveContext createRetrieveContext(RetrieveService service,
             String sourceAET, ArchiveAEExtension arcAE) {
         return new RetrieveContextImpl(service, sourceAET, arcAE);
@@ -117,104 +122,57 @@ public class DefaultRetrieveService implements RetrieveService {
     public List<ArchiveInstanceLocator> calculateMatches(IDWithIssuer[] pids,
             Attributes keys, QueryParam queryParam) {
 
-        BooleanBuilder builder = new BooleanBuilder();
-        builder.and(QueryBuilder.pids(pids, 
-                queryParam.isMatchLinkedPatientIDs(), false));
-        builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
-                keys.getStrings(Tag.StudyInstanceUID), false));
-        builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,
-                keys.getStrings(Tag.SeriesInstanceUID), false));
-        builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
-                keys.getStrings(Tag.SOPInstanceUID), false));
-
-        builder.and(QFileRef.fileRef.status.ne(FileRef.Status.REPLACED));
-        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        builder.and(QueryBuilder.hideRejectionNote(queryParam));
-       return query(builder);
+        return locate(ejb.query(SELECT,
+                pids,
+                keys.getStrings(Tag.StudyInstanceUID),
+                keys.getStrings(Tag.SeriesInstanceUID),
+                keys.getStrings(Tag.SOPInstanceUID), queryParam));
     }
 
     /**
      * Given study and/or series and/or object uids, performs the query and
      * returns references to the instances.
      */
-    public List<ArchiveInstanceLocator> calculateMatches(String studyUID,
-            String seriesUID, String objectUID, QueryParam queryParam) {
+    @Override
+    public List<ArchiveInstanceLocator> calculateMatches(String studyIUID,
+            String seriesIUID, String objectIUID, QueryParam queryParam) {
 
-        BooleanBuilder builder = new BooleanBuilder();
-
-        if (studyUID != null)
-            builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
-                    new String[] { studyUID }, false));
-
-        if (seriesUID != null)
-            builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,
-                    new String[] { seriesUID }, false));
-
-        if (objectUID != null)
-            builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
-                    new String[] { objectUID }, false));
-
-        builder.and(QFileRef.fileRef.status.ne(FileRef.Status.REPLACED));
-        builder.and(QueryBuilder.hideRejectedInstance(queryParam));
-        builder.and(QueryBuilder.hideRejectionNote(queryParam));
-        return query(builder);
+        return locate(ejb.query(SELECT, 
+                null,
+                new String[] { studyIUID },
+                new String[] { seriesIUID },
+                new String[] { objectIUID }, queryParam));
     }
 
-    /**
-     * Executes the query.
-     */
-    private List<ArchiveInstanceLocator> query(BooleanBuilder builder) {
-        List<Tuple> query = new HibernateQuery(em.unwrap(Session.class))
-                .from(QInstance.instance)
-                .leftJoin(QInstance.instance.fileRefs, QFileRef.fileRef)
-                .leftJoin(QFileRef.fileRef.fileSystem, QFileSystem.fileSystem)
-                .innerJoin(QInstance.instance.series, QSeries.series)
-                .innerJoin(QSeries.series.study, QStudy.study)
-                .innerJoin(QStudy.study.patient, QPatient.patient)
-                .where(builder)
-                .list(QFileRef.fileRef.transferSyntaxUID,
-                        QFileRef.fileRef.filePath, QFileSystem.fileSystem.uri,
-                        QSeries.series.pk, QInstance.instance.pk,
-                        QInstance.instance.sopClassUID,
-                        QInstance.instance.sopInstanceUID,
-                        QInstance.instance.retrieveAETs,
-                        QInstance.instance.externalRetrieveAET,
-                        QInstance.instance.attributesBlob.encodedAttributes,
-                        QFileRef.fileRef.fileTimeZone);
-
-        return locate(query);
-    }
-
-    /**
-     * Given the query result, constructs response.
-     */
     private List<ArchiveInstanceLocator> locate(List<Tuple> tuples) {
-        List<ArchiveInstanceLocator> locators = new ArrayList<ArchiveInstanceLocator>(
-                tuples.size());
+        List<ArchiveInstanceLocator> locators =
+                new ArrayList<ArchiveInstanceLocator>(tuples.size());
         long instPk = -1;
         long seriesPk = -1;
         Attributes seriesAttrs = null;
         for (Tuple tuple : tuples) {
-            String tsuid = tuple.get(0, String.class);
-            String filePath = tuple.get(1, String.class);
-            String fsuri = tuple.get(2, String.class);
-            String ftz = tuple.get(10, String.class);
-            long nextSeriesPk = tuple.get(3, long.class);
-            long nextInstPk = tuple.get(4, long.class);
+            String tsuid = tuple.get(QFileRef.fileRef.transferSyntaxUID);
+            String filePath = tuple.get(QFileRef.fileRef.filePath);
+            String fsuri = tuple.get(QFileSystem.fileSystem.uri);
+            String ftz = tuple.get(QFileRef.fileRef.fileTimeZone);
+            long nextSeriesPk = tuple.get(QSeries.series.pk);
+            long nextInstPk = tuple.get(QInstance.instance.pk);
             if (seriesPk != nextSeriesPk) {
-                seriesAttrs = getSeriesAttributes(nextSeriesPk);
+                seriesAttrs = ejb.getSeriesAttributes(nextSeriesPk);
                 seriesPk = nextSeriesPk;
             }
             if (instPk != nextInstPk) {
-                String cuid = tuple.get(5, String.class);
-                String iuid = tuple.get(6, String.class);
-                String retrieveAETs = tuple.get(7, String.class);
-                String externalRetrieveAET = tuple.get(8, String.class);
+                String cuid = tuple.get(QInstance.instance.sopClassUID);
+                String iuid = tuple.get(QInstance.instance.sopInstanceUID);
+                String retrieveAETs = tuple.get(QInstance.instance.retrieveAETs);
+                String externalRetrieveAET =
+                        tuple.get(QInstance.instance.externalRetrieveAET);
                 String uri;
                 Attributes attrs;
                 if (fsuri != null) {
                     uri = fsuri + '/' + filePath;
-                    byte[] instByteAttrs = tuple.get(9, byte[].class);
+                    byte[] instByteAttrs =
+                            tuple.get(QueryBuilder.instanceAttributesBlob.encodedAttributes);
                     Attributes instanceAttrs = new Attributes();
                     Utils.decodeAttributes(instanceAttrs, instByteAttrs);
                     attrs = Utils.mergeAndNormalize(seriesAttrs, instanceAttrs);
@@ -238,13 +196,6 @@ public class DefaultRetrieveService implements RetrieveService {
             }
         }
         return locators;
-    }
-
-    private Attributes getSeriesAttributes(Long seriesPk) {
-        PatientStudySeriesAttributes result = (PatientStudySeriesAttributes) em
-                .createNamedQuery(Series.PATIENT_STUDY_SERIES_ATTRIBUTES)
-                .setParameter(1, seriesPk).getSingleResult();
-        return result.getAttributes();
     }
 
     private void setParameters(Transformer tr, RetrieveContext retrieveContext) {
