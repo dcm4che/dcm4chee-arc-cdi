@@ -177,7 +177,7 @@ public enum SeriesCommands{
 
         removefileReference(inst);
         try {
-            fileManager.scheduleDelete(tmpRefs, "test", "DCM4CHEE", 2, "peep", 0);
+            fileManager.scheduleDelete(tmpRefs, 0);
         } catch (Exception e) {
             //ignore already handled by the EJB
         }
