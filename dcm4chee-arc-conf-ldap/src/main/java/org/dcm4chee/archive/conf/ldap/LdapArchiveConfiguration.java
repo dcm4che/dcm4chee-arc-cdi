@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
@@ -104,6 +105,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 arcDev.isHostnameAEresoultion(), false);
         LdapUtils.storeNotDef(attrs, "dcmDeIdentifyLogs",
                 arcDev.isDeIdentifyLogs(), false);
+        LdapUtils.storeNotDef(attrs, "dcmRejectedObjectsCleanUpPollInterval", 
+                arcDev.getRejectedObjectsCleanUpPollInterval(), 0);
     }
 
     @Override
@@ -195,6 +198,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 rejectionParam.getAcceptPreviousRejectedInstance());
         LdapUtils.storeNotEmpty(attrs, "dcmOverwritePreviousRejection",
                 rejectionParam.getOverwritePreviousRejection());
+        LdapUtils.storeNotNull(attrs, "dcmRejectedObjectRetentionTime", rejectionParam.getRetentionTime());
+        LdapUtils.storeNotNull(attrs, "dcmRejectedObjectRetentionTimeUnit", rejectionParam.getRetentionTimeUnit());
         return attrs;
     }
 
@@ -284,6 +289,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 attrs.get("dcmWadoAttributesStaleTimeout"), 0));
         arcdev.setHostnameAEresoultion(LdapUtils.booleanValue(attrs.get("dcmHostNameAEResolution"), false));
         arcdev.setDeIdentifyLogs(LdapUtils.booleanValue(attrs.get("dcmDeIdentifyLogs"), false));
+        arcdev.setRejectedObjectsCleanUpPollInterval(
+                LdapUtils.intValue(attrs.get("dcmRejectedObjectsCleanUpPollInterval"), 0));
 
     }
 
@@ -348,6 +355,9 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                         storeActionOf(attrs.get("dcmAcceptPreviousRejectedInstance")));
                 param.setOverwritePreviousRejection(LdapUtils.codeArray(
                         attrs.get("dcmOverwritePreviousRejection")));
+                param.setRetentionTime(LdapUtils.intValue(attrs.get("dcmRejectedObjectRetentionTime"),-1));
+                param.setRetentionTimeUnit(TimeUnit.valueOf(LdapUtils.stringValue(
+                        attrs.get("dcmRejectedObjectRetentionTimeUnit"),"DAYS")));
                 list.add(param);
             }
         } finally {
@@ -485,6 +495,9 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         LdapUtils.storeDiff(mods, "dcmDeIdentifyLogs",
                 aa.isDeIdentifyLogs(),
                 bb.isDeIdentifyLogs(), false);
+        LdapUtils.storeDiff(mods, "dcmRejectedObjectsCleanUpPollInterval", 
+                aa.getRejectedObjectsCleanUpPollInterval(), 
+                bb.getRejectedObjectsCleanUpPollInterval(),0);
     }
 
     @Override
@@ -603,6 +616,12 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         LdapUtils.storeDiff(mods, "dcmOverwritePreviousRejection",
                 prev.getOverwritePreviousRejection(),
                 rejectionType.getOverwritePreviousRejection());
+        LdapUtils.storeDiff(mods, "dcmRejectedObjectRetentionTime",
+                prev.getRetentionTime(),
+                rejectionType.getRetentionTime());
+        LdapUtils.storeDiff(mods, "dcmRejectedObjectRetentionTimeUnit",
+                prev.getRetentionTimeUnit(),
+                rejectionType.getRetentionTimeUnit());
         return mods;
     }
 

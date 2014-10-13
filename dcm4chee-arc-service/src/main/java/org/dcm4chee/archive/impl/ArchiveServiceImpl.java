@@ -69,6 +69,7 @@ import org.dcm4che3.net.service.BasicCEchoSCP;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceRegistry;
 import org.dcm4chee.archive.ArchiveService;
+import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.code.CodeService;
@@ -79,7 +80,7 @@ import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.event.ConnectionEventSource;
 import org.dcm4chee.archive.event.LocalSource;
-import org.dcm4chee.archive.event.StartStopEvent;
+import org.dcm4chee.archive.event.StartStopReloadEvent;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -122,13 +123,16 @@ public class ArchiveServiceImpl implements ArchiveService {
 
     @Inject
     private CodeService codeService;
-    
+
     @Inject @ArchiveServiceStarted
-    private Event<StartStopEvent> archiveServiceStarted;
-    
+    private Event<StartStopReloadEvent> archiveServiceStarted;
+
     @Inject @ArchiveServiceStopped
-    private Event<StartStopEvent> archiveServiceStopped;
-    
+    private Event<StartStopReloadEvent> archiveServiceStopped;
+
+    @Inject @ArchiveServiceReloaded
+    private Event<StartStopReloadEvent> archiveServiceReloaded;
+
     @Inject
     private ConnectionEventSource connectionEventSource;
 
@@ -219,7 +223,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         
         device.bindConnections();
         running = true;
-        archiveServiceStarted.fire(new StartStopEvent(device,source));
+        archiveServiceStarted.fire(new StartStopReloadEvent(device,source));
     }
 
     @Override
@@ -227,7 +231,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         
         device.unbindConnections();
         running = false;
-        archiveServiceStopped.fire(new StartStopEvent(device,source));
+        archiveServiceStopped.fire(new StartStopReloadEvent(device,source));
     }
 
     @Override
@@ -238,6 +242,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         initImageReaderFactory();
         initImageWriterFactory();
         device.rebindConnections();
+        archiveServiceReloaded.fire(new StartStopReloadEvent(device, new LocalSource()));
     }
 
     @Override

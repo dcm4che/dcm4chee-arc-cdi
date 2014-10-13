@@ -50,7 +50,7 @@ import org.dcm4chee.archive.entity.FileRef;
 public interface FileMgmt {
 
     //deletes a file and returns true if deleted otherwise returns false
-    boolean doDelete(long l);
+    boolean doDelete(FileRef ref);
 
     //send a file delete message to the queue
     void scheduleDelete(Collection<FileRef> refs, int delay) throws Exception;
@@ -58,7 +58,5 @@ public interface FileMgmt {
     //sets file-ref status to delete failed
     void failDelete(FileRef ref);
 
-    //remove file-ref after successful delete
-    void removeDeadFileRef(FileRef ref);
 
 }

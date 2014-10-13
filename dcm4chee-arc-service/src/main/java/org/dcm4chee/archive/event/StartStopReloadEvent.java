@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,27 +36,36 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.iocm;
+package org.dcm4chee.archive.event;
 
-import java.sql.Timestamp;
-import java.util.Collection;
-
-import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.Instance;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.dto.Participant;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * Event to be fired when the device is started or stopped.
+ * Contains the device and the source which triggered the event.
+ * 
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public interface RejectionService {
+public class StartStopReloadEvent {
+    
+    private Device device;
+    private Participant source;
+    /**
+     * @param device
+     * @param source
+     */
+    public StartStopReloadEvent(Device device, Participant source) {
+        this.device = device;
+        this.source = source;
+    }
 
-    public int reject(Object source, Collection<Instance> instances,
-            Code rejectionCode, org.dcm4che3.data.Code[] prevRejectionCodes);
+    public Device getDevice() {
+        return device;
+    }
+    public Participant getSource() {
+        return source;
+    }
 
-    public int restore(Object source, Collection<Instance> instances,
-            org.dcm4che3.data.Code[] prevRejectionCodes);
-
-    public void deleteRejected(Object source, Collection<Instance> instances);
-
-    public Collection<Instance> findRejectedObjects(Code rejectionNote, Timestamp deadline);
 }

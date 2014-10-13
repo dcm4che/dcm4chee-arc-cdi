@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.conf;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import org.dcm4che3.data.Code;
 
@@ -50,6 +51,10 @@ public class RejectionParam {
 
     private Code rejectionNoteTitle;
 
+    private int retentionTime;
+    
+    private TimeUnit retentionTimeUnit;
+    
     private StoreAction acceptPreviousRejectedInstance;
 
     private Code[] overwritePreviousRejection = {};
@@ -107,5 +112,21 @@ public class RejectionParam {
                 return rejectionParam;
         }
         return null;
+    }
+
+    public int getRetentionTime() {
+        return retentionTime;
+    }
+
+    public void setRetentionTime(int retentionTime) {
+        this.retentionTime = retentionTime;
+    }
+
+    public TimeUnit getRetentionTimeUnit() {
+        return retentionTimeUnit;
+    }
+
+    public void setRetentionTimeUnit(TimeUnit retentionTimeUnit) {
+        this.retentionTimeUnit = retentionTimeUnit;
     }
 }

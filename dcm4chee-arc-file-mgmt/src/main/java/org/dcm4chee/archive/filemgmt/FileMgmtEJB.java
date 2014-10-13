@@ -109,12 +109,11 @@ public class FileMgmtEJB implements FileMgmt{
         LOG.warn("Failed to delete file {}, setting file reference status to {}",ref.getFilePath(),ref.getStatus() );
     }
 
-    @Override
-    public void removeDeadFileRef(FileRef ref) {
+    private void removeDeadFileRef(FileRef ref) {
 
         try {
-            FileRef newRef = em.find(FileRef.class, ref.getPk());
-            em.remove(newRef);
+            em.merge(ref);
+            em.remove(ref);
         }
         catch (Exception e)
         {
@@ -127,8 +126,8 @@ public class FileMgmtEJB implements FileMgmt{
     }
 
     @Override
-    public boolean doDelete(long refPK) {
-        FileRef ref = em.find(FileRef.class, refPK);
+    public boolean doDelete(FileRef ref) {
+        ref = em.find(FileRef.class, ref.getPk());
         File tmp = new File(ref.getFileSystem().getPath().toString(),ref.getFilePath());
         try{
             Files.delete(tmp.toPath());
@@ -137,6 +136,7 @@ public class FileMgmtEJB implements FileMgmt{
         {
             return false;
         }
+        removeDeadFileRef(ref);
         return true;
     }
 }

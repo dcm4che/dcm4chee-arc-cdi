@@ -410,6 +410,26 @@ attributetype ( 1.2.40.0.13.1.15.10.3.65 NAME 'dcmQueryRetrieveViewID'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 
+attributetype ( 1.2.40.0.13.1.15.10.3.66 NAME 'dcmRejectedObjectRetentionTime'
+  DESC 'Specifies the time value for the retention, used by the cleanup service to permanently delete rejected objects by a specific rejection note, default is 30'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.10.3.67 NAME 'dcmRejectedObjectRetentionTimeUnit'
+  DESC 'Specifies the time Unit for the retention, used by the cleanup service to permanently delete rejected objects by a specific rejection note, default is days if not specified'
+  EQUALITY caseExactMatch
+  SUBSTR caseExactSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.10.3.68 NAME 'dcmRejectedObjectsCleanUpPollInterval'
+  DESC 'Specifies the poll interval for the rejected objects clean up service, time unit is seconds'
+  EQUALITY caseExactMatch
+  SUBSTR caseExactSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
 objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -420,7 +440,8 @@ objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmHostNameAEResolution $
     dcmConfigurationStaleTimeout $
     dcmDeIdentifyLogs $
-    dcmWadoAttributesStaleTimeout ) )
+    dcmWadoAttributesStaleTimeout $
+    dcmRejectedObjectsCleanUpPollInterval ) )
 
 objectclass ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   DESC 'DICOM Archive Network AE related information'
@@ -543,6 +564,8 @@ objectclass ( 1.2.40.0.13.1.15.10.4.19 NAME 'dcmRejectionNote'
     dcmRejectionNoteTitle )
   MAY (
     dcmRevokeRejection $
+    dcmRejectedObjectRetentionTime $
+    dcmRejectedObjectRetentionTimeUnit $
     dcmAcceptPreviousRejectedInstance $
     dcmOverwritePreviousRejection ) )
 

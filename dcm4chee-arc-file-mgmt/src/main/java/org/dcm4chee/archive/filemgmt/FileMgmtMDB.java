@@ -73,9 +73,8 @@ public class FileMgmtMDB implements MessageListener{
         try {
             //TODO - AUDIT here using provided properties
             FileRef ref = (FileRef)((ObjectMessage) message).getObject();
-            if(fileManager.doDelete(ref.getPk())){
+            if(fileManager.doDelete(ref)){
                 LOG.info("Delete {} ",ref.getFilePath());
-                fileManager.removeDeadFileRef(ref);
             }
             else
             {

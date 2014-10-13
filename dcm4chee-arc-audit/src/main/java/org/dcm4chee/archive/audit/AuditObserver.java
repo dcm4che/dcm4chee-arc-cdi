@@ -65,7 +65,7 @@ import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.event.ConnectionEvent;
-import org.dcm4chee.archive.event.StartStopEvent;
+import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.mima.impl.PixQueryEvent;
 import org.dcm4chee.archive.query.impl.QueryEvent;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
@@ -137,13 +137,13 @@ public class AuditObserver {
     }
     
     public void receiveArchiveServiceStarted(
-            @Observes @ArchiveServiceStarted StartStopEvent event) {        
+            @Observes @ArchiveServiceStarted StartStopReloadEvent event) {        
         AuditLogger logger = getLogger(event.getDevice());
         sendAuditMessage (new StartStopAudit(true, logger, event.getSource()),logger);
     }
 
     public void receiveArchiveServiceStopped(
-            @Observes @ArchiveServiceStopped StartStopEvent event) {
+            @Observes @ArchiveServiceStopped StartStopReloadEvent event) {
         AuditLogger logger = getLogger(event.getDevice());
         sendAuditMessage (new StartStopAudit(false, logger, event.getSource()), logger);
     }

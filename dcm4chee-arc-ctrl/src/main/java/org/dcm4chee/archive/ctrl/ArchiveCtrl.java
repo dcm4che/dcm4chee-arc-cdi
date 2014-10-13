@@ -81,6 +81,7 @@ public class ArchiveCtrl {
     @GET
     @Path("start")
     public Response start() throws Exception {
+        if(!service.isRunning())
         service.start(new HttpSource(request));
         return Response.status(Status.OK).build();
     }
@@ -88,6 +89,7 @@ public class ArchiveCtrl {
     @GET
     @Path("stop")
     public Response stop() {
+        if(service.isRunning())
         service.stop(new HttpSource(request));
         return Response.status(Status.OK).build();
     }

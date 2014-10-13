@@ -42,6 +42,7 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -96,6 +97,9 @@ public class PreferencesArchiveConfiguration extends
                 arcDev.isHostnameAEresoultion(), false);
         PreferencesUtils.storeNotDef(prefs, "dcmDeIdentifyLogs",
                 arcDev.isDeIdentifyLogs(), false);
+        PreferencesUtils.storeNotDef(prefs, "dcmRejectedObjectsCleanUpPollInterval", 
+                arcDev.getRejectedObjectsCleanUpPollInterval(), 0);
+
     }
 
     @Override
@@ -150,6 +154,8 @@ public class PreferencesArchiveConfiguration extends
                 rn.getAcceptPreviousRejectedInstance());
         PreferencesUtils.storeNotEmpty(prefs, "dcmOverwritePreviousRejection",
                 rn.getOverwritePreviousRejection());
+        PreferencesUtils.storeNotNull(prefs, "dcmRejectedObjectRetentionTime", rn.getRetentionTime());
+        PreferencesUtils.storeNotNull(prefs, "dcmRejectedObjectRetentionTimeUnit", rn.getRetentionTimeUnit());
     }
 
     private void storeQueryRetrieveViews(ArchiveDeviceExtension arcDev,
@@ -236,7 +242,9 @@ public class PreferencesArchiveConfiguration extends
         arcdev.setHostnameAEresoultion(prefs.getBoolean(
                 "dcmHostNameAEResolution", false));
         arcdev.setDeIdentifyLogs(prefs.getBoolean(
-                "dcmDeIdentifyLogs", false));        
+                "dcmDeIdentifyLogs", false));
+        arcdev.setRejectedObjectsCleanUpPollInterval(prefs.getInt(
+                "dcmRejectedObjectsCleanUpPollInterval", 0));
     }
 
     @Override
@@ -290,6 +298,8 @@ public class PreferencesArchiveConfiguration extends
                 storeActionOf(prefs, "dcmAcceptPreviousRejectedInstance"));
         param.setOverwritePreviousRejection(
                 PreferencesUtils.codeArray(prefs, "dcmOverwritePreviousRejection"));
+        param.setRetentionTime(prefs.getInt("dcmRejectedObjectRetentionTime",-1));
+        param.setRetentionTimeUnit(TimeUnit.valueOf(prefs.get("dcmRejectedObjectRetentionTimeUnit","DAYS")));
         return param;
     }
 
@@ -405,6 +415,9 @@ public class PreferencesArchiveConfiguration extends
                 aa.isHostnameAEresoultion(), bb.isHostnameAEresoultion(), false);
         PreferencesUtils.storeDiff(prefs, "dcmDeIdentifyLogs",
                 aa.isDeIdentifyLogs(), bb.isDeIdentifyLogs(), false);
+        PreferencesUtils.storeDiff(prefs, "dcmRejectedObjectsCleanUpPollInterval",
+                aa.getRejectedObjectsCleanUpPollInterval(), 
+                bb.getRejectedObjectsCleanUpPollInterval(),0);
     }
 
     @Override
@@ -539,6 +552,8 @@ public class PreferencesArchiveConfiguration extends
         PreferencesUtils.storeDiff(prefs, "dcmAcceptPreviousRejectedInstance",
                 prev.getOverwritePreviousRejection(),
                 rn.getOverwritePreviousRejection());
+        PreferencesUtils.storeDiff(prefs, "dcmRejectedObjectRetentionTime", prev.getRetentionTime(), rn.getRetentionTime());
+        PreferencesUtils.storeDiff(prefs, "dcmRejectedObjectRetentionTimeUnit", prev.getRetentionTimeUnit(), rn.getRetentionTimeUnit());
     }
 
     private void mergeQueryRetrieveViews(ArchiveDeviceExtension prev,

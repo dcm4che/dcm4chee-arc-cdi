@@ -50,6 +50,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
@@ -950,6 +951,8 @@ public class ArchiveDeviceTest {
         param.setRevokeRejection(revokeRejection);
         param.setAcceptPreviousRejectedInstance(storeAction);
         param.setOverwritePreviousRejection(overwritePreviousRejection);
+        param.setRetentionTime(-1);
+        param.setRetentionTimeUnit(TimeUnit.DAYS);
         return param;
     }
 
