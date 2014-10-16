@@ -24,6 +24,8 @@
   	<class>org.dcm4chee.archive.entity.FileRef</class>
   	<class>org.dcm4chee.archive.entity.FileSystem</class>
   	<class>org.dcm4chee.archive.entity.ContentItem</class>
+    <class>org.dcm4chee.archive.entity.StudyQueryAttributes</class>
+    <class>org.dcm4chee.archive.entity.SeriesQueryAttributes</class>
   	
     <properties>
       <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect" />
