@@ -3,8 +3,8 @@ create index code_idx on code (code_value, code_designator, code_version);
 create index content_item_rel_type_idx on content_item (rel_type);
 create index content_item_text_value_idx on content_item (text_value);
 
-create unique index issuer_entity_id_idx on issuer (entity_id);
-create unique index issuer_entity_uid_idx on issuer (entity_uid, entity_uid_type);
+create unique index issuer_entity_id_idx on id_issuer (entity_id);
+create unique index issuer_entity_uid_idx on id_issuer (entity_uid, entity_uid_type);
 
 create index family_name_idx on person_name (family_name);
 create index given_name_idx on person_name (given_name);
