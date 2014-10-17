@@ -78,7 +78,7 @@ import com.mysema.query.types.Predicate;
 @Stateless
 public class QueryServiceEJB {
 
-    private static final Expression<?>[] PATIENT_STUDY_SERIES_ATTRS = {
+    static final Expression<?>[] PATIENT_STUDY_SERIES_ATTRS = {
         QStudy.study.pk,
         QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances,
         QStudyQueryAttributes.studyQueryAttributes.numberOfInstances,
@@ -90,7 +90,7 @@ public class QueryServiceEJB {
         QueryBuilder.patientAttributesBlob.encodedAttributes
     };
 
-    private static final Expression<?>[] CALC_STUDY_QUERY_ATTRS = {
+    static final Expression<?>[] CALC_STUDY_QUERY_ATTRS = {
         QSeries.series.pk,
         QSeries.series.modality,
         QInstance.instance.sopClassUID,
@@ -99,7 +99,7 @@ public class QueryServiceEJB {
         QInstance.instance.availability
     };
 
-    private static final Expression<?>[] CALC_SERIES_QUERY_ATTRS = {
+    static final Expression<?>[] CALC_SERIES_QUERY_ATTRS = {
         QInstance.instance.retrieveAETs,
         QInstance.instance.externalRetrieveAET,
         QInstance.instance.availability
@@ -194,6 +194,7 @@ public class QueryServiceEJB {
                 .where(createPredicate(
                         QSeries.series.study.pk.eq(studyPk), queryParam))
                 .iterate(CALC_STUDY_QUERY_ATTRS)) {
+
             while (results.hasNext()) {
                 factory.addInstance(results.next());
             }
@@ -215,6 +216,7 @@ public class QueryServiceEJB {
                 .where(createPredicate(
                         QInstance.instance.series.pk.eq(seriesPk), queryParam))
                 .iterate(CALC_SERIES_QUERY_ATTRS)) {
+
             while (results.hasNext()) {
                 factory.addInstance(results.next());
             }
@@ -318,5 +320,4 @@ public class QueryServiceEJB {
             return queryAttrs;
         }
     }
-
 }
