@@ -69,7 +69,7 @@ import com.mysema.commons.lang.CloseableIterator;
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
-import com.mysema.query.types.expr.BooleanExpression;
+import com.mysema.query.types.Predicate;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -176,8 +176,7 @@ public class QueryServiceEJB {
         return attrs;
     }
 
-    BooleanBuilder createBooleanBuilder(BooleanExpression initial,
-            QueryParam queryParam) {
+    private Predicate createPredicate(Predicate initial, QueryParam queryParam) {
         BooleanBuilder builder = new BooleanBuilder(initial);
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNote(queryParam));
@@ -186,112 +185,138 @@ public class QueryServiceEJB {
 
     public StudyQueryAttributes calculateStudyQueryAttributes(
             Long studyPk, QueryParam queryParam) {
-        int numberOfInstances = 0;
-        Set<Long> seriesPKs = new HashSet<Long>();
-        Set<String> mods = new HashSet<String>();
-        Set<String> cuids = new HashSet<String>();
-        String[] retrieveAETs = null;
-        String externalRetrieveAET = null;
-        Availability availability = null;
+        StudyQueryAttributesFactory factory = newStudyQueryAttributeFactory();
         try (
-            CloseableIterator<Tuple> results = queryFactory.query(em.unwrap(Session.class))
+            CloseableIterator<Tuple> results = queryFactory.query(
+                    em.unwrap(Session.class))
                 .from(QInstance.instance)
                 .innerJoin(QInstance.instance.series, QSeries.series)
-                .where(createBooleanBuilder(
+                .where(createPredicate(
                         QSeries.series.study.pk.eq(studyPk), queryParam))
                 .iterate(CALC_STUDY_QUERY_ATTRS)) {
             while (results.hasNext()) {
-                Tuple result = results.next();
-                if (seriesPKs.add(result.get(QSeries.series.pk))) {
-                    String modality1 = result.get(QSeries.series.modality);
-                    if (modality1 != null)
-                        mods.add(modality1);
-                }
-                cuids.add(result.get(QInstance.instance.sopClassUID));
-                String[] retrieveAETs1 = StringUtils.split(
-                        result.get(QInstance.instance.retrieveAETs),
-                        '\\');
-                String externalRetrieveAET1 =
-                        result.get(QInstance.instance.externalRetrieveAET);
-                Availability availability1 =
-                        result.get(QInstance.instance.availability);
-                if (numberOfInstances++ == 0) {
-                    retrieveAETs = retrieveAETs1;
-                    externalRetrieveAET = externalRetrieveAET1;
-                    availability = availability1;
-                } else {
-                    retrieveAETs = Utils.intersection(
-                            retrieveAETs, retrieveAETs1);
-                    if (externalRetrieveAET != null
-                            && !externalRetrieveAET.equals(externalRetrieveAET1))
-                        externalRetrieveAET = null;
-                    if (availability.compareTo(availability1) < 0)
-                        availability = availability1;
-                }
+                factory.addInstance(results.next());
             }
         }
-        StudyQueryAttributes studyView = new StudyQueryAttributes();
-        studyView.setViewID(queryParam.getQueryRetrieveView().getViewID());
-        studyView.setStudy(em.getReference(Study.class, studyPk));
-        studyView.setNumberOfInstances(numberOfInstances);
-        if (numberOfInstances > 0) {
-            studyView.setNumberOfSeries(seriesPKs.size());
-            studyView.setModalitiesInStudy(mods.toArray(new String[mods.size()]));
-            studyView.setSOPClassesInStudy(cuids.toArray(new String[cuids.size()]));
-            studyView.setRetrieveAETs(retrieveAETs);
-            studyView.setExternalRetrieveAET(externalRetrieveAET);
-            studyView.setAvailability(availability);
-        }
-        em.persist(studyView);
-        return studyView;
+        StudyQueryAttributes queryAttrs = factory.createStudyQueryAttributes(
+                queryParam.getQueryRetrieveView().getViewID(),
+                em.getReference(Study.class, studyPk));
+        em.persist(queryAttrs);
+        return queryAttrs;
     }
 
     public SeriesQueryAttributes calculateSeriesQueryAttributes(
             Long seriesPk, QueryParam queryParam) {
-        int numberOfInstances = 0;
-        String retrieveAETs[] = null;
-        String externalRetrieveAET = null;
-        Availability availability = null;
+        SeriesQueryAttributesFactory factory = newSeriesQueryAttributesFactory();
         try (
-            CloseableIterator<Tuple> results = queryFactory.query(em.unwrap(Session.class))
+            CloseableIterator<Tuple> results = queryFactory.query(
+                    em.unwrap(Session.class))
                 .from(QInstance.instance)
-                .where(createBooleanBuilder(
+                .where(createPredicate(
                         QInstance.instance.series.pk.eq(seriesPk), queryParam))
                 .iterate(CALC_SERIES_QUERY_ATTRS)) {
             while (results.hasNext()) {
-                Tuple result = results.next();
-                String[] retrieveAETs1 = StringUtils.split(
-                        result.get(QInstance.instance.retrieveAETs),
-                        '\\');
-                String externalRetrieveAET1 =
-                        result.get(QInstance.instance.externalRetrieveAET);
-                Availability availability1 =
-                        result.get(QInstance.instance.availability);
-                if (numberOfInstances++ == 0) {
-                    retrieveAETs = retrieveAETs1;
-                    externalRetrieveAET = externalRetrieveAET1;
-                    availability = availability1;
-                } else {
-                    retrieveAETs = Utils.intersection(
-                            retrieveAETs, retrieveAETs1);
-                    if (externalRetrieveAET != null
-                            && !externalRetrieveAET.equals(externalRetrieveAET1))
-                        externalRetrieveAET = null;
-                    if (availability.compareTo(availability1) < 0)
-                        availability = availability1;
-                }
+                factory.addInstance(results.next());
             }
         }
-        SeriesQueryAttributes seriesView = new SeriesQueryAttributes();
-        seriesView.setSeries(em.getReference(Series.class, seriesPk));
-        seriesView.setViewID(queryParam.getQueryRetrieveView().getViewID());
-        seriesView.setNumberOfInstances(numberOfInstances);
-        if (numberOfInstances > 0) {
-            seriesView.setRetrieveAETs(retrieveAETs);
-            seriesView.setExternalRetrieveAET(externalRetrieveAET);
-            seriesView.setAvailability(availability);
-        }
-        em.persist(seriesView);
-        return seriesView;
+        SeriesQueryAttributes queryAttrs = factory.createSeriesQueryAttributes(
+                queryParam.getQueryRetrieveView().getViewID(),
+                em.getReference(Series.class, seriesPk));
+        em.persist(queryAttrs);
+        return queryAttrs;
     }
+
+    private StudyQueryAttributesFactory newStudyQueryAttributeFactory() {
+        return new StudyQueryAttributesFactory();
+    }
+
+    private SeriesQueryAttributesFactory newSeriesQueryAttributesFactory() {
+        return new SeriesQueryAttributesFactory();
+    }
+
+    private static class CommonStudySeriesQueryAttributesFactory {
+
+        protected int numberOfInstances;
+        protected String[] retrieveAETs;
+        protected String externalRetrieveAET;
+        protected Availability availability;
+
+        public void addInstance(Tuple result) {
+            String[] retrieveAETs1 = StringUtils.split(
+                    result.get(QInstance.instance.retrieveAETs),
+                    '\\');
+            String externalRetrieveAET1 =
+                    result.get(QInstance.instance.externalRetrieveAET);
+            Availability availability1 =
+                    result.get(QInstance.instance.availability);
+            if (numberOfInstances++ == 0) {
+                retrieveAETs = retrieveAETs1;
+                externalRetrieveAET = externalRetrieveAET1;
+                availability = availability1;
+            } else {
+                retrieveAETs = Utils.intersection(
+                        retrieveAETs, retrieveAETs1);
+                if (externalRetrieveAET != null
+                        && !externalRetrieveAET.equals(externalRetrieveAET1))
+                    externalRetrieveAET = null;
+                if (availability.compareTo(availability1) < 0)
+                    availability = availability1;
+            }
+        }
+    }
+
+    private static final class SeriesQueryAttributesFactory
+            extends CommonStudySeriesQueryAttributesFactory {
+
+        public SeriesQueryAttributes createSeriesQueryAttributes(String viewID,
+                Series series) {
+            SeriesQueryAttributes queryAttrs = new SeriesQueryAttributes();
+            queryAttrs.setSeries(series);
+            queryAttrs.setViewID(viewID);
+            queryAttrs.setNumberOfInstances(numberOfInstances);
+            if (numberOfInstances > 0) {
+                queryAttrs.setRetrieveAETs(retrieveAETs);
+                queryAttrs.setExternalRetrieveAET(externalRetrieveAET);
+                queryAttrs.setAvailability(availability);
+            }
+            return queryAttrs;
+        }
+    }
+
+    private static final class StudyQueryAttributesFactory
+            extends CommonStudySeriesQueryAttributesFactory {
+    
+        protected Set<Long> seriesPKs = new HashSet<Long>();
+        protected Set<String> mods = new HashSet<String>();
+        protected Set<String> cuids = new HashSet<String>();
+    
+        @Override
+        public void addInstance(Tuple result) {
+            super.addInstance(result);
+            if (seriesPKs.add(result.get(QSeries.series.pk))) {
+                String modality1 = result.get(QSeries.series.modality);
+                if (modality1 != null)
+                    mods.add(modality1);
+            }
+            cuids.add(result.get(QInstance.instance.sopClassUID));
+        }
+    
+        public StudyQueryAttributes createStudyQueryAttributes(String viewID,
+                Study study) {
+            StudyQueryAttributes queryAttrs = new StudyQueryAttributes();
+            queryAttrs.setViewID(viewID);
+            queryAttrs.setStudy(study);
+            queryAttrs.setNumberOfInstances(numberOfInstances);
+            if (numberOfInstances > 0) {
+                queryAttrs.setNumberOfSeries(seriesPKs.size());
+                queryAttrs.setModalitiesInStudy(mods.toArray(new String[mods.size()]));
+                queryAttrs.setSOPClassesInStudy(cuids.toArray(new String[cuids.size()]));
+                queryAttrs.setRetrieveAETs(retrieveAETs);
+                queryAttrs.setExternalRetrieveAET(externalRetrieveAET);
+                queryAttrs.setAvailability(availability);
+            }
+            return queryAttrs;
+        }
+    }
+
 }
