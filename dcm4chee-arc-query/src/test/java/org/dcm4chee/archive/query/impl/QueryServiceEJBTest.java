@@ -56,6 +56,8 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.SeriesQueryAttributes;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyQueryAttributes;
+import org.dcm4chee.archive.query.impl.QueryServiceEJB.SeriesQueryAttributesFactory;
+import org.dcm4chee.archive.query.impl.QueryServiceEJB.StudyQueryAttributesFactory;
 import org.dcm4chee.mysema.query.jpa.hibernate.DetachedHibernateQueryFactory;
 import org.easymock.EasyMockSupport;
 import org.hibernate.Session;
@@ -111,113 +113,85 @@ public class QueryServiceEJBTest {
         mockTuples = easyMockSupport.createMock(CloseableIterator.class);
 
         cut = easyMockSupport.createMockBuilder(QueryServiceEJB.class)
-                .addMockedMethod("createBooleanBuilder")
-                .addMockedMethod("createSeriesAttributes")
-                .addMockedMethod("createSeriesQueryAttributes")
-                .addMockedMethod("createStudyAttributes")
-                .addMockedMethod("createStudyQueryAttributes").createMock();
+                .addMockedMethod("createPredicate")
+                .addMockedMethod("createSeriesQueryAttributesFactory")
+                .addMockedMethod("createStudyQueryAttributesFactory")
+                .createMock();
         cut.em = mockEntityManager;
         cut.queryFactory = mockDetachedHibernateQueryFactory;
     }
 
     @Test
     public void calculateSeriesQueryAttributes_doesNotUpdateSeriesAttributes_whenSeriesHasZeroInstances() {
-        QueryServiceEJB.SeriesAttributes mockSeriesAttributes = easyMockSupport
-                .createMock(QueryServiceEJB.SeriesAttributes.class);
-        SeriesQueryAttributes mockSeriesQueryAttributes = easyMockSupport
-                .createMock(SeriesQueryAttributes.class);
+        SeriesQueryAttributesFactory mockSeriesQueryAttributesFactory = easyMockSupport
+                .createMock(SeriesQueryAttributesFactory.class);
 
         expect(mockTuples.hasNext()).andReturn(FALSE);
 
-        mockSeriesQueryAttributes.setNumberOfInstances(0);
-        mockSeriesAttributes.populateSeriesQueryAttributes(0,
-                mockSeriesQueryAttributes);
-
-        calculateSeriesQueryAttributes(mockSeriesAttributes,
-                mockSeriesQueryAttributes);
+        calculateSeriesQueryAttributes(mockSeriesQueryAttributesFactory);
     }
 
     @Test
     public void calculateSeriesQueryAttributes_doesUpdateSeriesAttributes_whenSeriesHasTwoInstances() {
-        QueryServiceEJB.SeriesAttributes mockSeriesAttributes = easyMockSupport
-                .createMock(QueryServiceEJB.SeriesAttributes.class);
-        SeriesQueryAttributes mockSeriesQueryAttributes = easyMockSupport
-                .createMock(SeriesQueryAttributes.class);
+        SeriesQueryAttributesFactory mockSeriesQueryAttributesFactory = easyMockSupport
+                .createMock(SeriesQueryAttributesFactory.class);
         Tuple mockTuple = easyMockSupport.createMock(Tuple.class);
 
         expect(mockTuples.hasNext()).andReturn(TRUE);
         expect(mockTuples.next()).andReturn(mockTuple);
-        mockSeriesAttributes.updateAttributes(0, mockTuple);
+        mockSeriesQueryAttributesFactory.addInstance(mockTuple);
 
         expect(mockTuples.hasNext()).andReturn(TRUE);
         expect(mockTuples.next()).andReturn(mockTuple);
-        mockSeriesAttributes.updateAttributes(1, mockTuple);
+        mockSeriesQueryAttributesFactory.addInstance(mockTuple);
 
         expect(mockTuples.hasNext()).andReturn(FALSE);
 
-        mockSeriesQueryAttributes.setNumberOfInstances(2);
-        mockSeriesAttributes.populateSeriesQueryAttributes(2,
-                mockSeriesQueryAttributes);
-
-        calculateSeriesQueryAttributes(mockSeriesAttributes,
-                mockSeriesQueryAttributes);
+        calculateSeriesQueryAttributes(mockSeriesQueryAttributesFactory);
     }
 
     @Test
     public void calculateStudyQueryAttributes_doesNotUpdateStudyAttributes_whenStudyHasZeroInstances() {
-        QueryServiceEJB.StudyAttributes mockStudyAttributes = easyMockSupport
-                .createMock(QueryServiceEJB.StudyAttributes.class);
-        StudyQueryAttributes mockStudyQueryAttributes = easyMockSupport
-                .createMock(StudyQueryAttributes.class);
+        StudyQueryAttributesFactory mockStudyQueryAttributesFactory = easyMockSupport
+                .createMock(StudyQueryAttributesFactory.class);
 
         expect(mockTuples.hasNext()).andReturn(FALSE);
 
-        mockStudyQueryAttributes.setNumberOfInstances(0);
-        mockStudyAttributes.populateStudyQueryAttributes(0,
-                mockStudyQueryAttributes);
-
-        calculateStudyQueryAttributes(mockStudyAttributes,
-                mockStudyQueryAttributes);
+        calculateStudyQueryAttributes(mockStudyQueryAttributesFactory);
     }
 
     @Test
     public void calculateStudyQueryAttributes_doesUpdateStudyAttributes_whenStudyHasOneInstance() {
-        QueryServiceEJB.StudyAttributes mockStudyAttributes = easyMockSupport
-                .createMock(QueryServiceEJB.StudyAttributes.class);
-        StudyQueryAttributes mockStudyQueryAttributes = easyMockSupport
-                .createMock(StudyQueryAttributes.class);
+        StudyQueryAttributesFactory mockStudyQueryAttributesFactory = easyMockSupport
+                .createMock(StudyQueryAttributesFactory.class);
         Tuple mockTuple = easyMockSupport.createMock(Tuple.class);
 
         expect(mockTuples.hasNext()).andReturn(TRUE);
         expect(mockTuples.next()).andReturn(mockTuple);
-        mockStudyAttributes.updateAttributes(0, mockTuple);
+        mockStudyQueryAttributesFactory.addInstance(mockTuple);
 
         expect(mockTuples.hasNext()).andReturn(FALSE);
 
-        mockStudyQueryAttributes.setNumberOfInstances(1);
-        mockStudyAttributes.populateStudyQueryAttributes(1,
-                mockStudyQueryAttributes);
-
-        calculateStudyQueryAttributes(mockStudyAttributes,
-                mockStudyQueryAttributes);
+        calculateStudyQueryAttributes(mockStudyQueryAttributesFactory);
     }
 
     private void calculateSeriesQueryAttributes(
-            QueryServiceEJB.SeriesAttributes mockSeriesAttributes,
-            SeriesQueryAttributes mockSeriesQueryAttributes) {
+            SeriesQueryAttributesFactory mockSeriesQueryAttributesFactory) {
         QueryParam mockQueryParam = easyMockSupport
                 .createMock(QueryParam.class);
         Series mockSeries = easyMockSupport.createNiceMock(Series.class);
+        Session mockSession = easyMockSupport.createNiceMock(Session.class);
         QueryRetrieveView mockQueryRetrieveView = PowerMock
                 .createMock(QueryRetrieveView.class);
+        SeriesQueryAttributes mockSeriesQueryAttributes = easyMockSupport
+                .createNiceMock(SeriesQueryAttributes.class);
 
-        Session mockSession = easyMockSupport.createNiceMock(Session.class);
-
-        expect(cut.createSeriesAttributes()).andReturn(mockSeriesAttributes);
+        expect(cut.createSeriesQueryAttributesFactory()).andReturn(
+                mockSeriesQueryAttributesFactory);
         expect(mockEntityManager.unwrap(Session.class)).andReturn(mockSession);
 
         expect(
-                cut.createBooleanBuilder(isA(BooleanExpression.class),
+                cut.createPredicate(isA(BooleanExpression.class),
                         same(mockQueryParam))).andReturn(mockBooleanBuilder);
 
         expect(mockDetachedHibernateQueryFactory.query(mockSession)).andReturn(
@@ -234,18 +208,16 @@ public class QueryServiceEJBTest {
 
         mockTuples.close();
 
-        expect(cut.createSeriesQueryAttributes()).andReturn(
-                mockSeriesQueryAttributes);
-
-        expect(mockEntityManager.getReference(Series.class, SERIES_PK))
-                .andReturn(mockSeries);
-        mockSeriesQueryAttributes.setSeries(mockSeries);
-
         expect(mockQueryParam.getQueryRetrieveView()).andReturn(
                 mockQueryRetrieveView);
         expect(mockQueryRetrieveView.getViewID()).andReturn(VIEW_ID);
+        expect(mockEntityManager.getReference(Series.class, SERIES_PK))
+                .andReturn(mockSeries);
+        expect(
+                mockSeriesQueryAttributesFactory.createSeriesQueryAttributes(
+                        VIEW_ID, mockSeries)).andReturn(
+                mockSeriesQueryAttributes);
 
-        mockSeriesQueryAttributes.setViewID(VIEW_ID);
         mockEntityManager.persist(mockSeriesQueryAttributes);
 
         easyMockSupport.replayAll();
@@ -260,21 +232,22 @@ public class QueryServiceEJBTest {
     }
 
     private void calculateStudyQueryAttributes(
-            QueryServiceEJB.StudyAttributes mockStudyAttributes,
-            StudyQueryAttributes mockStudyQueryAttributes) {
+            StudyQueryAttributesFactory mockStudyQueryAttributesFactory) {
         QueryParam mockQueryParam = easyMockSupport
                 .createMock(QueryParam.class);
         Study mockStudy = easyMockSupport.createNiceMock(Study.class);
         QueryRetrieveView mockQueryRetrieveView = PowerMock
                 .createMock(QueryRetrieveView.class);
-
         Session mockSession = easyMockSupport.createNiceMock(Session.class);
+        StudyQueryAttributes mockStudyQueryAttributes = easyMockSupport
+                .createNiceMock(StudyQueryAttributes.class);
 
-        expect(cut.createStudyAttributes()).andReturn(mockStudyAttributes);
+        expect(cut.createStudyQueryAttributesFactory()).andReturn(
+                mockStudyQueryAttributesFactory);
         expect(mockEntityManager.unwrap(Session.class)).andReturn(mockSession);
 
         expect(
-                cut.createBooleanBuilder(isA(BooleanExpression.class),
+                cut.createPredicate(isA(BooleanExpression.class),
                         same(mockQueryParam))).andReturn(mockBooleanBuilder);
 
         expect(mockDetachedHibernateQueryFactory.query(mockSession)).andReturn(
@@ -294,18 +267,17 @@ public class QueryServiceEJBTest {
 
         mockTuples.close();
 
-        expect(cut.createStudyQueryAttributes()).andReturn(
-                mockStudyQueryAttributes);
-
         expect(mockEntityManager.getReference(Study.class, STUDY_PK))
                 .andReturn(mockStudy);
-        mockStudyQueryAttributes.setStudy(mockStudy);
 
         expect(mockQueryParam.getQueryRetrieveView()).andReturn(
                 mockQueryRetrieveView);
         expect(mockQueryRetrieveView.getViewID()).andReturn(VIEW_ID);
 
-        mockStudyQueryAttributes.setViewID(VIEW_ID);
+        expect(
+                mockStudyQueryAttributesFactory.createStudyQueryAttributes(
+                        VIEW_ID, mockStudy))
+                .andReturn(mockStudyQueryAttributes);
 
         mockEntityManager.persist(mockStudyQueryAttributes);
 
