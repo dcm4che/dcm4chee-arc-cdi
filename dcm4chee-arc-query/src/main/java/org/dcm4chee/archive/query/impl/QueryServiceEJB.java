@@ -78,7 +78,7 @@ import com.mysema.query.types.Predicate;
 @Stateless
 public class QueryServiceEJB {
 
-    private static final Expression<?>[] PATIENT_STUDY_SERIES_ATTRS = {
+    static final Expression<?>[] PATIENT_STUDY_SERIES_ATTRS = {
         QStudy.study.pk,
         QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances,
         QStudyQueryAttributes.studyQueryAttributes.numberOfInstances,
@@ -90,7 +90,7 @@ public class QueryServiceEJB {
         QueryBuilder.patientAttributesBlob.encodedAttributes
     };
 
-    private static final Expression<?>[] CALC_STUDY_QUERY_ATTRS = {
+    static final Expression<?>[] CALC_STUDY_QUERY_ATTRS = {
         QSeries.series.pk,
         QSeries.series.modality,
         QInstance.instance.sopClassUID,
@@ -99,7 +99,7 @@ public class QueryServiceEJB {
         QInstance.instance.availability
     };
 
-    private static final Expression<?>[] CALC_SERIES_QUERY_ATTRS = {
+    static final Expression<?>[] CALC_SERIES_QUERY_ATTRS = {
         QInstance.instance.retrieveAETs,
         QInstance.instance.externalRetrieveAET,
         QInstance.instance.availability
@@ -176,7 +176,7 @@ public class QueryServiceEJB {
         return attrs;
     }
 
-    private Predicate createPredicate(Predicate initial, QueryParam queryParam) {
+    Predicate createPredicate(Predicate initial, QueryParam queryParam) {
         BooleanBuilder builder = new BooleanBuilder(initial);
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNote(queryParam));
@@ -185,7 +185,7 @@ public class QueryServiceEJB {
 
     public StudyQueryAttributes calculateStudyQueryAttributes(
             Long studyPk, QueryParam queryParam) {
-        StudyQueryAttributesFactory factory = newStudyQueryAttributeFactory();
+        StudyQueryAttributesFactory factory = createStudyQueryAttributesFactory();
         try (
             CloseableIterator<Tuple> results = queryFactory.query(
                     em.unwrap(Session.class))
@@ -194,6 +194,7 @@ public class QueryServiceEJB {
                 .where(createPredicate(
                         QSeries.series.study.pk.eq(studyPk), queryParam))
                 .iterate(CALC_STUDY_QUERY_ATTRS)) {
+
             while (results.hasNext()) {
                 factory.addInstance(results.next());
             }
@@ -207,7 +208,7 @@ public class QueryServiceEJB {
 
     public SeriesQueryAttributes calculateSeriesQueryAttributes(
             Long seriesPk, QueryParam queryParam) {
-        SeriesQueryAttributesFactory factory = newSeriesQueryAttributesFactory();
+        SeriesQueryAttributesFactory factory = createSeriesQueryAttributesFactory();
         try (
             CloseableIterator<Tuple> results = queryFactory.query(
                     em.unwrap(Session.class))
@@ -215,6 +216,7 @@ public class QueryServiceEJB {
                 .where(createPredicate(
                         QInstance.instance.series.pk.eq(seriesPk), queryParam))
                 .iterate(CALC_SERIES_QUERY_ATTRS)) {
+
             while (results.hasNext()) {
                 factory.addInstance(results.next());
             }
@@ -226,15 +228,15 @@ public class QueryServiceEJB {
         return queryAttrs;
     }
 
-    private StudyQueryAttributesFactory newStudyQueryAttributeFactory() {
+    StudyQueryAttributesFactory createStudyQueryAttributesFactory() {
         return new StudyQueryAttributesFactory();
     }
 
-    private SeriesQueryAttributesFactory newSeriesQueryAttributesFactory() {
+    SeriesQueryAttributesFactory createSeriesQueryAttributesFactory() {
         return new SeriesQueryAttributesFactory();
     }
 
-    private static class CommonStudySeriesQueryAttributesFactory {
+    static class CommonStudySeriesQueryAttributesFactory {
 
         protected int numberOfInstances;
         protected String[] retrieveAETs;
@@ -265,7 +267,7 @@ public class QueryServiceEJB {
         }
     }
 
-    private static final class SeriesQueryAttributesFactory
+    static class SeriesQueryAttributesFactory
             extends CommonStudySeriesQueryAttributesFactory {
 
         public SeriesQueryAttributes createSeriesQueryAttributes(String viewID,
@@ -283,7 +285,7 @@ public class QueryServiceEJB {
         }
     }
 
-    private static final class StudyQueryAttributesFactory
+    static class StudyQueryAttributesFactory
             extends CommonStudySeriesQueryAttributesFactory {
     
         protected Set<Long> seriesPKs = new HashSet<Long>();
@@ -318,5 +320,4 @@ public class QueryServiceEJB {
             return queryAttrs;
         }
     }
-
 }
