@@ -251,7 +251,9 @@ public class MPPS implements Serializable {
         if (s != null)
             status = Status.valueOf(s.replace(' ', '_'));
         
-
+        if (attributesBlob == null)
+            attributesBlob = new AttributesBlob(attrs);
+        else
             attributesBlob.setAttributes(attrs);
     }
 }
