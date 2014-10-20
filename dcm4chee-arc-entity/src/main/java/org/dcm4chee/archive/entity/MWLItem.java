@@ -265,9 +265,7 @@ public class MWLItem implements Serializable {
         studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
         accessionNumber = attrs.getString(Tag.AccessionNumber);
 
-        if (attributesBlob == null)
-            attributesBlob = new AttributesBlob(attrs);
-        else
+
             attributesBlob.setAttributes(attrs);
     }
 }

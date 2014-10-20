@@ -418,10 +418,7 @@ public class Series implements Serializable {
         seriesCustomAttribute3 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        if (attributesBlob == null)
-            attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
-        else
-            attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
+        attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
         
     }
 

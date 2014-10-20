@@ -316,9 +316,6 @@ public class Patient implements Serializable {
         patientCustomAttribute3 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        if (attributesBlob == null)
-            attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
-        else
             attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
     }
 
