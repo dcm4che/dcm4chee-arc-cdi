@@ -128,7 +128,7 @@ public class MWLItem implements Serializable {
     @Column(name = "sps_status")
     private String status;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
@@ -265,6 +265,9 @@ public class MWLItem implements Serializable {
         studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
         accessionNumber = attrs.getString(Tag.AccessionNumber);
 
-        attributesBlob = new AttributesBlob(attrs);
+        if (attributesBlob == null)
+            attributesBlob = new AttributesBlob(attrs);
+        else
+            attributesBlob.setAttributes(attrs);
     }
 }

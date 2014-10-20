@@ -148,7 +148,7 @@ public class Study implements Serializable {
     @Column(name = "access_control_id")
     private String accessControlID;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
@@ -326,7 +326,10 @@ public class Study implements Serializable {
         studyCustomAttribute3 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
+        if (attributesBlob == null)
+            attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
+        else
+            attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
     }
 
 }

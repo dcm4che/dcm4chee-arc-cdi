@@ -130,7 +130,7 @@ public class MPPS implements Serializable {
     @Column(name = "mpps_status")
     private Status status;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
@@ -251,6 +251,9 @@ public class MPPS implements Serializable {
         if (s != null)
             status = Status.valueOf(s.replace(' ', '_'));
         
-        attributesBlob = new AttributesBlob(attrs);
+        if (attributesBlob == null)
+            attributesBlob = new AttributesBlob(attrs);
+        else
+            attributesBlob.setAttributes(attrs);
     }
 }

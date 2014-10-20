@@ -133,7 +133,7 @@ public class Patient implements Serializable {
     @Column(name = "pat_custom3")
     private String patientCustomAttribute3;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
     
@@ -316,7 +316,10 @@ public class Patient implements Serializable {
         patientCustomAttribute3 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
+        if (attributesBlob == null)
+            attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
+        else
+            attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
     }
 
     public void updateOtherPatientIDs() {

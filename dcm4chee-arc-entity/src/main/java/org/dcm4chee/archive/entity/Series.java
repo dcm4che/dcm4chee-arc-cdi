@@ -183,7 +183,7 @@ public class Series implements Serializable {
     @Column(name = "src_aet")
     private String sourceAET;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
@@ -418,7 +418,10 @@ public class Series implements Serializable {
         seriesCustomAttribute3 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
+        if (attributesBlob == null)
+            attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
+        else
+            attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
         
     }
 

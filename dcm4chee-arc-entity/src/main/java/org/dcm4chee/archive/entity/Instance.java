@@ -269,7 +269,7 @@ public class Instance implements Serializable {
     @Column(name = "archived")
     private boolean archived;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
@@ -499,6 +499,9 @@ public class Instance implements Serializable {
         instanceCustomAttribute3 =
                 AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
-        attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
+        if (attributesBlob == null)
+                attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
+        else
+            attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
     }
 }
