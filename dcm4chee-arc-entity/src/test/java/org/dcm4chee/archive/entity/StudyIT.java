@@ -110,7 +110,7 @@ public class StudyIT {
     }
 
     @Test
-    public void findByStudyInstanceUIDEager_shouldThrowException_whenStudyExistsButHasNoPatientAndNoAttributesBlob() {
+    public void findByStudyInstanceUIDEager_shouldThrowException_whenStudyExistsButHasNoPatient() {
         try {
             entityManager.createNamedQuery(FIND_BY_STUDY_INSTANCE_UID_EAGER)
                     .setParameter(1, "1").getSingleResult();
