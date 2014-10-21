@@ -185,7 +185,9 @@ public class QueryServiceEJB {
 
     public StudyQueryAttributes calculateStudyQueryAttributes(
             Long studyPk, QueryParam queryParam) {
-        StudyQueryAttributesFactory factory = createStudyQueryAttributesFactory();
+        StudyQueryAttributesBuilder builder = createStudyQueryAttributesBuilder();
+        builder.setViewID(queryParam.getQueryRetrieveView().getViewID());
+        builder.setStudy(em.getReference(Study.class, studyPk));
         try (
             CloseableIterator<Tuple> results = queryFactory.query(
                     em.unwrap(Session.class))
@@ -196,19 +198,19 @@ public class QueryServiceEJB {
                 .iterate(CALC_STUDY_QUERY_ATTRS)) {
 
             while (results.hasNext()) {
-                factory.addInstance(results.next());
+                builder.addInstance(results.next());
             }
         }
-        StudyQueryAttributes queryAttrs = factory.createStudyQueryAttributes(
-                queryParam.getQueryRetrieveView().getViewID(),
-                em.getReference(Study.class, studyPk));
+        StudyQueryAttributes queryAttrs = builder.build();
         em.persist(queryAttrs);
         return queryAttrs;
     }
 
     public SeriesQueryAttributes calculateSeriesQueryAttributes(
             Long seriesPk, QueryParam queryParam) {
-        SeriesQueryAttributesFactory factory = createSeriesQueryAttributesFactory();
+        SeriesQueryAttributesBuilder builder = createSeriesQueryAttributesBuilder();
+        builder.setViewID(queryParam.getQueryRetrieveView().getViewID());
+        builder.setSeries(em.getReference(Series.class, seriesPk));
         try (
             CloseableIterator<Tuple> results = queryFactory.query(
                     em.unwrap(Session.class))
@@ -218,30 +220,33 @@ public class QueryServiceEJB {
                 .iterate(CALC_SERIES_QUERY_ATTRS)) {
 
             while (results.hasNext()) {
-                factory.addInstance(results.next());
+                builder.addInstance(results.next());
             }
         }
-        SeriesQueryAttributes queryAttrs = factory.createSeriesQueryAttributes(
-                queryParam.getQueryRetrieveView().getViewID(),
-                em.getReference(Series.class, seriesPk));
+        SeriesQueryAttributes queryAttrs = builder.build();
         em.persist(queryAttrs);
         return queryAttrs;
     }
 
-    StudyQueryAttributesFactory createStudyQueryAttributesFactory() {
-        return new StudyQueryAttributesFactory();
+    StudyQueryAttributesBuilder createStudyQueryAttributesBuilder() {
+        return new StudyQueryAttributesBuilder();
     }
 
-    SeriesQueryAttributesFactory createSeriesQueryAttributesFactory() {
-        return new SeriesQueryAttributesFactory();
+    SeriesQueryAttributesBuilder createSeriesQueryAttributesBuilder() {
+        return new SeriesQueryAttributesBuilder();
     }
 
-    static class CommonStudySeriesQueryAttributesFactory {
+    static class CommonStudySeriesQueryAttributesBuilder {
 
         protected int numberOfInstances;
         protected String[] retrieveAETs;
         protected String externalRetrieveAET;
         protected Availability availability;
+        protected String viewID;
+
+        public void setViewID(String viewID) {
+            this.viewID = viewID;
+        }
 
         public void addInstance(Tuple result) {
             String[] retrieveAETs1 = StringUtils.split(
@@ -267,11 +272,16 @@ public class QueryServiceEJB {
         }
     }
 
-    static class SeriesQueryAttributesFactory
-            extends CommonStudySeriesQueryAttributesFactory {
+    static class SeriesQueryAttributesBuilder
+            extends CommonStudySeriesQueryAttributesBuilder {
 
-        public SeriesQueryAttributes createSeriesQueryAttributes(String viewID,
-                Series series) {
+        protected Series series;
+
+        public void setSeries(Series series) {
+            this.series = series;
+        }
+
+        public SeriesQueryAttributes build() {
             SeriesQueryAttributes queryAttrs = new SeriesQueryAttributes();
             queryAttrs.setSeries(series);
             queryAttrs.setViewID(viewID);
@@ -285,13 +295,18 @@ public class QueryServiceEJB {
         }
     }
 
-    static class StudyQueryAttributesFactory
-            extends CommonStudySeriesQueryAttributesFactory {
+    static class StudyQueryAttributesBuilder
+            extends CommonStudySeriesQueryAttributesBuilder {
     
         protected Set<Long> seriesPKs = new HashSet<Long>();
         protected Set<String> mods = new HashSet<String>();
         protected Set<String> cuids = new HashSet<String>();
-    
+        protected Study study;
+
+        public void setStudy(Study study) {
+            this.study = study;
+        }
+
         @Override
         public void addInstance(Tuple result) {
             super.addInstance(result);
@@ -303,8 +318,7 @@ public class QueryServiceEJB {
             cuids.add(result.get(QInstance.instance.sopClassUID));
         }
     
-        public StudyQueryAttributes createStudyQueryAttributes(String viewID,
-                Study study) {
+        public StudyQueryAttributes build() {
             StudyQueryAttributes queryAttrs = new StudyQueryAttributes();
             queryAttrs.setViewID(viewID);
             queryAttrs.setStudy(study);

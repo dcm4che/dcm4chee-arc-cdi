@@ -11,7 +11,7 @@ import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.query.impl.QueryServiceEJB.CommonStudySeriesQueryAttributesFactory;
+import org.dcm4chee.archive.query.impl.QueryServiceEJB.CommonStudySeriesQueryAttributesBuilder;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +24,7 @@ import com.mysema.query.Tuple;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ Utils.class, StringUtils.class })
-public class CommonStudySeriesQueryAttributesFactoryTest {
+public class CommonStudySeriesQueryAttributesBuilderTest {
     private static final String[] EXISTING_RETRIEVE_AETS = { "existing retrieve aets" };
 
     private static final String RETURNED_EXTERNAL_RETRIEVE_AET = "returned external retrieve aet";
@@ -37,7 +37,7 @@ public class CommonStudySeriesQueryAttributesFactoryTest {
 
     EasyMockSupport easyMockSupport;
 
-    CommonStudySeriesQueryAttributesFactory cut;
+    CommonStudySeriesQueryAttributesBuilder cut;
 
     @Before
     public void before() {
@@ -47,7 +47,7 @@ public class CommonStudySeriesQueryAttributesFactoryTest {
         easyMockSupport = new EasyMockSupport();
 
         cut = easyMockSupport.createMockBuilder(
-                CommonStudySeriesQueryAttributesFactory.class).createMock();
+                CommonStudySeriesQueryAttributesBuilder.class).createMock();
     }
 
     Tuple createMockTuple(String retrieveAets, String[] retrieveAetsArray,
