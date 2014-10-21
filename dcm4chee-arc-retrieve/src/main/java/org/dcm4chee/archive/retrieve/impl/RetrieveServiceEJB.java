@@ -74,6 +74,9 @@ public class RetrieveServiceEJB {
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
+    static final QFileRef filealiastableref = new QFileRef("filealiastableref");
+    static final QFileSystem filealiastablereffilesystem = new QFileSystem("filealiastablereffilesystem");
+
     public List<Tuple> query(Expression<?>[] select,
             IDWithIssuer[] pids, String[] studyIUIDs, String[] seriesIUIDs,
             String[] objectIUIDs, QueryParam queryParam) {
@@ -96,10 +99,13 @@ public class RetrieveServiceEJB {
                 .from(QInstance.instance)
                 .leftJoin(QInstance.instance.fileRefs, QFileRef.fileRef)
                 .leftJoin(QFileRef.fileRef.fileSystem, QFileSystem.fileSystem)
+                .leftJoin(QInstance.instance.fileAliasTableRefs, filealiastableref)
+                .leftJoin(filealiastableref.fileSystem,filealiastablereffilesystem )
                 .innerJoin(QInstance.instance.attributesBlob, QueryBuilder.instanceAttributesBlob)
                 .innerJoin(QInstance.instance.series, QSeries.series)
                 .innerJoin(QSeries.series.study, QStudy.study)
                 .innerJoin(QStudy.study.patient, QPatient.patient)
+                .orderBy(QInstance.instance.pk.asc())
                 .where(builder)
                 .list(select);
 

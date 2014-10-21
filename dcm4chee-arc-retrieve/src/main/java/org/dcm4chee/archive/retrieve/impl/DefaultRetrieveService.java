@@ -91,8 +91,11 @@ public class DefaultRetrieveService implements RetrieveService {
 
     private static final Expression<?>[] SELECT = {
         QFileRef.fileRef.transferSyntaxUID,
+        RetrieveServiceEJB.filealiastableref.transferSyntaxUID,
         QFileRef.fileRef.filePath,
+        RetrieveServiceEJB.filealiastableref.filePath,
         QFileSystem.fileSystem.uri,
+        RetrieveServiceEJB.filealiastablereffilesystem.uri,
         QSeries.series.pk,
         QInstance.instance.pk,
         QInstance.instance.sopClassUID,
@@ -100,7 +103,8 @@ public class DefaultRetrieveService implements RetrieveService {
         QInstance.instance.retrieveAETs,
         QInstance.instance.externalRetrieveAET,
         QueryBuilder.instanceAttributesBlob,
-        QFileRef.fileRef.fileTimeZone
+        QFileRef.fileRef.fileTimeZone,
+        RetrieveServiceEJB.filealiastableref.fileTimeZone
     };
 
     @Inject
@@ -144,57 +148,149 @@ public class DefaultRetrieveService implements RetrieveService {
                 new String[] { objectIUID }, queryParam));
     }
 
+    private static class ArchiveInstanceLocatorFactory {
+       ArchiveInstanceLocator locator;
+       Tuple locatedTuple;
+       String uri;
+       String uriFat;
+       Attributes seriesAttrs;
+       Attributes attrs;
+       String tsuid, filePath, fsuri, ftz, tsuidFat, filePathFat, fsuriFat, ftzFat;
+       String cuid = null, iuid = null, retrieveAETs = null, externalRetrieveAET =null;
+       boolean located = false;
+
+        ArchiveInstanceLocatorFactory(Tuple tuple, Attributes seriesAttrs) {
+            clearAll();
+            this.seriesAttrs = seriesAttrs;
+            cuid= tuple.get(QInstance.instance.sopClassUID);
+            iuid = tuple.get(QInstance.instance.sopInstanceUID);
+            retrieveAETs = tuple.get(QInstance.instance.retrieveAETs);
+            externalRetrieveAET =
+                    tuple.get(QInstance.instance.externalRetrieveAET);
+            located=false;
+        }
+
+        private void clearAll() {
+            locator = null;
+            locatedTuple = null;
+            uri = null;
+            uriFat = null;
+            seriesAttrs = null;
+            attrs = null;
+            tsuid = null;
+            filePath = null;
+            fsuri = null;
+            ftz = null;
+            tsuidFat = null;
+            filePathFat = null;
+            fsuriFat = null;
+            ftzFat = null;
+            cuid = null;
+            iuid = null;
+            retrieveAETs = null;
+            externalRetrieveAET = null;
+            located = false;
+        }
+
+        void addRecord(Tuple tuple) {
+            if(!located) {
+            tsuid = tuple.get(QFileRef.fileRef.transferSyntaxUID);
+            filePath = tuple.get(QFileRef.fileRef.filePath);
+            fsuri = tuple.get(QFileSystem.fileSystem.uri);
+            ftz = tuple.get(QFileRef.fileRef.fileTimeZone);
+
+            tsuidFat = tuple.get(RetrieveServiceEJB.filealiastableref.transferSyntaxUID);
+            filePathFat = tuple.get(RetrieveServiceEJB.filealiastableref.filePath);
+            fsuriFat = tuple.get(RetrieveServiceEJB.filealiastablereffilesystem.uri);
+            ftzFat = tuple.get(RetrieveServiceEJB.filealiastableref.fileTimeZone);
+
+            if(fsuri != null) {
+            uri = fsuri + '/' + filePath;
+            locatedTuple = tuple;
+            located=true;
+            }
+            else
+            uri = extractRetrieveURI(retrieveAETs, externalRetrieveAET);
+
+            if(fsuriFat != null) {
+            uriFat = fsuriFat + '/' + filePathFat;
+            locatedTuple = tuple;
+            located=true;
+            }
+            else
+            uriFat = extractRetrieveURI(retrieveAETs, externalRetrieveAET);
+            }
+        }
+        private String extractRetrieveURI(String retrieveAETs,
+                String externalRetrieveAET) {
+            String uri;
+            StringBuilder sb = new StringBuilder();
+            if (externalRetrieveAET != null) {
+                sb.append("aet:");
+                if (retrieveAETs != null)
+                    sb.append('\\');
+                sb.append(externalRetrieveAET);
+            }
+            uri = sb.toString();
+            return uri.isEmpty()?null:uri;
+        }
+        ArchiveInstanceLocator createArchiveInstanceLocator() {
+
+            if(located) {
+            byte[] instByteAttrs =
+            locatedTuple.get(QueryBuilder.instanceAttributesBlob.encodedAttributes);
+            Attributes instanceAttrs = new Attributes();
+            Utils.decodeAttributes(instanceAttrs, instByteAttrs);
+            attrs = Utils.mergeAndNormalize(seriesAttrs, instanceAttrs);
+            ArchiveInstanceLocator ref = new ArchiveInstanceLocator(
+                    cuid, iuid, tsuid!=null?tsuid:tsuidFat, !uri.toLowerCase().contains("aet:")?uri:uriFat, ftz!=null?ftz:ftzFat);
+            ref.setObject(attrs);
+            locator = ref;
+            }
+            else {
+                ArchiveInstanceLocator ref = new ArchiveInstanceLocator(
+                        cuid, iuid, tsuid!=null?tsuid:tsuidFat, uri!=null?uri:uriFat, ftz!=null?ftz:ftzFat);
+                ref.setObject(null);
+                locator = ref;
+            }
+            return locator;
+        }
+    }
     private List<ArchiveInstanceLocator> locate(List<Tuple> tuples) {
+
         List<ArchiveInstanceLocator> locators =
                 new ArrayList<ArchiveInstanceLocator>(tuples.size());
         long instPk = -1;
         long seriesPk = -1;
         Attributes seriesAttrs = null;
+        ArchiveInstanceLocatorFactory factory = null;
+
         for (Tuple tuple : tuples) {
-            String tsuid = tuple.get(QFileRef.fileRef.transferSyntaxUID);
-            String filePath = tuple.get(QFileRef.fileRef.filePath);
-            String fsuri = tuple.get(QFileSystem.fileSystem.uri);
-            String ftz = tuple.get(QFileRef.fileRef.fileTimeZone);
+            
             long nextSeriesPk = tuple.get(QSeries.series.pk);
             long nextInstPk = tuple.get(QInstance.instance.pk);
+
             if (seriesPk != nextSeriesPk) {
                 seriesAttrs = ejb.getSeriesAttributes(nextSeriesPk);
                 seriesPk = nextSeriesPk;
             }
-            if (instPk != nextInstPk) {
-                String cuid = tuple.get(QInstance.instance.sopClassUID);
-                String iuid = tuple.get(QInstance.instance.sopInstanceUID);
-                String retrieveAETs = tuple.get(QInstance.instance.retrieveAETs);
-                String externalRetrieveAET =
-                        tuple.get(QInstance.instance.externalRetrieveAET);
-                String uri;
-                Attributes attrs;
-                if (fsuri != null) {
-                    uri = fsuri + '/' + filePath;
-                    byte[] instByteAttrs =
-                            tuple.get(QueryBuilder.instanceAttributesBlob.encodedAttributes);
-                    Attributes instanceAttrs = new Attributes();
-                    Utils.decodeAttributes(instanceAttrs, instByteAttrs);
-                    attrs = Utils.mergeAndNormalize(seriesAttrs, instanceAttrs);
-                } else {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("aet:");
-                    if (retrieveAETs != null) {
-                        sb.append(retrieveAETs);
-                    }
-                    if (externalRetrieveAET != null) {
-                        if (retrieveAETs != null)
-                            sb.append('\\');
-                        sb.append(externalRetrieveAET);
-                    }
-                    uri = sb.toString();
-                    attrs = null;
-                }
-                locators.add((ArchiveInstanceLocator) new ArchiveInstanceLocator(
-                        cuid, iuid, tsuid, uri, ftz).setObject(attrs));
+            
+            if(instPk == -1) {
                 instPk = nextInstPk;
+                factory = new ArchiveInstanceLocatorFactory(tuple, seriesAttrs);
             }
+            
+            if (instPk != nextInstPk) {
+              if (factory != null)
+              locators.add(factory.createArchiveInstanceLocator());
+              factory = new ArchiveInstanceLocatorFactory(tuple, seriesAttrs);
+            }
+            
+            factory.addRecord(tuple);
+                instPk = nextInstPk;
         }
+          if (factory != null)
+          locators.add(factory.createArchiveInstanceLocator());
         return locators;
     }
 

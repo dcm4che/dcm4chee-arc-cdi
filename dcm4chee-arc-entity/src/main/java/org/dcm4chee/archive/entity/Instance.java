@@ -51,6 +51,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -294,6 +296,12 @@ public class Instance implements Serializable {
     @JoinColumn(name = "series_fk")
     private Series series;
 
+    @ManyToMany
+    @JoinTable(name="file_alias_table",
+    joinColumns={@JoinColumn(name="instance_fk", referencedColumnName="pk")},
+    inverseJoinColumns={@JoinColumn(name="file_ref_fk", referencedColumnName="pk")})
+    private Collection<FileRef> fileAliasTableRefs;
+
     @Transient
     private Attributes cachedAttributes;
 
@@ -461,6 +469,14 @@ public class Instance implements Serializable {
 
     public Collection<FileRef> getFileRefs() {
         return fileRefs;
+    }
+
+    public void setFileAliasTableRefs(Collection<FileRef> fileAliasTableRefs) {
+        this.fileAliasTableRefs = fileAliasTableRefs;
+    }
+
+    public Collection<FileRef> getFileAliasTableRefs() {
+        return fileAliasTableRefs;
     }
 
     public Series getSeries() {

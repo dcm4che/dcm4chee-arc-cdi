@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Date;
 
 import javax.persistence.Basic;
@@ -51,6 +52,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
@@ -106,6 +108,9 @@ public class FileRef implements Serializable {
     @JoinColumn(name = "instance_fk", updatable = true)
     private Instance instance;
 
+    @ManyToMany(mappedBy="fileAliasTableRefs")
+    private Collection<Instance> fileAliasTableInstances;
+
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "filesystem_fk", updatable = false)
     private FileSystem fileSystem;
@@ -158,6 +163,15 @@ public class FileRef implements Serializable {
 
     public void setInstance(Instance instance) {
         this.instance = instance;
+    }
+
+    public Collection<Instance> getFileAliasTableInstances() {
+        return fileAliasTableInstances;
+    }
+
+    public void setFileAliasTableInstances(
+            Collection<Instance> fileAliasTableInstances) {
+        this.fileAliasTableInstances = fileAliasTableInstances;
     }
 
     public FileSystem getFileSystem() {
