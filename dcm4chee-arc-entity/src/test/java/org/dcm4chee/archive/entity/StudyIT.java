@@ -54,7 +54,6 @@ import org.dcm4chee.archive.junit.rules.EntityManagerFactoryRule;
 import org.dcm4chee.archive.junit.rules.EntityManagerRule;
 import org.dcm4chee.archive.junit.rules.IDatabaseConnectionRule;
 import org.dcm4chee.archive.junit.rules.IDatasetRule;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -110,13 +109,11 @@ public class StudyIT {
     }
 
     @Test
-    public void findByStudyInstanceUIDEager_shouldThrowException_whenStudyExistsButHasNoPatient() {
-        try {
-            entityManager.createNamedQuery(FIND_BY_STUDY_INSTANCE_UID_EAGER)
-                    .setParameter(1, "1").getSingleResult();
+    public void findByStudyInstanceUIDEager_shouldSelectStudy_whenStudyExistsInstanceUIDMatches() {
+        Study study = (Study) entityManager
+                .createNamedQuery(FIND_BY_STUDY_INSTANCE_UID_EAGER)
+                .setParameter(1, "2").getSingleResult();
 
-            fail();
-        } catch (NoResultException e) {
-        }
+        assertThat(study.getPk(), is(2L));
     }
 }
