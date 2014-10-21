@@ -32,14 +32,14 @@ class ArchiveInstanceLocatorBuilder {
         this.attrs = Utils.mergeAndNormalize(seriesAttrs, instanceAttrs );
     }
 
-    void addRecord(Tuple tuple) {
+    void addFileRefs(Tuple tuple) {
         if (availability != Availability.ONLINE) {
-            addFile(tuple.get(QFileRef.fileRef.filePath),
+            addFileRef(tuple.get(QFileRef.fileRef.filePath),
                     tuple.get(QFileRef.fileRef.transferSyntaxUID),
                     tuple.get(QFileRef.fileRef.fileTimeZone),
                     tuple.get(QFileSystem.fileSystem.uri),
                     tuple.get(QFileSystem.fileSystem.availability));
-            addFile(tuple.get(RetrieveServiceEJB.filealiastableref.filePath),
+            addFileRef(tuple.get(RetrieveServiceEJB.filealiastableref.filePath),
                     tuple.get(RetrieveServiceEJB.filealiastableref.fileTimeZone),
                     tuple.get(RetrieveServiceEJB.filealiastableref.transferSyntaxUID),
                     tuple.get(RetrieveServiceEJB.filealiastablereffilesystem.uri),
@@ -47,7 +47,7 @@ class ArchiveInstanceLocatorBuilder {
         }
     }
  
-    private void addFile(String filePath, String tsuid,
+    private void addFileRef(String filePath, String tsuid,
             String fileTimeZone, String fsURI, Availability availability) {
         if (availability != null && availability.compareTo(this.availability) < 0) {
             locator = new ArchiveInstanceLocator(

@@ -172,7 +172,7 @@ public class DefaultRetrieveService implements RetrieveService {
                 builder = new ArchiveInstanceLocatorBuilder(tuple, seriesAttrs);
             }
             
-            builder.addRecord(tuple);
+            builder.addFileRefs(tuple);
             instPk = nextInstPk;
         }
         if (builder != null)
