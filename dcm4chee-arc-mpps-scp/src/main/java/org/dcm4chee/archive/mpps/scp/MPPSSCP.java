@@ -52,6 +52,7 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.event.MPPSCreate;
@@ -87,8 +88,9 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         try {
             String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
             ApplicationEntity ae = as.getApplicationEntity();
+            ArchiveAEExtension aeArc = ae.getAEExtension(ArchiveAEExtension.class);
             mppsService.coerceAttributes(as, Dimse.N_CREATE_RQ, data);
-            MPPS mpps = mppsService.createPerformedProcedureStep(as,
+            MPPS mpps = mppsService.createPerformedProcedureStep(aeArc,
                     iuid, data, mppsService);
 
             createMPPSEvent.fire(
@@ -107,8 +109,9 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         try {
             String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
             ApplicationEntity ae = as.getApplicationEntity();
+            ArchiveAEExtension aeArc = ae.getAEExtension(ArchiveAEExtension.class);
             mppsService.coerceAttributes(as, Dimse.N_SET_RQ, data);
-            MPPS mpps = mppsService.updatePerformedProcedureStep(as,
+            MPPS mpps = mppsService.updatePerformedProcedureStep(aeArc,
                     iuid, data, mppsService);
 
             (mpps.getStatus() == MPPS.Status.IN_PROGRESS

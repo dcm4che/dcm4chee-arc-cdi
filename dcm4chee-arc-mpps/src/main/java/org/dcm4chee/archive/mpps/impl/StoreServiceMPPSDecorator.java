@@ -36,39 +36,64 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.mpps;
+package org.dcm4chee.archive.mpps.impl;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Dimse;
+import javax.decorator.Decorator;
+import javax.decorator.Delegate;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+
+import org.dcm4che3.data.UID;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreService;
+import org.dcm4chee.archive.store.StoreSession;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface MPPSService {
+@Decorator
+public abstract class StoreServiceMPPSDecorator implements StoreService {
 
-    MPPS createPerformedProcedureStep(Association as, String sopInstanceUID,
-            Attributes attrs, MPPSService service)
-            throws DicomServiceException;
+    @Inject @Delegate StoreService storeService;
 
-    MPPS updatePerformedProcedureStep(Association as, String iuid,
-            Attributes attrs, MPPSService service)
-            throws DicomServiceException;
+    @Inject MPPSService mppsService;
 
-    Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)
-            throws DicomServiceException;
+    @Override
+    public Instance findOrCreateInstance(EntityManager em, StoreContext context)
+            throws DicomServiceException {
+        Instance inst = storeService.findOrCreateInstance(em, context);
+        MPPS mpps = findMPPS(em, context, inst);
+        context.setProperty(MPPS.class.getName(), mpps);
+        mppsService.checkIncorrectWorklistEntrySelected(context, mpps, inst);
+        return inst;
+    }
 
-    void checkIncorrectWorklistEntrySelected(StoreContext context, MPPS mpps,
-            Instance inst);
+    private MPPS findMPPS(EntityManager em, StoreContext context, Instance inst) {
+        Series series = inst.getSeries();
+        String ppsiuid = series.getPerformedProcedureStepInstanceUID();
+        String ppscuid = series.getPerformedProcedureStepClassUID();
+        if (ppsiuid == null
+                || !UID.ModalityPerformedProcedureStepSOPClass.equals(ppscuid))
+            return null;
 
-    void coerceAttributes(Association as, Dimse dimse, Attributes attrs)
-            throws DicomServiceException;
-
+        StoreSession session = context.getStoreSession();
+        MPPS mpps = (MPPS) session.getProperty(MPPS.class.getName());
+        if (mpps == null || !mpps.getSopInstanceUID().equals(ppsiuid)) {
+            try {
+                mpps = em.createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UID, MPPS.class)
+                        .setParameter(1, ppsiuid)
+                        .getSingleResult();
+                session.setProperty(MPPS.class.getName(), mpps);
+            } catch (NoResultException e) {
+            }
+        }
+        return mpps;
+    }
 }

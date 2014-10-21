@@ -99,15 +99,14 @@ public class MPPSServiceImpl implements MPPSService {
     private CodeService codeService;
 
     @Override
-    public MPPS createPerformedProcedureStep(Association as, String iuid,
-            Attributes attrs, MPPSService service) throws DicomServiceException {
+    public MPPS createPerformedProcedureStep(ArchiveAEExtension arcAE,
+            String iuid, Attributes attrs, MPPSService service)
+                    throws DicomServiceException {
         try {
             find(iuid);
             throw new DicomServiceException(Status.DuplicateSOPinstance)
                 .setUID(Tag.AffectedSOPInstanceUID, iuid);
         } catch (NoResultException e) {}
-        ApplicationEntity ae = as.getApplicationEntity();
-        ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
         Patient patient = service.findOrCreatePatient(attrs, arcAE.getStoreParam());
         MPPS mpps = new MPPS();
         mpps.setSopInstanceUID(iuid);
@@ -118,8 +117,9 @@ public class MPPSServiceImpl implements MPPSService {
     }
 
     @Override
-    public MPPS updatePerformedProcedureStep(Association as, String iuid,
-            Attributes modified, MPPSService service) throws DicomServiceException {
+    public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE,
+            String iuid, Attributes modified, MPPSService service)
+                    throws DicomServiceException {
         MPPS pps;
         try {
             pps = find(iuid);
@@ -145,11 +145,25 @@ public class MPPSServiceImpl implements MPPSService {
             if (codeItem != null) {
                 Code code = codeService.findOrCreate(new Code(codeItem));
                 pps.setDiscontinuationReasonCode(code);
-                checkIncorrectWorklistEntrySelected(as, pps,
-                        as.getApplicationEntity().getDevice());
+                checkIncorrectWorklistEntrySelected(pps,
+                        arcAE.getApplicationEntity().getDevice());
             }
         }
         return pps;
+    }
+
+    public void checkIncorrectWorklistEntrySelected(StoreContext context,
+            MPPS mpps, Instance inst) {
+        StoreSession session = context.getStoreSession();
+        if (context.getStoreAction() == StoreAction.IGNORE
+                 || !isIncorrectWorklistEntrySelected(mpps, session.getDevice()))
+            return;
+
+        inst.setRejectionNoteCode(mpps.getDiscontinuationReasonCode());
+        inst.setAvailability(Availability.UNAVAILABLE);
+        LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
+                session, inst.getPk(), inst.getSopInstanceUID(),
+                mpps.getDiscontinuationReasonCode());
     }
 
     private boolean isIncorrectWorklistEntrySelected(MPPS mpps, Device device) {
@@ -168,22 +182,7 @@ public class MPPSServiceImpl implements MPPSService {
         return reasonCode.equals((Code) arcDev.getIncorrectWorklistEntrySelectedCode());
     }
 
-    @Override
-    public void checkIncorrectWorklistEntrySelected(StoreContext context,
-            MPPS mpps, Instance inst) {
-        StoreSession session = context.getStoreSession();
-        if (context.getStoreAction() == StoreAction.IGNORE
-                 || !isIncorrectWorklistEntrySelected(mpps, session.getDevice()))
-            return;
-
-        inst.setRejectionNoteCode(mpps.getDiscontinuationReasonCode());
-        inst.setAvailability(Availability.UNAVAILABLE);
-        LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
-                session, inst.getPk(), inst.getSopInstanceUID(),
-                mpps.getDiscontinuationReasonCode());
-    }
-
-    private void checkIncorrectWorklistEntrySelected(Association as, 
+    private void checkIncorrectWorklistEntrySelected( 
             MPPS pps, Device device) {
         if (!isIncorrectWorklistEntrySelected(pps, device))
             return;
@@ -213,19 +212,18 @@ public class MPPSServiceImpl implements MPPSService {
                     Series series = inst.getSeries();
                     Study study = series.getStudy();
                     if (!cuid.equals(cuidInPPS)) {
-                        LOG.warn("{}: SOP Class of received Instance[iuid={}, cuid={}] "
+                        LOG.warn("SOP Class of received Instance[iuid={}, cuid={}] "
                                 + "of Series[iuid={}] of Study[iuid={}] differs from"
                                 + "SOP Class[cuid={}] referenced by MPPS[iuid={}]",
-                                as, iuid, cuid, series.getSeriesInstanceUID(), 
+                                iuid, cuid, series.getSeriesInstanceUID(), 
                                 study.getStudyInstanceUID(), cuidInPPS,
                                 pps.getSopInstanceUID());
                     }
                     inst.setRejectionNoteCode(pps.getDiscontinuationReasonCode());
-                    inst.setAvailability(Availability.UNAVAILABLE);
                     series.clearQueryAttributes();
                     study.clearQueryAttributes();
-                    LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
-                            as, inst.getPk(), iuid,
+                    LOG.info("Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
+                            inst.getPk(), iuid,
                             pps.getDiscontinuationReasonCode());
                 }
             }
