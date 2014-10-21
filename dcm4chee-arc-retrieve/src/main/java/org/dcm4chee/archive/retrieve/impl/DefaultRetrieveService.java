@@ -69,7 +69,6 @@ import org.dcm4chee.archive.entity.QFileRef;
 import org.dcm4chee.archive.entity.QFileSystem;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QSeries;
-import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
@@ -90,21 +89,23 @@ public class DefaultRetrieveService implements RetrieveService {
     private static final Logger LOG = Logger.getLogger(DefaultRetrieveService.class);
 
     private static final Expression<?>[] SELECT = {
-        QFileRef.fileRef.transferSyntaxUID,
-        RetrieveServiceEJB.filealiastableref.transferSyntaxUID,
         QFileRef.fileRef.filePath,
-        RetrieveServiceEJB.filealiastableref.filePath,
+        QFileRef.fileRef.transferSyntaxUID,
+        QFileRef.fileRef.fileTimeZone,
         QFileSystem.fileSystem.uri,
+        QFileSystem.fileSystem.availability,
+        RetrieveServiceEJB.filealiastableref.filePath,
+        RetrieveServiceEJB.filealiastableref.fileTimeZone,
+        RetrieveServiceEJB.filealiastableref.transferSyntaxUID,
         RetrieveServiceEJB.filealiastablereffilesystem.uri,
+        RetrieveServiceEJB.filealiastablereffilesystem.availability,
         QSeries.series.pk,
         QInstance.instance.pk,
         QInstance.instance.sopClassUID,
         QInstance.instance.sopInstanceUID,
         QInstance.instance.retrieveAETs,
         QInstance.instance.externalRetrieveAET,
-        QueryBuilder.instanceAttributesBlob,
-        QFileRef.fileRef.fileTimeZone,
-        RetrieveServiceEJB.filealiastableref.fileTimeZone
+        QueryBuilder.instanceAttributesBlob
     };
 
     @Inject
@@ -148,114 +149,6 @@ public class DefaultRetrieveService implements RetrieveService {
                 new String[] { objectIUID }, queryParam));
     }
 
-    private static class ArchiveInstanceLocatorFactory {
-       ArchiveInstanceLocator locator;
-       Tuple locatedTuple;
-       String uri;
-       String uriFat;
-       Attributes seriesAttrs;
-       Attributes attrs;
-       String tsuid, filePath, fsuri, ftz, tsuidFat, filePathFat, fsuriFat, ftzFat;
-       String cuid = null, iuid = null, retrieveAETs = null, externalRetrieveAET =null;
-       boolean located = false;
-
-        ArchiveInstanceLocatorFactory(Tuple tuple, Attributes seriesAttrs) {
-            clearAll();
-            this.seriesAttrs = seriesAttrs;
-            cuid= tuple.get(QInstance.instance.sopClassUID);
-            iuid = tuple.get(QInstance.instance.sopInstanceUID);
-            retrieveAETs = tuple.get(QInstance.instance.retrieveAETs);
-            externalRetrieveAET =
-                    tuple.get(QInstance.instance.externalRetrieveAET);
-            located=false;
-        }
-
-        private void clearAll() {
-            locator = null;
-            locatedTuple = null;
-            uri = null;
-            uriFat = null;
-            seriesAttrs = null;
-            attrs = null;
-            tsuid = null;
-            filePath = null;
-            fsuri = null;
-            ftz = null;
-            tsuidFat = null;
-            filePathFat = null;
-            fsuriFat = null;
-            ftzFat = null;
-            cuid = null;
-            iuid = null;
-            retrieveAETs = null;
-            externalRetrieveAET = null;
-            located = false;
-        }
-
-        void addRecord(Tuple tuple) {
-            if(!located) {
-            tsuid = tuple.get(QFileRef.fileRef.transferSyntaxUID);
-            filePath = tuple.get(QFileRef.fileRef.filePath);
-            fsuri = tuple.get(QFileSystem.fileSystem.uri);
-            ftz = tuple.get(QFileRef.fileRef.fileTimeZone);
-
-            tsuidFat = tuple.get(RetrieveServiceEJB.filealiastableref.transferSyntaxUID);
-            filePathFat = tuple.get(RetrieveServiceEJB.filealiastableref.filePath);
-            fsuriFat = tuple.get(RetrieveServiceEJB.filealiastablereffilesystem.uri);
-            ftzFat = tuple.get(RetrieveServiceEJB.filealiastableref.fileTimeZone);
-
-            if(fsuri != null) {
-            uri = fsuri + '/' + filePath;
-            locatedTuple = tuple;
-            located=true;
-            }
-            else
-            uri = extractRetrieveURI(retrieveAETs, externalRetrieveAET);
-
-            if(fsuriFat != null) {
-            uriFat = fsuriFat + '/' + filePathFat;
-            locatedTuple = tuple;
-            located=true;
-            }
-            else
-            uriFat = extractRetrieveURI(retrieveAETs, externalRetrieveAET);
-            }
-        }
-        private String extractRetrieveURI(String retrieveAETs,
-                String externalRetrieveAET) {
-            String uri;
-            StringBuilder sb = new StringBuilder();
-            if (externalRetrieveAET != null) {
-                sb.append("aet:");
-                if (retrieveAETs != null)
-                    sb.append('\\');
-                sb.append(externalRetrieveAET);
-            }
-            uri = sb.toString();
-            return uri.isEmpty()?null:uri;
-        }
-        ArchiveInstanceLocator createArchiveInstanceLocator() {
-
-            if(located) {
-            byte[] instByteAttrs =
-            locatedTuple.get(QueryBuilder.instanceAttributesBlob.encodedAttributes);
-            Attributes instanceAttrs = new Attributes();
-            Utils.decodeAttributes(instanceAttrs, instByteAttrs);
-            attrs = Utils.mergeAndNormalize(seriesAttrs, instanceAttrs);
-            ArchiveInstanceLocator ref = new ArchiveInstanceLocator(
-                    cuid, iuid, tsuid!=null?tsuid:tsuidFat, !uri.toLowerCase().contains("aet:")?uri:uriFat, ftz!=null?ftz:ftzFat);
-            ref.setObject(attrs);
-            locator = ref;
-            }
-            else {
-                ArchiveInstanceLocator ref = new ArchiveInstanceLocator(
-                        cuid, iuid, tsuid!=null?tsuid:tsuidFat, uri!=null?uri:uriFat, ftz!=null?ftz:ftzFat);
-                ref.setObject(null);
-                locator = ref;
-            }
-            return locator;
-        }
-    }
     private List<ArchiveInstanceLocator> locate(List<Tuple> tuples) {
 
         List<ArchiveInstanceLocator> locators =
@@ -263,10 +156,9 @@ public class DefaultRetrieveService implements RetrieveService {
         long instPk = -1;
         long seriesPk = -1;
         Attributes seriesAttrs = null;
-        ArchiveInstanceLocatorFactory factory = null;
+        ArchiveInstanceLocatorBuilder builder = null;
 
         for (Tuple tuple : tuples) {
-            
             long nextSeriesPk = tuple.get(QSeries.series.pk);
             long nextInstPk = tuple.get(QInstance.instance.pk);
 
@@ -274,23 +166,17 @@ public class DefaultRetrieveService implements RetrieveService {
                 seriesAttrs = ejb.getSeriesAttributes(nextSeriesPk);
                 seriesPk = nextSeriesPk;
             }
-            
-            if(instPk == -1) {
-                instPk = nextInstPk;
-                factory = new ArchiveInstanceLocatorFactory(tuple, seriesAttrs);
-            }
-            
             if (instPk != nextInstPk) {
-              if (factory != null)
-              locators.add(factory.createArchiveInstanceLocator());
-              factory = new ArchiveInstanceLocatorFactory(tuple, seriesAttrs);
+                if (builder != null)
+                    locators.add(builder.build());
+                builder = new ArchiveInstanceLocatorBuilder(tuple, seriesAttrs);
             }
             
-            factory.addRecord(tuple);
-                instPk = nextInstPk;
+            builder.addRecord(tuple);
+            instPk = nextInstPk;
         }
-          if (factory != null)
-          locators.add(factory.createArchiveInstanceLocator());
+        if (builder != null)
+            locators.add(builder.build());
         return locators;
     }
 
