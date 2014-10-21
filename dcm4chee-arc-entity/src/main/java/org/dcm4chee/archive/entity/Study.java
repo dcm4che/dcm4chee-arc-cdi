@@ -166,7 +166,7 @@ public class Study implements Serializable {
         inverseJoinColumns = @JoinColumn(name = "pcode_fk", referencedColumnName = "pk"))
     private Collection<Code> procedureCodes;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "patient_fk")
     private Patient patient;
 

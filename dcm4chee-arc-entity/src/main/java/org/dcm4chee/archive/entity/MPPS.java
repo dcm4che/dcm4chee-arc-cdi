@@ -138,12 +138,9 @@ public class MPPS implements Serializable {
     @JoinColumn(name = "drcode_fk")
     private Code discontinuationReasonCode;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "patient_fk")
     private Patient patient;
-
-    @Transient
-    private Attributes cachedAttributes;
 
     public long getPk() {
         return pk;

@@ -648,7 +648,8 @@ public class StoreServiceImpl implements StoreService {
         series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
         series.setRequestAttributes(createRequestAttributes(
                 data.getSequence(Tag.RequestAttributesSequence),
-                storeParam.getFuzzyStr()));
+                storeParam.getFuzzyStr(),
+                series));
         series.setSourceAET(session.getRemoteAET());
         series.setAttributes(data,
                 storeParam.getAttributeFilter(Entity.Series),
@@ -671,9 +672,11 @@ public class StoreServiceImpl implements StoreService {
         inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
         inst.setVerifyingObservers(createVerifyingObservers(
                 data.getSequence(Tag.VerifyingObserverSequence),
-                storeParam.getFuzzyStr()));
-        inst.setContentItems(createContentItems(data
-                .getSequence(Tag.ContentSequence)));
+                storeParam.getFuzzyStr(),
+                inst));
+        inst.setContentItems(createContentItems(
+                data.getSequence(Tag.ContentSequence),
+                inst));
         inst.setRetrieveAETs(storeParam.getRetrieveAETs());
         inst.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
         inst.setAvailability(fs.getAvailability());
@@ -780,48 +783,60 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private Collection<RequestAttributes> createRequestAttributes(Sequence seq,
-            FuzzyStr fuzzyStr) {
+            FuzzyStr fuzzyStr, Series series) {
         if (seq == null || seq.isEmpty())
             return null;
 
         ArrayList<RequestAttributes> list = new ArrayList<RequestAttributes>(
                 seq.size());
-        for (Attributes item : seq)
-            list.add(new RequestAttributes(item, findOrCreateIssuer(item
+        for (Attributes item : seq) {
+            RequestAttributes request = new RequestAttributes(item, findOrCreateIssuer(item
                     .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
-                    fuzzyStr));
+                    fuzzyStr);
+            request.setSeries(series);
+            list.add(request);
+        }
         return list;
     }
 
     private Collection<VerifyingObserver> createVerifyingObservers(
-            Sequence seq, FuzzyStr fuzzyStr) {
+            Sequence seq, FuzzyStr fuzzyStr, Instance instance) {
         if (seq == null || seq.isEmpty())
             return null;
 
         ArrayList<VerifyingObserver> list = new ArrayList<VerifyingObserver>(
                 seq.size());
-        for (Attributes item : seq)
-            list.add(new VerifyingObserver(item, fuzzyStr));
+        for (Attributes item : seq) {
+            VerifyingObserver observer = new VerifyingObserver(item, fuzzyStr);
+            observer.setInstance(instance);
+            list.add(observer);
+        }
         return list;
     }
 
-    private Collection<ContentItem> createContentItems(Sequence seq) {
+    private Collection<ContentItem> createContentItems(Sequence seq, Instance inst) {
         if (seq == null || seq.isEmpty())
             return null;
 
         Collection<ContentItem> list = new ArrayList<ContentItem>(seq.size());
         for (Attributes item : seq) {
             String type = item.getString(Tag.ValueType);
+            ContentItem contentItem = null;
             if ("CODE".equals(type)) {
-                list.add(new ContentItem(item.getString(Tag.RelationshipType)
+                contentItem = new ContentItem(item.getString(Tag.RelationshipType)
                         .toUpperCase(), singleCode(item,
                         Tag.ConceptNameCodeSequence), singleCode(item,
-                        Tag.ConceptCodeSequence)));
+                        Tag.ConceptCodeSequence));
+                list.add(contentItem);
             } else if ("TEXT".equals(type)) {
                 list.add(new ContentItem(item.getString(Tag.RelationshipType)
                         .toUpperCase(), singleCode(item,
                         Tag.ConceptNameCodeSequence), item.getString(
                         Tag.TextValue, "*")));
+            }
+            if (contentItem != null) {
+                contentItem.setInstance(inst);
+                list.add(contentItem);
             }
         }
         return list;

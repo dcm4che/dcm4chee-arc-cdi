@@ -83,7 +83,7 @@ public class VerifyingObserver implements Serializable {
     @JoinColumn(name = "observer_name_fk")
     private PersonName verifyingObserverName;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "instance_fk")
     private Instance instance;
 

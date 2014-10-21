@@ -89,15 +89,15 @@ public class ContentItem implements Serializable {
     @Column(name = "text_value")
     private String textValue;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "name_fk")
     private Code conceptName;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "code_fk")
     private Code conceptCode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "instance_fk")
     private Instance instance;
 

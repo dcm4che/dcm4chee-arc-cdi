@@ -77,7 +77,7 @@ public class SeriesQueryAttributes {
     @Column(name = "availability")
     private Availability availability;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "series_fk")
     private Series series;
 

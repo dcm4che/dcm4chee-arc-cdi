@@ -51,7 +51,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -115,8 +114,7 @@ public class PersonName {
     @Column(name = "p_name_suffix")
     private String phoneticNameSuffix;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "person_name_fk", referencedColumnName = "pk")
+    @OneToMany(mappedBy = "personName", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<SoundexCode> soundexCodes;
 
     public PersonName() {
@@ -155,7 +153,7 @@ public class PersonName {
                 : new PersonName(pn, fuzzyStr);
     }
 
-    private static Collection<SoundexCode> createSoundexCodes(String familyName,
+    private Collection<SoundexCode> createSoundexCodes(String familyName,
             String givenName, String middleName, FuzzyStr fuzzyStr) {
         Collection<SoundexCode> codes = new ArrayList<SoundexCode>();
         addSoundexCodesTo(Component.FamilyName, familyName, fuzzyStr, codes);
@@ -164,15 +162,18 @@ public class PersonName {
         return codes;
    }
 
-    private static void addSoundexCodesTo(Component component, String name,
+    private void addSoundexCodesTo(Component component, String name,
             FuzzyStr fuzzyStr, Collection<SoundexCode> codes) {
         if (name == null)
             return;
 
         Iterator<String> parts = SoundexCode.tokenizePersonNameComponent(name);
-        for (int i = 0; parts.hasNext(); i++)
-            codes.add(new SoundexCode(component, i,
-                    fuzzyStr.toFuzzy(parts.next())));
+        for (int i = 0; parts.hasNext(); i++) {
+            SoundexCode soundexCode = new SoundexCode(component, i,
+                    fuzzyStr.toFuzzy(parts.next()));
+            soundexCode.setPersonName(this);
+            codes.add(soundexCode);
+        }
     }
 
     public org.dcm4che3.data.PersonName toPersonName() {

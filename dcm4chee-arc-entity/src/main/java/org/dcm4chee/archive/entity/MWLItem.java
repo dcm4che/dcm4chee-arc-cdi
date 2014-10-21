@@ -139,11 +139,10 @@ public class MWLItem implements Serializable {
     @JoinColumn(name = "perf_phys_name_fk")
     private PersonName scheduledPerformingPhysicianName;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "mwl_item_fk")
+    @OneToMany(mappedBy = "mwlItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<ScheduledStationAETitle> scheduledStationAETs;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "patient_fk")
     private Patient patient;
 
@@ -201,6 +200,15 @@ public class MWLItem implements Serializable {
 
     public void setPatient(Patient patient) {
         this.patient = patient;
+    }
+
+    public Collection<ScheduledStationAETitle> getScheduledStationAETs() {
+        return scheduledStationAETs;
+    }
+
+    public void setScheduledStationAETs(
+            Collection<ScheduledStationAETitle> scheduledStationAETs) {
+        this.scheduledStationAETs = scheduledStationAETs;
     }
 
     @Override

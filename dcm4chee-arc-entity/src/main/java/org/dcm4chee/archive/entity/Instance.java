@@ -281,19 +281,16 @@ public class Instance implements Serializable {
     @JoinColumn(name = "reject_code_fk")
     private Code rejectionNoteCode;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "instance_fk")
+    @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<VerifyingObserver> verifyingObservers;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "instance_fk")
+    @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<ContentItem> contentItems;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = false)
-    @JoinColumn(name = "instance_fk")
+    @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = false)
     private Collection<FileRef> fileRefs;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "series_fk")
     private Series series;
 

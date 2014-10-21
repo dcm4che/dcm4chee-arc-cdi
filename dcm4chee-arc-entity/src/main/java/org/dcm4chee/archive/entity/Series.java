@@ -195,8 +195,7 @@ public class Series implements Serializable {
     @JoinColumn(name = "inst_code_fk")
     private Code institutionCode;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "series_fk")
+    @OneToMany(mappedBy = "series", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<RequestAttributes> requestAttributes;
 
 //    @ManyToMany
@@ -206,7 +205,7 @@ public class Series implements Serializable {
 //    private Collection<ScheduledProcedureStep> scheduledProcedureSteps;
 
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "study_fk")
     private Study study;
 

@@ -86,7 +86,7 @@ public class StudyQueryAttributes {
     @Column(name = "availability")
     private Availability availability;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "study_fk")
     private Study study;
 

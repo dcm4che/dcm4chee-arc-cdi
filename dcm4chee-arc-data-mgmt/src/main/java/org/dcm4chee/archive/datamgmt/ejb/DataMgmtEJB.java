@@ -775,6 +775,7 @@ public enum SeriesCommands{
                     em.persist(verifyingObserverName);
                 VerifyingObserver newObserver = new VerifyingObserver(observer,
                         arcDevExt.getFuzzyStr());
+                newObserver.setInstance(instance);
                 oldObservers.add(newObserver);
             }
         }
@@ -788,6 +789,7 @@ public enum SeriesCommands{
                 getObserverPK(observerAttrs, arcDevExt.getFuzzyStr()));
         if (tmp == null) {
             tmp = new VerifyingObserver(observerAttrs, arcDevExt.getFuzzyStr());
+            tmp.setInstance(instance);
         }
 
         return tmp;
@@ -838,6 +840,7 @@ public enum SeriesCommands{
                     em.persist(requestingPhysician);
                 RequestAttributes newRequest = new RequestAttributes(request,
                         issuerOfAccessionNumber, arcDevExt.getFuzzyStr());
+                newRequest.setSeries(series);
                 oldRequests.add(newRequest);
             }
         }
@@ -1092,6 +1095,7 @@ public enum SeriesCommands{
                 em.persist(verifyingObserverName);
             VerifyingObserver newObserver = new VerifyingObserver(attrs,
                     arcDevExt.getFuzzyStr());
+            newObserver.setInstance(instance);
             em.persist(newObserver);
             newObservers.add(newObserver);
         }

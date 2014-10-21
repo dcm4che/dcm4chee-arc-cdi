@@ -46,6 +46,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
@@ -72,11 +74,23 @@ public class ScheduledStationAETitle implements Serializable  {
     @Column(name = "station_aet")
     private String aeTitle;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "mwl_item_fk")
+    private MWLItem mwlItem;
+
     public long getPk() {
         return pk;
     }
 
     public String getAETitle() {
         return aeTitle;
+    }
+
+    public MWLItem getMwlItem() {
+        return mwlItem;
+    }
+
+    public void setMwlItem(MWLItem mwlItem) {
+        this.mwlItem = mwlItem;
     }
 }

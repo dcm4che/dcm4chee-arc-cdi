@@ -102,7 +102,7 @@ public class RequestAttributes implements Serializable {
     @JoinColumn(name = "accno_issuer_fk")
     private Issuer issuerOfAccessionNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "series_fk")
     private Series series;
     

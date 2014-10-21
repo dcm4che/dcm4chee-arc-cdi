@@ -74,7 +74,7 @@ public class SoundexCode {
     @Column(name = "sx_code_value", nullable = false)
     private String codeValue;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "person_name_fk")
     private PersonName personName;
 
@@ -121,6 +121,14 @@ public class SoundexCode {
 
     public String getCodeValue() {
         return codeValue.equals("*") ? "" : codeValue;
+    }
+
+    public PersonName getPersonName() {
+        return personName;
+    }
+
+    public void setPersonName(PersonName personName) {
+        this.personName = personName;
     }
 
 }
