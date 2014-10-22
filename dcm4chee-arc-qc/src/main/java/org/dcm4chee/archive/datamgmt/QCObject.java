@@ -61,11 +61,11 @@ public class QCObject {
         this.cloneSOPUIDs = cloneSOPUIDs;
     }
 
-    public String[] getDeleteUIDs() {
+    public String[] getRestoreOrRejectUIDs() {
         return restoreOrRejectUIDs;
     }
 
-    public void setDeleteUIDs(String[] deleteUIDs) {
+    public void setRestoreOrRejectUIDs(String[] deleteUIDs) {
         this.restoreOrRejectUIDs = deleteUIDs;
     }
 

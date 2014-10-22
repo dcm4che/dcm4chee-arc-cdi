@@ -66,11 +66,11 @@ public interface QCBean {
     boolean deleteSeriesIfEmpty(String seriesInstanceUID,
             String studyInstanceUID);
 
-    void reject(Instance source, Code qcRejectionCode);
+    void reject(String[] sopInstanceUIDs, Code qcRejectionCode);
 
-    void rejectMany(Collection<Instance> instances, Code qcRejectionCode);
+    void reject(Collection<Instance> instances, Code qcRejectionCode);
 
-    void restore(Instance source);
+    void restore(String[] sopInstanceUIDs);
 
-    void restoreMany(Collection<Instance> instances);
+    void restore(Collection<Instance> instances);
 }

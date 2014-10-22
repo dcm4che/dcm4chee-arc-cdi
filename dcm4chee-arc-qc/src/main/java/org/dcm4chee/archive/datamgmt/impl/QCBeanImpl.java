@@ -123,25 +123,23 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public void reject(Instance source, org.dcm4che3.data.Code qcRejectionCode) {
-        // TODO Auto-generated method stub
+    public void reject(Collection<Instance> instances, org.dcm4che3.data.Code qcRejectionCode) {
+        rejectionService.reject(this, instances, findOrCreateCode(qcRejectionCode), null);
     }
 
     @Override
-    public void rejectMany(Collection<Instance> instances, org.dcm4che3.data.Code qcRejectionCode) {
-        // TODO Auto-generated method stub
-
+    public void reject(String[] sopInstanceUIDs, org.dcm4che3.data.Code qcRejectionCode) {
+        rejectionService.reject(this, locateInstances(sopInstanceUIDs), findOrCreateCode(qcRejectionCode), null);
     }
 
     @Override
-    public void restore(Instance source) {
-        // TODO Auto-generated method stub
+    public void restore(Collection<Instance> instances) {
+        rejectionService.restore(this, instances, null);
     }
 
     @Override
-    public void restoreMany(Collection<Instance> instances) {
-        // TODO Auto-generated method stub
-
+    public void restore(String[] sopInstanceUIDs) {
+        rejectionService.restore(this, locateInstances(sopInstanceUIDs), null);
     }
 
     @Override

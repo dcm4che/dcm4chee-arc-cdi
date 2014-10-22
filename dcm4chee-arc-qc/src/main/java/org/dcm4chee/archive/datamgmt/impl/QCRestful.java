@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.inject.Inject;
 import javax.json.Json;
@@ -34,9 +33,6 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.datamgmt.PatientCommands;
 import org.dcm4chee.archive.datamgmt.QCBean;
 import org.dcm4chee.archive.datamgmt.QCObject;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Study;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,14 +104,14 @@ public class QCRestful {
 
         case "reject":
 
-            qcManager.rejectMany(
-                    qcManager.locateInstances(object.getDeleteUIDs()), object.getQcRejectionCode());
+            qcManager.reject(
+                    object.getRestoreOrRejectUIDs(), object.getQcRejectionCode());
             break;
 
         case "restore":
 
-            qcManager.restoreMany(
-                    qcManager.locateInstances(object.getDeleteUIDs()));
+            qcManager.restore(
+                    object.getRestoreOrRejectUIDs());
             break;
         default:
             return Response.status(Response.Status.CONFLICT).entity("Unable to decide operation").build();
@@ -133,9 +129,6 @@ public class QCRestful {
         Attributes mergedAttrs = object.getTargetStudyData();
         if(!mergedAttrs.contains(Tag.StudyInstanceUID))
             mergedAttrs.setString(Tag.StudyInstanceUID, VR.UI, object.getTargetStudyUID());
-        
-        //persist new rejectionCode
-        qcManager.findOrCreateCode(object.getQcRejectionCode());
         return mergedAttrs;
     }
 
