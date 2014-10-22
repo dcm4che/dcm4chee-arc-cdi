@@ -83,13 +83,13 @@ public class QCRestful {
 
         case "merge":
             qcManager.mergeStudies(
-                    object.getMoveSOPUIDS(), object.getTargetStudyUID());
+                    object.getMoveSOPUIDS(), object.getTargetStudyUID(), object.getQcRejectionCode());
             break;
 
         case "split":
 
                 qcManager.split(
-                        qcManager.locateInstances(object.getMoveSOPUIDS()), mergedAttrs);
+                        qcManager.locateInstances(object.getMoveSOPUIDS()), mergedAttrs, object.getQcRejectionCode());
             break;
 
             //in segment the target study must be there
@@ -97,13 +97,13 @@ public class QCRestful {
 
             qcManager.segment(
                     qcManager.locateInstances(object.getMoveSOPUIDS()),
-                    qcManager.locateInstances(object.getCloneSOPUIDs()), mergedAttrs);
+                    qcManager.locateInstances(object.getCloneSOPUIDs()), mergedAttrs, object.getQcRejectionCode());
             break;
 
         case "delete":
 
             qcManager.deleteMany(
-                    qcManager.locateInstances(object.getDeleteUIDs()), false);
+                    qcManager.locateInstances(object.getDeleteUIDs()), false, object.getQcRejectionCode());
             break;
 
         default:

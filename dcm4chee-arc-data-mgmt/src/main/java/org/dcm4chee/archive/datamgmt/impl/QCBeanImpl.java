@@ -90,27 +90,27 @@ public class QCBeanImpl  implements QCBean{
     EntityManager em;
 
     @Override
-    public void mergeStudies(String[] sourceStudyUids, String targetStudyUid) {
+    public void mergeStudies(String[] sourceStudyUids, String targetStudyUid, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
         LOG.info("Performing QC Merge Studies");
     }
 
     @Override
     public void merge(String sourceStudyUid, String targetStudyUid,
-            boolean samePatient) {
+            boolean samePatient, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
         LOG.info("Performing QC Merge");
     }
 
     @Override
-    public void split(Collection<Instance> toMove, Attributes createdStudy) {
+    public void split(Collection<Instance> toMove, Attributes createdStudy, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
         LOG.info("Performing QC Split");
     }
 
     @Override
     public void segment(Collection<Instance> toMove,
-            Collection<Instance> toClone, Attributes targetStudy) {
+            Collection<Instance> toClone, Attributes targetStudy, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
         LOG.info("Performing QC Segment");
     }
@@ -123,7 +123,7 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public void move(Instance source, Series target, Attributes targetInstance) {
+    public void move(Instance source, Series target, Attributes targetInstance, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
         
     }
@@ -135,7 +135,7 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public void delete(Instance source, boolean fully) {
+    public void delete(Instance source, boolean fully, org.dcm4che3.data.Code qcRejectionCode) {
 //        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
 //        RejectionParam[] codes = arcDevExt.getRejectionParams();
 //        Code cofiguredQCRejection;
@@ -151,7 +151,7 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public void deleteMany(Collection<Instance> instances, boolean fully) {
+    public void deleteMany(Collection<Instance> instances, boolean fully, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
 //        LOG.info("Performing QC Delete");
 //        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
@@ -233,7 +233,7 @@ public class QCBeanImpl  implements QCBean{
                 patientService.mergePatientByHL7(
                         targetPatientAttrs,
                         srcPatientAttrs, arcAEExt.getStoreParam());
-            }
+            } 
             return true;
         }
         catch(Exception e)
