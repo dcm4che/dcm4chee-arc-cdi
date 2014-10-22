@@ -474,11 +474,13 @@ public class StoreServiceImpl implements StoreService {
             Instance instance) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         Collection<FileRef> fileRefs = instance.getFileRefs();
-        if (fileRefs.isEmpty())
+        Collection<FileRef> fileAliasRefs = instance.getFileAliasTableRefs();
+        if (fileRefs.isEmpty() && fileAliasRefs.isEmpty())
             return StoreAction.RESTORE;
 
         if (hasSameSourceAET(instance, session.getRemoteAET())
-                && !hasFileRefWithDigest(fileRefs, context.getSpoolFileDigest()))
+                && (!hasFileRefWithDigest(fileRefs, context.getSpoolFileDigest()))
+                ||  !hasFileRefWithDigest(fileRefs, context.getSpoolFileDigest()))
             return StoreAction.REPLACE;
 
         return StoreAction.IGNORE;
@@ -506,6 +508,7 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
         Collection<FileRef> replaced = new ArrayList<FileRef>();
+        Collection<FileRef> replacedByAlias = new ArrayList<FileRef>();
 
         try {
             Attributes attrs = context.getAttributes();
@@ -526,8 +529,16 @@ public class StoreServiceImpl implements StoreService {
                 for (Iterator<FileRef> iter = inst.getFileRefs().iterator(); iter
                         .hasNext();) {
                     FileRef fileRef = iter.next();
+                    if(fileRef.getFileAliasTableInstances().isEmpty())
                     fileRef.setStatus(FileRef.Status.REPLACED);
                     replaced.add(fileRef);
+                    iter.remove();
+                }
+                for(Iterator<FileRef> iter = inst.getFileAliasTableRefs().iterator(); iter.hasNext();) {
+                    FileRef fileRef = iter.next();
+                    if(fileRef.getFileAliasTableInstances().isEmpty())
+                    fileRef.setStatus(FileRef.Status.REPLACED);
+                    replacedByAlias.add(fileRef);
                     iter.remove();
                 }
                 em.remove(inst);
@@ -541,10 +552,12 @@ public class StoreServiceImpl implements StoreService {
         }
 
         Instance newInst = service.createInstance(em, context);
-
         for (FileRef replacedRef : replaced)
             replacedRef.setInstance(newInst);
-
+        for(FileRef replacedRef : replacedByAlias) {
+            replacedRef.getFileAliasTableInstances().add(newInst);
+            newInst.getFileAliasTableRefs().add(replacedRef);
+        }
         return newInst;
     }
 
