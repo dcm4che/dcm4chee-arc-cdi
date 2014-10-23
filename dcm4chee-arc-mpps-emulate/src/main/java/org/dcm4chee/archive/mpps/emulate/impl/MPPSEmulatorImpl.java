@@ -4,7 +4,6 @@
 package org.dcm4chee.archive.mpps.emulate.impl;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
@@ -83,7 +82,7 @@ public class MPPSEmulatorImpl implements MPPSEmulator {
                 .getDevice().getDeviceExtension(ArchiveDeviceExtension.class);
         for (Series series : seriess) {
             Attributes seriesAttrs = series.getAttributes();
-            //TODO
+            //TODO 
             series.setAttributes(attrs, 
                     arcDev.getAttributeFilter(Entity.Series),
                     arcDev.getFuzzyStr());

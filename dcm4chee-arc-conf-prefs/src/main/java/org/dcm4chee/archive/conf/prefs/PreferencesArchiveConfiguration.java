@@ -552,8 +552,13 @@ public class PreferencesArchiveConfiguration extends
         PreferencesUtils.storeDiff(prefs, "dcmAcceptPreviousRejectedInstance",
                 prev.getOverwritePreviousRejection(),
                 rn.getOverwritePreviousRejection());
-        PreferencesUtils.storeDiff(prefs, "dcmRejectedObjectRetentionTime", prev.getRetentionTime(), rn.getRetentionTime());
-        PreferencesUtils.storeDiff(prefs, "dcmRejectedObjectRetentionTimeUnit", prev.getRetentionTimeUnit(), rn.getRetentionTimeUnit());
+        PreferencesUtils.storeDiff(prefs, "dcmRejectedObjectRetentionTime", 
+                prev.getRetentionTime(), 
+                rn.getRetentionTime(),
+                0);
+        PreferencesUtils.storeDiff(prefs, "dcmRejectedObjectRetentionTimeUnit",
+                prev.getRetentionTimeUnit(),
+                rn.getRetentionTimeUnit());
     }
 
     private void mergeQueryRetrieveViews(ArchiveDeviceExtension prev,

@@ -559,6 +559,23 @@ public class ArchiveDeviceTest {
         "ORM^O01"
     };
 
+    private static final int MPPS_EMULATOR_POLL_INTERVAL = 60;
+
+    private static final MPPSEmulation.Rule[] MPPS_EMULATOR_RULES = {
+        createMPPSEmulationRule("MPPS Emulation Rule 1", 120, "EMULATE_MPPS")
+    };
+
+    private static MPPSEmulation.Rule createMPPSEmulationRule(
+            String commonName,
+            int emulationDelay,
+            String... sourceAETs) {
+        MPPSEmulation.Rule rule = new MPPSEmulation.Rule();
+        rule.setCommonName(commonName);
+        rule.setEmulationDelay(emulationDelay);
+        rule.setSourceAETs(sourceAETs);
+        return rule ;
+    }
+
     private KeyStore keystore;
     private DicomConfiguration config;
     private HL7Configuration hl7Config;
@@ -1123,8 +1140,17 @@ public class ArchiveDeviceTest {
         sels.put("givenName", "BROAD");
         ps.setPatientSelectorProperties(sels);
         aeExt.setPatientSelectorConfig(ps);
-        
+        aeExt.setMppsEmulation(createMPPSEmulation());
         return ae;
+    }
+
+    private static MPPSEmulation createMPPSEmulation() {
+        MPPSEmulation mppsEmulator = new MPPSEmulation();
+        mppsEmulator.setPollInterval(MPPS_EMULATOR_POLL_INTERVAL);
+        for (MPPSEmulation.Rule rule : MPPS_EMULATOR_RULES) {
+            mppsEmulator.addMPPSEmulationRule(rule);
+        }
+        return mppsEmulator;
     }
 
     private ApplicationEntity createAnotherAE(String aet,

@@ -703,32 +703,42 @@ cn: HostNameAETitleMap
 dn: cn=Rejected for Quality Reasons,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dcmAcceptPreviousRejectedInstance: IGNORE
 objectClass: dcmRejectionNote
+dcmRejectedObjectRetentionTime: -1
 dcmRejectionNoteTitle: (113001, DCM, "Rejected for Quality Reasons")
+dcmRejectedObjectRetentionTimeUnit: DAYS
 cn: Rejected for Quality Reasons
 
 dn: cn=Rejected for Patient Safety Reasons,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRejectionNote
 dcmOverwritePreviousRejection: (113001, DCM, "Rejected for Quality Reasons")
+dcmRejectedObjectRetentionTime: -1
 dcmRejectionNoteTitle: (113037, DCM, "Rejected for Patient Safety Reasons")
+dcmRejectedObjectRetentionTimeUnit: DAYS
 cn: Rejected for Patient Safety Reasons
 
 dn: cn=Incorrect worklist entry selected,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRejectionNote
 dcmOverwritePreviousRejection: (113001, DCM, "Rejected for Quality Reasons")
+dcmRejectedObjectRetentionTime: -1
 dcmRejectionNoteTitle: (110514, DCM, "Incorrect worklist entry selected")
+dcmRejectedObjectRetentionTimeUnit: DAYS
 cn: Incorrect worklist entry selected
 
 dn: cn=Incorrect Modality Worklist Entry,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRejectionNote
 dcmOverwritePreviousRejection: (113001, DCM, "Rejected for Quality Reasons")
+dcmRejectedObjectRetentionTime: -1
 dcmRejectionNoteTitle: (113038, DCM, "Incorrect Modality Worklist Entry")
+dcmRejectedObjectRetentionTimeUnit: DAYS
 cn: Incorrect Modality Worklist Entry
 
 dn: cn=Data Retention Policy Expired,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dcmAcceptPreviousRejectedInstance: REPLACE
 objectClass: dcmRejectionNote
 dcmOverwritePreviousRejection: (113001, DCM, "Rejected for Quality Reasons")
+dcmRejectedObjectRetentionTime: -1
 dcmRejectionNoteTitle: (113039, DCM, "Data Retention Policy Expired")
+dcmRejectedObjectRetentionTimeUnit: DAYS
 cn: Data Retention Policy Expired
 
 dn: cn=Restore rejected Instances,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -739,7 +749,9 @@ dcmOverwritePreviousRejection: (113037, DCM, "Rejected for Patient Safety Reason
 dcmOverwritePreviousRejection: (110514, DCM, "Incorrect worklist entry selected")
 dcmOverwritePreviousRejection: (113038, DCM, "Incorrect Modality Worklist Entry")
 dcmOverwritePreviousRejection: (113039, DCM, "Data Retention Policy Expired")
+dcmRejectedObjectRetentionTime: -1
 dcmRejectionNoteTitle: (REVOKE_REJECTION, 99DCM4CHEE, "Restore rejected Instances")
+dcmRejectedObjectRetentionTimeUnit: DAYS
 cn: Restore rejected Instances
 
 dn: dcmQueryRetrieveViewID=hideRejected,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -4228,6 +4240,21 @@ dicomTransferSyntax: 1.2.840.10008.1.2.2
 objectClass: dicomTransferCapability
 objectClass: dcmTransferCapability
 cn: Encapsulated PDF Storage SCU
+
+dn: cn=dcmMPPSEmulation,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmMPPSEmulationPollInterval: 60
+objectClass: dcmMPPSEmulation
+cn: dcmMPPSEmulation
+
+dn: cn=dcmMPPSEmulationRules,cn=dcmMPPSEmulation,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dcmCollection
+cn: dcmMPPSEmulationRules
+
+dn: cn=MPPS Emulation Rule 1,cn=dcmMPPSEmulationRules,cn=dcmMPPSEmulation,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmAETitle: EMULATE_MPPS
+objectClass: dcmMPPSEmulationRule
+dcmMPPSEmulationDelay: 120
+cn: MPPS Emulation Rule 1
 
 dn: cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRetrieveSuppressionCriteria

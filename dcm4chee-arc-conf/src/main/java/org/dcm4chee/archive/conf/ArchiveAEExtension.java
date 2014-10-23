@@ -181,6 +181,9 @@ public class ArchiveAEExtension extends AEExtension {
 //    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
 //    private boolean timeZoneSupported;
 
+    @ConfigField(name = "dcmMPPSEmulation", def = "null", failIfNotPresent = false)
+    private MPPSEmulation mppsEmulation;
+
     @ConfigField(name = "dcmRetrieveSuppressionCriteria", def = "null", failIfNotPresent=false)
     private RetrieveSuppressionCriteria retrieveSuppressionCriteria = new RetrieveSuppressionCriteria();
 
@@ -597,6 +600,14 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setQueryRetrieveViewID(String queryRetrieveViewID) {
         this.queryRetrieveViewID = queryRetrieveViewID;
+    }
+
+    public MPPSEmulation getMppsEmulation() {
+        return mppsEmulation;
+    }
+
+    public void setMppsEmulation(MPPSEmulation mppsEmulation) {
+        this.mppsEmulation = mppsEmulation;
     }
 
 }
