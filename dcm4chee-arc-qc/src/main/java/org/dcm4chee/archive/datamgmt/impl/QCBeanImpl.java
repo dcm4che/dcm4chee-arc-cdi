@@ -27,10 +27,6 @@ import org.dcm4chee.archive.datamgmt.QCEvent.DataMgmtOperation;
 import org.dcm4chee.archive.datamgmt.QCNotification;
 import org.dcm4chee.archive.datamgmt.PatientCommands;
 import org.dcm4chee.archive.datamgmt.QCBean;
-import org.dcm4chee.archive.datamgmt.entities.QCActionHistory;
-import org.dcm4chee.archive.datamgmt.entities.QCInstanceHistory;
-import org.dcm4chee.archive.datamgmt.entities.QCSeriesHistory;
-import org.dcm4chee.archive.datamgmt.entities.QCStudyHistory;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
@@ -133,26 +129,26 @@ public class QCBeanImpl  implements QCBean{
         rejectionService.restore(this, locateInstances(sopInstanceUIDs), null);
     }
 
-    @Override
-    public void recordHistoryEntry(QCActionHistory action,
-            Collection<QCStudyHistory> study,
-            Collection<QCSeriesHistory> series,
-            Collection<QCInstanceHistory> instance) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public QCInstanceHistory findUIDChangesFromHistory(Instance instance) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void removeHistoryEntry(QCActionHistory action) {
-        // TODO Auto-generated method stub
-        
-    }
+//    @Override
+//    public void recordHistoryEntry(QCActionHistory action,
+//            Collection<QCStudyHistory> study,
+//            Collection<QCSeriesHistory> series,
+//            Collection<QCInstanceHistory> instance) {
+//        // TODO Auto-generated method stub
+//        
+//    }
+//
+//    @Override
+//    public QCInstanceHistory findUIDChangesFromHistory(Instance instance) {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
+//
+//    @Override
+//    public void removeHistoryEntry(QCActionHistory action) {
+//        // TODO Auto-generated method stub
+//        
+//    }
 
     @Override
     public boolean canApplyQC(Instance instance) {
@@ -209,11 +205,11 @@ public class QCBeanImpl  implements QCBean{
             return false;
         }
     }
-    @Override
-    public void undoLastAction(QCStudyHistory study) {
-        // TODO Auto-generated method stub
-        
-    }
+//    @Override
+//    public void undoLastAction(QCStudyHistory study) {
+//        // TODO Auto-generated method stub
+//        
+//    }
 
     @Override
     public Collection<Instance> locateInstances(String[] sopInstanceUIDs) {
