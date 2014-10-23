@@ -41,6 +41,7 @@ package org.dcm4chee.archive.entity;
 import static org.dcm4che3.data.PersonName.Group;
 import static org.dcm4che3.data.PersonName.Component;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -62,7 +63,9 @@ import org.dcm4che3.soundex.FuzzyStr;
  */
 @Entity
 @Table(name = "person_name")
-public class PersonName {
+public class PersonName implements Serializable {
+
+    private static final long serialVersionUID = -6581572195671154849L;
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

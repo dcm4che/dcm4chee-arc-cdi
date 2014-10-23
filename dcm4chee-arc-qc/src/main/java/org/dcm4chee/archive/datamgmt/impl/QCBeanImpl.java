@@ -17,7 +17,6 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
@@ -33,7 +32,6 @@ import org.dcm4chee.archive.datamgmt.entities.QCInstanceHistory;
 import org.dcm4chee.archive.datamgmt.entities.QCSeriesHistory;
 import org.dcm4chee.archive.datamgmt.entities.QCStudyHistory;
 import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
@@ -42,7 +40,6 @@ import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
-import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.iocm.RejectionService;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.slf4j.Logger;
@@ -57,13 +54,7 @@ public class QCBeanImpl  implements QCBean{
     private PatientService patientService;
 
     @Inject
-    private Device device;
-
-    @Inject
     private CodeService codeService;
-
-    @Inject
-    private FileMgmt fileManager;
 
     @Inject
     private IssuerService issuerService;
@@ -570,9 +561,14 @@ public class QCBeanImpl  implements QCBean{
                 Instance.FIND_BY_SOP_INSTANCE_UID_FETCH_FILE_REFS_AND_FS, Instance.class)
                 .setParameter(1, sopInstanceUID);
         Instance inst = query.getSingleResult();
-
-        scheduleDelete(inst);
-
+        String[] sopUID = new String[1];
+        sopUID[0]=sopInstanceUID;
+        Collection<Instance> tmpList = locateInstances(sopUID);
+        //reject to make sure no modality retrieves the item after it has been scheduled for delete and before it's actually deleted
+        rejectionService.reject(this, tmpList, codeService.findOrCreate(new Code("113037","DCM",null,"Rejected for Patient Safety Reasons")), null);
+        //schedule for deletion 
+        rejectionService.deleteRejected(this, tmpList);
+        
         Series series = inst.getSeries();
         Study study = series.getStudy();
         em.remove(inst);
@@ -581,36 +577,6 @@ public class QCBeanImpl  implements QCBean{
         study.clearQueryAttributes();
 
         return inst;
-    }
-
-    private void scheduleDelete(Instance inst) {
-        Collection<FileRef> tmpRefs = clone(inst.getFileRefs());
-
-        removefileReference(inst);
-        try {
-            fileManager.scheduleDelete(tmpRefs, 0);
-        } catch (Exception e) {
-            //ignore already handled by the EJB
-        }
-    }
-
-    private Collection<FileRef> clone(Collection<FileRef> refs)
-    {
-        ArrayList<FileRef> clone = new ArrayList<FileRef>();
-        Iterator<FileRef> iter = refs.iterator();
-        while(iter.hasNext())
-        {
-            FileRef ref = iter.next();
-            clone.add(ref);
-        }
-        return clone;
-    }
-
-    private void removefileReference(Instance inst) {
-        for(FileRef ref: inst.getFileRefs())
-            ref.setInstance(null);
-        inst.getFileRefs().clear();
-        
     }
 
     @Override

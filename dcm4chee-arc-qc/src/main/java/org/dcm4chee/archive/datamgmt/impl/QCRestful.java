@@ -110,7 +110,7 @@ public class QCRestful {
 
         case "restore":
 
-            qcManager.restore(
+            qcManager.restore( 
                     object.getRestoreOrRejectUIDs());
             break;
         default:
@@ -174,7 +174,7 @@ public class QCRestful {
     }
 
     @DELETE
-    @Path("/delete/studies/{StudyInstanceUID}")
+    @Path("delete/studies/{StudyInstanceUID}")
     public Response deleteStudy(
             @PathParam("StudyInstanceUID") String studyInstanceUID) {
         try {
@@ -191,7 +191,7 @@ public class QCRestful {
     }
 
     @DELETE
-    @Path("/delete/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
+    @Path("delete/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
     public Response deleteSeries(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
@@ -208,7 +208,7 @@ public class QCRestful {
     }
 
     @DELETE
-    @Path("/delete/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
+    @Path("delete/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
     public Response deleteInstance(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
@@ -227,7 +227,7 @@ public class QCRestful {
     }
 
     @DELETE
-    @Path("/purge/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
+    @Path("purge/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
     public Response deleteSeriesIfEmpty(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
@@ -241,7 +241,7 @@ public class QCRestful {
     }
 
     @DELETE
-    @Path("/purge/studies/{StudyInstanceUID}")
+    @Path("purge/studies/{StudyInstanceUID}")
     public Response deleteStudyIfEmpty(
             @PathParam("StudyInstanceUID") String studyInstanceUID) {
         RSP = "Study with UID = " + studyInstanceUID

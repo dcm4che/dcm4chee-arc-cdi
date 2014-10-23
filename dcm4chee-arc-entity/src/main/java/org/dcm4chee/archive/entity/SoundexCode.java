@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.entity;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
@@ -58,7 +59,9 @@ import org.dcm4che3.data.PersonName.Component;
  */
 @Entity
 @Table(name = "soundex_code")
-public class SoundexCode {
+public class SoundexCode implements Serializable{
+
+    private static final long serialVersionUID = -6597108452193541679L;
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

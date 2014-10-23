@@ -73,20 +73,21 @@ public class RejectionServiceEJB {
 
     public void deleteRejected(Object source, Collection<Instance> instances) {
         try {
-        ArrayList<FileRef> toBeDeleted = new ArrayList<FileRef>();
+        Collection<FileRef> toBeDeleted = null;
         for(Instance inst: instances) {
             inst = em.find(Instance.class, inst.getPk());
-            if(isRejected(inst)){
+              if(isRejected(inst)){
                 Collection<FileRef> tmpRefs = clone(inst.getFileRefs());
+                tmpRefs.addAll(inst.getFileAliasTableRefs());
                 inst.getSeries().clearQueryAttributes();
                 inst.getSeries().getStudy().clearQueryAttributes();
-                detachReferences(inst);
+                toBeDeleted = detachReferences(inst, tmpRefs);
                 em.remove(inst);
                 LOG.info("Removing {} and Scheduling delete for associated file references" , inst);
-                toBeDeleted.addAll(tmpRefs);
             }
         }
-        if(!toBeDeleted.isEmpty())
+
+        if(toBeDeleted!=null && !toBeDeleted.isEmpty())
             fileManager.scheduleDelete(toBeDeleted, 0);
         }
         catch(Exception e) {
@@ -112,10 +113,21 @@ public class RejectionServiceEJB {
         return clone;
     }
 
-    private void detachReferences(Instance inst) {
-        for(FileRef ref: inst.getFileRefs())
+    private Collection<FileRef> detachReferences(Instance inst, Collection<FileRef> refs) {
+        
+        for(Iterator<FileRef> iterator = refs.iterator(); iterator.hasNext();) {
+            FileRef ref = iterator.next();
+            if(ref.getFileAliasTableInstances().size() > 1 ||
+                    (ref.getFileAliasTableInstances().size() == 1 
+                    && !ref.getFileAliasTableInstances().contains(ref.getInstance()))) {
+                iterator.remove();
+                continue;
+            }
             ref.setInstance(null);
-        inst.getFileRefs().clear();
+        }
+
+        inst.getFileAliasTableRefs().clear();
+        return refs;
     }
 
     public Collection<Instance> findRejectedObjects(Code rejectionNote, Timestamp deadline) {
