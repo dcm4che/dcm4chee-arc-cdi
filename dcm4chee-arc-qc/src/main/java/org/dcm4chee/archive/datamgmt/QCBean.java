@@ -8,10 +8,6 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.datamgmt.entities.QCActionHistory;
-import org.dcm4chee.archive.datamgmt.entities.QCInstanceHistory;
-import org.dcm4chee.archive.datamgmt.entities.QCSeriesHistory;
-import org.dcm4chee.archive.datamgmt.entities.QCStudyHistory;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
@@ -33,13 +29,13 @@ public interface QCBean {
 
     public void clone(Instance source, Series target, Attributes targetInstance);
 
-    public void recordHistoryEntry(QCActionHistory action,
-            Collection<QCStudyHistory> study, Collection<QCSeriesHistory> series,
-            Collection<QCInstanceHistory> instance);
+//    public void recordHistoryEntry(QCActionHistory action,
+//            Collection<QCStudyHistory> study, Collection<QCSeriesHistory> series,
+//            Collection<QCInstanceHistory> instance);
 
-    public QCInstanceHistory findUIDChangesFromHistory(Instance instance);
+//    public QCInstanceHistory findUIDChangesFromHistory(Instance instance);
 
-    public void removeHistoryEntry(QCActionHistory action);
+//    public void removeHistoryEntry(QCActionHistory action);
 
     public boolean canApplyQC(Instance sopInstanceUID);
 
@@ -49,7 +45,7 @@ public interface QCBean {
     
     boolean patientOperation(Attributes sourcePatientAttributes, Attributes targetPatientAttributes, ArchiveAEExtension arcAEExt, PatientCommands command);
     
-    public void undoLastAction(QCStudyHistory study);
+//    public void undoLastAction(QCStudyHistory study);
 
     public Collection<Instance> locateInstances(String[] strings);
 
