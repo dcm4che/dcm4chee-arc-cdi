@@ -107,6 +107,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 arcDev.isDeIdentifyLogs(), false);
         LdapUtils.storeNotDef(attrs, "dcmRejectedObjectsCleanUpPollInterval", 
                 arcDev.getRejectedObjectsCleanUpPollInterval(), 0);
+        LdapUtils.storeNotDef(attrs, "dcmRejectedObjectsCleanUpMaxNumberOfDeletes", 
+                arcDev.getRejectedObjectsCleanUpMaxNumberOfDeletes(), 0);
         LdapUtils.storeNotDef(attrs, "dcmMppsEmulationPollInterval", 
                 arcDev.getMppsEmulationPollInterval(), 0);
    }
@@ -293,6 +295,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         arcdev.setDeIdentifyLogs(LdapUtils.booleanValue(attrs.get("dcmDeIdentifyLogs"), false));
         arcdev.setRejectedObjectsCleanUpPollInterval(
                 LdapUtils.intValue(attrs.get("dcmRejectedObjectsCleanUpPollInterval"), 0));
+        arcdev.setRejectedObjectsCleanUpMaxNumberOfDeletes(
+                LdapUtils.intValue(attrs.get("dcmRejectedObjectsCleanUpMaxNumberOfDeletes"), 0));
         arcdev.setMppsEmulationPollInterval(
                 LdapUtils.intValue(attrs.get("dcmMppsEmulationPollInterval"), 0));
 
@@ -502,6 +506,9 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         LdapUtils.storeDiff(mods, "dcmRejectedObjectsCleanUpPollInterval", 
                 aa.getRejectedObjectsCleanUpPollInterval(), 
                 bb.getRejectedObjectsCleanUpPollInterval(), 0);
+        LdapUtils.storeDiff(mods, "dcmRejectedObjectsCleanUpMaxNumberOfDeletes", 
+                aa.getRejectedObjectsCleanUpMaxNumberOfDeletes(), 
+                bb.getRejectedObjectsCleanUpMaxNumberOfDeletes(), 0);
         LdapUtils.storeDiff(mods, "dcmMppsEmulationPollInterval", 
                 aa.getMppsEmulationPollInterval(), 
                 bb.getMppsEmulationPollInterval(), 0);

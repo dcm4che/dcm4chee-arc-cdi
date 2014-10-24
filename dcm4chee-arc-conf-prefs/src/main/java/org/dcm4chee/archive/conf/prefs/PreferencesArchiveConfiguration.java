@@ -99,6 +99,8 @@ public class PreferencesArchiveConfiguration extends
                 arcDev.isDeIdentifyLogs(), false);
         PreferencesUtils.storeNotDef(prefs, "dcmRejectedObjectsCleanUpPollInterval", 
                 arcDev.getRejectedObjectsCleanUpPollInterval(), 0);
+        PreferencesUtils.storeNotDef(prefs, "dcmRejectedObjectsCleanUpMaxNumberOfDeletes", 
+                arcDev.getRejectedObjectsCleanUpMaxNumberOfDeletes(), 0);
         PreferencesUtils.storeNotDef(prefs, "dcmMppsEmulationPollInterval", 
                 arcDev.getMppsEmulationPollInterval(), 0);
     }
@@ -246,6 +248,8 @@ public class PreferencesArchiveConfiguration extends
                 "dcmDeIdentifyLogs", false));
         arcdev.setRejectedObjectsCleanUpPollInterval(prefs.getInt(
                 "dcmRejectedObjectsCleanUpPollInterval", 0));
+        arcdev.setRejectedObjectsCleanUpMaxNumberOfDeletes(prefs.getInt(
+                "dcmRejectedObjectsCleanUpMaxNumberOfDeletes", 0));
         arcdev.setMppsEmulationPollInterval(prefs.getInt(
                 "dcmMppsEmulationPollInterval", 0));
     }
@@ -421,6 +425,9 @@ public class PreferencesArchiveConfiguration extends
         PreferencesUtils.storeDiff(prefs, "dcmRejectedObjectsCleanUpPollInterval",
                 aa.getRejectedObjectsCleanUpPollInterval(), 
                 bb.getRejectedObjectsCleanUpPollInterval(),0);
+        PreferencesUtils.storeDiff(prefs, "dcmRejectedObjectsCleanUpMaxNumberOfDeletes",
+                aa.getRejectedObjectsCleanUpMaxNumberOfDeletes(), 
+                bb.getRejectedObjectsCleanUpMaxNumberOfDeletes(),0);
         PreferencesUtils.storeDiff(prefs, "dcmMppsEmulationPollInterval",
                 aa.getMppsEmulationPollInterval(), 
                 bb.getMppsEmulationPollInterval(),0);

@@ -360,9 +360,8 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.67 NAME 'dcmRejectedObjectRetentionTi
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.68 NAME 'dcmRejectedObjectsCleanUpPollInterval'
   DESC 'Specifies the poll interval for the rejected objects clean up service, time unit is seconds'
-  EQUALITY caseExactMatch
-  SUBSTR caseExactSubstringsMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.69 NAME 'dcmMPPSEmulationPollInterval'
   DESC 'Specifies the poll interval for MPPS Emulation, time unit is seconds'
@@ -371,6 +370,11 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.69 NAME 'dcmMPPSEmulationPollInterval
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.70 NAME 'dcmMPPSEmulationDelay'
   DESC 'Specifies delay of MPPS Emulation after receive of last object of a study, time unit is seconds'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.71 NAME 'dcmRejectedObjectsCleanUpMaxNumberOfDeletes'
+  DESC 'Specifies the maximum number of deletes performed each time the clean up service is invoked'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
@@ -386,6 +390,7 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmDeIdentifyLogs $
     dcmWadoAttributesStaleTimeout $
     dcmRejectedObjectsCleanUpPollInterval $
+    dcmRejectedObjectsCleanUpMaxNumberOfDeletes $
     dcmMPPSEmulationPollInterval ) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   DESC 'DICOM Archive Network AE related information'
