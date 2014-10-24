@@ -38,7 +38,6 @@
 
 package org.dcm4chee.archive.iocm;
 
-import java.sql.Timestamp;
 import java.util.Collection;
 
 import org.dcm4chee.archive.entity.Code;
@@ -55,8 +54,4 @@ public interface RejectionService {
 
     public int restore(Object source, Collection<Instance> instances,
             org.dcm4che3.data.Code[] prevRejectionCodes);
-
-    public void deleteRejected(Object source, Collection<Instance> instances);
-
-    public Collection<Instance> findRejectedObjects(Code rejectionNote, Timestamp deadline);
 }

@@ -38,11 +38,9 @@
 
 package org.dcm4chee.archive.iocm.impl;
 
-import java.sql.Timestamp;
 import java.util.Collection;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
@@ -50,6 +48,7 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.iocm.InstanceAlreadyRejectedException;
 import org.dcm4chee.archive.iocm.RejectionService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,9 +60,6 @@ import org.slf4j.LoggerFactory;
 public class RejectionServiceImpl implements RejectionService {
 
     private static Logger LOG = LoggerFactory.getLogger(RejectionServiceImpl.class);
-
-    @Inject
-    RejectionServiceEJB ejbUtility;
 
     @Override
     public int reject(Object source, Collection<Instance> instances,
@@ -123,17 +119,6 @@ public class RejectionServiceImpl implements RejectionService {
         Study study = series.getStudy();
         series.clearQueryAttributes();
         study.clearQueryAttributes();
-    }
-
-    @Override
-    public void deleteRejected(Object source, Collection<Instance> instances) {
-        ejbUtility.deleteRejected(source, instances);
-    }
-
-    @Override
-    public Collection<Instance> findRejectedObjects(Code rejectionNote,
-            Timestamp deadline) {
-        return ejbUtility.findRejectedObjects(rejectionNote, deadline);
     }
     
 }

@@ -81,7 +81,6 @@ public class FileMgmtEJB implements FileMgmt{
 
     @Override
     public void scheduleDelete(Collection<FileRef> refs, int delay) throws Exception {
-        
     for(FileRef ref: refs)
         try {
         Connection conn = connFactory.createConnection();
@@ -104,32 +103,26 @@ public class FileMgmtEJB implements FileMgmt{
     @Override
     public void failDelete(FileRef ref) {
         ref.setStatus(FileRef.Status.DELETE_FAILED);
-        em.merge(ref);
-        em.flush();
         LOG.warn("Failed to delete file {}, setting file reference status to {}",ref.getFilePath(),ref.getStatus() );
     }
 
     private void removeDeadFileRef(FileRef ref) {
 
         try {
-            em.merge(ref);
             em.remove(ref);
         }
         catch (Exception e)
         {
             LOG.error("Failed to remove File Ref {}", ref.toString());
         }
-        finally {
-            em.flush();
-        }
 
     }
 
     @Override
     public boolean doDelete(FileRef ref) {
-        ref = em.find(FileRef.class, ref.getPk());
-        File tmp = new File(ref.getFileSystem().getPath().toString(),ref.getFilePath());
         try{
+        File tmp = new File(ref.getFileSystem().getPath().toString(),ref.getFilePath());
+
             Files.delete(tmp.toPath());
         }
         catch(IOException e)
@@ -138,5 +131,12 @@ public class FileMgmtEJB implements FileMgmt{
         }
         removeDeadFileRef(ref);
         return true;
+    }
+
+    @Override
+    public FileRef reattachRef(FileRef ref) {
+        long pk = ref.getPk();
+        FileRef reattached =  em.find(FileRef.class, pk);
+        return reattached;
     }
 }

@@ -58,7 +58,7 @@ import org.dcm4chee.archive.conf.RejectionParam;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
-import org.dcm4chee.archive.iocm.RejectionService;
+import org.dcm4chee.archive.iocm.RejectionServiceDeleteBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +72,7 @@ public class RejectedObjectCleanUpService {
     private static final Logger LOG = LoggerFactory.getLogger(RejectedObjectCleanUpService.class);
 
     @Inject
-    private RejectionService rejectionService;
+    private RejectionServiceDeleteBean rejectionServiceDeleteEJB;
 
     @Inject
     private CodeService codeService;
@@ -94,12 +94,12 @@ public class RejectedObjectCleanUpService {
                         TimeUnit.MILLISECONDS.convert(
                                 rn.getRetentionTime(), rn.getRetentionTimeUnit()));
 
-                rejectedObjects.addAll(rejectionService.findRejectedObjects(
+                rejectedObjects.addAll(rejectionServiceDeleteEJB.findRejectedObjects(
                        codeService.findOrCreate(
                                new Code(rn.getRejectionNoteTitle())), retentionUnitsAgo));
                 }
             }
-                rejectionService.deleteRejected(cleanUpTask, rejectedObjects);
+            rejectionServiceDeleteEJB.deleteRejected(cleanUpTask, rejectedObjects);
         }
     };
 

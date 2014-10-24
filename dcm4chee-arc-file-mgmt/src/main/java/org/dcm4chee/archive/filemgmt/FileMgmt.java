@@ -58,5 +58,7 @@ public interface FileMgmt {
     //sets file-ref status to delete failed
     void failDelete(FileRef ref);
 
+    FileRef reattachRef(FileRef ref);
+
 
 }

@@ -72,13 +72,13 @@ public class FileMgmtMDB implements MessageListener{
     public void onMessage(Message message) {
         try {
             //TODO - AUDIT here using provided properties
-            FileRef ref = (FileRef)((ObjectMessage) message).getObject();
-            if(fileManager.doDelete(ref)){
-                LOG.info("Delete {} ",ref.getFilePath());
+            FileRef refAttached = fileManager.reattachRef((FileRef)((ObjectMessage) message).getObject());
+            if(fileManager.doDelete(refAttached)){
+                LOG.info("Delete {} ",refAttached.getFilePath());
             }
             else
             {
-                fileManager.failDelete(ref);
+                fileManager.failDelete(refAttached);
             }
         } catch (Throwable th) {
             LOG.warn("Failed to process " + message, th);

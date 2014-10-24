@@ -37,6 +37,7 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.iocm.RejectionService;
+import org.dcm4chee.archive.iocm.RejectionServiceDeleteBean;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +58,10 @@ public class QCBeanImpl  implements QCBean{
 
     @Inject
     private RejectionService rejectionService;
+
+    @Inject 
+    private RejectionServiceDeleteBean rejectionServiceDeleteEJB;
+    
     @Inject
     @QCNotification
     Event<QCEvent> internalNotification;
@@ -217,7 +222,9 @@ public class QCBeanImpl  implements QCBean{
         for(String sopInstanceUID : sopInstanceUIDs) {
         Query query  = em.createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER);
         query.setParameter(1, sopInstanceUID);
-        list.add((Instance)query.getSingleResult());
+        Instance inst =(Instance)query.getSingleResult();
+        if(!list.contains(inst))
+        list.add(inst);
         }
         return list;
     }
@@ -563,7 +570,7 @@ public class QCBeanImpl  implements QCBean{
         //reject to make sure no modality retrieves the item after it has been scheduled for delete and before it's actually deleted
         rejectionService.reject(this, tmpList, codeService.findOrCreate(new Code("113037","DCM",null,"Rejected for Patient Safety Reasons")), null);
         //schedule for deletion 
-        rejectionService.deleteRejected(this, tmpList);
+        rejectionServiceDeleteEJB.deleteRejected(this, tmpList);
         
         Series series = inst.getSeries();
         Study study = series.getStudy();
