@@ -105,7 +105,7 @@ public class DefaultRetrieveService implements RetrieveService {
         QInstance.instance.sopInstanceUID,
         QInstance.instance.retrieveAETs,
         QInstance.instance.externalRetrieveAET,
-        QueryBuilder.instanceAttributesBlob
+        QueryBuilder.instanceAttributesBlob.encodedAttributes
     };
 
     @Inject
