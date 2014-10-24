@@ -385,7 +385,8 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmConfigurationStaleTimeout $
     dcmDeIdentifyLogs $
     dcmWadoAttributesStaleTimeout $
-    dcmRejectedObjectsCleanUpPollInterval ) )
+    dcmRejectedObjectsCleanUpPollInterval $
+    dcmMPPSEmulationPollInterval ) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   DESC 'DICOM Archive Network AE related information'
   SUP top AUXILIARY
@@ -510,15 +511,7 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.20 NAME 'dcmQueryRetrieveView'
     dcmShowInstancesRejectedByCode $
     dcmHideRejectionNoteWithCode $
     dcmHideNotRejectedInstances ) )
-olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.21 NAME 'dcmMPPSEmulation'
-  DESC 'Specifies MPPS Emulation properties'
-  SUP top
-  STRUCTURAL
-  MUST (
-    cn )
-  MAY (
-    dcmMPPSEmulationPollInterval ) )
-olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.22 NAME 'dcmMPPSEmulationRule'
+olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.21 NAME 'dcmMPPSEmulationRule'
   DESC 'Specifies MPPS Emulation rule'
   SUP top
   STRUCTURAL

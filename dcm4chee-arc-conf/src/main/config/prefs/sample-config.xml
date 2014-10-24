@@ -16,6 +16,7 @@
             <entry key="dcmKeyStorePin" value="secret"/>
             <entry key="dcmKeyStoreType" value="JKS"/>
             <entry key="dcmKeyStoreURL" value="${jboss.server.config.url}/dcm4chee-arc/key.jks"/>
+            <entry key="dcmMppsEmulationPollInterval" value="60"/>
             <entry key="dcmWadoAttributesStaleTimeout" value="60"/>
             <entry key="dicomAuthorizedNodeCertificateReference.#" value="11"/>
             <entry key="dicomAuthorizedNodeCertificateReference.1" value="dicomConfigurationRoot/dicomDevicesRoot/dcmqrscp"/>
@@ -491,6 +492,17 @@
                     <entry key="dcmPhotometricInterpretation.2" value="MONOCHROME2"/>
                     <entry key="dcmPhotometricInterpretation.3" value="RGB"/>
                     <entry key="dicomTransferSyntax" value="1.2.840.10008.1.2.4.50"/>
+                  </map>
+                </node>
+              </node>
+              <node name="dcmMPPSEmulationRules">
+                <map/>
+                <node name="MPPS Emulation Rule 1">
+                  <map>
+                    <entry key="cn" value="MPPS Emulation Rule 1"/>
+                    <entry key="dcmAETitle.#" value="1"/>
+                    <entry key="dcmAETitle.1" value="EMULATE_MPPS"/>
+                    <entry key="dcmMPPSEmulationDelay" value="120"/>
                   </map>
                 </node>
               </node>
@@ -3645,6 +3657,9 @@
               <node name="dcmCompressionRule">
                 <map/>
               </node>
+              <node name="dcmMPPSEmulationRules">
+                <map/>
+              </node>
               <node name="dcmRetrieveSuppressionCriteria">
                 <map/>
                 <node name="dcmRetrieveSuppressionCriteriaMap">
@@ -5279,6 +5294,9 @@
                 <map/>
               </node>
               <node name="dcmCompressionRule">
+                <map/>
+              </node>
+              <node name="dcmMPPSEmulationRules">
                 <map/>
               </node>
               <node name="dcmRetrieveSuppressionCriteria">
@@ -6969,6 +6987,8 @@
             <node name="1">
               <map>
                 <entry key="dcmAcceptPreviousRejectedInstance" value="IGNORE"/>
+                <entry key="dcmRejectedObjectRetentionTime" value="-1"/>
+                <entry key="dcmRejectedObjectRetentionTimeUnit" value="DAYS"/>
                 <entry key="dcmRejectionNoteTitle" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
               </map>
             </node>
@@ -6976,6 +6996,8 @@
               <map>
                 <entry key="dcmOverwritePreviousRejection.#" value="1"/>
                 <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectedObjectRetentionTime" value="-1"/>
+                <entry key="dcmRejectedObjectRetentionTimeUnit" value="DAYS"/>
                 <entry key="dcmRejectionNoteTitle" value="(113037, DCM, &quot;Rejected for Patient Safety Reasons&quot;)"/>
               </map>
             </node>
@@ -6983,6 +7005,8 @@
               <map>
                 <entry key="dcmOverwritePreviousRejection.#" value="1"/>
                 <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectedObjectRetentionTime" value="-1"/>
+                <entry key="dcmRejectedObjectRetentionTimeUnit" value="DAYS"/>
                 <entry key="dcmRejectionNoteTitle" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
               </map>
             </node>
@@ -6990,6 +7014,8 @@
               <map>
                 <entry key="dcmOverwritePreviousRejection.#" value="1"/>
                 <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectedObjectRetentionTime" value="-1"/>
+                <entry key="dcmRejectedObjectRetentionTimeUnit" value="DAYS"/>
                 <entry key="dcmRejectionNoteTitle" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
               </map>
             </node>
@@ -6998,6 +7024,8 @@
                 <entry key="dcmAcceptPreviousRejectedInstance" value="REPLACE"/>
                 <entry key="dcmOverwritePreviousRejection.#" value="1"/>
                 <entry key="dcmOverwritePreviousRejection.1" value="(113001, DCM, &quot;Rejected for Quality Reasons&quot;)"/>
+                <entry key="dcmRejectedObjectRetentionTime" value="-1"/>
+                <entry key="dcmRejectedObjectRetentionTimeUnit" value="DAYS"/>
                 <entry key="dcmRejectionNoteTitle" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
               </map>
             </node>
@@ -7009,6 +7037,8 @@
                 <entry key="dcmOverwritePreviousRejection.3" value="(110514, DCM, &quot;Incorrect worklist entry selected&quot;)"/>
                 <entry key="dcmOverwritePreviousRejection.4" value="(113038, DCM, &quot;Incorrect Modality Worklist Entry&quot;)"/>
                 <entry key="dcmOverwritePreviousRejection.5" value="(113039, DCM, &quot;Data Retention Policy Expired&quot;)"/>
+                <entry key="dcmRejectedObjectRetentionTime" value="-1"/>
+                <entry key="dcmRejectedObjectRetentionTimeUnit" value="DAYS"/>
                 <entry key="dcmRejectionNoteTitle" value="(REVOKE_REJECTION, 99DCM4CHEE, &quot;Restore rejected Instances&quot;)"/>
                 <entry key="dcmRevokeRejection" value="true"/>
               </map>

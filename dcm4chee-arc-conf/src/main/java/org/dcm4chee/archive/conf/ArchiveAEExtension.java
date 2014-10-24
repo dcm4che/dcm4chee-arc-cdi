@@ -38,7 +38,6 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +47,6 @@ import javax.xml.transform.TransformerConfigurationException;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
-import org.dcm4che3.conf.api.generic.ConfigClass;
 import org.dcm4che3.conf.api.generic.ConfigField;
 import org.dcm4che3.conf.api.generic.ReflectiveConfig;
 import org.dcm4che3.imageio.codec.CompressionRule;
@@ -181,9 +179,6 @@ public class ArchiveAEExtension extends AEExtension {
 //    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
 //    private boolean timeZoneSupported;
 
-    @ConfigField(name = "dcmMPPSEmulation", def = "null", failIfNotPresent = false)
-    private MPPSEmulation mppsEmulation;
-
     @ConfigField(name = "dcmRetrieveSuppressionCriteria", def = "null", failIfNotPresent=false)
     private RetrieveSuppressionCriteria retrieveSuppressionCriteria = new RetrieveSuppressionCriteria();
 
@@ -196,34 +191,14 @@ public class ArchiveAEExtension extends AEExtension {
         this.retrieveSuppressionCriteria = retrieveSuppressionCriteria;
     }
 
-    @ConfigClass(objectClass = "dcmRetrieveSuppressionCriteria")
-    public static class RetrieveSuppressionCriteria implements Serializable {
-    private static final long serialVersionUID = -7215371541145445328L;
-    
-    @ConfigField(name = "dcmCheckTransferCapabilities", def = "false")
-    private boolean checkTransferCapabilities;
+    // will be converted to Collection<Rule>, when supported by generic configuration
+    @ConfigField(name = "dcmMPPSEmulationRules", mapKey = "cn", failIfNotPresent=false)
+    private Map<String, MPPSEmulationRule> mppsEmulationRules = 
+            new HashMap<String, MPPSEmulationRule>();
 
-    @ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSuppressionCriteriaEntry", failIfNotPresent=false)
-    private Map<String, String> suppressionCriteriaMap = new HashMap<String, String>();
+    private Map<String, MPPSEmulationRule> mppsEmulationRuleMap =
+            new HashMap<String, MPPSEmulationRule>();
 
-    public boolean isCheckTransferCapabilities() {
-        return checkTransferCapabilities;
-    }
-
-    public void setCheckTransferCapabilities(boolean checkTransferCapabilities) {
-        this.checkTransferCapabilities = checkTransferCapabilities;
-    }
-
-    public Map<String, String> getSuppressionCriteriaMap() {
-        return suppressionCriteriaMap;
-    }
-
-    public void setSuppressionCriteriaMap(Map<String, String> suppressionCriteriaMap) {
-        this.suppressionCriteriaMap = suppressionCriteriaMap;
-    }
-
-    }
-    
     @ConfigField(name = "dcmPatientSelector", def = "null", failIfNotPresent = false)
     private PatientSelectorConfig patientSelectorConfig;
 
@@ -602,12 +577,27 @@ public class ArchiveAEExtension extends AEExtension {
         this.queryRetrieveViewID = queryRetrieveViewID;
     }
 
-    public MPPSEmulation getMppsEmulation() {
-        return mppsEmulation;
+    public Map<String, MPPSEmulationRule> getMppsEmulationRules() {
+        return mppsEmulationRules;
     }
 
-    public void setMppsEmulation(MPPSEmulation mppsEmulation) {
-        this.mppsEmulation = mppsEmulation;
+    public void setMppsEmulationRules(Map<String, MPPSEmulationRule> rules) {
+        this.mppsEmulationRules.clear();
+        this.mppsEmulationRuleMap.clear();
+        for (MPPSEmulationRule rule : rules.values()) {
+            addMppsEmulationRule(rule);
+        }
+    }
+
+    public MPPSEmulationRule getMppsEmulationRule(String sourceAET) {
+        return mppsEmulationRuleMap.get(sourceAET);
+    }
+
+    public void addMppsEmulationRule(MPPSEmulationRule rule) {
+        mppsEmulationRules.put(rule.getCommonName(), rule);
+        for (String sourceAET : rule.getSourceAETs()) {
+            mppsEmulationRuleMap.put(sourceAET, rule);
+        }
     }
 
 }

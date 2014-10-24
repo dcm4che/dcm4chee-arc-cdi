@@ -471,6 +471,7 @@ dcmKeyStorePin: secret
 dcmKeyStoreType: JKS
 dcmConfigurationStaleTimeout: 60
 dcmKeyStoreURL: ${jboss.server.config.url}/dcm4chee-arc/key.jks
+dcmMPPSEmulationPollInterval: 60
 dicomAuthorizedNodeCertificateReference: dicomDeviceName=dcmqrscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomAuthorizedNodeCertificateReference: dicomDeviceName=stgcmtscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomAuthorizedNodeCertificateReference: dicomDeviceName=storescp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -4241,21 +4242,6 @@ objectClass: dicomTransferCapability
 objectClass: dcmTransferCapability
 cn: Encapsulated PDF Storage SCU
 
-dn: cn=dcmMPPSEmulation,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMPPSEmulationPollInterval: 60
-objectClass: dcmMPPSEmulation
-cn: dcmMPPSEmulation
-
-dn: cn=dcmMPPSEmulationRules,cn=dcmMPPSEmulation,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-objectClass: dcmCollection
-cn: dcmMPPSEmulationRules
-
-dn: cn=MPPS Emulation Rule 1,cn=dcmMPPSEmulationRules,cn=dcmMPPSEmulation,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmAETitle: EMULATE_MPPS
-objectClass: dcmMPPSEmulationRule
-dcmMPPSEmulationDelay: 120
-cn: MPPS Emulation Rule 1
-
 dn: cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRetrieveSuppressionCriteria
 cn: dcmRetrieveSuppressionCriteria
@@ -4263,6 +4249,16 @@ cn: dcmRetrieveSuppressionCriteria
 dn: cn=dcmRetrieveSuppressionCriteriaMap,cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmCollection
 cn: dcmRetrieveSuppressionCriteriaMap
+
+dn: cn=dcmMPPSEmulationRules,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dcmCollection
+cn: dcmMPPSEmulationRules
+
+dn: cn=MPPS Emulation Rule 1,cn=dcmMPPSEmulationRules,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmAETitle: EMULATE_MPPS
+objectClass: dcmMPPSEmulationRule
+dcmMPPSEmulationDelay: 120
+cn: MPPS Emulation Rule 1
 
 dn: cn=dcmPatientSelector,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmPatientSelectorClass
@@ -6132,6 +6128,10 @@ dn: cn=dcmRetrieveSuppressionCriteriaMap,cn=dcmRetrieveSuppressionCriteria,dicom
 objectClass: dcmCollection
 cn: dcmRetrieveSuppressionCriteriaMap
 
+dn: cn=dcmMPPSEmulationRules,dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dcmCollection
+cn: dcmMPPSEmulationRules
+
 dn: dicomAETitle=DCM4CHEE_TRASH,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -7873,4 +7873,8 @@ cn: dcmRetrieveSuppressionCriteria
 dn: cn=dcmRetrieveSuppressionCriteriaMap,cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE_TRASH,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmCollection
 cn: dcmRetrieveSuppressionCriteriaMap
+
+dn: cn=dcmMPPSEmulationRules,dicomAETitle=DCM4CHEE_TRASH,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dcmCollection
+cn: dcmMPPSEmulationRules
 

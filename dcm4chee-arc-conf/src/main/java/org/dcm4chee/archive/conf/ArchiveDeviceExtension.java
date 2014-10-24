@@ -75,6 +75,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private RejectionParam[] rejectionParams = {};
     private QueryRetrieveView[] queryRetrieveViews = {};
     private int rejectedObjectsCleanUpPollInterval;
+    private int mppsEmulationPollInterval;
     
     public boolean isHostnameAEresoultion() {
         return hostnameAEresoultion;
@@ -170,6 +171,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.rejectedObjectsCleanUpPollInterval = rejectedObjectsCleanUpPollInterval;
     }
 
+    public int getMppsEmulationPollInterval() {
+        return mppsEmulationPollInterval;
+    }
+
+    public void setMppsEmulationPollInterval(int mppsEmulationPollInterval) {
+        this.mppsEmulationPollInterval = mppsEmulationPollInterval;
+    }
+
     public void clearTemplatesCache() {
         TemplatesCache cache = templatesCache;
         if (cache != null)
@@ -226,6 +235,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         setQueryRetrieveViews(arcdev.getQueryRetrieveViews());
         setWadoAttributesStaleTimeout(arcdev.getWadoAttributesStaleTimeout());
         setRejectedObjectsCleanUpPollInterval(arcdev.getRejectedObjectsCleanUpPollInterval());
+        setMppsEmulationPollInterval(arcdev.mppsEmulationPollInterval);
     }
 
     public StoreParam getStoreParam() {

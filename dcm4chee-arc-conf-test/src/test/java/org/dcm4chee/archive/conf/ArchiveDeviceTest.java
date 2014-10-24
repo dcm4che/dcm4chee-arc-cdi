@@ -561,15 +561,11 @@ public class ArchiveDeviceTest {
 
     private static final int MPPS_EMULATOR_POLL_INTERVAL = 60;
 
-    private static final MPPSEmulation.Rule[] MPPS_EMULATOR_RULES = {
-        createMPPSEmulationRule("MPPS Emulation Rule 1", 120, "EMULATE_MPPS")
-    };
-
-    private static MPPSEmulation.Rule createMPPSEmulationRule(
+    private static MPPSEmulationRule createMPPSEmulationRule(
             String commonName,
             int emulationDelay,
             String... sourceAETs) {
-        MPPSEmulation.Rule rule = new MPPSEmulation.Rule();
+        MPPSEmulationRule rule = new MPPSEmulationRule();
         rule.setCommonName(commonName);
         rule.setEmulationDelay(emulationDelay);
         rule.setSourceAETs(sourceAETs);
@@ -869,6 +865,7 @@ public class ArchiveDeviceTest {
         arcDevExt.setWadoAttributesStaleTimeout(WADO_ATTRIBUTES_STALE_TIMEOUT);
         arcDevExt.setRejectionParams(createRejectionNotes());
         arcDevExt.setQueryRetrieveViews(QUERY_RETRIEVE_VIEWS);
+        arcDevExt.setMppsEmulationPollInterval(MPPS_EMULATOR_POLL_INTERVAL);
         setAttributeFilters(arcDevExt);
         device.setManufacturer("dcm4che.org");
         device.setManufacturerModelName("dcm4chee-arc");
@@ -1140,17 +1137,9 @@ public class ArchiveDeviceTest {
         sels.put("givenName", "BROAD");
         ps.setPatientSelectorProperties(sels);
         aeExt.setPatientSelectorConfig(ps);
-        aeExt.setMppsEmulation(createMPPSEmulation());
+        aeExt.addMppsEmulationRule(
+                createMPPSEmulationRule("MPPS Emulation Rule 1", 120, "EMULATE_MPPS"));
         return ae;
-    }
-
-    private static MPPSEmulation createMPPSEmulation() {
-        MPPSEmulation mppsEmulator = new MPPSEmulation();
-        mppsEmulator.setPollInterval(MPPS_EMULATOR_POLL_INTERVAL);
-        for (MPPSEmulation.Rule rule : MPPS_EMULATOR_RULES) {
-            mppsEmulator.addMPPSEmulationRule(rule);
-        }
-        return mppsEmulator;
     }
 
     private ApplicationEntity createAnotherAE(String aet,
