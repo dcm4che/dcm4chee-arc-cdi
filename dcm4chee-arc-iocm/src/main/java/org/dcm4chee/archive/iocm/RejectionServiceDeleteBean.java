@@ -12,6 +12,6 @@ public interface RejectionServiceDeleteBean {
             Collection<Instance> instances);
 
     public abstract Collection<Instance> findRejectedObjects(
-            Code rejectionNote, Timestamp deadline);
+            Code rejectionNote, Timestamp deadline, int maxDeletes);
 
 }

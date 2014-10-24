@@ -81,6 +81,7 @@ public class RejectedObjectCleanUpService {
 
     ScheduledFuture<?> cleanUpResult;
     private boolean running;
+    private int maxNumberOfDeletes;
     private Runnable cleanUpTask = new Runnable() {
         @Override
         public void run() {
@@ -96,7 +97,7 @@ public class RejectedObjectCleanUpService {
 
                 rejectedObjects.addAll(rejectionServiceDeleteEJB.findRejectedObjects(
                        codeService.findOrCreate(
-                               new Code(rn.getRejectionNoteTitle())), retentionUnitsAgo));
+                               new Code(rn.getRejectionNoteTitle())), retentionUnitsAgo, getMaxNumberOfDeletes()));
                 }
             }
             rejectionServiceDeleteEJB.deleteRejected(cleanUpTask, rejectedObjects);
@@ -112,7 +113,8 @@ public class RejectedObjectCleanUpService {
         LOG.info("Initializing Rejected Objects CleanUp Thread");
         cleanUpResult = device.scheduleWithFixedDelay(
                 cleanUpTask, 0,poll,TimeUnit.SECONDS);
-        LOG.info("Initialized Rejected Objects CleanUp Thread with an Interval of {} SECONDS",poll);
+        setMaxNumberOfDeletes(arcdevExt.getRejectedObjectsCleanUpMaxNumberOfDeletes());
+        LOG.info("Initialized Rejected Objects CleanUp Thread with an Interval of {} SECONDS, Maximum files to delete per execution {}",poll,getMaxNumberOfDeletes());
         }
     
 
@@ -156,6 +158,18 @@ public class RejectedObjectCleanUpService {
 
     public void setRunning(boolean running) {
         this.running = running;
+    }
+
+
+
+    public int getMaxNumberOfDeletes() {
+        return maxNumberOfDeletes;
+    }
+
+
+
+    public void setMaxNumberOfDeletes(int maxNumberOfDeletes) {
+        this.maxNumberOfDeletes = maxNumberOfDeletes;
     }
 
 }

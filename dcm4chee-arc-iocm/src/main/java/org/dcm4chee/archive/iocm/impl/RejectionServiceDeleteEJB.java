@@ -79,7 +79,7 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
     @Override
     public void deleteRejected(Object source, Collection<Instance> instances) {
         try {
-        Collection<FileRef> toBeDeleted = null;
+        Collection<FileRef> toBeDeleted = new HashSet<FileRef>();
         for(Instance inst: instances) {
             inst = em.merge(inst);
               if(isRejected(inst)){
@@ -87,12 +87,12 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
                 tmpRefs.addAll(inst.getFileAliasTableRefs());
                 inst.getSeries().clearQueryAttributes();
                 inst.getSeries().getStudy().clearQueryAttributes();
-                toBeDeleted = detachReferences(inst, tmpRefs);
+                toBeDeleted.addAll(detachReferences(inst, tmpRefs));
                 em.remove(inst);
                 LOG.info("Removing {} and Scheduling delete for associated file references" , inst);
             }
         }
-
+        em.flush();
         if(toBeDeleted!=null && !toBeDeleted.isEmpty())
             fileManager.scheduleDelete(toBeDeleted, 0);
         }
@@ -199,11 +199,13 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
      * @see org.dcm4chee.archive.iocm.impl.RejectionServiceDeleteBean#findRejectedObjects(org.dcm4chee.archive.entity.Code, java.sql.Timestamp)
      */
     @Override
-    public Collection<Instance> findRejectedObjects(Code rejectionNote, Timestamp deadline) {
+    public Collection<Instance> findRejectedObjects(Code rejectionNote, Timestamp deadline, int maxDeletes) {
         String queryStr = "SELECT i FROM Instance i WHERE i.rejectionNoteCode = ?1 and i.updatedTime < :deadline";
         Query query = null;
         try{
         query = em.createQuery(queryStr);
+        if(maxDeletes > 0)
+        query.setMaxResults(maxDeletes);
         }
         catch(Exception e)
         {
