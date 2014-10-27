@@ -532,6 +532,7 @@ public class StoreServiceImpl implements StoreService {
                     if(fileRef.getFileAliasTableInstances().isEmpty())
                     fileRef.setStatus(FileRef.Status.REPLACED);
                     replaced.add(fileRef);
+                    fileRef.setInstance(null);
                     iter.remove();
                 }
                 for(Iterator<FileRef> iter = inst.getFileAliasTableRefs().iterator(); iter.hasNext();) {
