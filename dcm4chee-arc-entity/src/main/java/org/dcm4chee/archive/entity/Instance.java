@@ -297,7 +297,7 @@ public class Instance implements Serializable {
     private Series series;
 
     @ManyToMany
-    @JoinTable(name="file_alias_table",
+    @JoinTable(name="rel_instance_file_ref",
     joinColumns={@JoinColumn(name="instance_fk", referencedColumnName="pk")},
     inverseJoinColumns={@JoinColumn(name="file_ref_fk", referencedColumnName="pk")})
     private Collection<FileRef> fileAliasTableRefs;

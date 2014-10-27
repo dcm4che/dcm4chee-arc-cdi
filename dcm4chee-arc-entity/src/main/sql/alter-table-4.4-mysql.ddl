@@ -391,5 +391,20 @@ alter table series
     drop ext_retr_aet,
     drop availability;
 
+create table rel_instance_file_ref (
+    instance_fk bigint not null,
+    file_ref_fk bigint not null
+) ENGINE=InnoDB;
+
+alter table rel_instance_file_ref 
+    add constraint FKEA5CC19493CF1065 
+    foreign key (file_ref_fk) 
+    references file_ref (pk);
+
+alter table rel_instance_file_ref 
+    add constraint FKEA5CC19437EDB1AA 
+    foreign key (instance_fk) 
+    references instance (pk);
+
 create index study_view_id_idx on study_query_attrs(view_id);
 create index series_view_id_idx on series_query_attrs(view_id);
