@@ -46,7 +46,6 @@ import java.util.Iterator;
 
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
@@ -54,7 +53,6 @@ import javax.persistence.Query;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.iocm.RejectionServiceDeleteBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,18 +64,12 @@ import org.slf4j.LoggerFactory;
 @Stateless
 public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
     static Logger LOG = LoggerFactory.getLogger(RejectionServiceDeleteEJB.class);
-    @Inject
-    public FileMgmt fileManager;
-    
+
     @PersistenceContext(unitName = "dcm4chee-arc")
     public EntityManager em;
     
-
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.iocm.impl.RejectionServiceDeleteBean#deleteRejected(java.lang.Object, java.util.Collection)
-     */
     @Override
-    public void deleteRejected(Object source, Collection<Instance> instances) {
+    public Collection<FileRef> deleteRejected(Object source, Collection<Instance> instances) {
         try {
         Collection<FileRef> toBeDeleted = new HashSet<FileRef>();
         for(Instance inst: instances) {
@@ -92,14 +84,14 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
                 LOG.info("Removing {} and Scheduling delete for associated file references" , inst);
             }
         }
-        em.flush();
-        if(toBeDeleted!=null && !toBeDeleted.isEmpty())
-            fileManager.scheduleDelete(toBeDeleted, 0);
+
+           return toBeDeleted;
         }
         catch(Exception e) {
             LOG.error("{}: Error deleting rejected objects, Transaction rolled back", e);
             throw new EJBException(e.getMessage());
         }
+
     }
 
     private boolean isRejected(Instance inst) {
@@ -190,14 +182,9 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
             iterator.remove();
         }
 
-        HashSet<FileRef> setNoDuplicates = new HashSet<FileRef>();
-        setNoDuplicates.addAll(refs);
-        return setNoDuplicates;
+        return refs;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.iocm.impl.RejectionServiceDeleteBean#findRejectedObjects(org.dcm4chee.archive.entity.Code, java.sql.Timestamp)
-     */
     @Override
     public Collection<Instance> findRejectedObjects(Code rejectionNote, Timestamp deadline, int maxDeletes) {
         String queryStr = "SELECT i FROM Instance i WHERE i.rejectionNoteCode = ?1 and i.updatedTime < :deadline";

@@ -54,7 +54,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @ApplicationScoped
 public class RejectionServiceImpl implements RejectionService {

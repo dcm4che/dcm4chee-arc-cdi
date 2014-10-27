@@ -35,26 +35,53 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.iocm;
+package org.dcm4chee.archive.iocm.impl;
 
 import java.sql.Timestamp;
 import java.util.Collection;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.filemgmt.FileMgmt;
+import org.dcm4chee.archive.iocm.RejectionDeleteService;
+import org.dcm4chee.archive.iocm.RejectionServiceDeleteBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
 
-public interface RejectionServiceDeleteBean {
+@ApplicationScoped
+public class RejectionDeleteServiceImpl implements RejectionDeleteService{
 
-    public Collection<FileRef> deleteRejected(Object source,
-            Collection<Instance> instances);
+    private static final Logger LOG = LoggerFactory.getLogger(RejectionDeleteServiceImpl.class);
+    
+    @Inject
+    private RejectionServiceDeleteBean rejectionServiceDeleter;
 
-    public Collection<Instance> findRejectedObjects(
-            Code rejectionNote, Timestamp deadline, int maxDeletes);
+    @Inject
+    private FileMgmt fileManager;
+
+    @Override
+    public void deleteRejected(Object source, Collection<Instance> instances) {
+        Collection<FileRef> tosScheduleForDelete = rejectionServiceDeleter.deleteRejected(source, instances);
+        try {
+            fileManager.scheduleDelete(tosScheduleForDelete, 0);
+        } catch (Exception e) {
+            LOG.error("{} : Unable to schedule FileRefs {} for deletion",e ,tosScheduleForDelete);
+        }
+    }
+
+    @Override
+    public Collection<Instance> findRejectedObjects(Code rejectionNote,
+            Timestamp deadline, int maxDeletes) {
+        return rejectionServiceDeleter.findRejectedObjects(rejectionNote, deadline, maxDeletes);
+    }
 
 }

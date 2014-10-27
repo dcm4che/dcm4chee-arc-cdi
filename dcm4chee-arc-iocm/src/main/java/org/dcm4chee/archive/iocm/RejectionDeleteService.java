@@ -41,17 +41,14 @@ import java.sql.Timestamp;
 import java.util.Collection;
 
 import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- * 
  */
 
-public interface RejectionServiceDeleteBean {
-
-    public Collection<FileRef> deleteRejected(Object source,
+public interface RejectionDeleteService {
+    public void deleteRejected(Object source,
             Collection<Instance> instances);
 
     public Collection<Instance> findRejectedObjects(
