@@ -203,30 +203,6 @@ alter table soundex_code
     foreign key (person_name_fk) 
     references person_name (pk);
 
-alter table study
-    change num_instances num_instances1 integer not null,
-    change num_instances_a num_instances2 integer not null,
-    change num_series num_series1 integer not null,
-    change num_series_a num_series2 integer not null,
-    add num_instances3 integer,
-    add num_series3 integer;
-
-update study set num_instances3 = -1, num_series3 = -1;
-
-alter table study
-    modify num_instances3 integer not null,
-    modify num_series3 integer not null;
-
-alter table series
-    change num_instances num_instances1 integer not null,
-    change num_instances_a num_instances2 integer not null,
-    add num_instances3 integer;
-
-update series set num_instances3 = -1;
-
-alter table series
-    modify num_instances3 integer not null;
-
 alter table file_ref
     add file_status integer;
 
@@ -398,12 +374,10 @@ alter table series_query_attrs
     references series (pk);
 
 alter table study
-    drop num_instances1,
-    drop num_instances2,
-    drop num_instances3,
-    drop num_series1,
-    drop num_series2,
-    drop num_series3,
+    drop num_instances,
+    drop num_instances_a,
+    drop num_series,
+    drop num_series_a,
     drop mods_in_study,
     drop cuids_in_study,
     drop retrieve_aets,
@@ -411,9 +385,8 @@ alter table study
     drop availability;
 
 alter table series
-    drop num_instances1,
-    drop num_instances2,
-    drop num_instances3,
+    drop num_instances,
+    drop num_instances_a,
     drop retrieve_aets,
     drop ext_retr_aet,
     drop availability;
