@@ -38,9 +38,11 @@
 package org.dcm4chee.archive.datamgmt.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
+import javax.ejb.EJBException;
 import javax.ejb.Stateless;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
@@ -54,17 +56,21 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.datamgmt.QCEvent;
-import org.dcm4chee.archive.datamgmt.QCEvent.DataMgmtOperation;
+import org.dcm4chee.archive.datamgmt.QCEvent.QCOperation;
 import org.dcm4chee.archive.datamgmt.QCNotification;
 import org.dcm4chee.archive.datamgmt.PatientCommands;
 import org.dcm4chee.archive.datamgmt.QCBean;
 import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.archive.entity.FileRef;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
@@ -88,6 +94,7 @@ public class QCBeanImpl  implements QCBean{
 
     private static Logger LOG = LoggerFactory.getLogger(QCBeanImpl.class);
 
+
     @Inject
     private PatientService patientService;
 
@@ -100,6 +107,9 @@ public class QCBeanImpl  implements QCBean{
     @Inject
     private RejectionService rejectionService;
 
+    @Inject
+    private Device device;
+
     @Inject 
     private RejectionDeleteService rejectionServiceDeleter;
     
@@ -110,30 +120,37 @@ public class QCBeanImpl  implements QCBean{
     @PersistenceContext(name="dcm4chee-arc")
     EntityManager em;
 
+
+    private String qcSource="Quality Control";
+
     @Override
-    public void mergeStudies(String[] sourceStudyUids, String targetStudyUid, org.dcm4che3.data.Code qcRejectionCode) {
+    public QCEvent mergeStudies(String[] sourceStudyUids, String targetStudyUid, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
         LOG.info("Performing QC Merge Studies");
+        return null;
     }
 
     @Override
-    public void merge(String sourceStudyUid, String targetStudyUid,
+    public QCEvent merge(String sourceStudyUid, String targetStudyUid,
             boolean samePatient, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
         LOG.info("Performing QC Merge");
+        return null;
     }
 
     @Override
-    public void split(Collection<Instance> toMove, Attributes createdStudy, org.dcm4che3.data.Code qcRejectionCode) {
+    public QCEvent split(Collection<Instance> toMove, Attributes createdStudy, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
         LOG.info("Performing QC Split");
+        return null;
     }
 
     @Override
-    public void segment(Collection<Instance> toMove,
+    public QCEvent segment(Collection<Instance> toMove,
             Collection<Instance> toClone, Attributes targetStudy, org.dcm4che3.data.Code qcRejectionCode) {
         // TODO Auto-generated method stub
         LOG.info("Performing QC Segment");
+        return null;
     }
 
     @Override
@@ -144,35 +161,77 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public void move(Instance source, Series target, Attributes targetInstance, org.dcm4che3.data.Code qcRejectionCode) {
-        // TODO Auto-generated method stub
+    public void move(Instance source, Series target, org.dcm4che3.data.Code qcRejectionCode) {
+        ArrayList<Instance> list = new ArrayList<Instance>();
+        list.add(source);
+        reject(list, qcRejectionCode);
+        try {
+            Instance newInstance = createInstance(source, target);
+            newInstance.getFileAliasTableRefs().add(
+                    !source.getFileRefs().isEmpty()
+                    ?getFirst(source.getFileRefs(), newInstance)
+                    :getFirst(source.getFileAliasTableRefs(), newInstance));
+            
+        } catch (Exception e) {
+            LOG.error("{} : Unable to create replacement instance for {},"
+                    + " rolling back move", qcSource,
+                    source);
+            throw new EJBException(e);
+        }
         
     }
 
     @Override
     public void clone(Instance source, Series target, Attributes targetInstance) {
-        // TODO Auto-generated method stub
-        
+        try {
+            Instance newInstance = createInstance(source, target);
+            newInstance.getFileAliasTableRefs().add(
+                    !source.getFileRefs().isEmpty()
+                    ?getFirst(source.getFileRefs(), newInstance)
+                    :getFirst(source.getFileAliasTableRefs(), newInstance));
+            
+        } catch (Exception e) {
+            LOG.error("{} : Unable to create replacement instance for {},"
+                    + " rolling back move", qcSource,
+                    source);
+            throw new EJBException(e);
+        }
     }
 
     @Override
-    public void reject(Collection<Instance> instances, org.dcm4che3.data.Code qcRejectionCode) {
-        rejectionService.reject(this, instances, findOrCreateCode(qcRejectionCode), null);
+    public QCEvent reject(Collection<Instance> instances, org.dcm4che3.data.Code qcRejectionCode) {
+        ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
+        rejectionService.reject(qcSource, instances, findOrCreateCode(qcRejectionCode), null);
+        for(Instance inst: instances)
+            sopInstanceUIDs.add(inst.getSopInstanceUID());
+        QCEvent rejectEvent = new QCEvent(QCOperation.REJECT, null, null, sopInstanceUIDs,null);
+        return rejectEvent;
     }
 
     @Override
-    public void reject(String[] sopInstanceUIDs, org.dcm4che3.data.Code qcRejectionCode) {
-        rejectionService.reject(this, locateInstances(sopInstanceUIDs), findOrCreateCode(qcRejectionCode), null);
+    public QCEvent reject(String[] sopInstanceUIDs, org.dcm4che3.data.Code qcRejectionCode) {
+        Collection<Instance> src = locateInstances(sopInstanceUIDs);
+        rejectionService.reject(qcSource, src, findOrCreateCode(qcRejectionCode), null);
+        QCEvent rejectEvent = new QCEvent(QCOperation.REJECT, null, null, Arrays.asList(sopInstanceUIDs), null);
+        return rejectEvent;
     }
 
     @Override
-    public void restore(Collection<Instance> instances) {
-        rejectionService.restore(this, instances, null);
+    public QCEvent restore(Collection<Instance> instances) {
+        ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
+        rejectionService.restore(qcSource, instances, null);
+        for(Instance inst: instances)
+            sopInstanceUIDs.add(inst.getSopInstanceUID());
+        QCEvent restoreEvent = new QCEvent(QCOperation.RESTORE, null,null, sopInstanceUIDs, null);
+        return restoreEvent;
     }
 
     @Override
-    public void restore(String[] sopInstanceUIDs) {
-        rejectionService.restore(this, locateInstances(sopInstanceUIDs), null);
+    public QCEvent restore(String[] sopInstanceUIDs) {
+        Collection<Instance> src = locateInstances(sopInstanceUIDs);
+        rejectionService.restore(qcSource, src, null);
+        QCEvent restoreEvent = new QCEvent(QCOperation.RESTORE, null,null, Arrays.asList(sopInstanceUIDs), null);
+        return restoreEvent;
     }
 
 //    @Override
@@ -207,7 +266,7 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public void updateDicomObject(ArchiveDeviceExtension arcDevExt,
+    public QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt,
             String scope, Attributes attrs)
             throws EntityNotFoundException {
         
@@ -222,8 +281,8 @@ public class QCBeanImpl  implements QCBean{
         case "instance":updateInstance(arcDevExt, attrs.getString(Tag.SOPInstanceUID), attrs);
             break;
         }
-        QCEvent updateEvent = new QCEvent(DataMgmtOperation.UPDATE,scope,attrs, null, null);
-        notify(updateEvent);
+        QCEvent updateEvent = new QCEvent(QCOperation.UPDATE,scope,attrs, null, null);
+        return updateEvent;
     }
 
     public boolean patientOperation(Attributes srcPatientAttrs, Attributes targetPatientAttrs, ArchiveAEExtension arcAEExt, PatientCommands command)
@@ -446,8 +505,15 @@ public class QCBeanImpl  implements QCBean{
     }
 
     private Code getConceptNameCode(Attributes attrs) {
-        Attributes codeAttrs  = attrs.getSequence(Tag.ConceptNameCodeSequence).get(0);
-        Code code = codeService.findOrCreate(new Code(codeAttrs));
+        Attributes codeAttrs  = attrs.getNestedDataset(Tag.ConceptNameCodeSequence);
+        Code code = null;
+        if (codeAttrs != null)
+            try {
+        code = codeService.findOrCreate(new Code(codeAttrs));
+            } catch (Exception e) {
+                LOG.info("Illegal code item in Sequence {}:\n{}",
+                        TagUtils.toString(Tag.ConceptNameCodeSequence), codeAttrs);
+            }
         return code;
     }
 
@@ -565,7 +631,8 @@ public class QCBeanImpl  implements QCBean{
      }
 
     @Override
-    public Study deleteStudy(String studyInstanceUID) throws Exception {
+    public QCEvent deleteStudy(String studyInstanceUID) throws Exception {
+        ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
         TypedQuery<Study> query = em.createNamedQuery(
                 Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
                 studyInstanceUID);
@@ -573,34 +640,41 @@ public class QCBeanImpl  implements QCBean{
 
         Collection<Series> allSeries = study.getSeries();
         for(Series series: allSeries)
-        for(Instance inst : series.getInstances())
+        for(Instance inst : series.getInstances()) {
+            sopInstanceUIDs.add(inst.getSopInstanceUID());
             deleteInstance(inst.getSopInstanceUID());
+        }
 
         em.remove(study);
         LOG.info("Removed study entity - " + studyInstanceUID);
-        return study;
+        QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, sopInstanceUIDs, null);
+        return deleteEvent;
     }
 
     @Override
-    public Series deleteSeries(String seriesInstanceUID) throws Exception {
+    public QCEvent deleteSeries(String seriesInstanceUID) throws Exception {
+        ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
         TypedQuery<Series> query = em.createNamedQuery(
                 Series.FIND_BY_SERIES_INSTANCE_UID, Series.class)
                 .setParameter(1, seriesInstanceUID);
         Series series = query.getSingleResult();
 
         Collection<Instance> insts = series.getInstances();
-        for(Instance inst : insts)
+        for(Instance inst : insts) {
+            sopInstanceUIDs.add(inst.getSopInstanceUID());
             deleteInstance(inst.getSopInstanceUID());
+        }
 
         Study study = series.getStudy();
         em.remove(series);
         study.clearQueryAttributes();
         LOG.info("Removed series entity - " + seriesInstanceUID);
-        return series;
+        QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, sopInstanceUIDs,null);
+        return deleteEvent;
     }
 
     @Override
-    public Instance deleteInstance(String sopInstanceUID) throws Exception {
+    public QCEvent deleteInstance(String sopInstanceUID) throws Exception {
         TypedQuery<Instance> query = em.createNamedQuery(
                 Instance.FIND_BY_SOP_INSTANCE_UID_FETCH_FILE_REFS_AND_FS, Instance.class)
                 .setParameter(1, sopInstanceUID);
@@ -619,8 +693,8 @@ public class QCBeanImpl  implements QCBean{
         LOG.info("Removed instance entity - " + sopInstanceUID);
         series.clearQueryAttributes();
         study.clearQueryAttributes();
-
-        return inst;
+        QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, Arrays.asList(sopUID),null);
+        return deleteEvent;
     }
 
     @Override
@@ -655,7 +729,41 @@ public class QCBeanImpl  implements QCBean{
         return false;
     }
 
-    public Code findOrCreateCode(org.dcm4che3.data.Code code) {
+    private Code findOrCreateCode(org.dcm4che3.data.Code code) {
         return codeService.findOrCreate(new Code(code));
+    }
+    private Instance createInstance(Instance oldinstance, Series series)
+            throws DicomServiceException {
+        ArchiveDeviceExtension archiveDeviceExtension = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        //update with provided attrs (only attributes in the filter)
+        Attributes data = oldinstance.getAttributes();
+        Instance inst = new Instance();
+        inst.setSeries(series);
+        inst.setConceptNameCode(oldinstance.getConceptNameCode());
+        inst.setVerifyingObservers(oldinstance.getVerifyingObservers());
+        inst.setContentItems(oldinstance.getContentItems());
+        inst.setRetrieveAETs(oldinstance.getRetrieveAETs());
+        inst.setExternalRetrieveAET(oldinstance.getExternalRetrieveAET());
+        inst.setAvailability(oldinstance.getAvailability());
+        inst.setAttributes(data,
+                archiveDeviceExtension.getAttributeFilter(Entity.Instance),
+                archiveDeviceExtension.getFuzzyStr());
+        em.persist(inst);
+        LOG.info("{}: Create {}", qcSource, inst);
+        return inst;
+    }
+
+    private FileRef getFirst(Collection<FileRef> refs, Instance inst) throws IllegalArgumentException{
+        FileRef reference = null;
+        if(refs.isEmpty()){
+            LOG.error("Invalid instance {} - must have a referenced file either via fileref or file alias",inst);
+            throw new IllegalArgumentException();
+        }
+        else{
+        for(FileRef ref : refs)
+            reference = ref;
+        return reference;
+        }
+
     }
 }

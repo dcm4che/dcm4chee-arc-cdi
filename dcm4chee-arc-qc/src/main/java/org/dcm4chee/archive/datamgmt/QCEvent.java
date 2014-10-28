@@ -49,30 +49,30 @@ import org.dcm4chee.archive.entity.Instance;
 
 public class QCEvent {
 
-    public enum DataMgmtOperation{
-        UPDATE, DELETE, TRASH, MERGE, SPLIT, SEGMENT, LINK, UNLINK, MERGEPAT, UPDATE_ID
+    public enum QCOperation{
+        UPDATE, DELETE, REJECT, RESTORE, MERGE, SPLIT, SEGMENT, LINK, UNLINK, MERGEPAT, UPDATE_ID
     }
 
-    private DataMgmtOperation operation;
-    private Collection<Instance> source, target;
+    private QCOperation operation;
+    private Collection<String> sourceUIDs, targetUIDs;
     private long eventTime;
 
     private String updateScope;
     private Attributes updateAttributes;
-    public QCEvent(DataMgmtOperation operation, String updateScope, Attributes updateAttributes, Collection<Instance> source, Collection<Instance> target)
+    public QCEvent(QCOperation operation, String updateScope, Attributes updateAttributes, Collection<String> sourceUIDs, Collection<String> targetUIDs)
     {
         this.operation = operation;
-        this.source = source;
-        this.target = target;
+        this.sourceUIDs = sourceUIDs;
+        this.targetUIDs = targetUIDs;
         this.eventTime = System.currentTimeMillis();
         this.updateAttributes = updateAttributes;
         this.updateScope = updateScope;
     }
 
-    public DataMgmtOperation getOperation() {
+    public QCOperation getOperation() {
         return operation;
     }
-    public void setOperation(DataMgmtOperation operation) {
+    public void setOperation(QCOperation operation) {
         this.operation = operation;
     }
 
@@ -83,20 +83,20 @@ public class QCEvent {
         this.eventTime = eventTime;
     }
 
-    public Collection<Instance> getSource() {
-        return source;
+    public Collection<String> getSource() {
+        return sourceUIDs;
     }
 
-    public void setSource(Collection<Instance> source) {
-        this.source = source;
+    public void setSource(Collection<String> sourceUIDs) {
+        this.sourceUIDs = sourceUIDs;
     }
 
-    public Collection<Instance> getTarget() {
-        return target;
+    public Collection<String> getTarget() {
+        return targetUIDs;
     }
 
-    public void setTarget(Collection<Instance> target) {
-        this.target = target;
+    public void setTarget(Collection<String> targetUIDs) {
+        this.targetUIDs = targetUIDs;
     }
 
     public String getUpdateScope() {

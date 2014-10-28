@@ -14,18 +14,18 @@ import org.dcm4chee.archive.entity.Study;
 
 public interface QCBean {
 
-    public void mergeStudies(String[] sourceStudyUids, String targetStudyUid, Code qcRejectionCode);
+    public QCEvent mergeStudies(String[] sourceStudyUids, String targetStudyUid, Code qcRejectionCode);
 
-    public void merge(String sourceStudyUid, String targetStudyUid, boolean samePatient, Code qcRejectionCode);
+    public QCEvent merge(String sourceStudyUid, String targetStudyUid, boolean samePatient, Code qcRejectionCode);
 
-    public void split(Collection<Instance> toMove, Attributes createdStudy, Code qcRejectionCode);
+    public QCEvent split(Collection<Instance> toMove, Attributes createdStudy, Code qcRejectionCode);
 
-    public void segment(Collection<Instance> toMove, Collection<Instance> toClone, Attributes targetStudy, Code qcRejectionCode);
+    public QCEvent segment(Collection<Instance> toMove, Collection<Instance> toClone, Attributes targetStudy, Code qcRejectionCode);
 
     public void segmentFrame(Instance toMove, Instance toClone, int frame,
             Attributes targetStudy);
 
-    public void move(Instance source, Series target, Attributes targetInstance, Code qcRejectionCode);
+    public void move(Instance source, Series target, Code qcRejectionCode);
 
     public void clone(Instance source, Series target, Attributes targetInstance);
 
@@ -41,7 +41,7 @@ public interface QCBean {
 
     public void notify(QCEvent event);
 
-    void updateDicomObject(ArchiveDeviceExtension arcDevExt, String scope, Attributes attrs) throws EntityNotFoundException;
+    QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt, String scope, Attributes attrs) throws EntityNotFoundException;
     
     boolean patientOperation(Attributes sourcePatientAttributes, Attributes targetPatientAttributes, ArchiveAEExtension arcAEExt, PatientCommands command);
     
@@ -49,24 +49,22 @@ public interface QCBean {
 
     public Collection<Instance> locateInstances(String[] strings);
 
-    public Code findOrCreateCode(Code code);
+    public QCEvent deleteStudy(String studyInstanceUID) throws Exception;
 
-    public Study deleteStudy(String studyInstanceUID) throws Exception;
+    public QCEvent deleteSeries(String seriesInstanceUID) throws Exception;
 
-    public Series deleteSeries(String seriesInstanceUID) throws Exception;
-
-    public Instance deleteInstance(String sopInstanceUID) throws Exception;
+    public QCEvent deleteInstance(String sopInstanceUID) throws Exception;
 
     boolean deleteStudyIfEmpty(String studyInstanceUID);
 
     boolean deleteSeriesIfEmpty(String seriesInstanceUID,
             String studyInstanceUID);
 
-    void reject(String[] sopInstanceUIDs, Code qcRejectionCode);
+    QCEvent reject(String[] sopInstanceUIDs, Code qcRejectionCode);
 
-    void reject(Collection<Instance> instances, Code qcRejectionCode);
+    QCEvent reject(Collection<Instance> instances, Code qcRejectionCode);
 
-    void restore(String[] sopInstanceUIDs);
+    QCEvent restore(String[] sopInstanceUIDs);
 
-    void restore(Collection<Instance> instances);
+    QCEvent restore(Collection<Instance> instances);
 }
