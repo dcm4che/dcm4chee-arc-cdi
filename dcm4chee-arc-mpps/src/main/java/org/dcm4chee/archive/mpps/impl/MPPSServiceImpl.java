@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.ejb.Stateless;
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -54,7 +55,6 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
@@ -62,10 +62,8 @@ import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.StoreAction;
+import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
@@ -73,10 +71,12 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.mpps.event.MPPSCreate;
+import org.dcm4chee.archive.mpps.event.MPPSEvent;
+import org.dcm4chee.archive.mpps.event.MPPSFinal;
+import org.dcm4chee.archive.mpps.event.MPPSUpdate;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
-import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.StoreSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,19 +98,37 @@ public class MPPSServiceImpl implements MPPSService {
     @Inject
     private CodeService codeService;
 
+    @Inject
+    @MPPSCreate
+    private Event<MPPSEvent> createMPPSEvent;
+
+    @Inject
+    @MPPSUpdate
+    private Event<MPPSEvent> updateMPPSEvent;
+
+    @Inject
+    @MPPSFinal
+    private Event<MPPSEvent> finalMPPSEvent;
+
     @Override
     public MPPS createPerformedProcedureStep(ArchiveAEExtension arcAE,
-            String iuid, Attributes attrs, MPPSService service)
-                    throws DicomServiceException {
+            String iuid, Attributes attrs, Patient patient,
+            MPPSService service) throws DicomServiceException {
         try {
             find(iuid);
             throw new DicomServiceException(Status.DuplicateSOPinstance)
                 .setUID(Tag.AffectedSOPInstanceUID, iuid);
         } catch (NoResultException e) {}
-        Patient patient = service.findOrCreatePatient(attrs, arcAE.getStoreParam());
+        StoreParam storeParam = arcAE.getStoreParam();
+        if (patient == null) {
+            patient = service.findOrCreatePatient(attrs, storeParam);
+        }
+        Attributes mppsAttrs = new Attributes(attrs.size());
+        mppsAttrs.addNotSelected(attrs,
+                storeParam.getAttributeFilter(Entity.Patient).getSelection());
         MPPS mpps = new MPPS();
         mpps.setSopInstanceUID(iuid);
-        mpps.setAttributes(attrs);
+        mpps.setAttributes(mppsAttrs);
         mpps.setPatient(patient);
         em.persist(mpps);
         return mpps;
@@ -145,48 +163,16 @@ public class MPPSServiceImpl implements MPPSService {
             if (codeItem != null) {
                 Code code = codeService.findOrCreate(new Code(codeItem));
                 pps.setDiscontinuationReasonCode(code);
-                checkIncorrectWorklistEntrySelected(pps,
-                        arcAE.getApplicationEntity().getDevice());
+                if (Utils.isIncorrectWorklistEntrySelected(pps, 
+                        arcAE.getApplicationEntity().getDevice())) {
+                    rejectIncorrectWorklistEntrySelected(pps);
+                }
             }
         }
         return pps;
     }
 
-    public void checkIncorrectWorklistEntrySelected(StoreContext context,
-            MPPS mpps, Instance inst) {
-        StoreSession session = context.getStoreSession();
-        if (context.getStoreAction() == StoreAction.IGNORE
-                 || !isIncorrectWorklistEntrySelected(mpps, session.getDevice()))
-            return;
-
-        inst.setRejectionNoteCode(mpps.getDiscontinuationReasonCode());
-        inst.setAvailability(Availability.UNAVAILABLE);
-        LOG.info("{}: Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
-                session, inst.getPk(), inst.getSopInstanceUID(),
-                mpps.getDiscontinuationReasonCode());
-    }
-
-    private boolean isIncorrectWorklistEntrySelected(MPPS mpps, Device device) {
-        if (mpps == null || mpps.getStatus() != MPPS.Status.DISCONTINUED)
-            return false;
-        
-        Code reasonCode = mpps.getDiscontinuationReasonCode();
-        if (reasonCode == null)
-            return false;
-
-        ArchiveDeviceExtension arcDev = 
-                device.getDeviceExtension(ArchiveDeviceExtension.class);
-        if (arcDev == null)
-            return false;
-
-        return reasonCode.equals((Code) arcDev.getIncorrectWorklistEntrySelectedCode());
-    }
-
-    private void checkIncorrectWorklistEntrySelected( 
-            MPPS pps, Device device) {
-        if (!isIncorrectWorklistEntrySelected(pps, device))
-            return;
-
+    private void rejectIncorrectWorklistEntrySelected(MPPS pps) {
         HashMap<String,Attributes> map = new HashMap<String,Attributes>();
         for (Attributes seriesRef : pps.getAttributes()
                 .getSequence(Tag.PerformedSeriesSequence)) {
@@ -269,4 +255,26 @@ public class MPPSServiceImpl implements MPPSService {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }
     }
+
+    @Override
+    public void fireCreateMPPSEvent(ApplicationEntity ae, Attributes data,
+            MPPS mpps) {
+        createMPPSEvent.fire(
+                new MPPSEvent(ae, Dimse.N_CREATE_RQ, data, mpps));
+    }
+
+    @Override
+    public void fireUpdateMPPSEvent(ApplicationEntity ae, Attributes data,
+            MPPS mpps) {
+        updateMPPSEvent.fire(
+                new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
+    }
+
+    @Override
+    public void fireFinalMPPSEvent(ApplicationEntity ae, Attributes data,
+            MPPS mpps) {
+        finalMPPSEvent.fire(
+                new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
+    }
+
 }

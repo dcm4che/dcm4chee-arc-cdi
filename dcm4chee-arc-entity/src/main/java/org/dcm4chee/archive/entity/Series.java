@@ -74,10 +74,10 @@ import org.dcm4chee.archive.conf.AttributeFilter;
  */
 @NamedQueries({
 @NamedQuery(
-    name="Series.findBySeriesInstanceUID",
+    name=Series.FIND_BY_SERIES_INSTANCE_UID,
     query="SELECT s FROM Series s WHERE s.seriesInstanceUID = ?1"),
 @NamedQuery(
-    name="Series.findBySeriesInstanceUID.eager",
+    name=Series.FIND_BY_SERIES_INSTANCE_UID_EAGER,
     query="SELECT se FROM Series se "
             + "JOIN FETCH se.study st "
             + "JOIN FETCH st.patient p "
@@ -86,7 +86,17 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "JOIN FETCH p.attributesBlob "
             + "WHERE se.seriesInstanceUID = ?1"),
 @NamedQuery(
-    name="Series.patientStudySeriesAttributes",
+    name=Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
+    query="SELECT se FROM Series se "
+            + "JOIN FETCH se.study st "
+            + "JOIN FETCH st.patient p "
+            + "JOIN FETCH se.attributesBlob "
+            + "JOIN FETCH st.attributesBlob "
+            + "JOIN FETCH p.attributesBlob "
+            + "WHERE st.studyInstanceUID = ?1 "
+            + "AND se.sourceAET = ?2"),
+@NamedQuery(
+    name=Series.PATIENT_STUDY_SERIES_ATTRIBUTES,
     query="SELECT NEW org.dcm4chee.archive.entity.PatientStudySeriesAttributes("
             + "s.attributesBlob.encodedAttributes, "
             + "s.study.attributesBlob.encodedAttributes, "
@@ -100,8 +110,9 @@ public class Series implements Serializable {
     private static final long serialVersionUID = -8317105475421750944L;
 
     public static final String FIND_BY_SERIES_INSTANCE_UID = "Series.findBySeriesInstanceUID";
-    public static final String FIND_BY_SERIES_INSTANCE_UID_EAGER = "Series.findBySeriesInstanceUID.eager";    
+    public static final String FIND_BY_SERIES_INSTANCE_UID_EAGER = "Series.findBySeriesInstanceUID.eager";
     public static final String PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.patientStudySeriesAttributes";
+    public static final String FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET = "Series.findByStudyInstanceUIDAndSourceAET";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

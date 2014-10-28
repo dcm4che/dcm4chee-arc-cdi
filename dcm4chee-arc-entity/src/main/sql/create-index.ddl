@@ -93,3 +93,7 @@ create index sps_station_aet_idx on sps_station_aet (station_aet);
 
 create index study_view_id_idx on study_query_attrs(view_id);
 create index series_view_id_idx on series_query_attrs(view_id);
+
+create unique index mpps_emulate_study_iuid_idx on mpps_emulate(study_iuid,src_aet);
+create index mpps_emulate_time_idx on mpps_emulate(emulation_time);
+

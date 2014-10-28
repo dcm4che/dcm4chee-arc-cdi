@@ -408,3 +408,16 @@ alter table rel_instance_file_ref
 
 create index study_view_id_idx on study_query_attrs(view_id);
 create index series_view_id_idx on series_query_attrs(view_id);
+
+create table mpps_emulate (
+    pk bigint not null auto_increment,
+    emulation_time datetime not null,
+    emulator_aet varchar(255) not null,
+    src_aet varchar(255) not null,
+    study_iuid varchar(255) not null,
+    primary key (pk)
+) ENGINE=InnoDB;
+
+create unique index mpps_emulate_study_iuid_idx on mpps_emulate(study_iuid,src_aet);
+create index mpps_emulate_time_idx on mpps_emulate(emulation_time);
+

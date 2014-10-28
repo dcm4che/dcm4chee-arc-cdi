@@ -503,6 +503,7 @@
                     <entry key="dcmAETitle.#" value="1"/>
                     <entry key="dcmAETitle.1" value="EMULATE_MPPS"/>
                     <entry key="dcmMPPSEmulationDelay" value="120"/>
+                    <entry key="dicomAETitle" value="DCM4CHEE"/>
                   </map>
                 </node>
               </node>

@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,25 +35,23 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive;
 
-import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.dto.Participant;
+package org.dcm4chee.archive.conf;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public interface ArchiveService {
+public class ArchiveConfigurationException extends RuntimeException {
 
-    Device getDevice();
-    
-    void reload(Participant source) throws Exception;
+    private static final long serialVersionUID = 6704216315517780780L;
 
-    boolean isRunning();
+    public ArchiveConfigurationException(String message) {
+        super(message);
+    }
 
-    void start(Participant source) throws Exception;
+    public ArchiveConfigurationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    void stop(Participant source);
-    
 }

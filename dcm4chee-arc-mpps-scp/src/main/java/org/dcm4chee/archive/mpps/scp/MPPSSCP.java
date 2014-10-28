@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.mpps.scp;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
@@ -55,10 +54,6 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.mpps.event.MPPSCreate;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
-import org.dcm4chee.archive.mpps.event.MPPSFinal;
-import org.dcm4chee.archive.mpps.event.MPPSUpdate;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -70,18 +65,6 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
     @Inject
     private MPPSService mppsService;
 
-    @Inject
-    @MPPSCreate
-    Event<MPPSEvent> createMPPSEvent;
-
-    @Inject
-    @MPPSUpdate
-    Event<MPPSEvent> updateMPPSEvent;
-
-    @Inject
-    @MPPSFinal
-    Event<MPPSEvent> finalMPPSEvent;
-
     @Override
     protected Attributes create(Association as, Attributes cmd,
             Attributes data, Attributes rsp) throws DicomServiceException {
@@ -91,10 +74,9 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
             ArchiveAEExtension aeArc = ae.getAEExtension(ArchiveAEExtension.class);
             mppsService.coerceAttributes(as, Dimse.N_CREATE_RQ, data);
             MPPS mpps = mppsService.createPerformedProcedureStep(aeArc,
-                    iuid, data, mppsService);
+                    iuid, data, null, mppsService);
 
-            createMPPSEvent.fire(
-                    new MPPSEvent(ae, Dimse.N_CREATE_RQ, data, mpps));
+            mppsService.fireCreateMPPSEvent(ae, data, mpps);
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -114,10 +96,11 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
             MPPS mpps = mppsService.updatePerformedProcedureStep(aeArc,
                     iuid, data, mppsService);
 
-            (mpps.getStatus() == MPPS.Status.IN_PROGRESS
-                    ? updateMPPSEvent
-                    : finalMPPSEvent)
-                    .fire(new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
+            if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
+                mppsService.fireUpdateMPPSEvent(ae, data, mpps);
+            else
+                mppsService.fireFinalMPPSEvent(ae, data, mpps);
+
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {

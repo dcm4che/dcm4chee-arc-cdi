@@ -4258,6 +4258,7 @@ dn: cn=MPPS Emulation Rule 1,cn=dcmMPPSEmulationRules,dicomAETitle=DCM4CHEE,dico
 dcmAETitle: EMULATE_MPPS
 objectClass: dcmMPPSEmulationRule
 dcmMPPSEmulationDelay: 120
+dicomAETitle: DCM4CHEE
 cn: MPPS Emulation Rule 1
 
 dn: cn=dcmPatientSelector,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com

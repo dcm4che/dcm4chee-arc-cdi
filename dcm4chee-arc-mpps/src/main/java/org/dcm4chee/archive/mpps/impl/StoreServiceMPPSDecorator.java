@@ -46,6 +46,7 @@ import javax.persistence.NoResultException;
 
 import org.dcm4che3.data.UID;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Series;
@@ -53,6 +54,8 @@ import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -60,6 +63,9 @@ import org.dcm4chee.archive.store.StoreSession;
  */
 @Decorator
 public abstract class StoreServiceMPPSDecorator implements StoreService {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(StoreServiceMPPSDecorator.class);
 
     @Inject @Delegate StoreService storeService;
 
@@ -69,31 +75,40 @@ public abstract class StoreServiceMPPSDecorator implements StoreService {
     public Instance findOrCreateInstance(EntityManager em, StoreContext context)
             throws DicomServiceException {
         Instance inst = storeService.findOrCreateInstance(em, context);
-        MPPS mpps = findMPPS(em, context, inst);
-        context.setProperty(MPPS.class.getName(), mpps);
-        mppsService.checkIncorrectWorklistEntrySelected(context, mpps, inst);
+        if (context.getStoreAction() != StoreAction.IGNORE) {
+            StoreSession session = context.getStoreSession();
+            MPPS mpps = findMPPS(em, session, inst);
+            if (Utils.isIncorrectWorklistEntrySelected(mpps, session.getDevice())) {
+                inst.setRejectionNoteCode(mpps.getDiscontinuationReasonCode());
+                LOG.info("{}: Reject {} by MPPS Discontinuation Reason - {}",
+                        context.getStoreSession(), inst,
+                        mpps.getDiscontinuationReasonCode());
+            }
+        }
         return inst;
     }
 
-    private MPPS findMPPS(EntityManager em, StoreContext context, Instance inst) {
+    private MPPS findMPPS(EntityManager em, StoreSession session, Instance inst) {
+        MPPS mpps = null;
         Series series = inst.getSeries();
         String ppsiuid = series.getPerformedProcedureStepInstanceUID();
         String ppscuid = series.getPerformedProcedureStepClassUID();
-        if (ppsiuid == null
-                || !UID.ModalityPerformedProcedureStepSOPClass.equals(ppscuid))
-            return null;
+        if (ppsiuid != null
+                && !UID.ModalityPerformedProcedureStepSOPClass.equals(ppscuid)) {
+            mpps = (MPPS) session.getProperty(MPPS.class.getName());
+            if (mpps != null && mpps.getSopInstanceUID().equals(ppsiuid))
+                return mpps;
 
-        StoreSession session = context.getStoreSession();
-        MPPS mpps = (MPPS) session.getProperty(MPPS.class.getName());
-        if (mpps == null || !mpps.getSopInstanceUID().equals(ppsiuid)) {
+            mpps = null;
             try {
                 mpps = em.createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UID, MPPS.class)
                         .setParameter(1, ppsiuid)
                         .getSingleResult();
-                session.setProperty(MPPS.class.getName(), mpps);
             } catch (NoResultException e) {
             }
         }
+        session.setProperty(MPPS.class.getName(), mpps);
         return mpps;
     }
+
 }

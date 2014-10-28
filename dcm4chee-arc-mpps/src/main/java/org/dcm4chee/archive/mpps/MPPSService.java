@@ -39,15 +39,14 @@
 package org.dcm4chee.archive.mpps;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.store.StoreContext;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -56,8 +55,8 @@ import org.dcm4chee.archive.store.StoreContext;
 public interface MPPSService {
 
     MPPS createPerformedProcedureStep(ArchiveAEExtension arcAE,
-            String sopInstanceUID, Attributes attrs, MPPSService service)
-            throws DicomServiceException;
+            String sopInstanceUID, Attributes attrs, Patient patient,
+            MPPSService service) throws DicomServiceException;
 
     MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE,
             String iuid, Attributes attrs, MPPSService service)
@@ -66,10 +65,13 @@ public interface MPPSService {
     Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)
             throws DicomServiceException;
 
-    void checkIncorrectWorklistEntrySelected(StoreContext context, MPPS mpps,
-            Instance inst);
-
     void coerceAttributes(Association as, Dimse dimse, Attributes attrs)
             throws DicomServiceException;
+
+    void fireCreateMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps);
+
+    void fireUpdateMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps);
+
+    void fireFinalMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps);
 
 }

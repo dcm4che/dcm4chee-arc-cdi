@@ -564,10 +564,12 @@ public class ArchiveDeviceTest {
     private static MPPSEmulationRule createMPPSEmulationRule(
             String commonName,
             int emulationDelay,
+            String emulatorAET,
             String... sourceAETs) {
         MPPSEmulationRule rule = new MPPSEmulationRule();
         rule.setCommonName(commonName);
         rule.setEmulationDelay(emulationDelay);
+        rule.setEmulatorAET(emulatorAET);
         rule.setSourceAETs(sourceAETs);
         return rule ;
     }
@@ -1138,7 +1140,8 @@ public class ArchiveDeviceTest {
         ps.setPatientSelectorProperties(sels);
         aeExt.setPatientSelectorConfig(ps);
         aeExt.addMppsEmulationRule(
-                createMPPSEmulationRule("MPPS Emulation Rule 1", 120, "EMULATE_MPPS"));
+                createMPPSEmulationRule("MPPS Emulation Rule 1", 120, 
+                        "DCM4CHEE", "EMULATE_MPPS"));
         return ae;
     }
 

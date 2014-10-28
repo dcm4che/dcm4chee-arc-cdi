@@ -38,8 +38,6 @@
 package org.dcm4chee.archive.impl;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -50,21 +48,13 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
-import org.dcm4che3.imageio.codec.ImageReaderFactory;
-import org.dcm4che3.imageio.codec.ImageWriterFactory;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.hl7.service.HL7Service;
 import org.dcm4che3.net.hl7.service.HL7ServiceRegistry;
-import org.dcm4che3.net.imageio.ImageReaderExtension;
-import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.net.service.BasicCEchoSCP;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceRegistry;
@@ -72,12 +62,7 @@ import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
-import org.dcm4chee.archive.code.CodeService;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.event.ConnectionEventSource;
 import org.dcm4chee.archive.event.LocalSource;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
@@ -91,12 +76,11 @@ import org.dcm4chee.archive.event.StartStopReloadEvent;
 public class ArchiveServiceImpl implements ArchiveService {
     
     @Inject
+    private ArchiveDeviceProducer deviceProducer;
+
+    @Inject
     private IApplicationEntityCache aeCache;
 
-    private static final String DEVICE_NAME_PROPERTY =
-            "org.dcm4chee.archive.deviceName";
-    private static final String DEF_DEVICE_NAME =
-            "dcm4chee-arc";
     private static String[] JBOSS_PROPERITIES = {
         "jboss.home",
         "jboss.modules",
@@ -118,12 +102,6 @@ public class ArchiveServiceImpl implements ArchiveService {
     @Inject
     private Instance<HL7Service> hl7Services;
 
-    @Inject
-    private DicomConfiguration conf;
-
-    @Inject
-    private CodeService codeService;
-
     @Inject @ArchiveServiceStarted
     private Event<StartStopReloadEvent> archiveServiceStarted;
 
@@ -136,6 +114,7 @@ public class ArchiveServiceImpl implements ArchiveService {
     @Inject
     private ConnectionEventSource connectionEventSource;
 
+    @Inject
     private Device device;
 
     private boolean running;
@@ -154,23 +133,13 @@ public class ArchiveServiceImpl implements ArchiveService {
         }
     }
 
-    private Device findDevice() throws ConfigurationException {
-        return conf.findDevice(
-                System.getProperty(DEVICE_NAME_PROPERTY, DEF_DEVICE_NAME));
-    }
-
-
     @PostConstruct
     public void init() {
         addJBossDirURLSystemProperties();
         try {
             executor = Executors.newCachedThreadPool();
             scheduledExecutor = Executors.newScheduledThreadPool(10);
-            device = findDevice();
             device.setConnectionMonitor(connectionEventSource);
-            findOrCreateRejectionCodes(device);
-            initImageReaderFactory();
-            initImageWriterFactory();
             device.setExecutor(executor);
             device.setScheduledExecutor(scheduledExecutor);
             serviceRegistry.addDicomService(echoscp);
@@ -188,12 +157,10 @@ public class ArchiveServiceImpl implements ArchiveService {
             }
             start(new LocalSource());
         } catch (RuntimeException re) {
-            shutdown(executor);
-            shutdown(scheduledExecutor);
+            destroy();
             throw re;
         } catch (Exception e) {
-            shutdown(executor);
-            shutdown(scheduledExecutor);
+            destroy();
             throw new RuntimeException(e);
         }
     }
@@ -220,33 +187,29 @@ public class ArchiveServiceImpl implements ArchiveService {
 
     @Override
     public void start(Participant source) throws Exception {
-        
         device.bindConnections();
         running = true;
-        archiveServiceStarted.fire(new StartStopReloadEvent(device,source));
+        archiveServiceStarted.fire(new StartStopReloadEvent(device, source));
     }
 
     @Override
     public void stop(Participant source) {
-        
-        device.unbindConnections();
-        running = false;
-        archiveServiceStopped.fire(new StartStopReloadEvent(device,source));
+        if (running) {
+            device.unbindConnections();
+            archiveServiceStopped.fire(new StartStopReloadEvent(device, source));
+            running = false;
+        }
     }
 
     @Override
-    public void reload() throws Exception {
+    public void reload(Participant source) throws Exception {
         aeCache.clear();
-        device.reconfigure(findDevice());
-        findOrCreateRejectionCodes(device);
-        initImageReaderFactory();
-        initImageWriterFactory();
+        deviceProducer.reloadConfiguration();
         device.rebindConnections();
-        archiveServiceReloaded.fire(new StartStopReloadEvent(device, new LocalSource()));
+        archiveServiceReloaded.fire(new StartStopReloadEvent(device, source));
     }
 
     @Override
-    @Produces
     public Device getDevice() {
         return device;
     }
@@ -256,53 +219,4 @@ public class ArchiveServiceImpl implements ArchiveService {
         return running;
     }
 
-    private void findOrCreateRejectionCodes(Device dev) {
-        Collection<Code> found = new ArrayList<Code>();
-        ArchiveDeviceExtension arcDev =
-                dev.getDeviceExtensionNotNull(ArchiveDeviceExtension.class);
-        arcDev.setIncorrectWorklistEntrySelectedCode(
-                findOrCreate(arcDev.getIncorrectWorklistEntrySelectedCode(), found));
-        for (QueryRetrieveView view : arcDev.getQueryRetrieveViews()) {
-            findOrCreate(view.getShowInstancesRejectedByCodes(), found);
-            findOrCreate(view.getHideRejectionNotesWithCodes(), found);
-        }
-    }
-
-    private void findOrCreate(org.dcm4che3.data.Code[] codes,
-            Collection<Code> found) {
-        for (int i = 0; i < codes.length; i++) {
-            codes[i] = findOrCreate(codes[i], found);
-        }
-    }
-
-    private Code findOrCreate(org.dcm4che3.data.Code code,
-            Collection<Code> found) {
-        try {
-            return (Code) code;
-        } catch (ClassCastException e) {
-            for (Code code2 : found) {
-                if (code2.equalsIgnoreMeaning(code))
-                    return code2;
-            }
-            Code code2 = codeService.findOrCreate(new Code(code));
-            found.add(code2);
-            return code2;
-        }
-    }
-
-    private void initImageReaderFactory() {
-        ImageReaderExtension ext = device.getDeviceExtension(ImageReaderExtension.class);
-        if (ext != null)
-            ImageReaderFactory.setDefault(ext.getImageReaderFactory());
-        else
-            ImageReaderFactory.resetDefault();
-    }
-
-    private void initImageWriterFactory() {
-        ImageWriterExtension ext = device.getDeviceExtension(ImageWriterExtension.class);
-        if (ext != null)
-            ImageWriterFactory.setDefault(ext.getImageWriterFactory());
-        else
-            ImageWriterFactory.resetDefault();
-    }
 }

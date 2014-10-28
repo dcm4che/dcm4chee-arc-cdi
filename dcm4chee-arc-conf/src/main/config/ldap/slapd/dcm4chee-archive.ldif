@@ -523,4 +523,5 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.21 NAME 'dcmMPPSEmulationRule'
   MUST (
     cn $
     dcmAETitle $
+    dicomAETitle $
     dcmMPPSEmulationDelay ) )

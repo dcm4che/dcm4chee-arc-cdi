@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,25 +35,28 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive;
+
+package org.dcm4chee.archive.mpps.impl;
 
 import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.dto.Participant;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.archive.entity.MPPS;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public interface ArchiveService {
+class Utils {
 
-    Device getDevice();
-    
-    void reload(Participant source) throws Exception;
+    static boolean isIncorrectWorklistEntrySelected(MPPS mpps, Device device) {
+        return mpps != null
+                && mpps.getStatus() == MPPS.Status.DISCONTINUED
+                && mpps.getDiscontinuationReasonCode() != null
+                && mpps.getDiscontinuationReasonCode()
+                    .equals((Code) device
+                            .getDeviceExtension(ArchiveDeviceExtension.class)
+                            .getIncorrectWorklistEntrySelectedCode());
+    }
 
-    boolean isRunning();
-
-    void start(Participant source) throws Exception;
-
-    void stop(Participant source);
-    
 }

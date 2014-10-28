@@ -12,6 +12,9 @@ public final class MPPSEmulationRule {
     @ConfigField(name = "dcmAETitle")
     private String[] sourceAETs;
 
+    @ConfigField(name = "dicomAETitle")
+    private String emulatorAET;
+
     @ConfigField(name = "dcmMPPSEmulationDelay")
     private int emulationDelay;
 
@@ -31,6 +34,14 @@ public final class MPPSEmulationRule {
         this.sourceAETs = sourceAETs;
     }
 
+    public String getEmulatorAET() {
+        return emulatorAET;
+    }
+
+    public void setEmulatorAET(String emulatorAET) {
+        this.emulatorAET = emulatorAET;
+    }
+
     public int getEmulationDelay() {
         return emulationDelay;
     }
@@ -38,4 +49,5 @@ public final class MPPSEmulationRule {
     public void setEmulationDelay(int emulationDelay) {
         this.emulationDelay = emulationDelay;
     }
+
 }

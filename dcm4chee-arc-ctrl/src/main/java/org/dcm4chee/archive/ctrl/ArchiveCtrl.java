@@ -97,7 +97,7 @@ public class ArchiveCtrl {
     @GET
     @Path("reload")
     public Response reload() throws Exception {
-        service.reload();
+        service.reload(new HttpSource(request));
         return Response.status(Status.OK).build();
     }
 
