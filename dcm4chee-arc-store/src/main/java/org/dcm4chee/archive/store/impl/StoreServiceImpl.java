@@ -86,6 +86,7 @@ import org.dcm4che3.util.StreamUtils;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreAction;
@@ -349,9 +350,11 @@ public class StoreServiceImpl implements StoreService {
         Attributes attrs = context.getAttributes();
         try {
             Attributes modified = context.getCoercedOriginalAttributes();
-            Templates tpl = session.getRemoteAET()!=null?arcAE.getAttributeCoercionTemplates(
-                    attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
-                    TransferCapability.Role.SCP, session.getRemoteAET()):null;
+            Templates tpl = session.getRemoteAET() != null ? arcAE
+                    .getAttributeCoercionTemplates(
+                            attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
+                            TransferCapability.Role.SCP, session.getRemoteAET())
+                    : null;
             if (tpl != null) {
                 attrs.update(SAXTransformer.transform(attrs, tpl, false, false,
                         new SetupTransformer() {
@@ -424,7 +427,25 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     public void updateDB(StoreContext context) throws DicomServiceException {
-        storeServiceEJB.updateDB(context);
+
+        ArchiveDeviceExtension dE = context.getStoreSession().getDevice()
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+
+        for (int i = 0; i <= dE.getUpdateDbRetries(); i++) {
+
+            try {
+                LOG.info("{}: try to updateDB, try nr. {}",context.getStoreSession(), i);
+                storeServiceEJB.updateDB(context);
+                break;
+            } catch (RuntimeException e) {
+                if (i >= dE.getUpdateDbRetries()) // last try failed
+                    throw new DicomServiceException(Status.UnableToProcess, e);
+                else
+                    LOG.warn("{}: Failed to updateDB, try nr. {}",
+                            context.getStoreSession(), i, e);
+            }
+        }
+
         updateAttributes(context);
     }
 
@@ -479,8 +500,10 @@ public class StoreServiceImpl implements StoreService {
             return StoreAction.RESTORE;
 
         if (hasSameSourceAET(instance, session.getRemoteAET())
-                && (!hasFileRefWithDigest(fileRefs, context.getSpoolFileDigest()))
-                ||  !hasFileRefWithDigest(fileAliasRefs, context.getSpoolFileDigest()))
+                && (!hasFileRefWithDigest(fileRefs,
+                        context.getSpoolFileDigest()))
+                || !hasFileRefWithDigest(fileAliasRefs,
+                        context.getSpoolFileDigest()))
             return StoreAction.REPLACE;
 
         return StoreAction.IGNORE;
@@ -528,22 +551,23 @@ public class StoreServiceImpl implements StoreService {
                 for (Iterator<FileRef> iter = inst.getFileRefs().iterator(); iter
                         .hasNext();) {
                     FileRef fileRef = iter.next();
-                    //no other instances referenced through alias table
-                    if(fileRef.getFileAliasTableInstances().isEmpty()) {
+                    // no other instances referenced through alias table
+                    if (fileRef.getFileAliasTableInstances().isEmpty()) {
                         fileRef.setStatus(org.dcm4chee.archive.entity.FileRef.Status.REPLACED);
                         replaced.add(fileRef);
-                        
+
                     }
                     fileRef.setInstance(null);
                     iter.remove();
                 }
-                for (Iterator<FileRef> iter = inst.getFileAliasTableRefs().iterator(); iter
-                        .hasNext();) {
+                for (Iterator<FileRef> iter = inst.getFileAliasTableRefs()
+                        .iterator(); iter.hasNext();) {
                     FileRef fileAliasRef = iter.next();
-                    //another instance referenced through original link
-                    if(fileAliasRef.getInstance()==null 
+                    // another instance referenced through original link
+                    if (fileAliasRef.getInstance() == null
                             && fileAliasRef.getFileAliasTableInstances().size() == 1) {
-                        fileAliasRef.setStatus(org.dcm4chee.archive.entity.FileRef.Status.REPLACED);
+                        fileAliasRef
+                                .setStatus(org.dcm4chee.archive.entity.FileRef.Status.REPLACED);
                         replaced.add(fileAliasRef);
                     }
                     iter.remove();
@@ -664,8 +688,7 @@ public class StoreServiceImpl implements StoreService {
         series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
         series.setRequestAttributes(createRequestAttributes(
                 data.getSequence(Tag.RequestAttributesSequence),
-                storeParam.getFuzzyStr(),
-                series));
+                storeParam.getFuzzyStr(), series));
         series.setSourceAET(session.getRemoteAET());
         series.setAttributes(data,
                 storeParam.getAttributeFilter(Entity.Series),
@@ -688,11 +711,9 @@ public class StoreServiceImpl implements StoreService {
         inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
         inst.setVerifyingObservers(createVerifyingObservers(
                 data.getSequence(Tag.VerifyingObserverSequence),
-                storeParam.getFuzzyStr(),
-                inst));
+                storeParam.getFuzzyStr(), inst));
         inst.setContentItems(createContentItems(
-                data.getSequence(Tag.ContentSequence),
-                inst));
+                data.getSequence(Tag.ContentSequence), inst));
         inst.setRetrieveAETs(storeParam.getRetrieveAETs());
         inst.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
         inst.setAvailability(fs.getAvailability());
@@ -720,7 +741,7 @@ public class StoreServiceImpl implements StoreService {
         fileRef.setInstance(instance);
 
         em.persist(fileRef);
-            
+
         LOG.info("{}: Create {}", session, fileRef);
         return fileRef;
     }
@@ -808,8 +829,10 @@ public class StoreServiceImpl implements StoreService {
         ArrayList<RequestAttributes> list = new ArrayList<RequestAttributes>(
                 seq.size());
         for (Attributes item : seq) {
-            RequestAttributes request = new RequestAttributes(item, findOrCreateIssuer(item
-                    .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
+            RequestAttributes request = new RequestAttributes(
+                    item,
+                    findOrCreateIssuer(item
+                            .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
                     fuzzyStr);
             request.setSeries(series);
             list.add(request);
@@ -832,7 +855,8 @@ public class StoreServiceImpl implements StoreService {
         return list;
     }
 
-    private Collection<ContentItem> createContentItems(Sequence seq, Instance inst) {
+    private Collection<ContentItem> createContentItems(Sequence seq,
+            Instance inst) {
         if (seq == null || seq.isEmpty())
             return null;
 
@@ -841,8 +865,8 @@ public class StoreServiceImpl implements StoreService {
             String type = item.getString(Tag.ValueType);
             ContentItem contentItem = null;
             if ("CODE".equals(type)) {
-                contentItem = new ContentItem(item.getString(Tag.RelationshipType)
-                        .toUpperCase(), singleCode(item,
+                contentItem = new ContentItem(item.getString(
+                        Tag.RelationshipType).toUpperCase(), singleCode(item,
                         Tag.ConceptNameCodeSequence), singleCode(item,
                         Tag.ConceptCodeSequence));
                 list.add(contentItem);

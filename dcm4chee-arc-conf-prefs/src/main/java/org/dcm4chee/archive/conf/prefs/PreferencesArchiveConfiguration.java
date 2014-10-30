@@ -103,6 +103,8 @@ public class PreferencesArchiveConfiguration extends
                 arcDev.getRejectedObjectsCleanUpMaxNumberOfDeletes(), 0);
         PreferencesUtils.storeNotDef(prefs, "dcmMppsEmulationPollInterval", 
                 arcDev.getMppsEmulationPollInterval(), 0);
+        PreferencesUtils.storeNotDef(prefs, "dcmUpdateDbRetries", 
+                arcDev.getUpdateDbRetries(), 0);
     }
 
     @Override
@@ -252,6 +254,7 @@ public class PreferencesArchiveConfiguration extends
                 "dcmRejectedObjectsCleanUpMaxNumberOfDeletes", 0));
         arcdev.setMppsEmulationPollInterval(prefs.getInt(
                 "dcmMppsEmulationPollInterval", 0));
+        arcdev.setUpdateDbRetries(prefs.getInt("dcmUpdateDbRetries", 0));        
     }
 
     @Override
@@ -431,6 +434,9 @@ public class PreferencesArchiveConfiguration extends
         PreferencesUtils.storeDiff(prefs, "dcmMppsEmulationPollInterval",
                 aa.getMppsEmulationPollInterval(), 
                 bb.getMppsEmulationPollInterval(),0);
+        PreferencesUtils.storeDiff(prefs, "dcmUpdateDbRetries", 
+                aa.getUpdateDbRetries(), 
+                bb.getUpdateDbRetries(), 0);        
     }
 
     @Override

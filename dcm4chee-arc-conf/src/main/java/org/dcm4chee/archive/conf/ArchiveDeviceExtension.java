@@ -70,6 +70,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     
     private boolean hostnameAEresoultion;
     private boolean deIdentifyLogs;
+    private int updateDbRetries;
     private Collection<HostNameAEEntry> hostNameAEList =
             new ArrayList<HostNameAEEntry>();
     private RejectionParam[] rejectionParams = {};
@@ -127,6 +128,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     public void setDeIdentifyLogs(boolean deIdentifyLogs) {
         this.deIdentifyLogs = deIdentifyLogs;
+    }
+    
+    public int getUpdateDbRetries() {
+        return updateDbRetries;
+    }
+
+    public void setUpdateDbRetries(int updateDbRetries) {
+        this.updateDbRetries = updateDbRetries;
     }
 
     public FuzzyStr getFuzzyStr() {

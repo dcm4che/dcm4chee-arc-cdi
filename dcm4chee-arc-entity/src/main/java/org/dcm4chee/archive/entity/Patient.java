@@ -65,6 +65,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
+import javax.persistence.Version;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
@@ -101,6 +102,10 @@ public class Patient implements Serializable {
     @Column(name = "pk")
     private long pk;
 
+    @Version
+    @Column(name = "version")
+    private long version;    
+    
     @Basic(optional = false)
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
@@ -297,6 +302,14 @@ public class Patient implements Serializable {
 
     public AttributesBlob getAttributesBlob() {
         return attributesBlob;
+    }
+    
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
     }
 
     public Attributes getAttributes() throws BlobCorruptedException {

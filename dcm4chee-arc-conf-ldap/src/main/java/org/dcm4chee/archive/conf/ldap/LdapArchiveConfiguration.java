@@ -111,6 +111,9 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 arcDev.getRejectedObjectsCleanUpMaxNumberOfDeletes(), 0);
         LdapUtils.storeNotDef(attrs, "dcmMppsEmulationPollInterval", 
                 arcDev.getMppsEmulationPollInterval(), 0);
+        LdapUtils.storeNotDef(attrs, "dcmUpdateDbRetries", 
+                arcDev.getUpdateDbRetries(), 0);
+
    }
 
     @Override
@@ -299,6 +302,8 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
                 LdapUtils.intValue(attrs.get("dcmRejectedObjectsCleanUpMaxNumberOfDeletes"), 0));
         arcdev.setMppsEmulationPollInterval(
                 LdapUtils.intValue(attrs.get("dcmMppsEmulationPollInterval"), 0));
+        arcdev.setUpdateDbRetries(
+                LdapUtils.intValue(attrs.get("dcmUpdateDbRetries"), 0));
 
     }
 
@@ -512,6 +517,10 @@ public class LdapArchiveConfiguration extends LdapDicomConfigurationExtension {
         LdapUtils.storeDiff(mods, "dcmMppsEmulationPollInterval", 
                 aa.getMppsEmulationPollInterval(), 
                 bb.getMppsEmulationPollInterval(), 0);
+        LdapUtils.storeDiff(mods, "dcmUpdateDbRetries", 
+                aa.getUpdateDbRetries(), 
+                bb.getUpdateDbRetries(), 0);
+        
     }
 
     @Override

@@ -447,6 +447,12 @@ attributetype ( 1.2.40.0.13.1.15.10.3.71 NAME 'dcmRejectedObjectsCleanUpMaxNumbe
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
 
+attributetype ( 1.2.40.0.13.1.15.10.3.72 NAME 'dcmUpdateDbRetries'
+  DESC 'Specifies the maximum number of retries in case of exceptions on DB updates'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+
 objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -457,6 +463,7 @@ objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmHostNameAEResolution $
     dcmConfigurationStaleTimeout $
     dcmDeIdentifyLogs $
+    dcmUpdateDbRetries $
     dcmWadoAttributesStaleTimeout $
     dcmRejectedObjectsCleanUpPollInterval $
     dcmRejectedObjectsCleanUpMaxNumberOfDeletes $
