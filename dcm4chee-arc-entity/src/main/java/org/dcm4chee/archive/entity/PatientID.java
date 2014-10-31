@@ -49,6 +49,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Version;
 
 import org.dcm4che3.data.IDWithIssuer;
 
@@ -66,6 +67,10 @@ public class PatientID implements Serializable {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")
     private long pk;
+    
+    @Version
+    @Column(name = "version")
+    private long version;    
 
     @Basic(optional=false)
     @Column(name = "pat_id")
@@ -105,6 +110,14 @@ public class PatientID implements Serializable {
 
     public void setIssuer(Issuer issuer) {
         this.issuer = issuer;
+    }
+    
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
     }
     
     @Override

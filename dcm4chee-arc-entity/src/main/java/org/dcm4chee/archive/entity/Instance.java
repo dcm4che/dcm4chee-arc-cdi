@@ -62,6 +62,7 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.persistence.Version;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -208,6 +209,10 @@ public class Instance implements Serializable {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")
     private long pk;
+    
+    @Version
+    @Column(name = "version")
+    private long version;  
 
     @Basic(optional = false)
     @Column(name = "created_time", updatable = false)
@@ -485,6 +490,14 @@ public class Instance implements Serializable {
 
     public void setSeries(Series series) {
         this.series = series;
+    }
+    
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
     }
 
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
