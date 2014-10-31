@@ -40,8 +40,8 @@ package org.dcm4chee.archive.qc.impl;
 import javax.enterprise.event.Observes;
 
 import org.slf4j.Logger;
-import org.dcm4chee.archive.datamgmt.QCEvent;
-import org.dcm4chee.archive.datamgmt.QCNotification;
+import org.dcm4chee.archive.qc.QCEvent;
+import org.dcm4chee.archive.qc.QCNotification;
 import org.slf4j.LoggerFactory;
 
 /**

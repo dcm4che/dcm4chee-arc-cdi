@@ -69,11 +69,11 @@ import org.dcm4che3.net.Device;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.datamgmt.IssuerObject;
-import org.dcm4chee.archive.datamgmt.PatientCommands;
-import org.dcm4chee.archive.datamgmt.QCBean;
-import org.dcm4chee.archive.datamgmt.QCEvent;
-import org.dcm4chee.archive.datamgmt.QCObject;
+import org.dcm4chee.archive.qc.IssuerObject;
+import org.dcm4chee.archive.qc.PatientCommands;
+import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.QCEvent;
+import org.dcm4chee.archive.qc.QCObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
