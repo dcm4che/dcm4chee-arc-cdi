@@ -48,6 +48,7 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.PatientID;
+import org.dcm4chee.archive.entity.QCActionHistory;
 import org.dcm4chee.archive.entity.Series;
 
 /**
@@ -71,9 +72,6 @@ public interface QCBean {
 
     public Instance clone(Instance source, Series target);
 
-//    public void recordHistoryEntry(QCActionHistory action,
-//            Collection<QCStudyHistory> study, Collection<QCSeriesHistory> series,
-//            Collection<QCInstanceHistory> instance);
 
 //    public QCInstanceHistory findUIDChangesFromHistory(Instance instance);
 

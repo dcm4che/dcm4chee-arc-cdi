@@ -106,7 +106,95 @@ public class QCInstanceHistory implements Serializable{
 
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional=true)
     @JoinColumn(name = "dicomattrs_fk")
-    private AttributesBlob attributesBlob;
+    private AttributesBlob updatedAttributesBlob;
+
+    public long getPk() {
+        return pk;
+    }
+
+    public void setPk(long pk) {
+        this.pk = pk;
+    }
+
+    public String getOldUID() {
+        return oldUID;
+    }
+
+    public void setOldUID(String oldUID) {
+        this.oldUID = oldUID;
+    }
+
+    public String getCurrentUID() {
+        return currentUID;
+    }
+
+    public void setCurrentUID(String currentUID) {
+        this.currentUID = currentUID;
+    }
+
+    public String getNextUID() {
+        return nextUID;
+    }
+
+    public void setNextUID(String nextUID) {
+        this.nextUID = nextUID;
+    }
+
+    public String getOldSeriesUID() {
+        return oldSeriesUID;
+    }
+
+    public void setOldSeriesUID(String oldSeriesUID) {
+        this.oldSeriesUID = oldSeriesUID;
+    }
+
+    public String getCurrenSeriestUID() {
+        return currenSeriestUID;
+    }
+
+    public void setCurrenSeriestUID(String currenSeriestUID) {
+        this.currenSeriestUID = currenSeriestUID;
+    }
+
+    public String getOldStudyUID() {
+        return oldStudyUID;
+    }
+
+    public void setOldStudyUID(String oldStudyUID) {
+        this.oldStudyUID = oldStudyUID;
+    }
+
+    public String getCurrentStudyUID() {
+        return currentStudyUID;
+    }
+
+    public void setCurrentStudyUID(String currentStudyUID) {
+        this.currentStudyUID = currentStudyUID;
+    }
+
+    public boolean isCloned() {
+        return cloned;
+    }
+
+    public void setCloned(boolean cloned) {
+        this.cloned = cloned;
+    }
+
+    public AttributesBlob getUpdatedAttributesBlob() {
+        return updatedAttributesBlob;
+    }
+
+    public void setUpdatedAttributesBlob(AttributesBlob attributesBlob) {
+        this.updatedAttributesBlob = attributesBlob;
+    }
+
+    public QCActionHistory getAction() {
+        return action;
+    }
+
+    public void setAction(QCActionHistory action) {
+        this.action = action;
+    }
 
     @ManyToOne
     @JoinColumn(name = "qc_action_history")
