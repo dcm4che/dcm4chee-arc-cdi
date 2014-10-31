@@ -421,3 +421,30 @@ create table mpps_emulate (
 create unique index mpps_emulate_study_iuid_idx on mpps_emulate(study_iuid,src_aet);
 create index mpps_emulate_time_idx on mpps_emulate(emulation_time);
 
+
+    create table qc_action_history (
+        pk bigint not null auto_increment,
+        action varchar(255) not null,
+        created_time datetime not null,
+        primary key (pk)
+    ) ENGINE=InnoDB;
+
+    create table qc_instance_history (
+        pk bigint not null auto_increment,
+        cloned bit not null,
+        current_series_uid varchar(255) not null,
+        current_study_uid varchar(255) not null,
+        current_uid varchar(255) not null,
+        next_uid varchar(255) not null,
+        old_series_uid varchar(255) not null,
+        old_study_uid varchar(255) not null,
+        old_uid varchar(255) not null,
+        qc_action_history bigint,
+        dicomattrs_fk bigint,
+        primary key (pk)
+    ) ENGINE=InnoDB;
+
+create index qc_instance_history_old_uid_idx on qc_instance_history (old_uid);
+create index qc_instance_history_next_uid_idx on qc_instance_history (next_uid);
+create index qc_instance_history_current_uid_idx on qc_instance_history (current_uid);
+create index qc_action_history_created_time_idx on qc_action_history (created_time);

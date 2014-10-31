@@ -277,4 +277,26 @@
     </attributes>
   </entity>
 
+    <entity class="QCActionHistory">
+    <table name="qc_action_history"/>
+    <sequence-generator name="seq" sequence-name="qc_action_history_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
+  <entity class="QCInstanceHistory">
+    <table name="qc_instance_history"/>
+    <sequence-generator name="seq" sequence-name="qc_instance_history_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
 </entity-mappings>

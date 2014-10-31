@@ -19,6 +19,8 @@ create index FKD0D3EB05E7945C3 on patient (pat_name_fk);
 create index FKD0D3EB0585AF69D8 on patient (dicomattrs_fk);
 create index FK8523EC95A511AE1E on patient_id (patient_fk);
 create index FK8523EC959E0B30AA on patient_id (issuer_fk);
+create index FK68FB577118E9ADE on qc_instance_history (qc_action_history);
+create index FK68FB57785AF69D8 on qc_instance_history (dicomattrs_fk);
 create index FKEA5CC19493CF1065 on rel_instance_file_ref (file_ref_fk);
 create index FKEA5CC19437EDB1AA on rel_instance_file_ref (instance_fk);
 create index FK268C10558B0E8FE9 on rel_linked_patient_id (patient_id_fk);

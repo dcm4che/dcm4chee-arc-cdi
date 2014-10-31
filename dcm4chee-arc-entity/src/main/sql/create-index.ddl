@@ -97,3 +97,7 @@ create index series_view_id_idx on series_query_attrs(view_id);
 create unique index mpps_emulate_study_iuid_idx on mpps_emulate(study_iuid,src_aet);
 create index mpps_emulate_time_idx on mpps_emulate(emulation_time);
 
+create index qc_instance_history_old_uid_idx on qc_instance_history (old_uid);
+create index qc_instance_history_next_uid_idx on qc_instance_history (next_uid);
+create index qc_instance_history_current_uid_idx on qc_instance_history (current_uid);
+create index qc_action_history_created_time_idx on qc_action_history (created_time);
