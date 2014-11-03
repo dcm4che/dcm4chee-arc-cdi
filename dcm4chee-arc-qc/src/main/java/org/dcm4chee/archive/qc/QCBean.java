@@ -48,7 +48,7 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.PatientID;
-import org.dcm4chee.archive.entity.QCActionHistory;
+import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.entity.Series;
 
 /**
@@ -81,7 +81,7 @@ public interface QCBean {
 
     public void notify(QCEvent event);
 
-    QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt, String scope, Attributes attrs) throws EntityNotFoundException;
+    QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt, QCUpdateScope scope, Attributes attrs) throws EntityNotFoundException;
     
     boolean patientOperation(Attributes sourcePatientAttributes, Attributes targetPatientAttributes, ArchiveAEExtension arcAEExt, PatientCommands command);
     

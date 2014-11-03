@@ -40,20 +40,14 @@ package org.dcm4chee.archive.entity;
 import java.io.Serializable;
 
 import javax.persistence.Basic;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
-
-
-import org.dcm4chee.archive.entity.AttributesBlob;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -104,16 +98,12 @@ public class QCInstanceHistory implements Serializable{
     @Column(name = "cloned", updatable = false)
     private boolean cloned;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional=true)
-    @JoinColumn(name = "dicomattrs_fk")
-    private AttributesBlob updatedAttributesBlob;
-
+    @ManyToOne
+    @JoinColumn(name="qc_series_history_fk")
+    private QCSeriesHistory series;
+    
     public long getPk() {
         return pk;
-    }
-
-    public void setPk(long pk) {
-        this.pk = pk;
     }
 
     public String getOldUID() {
@@ -180,24 +170,13 @@ public class QCInstanceHistory implements Serializable{
         this.cloned = cloned;
     }
 
-    public AttributesBlob getUpdatedAttributesBlob() {
-        return updatedAttributesBlob;
+    public QCSeriesHistory getSeries() {
+        return series;
     }
 
-    public void setUpdatedAttributesBlob(AttributesBlob attributesBlob) {
-        this.updatedAttributesBlob = attributesBlob;
+    public void setSeries(QCSeriesHistory series) {
+        this.series = series;
     }
 
-    public QCActionHistory getAction() {
-        return action;
-    }
-
-    public void setAction(QCActionHistory action) {
-        this.action = action;
-    }
-
-    @ManyToOne
-    @JoinColumn(name = "qc_action_history")
-    private QCActionHistory action;
 
 }

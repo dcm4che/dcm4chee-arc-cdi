@@ -123,7 +123,7 @@ public class QCRestful {
         case "update":
             ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
 
-            if(object.getUpdateScope().isEmpty()) {
+            if(object.getUpdateScope() == null) {
                 LOG.error("Unable to decide update Scope for QC update");
                 throw new WebApplicationException("Malformed update scope");
             }

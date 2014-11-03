@@ -50,6 +50,7 @@ import org.codehaus.jackson.map.JsonDeserializer;
 import org.codehaus.jackson.map.annotate.JsonDeserialize;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.json.JSONReader;
+import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +62,7 @@ import org.slf4j.LoggerFactory;
 public class QCObject {
 
     private String operation;
-    private String updateScope;
+    private QCUpdateScope updateScope;
     private String[] moveSOPUIDS;
     private String[] cloneSOPUIDs;
     private String[] restoreOrRejectUIDs;
@@ -143,11 +144,11 @@ public class QCObject {
         this.pid = pid;
     }
 
-    public String getUpdateScope() {
+    public QCUpdateScope getUpdateScope() {
         return updateScope;
     }
 
-    public void setUpdateScope(String updateScope) {
+    public void setUpdateScope(QCUpdateScope updateScope) {
         this.updateScope = updateScope;
     }
 

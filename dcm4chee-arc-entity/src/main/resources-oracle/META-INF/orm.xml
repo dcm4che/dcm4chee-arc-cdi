@@ -355,5 +355,36 @@
       </id>
     </attributes>
   </entity>
-  
+  <entity class="QCSeriesHistory">
+    <table name="qc_series_history"/>
+    <sequence-generator name="seq" sequence-name="qc_series_history_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
+  <entity class="QCStudyHistory">
+    <table name="qc_study_history"/>
+    <sequence-generator name="seq" sequence-name="qc_study_history_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
+  <entity class="QCUpdateHistory">
+    <table name="qc_update_history"/>
+    <sequence-generator name="seq" sequence-name="qc_update_history_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
 </entity-mappings>

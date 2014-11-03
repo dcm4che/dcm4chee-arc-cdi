@@ -81,6 +81,9 @@ import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
 import org.dcm4chee.archive.entity.QCActionHistory;
+import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
@@ -483,26 +486,26 @@ public class QCBeanImpl  implements QCBean{
 
     @Override
     public QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt,
-            String scope, Attributes attrs)
+            QCUpdateScope scope, Attributes attrs)
             throws EntityNotFoundException {
         QCActionHistory updateAction = generateQCAction(QCOperation.UPDATE);
         LOG.info("Performing QC update DICOM header on {} scope : ", scope);
         Object obj;
-        switch(scope.toLowerCase()) {
-        case "patient":obj=updatePatient(arcDevExt, attrs);
+        switch(scope) {
+        case PATIENT: obj=updatePatient(arcDevExt, attrs);
             break;
-        case "study":obj=updateStudy(arcDevExt, attrs.getString(Tag.StudyInstanceUID), attrs);
+        case STUDY: obj=updateStudy(arcDevExt, attrs.getString(Tag.StudyInstanceUID), attrs);
             break;
-        case "series":obj=updateSeries(arcDevExt, attrs.getString(Tag.SeriesInstanceUID), attrs);
+        case SERIES: obj=updateSeries(arcDevExt, attrs.getString(Tag.SeriesInstanceUID), attrs);
             break;
-        case "instance":obj=updateInstance(arcDevExt, attrs.getString(Tag.SOPInstanceUID), attrs);
+        case INSTANCE: obj=updateInstance(arcDevExt, attrs.getString(Tag.SOPInstanceUID), attrs);
             break;
         default : 
             LOG.error("{} : invalid update scope",qcSource);
             throw new EJBException();
         }
         recordUpdateHistoryEntry(updateAction, scope, attrs, obj);
-        QCEvent updateEvent = new QCEvent(QCOperation.UPDATE,scope,attrs, null, null);
+        QCEvent updateEvent = new QCEvent(QCOperation.UPDATE,scope.toString(),attrs, null, null);
         return updateEvent;
     }
 
@@ -1270,7 +1273,8 @@ public class QCBeanImpl  implements QCBean{
     }
 
     private void recordUpdateHistoryEntry(QCActionHistory action, 
-            String scope, Attributes attrs, Object obj) {
+            QCUpdateScope scope, Attributes attrs, Object obj) {
+        QCInstanceHistory instanceHistory = new QCInstanceHistory();
         
     }
 }
