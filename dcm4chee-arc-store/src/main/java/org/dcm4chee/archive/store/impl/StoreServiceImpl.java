@@ -871,10 +871,10 @@ public class StoreServiceImpl implements StoreService {
                         Tag.ConceptCodeSequence));
                 list.add(contentItem);
             } else if ("TEXT".equals(type)) {
-                list.add(new ContentItem(item.getString(Tag.RelationshipType)
+                contentItem = new ContentItem(item.getString(Tag.RelationshipType)
                         .toUpperCase(), singleCode(item,
                         Tag.ConceptNameCodeSequence), item.getString(
-                        Tag.TextValue, "*")));
+                        Tag.TextValue, "*"));
             }
             if (contentItem != null) {
                 contentItem.setInstance(inst);
