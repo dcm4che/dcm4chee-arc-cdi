@@ -106,6 +106,20 @@ public class QCInstanceHistory implements Serializable{
         return pk;
     }
 
+    public QCInstanceHistory() {}
+
+    public QCInstanceHistory(String oldStudyUID, String currentStudyUID,
+            String oldSeriesUID, String currentSeriesUID,
+            String oldUID, String currentUID, String nextUID, boolean cloned) {
+        this.cloned=cloned;
+        this.oldStudyUID = oldStudyUID;
+        this.oldSeriesUID = oldSeriesUID;
+        this.oldUID = oldUID;
+        this.currenSeriestUID = currentSeriesUID;
+        this.currentStudyUID = currentStudyUID;
+        this.currentUID = currentUID;
+        this.nextUID = nextUID;
+    }
     public String getOldUID() {
         return oldUID;
     }

@@ -34,6 +34,10 @@ public class QCUpdateHistory implements Serializable{
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
 
+    @Basic(optional = false)
+    @Column(name = "object_uid")
+    private String ObjectUID;
+
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional=true)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob updatedAttributesBlob;
@@ -80,6 +84,14 @@ public class QCUpdateHistory implements Serializable{
 
     public long getPk() {
         return pk;
+    }
+
+    public String getObjectUID() {
+        return ObjectUID;
+    }
+
+    public void setObjectUID(String objectUID) {
+        ObjectUID = objectUID;
     }
 
 }

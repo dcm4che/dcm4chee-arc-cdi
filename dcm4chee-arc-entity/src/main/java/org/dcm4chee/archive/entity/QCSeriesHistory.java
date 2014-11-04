@@ -14,6 +14,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.dcm4che3.data.Attributes;
+
 @Entity
 @Table(name="qc_series_history")
 public class QCSeriesHistory implements Serializable{
@@ -33,6 +35,13 @@ public class QCSeriesHistory implements Serializable{
     @JoinColumn(name="qc_study_history_fk")
     private QCStudyHistory study;
 
+    public QCSeriesHistory(){}
+    public QCSeriesHistory(Attributes attrs , QCStudyHistory study) {
+        this.study = study;
+        if(attrs != null)
+        this.updatedAttributesBlob = new AttributesBlob(attrs);
+    }
+    
     public AttributesBlob getUpdatedAttributesBlob() {
         return updatedAttributesBlob;
     }

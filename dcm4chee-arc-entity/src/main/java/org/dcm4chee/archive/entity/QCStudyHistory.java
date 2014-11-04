@@ -14,6 +14,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.dcm4che3.data.Attributes;
+
 @Entity
 @Table(name="qc_study_history")
 public class QCStudyHistory implements Serializable{
@@ -35,6 +37,12 @@ public class QCStudyHistory implements Serializable{
     private QCActionHistory action;
     
 
+    public QCStudyHistory(){}
+    public QCStudyHistory(Attributes attrs , QCActionHistory action) {
+        this.action = action;
+        if(attrs != null)
+        this.updatedAttributesBlob = new AttributesBlob(attrs);
+    }
     public QCActionHistory getAction() {
         return action;
     }
