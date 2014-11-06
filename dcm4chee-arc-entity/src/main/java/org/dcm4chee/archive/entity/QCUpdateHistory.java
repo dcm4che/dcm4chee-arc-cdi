@@ -23,7 +23,7 @@ public class QCUpdateHistory implements Serializable{
 
     private static final long serialVersionUID = -4407564849668358911L;
 
-    public enum QCUpdateScope {PATIENT, STUDY, SERIES, INSTANCE}
+    public enum QCUpdateScope {NONE,PATIENT, STUDY, SERIES, INSTANCE}
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
