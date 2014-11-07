@@ -43,6 +43,8 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.io.SAXReader;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.Availability;
@@ -74,7 +76,10 @@ public class InitDataForIT {
     private static final Logger log = Logger.getLogger(InitDataForIT.class);
     
     @Inject
-    private StoreService storeService; 
+    private StoreService storeService;
+
+    @Inject
+    private Device device;
     
 //    @PersistenceContext
 //    EntityManager em;
@@ -154,6 +159,8 @@ public class InitDataForIT {
         session.setStorageFileSystem(fs);
         session.setSource(new GenericParticipant("localhost", "testidentity"));
         session.setRemoteAET(SOURCE_AET);
+        session.setArchiveAEExtension(device.getApplicationEntity("DCM4CHEE")
+                .getAEExtension(ArchiveAEExtension.class));
         //Store context only needs the attributes and the store session earlier created
 //        utx.begin();
 //        em.joinTransaction();
