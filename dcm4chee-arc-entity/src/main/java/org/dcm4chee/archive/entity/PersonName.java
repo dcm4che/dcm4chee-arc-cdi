@@ -56,6 +56,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.dcm4che3.soundex.FuzzyStr;
+import org.hibernate.sql.Update;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -68,7 +69,7 @@ public class PersonName implements Serializable {
     private static final long serialVersionUID = -6581572195671154849L;
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "pk")
     private long pk;
 
@@ -122,8 +123,12 @@ public class PersonName implements Serializable {
 
     public PersonName() {
     }
-
+    
     public PersonName(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr) {
+        fromDicom(pn, fuzzyStr);
+    }
+
+    private void fromDicom(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr) {
         familyName = pn.get(Group.Alphabetic, Component.FamilyName);
         givenName = pn.get(Group.Alphabetic, Component.GivenName);
         middleName = pn.get(Group.Alphabetic, Component.MiddleName);
@@ -139,31 +144,26 @@ public class PersonName implements Serializable {
         phoneticMiddleName = pn.get(Group.Phonetic, Component.MiddleName);
         phoneticNamePrefix = pn.get(Group.Phonetic, Component.NamePrefix);
         phoneticNameSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
-        soundexCodes = createSoundexCodes(familyName, givenName, middleName,
-                fuzzyStr);
+        createOrUpdateSoundexCodes(familyName, givenName, ideographicMiddleName,
+                    fuzzyStr);
     }
 
-    public static PersonName valueOf(String s, FuzzyStr fuzzyStr, PersonName prev) {
-        if (s == null)
-            return null;
-
-        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(s, true);
-        if (pn.isEmpty())
-            return null;
-
-        return prev != null && pn.equals(prev.toPersonName())
-                ? prev
-                : new PersonName(pn, fuzzyStr);
-    }
-
-    private Collection<SoundexCode> createSoundexCodes(String familyName,
+    private void createOrUpdateSoundexCodes(String familyName,
             String givenName, String middleName, FuzzyStr fuzzyStr) {
-        Collection<SoundexCode> codes = new ArrayList<SoundexCode>();
-        addSoundexCodesTo(Component.FamilyName, familyName, fuzzyStr, codes);
-        addSoundexCodesTo(Component.GivenName, givenName, fuzzyStr, codes);
-        addSoundexCodesTo(Component.MiddleName, middleName, fuzzyStr, codes);
-        return codes;
-   }
+        
+        if (soundexCodes == null)
+            soundexCodes = new ArrayList<SoundexCode>();
+        else
+            for (Iterator<SoundexCode> iterator = soundexCodes.iterator(); 
+                    iterator.hasNext();) {
+                iterator.next();
+                iterator.remove();
+            }
+
+        addSoundexCodesTo(Component.FamilyName, familyName, fuzzyStr, soundexCodes);
+        addSoundexCodesTo(Component.GivenName, givenName, fuzzyStr, soundexCodes);
+        addSoundexCodesTo(Component.MiddleName, middleName, fuzzyStr, soundexCodes);
+    }
 
     private void addSoundexCodesTo(Component component, String name,
             FuzzyStr fuzzyStr, Collection<SoundexCode> codes) {
@@ -199,6 +199,24 @@ public class PersonName implements Serializable {
         return pn;
     }
 
+    public static PersonName valueOf(String s, FuzzyStr fuzzyStr,
+            PersonName prev) {
+        if (s == null)
+            return null;
+
+        org.dcm4che3.data.PersonName pn = new org.dcm4che3.data.PersonName(s,
+                true);
+        if (pn.isEmpty())
+            return null;
+
+        if (prev != null) {
+            if (!pn.equals(prev.toPersonName()))
+                prev.fromDicom(pn, fuzzyStr); //update values
+            return prev;
+        } else
+            return new PersonName(pn, fuzzyStr); //create new
+    }
+    
     @Override
     public String toString() {
         return toPersonName().toString();
