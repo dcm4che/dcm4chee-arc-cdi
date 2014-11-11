@@ -40,7 +40,7 @@ package org.dcm4chee.archive.retrieve.impl;
 
 import java.util.List;
 
-import javax.ejb.Stateful;
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -68,7 +68,7 @@ import com.mysema.query.types.Expression;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Stateful
+@Stateless
 public class RetrieveServiceEJB {
 
     @PersistenceContext(unitName = "dcm4chee-arc")
