@@ -85,6 +85,9 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "JOIN FETCH se.attributesBlob "
             + "JOIN FETCH st.attributesBlob "
             + "JOIN FETCH p.attributesBlob "
+            + "LEFT JOIN FETCH p.patientName pn "
+            + "LEFT JOIN FETCH st.referringPhysicianName rpn "
+            + "LEFT JOIN FETCH se.performingPhysicianName ppn "            
             + "WHERE se.seriesInstanceUID = ?1"),
 @NamedQuery(
     name=Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,

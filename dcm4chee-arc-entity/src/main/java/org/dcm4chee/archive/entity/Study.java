@@ -86,6 +86,8 @@ import org.dcm4chee.archive.conf.AttributeFilter;
                 + "JOIN FETCH st.attributesBlob "
                 + "JOIN FETCH st.patient "
                 + "p JOIN FETCH p.attributesBlob "
+                + "LEFT JOIN FETCH p.patientName pn "
+                + "LEFT JOIN FETCH st.referringPhysicianName rpn "                
                 + "WHERE st.studyInstanceUID = ?1")
 })
 @Entity
