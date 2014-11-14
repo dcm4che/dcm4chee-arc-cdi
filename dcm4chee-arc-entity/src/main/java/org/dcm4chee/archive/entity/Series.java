@@ -78,6 +78,12 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     name=Series.FIND_BY_SERIES_INSTANCE_UID,
     query="SELECT s FROM Series s WHERE s.seriesInstanceUID = ?1"),
 @NamedQuery(
+    name=Series.FIND_BY_SERIES_INSTANCE_UID_FETCH_REQ_ATTRS,
+    query="SELECT s FROM Series s "
+            + "JOIN FETCH s.requestAttributes "
+            + "JOIN FETCH s.institutionCode "
+            + "WHERE s.seriesInstanceUID = ?1"),
+@NamedQuery(
     name=Series.FIND_BY_SERIES_INSTANCE_UID_EAGER,
     query="SELECT se FROM Series se "
             + "JOIN FETCH se.study st "
@@ -117,6 +123,7 @@ public class Series implements Serializable {
     public static final String FIND_BY_SERIES_INSTANCE_UID_EAGER = "Series.findBySeriesInstanceUID.eager";
     public static final String PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.patientStudySeriesAttributes";
     public static final String FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET = "Series.findByStudyInstanceUIDAndSourceAET";
+    public static final String FIND_BY_SERIES_INSTANCE_UID_FETCH_REQ_ATTRS = "Series.findBySeriesInstanceUIDFetchReqAttrs";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

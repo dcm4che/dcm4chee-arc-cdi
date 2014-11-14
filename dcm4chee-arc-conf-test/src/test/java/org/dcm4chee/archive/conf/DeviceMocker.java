@@ -300,7 +300,9 @@ public class DeviceMocker {
         Tag.PresentationCreationDate,
         Tag.PresentationCreationTime,
         Tag.ContentCreatorName,
-        Tag.OriginalAttributesSequence
+        Tag.OriginalAttributesSequence,
+        Tag.IdenticalDocumentsSequence,
+        Tag.CurrentRequestedProcedureEvidenceSequence
     };
     private static final String[] IMAGE_CUIDS = {
         UID.ComputedRadiographyImageStorage,

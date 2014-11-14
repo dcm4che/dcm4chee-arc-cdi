@@ -83,6 +83,13 @@ import org.dcm4chee.archive.conf.AttributeFilter;
     query="SELECT i FROM Instance i "
             + "WHERE i.sopInstanceUID = ?1"),
 @NamedQuery(
+    name="Instance.findBySOPInstanceUIDFetchConceptCodeAndVerifyingObserver",
+    query="SELECT i FROM Instance i "
+            + "JOIN i.conceptNameCode "
+            + "JOIN i.verifyingObservers "
+            + "JOIN i.attributesBlob "
+            + "WHERE i.sopInstanceUID = ?1"),
+@NamedQuery(
         name="Instance.findBySOPInstanceUID.eager",
         query="SELECT i FROM Instance i "
                 + "JOIN FETCH i.series se "
@@ -188,7 +195,7 @@ import org.dcm4chee.archive.conf.AttributeFilter;
 public class Instance implements Serializable {
 
     private static final long serialVersionUID = -6510894512195470408L;
-
+    
     public static final String FIND_BY_SOP_INSTANCE_UID =
             "Instance.findBySOPInstanceUID";
     public static final String FIND_BY_SOP_INSTANCE_UID_EAGER =
@@ -207,6 +214,8 @@ public class Instance implements Serializable {
             "Instance.instanceFileRefByStudyInstanceUID";
     public static final String FIND_BY_SOP_INSTANCE_UID_FETCH_FILE_REFS_AND_FS =
             "Instance.findBySopInstanceUIDFetchFileRefsAndFs";
+    public static final String FIND_BY_SOP_INSTANCE_UID_FETCH_CONCEPT_CODE_AND_VERIFYING_OBSERVER =
+            "Instance.findBySOPInstanceUIDFetchConceptCodeAndVerifyingObserver";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -47,7 +47,7 @@
             <map/>
             <node name="Instance">
               <map>
-                <entry key="dcmTag.#" value="26"/>
+                <entry key="dcmTag.#" value="28"/>
                 <entry key="dcmTag.1" value="00080005"/>
                 <entry key="dcmTag.10" value="00280010"/>
                 <entry key="dcmTag.11" value="00280011"/>
@@ -74,6 +74,8 @@
                 <entry key="dcmTag.7" value="00081115"/>
                 <entry key="dcmTag.8" value="00200013"/>
                 <entry key="dcmTag.9" value="00280008"/>
+                <entry key="dcmTag.27" value="0040A375"/>
+                <entry key="dcmTag.28" value="0040A525"/>
               </map>
             </node>
             <node name="Patient">
