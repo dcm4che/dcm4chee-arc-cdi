@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NativeDicomModel xml-space="preserved">
+<DicomAttribute keyword="RequestAttributesSequence" tag="00400275" vr="SQ">
+<Item number="1">
+<DicomAttribute keyword="AccessionNumber" tag="00080050" vr="SH">
+<Value number="1">A12345</Value>
+</DicomAttribute>
+<DicomAttribute keyword="IssuerOfAccessionNumberSequence" tag="00080051" vr="SQ">
+<Item number="1">
+<DicomAttribute keyword="LocalNamespaceEntityID" tag="00400031" vr="UT">
+<Value number="1">DCM4CHEE_TESTDATA_ACCNO_ISSUER_1</Value>
+</DicomAttribute>
+</Item>
+</DicomAttribute>
+<DicomAttribute keyword="ScheduledProcedureStepID" tag="00400009" vr="SH">
+<Value number="1">9915.1</Value>
+</DicomAttribute>
+<DicomAttribute keyword="RequestedProcedureID" tag="00401001" vr="SH">
+<Value number="1">P-9915</Value>
+</DicomAttribute>
+<DicomAttribute keyword="RequestingPhysician" tag="00321032" vr="PN">
+<PersonName number="1">
+<Alphabetic>
+<FamilyName>Requesting Physician1</FamilyName>
+</Alphabetic>
+</PersonName>
+</DicomAttribute>
+</Item>
+</DicomAttribute>
+<DicomAttribute keyword="InstitutionCodeSequence" tag="00080082" vr="SQ">
+<Item number="1">
+<DicomAttribute keyword="CodeValue" tag="00080100" vr="SH">
+<Value number="1">INSTIT_CODE_1</Value>
+</DicomAttribute>
+<DicomAttribute keyword="CodingSchemeDesignator" tag="00080102" vr="SH">
+<Value number="1">99DCM4CHEE_TEST</Value>
+</DicomAttribute>
+<DicomAttribute keyword="CodeMeaning" tag="00080104" vr="LO">
+<Value number="1">Meaning of INSTIT_CODE_1</Value>
+</DicomAttribute>
+</Item>
+</DicomAttribute>
+<DicomAttribute keyword="StudyInstanceUID" tag="0020000D" vr="UI">
+<Value number="1">3.3.3.2</Value>
+</DicomAttribute>
+<DicomAttribute keyword="SeriesInstanceUID" tag="0020000E" vr="UI">
+<Value number="1">2.2.2.2</Value>
+</DicomAttribute>
+</NativeDicomModel>
