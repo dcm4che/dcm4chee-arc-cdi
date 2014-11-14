@@ -176,9 +176,11 @@ public class QCBeanImpl  implements QCBean{
         try{
             
         for(String sourceStudyUID : sourceStudyUids) {
+            boolean samePatient = sourceStudyUID.equalsIgnoreCase(targetStudyUId)?
+                    true:false;
             QCEvent singleMergeEvent = merge(sourceStudyUID, targetStudyUId,
                     targetStudyAttrs, targetSeriesAttrs,
-                    true, qcRejectionCode);
+                    samePatient, qcRejectionCode);
             sourceUIDs.addAll(singleMergeEvent.getSource());
             targetUIDs.addAll(singleMergeEvent.getTarget());
         }
@@ -479,11 +481,17 @@ public class QCBeanImpl  implements QCBean{
     @Override
     public Instance move(Instance source, Series target,
             org.dcm4che3.data.Code qcRejectionCode) {
+        if(!canApplyQC(source)) {
+            LOG.error("{} : Can't apply QC operation on already QCed"
+                    + " or rejected object",qcSource);
+            throw new EJBException();
+        }
         ArrayList<Instance> list = new ArrayList<Instance>();
         list.add(source);
         reject(list, qcRejectionCode);
         Instance newInstance;
         try {
+            
             newInstance = createInstance(source, target);
             
             if(newInstance.getFileAliasTableRefs()==null)
@@ -509,6 +517,11 @@ public class QCBeanImpl  implements QCBean{
     @Override
     public Instance clone(Instance source, Series target) {
         Instance newInstance;
+        if(!canApplyQC(source)) {
+            LOG.error("{} : Can't apply QC operation on already QCed"
+                    + " or rejected object",qcSource);
+            throw new EJBException();
+        }
         try {
             newInstance = createInstance(source, target);
 
