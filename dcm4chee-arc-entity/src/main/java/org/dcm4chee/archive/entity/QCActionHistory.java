@@ -38,7 +38,6 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
-
 import java.util.Date;
 
 import javax.persistence.Basic;
@@ -92,4 +91,8 @@ public class QCActionHistory implements Serializable{
         this.action = action;
     }
 
+    @Override
+    public String toString() {
+        return "QCActionHistory[pk=" + pk+ "]";
+    }
 }

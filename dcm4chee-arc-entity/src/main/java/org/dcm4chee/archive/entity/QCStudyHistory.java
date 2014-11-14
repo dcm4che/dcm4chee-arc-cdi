@@ -2,6 +2,7 @@ package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
 
+import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,7 +33,11 @@ public class QCStudyHistory implements Serializable{
     private AttributesBlob updatedAttributesBlob;
     
 
-    @ManyToOne
+    @Basic(optional = false)
+    @Column(name = "old_study_uid", updatable = false)
+    private String oldStudyUID;
+
+    @ManyToOne(cascade=CascadeType.ALL)
     @JoinColumn(name = "qc_action_history_fk")
     private QCActionHistory action;
     
@@ -43,6 +48,7 @@ public class QCStudyHistory implements Serializable{
         if(attrs != null)
         this.updatedAttributesBlob = new AttributesBlob(attrs);
     }
+
     public QCActionHistory getAction() {
         return action;
     }
@@ -62,4 +68,19 @@ public class QCStudyHistory implements Serializable{
     public long getPk() {
         return pk;
     }
+
+    @Override
+    public String toString() {
+        return "QCStudyHistory[pk=" + pk+ "]";
+    }
+
+
+    public String getOldStudyUID() {
+        return oldStudyUID;
+    }
+
+    public void setOldStudyUID(String oldStudyUID) {
+        this.oldStudyUID = oldStudyUID;
+    }
+
 }

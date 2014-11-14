@@ -14,15 +14,25 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
-
+@NamedQueries({
+@NamedQuery(
+    name="QCUpdateHistory.findFirstUpdateEntry",
+    query="SELECT q FROM QCUpdateHistory q where q.objectUID = ?1 "
+            + "AND q.next IS NULL"
+)
+})
 @Entity
 @Table(name="qc_update_history")
 public class QCUpdateHistory implements Serializable{
 
     private static final long serialVersionUID = -4407564849668358911L;
 
+    public static final String FIND_FIRST_UPDATE_ENTRY = "QCUpdateHistory.findFirstUpdateEntry";
+    
     public enum QCUpdateScope {NONE,PATIENT, STUDY, SERIES, INSTANCE}
 
     @Id
@@ -36,7 +46,7 @@ public class QCUpdateHistory implements Serializable{
 
     @Basic(optional = false)
     @Column(name = "object_uid")
-    private String ObjectUID;
+    private String objectUID;
 
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional=true)
     @JoinColumn(name = "dicomattrs_fk")
@@ -87,11 +97,11 @@ public class QCUpdateHistory implements Serializable{
     }
 
     public String getObjectUID() {
-        return ObjectUID;
+        return objectUID;
     }
 
     public void setObjectUID(String objectUID) {
-        ObjectUID = objectUID;
+        this.objectUID = objectUID;
     }
 
 }

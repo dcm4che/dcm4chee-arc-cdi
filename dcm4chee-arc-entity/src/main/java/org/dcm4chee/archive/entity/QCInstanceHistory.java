@@ -40,18 +40,53 @@ package org.dcm4chee.archive.entity;
 import java.io.Serializable;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.Cascade;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
+
+@NamedQueries({
+@NamedQuery(
+    name="QCInstanceHistory.findByCurrentUID",
+    query="SELECT qci FROM QCInstanceHistory qci "
+            + "JOIN qci.series qcse "
+            + "JOIN qcse.study qcst "
+            + "JOIN qcst.action qca "
+            + "where qci.currentUID = ?1 "),
+
+@NamedQuery(
+    name="QCInstanceHistory.findByCurrentUIDForAction",
+    query="SELECT qci FROM QCInstanceHistory qci "
+            + "JOIN qci.series qcse "
+            + "JOIN qcse.study qcst "
+            + "JOIN qcst.action qca "
+            + "where qci.currentUID = ?1 AND qca.action = ?2 "),
+
+@NamedQuery(
+    name="QCInstanceHistory.findByOldUID",
+    query="SELECT qci FROM QCInstanceHistory qci "
+            + "LEFT JOIN FETCH qci.series qcse "
+            + "LEFT JOIN FETCH qcse.updatedAttributesBlob "
+            + "LEFT JOIN FETCH qcse.study qcst "
+            + "LEFT JOIN FETCH qcst.updatedAttributesBlob "
+            + "LEFT JOIN FETCH qcst.action qca "
+            + "where qci.oldUID = ?1")
+})
 
 @Entity
 @Table(name="qc_instance_history")
@@ -59,6 +94,9 @@ public class QCInstanceHistory implements Serializable{
 
     private static final long serialVersionUID = -8359497624548247954L;
 
+    public static final String FIND_BY_CURRENT_UID="QCInstanceHistory.findByCurrentUID";
+    public static final String FIND_BY_OLD_UID="QCInstanceHistory.findByOldUID";
+    public static final String FIND_BY_CURRENT_UID_FOR_ACTION="QCInstanceHistory.findByCurrentUIDForAction";
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")
@@ -76,29 +114,23 @@ public class QCInstanceHistory implements Serializable{
     @Column(name = "next_uid", updatable = false)
     private String nextUID;
 
-
-    @Basic(optional = false)
-    @Column(name = "old_series_uid", updatable = false)
-    private String oldSeriesUID;
-
     @Basic(optional = false)
     @Column(name = "current_series_uid", updatable = true)
-    private String currenSeriestUID;
-
-
-    @Basic(optional = false)
-    @Column(name = "old_study_uid", updatable = false)
-    private String oldStudyUID;
+    private String currentSeriestUID;
 
     @Basic(optional = false)
     @Column(name = "current_study_uid", updatable = true)
     private String currentStudyUID;
 
+    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional=true)
+    @JoinColumn(name = "dicomattrs_fk")
+    private AttributesBlob previousAtributesBlob;
+
     @Basic(optional = false)
     @Column(name = "cloned", updatable = false)
     private boolean cloned;
 
-    @ManyToOne
+    @ManyToOne(cascade=CascadeType.ALL)
     @JoinColumn(name="qc_series_history_fk")
     private QCSeriesHistory series;
     
@@ -108,14 +140,12 @@ public class QCInstanceHistory implements Serializable{
 
     public QCInstanceHistory() {}
 
-    public QCInstanceHistory(String oldStudyUID, String currentStudyUID,
-            String oldSeriesUID, String currentSeriesUID,
-            String oldUID, String currentUID, String nextUID, boolean cloned) {
+    public QCInstanceHistory(String currentStudyUID,
+            String currentSeriesUID, String oldUID,
+            String currentUID, String nextUID, boolean cloned) {
         this.cloned=cloned;
-        this.oldStudyUID = oldStudyUID;
-        this.oldSeriesUID = oldSeriesUID;
         this.oldUID = oldUID;
-        this.currenSeriestUID = currentSeriesUID;
+        this.currentSeriestUID = currentSeriesUID;
         this.currentStudyUID = currentStudyUID;
         this.currentUID = currentUID;
         this.nextUID = nextUID;
@@ -144,28 +174,12 @@ public class QCInstanceHistory implements Serializable{
         this.nextUID = nextUID;
     }
 
-    public String getOldSeriesUID() {
-        return oldSeriesUID;
+    public String getCurrentSeriestUID() {
+        return currentSeriestUID;
     }
 
-    public void setOldSeriesUID(String oldSeriesUID) {
-        this.oldSeriesUID = oldSeriesUID;
-    }
-
-    public String getCurrenSeriestUID() {
-        return currenSeriestUID;
-    }
-
-    public void setCurrenSeriestUID(String currenSeriestUID) {
-        this.currenSeriestUID = currenSeriestUID;
-    }
-
-    public String getOldStudyUID() {
-        return oldStudyUID;
-    }
-
-    public void setOldStudyUID(String oldStudyUID) {
-        this.oldStudyUID = oldStudyUID;
+    public void setCurrentSeriestUID(String currenSeriestUID) {
+        this.currentSeriestUID = currenSeriestUID;
     }
 
     public String getCurrentStudyUID() {
@@ -192,5 +206,23 @@ public class QCInstanceHistory implements Serializable{
         this.series = series;
     }
 
+    public AttributesBlob getPreviousAtributesBlob() {
+        return previousAtributesBlob;
+    }
 
+    public void setPreviousAtributesBlob(AttributesBlob previousAtributesBlob) {
+        this.previousAtributesBlob = new AttributesBlob(previousAtributesBlob.getAttributes());
+    }
+
+    @Override
+    public String toString() {
+        return "QCInstanceHistory[pk=" + pk 
+                + ", oldUID= " + oldUID
+                + ", nextUID= " + nextUID
+                + ", currentUID= " + currentUID
+                + ", currentSeriesUID= " + currentSeriestUID
+                + ", currentStudyUID= " + currentStudyUID
+                + ", cloned= "+ cloned
+                + "]";
+    }
 }
