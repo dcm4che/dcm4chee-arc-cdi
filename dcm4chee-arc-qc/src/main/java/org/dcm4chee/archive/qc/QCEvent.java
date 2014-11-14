@@ -37,7 +37,9 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.qc;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 
 import org.dcm4che3.data.Attributes;
 
@@ -112,5 +114,17 @@ public class QCEvent {
 
     public void setUpdateAttributes(Attributes updateAttributes) {
         this.updateAttributes = updateAttributes;
+    }
+
+    @Override
+    public String toString() {
+        String str = "QCEvent[ operation: "+ (operation!=null?operation.name():"") 
+                + "\n eventTime: " + new Date(eventTime).toString() 
+                + "\n update :" + (updateScope==null? "No Info":updateScope)
+                + "\n updateAttributes : " + (updateAttributes==null? "No Info":updateAttributes.toString())
+                + "\n operation successfully applied on the following instances : \n" + (sourceUIDs!=null?Arrays.toString(sourceUIDs.toArray()):"[]")
+                + "\n resulting in the following instances : \n" + (targetUIDs!=null?Arrays.toString(targetUIDs.toArray()):"[]")
+                + "]";
+                return str;
     }
 }

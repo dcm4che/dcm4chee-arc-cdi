@@ -48,7 +48,12 @@ import java.lang.annotation.Target;
 
 import javax.inject.Qualifier;
 
+import org.dcm4chee.archive.qc.impl.QCPostProcessor;
+
 /**
+ * A CDI Event returned by the QC operations
+ * and used to trigger the post processing 
+ * workflow @see {@link QCPostProcessor#observeQC(QCEvent)}
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 

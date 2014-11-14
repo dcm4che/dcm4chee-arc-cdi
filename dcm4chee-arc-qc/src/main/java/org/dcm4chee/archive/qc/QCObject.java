@@ -176,7 +176,11 @@ public class QCObject {
         this.qcRejectionCode = qcRejectionCode;
     }
 }
-
+/**
+ * A custom deserializer used to deserialize DICOM Attributes
+ * Replaces the JSON reader with a custom implementation.
+ *
+ */
 class AttributesDeserializer extends JsonDeserializer<Attributes> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AttributesDeserializer.class);
@@ -196,15 +200,5 @@ class AttributesDeserializer extends JsonDeserializer<Attributes> {
         }
         return ds;
     }
-//class CodeDeserializer extends JsonDeserializer<Code> {
-//
-//    @Override
-//    public Code deserialize(JsonParser parser, DeserializationContext ctx)
-//            throws IOException, JsonProcessingException {
-//        ObjectCodec oc = parser.getCodec();
-//        JsonNode node = oc.readTree(parser);
-//        
-//    }
-//    
-//}
+
 }
