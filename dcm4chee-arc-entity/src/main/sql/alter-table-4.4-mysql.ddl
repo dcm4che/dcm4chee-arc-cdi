@@ -12,6 +12,7 @@ create unique index issuer_entity_uid_idx on issuer (entity_uid, entity_uid_type
 create table patient_id (
     pk bigint not null auto_increment,
     pat_id varchar(255) not null,
+    pat_id_type_code varchar(255),
     issuer_fk bigint,
     patient_fk bigint,
     primary key (pk)
@@ -471,3 +472,11 @@ create index qc_instance_history_old_uid_idx on qc_instance_history (old_uid);
 create index qc_instance_history_next_uid_idx on qc_instance_history (next_uid);
 create index qc_instance_history_current_uid_idx on qc_instance_history (current_uid);
 create index qc_action_history_created_time_idx on qc_action_history (created_time);
+
+alter table instance add version bigint ;
+alter table mpps add version bigint ;
+alter table mwl_item add version bigint ;
+alter table patient add version bigint ;
+alter table patient_id add version bigint ;
+alter table series add version bigint ;
+alter table study add version bigint ;
