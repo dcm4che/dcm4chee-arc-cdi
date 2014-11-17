@@ -437,24 +437,24 @@ create table qc_instance_history (
     current_study_uid varchar(255) not null,
     current_uid varchar(255) not null,
     next_uid varchar(255) not null,
-    old_series_uid varchar(255) not null,
-    old_study_uid varchar(255) not null,
     old_uid varchar(255) not null,
-    qc_action_history bigint,
     dicomattrs_fk bigint,
+    qc_series_history_fk bigint,
     primary key (pk)
 ) ENGINE=InnoDB;
 
 create table qc_series_history (
     pk bigint not null auto_increment,
-    qc_study_history bigint,
+    old_series_uid varchar(255) not null,
+    qc_study_history_fk bigint,
     dicomattrs_fk bigint,
     primary key (pk)
 ) ENGINE=InnoDB;
 
 create table qc_study_history (
     pk bigint not null auto_increment,
-    qc_action_history bigint,
+    old_study_uid varchar(255) not null,
+    qc_action_history_fk bigint,
     dicomattrs_fk bigint,
     primary key (pk)
 ) ENGINE=InnoDB;
@@ -462,6 +462,7 @@ create table qc_study_history (
 create table qc_update_history (
     pk bigint not null auto_increment,
     created_time datetime not null,
+    object_uid varchar(255) not null,
     scope varchar(255) not null,
     qc_update_history_fk bigint,
     dicomattrs_fk bigint,
