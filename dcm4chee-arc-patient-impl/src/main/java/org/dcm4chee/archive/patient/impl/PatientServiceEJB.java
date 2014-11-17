@@ -283,6 +283,7 @@ public class PatientServiceEJB implements PatientService {
             boolean deidentify) {
         PatientID patientID = new PatientID();
         patientID.setID(pid.getID());
+        patientID.setIdentifierTypeCode(pid.getIdentifierTypeCode());
         patientID.setIssuer(findOrCreateIssuer(pid.getIssuer()));
         patientID.setPatient(patient);
         LOG.info("Add {} to {}", patientID, patient.toString(deidentify));

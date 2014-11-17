@@ -76,6 +76,9 @@ public class PatientID implements Serializable {
     @Column(name = "pat_id")
     private String id;
 
+    @Column(name = "pat_id_type_code")
+    private String identifierTypeCode;
+
     @ManyToOne
     @JoinColumn(name = "issuer_fk")
     private Issuer issuer;
@@ -94,6 +97,14 @@ public class PatientID implements Serializable {
 
     public void setID(String id) {
         this.id = id;
+    }
+
+    public String getIdentifierTypeCode() {
+        return identifierTypeCode;
+    }
+
+    public void setIdentifierTypeCode(String identifierTypeCode) {
+        this.identifierTypeCode = identifierTypeCode;
     }
 
     public Patient getPatient() {
@@ -129,6 +140,8 @@ public class PatientID implements Serializable {
     }
 
     public IDWithIssuer toIDWithIssuer() {
-        return new IDWithIssuer(id, issuer);
+        IDWithIssuer result = new IDWithIssuer(id, issuer);
+        result.setIdentifierTypeCode(identifierTypeCode);
+        return result;
     }
 }
