@@ -136,6 +136,9 @@ public class QidoRS {
     private final static int[] STUDY_SERIES_INSTANCE_FIELDS =
             catAndSort(STUDY_SERIES_FIELDS, INSTANCE_FIELDS);
 
+    private final static int[] SERIES_INSTANCE_FIELDS =
+            catAndSort(SERIES_FIELDS, INSTANCE_FIELDS);
+
     private String aetitle;
     
     private ApplicationEntity ae;
@@ -232,8 +235,8 @@ public class QidoRS {
     @GET
     @Path("/series")
     @Produces("multipart/related;type=application/dicom+xml")
-    public Response searchRelationalForSeriesXML() throws Exception {
-        return search("searchRelationalForSeriesXML",
+    public Response searchForSeriesXML() throws Exception {
+        return search("searchForSeriesXML",
                 QueryRetrieveLevel.SERIES, true, null, null,
                 STUDY_SERIES_FIELDS, Output.DICOM_XML);
     }
@@ -241,8 +244,8 @@ public class QidoRS {
     @GET
     @Path("/series")
     @Produces("application/json")
-    public Response searchRelationalForSeriesJSON() throws Exception {
-        return search("searchRelationalForSeriesJSON",
+    public Response searchForSeriesJSON() throws Exception {
+        return search("searchForSeriesJSON",
                 QueryRetrieveLevel.SERIES, true, null, null,
                 STUDY_SERIES_FIELDS, Output.JSON);
     }
@@ -250,26 +253,26 @@ public class QidoRS {
     @GET
     @Path("/studies/{StudyInstanceUID}/series")
     @Produces("multipart/related;type=application/dicom+xml")
-    public Response searchForSeriesXML(
+    public Response searchForSeriesOfStudyXML(
             @PathParam("StudyInstanceUID") String studyInstanceUID) throws Exception {
-        return search("searchForSeriesXML", QueryRetrieveLevel.SERIES,
+        return search("searchForSeriesOfStudyXML", QueryRetrieveLevel.SERIES,
                 false, studyInstanceUID, null, SERIES_FIELDS, Output.DICOM_XML);
     }
 
     @GET
     @Path("/studies/{StudyInstanceUID}/series")
     @Produces("application/json")
-    public Response searchForSeriesJSON(
+    public Response searchForSeriesOfStudyJSON(
             @PathParam("StudyInstanceUID") String studyInstanceUID) throws Exception {
-        return search("searchForSeriesJSON", QueryRetrieveLevel.SERIES,
+        return search("searchForSeriesOfStudyJSON", QueryRetrieveLevel.SERIES,
                 false, studyInstanceUID, null, SERIES_FIELDS, Output.JSON);
     }
 
     @GET
     @Path("/instances")
     @Produces("multipart/related;type=application/dicom+xml")
-    public Response searchRelationalForInstancesXML() throws Exception {
-        return search("searchRelationalForInstancesXML",
+    public Response searchForInstancesXML() throws Exception {
+        return search("searchForInstancesXML",
                 QueryRetrieveLevel.IMAGE, true, null, null,
                 STUDY_SERIES_INSTANCE_FIELDS, Output.DICOM_XML);
     }
@@ -277,19 +280,37 @@ public class QidoRS {
     @GET
     @Path("/instances")
     @Produces("application/json")
-    public Response searchRelationalForInstancesJSON() throws Exception {
-        return search("searchRelationalForInstancesJSON",
+    public Response searchForInstancesJSON() throws Exception {
+        return search("searchForInstancesJSON",
                 QueryRetrieveLevel.IMAGE, true, null, null,
                 STUDY_SERIES_INSTANCE_FIELDS, Output.JSON);
     }
 
     @GET
+    @Path("/studies/{StudyInstanceUID}/instances")
+    @Produces("multipart/related;type=application/dicom+xml")
+    public Response searchForInstancesOfStudyXML(
+            @PathParam("StudyInstanceUID") String studyInstanceUID) throws Exception {
+        return search("searchForInstancesOfStudyXML", QueryRetrieveLevel.IMAGE,
+                true, studyInstanceUID, null, SERIES_INSTANCE_FIELDS, Output.DICOM_XML);
+    }
+
+    @GET
+    @Path("/studies/{StudyInstanceUID}/instances")
+    @Produces("application/json")
+    public Response searchForInstancesOfStudyJSON(
+            @PathParam("StudyInstanceUID") String studyInstanceUID) throws Exception {
+        return search("searchForInstancesOfStudyJSON", QueryRetrieveLevel.IMAGE,
+                true, studyInstanceUID, null, SERIES_INSTANCE_FIELDS, Output.JSON);
+    }
+
+    @GET
     @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances")
     @Produces("multipart/related;type=application/dicom+xml")
-    public Response searchForInstancesXML(
+    public Response searchForInstancesOfSeriesXML(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) throws Exception {
-        return search("searchForInstancesXML", QueryRetrieveLevel.IMAGE,
+        return search("searchForInstancesOfSeriesXML", QueryRetrieveLevel.IMAGE,
                 false, studyInstanceUID, seriesInstanceUID,
                 INSTANCE_FIELDS, Output.DICOM_XML);
     }
@@ -297,10 +318,10 @@ public class QidoRS {
     @GET
     @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances")
     @Produces("application/json")
-    public Response searchForInstancesJSON(
+    public Response searchForInstancesOfSeriesJSON(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID) throws Exception {
-        return search("searchForInstancesJSON", QueryRetrieveLevel.IMAGE,
+        return search("searchForInstancesOfSeriesJSON", QueryRetrieveLevel.IMAGE,
                 false, studyInstanceUID, seriesInstanceUID,
                 INSTANCE_FIELDS, Output.JSON);
     }
