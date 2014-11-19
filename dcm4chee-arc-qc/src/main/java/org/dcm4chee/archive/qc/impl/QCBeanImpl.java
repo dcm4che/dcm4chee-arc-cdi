@@ -80,6 +80,7 @@ import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
 import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.FileRef.Status;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
@@ -497,10 +498,12 @@ public class QCBeanImpl  implements QCBean{
             if(newInstance.getFileAliasTableRefs()==null)
             newInstance.setFileAliasTableRefs(new ArrayList<FileRef>());
             
-            newInstance.getFileAliasTableRefs().add(
-                    !source.getFileRefs().isEmpty()
+            
+            FileRef ref = !source.getFileRefs().isEmpty()
                     ?getFirst(source.getFileRefs(), newInstance)
-                    :getFirst(source.getFileAliasTableRefs(), newInstance));
+                    :getFirst(source.getFileAliasTableRefs(), newInstance);
+            newInstance.getFileAliasTableRefs().add(ref);
+            ref.setStatus(Status.REPLACED);
             
         } catch (Exception e) {
             LOG.error("{} : Unable to create replacement instance for {},"
@@ -528,10 +531,11 @@ public class QCBeanImpl  implements QCBean{
             if(newInstance.getFileAliasTableRefs()==null)
             newInstance.setFileAliasTableRefs(new ArrayList<FileRef>());
 
-            newInstance.getFileAliasTableRefs().add(
-                    !source.getFileRefs().isEmpty()
+            FileRef ref = !source.getFileRefs().isEmpty()
                     ?getFirst(source.getFileRefs(), newInstance)
-                    :getFirst(source.getFileAliasTableRefs(), newInstance));
+                    :getFirst(source.getFileAliasTableRefs(), newInstance);
+            newInstance.getFileAliasTableRefs().add(ref);
+            ref.setStatus(Status.REPLACED);
             
         } catch (Exception e) {
             LOG.error("{} : Unable to create replacement instance for {},"
