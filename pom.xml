@@ -13,6 +13,9 @@
     <hibernate.version>4.2.7.Final</hibernate.version>
     <querydsl.version>3.2.3</querydsl.version>
     <powermock.version>1.5.5</powermock.version>
+    <jacksonprovider.version>3.0.4.Final</jacksonprovider.version>
+    <resteasy.multipart.version>3.0.8.Final</resteasy.multipart.version>
+    <jacksonprovider.version>3.0.4.Final</jacksonprovider.version>
     <db>mysql</db>
     <ds>java:/PacsDS</ds>
   </properties>

@@ -18,6 +18,11 @@
       <artifactId>dcm4chee-arc-file-mgmt</artifactId>
       <version>${project.version}</version>
     </dependency>
+        <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-retrieve</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-iocm</artifactId>
@@ -72,19 +77,13 @@
     <dependency>
       <groupId>org.jboss.resteasy</groupId>
       <artifactId>resteasy-multipart-provider</artifactId>
-      <version>3.0.6.Final</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.resteasy</groupId>
-      <artifactId>resteasy-multipart-provider</artifactId>
-      <version>3.0.8.Final</version>
+      <version>${resteasy.multipart.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.resteasy</groupId>
       <artifactId>resteasy-jackson-provider</artifactId>
-      <version>3.0.4.Final</version>
+      <version>${jacksonprovider.version}</version>
       <scope>provided</scope>
     </dependency>
         <!-- test dependencies -->
