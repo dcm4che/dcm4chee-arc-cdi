@@ -16,6 +16,7 @@
     <jacksonprovider.version>3.0.4.Final</jacksonprovider.version>
     <resteasy.multipart.version>3.0.8.Final</resteasy.multipart.version>
     <jacksonprovider.version>3.0.4.Final</jacksonprovider.version>
+    <jacksonmapper.version>1.9.13</jacksonmapper.version>
     <db>mysql</db>
     <ds>java:/PacsDS</ds>
   </properties>
