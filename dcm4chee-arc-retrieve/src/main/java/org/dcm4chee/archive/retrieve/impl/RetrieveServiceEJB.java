@@ -90,8 +90,9 @@ public class RetrieveServiceEJB {
                 seriesIUIDs, false));
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                 objectIUIDs, false));
-
-        builder.and(QFileRef.fileRef.status.ne(FileRef.Status.REPLACED));
+        builder.and(
+                (filealiastableref.status.ne(FileRef.Status.REPLACED))
+                .or(QFileRef.fileRef.status.ne(FileRef.Status.REPLACED)));
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNote(queryParam));
 
