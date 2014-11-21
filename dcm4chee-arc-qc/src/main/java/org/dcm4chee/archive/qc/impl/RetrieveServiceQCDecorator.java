@@ -42,7 +42,10 @@ import javax.decorator.Delegate;
 import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
+import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.slf4j.Logger;
@@ -59,9 +62,13 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
 
     private static final Logger LOG = LoggerFactory.getLogger(
             RetrieveServiceQCDecorator.class);
+
     @Inject
     @Delegate
     RetrieveService retrieveService;
+    
+    @Inject
+    private QCBean qcManager;
 
     /* (non-Javadoc)
      * @see org.dcm4chee.archive.retrieve.RetrieveService#coerceRetrievedObject(org.dcm4chee.archive.retrieve.RetrieveContext, java.lang.String, org.dcm4che3.data.Attributes)
@@ -69,9 +76,21 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
     @Override
     public void coerceRetrievedObject(RetrieveContext retrieveContext,
             String remoteAET, Attributes attrs) throws DicomServiceException {
-        LOG.trace("************************************************************");
-        LOG.trace("*             QC Retrieve Decorator Loaded                *");
-        LOG.trace("************************************************************");
+        ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve =
+                retrieveContext.getArchiveAEExtension().getQcUpdateReferencesOnRetrieve();
+        
+        switch(qcUpdateReferencesOnRetrieve) {
+        case DEACTIVATE: break;
+        case PATIENT :
+            LOG.info("*         Performing reference update on patient scope      *");
+            LOG.info("*         Instance Retrieved Requires Update : {}           *", 
+                    qcManager.requiresReferenceUpdate(null,attrs));
+        case STUDY:
+            LOG.info("*         Performing reference update on study scope        *");
+            LOG.info("*         Instance Retrieved Requires Update : {}           *", 
+                    qcManager.requiresReferenceUpdate(attrs.getString(Tag.StudyInstanceUID), null));
+            break;
+        }
     }
 
 }

@@ -59,6 +59,7 @@ import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -171,9 +172,15 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmWadoSRTemplateURI")
     private String wadoSRTemplateURI;
 
-
     @ConfigField(name = "dcmQueryRetrieveViewID")
     private String queryRetrieveViewID;
+
+    @ConfigField(name = "dcmQCUpdateReferencesOnRetrieve", def="DEACTIVATE",
+            label="QC Update Reference on Retrieve",
+            description="Sets the scope for the QC retrieve service decorator "
+                    + "can be DEACTIAVETE, STUDY or PATIENT "
+                    + ", the update check is performed according to that scope")
+    private ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve;
 
     //removed from schema, irrelevant
 //    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
@@ -598,6 +605,15 @@ public class ArchiveAEExtension extends AEExtension {
         for (String sourceAET : rule.getSourceAETs()) {
             mppsEmulationRuleMap.put(sourceAET, rule);
         }
+    }
+
+    public ReferenceUpdateOnRetrieveScope getQcUpdateReferencesOnRetrieve() {
+        return qcUpdateReferencesOnRetrieve;
+    }
+
+    public void setQcUpdateReferencesOnRetrieve(
+            ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve) {
+        this.qcUpdateReferencesOnRetrieve = qcUpdateReferencesOnRetrieve;
     }
 
 }

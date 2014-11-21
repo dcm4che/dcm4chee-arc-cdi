@@ -453,6 +453,13 @@ attributetype ( 1.2.40.0.13.1.15.10.3.72 NAME 'dcmUpdateDbRetries'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
 
+attributetype ( 1.2.40.0.13.1.15.10.3.73 NAME 'dcmQCUpdateReferencesOnRetrieve'
+  DESC 'Specifies the scope for the update references on retrieve functionality of QC'
+  EQUALITY caseExactMatch
+  SUBSTR caseExactSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
 objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -506,7 +513,8 @@ objectclass ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
     dcmQidoMaxNumberOfResults $
     dcmWadoSupportedSRClasses $
     dcmWadoOverlayRendering $
-    dcmWadoSRTemplateURI) )
+    dcmWadoSRTemplateURI $
+    dcmQCUpdateReferencesOnRetrieve ) )
 
 objectclass ( 1.2.40.0.13.1.15.10.4.10 NAME 'dcmAttributeFilter'
   DESC 'Attributes stored in the database'
