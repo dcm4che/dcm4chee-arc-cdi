@@ -86,11 +86,7 @@
       <version>${jacksonprovider.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-mapper-asl</artifactId>
-      <version>${jacksonmapper.version}</version>
-    </dependency>
+
         <!-- test dependencies -->
     <dependency>
       <groupId>org.jboss.shrinkwrap.resolver</groupId>
@@ -205,7 +201,7 @@
               <configuration>
                 <archive>
                   <manifestEntries>
-                    <Dependencies>org.dcm4che.net, org.dcm4che.soundex, org.dcm4che.conf.api</Dependencies>
+                    <Dependencies>org.codehaus.jackson.jackson-jaxrs,org.codehaus.jackson.jackson-mapper-asl,org.dcm4che.net, org.dcm4che.soundex, org.dcm4che.conf.api</Dependencies>
                   </manifestEntries>
                 </archive>
               </configuration>

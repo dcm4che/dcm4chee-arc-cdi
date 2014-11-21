@@ -454,6 +454,7 @@ create table qc_series_history (
 create table qc_study_history (
     pk bigint not null auto_increment,
     old_study_uid varchar(255) not null,
+    next_study_uid varchar(255) not null,
     qc_action_history_fk bigint,
     dicomattrs_fk bigint,
     primary key (pk)

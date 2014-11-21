@@ -406,4 +406,22 @@ public interface QCBean {
      * @return the QC event
      */
     QCEvent restore(Collection<Instance> instances);
+
+    /**
+     * Requires Reference Update.
+     * Used by the RetrieveQCDecorator to check if the object being retrieved
+     * requires a reference update.
+     * Checks for if the study was QCed (exists as old or next in the study table)
+     * The studyinstance uid is provided or a patient in which case all 
+     * studies of the patient are used for the query.
+
+     * @param studyInstanceUID
+     *            UID for a study under investigation
+     * @param pat
+     *            Attributes with id for the patient 
+     *            whose studies are under investigation
+     * @return the QC event
+     */
+    boolean requiresReferenceUpdate(String studyInstanceUID, Attributes attrs);
+    
 }

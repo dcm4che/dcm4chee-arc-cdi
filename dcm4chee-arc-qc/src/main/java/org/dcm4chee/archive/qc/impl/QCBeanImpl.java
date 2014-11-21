@@ -56,6 +56,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import javax.persistence.Tuple;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
@@ -100,6 +101,8 @@ import org.dcm4chee.archive.issuer.IssuerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
+
 /**
  * The stateless bean implementing the QCBean interface
  * Used by clients to perform QC operations.
@@ -113,10 +116,10 @@ public class QCBeanImpl  implements QCBean{
     private static Logger LOG = LoggerFactory.getLogger(QCBeanImpl.class);
 
     /**
-     * Enum ReferenceState.
-     * Signifies if an object's references were fully moved , partially moved
-     * or none of the references were moved due to a QC operation used by the
-     * methods for handling invisible objects (KO/PR/SR)
+     * Enum ReferenceState. Signifies if an object's references were fully moved
+     * , partially moved or none of the references were moved due to a QC
+     * operation used by the methods for handling invisible objects (KO/PR/SR)
+     * 
      */
 
     private enum ReferenceState {
@@ -202,7 +205,7 @@ public class QCBeanImpl  implements QCBean{
      * org.dcm4che3.data.Attributes, boolean, org.dcm4che3.data.Code)
      */
     @Override
-    public QCEvent merge(String sourceStudyUid, String targetStudyUid, 
+    public QCEvent merge(String sourceStudyUid, String targetStudyUID, 
             Attributes targetStudyAttrs, Attributes targetSeriesAttrs,
             boolean samePatient, org.dcm4che3.data.Code qcRejectionCode) {
         
@@ -212,26 +215,26 @@ public class QCBeanImpl  implements QCBean{
 
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         Study source = getStudy(sourceStudyUid);
-        Study target = getStudy(targetStudyUid);
+        Study target = getStudy(targetStudyUID);
         
         if(source==null || target==null) {
             LOG.error("{} : Merge Failure, Source Study {} or Target Study {}"
-                    + " not Found",qcSource,sourceStudyUid, targetStudyUid);
+                    + " not Found",qcSource,sourceStudyUid, targetStudyUID);
             throw new EJBException();
         }
 
         if(!samePatient && source.getPatient().getPk()!=target.getPatient().getPk()) {
             LOG.error("{} : Merge Failure, Source Study {} or Target Study {}"
                     + " do not belong to the same patient",qcSource,sourceStudyUid,
-                    targetStudyUid);
+                    targetStudyUID);
             throw new EJBException();
         }
         
-        QCStudyHistory studyHistory = createQCStudyHistory(
-                source.getStudyInstanceUID(), target.getAttributes(), mergeAction);
+        QCStudyHistory studyHistory = createQCStudyHistory(source.getStudyInstanceUID(),
+                targetStudyUID, target.getAttributes(), mergeAction);
 
         if(!targetStudyAttrs.isEmpty())
-            updateStudy(archiveDeviceExtension, targetStudyUid, targetStudyAttrs);
+            updateStudy(archiveDeviceExtension, targetStudyUID, targetStudyAttrs);
 
         for(Series series: source.getSeries()) {
             Series newSeries = createSeries(series, target, targetSeriesAttrs);
@@ -241,7 +244,7 @@ public class QCBeanImpl  implements QCBean{
 
             for(Instance inst: series.getInstances()) {
                 Instance newInstance = move(inst, newSeries, qcRejectionCode);
-                QCInstanceHistory instanceHistory = new QCInstanceHistory( targetStudyUid, 
+                QCInstanceHistory instanceHistory = new QCInstanceHistory( targetStudyUID, 
                         newSeries.getSeriesInstanceUID(), inst.getSopInstanceUID(),
                         newInstance.getSopInstanceUID(), newInstance.getSopInstanceUID(), false);
                 instanceHistory.setSeries(seriesHistory);
@@ -302,7 +305,7 @@ public class QCBeanImpl  implements QCBean{
         }
 
         QCStudyHistory studyHistory = createQCStudyHistory(
-                sourceStudy.getStudyInstanceUID(),
+                sourceStudy.getStudyInstanceUID(), targetStudy.getStudyInstanceUID(),
                 sourceStudy.getAttributes(), splitAction);
 
         HashMap<String,NewSeriesTuple> oldToNewSeries = new HashMap<String, NewSeriesTuple>();
@@ -389,7 +392,7 @@ public class QCBeanImpl  implements QCBean{
         if(!targetStudyAttrs.isEmpty())
             updateStudy(archiveDeviceExtension, targetStudyUID, targetStudyAttrs);
         QCStudyHistory studyHistory = createQCStudyHistory(sourceStudy.getStudyInstanceUID(), 
-                sourceStudy.getAttributes(), segmentAction);
+                targetStudyUID, sourceStudy.getAttributes(), segmentAction);
         HashMap<String,NewSeriesTuple> oldToNewSeries = new HashMap<String, NewSeriesTuple>();
         Series newSeries;
         //move
@@ -823,6 +826,11 @@ public class QCBeanImpl  implements QCBean{
     @Override
     public Collection<Instance> locateInstances(String[] sopInstanceUIDs) {
         ArrayList<Instance> list = new ArrayList<Instance>();
+        if(sopInstanceUIDs == null) {
+            LOG.error("{} : Unable to locate instances with null UIDs"
+                    + " , returning an empty list", qcSource);
+            return list;
+        }
         for(String sopInstanceUID : sopInstanceUIDs) {
         Query query  = em.createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER);
         query.setParameter(1, sopInstanceUID);
@@ -862,6 +870,7 @@ public class QCBeanImpl  implements QCBean{
      * 
      * @param studyInstanceUID
      *            the study instance uid
+     * @param target 
      * @param oldAttributes
      *            the old attributes
      * @param qcActionHistory
@@ -869,12 +878,13 @@ public class QCBeanImpl  implements QCBean{
      * @return the QC study history
      */
     private QCStudyHistory createQCStudyHistory(String studyInstanceUID,
-            Attributes oldAttributes, QCActionHistory qcActionHistory) {
+            String targetStudyUID, Attributes oldAttributes, QCActionHistory qcActionHistory) {
         QCStudyHistory studyHistory = new QCStudyHistory();
         studyHistory.setAction(qcActionHistory);
         if(!oldAttributes.isEmpty())
           studyHistory.setUpdatedAttributesBlob(new AttributesBlob(oldAttributes));
         studyHistory.setOldStudyUID(studyInstanceUID);
+        studyHistory.setNextStudyUID(targetStudyUID);
         em.persist(studyHistory);
         return studyHistory;
     }
@@ -1800,12 +1810,12 @@ public class QCBeanImpl  implements QCBean{
      *            the moved instances
      * @return the reference state
      */
-    private ReferenceState getReferenceState(String studyInstanceUID, Series series,
-            Collection<String> moved) {
-        for(Instance inst : series.getInstances()) {
+    private ReferenceState getReferenceState(String studyInstanceUID, Instance inst,
+            Collection<String> moved, String seriesType) {
             Sequence currentEvidenceSequence = inst.getAttributes()
                     .getSequence(Tag.CurrentRequestedProcedureEvidenceSequence);
-            Collection<String> allReferencedSopUIDs = getAggregatedReferencedSopInstancesForStudy(
+            Collection<String> allReferencedSopUIDs = seriesType.equalsIgnoreCase("PR")? getAggregatedReferencedSopInstancesForSeries(inst.getAttributes()
+                    .getSequence(Tag.ReferencedSeriesSequence)): getAggregatedReferencedSopInstancesForStudy(
                     studyInstanceUID, currentEvidenceSequence);
             int allReferencesCount=allReferencedSopUIDs.size();
             if(allReferencesCount==0)
@@ -1821,7 +1831,7 @@ public class QCBeanImpl  implements QCBean{
                     && allReferencesCount > 0){
                 return ReferenceState.SOMEMOVED;
             }
-            }
+            
         return ReferenceState.NONEMOVED;
         }
 
@@ -1851,6 +1861,16 @@ public class QCBeanImpl  implements QCBean{
         return aggregatedSopUIDs;
     }
 
+    private Collection<String> getAggregatedReferencedSopInstancesForSeries(
+            Sequence referencedSeriesSequence) {
+        Collection<String> aggregatedSopUIDs = new ArrayList<String>();
+        for(Attributes seriesItems : referencedSeriesSequence) {
+            for(Attributes sopItems : seriesItems.getSequence(Tag.ReferencedImageSequence)) {
+                aggregatedSopUIDs.add(sopItems.getString(Tag.ReferencedSOPInstanceUID));
+            }
+        }
+        return aggregatedSopUIDs;
+    }
     /**
      * Find series KO/PR/SR.
      * Returns all series found within the study with the modality
@@ -1904,32 +1924,41 @@ public class QCBeanImpl  implements QCBean{
             QCStudyHistory studyHistory, Collection<String> sourceUIDs,
             Collection<String> targetUIDs, Study sourceStudy,
             Study targetStudy, HashMap<String, NewSeriesTuple> oldToNewSeries) {
+        sourceStudy = em.find(Study.class, sourceStudy.getPk());
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         Series newSeries;
         Collection<Series> seriesKOPRSR = findSeriesKOPRSR(sourceStudy);
          for(Series series: seriesKOPRSR) {
              for(Instance inst:series.getInstances()) {
-                 ReferenceState referenceState = getReferenceState(
-                         sourceStudy.getStudyInstanceUID(),series,sourceUIDs);
-                 Instance newInstance ;
-                 if(!oldToNewSeries.keySet().contains(
-                         inst.getSeries().getSeriesInstanceUID())) {
-                     newSeries= createSeries(inst.getSeries(), targetStudy, 
-                             targetSeriesAttrs);
-                     QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
-                             series.getAttributes(), studyHistory);
-                     oldToNewSeries.put(inst.getSeries().getSeriesInstanceUID(), 
-                             new NewSeriesTuple(newSeries.getPk(),seriesHistory));
+                 ReferenceState referenceState = null;
+                 if(series.getModality().equalsIgnoreCase("PR")) {
+                     referenceState = getReferenceState(
+                             sourceStudy.getStudyInstanceUID(),inst,sourceUIDs, "PR"); 
                  }
                  else {
-                     newSeries = em.find(Series.class,oldToNewSeries.get(
-                             inst.getSeries().getSeriesInstanceUID()).getPK());
+                     referenceState = getReferenceState(
+                             sourceStudy.getStudyInstanceUID(),inst,sourceUIDs, "KOSR");
                  }
+                 
+                 Instance newInstance ;
+
                  QCInstanceHistory instanceHistory;
                  switch (referenceState) {
                  
                 case ALLMOVED:
-
+                    if(!oldToNewSeries.keySet().contains(
+                            inst.getSeries().getSeriesInstanceUID())) {
+                        newSeries= createSeries(inst.getSeries(), targetStudy, 
+                                targetSeriesAttrs);
+                        QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
+                                series.getAttributes(), studyHistory);
+                        oldToNewSeries.put(inst.getSeries().getSeriesInstanceUID(), 
+                                new NewSeriesTuple(newSeries.getPk(),seriesHistory));
+                    }
+                    else {
+                        newSeries = em.find(Series.class,oldToNewSeries.get(
+                                inst.getSeries().getSeriesInstanceUID()).getPK());
+                    }
                     newInstance= move(inst,newSeries,qcRejectionCode);
                     instanceHistory = new QCInstanceHistory(
                             targetStudy.getStudyInstanceUID(),  newSeries.getSeriesInstanceUID(),
@@ -1953,6 +1982,19 @@ public class QCBeanImpl  implements QCBean{
                     break;
                     
                 case SOMEMOVED:
+                    if(!oldToNewSeries.keySet().contains(
+                            inst.getSeries().getSeriesInstanceUID())) {
+                        newSeries= createSeries(inst.getSeries(), targetStudy, 
+                                targetSeriesAttrs);
+                        QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
+                                series.getAttributes(), studyHistory);
+                        oldToNewSeries.put(inst.getSeries().getSeriesInstanceUID(), 
+                                new NewSeriesTuple(newSeries.getPk(),seriesHistory));
+                    }
+                    else {
+                        newSeries = em.find(Series.class,oldToNewSeries.get(
+                                inst.getSeries().getSeriesInstanceUID()).getPK());
+                    }
                     newInstance = clone(inst,newSeries);
                     inst = em.find(Instance.class, inst.getPk());
                     newInstance = em.find(Instance.class, newInstance.getPk());
@@ -2184,6 +2226,7 @@ public class QCBeanImpl  implements QCBean{
             QCActionHistory identHistoryAction) {
         QCStudyHistory identStudyHistory = createQCStudyHistory(
                 ident.getSeries().getStudy().getStudyInstanceUID(), 
+                ident.getSeries().getStudy().getStudyInstanceUID(), 
                 new Attributes(), identHistoryAction);
         QCSeriesHistory identSeriesHistory = createQCSeriesHistory(
                 ident.getSeries().getSeriesInstanceUID(), 
@@ -2310,6 +2353,72 @@ public class QCBeanImpl  implements QCBean{
         }
         
     }
+
+
+    @Override
+    public boolean requiresReferenceUpdate(String studyInstanceUID, Attributes attrs) {
+        
+        if(attrs == null) {
+            Query query = em.createNamedQuery(QCInstanceHistory.STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
+            query.setParameter(1, studyInstanceUID);
+            query.setMaxResults(1);
+            return query.getResultList().isEmpty()? false: true;
+        }
+        ArrayList<String> uids = new ArrayList<String>();
+        Patient pat = getPatient(attrs);
+        
+        if(pat == null) {
+            LOG.error("{} : Attributes supplied missing PatientID",qcSource);
+            throw new IllegalArgumentException("Attributes supplied missing PatientID");
+            }
+        
+        for(Study study : pat.getStudies()) {
+            uids.add(study.getStudyInstanceUID());
+            }
+        Query query = em.createNamedQuery(QCInstanceHistory.STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
+        query.setParameter("uids", uids);
+        query.setMaxResults(1);
+        return query.getResultList().isEmpty()? false : true;
+    }
+
+
+    
+    
+//    /* (non-Javadoc)
+//     * @see org.dcm4chee.archive.qc.QCBean#getQCed(java.lang.String)
+//     */
+//    @Override
+//    public HashMap<String, String> getQCed(String studyUID) {
+//        HashMap<String, String> mapping = new HashMap<String, String>();
+//        if(studyUID == null) {
+//            LOG.error("{} : Unable to get QCed references for study"
+//                    + " with UID = {}", qcSource, studyUID);
+//            return mapping;
+//        }
+//        Query query = em.createNamedQuery(QCInstanceHistory.FIND_ALLUIDS_OF_ACTION_BY_STUDY_UID);
+//        Collection<Tuple> tuples = query.getResultList();
+//        for (Tuple tuple : tuples) {
+//            String oldInstanceUID = asString(tuple.get(0));
+//            String currentInstanceUID = asString(tuple.get(1));
+//            if(oldInstanceUID!=null && currentInstanceUID!=null)
+//                mapping.put(oldInstanceUID, currentInstanceUID);
+//            
+//            String oldSeriesUID = asString(tuple.get(2));
+//            String currentSeriesUID = asString(tuple.get(3));
+//            if(oldSeriesUID != null && currentSeriesUID != null)
+//                mapping.put(oldSeriesUID, currentSeriesUID);
+//            
+//            String oldStudyUID = asString(tuple.get(4));
+//            String currentStudyUID = asString(tuple.get(5));
+//            if(oldStudyUID != null && currentStudyUID!=null)
+//                mapping.put(oldStudyUID, currentStudyUID);
+//        }
+//        return mapping;
+//    }
+//
+//    private String asString(Object object) {
+//        return object!=null?(String) object:null;
+//    }
 }
 
 //private QCInstanceHistory getFirstInstanceHistory(QCInstanceHistory instance, Collection<QCInstanceHistory> instances) {

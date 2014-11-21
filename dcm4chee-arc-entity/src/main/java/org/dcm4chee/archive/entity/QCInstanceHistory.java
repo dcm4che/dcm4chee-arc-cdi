@@ -85,7 +85,21 @@ import org.hibernate.annotations.Cascade;
             + "LEFT JOIN FETCH qcse.study qcst "
             + "LEFT JOIN FETCH qcst.updatedAttributesBlob "
             + "LEFT JOIN FETCH qcst.action qca "
-            + "where qci.oldUID = ?1")
+            + "where qci.oldUID = ?1"),
+@NamedQuery(
+    name="QCInstanceHistory.studyExistsInQCHistoryAsOldOrNext",
+    query="SELECT qcst.oldStudyUID FROM QCStudyHistory qcst "
+            + " where exists "
+            + " (select qcst2.oldStudyUID from QCStudyHistory qcst2"
+            + " where qcst2.oldStudyUID = ?1 OR qcst2.nextStudyUID = ?1)"
+    ),
+@NamedQuery(
+    name="QCInstanceHistory.studiesExistsInQCHistoryAsOldOrNext",
+    query="SELECT qcst.oldStudyUID FROM QCStudyHistory qcst "
+            + " where exists "
+            + " (select qcst2.oldStudyUID from QCStudyHistory qcst2"
+            + " where qcst2.oldStudyUID IN (:uids) OR qcst2.nextStudyUID IN (:uids))"
+    )
 })
 
 @Entity
@@ -97,6 +111,9 @@ public class QCInstanceHistory implements Serializable{
     public static final String FIND_BY_CURRENT_UID="QCInstanceHistory.findByCurrentUID";
     public static final String FIND_BY_OLD_UID="QCInstanceHistory.findByOldUID";
     public static final String FIND_BY_CURRENT_UID_FOR_ACTION="QCInstanceHistory.findByCurrentUIDForAction";
+    public static final String STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT= "QCInstanceHistory.studyExistsInQCHistoryAsOldOrNext";
+    public static final String STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT= "QCInstanceHistory.studiesExistsInQCHistoryAsOldOrNext";
+    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")

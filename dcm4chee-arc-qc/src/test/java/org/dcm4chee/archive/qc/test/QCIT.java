@@ -46,6 +46,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -413,6 +414,7 @@ public class QCIT {
         em.persist(prevaction);
         QCStudyHistory prevStudyHistory = new QCStudyHistory(null, prevaction);
         prevStudyHistory.setOldStudyUID("X.X.X");
+        prevStudyHistory.setNextStudyUID("3.3.3.3");
         em.persist(prevStudyHistory);
         QCSeriesHistory prevSeriesHistory = new QCSeriesHistory(null, prevStudyHistory);
         prevSeriesHistory.setOldSeriesUID("Y.Y.Y");
@@ -969,6 +971,9 @@ public class QCIT {
         assertTrue(identKO.getPreviousAtributesBlob()!=null);
         //test IMG2 is cloned
         assertTrue(newIMG2.isCloned());
+        //test getQCed for STUDY1 (IMG2 was not QCed)
+        assertTrue(qcManager.requiresReferenceUpdate("STUDY1", null));
+        
         
     }
 
@@ -1029,6 +1034,7 @@ public class QCIT {
         em.persist(prevaction);
         QCStudyHistory prevStudyHistory = new QCStudyHistory(null, prevaction);
         prevStudyHistory.setOldStudyUID("X.X.X");
+        prevStudyHistory.setNextStudyUID("STUDY1");
         em.persist(prevStudyHistory);
         QCSeriesHistory prevSeriesHistory = new QCSeriesHistory(null, prevStudyHistory);
         prevSeriesHistory.setOldSeriesUID("Y.Y.Y");
