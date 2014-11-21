@@ -2381,6 +2381,251 @@ public class QCBeanImpl  implements QCBean{
         return query.getResultList().isEmpty()? false : true;
     }
 
+    @Override
+    public Collection<String> scanForReferencedStudyUIDs(Attributes attrs) {
+        //identical document sequence is omitted since it's already part of the QC operation  
+        ArrayList<String> studiesReferenced = new ArrayList<String>();
+        //root study iuid
+        studiesReferenced.add(attrs.getString(Tag.StudyInstanceUID));
+        //Current RequestedProcedure EvidenceSequence
+        if(attrs.contains(Tag.CurrentRequestedProcedureEvidenceSequence))
+            studiesReferenced.addAll(getStudyFromAllItems(
+                    attrs.getSequence(Tag.CurrentRequestedProcedureEvidenceSequence)));
+        //Pertinent Other EvidenceSequence
+        if(attrs.contains(Tag.PertinentOtherEvidenceSequence))
+            studiesReferenced.addAll(getStudyFromAllItems(
+                    attrs.getSequence(Tag.PertinentOtherEvidenceSequence)));
+        //Referenced Study Sequence (includes only sop class and sop instance for the study)
+        if(attrs.contains(Tag.ReferencedStudySequence))
+            studiesReferenced.addAll(getReferencedStudiesFromReferencedStudySequence(
+                    attrs.getSequence(Tag.ReferencedStudySequence)));
+        //Predecessor DocumentsSequence
+        if(attrs.contains(Tag.PredecessorDocumentsSequence)) {
+            studiesReferenced.addAll(getStudyFromAllItems(
+                    attrs.getSequence(Tag.PredecessorDocumentsSequence)));
+        }
+        //Referenced Raw DataSequence
+        if(attrs.contains(Tag.ReferencedRawDataSequence)) {
+            studiesReferenced.addAll(getStudyFromAllItems(
+                    attrs.getSequence(Tag.ReferencedRawDataSequence)));
+        }
+        //Referenced WaveformSequence
+        if(attrs.contains(Tag.ReferencedWaveformSequence)) {
+          studiesReferenced.addAll(getStudyFromAllItems(
+                  attrs.getSequence(Tag.ReferencedWaveformSequence)));  
+        }
+        //Referenced ImageEvidence Sequence
+        if(attrs.contains(Tag.ReferencedImageEvidenceSequence))
+            studiesReferenced.addAll(getStudyFromAllItems(
+                    attrs.getSequence(Tag.ReferencedImageEvidenceSequence)));
+        //Source Image EvidenceSequence
+        if(attrs.contains(Tag.SourceImageEvidenceSequence))
+            studiesReferenced.addAll(getStudyFromAllItems(
+                    attrs.getSequence(Tag.SourceImageEvidenceSequence)));
+        //The associated study to all references must be fetched for the following Sequences
+        //Source Image Sequence
+        if(attrs.contains(Tag.SourceImageSequence)) {
+            Collection<Instance> instances = locateInstances(getReferencedInstances(
+                    attrs.getSequence(Tag.SourceImageSequence)));
+            for(Instance inst : instances){
+                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+            }
+        }
+      //Referenced SpatialRegistration Sequence
+        if(attrs.contains(Tag.ReferencedSpatialRegistrationSequence)) {
+            Collection<Instance> instances = locateInstances(getReferencedInstances(
+                    attrs.getSequence(Tag.ReferencedSpatialRegistrationSequence)));
+            for(Instance inst : instances){
+                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+            }
+        } 
+        //Referenced Image Sequence 
+        if(attrs.contains(Tag.ReferencedImageSequence)) {
+            Collection<Instance> instances = locateInstances(getReferencedInstances(
+                    attrs.getSequence(Tag.ReferencedImageSequence)));
+            for(Instance inst : instances){
+                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+            }
+        }
+        //Referenced Image Sequence (witin) Displayed AreaSelection Sequence
+        if(attrs.contains(Tag.DisplayedAreaSelectionSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.DisplayedAreaSelectionSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+            }
+            }
+        }
+      //Referenced Image Sequence (witin) Graphic Annotation Sequence
+        if(attrs.contains(Tag.GraphicAnnotationSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.GraphicAnnotationSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+            }
+            }
+        }
+        //Referenced Image Sequence (witin) Softcopy VOI LUTSequence
+        if(attrs.contains(Tag.SoftcopyVOILUTSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.SoftcopyVOILUTSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+                }
+            }
+        }
+      //Referenced Stereometric Instance Sequence (witin) Structured Display ImageBox Sequence
+        if(attrs.contains(Tag.StructuredDisplayImageBoxSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.StructuredDisplayImageBoxSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedStereometricInstanceSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+                }
+            }
+        }
+      //Referenced Image Sequence (witin) Mask SubtractionSequence
+        if(attrs.contains(Tag.MaskSubtractionSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.MaskSubtractionSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+                }
+            }
+        }
+        //Referenced Image Sequence (witin) Frame Display Shutter Sequence
+        if(attrs.contains(Tag.FrameDisplayShutterSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.FrameDisplayShutterSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+                }
+            }
+        }
+      //Referenced Image Sequence (witin) Multi-frame Presentation Sequence
+        if(attrs.contains(Tag.MultiFramePresentationSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.MultiFramePresentationSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+                }
+            }
+        }
+        //Referenced Image Sequence (witin) Deformable Registration Sequence
+        if(attrs.contains(Tag.DeformableRegistrationSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.DeformableRegistrationSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+                }
+            }
+        }
+      //Referenced Image Sequence (witin) Fiducial Set Sequence
+        if(attrs.contains(Tag.FiducialSetSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.FiducialSetSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+                }
+            }
+        }
+        //Referenced Image Sequence (witin) Referenced Image Real World Value Mapping Sequence
+        if(attrs.contains(Tag.ReferencedImageRealWorldValueMappingSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.ReferencedImageRealWorldValueMappingSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+                }
+            }
+        }
+        //Referenced PresentationState Sequence
+        if(attrs.contains(Tag.ReferencedPresentationStateSequence)) {
+            Collection<Instance> instances = locateInstances(getReferencedInstances(
+                    attrs.getSequence(Tag.ReferencedPresentationStateSequence)));
+            for(Instance inst : instances){
+                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+            }
+        }
+        //Referenced InstanceSequence
+        if(attrs.contains(Tag.ReferencedInstanceSequence)) {
+            Collection<Instance> instances = locateInstances(getReferencedInstances(
+                    attrs.getSequence(Tag.ReferencedInstanceSequence)));
+            for(Instance inst : instances){
+                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+            }
+        }
+
+        //Referenced Image Sequence (witin) Referenced Series Sequence for Presentation states
+        if(attrs.contains(Tag.ReferencedSeriesSequence)) {
+            for(Attributes item : attrs.getSequence(Tag.ReferencedSeriesSequence)) {
+                if(item.contains(Tag.ReferencedImageSequence)) {
+                Collection<Instance> instances = locateInstances(getReferencedInstances(
+                        item.getSequence(Tag.ReferencedImageSequence)));
+                for(Instance inst : instances){
+                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+                }
+                }
+            }
+        }
+        return studiesReferenced;
+    }
+
+    private String[] getReferencedInstances(Sequence sequence) {
+        String[] references = new String[sequence.size()];
+        int i=0;
+        for(Attributes item : sequence) {
+            references[sequence.indexOf(item)] = item.getString(Tag.ReferencedSOPInstanceUID);
+        }
+        return references;
+    }
+
+    private Collection<String> getStudyFromAllItems(Sequence sequence) {
+        ArrayList<String> studyInstanceUIDs = new ArrayList<String>(); 
+        for(Attributes item : sequence) {
+            studyInstanceUIDs.add(item.getString(Tag.StudyInstanceUID));
+        }
+        
+        return studyInstanceUIDs;
+    }
+
+    private Collection<String> getReferencedStudiesFromReferencedStudySequence(Sequence sequence) {
+        ArrayList<String> studyInstanceUIDs = new ArrayList<String>(); 
+        for(Attributes item : sequence) {
+            studyInstanceUIDs.add(item.getString(Tag.ReferencedSOPInstanceUID));
+        }
+        
+        return studyInstanceUIDs;
+    }
+
 
     
     

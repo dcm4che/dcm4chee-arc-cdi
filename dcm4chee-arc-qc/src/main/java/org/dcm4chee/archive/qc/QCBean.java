@@ -417,11 +417,22 @@ public interface QCBean {
 
      * @param studyInstanceUID
      *            UID for a study under investigation
-     * @param pat
+     * @param attrs
      *            Attributes with id for the patient 
      *            whose studies are under investigation
      * @return the QC event
      */
     boolean requiresReferenceUpdate(String studyInstanceUID, Attributes attrs);
+
+    /**
+     * Scan For Referenced Study UIDs.
+     * Used by the RetrieveQCDecorator to get the list of referenced
+     * study uids required for the query to get the upadted references.
+     * 
+     * @param attrs
+     *            Attributes for the retrieved object
+     * @return the QC event
+     */
+    public Collection<String> scanForReferencedStudyUIDs(Attributes attrs);
     
 }

@@ -37,6 +37,8 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.qc.impl;
 
+import java.util.Collection;
+
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
@@ -78,19 +80,27 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
             String remoteAET, Attributes attrs) throws DicomServiceException {
         ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve =
                 retrieveContext.getArchiveAEExtension().getQcUpdateReferencesOnRetrieve();
-        
+        boolean requiresUpdate = false;
         switch(qcUpdateReferencesOnRetrieve) {
         case DEACTIVATE: break;
         case PATIENT :
-            LOG.info("*         Performing reference update on patient scope      *");
-            LOG.info("*         Instance Retrieved Requires Update : {}           *", 
-                    qcManager.requiresReferenceUpdate(null,attrs));
+            requiresUpdate = qcManager.requiresReferenceUpdate(null,attrs);
+            LOG.debug("Instance Retrieved Requires Update : {}", requiresUpdate);
+            break;
         case STUDY:
-            LOG.info("*         Performing reference update on study scope        *");
-            LOG.info("*         Instance Retrieved Requires Update : {}           *", 
-                    qcManager.requiresReferenceUpdate(attrs.getString(Tag.StudyInstanceUID), null));
+            requiresUpdate = qcManager.requiresReferenceUpdate(attrs.getString(Tag.StudyInstanceUID), null);
+            LOG.debug("Instance Retrieved Requires Update : {}", requiresUpdate);
             break;
         }
+        if(requiresUpdate) {
+            LOG.debug("Performing reference update on {} scope", qcUpdateReferencesOnRetrieve.name());
+            Collection<String> referencedStudyInstanceUIDs = qcManager.scanForReferencedStudyUIDs(attrs);
+            LOG.debug("Studies referenced: ");
+            for(String study : referencedStudyInstanceUIDs) {
+                LOG.debug(study);
+            }
+        }
+
     }
 
 }
