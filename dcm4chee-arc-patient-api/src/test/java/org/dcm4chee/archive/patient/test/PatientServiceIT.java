@@ -40,12 +40,7 @@ package org.dcm4chee.archive.patient.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
@@ -67,6 +62,7 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.soundex.ESoundex;
 import org.dcm4chee.archive.conf.AttributeFilter;
+import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.BlobCorruptedException;
 import org.dcm4chee.archive.entity.Issuer;
@@ -1092,9 +1088,7 @@ public class PatientServiceIT {
      */
     public static StoreParam createStoreParam() {
         StoreParam storeParam = new StoreParam();
-        AttributeFilter[] filter = new AttributeFilter[1];
-        filter[0] = PATIENT_ATTR_FILTER;
-        storeParam.setAttributeFilters(filter);
+        storeParam.setAttributeFilters(ATTRIBUTE_FILTERS);
         storeParam.setFuzzyStr(new ESoundex());
         return storeParam;
     }
@@ -1145,4 +1139,11 @@ public class PatientServiceIT {
 
     private static final AttributeFilter PATIENT_ATTR_FILTER = new AttributeFilter(
             PATIENT_ATTRS);
+
+    public static final Map<Entity, AttributeFilter> ATTRIBUTE_FILTERS;
+
+    static {
+        ATTRIBUTE_FILTERS = new HashMap<>();
+        ATTRIBUTE_FILTERS.put(Entity.Patient, new AttributeFilter(PATIENT_ATTRS));
+    }
 }

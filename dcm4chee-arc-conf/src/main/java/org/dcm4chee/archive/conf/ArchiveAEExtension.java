@@ -38,17 +38,12 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.xml.transform.Templates;
-import javax.xml.transform.TransformerConfigurationException;
-
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
-import org.dcm4che3.conf.api.generic.ConfigField;
-import org.dcm4che3.conf.api.generic.ReflectiveConfig;
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
+import org.dcm4che3.conf.core.util.ConfigIterators;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.io.TemplatesCache;
@@ -61,129 +56,138 @@ import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
 
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerConfigurationException;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
 
+@LDAP(objectClasses = "dcmArchiveNetworkAE", noContainerNode = true)
+@ConfigurableClass
 public class ArchiveAEExtension extends AEExtension {
 
     private static final long serialVersionUID = -2390448404282661045L;
 
     public static final String DEF_RETRY_INTERVAL = "60";
 
-    @ConfigField(name = "dcmModifyingSystem")
+    @ConfigurableProperty(name = "dcmModifyingSystem")
     private String modifyingSystem;
 
-    @ConfigField(name = "dcmWadoSupportedSRClasses")
+    @ConfigurableProperty(name = "dcmWadoSupportedSRClasses")
     private String[] wadoSupportedSRClasses = {};
 
-    @ConfigField(name = "dcmWadoOverlayRendering", def="true")
+    @ConfigurableProperty(name = "dcmWadoOverlayRendering", defaultValue = "true")
     private boolean wadoOverlayRendering;
 
-    @ConfigField(name = "dcmRetrieveAET")
+    @ConfigurableProperty(name = "dcmRetrieveAET")
     private String[] retrieveAETs = {};
 
-    @ConfigField(name = "dcmExternalRetrieveAET")
+    @ConfigurableProperty(name = "dcmExternalRetrieveAET")
     private String externalRetrieveAET;
 
-    @ConfigField(name = "dcmFileSystemGroupID")
+    @ConfigurableProperty(name = "dcmFileSystemGroupID")
     private String fileSystemGroupID;
 
-    @ConfigField(name = "dcmDigestAlgorithm")
+    @ConfigurableProperty(name = "dcmDigestAlgorithm")
     private String digestAlgorithm;
 
-    @ConfigField(name = "dcmSpoolDirectoryPath")
+    @ConfigurableProperty(name = "dcmSpoolDirectoryPath")
     private String spoolDirectoryPath;
 
-    @ConfigField(name = "dcmStorageFilePathFormat")
+    @ConfigurableProperty(name = "dcmStorageFilePathFormat")
     private AttributesFormat storageFilePathFormat;
 
-    @ConfigField(name = "dcmSuppressWarningCoercionOfDataElements", def = "false")
+    @ConfigurableProperty(name = "dcmSuppressWarningCoercionOfDataElements", defaultValue = "false")
     private boolean suppressWarningCoercionOfDataElements;
 
-    @ConfigField(name = "dcmPreserveSpoolFileOnFailure", def = "false")
+    @ConfigurableProperty(name = "dcmPreserveSpoolFileOnFailure", defaultValue = "false")
     private boolean preserveSpoolFileOnFailure;
 
-    @ConfigField(name = "dcmPersonNameComponentOrderInsensitiveMatching", def = "false")
+    @ConfigurableProperty(name = "dcmPersonNameComponentOrderInsensitiveMatching", defaultValue = "false")
     private boolean personNameComponentOrderInsensitiveMatching;
 
-    @ConfigField(name = "dcmMatchUnknown", def = "false")
+    @ConfigurableProperty(name = "dcmMatchUnknown", defaultValue = "false")
     private boolean matchUnknown;
 
-    @ConfigField(name = "dcmMatchLinkedPatientIDs", def = "false")
+    @ConfigurableProperty(name = "dcmMatchLinkedPatientIDs", defaultValue = "false")
     private boolean matchLinkedPatientIDs;
 
-    @ConfigField(name = "dcmSendPendingCGet", def = "false")
+    @ConfigurableProperty(name = "dcmSendPendingCGet", defaultValue = "false")
     private boolean sendPendingCGet;
 
-    @ConfigField(name = "dcmSendPendingCMoveInterval", def = "0")
+    @ConfigurableProperty(name = "dcmSendPendingCMoveInterval", defaultValue = "0")
     private int sendPendingCMoveInterval;
 
-    @ConfigField(name = "dcmStgCmtDelay", def = "0")
+    @ConfigurableProperty(name = "dcmStgCmtDelay", defaultValue = "0")
     private int storageCommitmentDelay;
 
-    @ConfigField(name = "dcmStgCmtMaxRetries", def = "0")
+    @ConfigurableProperty(name = "dcmStgCmtMaxRetries", defaultValue = "0")
     private int storageCommitmentMaxRetries;
 
-    @ConfigField(name = "dcmStgCmtRetryInterval", def = DEF_RETRY_INTERVAL)
+    @ConfigurableProperty(name = "dcmStgCmtRetryInterval", defaultValue = DEF_RETRY_INTERVAL)
     private int storageCommitmentRetryInterval = Integer
             .parseInt(DEF_RETRY_INTERVAL);
 
-    @ConfigField(name = "dcmFwdMppsDestination")
+    @ConfigurableProperty(name = "dcmFwdMppsDestination")
     private String[] forwardMPPSDestinations = {};
 
-    @ConfigField(name = "dcmFwdMppsMaxRetries", def = "0")
+    @ConfigurableProperty(name = "dcmFwdMppsMaxRetries", defaultValue = "0")
     private int forwardMPPSMaxRetries;
 
-    @ConfigField(name = "dcmFwdMppsRetryInterval", def = DEF_RETRY_INTERVAL)
+    @ConfigurableProperty(name = "dcmFwdMppsRetryInterval", defaultValue = DEF_RETRY_INTERVAL)
     private int forwardMPPSRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
 
-    @ConfigField(name = "dcmIanDestination")
+    @ConfigurableProperty(name = "dcmIanDestination")
     private String[] IANDestinations = {};
 
-    @ConfigField(name = "dcmIanMaxRetries", def = "0")
+    @ConfigurableProperty(name = "dcmIanMaxRetries", defaultValue = "0")
     private int IANMaxRetries;
 
-    @ConfigField(name = "dcmIanRetryInterval", def = DEF_RETRY_INTERVAL)
+    @ConfigurableProperty(name = "dcmIanRetryInterval", defaultValue = DEF_RETRY_INTERVAL)
     private int IANRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
 
-    private final AttributeCoercions attributeCoercions = new AttributeCoercions();
-    private final CompressionRules compressionRules = new CompressionRules();
+    @LDAP(noContainerNode = true)
+    @ConfigurableProperty(name = "dcmAtrributeCoercions")
+    private AttributeCoercions attributeCoercions = new AttributeCoercions();
 
-    @ConfigField(name = "dcmReturnOtherPatientIDs", def = "false")
+    @LDAP(noContainerNode = true)
+    @ConfigurableProperty(name = "dcmCompressionRules")
+    private CompressionRules compressionRules = new CompressionRules();
+
+    @ConfigurableProperty(name = "dcmReturnOtherPatientIDs", defaultValue = "false")
     private boolean returnOtherPatientIDs;
 
-    @ConfigField(name = "dcmReturnOtherPatientNames", def = "false")
+    @ConfigurableProperty(name = "dcmReturnOtherPatientNames", defaultValue = "false")
     private boolean returnOtherPatientNames;
 
-    @ConfigField(name = "hl7PIXManagerApplication")
+    @ConfigurableProperty(name = "hl7PIXManagerApplication")
     private String remotePIXManagerApplication;
 
-    @ConfigField(name = "hl7PIXConsumerApplication")
+    @ConfigurableProperty(name = "hl7PIXConsumerApplication")
     private String localPIXConsumerApplication;
 
-    @ConfigField(name = "dcmQidoMaxNumberOfResults", def = "0")
+    @ConfigurableProperty(name = "dcmQidoMaxNumberOfResults", defaultValue = "0")
     private int QIDOMaxNumberOfResults;
 
-    @ConfigField(name = "dcmWadoSRTemplateURI")
+    @ConfigurableProperty(name = "dcmWadoSRTemplateURI")
     private String wadoSRTemplateURI;
 
-    @ConfigField(name = "dcmQueryRetrieveViewID")
+    @ConfigurableProperty(name = "dcmQueryRetrieveViewID")
     private String queryRetrieveViewID;
 
-    @ConfigField(name = "dcmQCUpdateReferencesOnRetrieve", def="DEACTIVATE",
+    @ConfigurableProperty(name = "dcmQCUpdateReferencesOnRetrieve", defaultValue="DEACTIVATE",
             label="QC Update Reference on Retrieve",
             description="Sets the scope for the QC retrieve service decorator "
-                    + "can be DEACTIAVETE, STUDY or PATIENT "
+                    + "can be DEACTIVATE, STUDY or PATIENT "
                     + ", the update check is performed according to that scope")
-    private ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve;
+    private ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve = ReferenceUpdateOnRetrieveScope.DEACTIVATE;
 
-    //removed from schema, irrelevant
-//    @ConfigField(name = "dcmIsTimeZoneSupported", def = "false")
-//    private boolean timeZoneSupported;
-
-    @ConfigField(name = "dcmRetrieveSuppressionCriteria", def = "null", failIfNotPresent=false)
+    @ConfigurableProperty(name = "dcmRetrieveSuppressionCriteria", defaultValue = "null")
     private RetrieveSuppressionCriteria retrieveSuppressionCriteria = new RetrieveSuppressionCriteria();
 
     public RetrieveSuppressionCriteria getRetrieveSuppressionCriteria() {
@@ -196,14 +200,15 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     // will be converted to Collection<Rule>, when supported by generic configuration
-    @ConfigField(name = "dcmMPPSEmulationRules", mapKey = "cn", failIfNotPresent=false)
-    private Map<String, MPPSEmulationRule> mppsEmulationRules = 
+    @LDAP(distinguishingField = "cn")
+    @ConfigurableProperty(name = "dcmMPPSEmulationRules")
+    private Map<String, MPPSEmulationRule> mppsEmulationRules =
             new HashMap<String, MPPSEmulationRule>();
 
     private Map<String, MPPSEmulationRule> mppsEmulationRuleMap =
             new HashMap<String, MPPSEmulationRule>();
 
-    @ConfigField(name = "dcmPatientSelector", def = "null", failIfNotPresent = false)
+    @ConfigurableProperty(name = "dcmPatientSelector")
     private PatientSelectorConfig patientSelectorConfig;
 
     public PatientSelectorConfig getPatientSelectorConfig() {
@@ -232,7 +237,7 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public AttributeCoercion getAttributeCoercion(String sopClass, Dimse dimse,
-            Role role, String aeTitle) {
+                                                  Role role, String aeTitle) {
         return attributeCoercions.findAttributeCoercion(sopClass, dimse, role,
                 aeTitle);
     }
@@ -247,7 +252,8 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setAttributeCoercions(AttributeCoercions acs) {
         attributeCoercions.clear();
-        attributeCoercions.add(acs);
+        if (acs!=null)
+            attributeCoercions.add(acs);
     }
 
     public boolean removeAttributeCoercion(AttributeCoercion ac) {
@@ -264,7 +270,8 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setCompressionRules(CompressionRules rules) {
         compressionRules.clear();
-        compressionRules.add(rules);
+        if (rules != null)
+            compressionRules.add(rules);
     }
 
     public boolean removeCompressionRule(CompressionRule ac) {
@@ -333,7 +340,7 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public Templates getAttributeCoercionTemplates(String cuid, Dimse dimse,
-            TransferCapability.Role role, String aet)
+                                                   TransferCapability.Role role, String aet)
             throws TransformerConfigurationException {
         AttributeCoercion ac = getAttributeCoercion(cuid, dimse, role, aet);
         return ac != null ? TemplatesCache.getDefault().get(
@@ -521,7 +528,7 @@ public class ArchiveAEExtension extends AEExtension {
     public void reconfigure(AEExtension from) {
         ArchiveAEExtension arcae = (ArchiveAEExtension) from;
 
-        ReflectiveConfig.reconfigure(arcae, this);
+        ConfigIterators.reconfigure(arcae, this, ArchiveAEExtension.class);
 
         setAttributeCoercions(arcae.getAttributeCoercions());
         setCompressionRules(arcae.getCompressionRules());
@@ -539,9 +546,9 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public QueryParam getQueryParam(EnumSet<QueryOption> queryOpts,
-            String[] accessControlIDs) {
+                                    String[] accessControlIDs) {
         ArchiveDeviceExtension arcDev = ae.getDevice()
-                        .getDeviceExtension(ArchiveDeviceExtension.class);
+                .getDeviceExtension(ArchiveDeviceExtension.class);
         QueryParam queryParam = arcDev.getQueryParam();
         queryParam.setCombinedDatetimeMatching(queryOpts
                 .contains(QueryOption.DATETIME));

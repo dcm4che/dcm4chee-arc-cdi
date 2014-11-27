@@ -38,17 +38,29 @@
 
 package org.dcm4chee.archive.conf;
 
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.data.Code;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
+@LDAP(objectClasses = "dcmQueryRetrieveView", distinguishingField = "dcmQueryRetrieveViewID")
+@ConfigurableClass
 public class QueryRetrieveView {
 
+    @ConfigurableProperty(name = "dcmQueryRetrieveViewID")
     private String viewID;
-    private Code[] showInstancesRejectedByCode = {};
-    private Code[] hideRejectionNotesWithCode = {};
+
+    @ConfigurableProperty(name = "dcmShowInstancesRejectedByCode")
+    private Code[] showInstancesRejectedByCodes = {};
+
+    @ConfigurableProperty(name = "dcmHideRejectionNoteWithCode")
+    private Code[] hideRejectionNotesWithCodes = {};
+
+    @ConfigurableProperty(name = "dcmHideNotRejectedInstances")
     private boolean hideNotRejectedInstances;
 
     public final String getViewID() {
@@ -60,19 +72,19 @@ public class QueryRetrieveView {
     }
 
     public final Code[] getShowInstancesRejectedByCodes() {
-        return showInstancesRejectedByCode;
+        return showInstancesRejectedByCodes;
     }
 
     public final void setShowInstancesRejectedByCodes(Code... codes) {
-        this.showInstancesRejectedByCode = codes;
+        this.showInstancesRejectedByCodes = codes;
     }
 
     public final Code[] getHideRejectionNotesWithCodes() {
-        return hideRejectionNotesWithCode;
+        return hideRejectionNotesWithCodes;
     }
 
     public final void setHideRejectionNotesWithCodes(Code... codes) {
-        this.hideRejectionNotesWithCode = codes;
+        this.hideRejectionNotesWithCodes = codes;
     }
 
     public final boolean isHideNotRejectedInstances() {

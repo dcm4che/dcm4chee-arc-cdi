@@ -43,19 +43,17 @@ package org.dcm4chee.archive.rs;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.HostNameAEEntry;
 import org.dcm4chee.archive.dto.Participant;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @ApplicationScoped
 public class HostAECacheImpl implements HostAECache{
@@ -74,7 +72,7 @@ public class HostAECacheImpl implements HostAECache{
     private ArchiveDeviceExtension arcDevExt;
 
     private boolean resolve() {
-        return arcDevExt.isHostnameAEresoultion();
+        return arcDevExt.isHostnameAEResolution();
     }
 
     public ApplicationEntity findAE(HttpSource source){
@@ -112,16 +110,12 @@ public class HostAECacheImpl implements HostAECache{
     }
 
     private ApplicationEntity lookupAE(String host) {
-        for (HostNameAEEntry entry : arcDevExt.getHostNameAEList()) {
-            if (entry.getHostName().compareToIgnoreCase(host) == 0) {
-                try {
-                    return aeCache.findApplicationEntity(entry.getAeTitle());
-                } catch (ConfigurationException e) {
-                    return null;
-                }
-            }
+        try {
+            final String aeTitle = arcDevExt.getHostNameToAETitleMap().get(host);
+            return aeCache.findApplicationEntity(aeTitle);
+        } catch (ConfigurationException e) {
+            return null;
         }
-        return null;
     }
 
 }

@@ -67,7 +67,6 @@ import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Fragments;
@@ -317,7 +316,7 @@ public class WadoRS extends Wado {
     @Path("/studies/{StudyInstanceUID}")
     public Response retrieveStudy(
             @PathParam("StudyInstanceUID") String studyInstanceUID)
-            throws DicomServiceException, ConfigurationNotFoundException {
+            throws DicomServiceException  {
         init("retrieveStudy");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -331,7 +330,7 @@ public class WadoRS extends Wado {
     public Response retrieveSeries(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID)
-            throws DicomServiceException, ConfigurationNotFoundException {
+            throws DicomServiceException {
         init("retrieveSeries");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -347,7 +346,7 @@ public class WadoRS extends Wado {
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
             @PathParam("SOPInstanceUID") String sopInstanceUID)
-            throws DicomServiceException, ConfigurationNotFoundException {
+            throws DicomServiceException {
         init("retrieveInstance");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -402,7 +401,7 @@ public class WadoRS extends Wado {
     @Path("/studies/{StudyInstanceUID}/metadata")
     public Response retrieveStudyMetadata(
             @PathParam("StudyInstanceUID") String studyInstanceUID)
-            throws ConfigurationNotFoundException, DicomServiceException {
+            throws DicomServiceException {
         init("retrieveMetadata");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -417,7 +416,7 @@ public class WadoRS extends Wado {
     public Response retrieveSeriesMetadata(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID)
-            throws ConfigurationNotFoundException, DicomServiceException {
+            throws DicomServiceException {
         init("retrieveMetadata");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -434,7 +433,7 @@ public class WadoRS extends Wado {
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
             @PathParam("SOPInstanceUID") String sopInstanceUID)
-            throws ConfigurationNotFoundException, DicomServiceException {
+            throws DicomServiceException {
         init("retrieveMetadata");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -445,7 +444,7 @@ public class WadoRS extends Wado {
     }
 
     private Response retrieve(List<ArchiveInstanceLocator> refs)
-            throws DicomServiceException, ConfigurationNotFoundException {
+            throws DicomServiceException {
 
         List<ArchiveInstanceLocator> insts = new ArrayList<ArchiveInstanceLocator>();
         List<ArchiveInstanceLocator> instswarning = new ArrayList<ArchiveInstanceLocator>();
@@ -564,7 +563,7 @@ public class WadoRS extends Wado {
     }
 
     private Response retrieveMetadata(final List<ArchiveInstanceLocator> refs)
-            throws ConfigurationNotFoundException, DicomServiceException {
+            throws DicomServiceException {
 
         if (refs.isEmpty())
             throw new WebApplicationException(Status.NOT_FOUND);
