@@ -41,24 +41,35 @@ package org.dcm4chee.archive.conf;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.data.Code;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
+@LDAP(objectClasses = "dcmRejectionNote", distinguishingField = "dcmRejectionNoteTitle")
+@ConfigurableClass
 public class RejectionParam {
 
+    @ConfigurableProperty(name="dcmRejectionNoteTitle")
     private Code rejectionNoteTitle;
 
+    @ConfigurableProperty(name="dcmRejectedObjectRetentionTime")
     private int retentionTime;
-    
+
+    @ConfigurableProperty(name="dcmRejectedObjectRetentionTimeUnit")
     private TimeUnit retentionTimeUnit;
-    
+
+    @ConfigurableProperty(name="dcmAcceptPreviousRejectedInstance")
     private StoreAction acceptPreviousRejectedInstance;
 
+    @ConfigurableProperty(name="dcmOverwritePreviousRejection")
     private Code[] overwritePreviousRejection = {};
 
+    @ConfigurableProperty(name="dcmRevokeRejection", defaultValue = "false")
     private boolean revokeRejection;
 
     public final Code getRejectionNoteTitle() {

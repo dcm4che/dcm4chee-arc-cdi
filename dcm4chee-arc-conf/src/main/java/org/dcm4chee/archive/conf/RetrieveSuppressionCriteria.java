@@ -1,21 +1,29 @@
 package org.dcm4chee.archive.conf;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.dcm4che3.conf.api.generic.ConfigClass;
-import org.dcm4che3.conf.api.generic.ConfigField;
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
 
-@ConfigClass(objectClass = "dcmRetrieveSuppressionCriteria")
+@LDAP(objectClasses = "dcmRetrieveSuppressionCriteria")
+@ConfigurableClass
 public class RetrieveSuppressionCriteria implements Serializable {
 private static final long serialVersionUID = -7215371541145445328L;
 
-@ConfigField(name = "dcmCheckTransferCapabilities", def = "false")
+@ConfigurableProperty(name = "dcmCheckTransferCapabilities", defaultValue = "false")
 private boolean checkTransferCapabilities;
 
-@ConfigField(mapName = "dcmRetrieveSuppressionCriteriaMap", mapKey = "dicomAETitle", name = "labeledURI", mapElementObjectClass = "dcmRetrieveSuppressionCriteriaEntry", failIfNotPresent=false)
-private Map<String, String> suppressionCriteriaMap = new HashMap<String, String>();
+
+@LDAP(
+        distinguishingField = "dicomAETitle",
+        mapEntryObjectClass = "dcmRetrieveSuppressionCriteriaEntry",
+        mapValueAttribute = "labeledURI"
+)
+@ConfigurableProperty(name = "dcmRetrieveSuppressionCriteriaMap")
+private Map<String, String> suppressionCriteriaMap = new LinkedHashMap<String, String>();
 
 public boolean isCheckTransferCapabilities() {
     return checkTransferCapabilities;

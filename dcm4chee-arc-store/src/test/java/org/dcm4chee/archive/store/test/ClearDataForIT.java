@@ -37,7 +37,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 package org.dcm4chee.archive.store.test;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -51,6 +53,7 @@ import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -216,9 +219,7 @@ public class ClearDataForIT {
 
     private static StoreParam createStoreParam() {
         StoreParam storeParam = new StoreParam();
-        AttributeFilter[] filter = new AttributeFilter[1];
-        filter[0] = PATIENT_ATTR_FILTER;
-        storeParam.setAttributeFilters(filter);
+        storeParam.setAttributeFilters(ATTRIBUTE_FILTERS);
         storeParam.setFuzzyStr(new ESoundex());
         return storeParam;
     }
@@ -253,6 +254,11 @@ public class ClearDataForIT {
             Tag.SpecialNeeds, Tag.PertinentDocumentsSequence, Tag.PatientState,
             Tag.PatientClinicalTrialParticipationSequence,
             Tag.ConfidentialityConstraintOnPatientDataDescription };
-    private static final AttributeFilter PATIENT_ATTR_FILTER = new AttributeFilter(
-            PATIENT_ATTRS);
+
+    public static final Map<Entity, AttributeFilter> ATTRIBUTE_FILTERS;
+
+    static {
+        ATTRIBUTE_FILTERS = new HashMap<>();
+        ATTRIBUTE_FILTERS.put(Entity.Patient, new AttributeFilter(PATIENT_ATTRS));
+    }
 }

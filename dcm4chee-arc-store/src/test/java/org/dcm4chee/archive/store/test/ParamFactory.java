@@ -40,9 +40,13 @@ package org.dcm4chee.archive.store.test;
 
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.ESoundex;
+import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.conf.AttributeFilter;
+
+import java.util.EnumMap;
+import java.util.Map;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -179,143 +183,21 @@ public abstract class ParamFactory {
         Tag.ContentCreatorName,
         Tag.OriginalAttributesSequence
     };
-    private static final int[] VISIT_ATTRS = {
-        Tag.SpecificCharacterSet,
-        Tag.InstitutionName,
-        Tag.InstitutionAddress,
-        Tag.InstitutionCodeSequence,
-        Tag.ReferringPhysicianName,
-        Tag.ReferringPhysicianAddress,
-        Tag.ReferringPhysicianTelephoneNumbers,
-        Tag.ReferringPhysicianIdentificationSequence,
-        Tag.AdmittingDiagnosesDescription,
-        Tag.AdmittingDiagnosesCodeSequence,
-        Tag.VisitStatusID,
-        Tag.AdmissionID,
-        Tag.IssuerOfAdmissionIDSequence,
-        Tag.RouteOfAdmissions,
-        Tag.AdmittingDate,
-        Tag.AdmittingTime,
-        Tag.ServiceEpisodeID,
-        Tag.ServiceEpisodeDescription,
-        Tag.IssuerOfServiceEpisodeIDSequence,
-        Tag.CurrentPatientLocation,
-        Tag.PatientInstitutionResidence,
-        Tag.VisitComments
-    };
-    private static final int[] SERVICE_REQUEST_ATTRS = {
-        Tag.SpecificCharacterSet,
-        Tag.AccessionNumber,
-        Tag.IssuerOfAccessionNumberSequence,
-        Tag.RequestingPhysicianIdentificationSequence,
-        Tag.RequestingPhysician,
-        Tag.RequestingService,
-        Tag.RequestingServiceCodeSequence,
-        Tag.OrderPlacerIdentifierSequence,
-        Tag.OrderFillerIdentifierSequence,
-        Tag.IssueDateOfImagingServiceRequest,
-        Tag.IssueTimeOfImagingServiceRequest,
-        Tag.OrderEnteredBy,
-        Tag.OrderEntererLocation,
-        Tag.OrderCallbackPhoneNumber,
-        Tag.PlacerOrderNumberImagingServiceRequest,
-        Tag.FillerOrderNumberImagingServiceRequest,
-        Tag.ImagingServiceRequestComments
-    };
-    private static final int[] REQUESTED_PROCEDURE_ATTRS = {
-        Tag.SpecificCharacterSet,
-        Tag.StudyDate,
-        Tag.StudyTime,
-        Tag.StudyInstanceUID,
-        Tag.RequestedProcedureDescription,
-        Tag.RequestedProcedureCodeSequence,
-        Tag.RequestedProcedureID,
-        Tag.ReasonForTheRequestedProcedure,
-        Tag.RequestedProcedurePriority,
-        Tag.PatientTransportArrangements,
-        Tag.RequestedProcedureLocation,
-        Tag.ConfidentialityCode,
-        Tag.ReportingPriority,
-        Tag.ReasonForRequestedProcedureCodeSequence,
-        Tag.NamesOfIntendedRecipientsOfResults,
-        Tag.IntendedRecipientsOfResultsIdentificationSequence,
-        Tag.RequestedProcedureComments
-    };
-    private static final int[] SPS_ATTRS = {
-        Tag.SpecificCharacterSet,
-        Tag.Modality,
-        Tag.AnatomicalOrientationType,
-        Tag.RequestedContrastAgent,
-        Tag.ScheduledStationAETitle,
-        Tag.ScheduledProcedureStepStartDate,
-        Tag.ScheduledProcedureStepStartTime,
-        Tag.ScheduledProcedureStepEndDate,
-        Tag.ScheduledProcedureStepEndTime,
-        Tag.ScheduledPerformingPhysicianName,
-        Tag.ScheduledProcedureStepDescription,
-        Tag.ScheduledProtocolCodeSequence,
-        Tag.ScheduledProcedureStepID,
-        Tag.ScheduledPerformingPhysicianIdentificationSequence,
-        Tag.ScheduledStationName,
-        Tag.ScheduledProcedureStepLocation,
-        Tag.PreMedication,
-        Tag.ScheduledProcedureStepStatus,
-        Tag.CommentsOnTheScheduledProcedureStep,
-        Tag.ScheduledSpecimenSequence
-    };
-    private static final int[] PPS_ATTRS = {
-        Tag.SpecificCharacterSet,
-        Tag.Modality,
-        Tag.ProcedureCodeSequence,
-        Tag.AnatomicStructureSpaceOrRegionSequence,
-        Tag.DistanceSourceToDetector,
-        Tag.ImageAndFluoroscopyAreaDoseProduct,
-        Tag.StudyID,
-        Tag.AdmissionID,
-        Tag.IssuerOfAdmissionIDSequence,
-        Tag.ServiceEpisodeID,
-        Tag.ServiceEpisodeDescription,
-        Tag.IssuerOfServiceEpisodeIDSequence,
-        Tag.PerformedStationAETitle,
-        Tag.PerformedStationName,
-        Tag.PerformedLocation,
-        Tag.PerformedProcedureStepStartDate,
-        Tag.PerformedProcedureStepStartTime,
-        Tag.PerformedProcedureStepEndDate,
-        Tag.PerformedProcedureStepEndTime,
-        Tag.PerformedProcedureStepStatus,
-        Tag.PerformedProcedureStepID,
-        Tag.PerformedProcedureStepDescription,
-        Tag.PerformedProcedureTypeDescription,
-        Tag.PerformedProtocolCodeSequence,
-        Tag.ScheduledStepAttributesSequence,
-        Tag.CommentsOnThePerformedProcedureStep,
-        Tag.PerformedProcedureStepDiscontinuationReasonCodeSequence,
-        Tag.TotalTimeOfFluoroscopy,
-        Tag.TotalNumberOfExposures,
-        Tag.EntranceDose,
-        Tag.ExposedArea,
-        Tag.DistanceSourceToEntrance,
-        Tag.ExposureDoseSequence,
-        Tag.CommentsOnRadiationDose,
-        Tag.BillingProcedureStepSequence,
-        Tag.FilmConsumptionSequence,
-        Tag.BillingSuppliesAndDevicesSequence,
-        Tag.PerformedSeriesSequence,
-        Tag.ReasonForPerformedProcedureCodeSequence,
-        Tag.EntranceDoseInmGy
-    };
-    private static final AttributeFilter[] ATTR_FILTERS = {
+    private static final AttributeFilter[] ATTR_FILTERS1 = {
         new AttributeFilter(PATIENT_ATTRS),
         new AttributeFilter(STUDY_ATTRS),
         new AttributeFilter(SERIES_ATTRS),
         new AttributeFilter(INSTANCE_ATTRS),
-        new AttributeFilter(VISIT_ATTRS),
-        new AttributeFilter(SERVICE_REQUEST_ATTRS),
-        new AttributeFilter(REQUESTED_PROCEDURE_ATTRS),
-        new AttributeFilter(SPS_ATTRS),
-        new AttributeFilter(PPS_ATTRS)
+
     };
+
+    private static final Map<Entity, AttributeFilter> ATTR_FILTERS = new EnumMap<Entity, AttributeFilter>(Entity.class);
+    static {
+        ATTR_FILTERS.put(Entity.Patient, new AttributeFilter(PATIENT_ATTRS));
+        ATTR_FILTERS.put(Entity.Study, new AttributeFilter(STUDY_ATTRS));
+        ATTR_FILTERS.put(Entity.Instance, new AttributeFilter(INSTANCE_ATTRS));
+        ATTR_FILTERS.put(Entity.Series, new AttributeFilter(SERIES_ATTRS));
+    }
 
     public static StoreParam createStoreParam() {
         StoreParam storeParam = new StoreParam();

@@ -40,9 +40,13 @@ package org.dcm4chee.archive.qc.test;
 
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.ESoundex;
+import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.conf.AttributeFilter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -305,28 +309,27 @@ public abstract class ParamFactory {
         Tag.ReasonForPerformedProcedureCodeSequence,
         Tag.EntranceDoseInmGy
     };
-    private static final AttributeFilter[] ATTR_FILTERS = {
-        new AttributeFilter(PATIENT_ATTRS),
-        new AttributeFilter(STUDY_ATTRS),
-        new AttributeFilter(SERIES_ATTRS),
-        new AttributeFilter(INSTANCE_ATTRS),
-        new AttributeFilter(VISIT_ATTRS),
-        new AttributeFilter(SERVICE_REQUEST_ATTRS),
-        new AttributeFilter(REQUESTED_PROCEDURE_ATTRS),
-        new AttributeFilter(SPS_ATTRS),
-        new AttributeFilter(PPS_ATTRS)
-    };
+
+    public static final Map<Entity, AttributeFilter> ATTRIBUTE_FILTERS;
+
+    static {
+        ATTRIBUTE_FILTERS = new HashMap<>();
+        ATTRIBUTE_FILTERS.put(Entity.Instance, new AttributeFilter(INSTANCE_ATTRS));
+        ATTRIBUTE_FILTERS.put(Entity.Patient, new AttributeFilter(PATIENT_ATTRS));
+        ATTRIBUTE_FILTERS.put(Entity.Series, new AttributeFilter(SERIES_ATTRS));
+        ATTRIBUTE_FILTERS.put(Entity.Study, new AttributeFilter(STUDY_ATTRS));
+    }
 
     public static StoreParam createStoreParam() {
         StoreParam storeParam = new StoreParam();
-        storeParam.setAttributeFilters(ATTR_FILTERS);
+        storeParam.setAttributeFilters(ATTRIBUTE_FILTERS);
         storeParam.setFuzzyStr(new ESoundex());
         return storeParam;
     }
 
     public static QueryParam createQueryParam() {
         QueryParam queryParam = new QueryParam();
-        queryParam.setAttributeFilters(ATTR_FILTERS);
+        queryParam.setAttributeFilters(ATTRIBUTE_FILTERS);
         queryParam.setFuzzyStr(new ESoundex());
         return queryParam;
     }

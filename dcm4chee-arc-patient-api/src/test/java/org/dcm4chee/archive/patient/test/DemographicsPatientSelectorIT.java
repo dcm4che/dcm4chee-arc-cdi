@@ -40,11 +40,7 @@ package org.dcm4chee.archive.patient.test;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
@@ -64,6 +60,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.soundex.ESoundex;
 import org.dcm4chee.archive.conf.AttributeFilter;
+import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
@@ -335,9 +332,7 @@ public class DemographicsPatientSelectorIT {
      */
     public static StoreParam createStoreParam() {
         StoreParam storeParam = new StoreParam();
-        AttributeFilter[] filter = new AttributeFilter[1];
-        filter[0] = PATIENT_ATTR_FILTER;
-        storeParam.setAttributeFilters(filter);
+        storeParam.setAttributeFilters(ATTRIBUTE_FILTERS);
         storeParam.setFuzzyStr(new ESoundex());
         return storeParam;
     }
@@ -416,7 +411,10 @@ public class DemographicsPatientSelectorIT {
             Tag.PatientClinicalTrialParticipationSequence,
             Tag.ConfidentialityConstraintOnPatientDataDescription };
 
-    private static final AttributeFilter PATIENT_ATTR_FILTER = new AttributeFilter(
-            PATIENT_ATTRS);
+    public static final Map<Entity, AttributeFilter> ATTRIBUTE_FILTERS;
 
+    static {
+        ATTRIBUTE_FILTERS = new HashMap<>();
+        ATTRIBUTE_FILTERS.put(Entity.Patient, new AttributeFilter(PATIENT_ATTRS));
+    }
 }

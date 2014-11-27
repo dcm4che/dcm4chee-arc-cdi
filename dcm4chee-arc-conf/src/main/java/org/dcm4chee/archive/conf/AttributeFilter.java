@@ -41,20 +41,35 @@ package org.dcm4chee.archive.conf;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.ValueSelector;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
+@LDAP(distinguishingField = "dcmEntity", objectClasses = "dcmAttributeFilter")
+@ConfigurableClass
 public class AttributeFilter implements Serializable {
 
     private static final long serialVersionUID = -2417549681350544302L;
 
-    private final int[] selection;
+    @ConfigurableProperty(name = "dcmTag")
+    private int[] selection;
+
+    @ConfigurableProperty(name = "dcmCustomAttribute1")
     private ValueSelector customAttribute1;
+
+    @ConfigurableProperty(name = "dcmCustomAttribute2")
     private ValueSelector customAttribute2;
+
+    @ConfigurableProperty(name = "dcmCustomAttribute3")
     private ValueSelector customAttribute3;
+
+    public AttributeFilter() {
+    }
 
     public AttributeFilter(int... selection) {
         Arrays.sort(this.selection = selection);
@@ -92,4 +107,7 @@ public class AttributeFilter implements Serializable {
         return customAttribute3;
     }
 
+    public void setSelection(int[] selection) {
+        this.selection = selection;
+    }
 }
