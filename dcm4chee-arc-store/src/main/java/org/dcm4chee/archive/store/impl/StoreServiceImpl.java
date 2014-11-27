@@ -152,7 +152,7 @@ public class StoreServiceImpl implements StoreService {
     public void initStorageSystem(StoreSession session)
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        String groupID = arcAE.getFileSystemGroupID();
+        String groupID = arcAE.getStorageSystemGroupID();
         StorageSystem storageSystem = storageService.selectStorageSystem(groupID, 0);
         if (storageSystem == null)
             throw new DicomServiceException(Status.OutOfResources,

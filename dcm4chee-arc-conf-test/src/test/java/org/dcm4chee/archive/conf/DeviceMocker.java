@@ -783,7 +783,7 @@ public class DeviceMocker {
         ae.addAEExtension(aeExt);
         ae.setAssociationAcceptor(true);
         ae.setAssociationInitiator(true);
-        aeExt.setFileSystemGroupID("DEFAULT");
+        aeExt.setStorageSystemGroupID("DEFAULT");
         aeExt.setSpoolDirectoryPath("spool");
         aeExt.setStorageFilePathFormat(new AttributesFormat(
                 "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
@@ -935,7 +935,7 @@ public class DeviceMocker {
         ae.addAEExtension(aeExt);
         ae.setAssociationAcceptor(true);
         ae.setAssociationInitiator(true);
-        aeExt.setFileSystemGroupID("notDEFAULT");
+        aeExt.setStorageSystemGroupID("notDEFAULT");
         aeExt.setSpoolDirectoryPath("archive/anotherspool");
         aeExt.setStorageFilePathFormat(new AttributesFormat(
                 "archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );

@@ -87,8 +87,8 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmExternalRetrieveAET")
     private String externalRetrieveAET;
 
-    @ConfigField(name = "dcmFileSystemGroupID")
-    private String fileSystemGroupID;
+    @ConfigField(name = "dcmStorageSystemGroupID")
+    private String storageSystemGroupID;
 
     @ConfigField(name = "dcmDigestAlgorithm")
     private String digestAlgorithm;
@@ -300,12 +300,12 @@ public class ArchiveAEExtension extends AEExtension {
         this.externalRetrieveAET = externalRetrieveAET;
     }
 
-    public String getFileSystemGroupID() {
-        return fileSystemGroupID;
+    public String getStorageSystemGroupID() {
+        return storageSystemGroupID;
     }
 
-    public void setFileSystemGroupID(String fileSystemGroupID) {
-        this.fileSystemGroupID = fileSystemGroupID;
+    public void setStorageSystemGroupID(String storageSystemGroupID) {
+        this.storageSystemGroupID = storageSystemGroupID;
     }
 
     public String getDigestAlgorithm() {
