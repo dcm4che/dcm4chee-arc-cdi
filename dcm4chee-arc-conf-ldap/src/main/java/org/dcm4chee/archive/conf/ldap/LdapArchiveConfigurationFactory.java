@@ -58,11 +58,13 @@ import org.dcm4che3.conf.ldap.LdapDicomConfiguration;
 import org.dcm4che3.conf.ldap.LdapDicomConfigurationExtension;
 import org.dcm4che3.conf.ldap.audit.LdapAuditLoggerConfiguration;
 import org.dcm4che3.conf.ldap.audit.LdapAuditRecordRepositoryConfiguration;
+import org.dcm4che3.conf.ldap.generic.LdapGenericConfigExtension;
 import org.dcm4che3.conf.ldap.hl7.LdapHL7Configuration;
 import org.dcm4che3.conf.ldap.hl7.LdapHL7ConfigurationExtension;
 import org.dcm4che3.conf.ldap.imageio.LdapImageReaderConfiguration;
 import org.dcm4che3.conf.ldap.imageio.LdapImageWriterConfiguration;
 import org.dcm4che3.util.StreamUtils;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -103,6 +105,12 @@ public class LdapArchiveConfigurationFactory {
     @Produces
     public static LdapDicomConfigurationExtension imageWriterConfiguration() {
         return new LdapImageWriterConfiguration();
+    }
+
+    @Produces
+    public static LdapDicomConfigurationExtension storageConfiguration()
+            throws ConfigurationException {
+        return LdapGenericConfigExtension.create(StorageDeviceExtension.class);
     }
 
     @Produces

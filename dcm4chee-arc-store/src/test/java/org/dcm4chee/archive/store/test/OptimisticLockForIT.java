@@ -41,10 +41,8 @@ package org.dcm4chee.archive.store.test;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.EJB;
 import javax.ejb.EJBTransactionRolledbackException;
 import javax.inject.Inject;
 import javax.persistence.OptimisticLockException;
@@ -52,21 +50,17 @@ import javax.persistence.OptimisticLockException;
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.io.SAXReader;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
-import org.dcm4chee.archive.entity.Availability;
-import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.storage.conf.StorageSystem;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -183,9 +177,7 @@ public class OptimisticLockForIT {
 
         StoreSession session = storeService.createStoreSession(storeService);
         session.setStoreParam(storeParam);
-        FileSystem fs = new FileSystem();
-        fs.setAvailability(Availability.ONLINE);
-        session.setStorageFileSystem(fs);
+        session.setStorageSystem(new StorageSystem());
         session.setSource(new GenericParticipant("localhost", "testidentity"));
         session.setRemoteAET(SOURCE_AET);
         

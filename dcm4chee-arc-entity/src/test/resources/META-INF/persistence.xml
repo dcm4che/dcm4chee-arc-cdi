@@ -21,8 +21,7 @@
   	<class>org.dcm4chee.archive.entity.ScheduledStationAETitle</class>
   	<class>org.dcm4chee.archive.entity.Instance</class>
   	<class>org.dcm4chee.archive.entity.VerifyingObserver</class>
-  	<class>org.dcm4chee.archive.entity.FileRef</class>
-  	<class>org.dcm4chee.archive.entity.FileSystem</class>
+  	<class>org.dcm4chee.archive.entity.Location</class>
   	<class>org.dcm4chee.archive.entity.ContentItem</class>
     <class>org.dcm4chee.archive.entity.StudyQueryAttributes</class>
     <class>org.dcm4chee.archive.entity.SeriesQueryAttributes</class>

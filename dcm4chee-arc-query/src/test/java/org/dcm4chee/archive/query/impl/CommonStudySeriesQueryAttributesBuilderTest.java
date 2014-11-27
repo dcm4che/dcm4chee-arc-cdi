@@ -1,17 +1,15 @@
 package org.dcm4chee.archive.query.impl;
 
-import static org.dcm4chee.archive.entity.Availability.NEARLINE;
-import static org.dcm4chee.archive.entity.Availability.ONLINE;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import org.dcm4che3.util.StringUtils;
-import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.impl.QueryServiceEJB.CommonStudySeriesQueryAttributesBuilder;
+import org.dcm4chee.storage.conf.Availability;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,7 +68,7 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
     public void addInstance_shouldUseRetrievedValuesAsIs_whenNumberOfInstancesIsGreaterThanZero() {
         Tuple mockTuple = createMockTuple(RETURNED_RETRIEVE_AETS,
                 RETURNED_RETRIEVE_AETS_ARRAY, RETURNED_EXTERNAL_RETRIEVE_AET,
-                NEARLINE);
+                Availability.NEARLINE);
 
         easyMockSupport.replayAll();
         PowerMock.replayAll();
@@ -80,7 +78,7 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
 
         assertThat(cut.retrieveAETs, is(RETURNED_RETRIEVE_AETS_ARRAY));
         assertThat(cut.externalRetrieveAET, is(RETURNED_EXTERNAL_RETRIEVE_AET));
-        assertThat(cut.availability, is(NEARLINE));
+        assertThat(cut.availability, is(Availability.NEARLINE));
 
         PowerMock.verifyAll();
         easyMockSupport.verifyAll();
@@ -90,11 +88,11 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
     public void addInstance_shouldIntersectRetrieveAets_whenNumberOfInstancesIsOne() {
         Tuple mockTuple = createMockTuple(RETURNED_RETRIEVE_AETS,
                 RETURNED_RETRIEVE_AETS_ARRAY, RETURNED_EXTERNAL_RETRIEVE_AET,
-                NEARLINE);
+                Availability.NEARLINE);
 
         cut.retrieveAETs = EXISTING_RETRIEVE_AETS;
         cut.externalRetrieveAET = RETURNED_EXTERNAL_RETRIEVE_AET;
-        cut.availability = NEARLINE;
+        cut.availability = Availability.NEARLINE;
 
         expect(
                 Utils.intersection(EXISTING_RETRIEVE_AETS,
@@ -109,7 +107,7 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
 
         assertThat(cut.retrieveAETs, is(RETRIEVE_AETS_INTERSECTION));
         assertThat(cut.externalRetrieveAET, is(RETURNED_EXTERNAL_RETRIEVE_AET));
-        assertThat(cut.availability, is(NEARLINE));
+        assertThat(cut.availability, is(Availability.NEARLINE));
 
         PowerMock.verifyAll();
         easyMockSupport.verifyAll();
@@ -119,11 +117,11 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
     public void addInstance_shouldSetTheMinimumAvailability_whenNumberOfInstancesIsOne() {
         Tuple mockTuple = createMockTuple(RETURNED_RETRIEVE_AETS,
                 RETURNED_RETRIEVE_AETS_ARRAY, RETURNED_EXTERNAL_RETRIEVE_AET,
-                NEARLINE);
+                Availability.NEARLINE);
 
         cut.retrieveAETs = EXISTING_RETRIEVE_AETS;
         cut.externalRetrieveAET = RETURNED_EXTERNAL_RETRIEVE_AET;
-        cut.availability = ONLINE;
+        cut.availability = Availability.ONLINE;
 
         expect(
                 Utils.intersection(EXISTING_RETRIEVE_AETS,
@@ -138,7 +136,7 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
 
         assertThat(cut.retrieveAETs, is(RETRIEVE_AETS_INTERSECTION));
         assertThat(cut.externalRetrieveAET, is(RETURNED_EXTERNAL_RETRIEVE_AET));
-        assertThat(cut.availability, is(NEARLINE));
+        assertThat(cut.availability, is(Availability.NEARLINE));
 
         PowerMock.verifyAll();
         easyMockSupport.verifyAll();
@@ -147,8 +145,8 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
     @Test
     public void addInstance_shouldSetExternalRetrieveAETToNull_whenTWOTuplesHaveDifferentExternalRetrieveAETs() {
         Tuple[] mockTuples = {
-                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "A", NEARLINE),
-                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "B", NEARLINE) };
+                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "A", Availability.NEARLINE),
+                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "B", Availability.NEARLINE) };
 
         expect(
                 Utils.intersection(RETURNED_RETRIEVE_AETS_ARRAY,
@@ -163,7 +161,7 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
 
         assertThat(cut.retrieveAETs, is(RETURNED_RETRIEVE_AETS_ARRAY));
         assertThat(cut.externalRetrieveAET, is(nullValue()));
-        assertThat(cut.availability, is(NEARLINE));
+        assertThat(cut.availability, is(Availability.NEARLINE));
 
         PowerMock.verifyAll();
         easyMockSupport.verifyAll();
@@ -172,9 +170,9 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
     @Test
     public void addInstance_shouldSetExternalRetrieveAETToNull_whenTHREETuplesHaveDifferentExternalRetrieveAETs() {
         Tuple[] mockTuples = {
-                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "A", NEARLINE),
-                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "B", NEARLINE),
-                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "C", NEARLINE) };
+                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "A", Availability.NEARLINE),
+                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "B", Availability.NEARLINE),
+                createMockTuple(RETURNED_RETRIEVE_AETS, RETURNED_RETRIEVE_AETS_ARRAY, "C", Availability.NEARLINE) };
 
         expect(
                 Utils.intersection(RETURNED_RETRIEVE_AETS_ARRAY,
@@ -190,7 +188,7 @@ public class CommonStudySeriesQueryAttributesBuilderTest {
 
         assertThat(cut.retrieveAETs, is(RETURNED_RETRIEVE_AETS_ARRAY));
         assertThat(cut.externalRetrieveAET, is(nullValue()));
-        assertThat(cut.availability, is(NEARLINE));
+        assertThat(cut.availability, is(Availability.NEARLINE));
 
         PowerMock.verifyAll();
         easyMockSupport.verifyAll();

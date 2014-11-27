@@ -40,7 +40,7 @@ package org.dcm4chee.archive.filemgmt;
 
 import java.util.Collection;
 
-import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.Location;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -50,15 +50,15 @@ import org.dcm4chee.archive.entity.FileRef;
 public interface FileMgmt {
 
     //deletes a file and returns true if deleted otherwise returns false
-    boolean doDelete(FileRef ref);
+    boolean doDelete(Location ref);
 
     //send a file delete message to the queue
-    void scheduleDelete(Collection<FileRef> refs, int delay) throws Exception;
+    void scheduleDelete(Collection<Location> refs, int delay) throws Exception;
 
     //sets file-ref status to delete failed
-    void failDelete(FileRef ref);
+    void failDelete(Location ref);
 
-    FileRef reattachRef(FileRef ref);
+    Location reattachRef(Location ref);
 
 
 }

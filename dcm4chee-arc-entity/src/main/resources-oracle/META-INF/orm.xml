@@ -265,20 +265,9 @@
     </attributes>
   </entity>
 
-  <entity class="FileRef">
-    <table name="file_ref" />
-    <sequence-generator name="seq" sequence-name="files_pk_seq" allocation-size="1" />
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="SEQUENCE" generator="seq" />
-      </id>
-    </attributes>
-  </entity>
-
-  <entity class="FileSystem">
-    <table name="filesystem" />
-    <sequence-generator name="seq" sequence-name="filesystem_pk_seq" allocation-size="1" />
+  <entity class="Location">
+    <table name="location" />
+    <sequence-generator name="seq" sequence-name="location_pk_seq" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />

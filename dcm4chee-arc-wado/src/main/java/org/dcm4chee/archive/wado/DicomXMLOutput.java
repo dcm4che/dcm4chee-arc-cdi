@@ -52,7 +52,6 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
@@ -64,13 +63,13 @@ import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
  */
 public class DicomXMLOutput implements StreamingOutput {
 
-    private final InstanceLocator fileRef;
+    private final ArchiveInstanceLocator fileRef;
     private final Attributes attrs;
     private final String bulkDataURI;
     private RetrieveContext context;
     private RetrieveService service;
     
-    public DicomXMLOutput(InstanceLocator fileRef, String bulkDataURI,
+    public DicomXMLOutput(ArchiveInstanceLocator fileRef, String bulkDataURI,
             Attributes attrs, RetrieveContext ctx) {
         this.fileRef = fileRef;
         this.bulkDataURI = bulkDataURI;
@@ -82,7 +81,8 @@ public class DicomXMLOutput implements StreamingOutput {
     @Override
     public void write(OutputStream out) throws IOException,
             WebApplicationException {
-        DicomInputStream dis = new DicomInputStream(fileRef.getFile());
+        DicomInputStream dis = new DicomInputStream(
+                service.getFile(fileRef).toFile());
         dis.setURI(bulkDataURI);
         try {
             dis.setIncludeBulkData(IncludeBulkData.URI);
@@ -90,8 +90,7 @@ public class DicomXMLOutput implements StreamingOutput {
             
             if(context.getSourceAET()!=null){
             service.coerceFileBeforeMerge(
-                    (ArchiveInstanceLocator) fileRef, context,
-                    context.getSourceAET(), dataset);
+                    fileRef, context, context.getSourceAET(), dataset);
 
              service.coerceRetrievedObject(context,
                         context.getSourceAET(), dataset);

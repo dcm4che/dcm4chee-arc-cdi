@@ -48,6 +48,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.storage.conf.Availability;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

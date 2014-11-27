@@ -47,7 +47,7 @@ import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
-import org.dcm4chee.archive.entity.Availability;
+import org.dcm4chee.storage.conf.Availability;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

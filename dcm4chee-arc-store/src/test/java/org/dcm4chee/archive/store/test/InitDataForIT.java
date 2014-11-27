@@ -47,11 +47,10 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
-import org.dcm4chee.archive.entity.Availability;
-import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.storage.conf.StorageSystem;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -154,9 +153,7 @@ public class InitDataForIT {
         //store session
         StoreSession session = storeService.createStoreSession(storeService); 
         session.setStoreParam(storeParam);
-        FileSystem fs = new FileSystem();
-        fs.setAvailability(Availability.ONLINE);
-        session.setStorageFileSystem(fs);
+        session.setStorageSystem(new StorageSystem());
         session.setSource(new GenericParticipant("localhost", "testidentity"));
         session.setRemoteAET(SOURCE_AET);
         session.setArchiveAEExtension(device.getApplicationEntity("DCM4CHEE")

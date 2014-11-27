@@ -41,7 +41,6 @@ package org.dcm4chee.archive.compress.impl;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
@@ -66,10 +65,9 @@ import org.dcm4chee.archive.compress.CompressionService;
 public class CompressionServiceImpl implements CompressionService {
 
     @Override
-    public void compress(CompressionRule rule, Path src, Path dest,
+    public void compress(CompressionRule rule, Path src, OutputStream out,
             MessageDigest digest, String tsuid, Attributes attrs)
             throws IOException {
-        OutputStream out = Files.newOutputStream(dest);
         Compressor compressor = new Compressor(attrs, tsuid);
         try {
             if (digest != null) {
@@ -85,8 +83,8 @@ public class CompressionServiceImpl implements CompressionService {
             Attributes fmi = attrs.createFileMetaInformation(ts);
             fmi.setString(Tag.TransferSyntaxUID, VR.UI, ts);
             dout.writeDataset(fmi, attrs);
+            dout.flush();
         } finally {
-            SafeClose.close(out);
             SafeClose.close(compressor);
         }
     }

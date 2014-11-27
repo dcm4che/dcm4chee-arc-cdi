@@ -48,9 +48,9 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.entity.FileSystem;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.storage.conf.StorageSystem;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -64,7 +64,7 @@ public class StoreSessionImpl implements StoreSession {
     private ArchiveAEExtension arcAE;
     private StoreParam storeParam;
     private MessageDigest messageDigest;
-    private FileSystem storageFileSystem;
+    private StorageSystem storageSystem;
     private Path spoolDirectory;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
     private Device sourceDevice;
@@ -145,13 +145,13 @@ public class StoreSessionImpl implements StoreSession {
     }
 
     @Override
-    public FileSystem getStorageFileSystem() {
-        return storageFileSystem;
+    public StorageSystem getStorageSystem() {
+        return storageSystem;
     }
 
     @Override
-    public void setStorageFileSystem(FileSystem fs) {
-        this.storageFileSystem = fs;
+    public void setStorageSystem(StorageSystem storageSystem) {
+        this.storageSystem = storageSystem;
     }
 
     @Override
@@ -205,6 +205,11 @@ public class StoreSessionImpl implements StoreSession {
     @Override
     public void setSourceTimeZone(TimeZone sourceTimeZone) {
         this.sourceTimeZone = sourceTimeZone;
+    }
+
+    @Override
+    public String getSourceTimeZoneID() {
+        return sourceTimeZone != null ? sourceTimeZone.getID() : null;
     }
 }
 

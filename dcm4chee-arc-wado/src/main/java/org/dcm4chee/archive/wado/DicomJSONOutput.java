@@ -89,9 +89,9 @@ public class DicomJSONOutput implements StreamingOutput {
         JSONWriter writer = new JSONWriter(gen);
         gen.writeStartArray();
 
-        for (InstanceLocator ref : refs) {
+        for (ArchiveInstanceLocator ref : refs) {
             bulkDataURI = toBulkDataURI(ref.uri);
-            DicomInputStream dis = new DicomInputStream(ref.getFile());
+            DicomInputStream dis = new DicomInputStream(service.getFile(ref).toFile());
             try {
                 dis.setURI(bulkDataURI);
                 dis.setIncludeBulkData(IncludeBulkData.URI);

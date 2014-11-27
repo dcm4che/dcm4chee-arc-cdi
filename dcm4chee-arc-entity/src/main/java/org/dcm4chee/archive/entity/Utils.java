@@ -42,7 +42,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.SpecificCharacterSet;
@@ -52,6 +51,7 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.storage.conf.Availability;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

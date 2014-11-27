@@ -8,6 +8,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <dcm4che.version>3.3.5-SNAPSHOT</dcm4che.version>
+    <dcm4chee-storage.version>2.0.0-SNAPSHOT</dcm4chee-storage.version>
     <jboss-javaee-6.0.version>3.0.2.Final</jboss-javaee-6.0.version>
     <slf4j.version>1.7.5</slf4j.version>
     <hibernate.version>4.2.7.Final</hibernate.version>
@@ -163,6 +164,21 @@
         <artifactId>dcm4che-net-audit</artifactId>
         <version>${dcm4che.version}</version>
         <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-conf</artifactId>
+        <version>${dcm4chee-storage.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-service</artifactId>
+        <version>${dcm4chee-storage.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-filesystem</artifactId>
+        <version>${dcm4chee-storage.version}</version>
       </dependency>
       <dependency>
         <groupId>org.dcm4che.dcm4chee-arc</groupId>

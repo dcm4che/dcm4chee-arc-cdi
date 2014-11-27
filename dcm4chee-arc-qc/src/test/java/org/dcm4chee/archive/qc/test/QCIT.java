@@ -72,8 +72,7 @@ import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.FileRef;
-import org.dcm4chee.archive.entity.FileSystem;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
@@ -93,7 +92,7 @@ import org.dcm4chee.archive.qc.QCEvent.QCOperation;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.archive.store.impl.FileSystemEJB;
+import org.dcm4chee.storage.conf.StorageSystem;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -119,9 +118,6 @@ public class QCIT {
     private static final String SOURCE_AET = "DCM4CHEE";
 
     private static final String[] RETRIEVE_AETS = { "RETRIEVE_AET" };
-    
-    @Inject
-    private FileSystemEJB fsEjb;
     
     @Inject
     private StoreService storeService; 
@@ -451,7 +447,7 @@ public class QCIT {
         instances.addAll(qcManager.locateInstances(instanceSOPUID));
 
         //check file alias table links created 
-        ArrayList<FileRef> refs = (ArrayList<FileRef>) getFileAliasRefs(instances.get(0));
+        ArrayList<Location> refs = (ArrayList<Location>) getFileAliasRefs(instances.get(0));
         assertTrue(refs.size()==1);
 
         //check moved
@@ -523,9 +519,9 @@ public class QCIT {
         ArrayList<Instance> instances = new ArrayList<Instance>();
         instances.addAll(qcManager.locateInstances(instanceSOPUID));
         //check file alias table links created 
-        ArrayList<FileRef> refs = (ArrayList<FileRef>) getFileAliasRefs(instances.get(0));
-        ArrayList<FileRef> refs2 = (ArrayList<FileRef>) getFileAliasRefs(instances.get(1));
-        ArrayList<FileRef> refs3 = (ArrayList<FileRef>) getFileAliasRefs(instances.get(2));
+        ArrayList<Location> refs = (ArrayList<Location>) getFileAliasRefs(instances.get(0));
+        ArrayList<Location> refs2 = (ArrayList<Location>) getFileAliasRefs(instances.get(1));
+        ArrayList<Location> refs3 = (ArrayList<Location>) getFileAliasRefs(instances.get(2));
         assertTrue(refs.size()==1);
         assertTrue(refs2.size()==1);
         assertTrue(refs3.size()==1);
@@ -632,8 +628,8 @@ public class QCIT {
         thirdParty.addAll(qcManager.locateInstances(identSOPUID));
 
         //check file alias table links created 
-        ArrayList<FileRef> refs = (ArrayList<FileRef>) getFileAliasRefs(instances.get(0));
-        ArrayList<FileRef> refs2 = (ArrayList<FileRef>) getFileAliasRefs(instances.get(1));
+        ArrayList<Location> refs = (ArrayList<Location>) getFileAliasRefs(instances.get(0));
+        ArrayList<Location> refs2 = (ArrayList<Location>) getFileAliasRefs(instances.get(1));
         assertTrue(refs.size()==1);
         assertTrue(refs2.size()==1);
         //test study created enriched with new attributes
@@ -726,9 +722,9 @@ public class QCIT {
         ArrayList<Instance> instances = new ArrayList<Instance>();
         instances.addAll(qcManager.locateInstances(instanceSOPUID));
         //check file alias table links created 
-        ArrayList<FileRef> refs = (ArrayList<FileRef>) getFileAliasRefs(instances.get(0));
-        ArrayList<FileRef> refs2 = (ArrayList<FileRef>) getFileAliasRefs(instances.get(1));
-        ArrayList<FileRef> refs3 = (ArrayList<FileRef>) getFileAliasRefs(instances.get(2));
+        ArrayList<Location> refs = (ArrayList<Location>) getFileAliasRefs(instances.get(0));
+        ArrayList<Location> refs2 = (ArrayList<Location>) getFileAliasRefs(instances.get(1));
+        ArrayList<Location> refs3 = (ArrayList<Location>) getFileAliasRefs(instances.get(2));
         assertTrue(refs.size()==1);
         assertTrue(refs2.size()==1);
         assertTrue(refs3.size()==1);
@@ -823,8 +819,8 @@ public class QCIT {
         ArrayList<Instance> instances = new ArrayList<Instance>();
         instances.addAll(qcManager.locateInstances(instanceSOPUID));
         //check file alias table links created 
-        ArrayList<FileRef> refs = (ArrayList<FileRef>) getFileAliasRefs(instances.get(0));
-        ArrayList<FileRef> refs2 = (ArrayList<FileRef>) getFileAliasRefs(instances.get(1));
+        ArrayList<Location> refs = (ArrayList<Location>) getFileAliasRefs(instances.get(0));
+        ArrayList<Location> refs2 = (ArrayList<Location>) getFileAliasRefs(instances.get(1));
         assertTrue(refs.size()==1);
         assertTrue(refs2.size()==1);
 
@@ -903,8 +899,8 @@ public class QCIT {
         thirdParty.addAll(qcManager.locateInstances(identSOPUID));
 
         //check file alias table links created 
-        ArrayList<FileRef> refs = (ArrayList<FileRef>) getFileAliasRefs(instances.get(0));
-        ArrayList<FileRef> refs2 = (ArrayList<FileRef>) getFileAliasRefs(instances.get(1));
+        ArrayList<Location> refs = (ArrayList<Location>) getFileAliasRefs(instances.get(0));
+        ArrayList<Location> refs2 = (ArrayList<Location>) getFileAliasRefs(instances.get(1));
         assertTrue(refs.size()==1);
         assertTrue(refs2.size()==1);
         //test study created enriched with new attributes
@@ -1051,7 +1047,7 @@ public class QCIT {
 
 
 
-    private Collection<FileRef> getFileAliasRefs(Instance instance) {
+    private Collection<Location> getFileAliasRefs(Instance instance) {
         Query query = em.createQuery("SELECT i.fileAliasTableRefs FROM Instance"
                 + " i where i.sopInstanceUID = ?1");
         query.setParameter(1, instance.getSopInstanceUID());
@@ -1088,9 +1084,7 @@ public class QCIT {
         StoreSession session = storeService.createStoreSession(storeService); 
         session.setStoreParam(storeParam);
         String groupID = arcAEExt.getFileSystemGroupID();
-        FileSystem fs = fsEjb.findCurrentFileSystem(groupID,
-                arcAEExt.getInitFileSystemURI());
-        session.setStorageFileSystem(fs);
+        session.setStorageSystem(new StorageSystem());
         session.setSource(new GenericParticipant("localhost", "updateTest-QCIT"));
         session.setRemoteAET(SOURCE_AET);
         session.setArchiveAEExtension(device.getApplicationEntity("DCM4CHEE")
@@ -1108,11 +1102,11 @@ public class QCIT {
 
     private StoreContext setFileAttrs(StoreContext storeContext) 
             throws URISyntaxException {
-        File f = new File(storeContext.getStoreSession().getStorageFileSystem()
-                .getPath()+"/tmp");
+//        File f = new File(storeContext.getStoreSession().getStorageFileSystem()
+//                .getPath()+"/tmp");
         storeContext.setFinalFileDigest("ABC");
         storeContext.setTransferSyntax("1.2.840.10008.1.2");
-        storeContext.setFinalFile(f.toPath());
+//        storeContext.setFinalFile(f.toPath());
         return storeContext;
     }
 

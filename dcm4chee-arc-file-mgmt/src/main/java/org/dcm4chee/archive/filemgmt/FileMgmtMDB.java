@@ -47,7 +47,7 @@ import javax.jms.ObjectMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.Location;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -72,9 +72,9 @@ public class FileMgmtMDB implements MessageListener{
     public void onMessage(Message message) {
         try {
             //TODO - AUDIT here using provided properties
-            FileRef refAttached = fileManager.reattachRef((FileRef)((ObjectMessage) message).getObject());
+            Location refAttached = fileManager.reattachRef((Location)((ObjectMessage) message).getObject());
             if(fileManager.doDelete(refAttached)){
-                LOG.info("Delete {} ",refAttached.getFilePath());
+                LOG.info("Delete {} ",refAttached.getStoragePath());
             }
             else
             {

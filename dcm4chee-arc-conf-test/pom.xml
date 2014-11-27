@@ -50,6 +50,10 @@
       <artifactId>dcm4che-soundex</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-conf</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.3</version>

@@ -80,7 +80,7 @@ import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
-import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
@@ -497,13 +497,13 @@ public class QCBeanImpl  implements QCBean{
             
             newInstance = createInstance(source, target);
             
-            if(newInstance.getFileAliasTableRefs()==null)
-            newInstance.setFileAliasTableRefs(new ArrayList<FileRef>());
+            if(newInstance.getOtherLocations()==null)
+            newInstance.setOtherLocations(new ArrayList<Location>());
             
-            newInstance.getFileAliasTableRefs().add(
-                    !source.getFileRefs().isEmpty()
-                    ?getFirst(source.getFileRefs(), newInstance)
-                    :getFirst(source.getFileAliasTableRefs(), newInstance));
+            newInstance.getOtherLocations().add(
+                    !source.getLocations().isEmpty()
+                    ?getFirst(source.getLocations(), newInstance)
+                    :getFirst(source.getOtherLocations(), newInstance));
             
         } catch (Exception e) {
             LOG.error("{} : Unable to create replacement instance for {},"
@@ -528,13 +528,13 @@ public class QCBeanImpl  implements QCBean{
         try {
             newInstance = createInstance(source, target);
 
-            if(newInstance.getFileAliasTableRefs()==null)
-            newInstance.setFileAliasTableRefs(new ArrayList<FileRef>());
+            if(newInstance.getOtherLocations()==null)
+            newInstance.setOtherLocations(new ArrayList<Location>());
 
-            newInstance.getFileAliasTableRefs().add(
-                    !source.getFileRefs().isEmpty()
-                    ?getFirst(source.getFileRefs(), newInstance)
-                    :getFirst(source.getFileAliasTableRefs(), newInstance));
+            newInstance.getOtherLocations().add(
+                    !source.getLocations().isEmpty()
+                    ?getFirst(source.getLocations(), newInstance)
+                    :getFirst(source.getOtherLocations(), newInstance));
             
         } catch (Exception e) {
             LOG.error("{} : Unable to create replacement instance for {},"
@@ -758,7 +758,7 @@ public class QCBeanImpl  implements QCBean{
     @Override
     public QCEvent deleteInstance(String sopInstanceUID) throws Exception {
         TypedQuery<Instance> query = em.createNamedQuery(
-                Instance.FIND_BY_SOP_INSTANCE_UID_FETCH_FILE_REFS_AND_FS, Instance.class)
+                Instance.FIND_BY_SOP_INSTANCE_UID_FETCH_LOCATION, Instance.class)
                 .setParameter(1, sopInstanceUID);
         Instance inst = query.getSingleResult();
         String[] sopUID = new String[1];
@@ -1671,16 +1671,16 @@ public class QCBeanImpl  implements QCBean{
      * @throws IllegalArgumentException
      *             the illegal argument exception
      */
-    private FileRef getFirst(Collection<FileRef> refs, Instance inst)
+    private Location getFirst(Collection<Location> refs, Instance inst)
             throws IllegalArgumentException{
-        FileRef reference = null;
+        Location reference = null;
         if(refs.isEmpty()){
             LOG.error("Invalid instance {} - must have a referenced file "
                     + "either via fileref or file alias",inst);
             throw new IllegalArgumentException();
         }
         else{
-        for(FileRef ref : refs) {
+        for(Location ref : refs) {
             reference = ref;
             break;
         }

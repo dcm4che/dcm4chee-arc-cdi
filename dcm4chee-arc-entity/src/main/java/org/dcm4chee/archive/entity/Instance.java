@@ -70,6 +70,7 @@ import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
+import org.dcm4chee.storage.conf.Availability;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -104,91 +105,12 @@ import org.dcm4chee.archive.conf.AttributeFilter;
                 + "LEFT JOIN FETCH se.performingPhysicianName ppn "
                 + "WHERE i.sopInstanceUID = ?1"),            
 @NamedQuery(
-    name="Instance.findBySopInstanceUIDFetchFileRefsAndFs",
-    query="SELECT i FROM Instance i LEFT JOIN FETCH i.fileRefs f LEFT JOIN FETCH f.fileSystem "
+    name="Instance.findBySopInstanceUIDFetchLocations",
+    query="SELECT i FROM Instance i LEFT JOIN FETCH i.locations "
             + "WHERE i.sopInstanceUID = ?1"),
 @NamedQuery(
     name="Instance.findBySeriesInstanceUID",
     query="SELECT i FROM Instance i "
-            + "WHERE i.series.seriesInstanceUID = ?1"),
-@NamedQuery(
-    name="Instance.sopInstanceReferenceBySeriesInstanceUID",
-    query="SELECT NEW org.dcm4chee.archive.entity.SOPInstanceReference("
-            + "i.series.study.studyInstanceUID, "
-            + "i.series.performedProcedureStepClassUID, "
-            + "i.series.performedProcedureStepInstanceUID, "
-            + "i.series.seriesInstanceUID, "
-            + "i.sopClassUID, "
-            + "i.sopInstanceUID, "
-            + "i.availability,"
-            + "i.retrieveAETs,"
-            + "i.externalRetrieveAET) "
-            + "FROM Instance i "
-            + "WHERE i.series.seriesInstanceUID = ?1"),
-@NamedQuery(
-    name="Instance.sopInstanceReferenceByStudyInstanceUID",
-    query="SELECT NEW org.dcm4chee.archive.entity.SOPInstanceReference("
-            + "i.series.study.studyInstanceUID, "
-            + "i.series.performedProcedureStepClassUID, "
-            + "i.series.performedProcedureStepInstanceUID, "
-            + "i.series.seriesInstanceUID, "
-            + "i.sopClassUID, "
-            + "i.sopInstanceUID, "
-            + "i.availability,"
-            + "i.retrieveAETs,"
-            + "i.externalRetrieveAET) "
-            + "FROM Instance i "
-            + "WHERE i.series.study.studyInstanceUID = ?1"),
-@NamedQuery(
-    name="Instance.instanceFileRefBySOPInstanceUID",
-    query="SELECT NEW org.dcm4chee.archive.entity.InstanceFileRef("
-            + "i.series.pk, "
-            + "i.sopClassUID, "
-            + "i.sopInstanceUID, "
-            + "i.availability, "
-            + "i.retrieveAETs, "
-            + "i.externalRetrieveAET, "
-            + "f.fileSystem.uri, "
-            + "f.filePath, "
-            + "f.transferSyntaxUID, "
-            + "f.fileSystem.availability, "
-            + "i.attributesBlob.encodedAttributes) "
-            + "FROM Instance i "
-            + "LEFT JOIN i.fileRefs f "
-            + "WHERE i.sopInstanceUID = ?1"),
-@NamedQuery(
-    name="Instance.instanceFileRefByStudyInstanceUID",
-    query="SELECT NEW org.dcm4chee.archive.entity.InstanceFileRef("
-            + "i.series.pk, "
-            + "i.sopClassUID, "
-            + "i.sopInstanceUID, "
-            + "i.availability, "
-            + "i.retrieveAETs, "
-            + "i.externalRetrieveAET, "
-            + "f.fileSystem.uri, "
-            + "f.filePath, "
-            + "f.transferSyntaxUID, "
-            + "f.fileSystem.availability, "
-            + "i.attributesBlob.encodedAttributes) "
-            + "FROM Instance i "
-            + "LEFT JOIN i.fileRefs f "
-            + "WHERE i.series.study.studyInstanceUID = ?1"),
-@NamedQuery(
-    name="Instance.instanceFileRefBySeriesInstanceUID",
-    query="SELECT NEW org.dcm4chee.archive.entity.InstanceFileRef("
-            + "i.series.pk, "
-            + "i.sopClassUID, "
-            + "i.sopInstanceUID, "
-            + "i.availability, "
-            + "i.retrieveAETs, "
-            + "i.externalRetrieveAET, "
-            + "f.fileSystem.uri, "
-            + "f.filePath, "
-            + "f.transferSyntaxUID, "
-            + "f.fileSystem.availability, "
-            + "i.attributesBlob.encodedAttributes) "
-            + "FROM Instance i "
-            + "LEFT JOIN i.fileRefs f "
             + "WHERE i.series.seriesInstanceUID = ?1")})
 @Entity
 @Table(name = "instance")
@@ -202,18 +124,8 @@ public class Instance implements Serializable {
             "Instance.findBySOPInstanceUID.eager";    
     public static final String FIND_BY_SERIES_INSTANCE_UID =
             "Instance.findBySeriesInstanceUID";
-    public static final String SOP_INSTANCE_REFERENCE_BY_SERIES_INSTANCE_UID =
-            "Instance.sopInstanceReferenceBySeriesInstanceUID";
-    public static final String SOP_INSTANCE_REFERENCE_BY_STUDY_INSTANCE_UID =
-            "Instance.sopInstanceReferenceByStudyInstanceUID";
-    public static final String INSTANCE_FILE_REF_BY_SOP_INSTANCE_UID =
-            "Instance.instanceFileRefBySOPInstanceUID";
-    public static final String INSTANCE_FILE_REF_BY_SERIES_INSTANCE_UID =
-            "Instance.instanceFileRefBySeriesInstanceUID";
-    public static final String INSTANCE_FILE_REF_BY_STUDY_INSTANCE_UID =
-            "Instance.instanceFileRefByStudyInstanceUID";
-    public static final String FIND_BY_SOP_INSTANCE_UID_FETCH_FILE_REFS_AND_FS =
-            "Instance.findBySopInstanceUIDFetchFileRefsAndFs";
+    public static final String FIND_BY_SOP_INSTANCE_UID_FETCH_LOCATION =
+            "Instance.findBySopInstanceUIDFetchLocations";
     public static final String FIND_BY_SOP_INSTANCE_UID_FETCH_CONCEPT_CODE_AND_VERIFYING_OBSERVER =
             "Instance.findBySOPInstanceUIDFetchConceptCodeAndVerifyingObserver";
 
@@ -307,17 +219,17 @@ public class Instance implements Serializable {
     private Collection<ContentItem> contentItems;
 
     @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = false)
-    private Collection<FileRef> fileRefs;
+    private Collection<Location> locations;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "series_fk")
     private Series series;
 
     @ManyToMany
-    @JoinTable(name="rel_instance_file_ref",
+    @JoinTable(name="rel_instance_location",
     joinColumns={@JoinColumn(name="instance_fk", referencedColumnName="pk")},
-    inverseJoinColumns={@JoinColumn(name="file_ref_fk", referencedColumnName="pk")})
-    private Collection<FileRef> fileAliasTableRefs;
+    inverseJoinColumns={@JoinColumn(name="location_fk", referencedColumnName="pk")})
+    private Collection<Location> otherLocations;
 
     @Transient
     private Attributes cachedAttributes;
@@ -484,16 +396,16 @@ public class Instance implements Serializable {
         this.contentItems = contentItems;
     }
 
-    public Collection<FileRef> getFileRefs() {
-        return fileRefs;
+    public Collection<Location> getLocations() {
+        return locations;
     }
 
-    public void setFileAliasTableRefs(Collection<FileRef> fileAliasTableRefs) {
-        this.fileAliasTableRefs = fileAliasTableRefs;
+    public void setOtherLocations(Collection<Location> otherLocations) {
+        this.otherLocations = otherLocations;
     }
 
-    public Collection<FileRef> getFileAliasTableRefs() {
-        return fileAliasTableRefs;
+    public Collection<Location> getOtherLocations() {
+        return otherLocations;
     }
 
     public Series getSeries() {

@@ -57,7 +57,6 @@ import javax.imageio.ImageReader;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
-import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
@@ -97,13 +96,13 @@ import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.Property;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
+import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
@@ -292,7 +291,7 @@ public class WadoURI extends Wado {
                 instsfailed.addAll(ref);
                 throw new WebApplicationException(Status.BAD_REQUEST);
             }
-            InstanceLocator instance = ref.get(0);
+            ArchiveInstanceLocator instance = ref.get(0);
             Attributes attrs = (Attributes) instance.getObject();
 
             MediaType mediaType = selectMediaType(instance.tsuid,
@@ -397,7 +396,7 @@ public class WadoURI extends Wado {
         return false;
     }
 
-    private Response retrieveSRHTML(final InstanceLocator instance)
+    private Response retrieveSRHTML(final ArchiveInstanceLocator ref)
             throws TransformerConfigurationException {
         return Response.ok(new StreamingOutput() {
             @Override
@@ -426,7 +425,8 @@ public class WadoURI extends Wado {
                 SAXWriter w = null;
                 th.setResult(new StreamResult(bout));
                 w = new SAXWriter(th);
-                DicomInputStream dis = new DicomInputStream(instance.getFile());
+                DicomInputStream dis = new DicomInputStream(
+                        retrieveService.getFile(ref).toFile());
                 Attributes data = dis.readDataset(-1, -1);
                 dis.close();
                 try {
@@ -438,7 +438,8 @@ public class WadoURI extends Wado {
         }, MediaType.TEXT_HTML_TYPE).build();
     }
 
-    private Response retrievePDFXMLOrText(MediaType mediaType, final InstanceLocator instance) {
+    private Response retrievePDFXMLOrText(MediaType mediaType,
+            final ArchiveInstanceLocator ref) {
 
         return Response.ok(new StreamingOutput() {
 
@@ -448,7 +449,8 @@ public class WadoURI extends Wado {
                 BufferedOutputStream bOut = null;
                 DicomInputStream in = null;
                 try {
-                    in = new DicomInputStream(instance.getFile());
+                    in = new DicomInputStream(
+                            retrieveService.getFile(ref).toFile());
                     Attributes atts = in.readDataset(-1, -1);
                     bOut = new BufferedOutputStream(out);
                     bOut.write(atts.getBytes(Tag.EncapsulatedDocument));
@@ -461,7 +463,7 @@ public class WadoURI extends Wado {
         }, mediaType).build();
     }
 
-    private Response retrieveNativeDicomObject(InstanceLocator ref,
+    private Response retrieveNativeDicomObject(ArchiveInstanceLocator ref,
             Attributes attrs) {
         String tsuid = selectTransferSyntax(ref.tsuid);
         MediaType mediaType = MediaType
@@ -476,7 +478,7 @@ public class WadoURI extends Wado {
                 : UID.ExplicitVRLittleEndian;
     }
 
-    private Response retrieveJPEG(final InstanceLocator ref, final Attributes attrs) {
+    private Response retrieveJPEG(final ArchiveInstanceLocator ref, final Attributes attrs) {
 
         return Response.ok(new StreamingOutput() {
 
@@ -489,7 +491,7 @@ public class WadoURI extends Wado {
         }, MediaTypes.IMAGE_JPEG_TYPE).build();
     }
 
-    private Response retrievePNG(final InstanceLocator ref, final Attributes attrs) {
+    private Response retrievePNG(final ArchiveInstanceLocator ref, final Attributes attrs) {
 
         return Response.ok(new StreamingOutput() {
 
@@ -521,10 +523,11 @@ public class WadoURI extends Wado {
         }
     }
 
-    private BufferedImage getBufferedImage(final InstanceLocator ref,
+    private BufferedImage getBufferedImage(final ArchiveInstanceLocator ref,
             final Attributes attrs) throws IOException {
-        ImageInputStream iis = ImageIO.createImageInputStream(ref
-                .getFile());
+        RetrieveService retrieveService = context.getRetrieveService();
+        ImageInputStream iis = ImageIO.createImageInputStream(
+                retrieveService.getFile(ref).toFile());
         BufferedImage bi;
         try {
             bi = readImage(iis, attrs);
@@ -534,7 +537,7 @@ public class WadoURI extends Wado {
         return bi;
     }
 
-    private Response retrieveGIF(final InstanceLocator ref,
+    private Response retrieveGIF(final ArchiveInstanceLocator ref,
             final Attributes attrs) {
 
         final MediaType mediaType = MediaTypes.IMAGE_GIF_TYPE;
@@ -639,11 +642,12 @@ public class WadoURI extends Wado {
           return(node);
         }
 
-    private Collection<BufferedImage> readImages(InstanceLocator ref, Attributes attrs) {
+    private Collection<BufferedImage> readImages(
+            ArchiveInstanceLocator ref, Attributes attrs) {
         ImageInputStream iis = null;
         try {
-            iis = ImageIO.createImageInputStream(ref
-                    .getFile());
+            iis = ImageIO.createImageInputStream(
+                    retrieveService.getFile(ref).toFile());
         } catch (IOException e) {
             LOG.error("Error creating image input stream  {}", e);
         }
@@ -761,7 +765,8 @@ public class WadoURI extends Wado {
             if (ref.size() != 1)
                 throw new WebApplicationException(Status.BAD_REQUEST);
 
-            DicomInputStream dis = new DicomInputStream(ref.get(0).getFile());
+            DicomInputStream dis = new DicomInputStream(
+                    retrieveService.getFile(ref.get(0)).toFile());
             try {
                 param.setPresentationState(dis.readDataset(-1, -1));
             } finally {

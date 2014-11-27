@@ -47,10 +47,9 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.PatientStudySeriesAttributes;
-import org.dcm4chee.archive.entity.QFileRef;
-import org.dcm4chee.archive.entity.QFileSystem;
+import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QSeries;
@@ -74,10 +73,7 @@ public class RetrieveServiceEJB {
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
-    static final QFileRef filealiastableref = new QFileRef("filealiastableref");
-    static final QFileSystem filealiastablereffilesystem = new QFileSystem("filealiastablereffilesystem");
-
-    public List<Tuple> query(Expression<?>[] select,
+    public List<Tuple> query(Expression<?>[] select, QLocation otherLocations,
             IDWithIssuer[] pids, String[] studyIUIDs, String[] seriesIUIDs,
             String[] objectIUIDs, QueryParam queryParam) {
 
@@ -91,18 +87,17 @@ public class RetrieveServiceEJB {
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                 objectIUIDs, false));
         builder.and(
-                (filealiastableref.status.ne(FileRef.Status.REPLACED))
-                .or(QFileRef.fileRef.status.ne(FileRef.Status.REPLACED)));
+                (otherLocations.status.ne(Location.Status.REPLACED))
+                .or(QLocation.location.status.ne(Location.Status.REPLACED)));
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNote(queryParam));
 
         List<Tuple> query = new HibernateQuery(em.unwrap(Session.class))
                 .from(QInstance.instance)
-                .leftJoin(QInstance.instance.fileRefs, QFileRef.fileRef)
-                .leftJoin(QFileRef.fileRef.fileSystem, QFileSystem.fileSystem)
-                .leftJoin(QInstance.instance.fileAliasTableRefs, filealiastableref)
-                .leftJoin(filealiastableref.fileSystem,filealiastablereffilesystem )
-                .innerJoin(QInstance.instance.attributesBlob, QueryBuilder.instanceAttributesBlob)
+                .leftJoin(QInstance.instance.locations, QLocation.location)
+                .leftJoin(QInstance.instance.otherLocations, otherLocations)
+                .innerJoin(QInstance.instance.attributesBlob,
+                        QueryBuilder.instanceAttributesBlob)
                 .innerJoin(QInstance.instance.series, QSeries.series)
                 .innerJoin(QSeries.series.study, QStudy.study)
                 .innerJoin(QStudy.study.patient, QPatient.patient)

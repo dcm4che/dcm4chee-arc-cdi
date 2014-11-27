@@ -392,21 +392,6 @@ alter table series
     drop ext_retr_aet,
     drop availability;
 
-create table rel_instance_file_ref (
-    instance_fk bigint not null,
-    file_ref_fk bigint not null
-) ENGINE=InnoDB;
-
-alter table rel_instance_file_ref 
-    add constraint FKEA5CC19493CF1065 
-    foreign key (file_ref_fk) 
-    references file_ref (pk);
-
-alter table rel_instance_file_ref 
-    add constraint FKEA5CC19437EDB1AA 
-    foreign key (instance_fk) 
-    references instance (pk);
-
 create index study_view_id_idx on study_query_attrs(view_id);
 create index series_view_id_idx on series_query_attrs(view_id);
 
@@ -482,3 +467,42 @@ alter table patient add version bigint ;
 alter table patient_id add version bigint ;
 alter table series add version bigint ;
 alter table study add version bigint ;
+
+alter table file_ref rename location;
+
+alter table location
+    change filepath storage_path varchar(255) not null,
+    change file_digest digest varchar(255),
+    change file_size size bigint not null,
+    change file_status status integer not null,
+    change file_time_zone time_zone varchar(255),
+    change file_tsuid tsuid varchar(255) not null,
+    add storage_group_id varchar(255),
+    add storage_id varchar(255),
+    add entry_name varchar(255),
+    drop foreign key FKD42DBF50206F5C8A,
+    drop filesystem_fk;
+
+update location set storage_group_id='DEFAULT', storage_id='fs1';
+
+alter table location
+    modify storage_group_id varchar(255) not null,
+    modify storage_id varchar(255) not null;
+
+drop table filesystem;
+
+create table rel_instance_location (
+    instance_fk bigint not null,
+    location_fk bigint not null
+) ENGINE=InnoDB;
+
+alter table rel_instance_location 
+    add constraint FK877EA1F9265C5DAA 
+    foreign key (location_fk) 
+    references location (pk);
+
+alter table rel_instance_location 
+    add constraint FK877EA1F937EDB1AA 
+    foreign key (instance_fk) 
+    references instance (pk);
+

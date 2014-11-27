@@ -495,7 +495,7 @@ public class WadoRS extends Wado {
                 int failed = 0;
                 if (acceptedBulkdataMediaTypes.isEmpty()) {
 
-                    for (InstanceLocator ref : refs)
+                    for (ArchiveInstanceLocator ref : refs)
                         if (!addDicomObjectTo(ref, output)) {
                             instsfailed.add((ArchiveInstanceLocator) ref);
                             failed++;
@@ -523,7 +523,7 @@ public class WadoRS extends Wado {
                 throw new WebApplicationException(Status.NOT_ACCEPTABLE);
 
             ZipOutput output = new ZipOutput();
-            for (InstanceLocator ref : refs) {
+            for (ArchiveInstanceLocator ref : refs) {
                 output.addEntry(new DicomObjectOutput(ref, (Attributes) ref
                         .getObject(), ref.tsuid, context));
             }
@@ -588,14 +588,14 @@ public class WadoRS extends Wado {
             return JSONResponseBuilder.build();
         } else {
             MultipartRelatedOutput output = new MultipartRelatedOutput();
-            for (InstanceLocator ref : refs)
+            for (ArchiveInstanceLocator ref : refs)
                 addMetadataTo(ref, output);
             return Response.ok(output).build();
         }
 
     }
 
-    private boolean addDicomObjectTo(InstanceLocator ref,
+    private boolean addDicomObjectTo(ArchiveInstanceLocator ref,
             MultipartRelatedOutput output) {
         String tsuid = selectDicomTransferSyntaxes(ref);
         if (tsuid == null) {
@@ -785,7 +785,7 @@ public class WadoRS extends Wado {
         }
     }
 
-    private void addMetadataTo(InstanceLocator ref,
+    private void addMetadataTo(ArchiveInstanceLocator ref,
             MultipartRelatedOutput output) {
         Attributes attrs = (Attributes) ref.getObject();
         addPart(output, new DicomXMLOutput(ref, toBulkDataURI(ref.uri), attrs,
@@ -797,10 +797,10 @@ public class WadoRS extends Wado {
                 || mediaType.getSubtype().equalsIgnoreCase("dicom+jpeg-jpx");
     }
 
-    private Attributes getFileAttributes(InstanceLocator ref) {
+    private Attributes getFileAttributes(ArchiveInstanceLocator ref) {
         DicomInputStream dis = null;
         try {
-            dis = new DicomInputStream(ref.getFile());
+            dis = new DicomInputStream(retrieveService.getFile(ref).toFile());
             dis.setIncludeBulkData(IncludeBulkData.URI);
             Attributes dataset = dis.readDataset(-1, -1);
             return dataset;

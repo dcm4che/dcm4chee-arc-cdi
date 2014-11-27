@@ -496,6 +496,7 @@ userCertificate;binary:: MIIDdTCCAl2gAwIBAgIEOfFkgTANBgkqhkiG9w0BAQsFADBrMQswCQY
 
 dn: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomHostname: localhost
+dcmBindAddress: 0.0.0.0
 dicomPort: 11112
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
@@ -504,20 +505,22 @@ dcmMaxOpsPerformed: 0
 cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dicomHostname: localhost
-dicomPort: 2762
-objectClass: dicomNetworkConnection
-objectClass: dcmNetworkConnection
-dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
-dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmMaxOpsInvoked: 0
-dcmMaxOpsPerformed: 0
 dcmTLSProtocol: TLSv1
 dcmTLSProtocol: SSLv3
+dcmMaxOpsInvoked: 0
+dcmBindAddress: 0.0.0.0
+objectClass: dicomNetworkConnection
+objectClass: dcmNetworkConnection
+dcmMaxOpsPerformed: 0
 cn: dicom-tls
+dicomHostname: localhost
+dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
+dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
+dicomPort: 2762
 
 dn: cn=hl7,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomHostname: localhost
+dcmBindAddress: 0.0.0.0
 dicomPort: 2575
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
@@ -526,6 +529,7 @@ cn: hl7
 
 dn: cn=hl7-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomHostname: localhost
+dcmBindAddress: 0.0.0.0
 dicomPort: 12575
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
@@ -895,8 +899,32 @@ dicomTransferSyntax: 1.2.840.10008.1.2.4.70
 objectClass: dcmImageWriter
 dcmImageWriteParam: compressionType=JPEG-LOSSLESS
 
+dn: cn=Storage Device Extension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dcmStorageDeviceExtension
+cn: Storage Device Extension
+
+dn: cn=Storage System Groups,cn=Storage Device Extension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dcmCollection
+cn: Storage System Groups
+
+dn: dcmStorageSystemGroupID=DEFAULT,cn=Storage System Groups,cn=Storage Device Extension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmActiveStorageSystemID: fs1
+objectClass: dcmStorageSystemGroup
+dcmStorageSystemGroupID: DEFAULT
+
+dn: cn=Storage Systems,dcmStorageSystemGroupID=DEFAULT,cn=Storage System Groups,cn=Storage Device Extension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dcmCollection
+cn: Storage Systems
+
+dn: dcmStorageSystemID=fs1,cn=Storage Systems,dcmStorageSystemGroupID=DEFAULT,cn=Storage System Groups,cn=Storage Device Extension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmInstanceAvailability: ONLINE
+dcmStorageSystemID: fs1
+dcmStorageSystemPath: /var/local/dcm4chee-arc/fs1
+dcmProviderName: org.dcm4chee.storage.filesystem
+objectClass: dcmStorageSystem
+dcmStorageSystemStatus: OK
+
 dn: dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmInitFileSystemURI: ${jboss.server.data.url}
 dcmDigestAlgorithm: MD5
 dcmQueryRetrieveViewID: hideRejected
 dcmFileSystemGroupID: DEFAULT
@@ -907,10 +935,10 @@ objectClass: dicomNetworkAE
 objectClass: dcmNetworkAE
 objectClass: dcmArchiveNetworkAE
 dcmWadoOverlayRendering: FALSE
-dcmStorageFilePathFormat: archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
+dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
 dcmRetrieveAET: DCM4CHEE
 dcmSendPendingCMoveInterval: 5000
-dcmSpoolDirectoryPath: archive/spool
+dcmSpoolDirectoryPath: spool
 dcmQidoMaxNumberOfResults: 1000
 hl7PIXManagerApplication: HL7RCV^DCM4CHEE
 dcmReturnOtherPatientNames: TRUE

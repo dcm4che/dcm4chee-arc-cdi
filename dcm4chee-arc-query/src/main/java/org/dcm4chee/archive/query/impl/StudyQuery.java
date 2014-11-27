@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.QStudyQueryAttributes;
 import org.dcm4chee.archive.entity.Study;
@@ -47,6 +46,7 @@ import org.dcm4chee.archive.entity.StudyQueryAttributes;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.util.QueryBuilder;
+import org.dcm4chee.storage.conf.Availability;
 import org.hibernate.ScrollableResults;
 import org.hibernate.StatelessSession;
 

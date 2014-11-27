@@ -48,7 +48,6 @@ import org.dcm4che3.imageio.codec.Decompressor;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
@@ -74,13 +73,13 @@ import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
  */
 class DicomObjectOutput implements StreamingOutput {
 
-    private final InstanceLocator fileRef;
+    private final ArchiveInstanceLocator fileRef;
     private final Attributes attrs;
     private final String tsuid;
     private RetrieveContext context;
     private RetrieveService service;
     
-    DicomObjectOutput(InstanceLocator fileRef, Attributes attrs, String tsuid,
+    DicomObjectOutput(ArchiveInstanceLocator fileRef, Attributes attrs, String tsuid,
             RetrieveContext ctx) {
         this.fileRef = fileRef;
         this.attrs = attrs;
@@ -90,7 +89,8 @@ class DicomObjectOutput implements StreamingOutput {
     }
 
     public void write(OutputStream out) throws IOException {
-        DicomInputStream dis = new DicomInputStream(fileRef.getFile());
+        DicomInputStream dis = new DicomInputStream(
+                service.getFile(fileRef).toFile());
         try {
             dis.setIncludeBulkData(IncludeBulkData.URI);
             Attributes dataset = dis.readDataset(-1, -1);

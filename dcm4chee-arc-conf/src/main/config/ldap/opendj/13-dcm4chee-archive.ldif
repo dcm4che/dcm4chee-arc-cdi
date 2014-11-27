@@ -5,6 +5,7 @@ objectClass: ldapSubentry
 objectClass: subschema
 attributeTypes: ( 1.2.40.0.13.1.15.10.3.1 NAME 'dcmInitFileSystemURI'
   DESC 'URI of directory path of initial Storage File System.'
+  OBSOLETE
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
   SINGLE-VALUE )

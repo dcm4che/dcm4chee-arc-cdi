@@ -42,8 +42,9 @@ import java.nio.file.Path;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.storage.StorageContext;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -73,21 +74,29 @@ public interface StoreContext {
 
     void setCoercedOrginalAttributes(Attributes attributes);
 
-    Path getFinalFile();
+    String getStoragePath();
 
-    void setFinalFile(Path finalFile);
+    void setStoragePath(String storagePath);
+
+    StorageContext getStorageContext();
+
+    void setStorageContext(StorageContext storageContext);
 
     StoreAction getStoreAction();
 
     void setStoreAction(StoreAction action);
 
-    FileRef getFileRef();
+    Location getFileRef();
 
-    void setFileRef(FileRef createFileRef);
+    void setFileRef(Location createFileRef);
 
     String getFinalFileDigest();
 
     void setFinalFileDigest(String finalFileDigest);
+
+    long getFinalFileSize();
+
+    void setFinalFileSize(long size);
 
     Instance getInstance();
 
@@ -104,6 +113,7 @@ public interface StoreContext {
     Throwable getThrowable();
     
     void setThrowable(Throwable t);
-    
+
+    String calcStoragePath();
 
 }

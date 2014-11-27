@@ -49,7 +49,6 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.Availability;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QPatient;
 import org.dcm4chee.archive.entity.QSeries;
@@ -63,6 +62,7 @@ import org.dcm4chee.archive.entity.StudyQueryAttributes;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.mysema.query.jpa.hibernate.DetachedHibernateQueryFactory;
+import org.dcm4chee.storage.conf.Availability;
 import org.hibernate.Session;
 
 import com.mysema.commons.lang.CloseableIterator;

@@ -90,9 +90,6 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigField(name = "dcmFileSystemGroupID")
     private String fileSystemGroupID;
 
-    @ConfigField(name = "dcmInitFileSystemURI")
-    private String initFileSystemURI;
-
     @ConfigField(name = "dcmDigestAlgorithm")
     private String digestAlgorithm;
 
@@ -309,14 +306,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setFileSystemGroupID(String fileSystemGroupID) {
         this.fileSystemGroupID = fileSystemGroupID;
-    }
-
-    public String getInitFileSystemURI() {
-        return initFileSystemURI;
-    }
-
-    public void setInitFileSystemURI(String initFileSystemURI) {
-        this.initFileSystemURI = initFileSystemURI;
     }
 
     public String getDigestAlgorithm() {

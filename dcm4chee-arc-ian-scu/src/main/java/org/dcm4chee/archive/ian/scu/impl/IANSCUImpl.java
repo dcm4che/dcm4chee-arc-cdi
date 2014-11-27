@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.ian.scu.impl;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
@@ -72,9 +73,12 @@ import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.entity.SOPInstanceReference;
+import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.entity.QSeries;
+import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.ian.scu.IANSCU;
 //import org.dcm4chee.archive.iocm.RejectionEvent;
 //import org.dcm4chee.archive.iocm.RejectionType;
@@ -84,6 +88,9 @@ import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.mysema.query.Tuple;
+import com.mysema.query.jpa.hibernate.HibernateQuery;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -147,21 +154,35 @@ public class IANSCUImpl implements IANSCU {
         builder.setReferencedMPPS(pps.getSopInstanceUID(), ppsattrs);
         Sequence perfSeriesSeq = ppsattrs.getSequence(Tag.PerformedSeriesSequence);
         for (Attributes series : perfSeriesSeq) {
-            if (!series.containsValue(Tag.SeriesInstanceUID))
+            String seriesIUID = series.getString(Tag.SeriesInstanceUID);
+            if (seriesIUID == null)
                 throw new IllegalArgumentException(
                         "Missing Series Instance UID");
-            for (SOPInstanceReference sopRef : em.createNamedQuery(
-                    Instance.SOP_INSTANCE_REFERENCE_BY_SERIES_INSTANCE_UID,
-                    SOPInstanceReference.class)
-              .setParameter(1, series.getString(Tag.SeriesInstanceUID))
-              .getResultList()) {
+
+            List<Tuple> list = new HibernateQuery(
+                    em.unwrap(org.hibernate.Session.class))
+                .from(QInstance.instance)
+                .innerJoin(QInstance.instance.series, QSeries.series)
+                .innerJoin(QSeries.series.study, QStudy.study)
+                .where(QSeries.series.seriesInstanceUID.eq(seriesIUID),
+                        QInstance.instance.rejectionNoteCode.isNull())
+                .list(QStudy.study.studyInstanceUID,
+                        QInstance.instance.sopInstanceUID,
+                        QInstance.instance.sopClassUID,
+                        QInstance.instance.availability,
+                        QInstance.instance.retrieveAETs,
+                        QInstance.instance.externalRetrieveAET);
+
+            for (Tuple tuple : list) {
                 builder.addReferencedInstance(
-                        sopRef.studyInstanceUID, 
-                        sopRef.seriesInstanceUID,
-                        sopRef.sopInstanceUID,
-                        sopRef.sopClassUID,
-                        sopRef.availability,
-                        sopRef.getRetrieveAETs());
+                        tuple.get(QStudy.study.studyInstanceUID),
+                        seriesIUID,
+                        tuple.get(QInstance.instance.sopInstanceUID),
+                        tuple.get(QInstance.instance.sopClassUID),
+                        tuple.get(QInstance.instance.availability),
+                        Utils.decodeAETs(
+                            tuple.get(QInstance.instance.retrieveAETs),
+                            tuple.get(QInstance.instance.externalRetrieveAET)));
             }
         }
         return builder;

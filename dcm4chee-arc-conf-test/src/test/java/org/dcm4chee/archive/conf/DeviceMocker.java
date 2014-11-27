@@ -39,7 +39,6 @@
  package org.dcm4chee.archive.conf;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
-import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.data.Code;
@@ -57,12 +56,15 @@ import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.util.AttributesFormat;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
+import org.dcm4chee.storage.conf.StorageSystemStatus;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -601,22 +603,32 @@ public class DeviceMocker {
          return device;
      }
 
-    protected Device createArchiveDevice(String name, Device arrDevice) throws Exception {
+    protected Device createArchiveDevice(String name, Device arrDevice)
+            throws Exception {
         Device device = new Device(name);
-        HL7DeviceExtension hl7DevExt = new HL7DeviceExtension();
-        ArchiveDeviceExtension arcDevExt = new ArchiveDeviceExtension();
-        device.addDeviceExtension(hl7DevExt);
-        device.addDeviceExtension(arcDevExt);
+
+        Connection dicom = new Connection("dicom", "localhost", 11112);
+        dicom.setBindAddress("0.0.0.0");
+        dicom.setMaxOpsInvoked(0);
+        dicom.setMaxOpsPerformed(0);
+        device.addConnection(dicom);
+
+        Connection dicomTLS = new Connection("dicom-tls", "localhost", 2762);
+        dicomTLS.setBindAddress("0.0.0.0");
+        dicomTLS.setMaxOpsInvoked(0);
+        dicomTLS.setMaxOpsPerformed(0);
+        dicomTLS.setTlsCipherSuites(
+                Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
+                Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
+        device.addConnection(dicomTLS);
+
+        addArchiveDeviceExtension(device);
+        addHL7DeviceExtension(device);
+        addAuditLogger(device, arrDevice);
+        addStorageDeviceExtension(device);
         device.addDeviceExtension(new ImageReaderExtension(ImageReaderFactory.getDefault()));
         device.addDeviceExtension(new ImageWriterExtension(ImageWriterFactory.getDefault()));
-        arcDevExt.setIncorrectWorklistEntrySelectedCode(INCORRECT_WORKLIST_ENTRY_SELECTED);
-        arcDevExt.setFuzzyAlgorithmClass("org.dcm4che3.soundex.ESoundex");
-        arcDevExt.setConfigurationStaleTimeout(CONFIGURATION_STALE_TIMEOUT);
-        arcDevExt.setWadoAttributesStaleTimeout(WADO_ATTRIBUTES_STALE_TIMEOUT);
-        arcDevExt.setRejectionParams(createRejectionNotes());
-        arcDevExt.setQueryRetrieveViews(QUERY_RETRIEVE_VIEWS);
-        arcDevExt.setMppsEmulationPollInterval(MPPS_EMULATOR_POLL_INTERVAL);
-        setAttributeFilters(arcDevExt);
+
         device.setManufacturer("dcm4che.org");
         device.setManufacturerModelName("dcm4chee-arc");
         device.setSoftwareVersions("4.2.0.Alpha3");
@@ -628,62 +640,100 @@ public class DeviceMocker {
         for (String other : OTHER_DEVICES)
             device.setAuthorizedNodeCertificates(config.deviceRef(other),
                     (X509Certificate) keystore.getCertificate(other));
-        Connection dicom = createConnection("dicom", "localhost", 11112);
-        dicom.setMaxOpsInvoked(0);
-        dicom.setMaxOpsPerformed(0);
-        device.addConnection(dicom);
-        Connection dicomTLS = new Connection("dicom-tls", "localhost", 2762);
-        dicomTLS.setMaxOpsInvoked(0);
-        dicomTLS.setMaxOpsPerformed(0);
-        dicomTLS.setTlsCipherSuites(
+
+        device.addApplicationEntity(
+                createAE("DCM4CHEE", dicom, dicomTLS,
+                    IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                    HIDE_REJECTED_VIEW, null, PIX_MANAGER));
+        device.addApplicationEntity(
+                createQRAE("DCM4CHEE_ADMIN", dicom, dicomTLS,
+                    IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                    REGULAR_USE_VIEW, null, PIX_MANAGER));
+        device.addApplicationEntity(
+                createQRAE("DCM4CHEE_TRASH", dicom, dicomTLS,
+                    IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                    TRASH_VIEW, null, PIX_MANAGER));
+
+        return device ;
+    }
+
+    private void addStorageDeviceExtension(Device device) {
+        StorageDeviceExtension ext = new StorageDeviceExtension();
+        device.addDeviceExtension(ext);
+        StorageSystemGroup group = new StorageSystemGroup();
+        group.setGroupID("DEFAULT");
+        group.addStorageSystem(newFileSystem("fs1", "/var/local/dcm4chee-arc/fs1"));
+        group.setActiveStorageSystemIDs("fs1");
+        ext.addStorageSystemGroup(group);
+    }
+
+    private StorageSystem newFileSystem(String id, String path) {
+        StorageSystem fs = new StorageSystem();
+        fs.setStorageSystemID(id);
+        fs.setStorageSystemPath(path);
+        fs.setProviderName("org.dcm4chee.storage.filesystem");
+        fs.setStorageSystemStatus(StorageSystemStatus.OK);
+        return fs;
+    }
+
+    private void addAuditLogger(Device device, Device arrDevice) {
+        Connection auditUDP = new Connection("audit-udp", "localhost");
+        auditUDP.setProtocol(Connection.Protocol.SYSLOG_UDP);
+        device.addConnection(auditUDP);
+
+        AuditLogger auditLogger = new AuditLogger();
+        device.addDeviceExtension(auditLogger);
+        auditLogger.addConnection(auditUDP);
+        auditLogger.setAuditSourceTypeCodes("4");
+        auditLogger.setAuditRecordRepositoryDevice(arrDevice);
+    }
+
+    private void addHL7DeviceExtension(Device device) {
+        HL7DeviceExtension ext = new HL7DeviceExtension();
+        device.addDeviceExtension(ext);
+
+        Connection hl7 = new Connection("hl7", "localhost", 2575);
+        hl7.setBindAddress("0.0.0.0");
+        hl7.setProtocol(Connection.Protocol.HL7);
+        device.addConnection(hl7);
+
+        Connection hl7TLS = new Connection("hl7-tls", "localhost", 12575);
+        hl7TLS.setBindAddress("0.0.0.0");
+        hl7TLS.setProtocol(Connection.Protocol.HL7);
+        hl7TLS.setTlsCipherSuites(
                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
-        device.addConnection(dicomTLS);
-        ApplicationEntity ae = createAE("DCM4CHEE",
-                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                HIDE_REJECTED_VIEW, null, PIX_MANAGER);
-        device.addApplicationEntity(ae);
-        ae.addConnection(dicom);
-        ae.addConnection(dicomTLS);
-        ApplicationEntity adminAE = createQRAE("DCM4CHEE_ADMIN",
-                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                REGULAR_USE_VIEW, null, PIX_MANAGER);
-        device.addApplicationEntity(adminAE);
-        adminAE.addConnection(dicom);
-        adminAE.addConnection(dicomTLS);
-        ApplicationEntity trashAE = createQRAE("DCM4CHEE_TRASH",
-                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                TRASH_VIEW, null, PIX_MANAGER);
-        device.addApplicationEntity(trashAE);
-        trashAE.addConnection(dicom);
-        trashAE.addConnection(dicomTLS);
+        device.addConnection(hl7TLS);
+
         HL7Application hl7App = new HL7Application("*");
         ArchiveHL7ApplicationExtension hl7AppExt = new ArchiveHL7ApplicationExtension();
         hl7App.addHL7ApplicationExtension(hl7AppExt);
         hl7App.setAcceptedMessageTypes(HL7_MESSAGE_TYPES);
         hl7App.setHL7DefaultCharacterSet("8859/1");
         hl7AppExt.addTemplatesURI("adt2dcm", HL7_ADT2DCM_XSL);
-        hl7DevExt.addHL7Application(hl7App);
-        Connection hl7 = new Connection("hl7", "localhost", 2575);
-        hl7.setProtocol(Connection.Protocol.HL7);
-        device.addConnection(hl7);
+        ext.addHL7Application(hl7App);
         hl7App.addConnection(hl7);
-        Connection hl7TLS = new Connection("hl7-tls", "localhost", 12575);
-        hl7TLS.setProtocol(Connection.Protocol.HL7);
-        hl7TLS.setTlsCipherSuites(
-                Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
-                Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
-        device.addConnection(hl7TLS);
         hl7App.addConnection(hl7TLS);
-        AuditLogger auditLogger = new AuditLogger();
-        device.addDeviceExtension(auditLogger);
-        Connection auditUDP = new Connection("audit-udp", "localhost");
-        auditUDP.setProtocol(Connection.Protocol.SYSLOG_UDP);
-        device.addConnection(auditUDP);
-        auditLogger.addConnection(auditUDP);
-        auditLogger.setAuditSourceTypeCodes("4");
-        auditLogger.setAuditRecordRepositoryDevice(arrDevice);
-        return device ;
+    }
+
+    private void addArchiveDeviceExtension(Device device) {
+        ArchiveDeviceExtension ext = new ArchiveDeviceExtension();
+        device.addDeviceExtension(ext);
+        ext.setIncorrectWorklistEntrySelectedCode(INCORRECT_WORKLIST_ENTRY_SELECTED);
+        ext.setFuzzyAlgorithmClass("org.dcm4che3.soundex.ESoundex");
+        ext.setConfigurationStaleTimeout(CONFIGURATION_STALE_TIMEOUT);
+        ext.setWadoAttributesStaleTimeout(WADO_ATTRIBUTES_STALE_TIMEOUT);
+        ext.setRejectionParams(createRejectionNotes());
+        ext.setQueryRetrieveViews(QUERY_RETRIEVE_VIEWS);
+        ext.setMppsEmulationPollInterval(MPPS_EMULATOR_POLL_INTERVAL);
+        ext.setAttributeFilter(Entity.Patient,
+                new AttributeFilter(PATIENT_ATTRS));
+        ext.setAttributeFilter(Entity.Study,
+                new AttributeFilter(STUDY_ATTRS));
+        ext.setAttributeFilter(Entity.Series,
+                new AttributeFilter(SERIES_ATTRS));
+        ext.setAttributeFilter(Entity.Instance,
+                new AttributeFilter(INSTANCE_ATTRS));
     }
 
     private RejectionParam[] createRejectionNotes() {
@@ -720,38 +770,23 @@ public class DeviceMocker {
         return param;
     }
 
-    private void setAttributeFilters(ArchiveDeviceExtension device) {
-        device.setAttributeFilter(Entity.Patient,
-                new AttributeFilter(PATIENT_ATTRS));
-        device.setAttributeFilter(Entity.Study,
-                new AttributeFilter(STUDY_ATTRS));
-        device.setAttributeFilter(Entity.Series,
-                new AttributeFilter(SERIES_ATTRS));
-        device.setAttributeFilter(Entity.Instance,
-                new AttributeFilter(INSTANCE_ATTRS));
-    }
-
-    private Connection createConnection(String commonName,
-            String hostname, int port, String... tlsCipherSuites) {
-        Connection conn = new Connection(commonName, hostname, port);
-        conn.setTlsCipherSuites(tlsCipherSuites);
-        return conn;
-    }
-
     private ApplicationEntity createAE(String aet,
+            Connection dicom, Connection dicomTLS, 
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
             QueryRetrieveView queryRetrieveView,
             String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
+        ae.addConnection(dicom);
+        ae.addConnection(dicomTLS);
+
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
         ae.addAEExtension(aeExt);
         ae.setAssociationAcceptor(true);
         ae.setAssociationInitiator(true);
         aeExt.setFileSystemGroupID("DEFAULT");
-        aeExt.setInitFileSystemURI("${jboss.server.data.url}");
-        aeExt.setSpoolDirectoryPath("archive/spool");
+        aeExt.setSpoolDirectoryPath("spool");
         aeExt.setStorageFilePathFormat(new AttributesFormat(
-                "archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
+                "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
         aeExt.setDigestAlgorithm("MD5");
         aeExt.setRetrieveAETs(aet);
         aeExt.setPreserveSpoolFileOnFailure(true);
@@ -901,7 +936,6 @@ public class DeviceMocker {
         ae.setAssociationAcceptor(true);
         ae.setAssociationInitiator(true);
         aeExt.setFileSystemGroupID("notDEFAULT");
-        aeExt.setInitFileSystemURI("${jboss.server.data.url}");
         aeExt.setSpoolDirectoryPath("archive/anotherspool");
         aeExt.setStorageFilePathFormat(new AttributesFormat(
                 "archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
@@ -998,10 +1032,14 @@ public class DeviceMocker {
     }
 
     private ApplicationEntity createQRAE(String aet,
+            Connection dicom, Connection dicomTLS,
             String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
             QueryRetrieveView queryRetrieveView,
             String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
+        ae.addConnection(dicom);
+        ae.addConnection(dicomTLS);
+
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
         ae.addAEExtension(aeExt);
         ae.setAssociationAcceptor(true);

@@ -38,9 +38,11 @@
 
 package org.dcm4chee.archive.retrieve;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
-import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.service.DicomServiceException;
@@ -101,5 +103,7 @@ public interface RetrieveService {
              Attributes attrs,
              String supressionCriteriaTemplateURI,
              final RetrieveContext retrieveContext);
+
+     Path getFile(ArchiveInstanceLocator inst) throws IOException;
 
 }

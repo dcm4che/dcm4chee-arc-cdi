@@ -130,7 +130,8 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                 .getTimeZoneOfDevice();
         Attributes attrs;
-        DicomInputStream in = new DicomInputStream(inst.getFile());
+        DicomInputStream in = new DicomInputStream(
+                retrieveService.getFile(inst).toFile());
         try {
             if (withoutBulkData) {
                 in.setIncludeBulkData(IncludeBulkData.NO);

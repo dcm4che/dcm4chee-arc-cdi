@@ -38,7 +38,9 @@
 
 package org.dcm4chee.archive.retrieve.impl;
 
+import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -56,6 +58,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.io.SAXWriter;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
@@ -65,13 +68,13 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.QFileRef;
-import org.dcm4chee.archive.entity.QFileSystem;
+import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QSeries;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.jboss.logging.Logger;
 
 import com.mysema.query.Tuple;
@@ -88,17 +91,21 @@ public class DefaultRetrieveService implements RetrieveService {
 
     private static final Logger LOG = Logger.getLogger(DefaultRetrieveService.class);
 
+    static final QLocation otherLocation = new QLocation("otherLocation");
+
     private static final Expression<?>[] SELECT = {
-        QFileRef.fileRef.filePath,
-        QFileRef.fileRef.transferSyntaxUID,
-        QFileRef.fileRef.fileTimeZone,
-        QFileSystem.fileSystem.uri,
-        QFileSystem.fileSystem.availability,
-        RetrieveServiceEJB.filealiastableref.filePath,
-        RetrieveServiceEJB.filealiastableref.fileTimeZone,
-        RetrieveServiceEJB.filealiastableref.transferSyntaxUID,
-        RetrieveServiceEJB.filealiastablereffilesystem.uri,
-        RetrieveServiceEJB.filealiastablereffilesystem.availability,
+        QLocation.location.storagePath,
+        QLocation.location.entryName,
+        QLocation.location.transferSyntaxUID,
+        QLocation.location.timeZone,
+        QLocation.location.storageSystemGroupID,
+        QLocation.location.storageSystemID,
+        otherLocation.storagePath,
+        otherLocation.entryName,
+        otherLocation.timeZone,
+        otherLocation.transferSyntaxUID,
+        otherLocation.storageSystemGroupID,
+        otherLocation.storageSystemID,
         QSeries.series.pk,
         QInstance.instance.pk,
         QInstance.instance.sopClassUID,
@@ -109,8 +116,14 @@ public class DefaultRetrieveService implements RetrieveService {
     };
 
     @Inject
+    private Device device;
+
+    @Inject
     private RetrieveServiceEJB ejb;
 
+    @Inject
+    private org.dcm4chee.storage.service.RetrieveService storageRetrieveService;
+    
     public RetrieveContext createRetrieveContext(RetrieveService service,
             String sourceAET, ArchiveAEExtension arcAE) {
         return new RetrieveContextImpl(service, sourceAET, arcAE);
@@ -127,7 +140,7 @@ public class DefaultRetrieveService implements RetrieveService {
     public List<ArchiveInstanceLocator> calculateMatches(IDWithIssuer[] pids,
             Attributes keys, QueryParam queryParam) {
 
-        return locate(ejb.query(SELECT,
+        return locate(ejb.query(SELECT, otherLocation,
                 pids,
                 keys.getStrings(Tag.StudyInstanceUID),
                 keys.getStrings(Tag.SeriesInstanceUID),
@@ -142,7 +155,7 @@ public class DefaultRetrieveService implements RetrieveService {
     public List<ArchiveInstanceLocator> calculateMatches(String studyIUID,
             String seriesIUID, String objectIUID, QueryParam queryParam) {
 
-        return locate(ejb.query(SELECT, 
+        return locate(ejb.query(SELECT, otherLocation,
                 null,
                 new String[] { studyIUID },
                 new String[] { seriesIUID },
@@ -169,10 +182,12 @@ public class DefaultRetrieveService implements RetrieveService {
             if (instPk != nextInstPk) {
                 if (builder != null)
                     locators.add(builder.build());
-                builder = new ArchiveInstanceLocatorBuilder(tuple, seriesAttrs);
+                builder = new ArchiveInstanceLocatorBuilder(
+                        device.getDeviceExtensionNotNull(StorageDeviceExtension.class),
+                        tuple, seriesAttrs);
             }
             
-            builder.addFileRefs(tuple);
+            builder.addFileRefs(tuple, otherLocation);
             instPk = nextInstPk;
         }
         if (builder != null)
@@ -301,5 +316,13 @@ public class DefaultRetrieveService implements RetrieveService {
             return ref;
     }
 
-
+    @Override
+    public Path getFile(ArchiveInstanceLocator inst) throws IOException {
+        org.dcm4chee.storage.RetrieveContext ctx =
+                storageRetrieveService.createRetrieveContext(inst.getStorageSystem());
+        
+        return inst.getEntryName() == null
+                ? storageRetrieveService.getFile(ctx, inst.getFilePath())
+                : storageRetrieveService.getFile(ctx, inst.getFilePath(), inst.getEntryName());
+    }
 }

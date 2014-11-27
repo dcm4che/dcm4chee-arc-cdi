@@ -39,14 +39,13 @@
 package org.dcm4chee.archive.store.impl;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -54,7 +53,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.TimeZone;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
@@ -79,7 +77,6 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.soundex.FuzzyStr;
-import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StreamUtils;
@@ -93,8 +90,7 @@ import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
-import org.dcm4chee.archive.entity.FileRef;
-import org.dcm4chee.archive.entity.FileSystem;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Patient;
@@ -109,6 +105,10 @@ import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
+import org.dcm4chee.storage.ObjectAlreadyExistsException;
+import org.dcm4chee.storage.StorageContext;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,6 +122,9 @@ public class StoreServiceImpl implements StoreService {
     static Logger LOG = LoggerFactory.getLogger(StoreServiceImpl.class);
 
     @Inject
+    private StorageService storageService;
+
+    @Inject
     private PatientService patientService;
 
     @Inject
@@ -129,9 +132,6 @@ public class StoreServiceImpl implements StoreService {
 
     @Inject
     private CodeService codeService;
-
-    @Inject
-    private FileSystemEJB fileSystemEJB;
 
     @Inject
     private StoreServiceEJB storeServiceEJB;
@@ -149,27 +149,30 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void initStorageFileSystem(StoreSession session)
+    public void initStorageSystem(StoreSession session)
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         String groupID = arcAE.getFileSystemGroupID();
-        FileSystem fs = fileSystemEJB.findCurrentFileSystem(groupID,
-                arcAE.getInitFileSystemURI());
-        if (fs == null)
+        StorageSystem storageSystem = storageService.selectStorageSystem(groupID, 0);
+        if (storageSystem == null)
             throw new DicomServiceException(Status.OutOfResources,
-                    "No writeable File System in File System Group " + groupID);
-        session.setStorageFileSystem(fs);
+                    "No writeable Storage System in Storage System Group " + groupID);
+        session.setStorageSystem(storageSystem);
     }
 
     @Override
     public void initSpoolDirectory(StoreSession session)
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        FileSystem fs = session.getStorageFileSystem();
-        Path parentDir = fs.getPath().resolve(arcAE.getSpoolDirectoryPath());
+        Path spoolDir = Paths.get(arcAE.getSpoolDirectoryPath());
+        if (!spoolDir.isAbsolute()) {
+            StorageSystem storageSystem = session.getStorageSystem();
+            spoolDir = storageService.getBaseDirectory(storageSystem)
+                        .resolve(spoolDir);
+        }
         try {
-            Files.createDirectories(parentDir);
-            Path dir = Files.createTempDirectory(parentDir, null);
+            Files.createDirectories(spoolDir);
+            Path dir = Files.createTempDirectory(spoolDir, null);
             LOG.info("{}: M-WRITE spool directory - {}", session, dir);
             session.setSpoolDirectory(dir);
         } catch (IOException e) {
@@ -210,16 +213,14 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private void deleteFinalFile(StoreContext context) {
-        Path file = context.getFinalFile();
-        if (file == null)
-            return;
-
-        StoreSession session = context.getStoreSession();
-        try {
-            Files.delete(file);
-            LOG.info("{}: M-DELETE final file - {}", session, file);
-        } catch (IOException e) {
-            LOG.warn("{}: Failed to M-DELETE final file - {}", session, file, e);
+        String storagePath = context.getStoragePath();
+        if (storagePath != null) {
+            try {
+                storageService.deleteObject(context.getStorageContext(), storagePath);
+            } catch (IOException e) {
+                LOG.warn("{}: Failed to delete final file - {}",
+                        context.getStoreSession(), storagePath, e);
+            }
         }
     }
 
@@ -386,43 +387,28 @@ public class StoreServiceImpl implements StoreService {
     public void processFile(StoreContext context) throws DicomServiceException {
         try {
             StoreSession session = context.getStoreSession();
-            StoreService service = session.getStoreService();
+            StorageContext storageContext =
+                    storageService.createStorageContext(session.getStorageSystem());
             Path source = context.getSpoolFile();
-            Path target = service.calcStorePath(context);
-            Files.createDirectories(target.getParent());
-            String fileName = target.getFileName().toString();
+            context.setStorageContext(storageContext);
+            context.setFinalFileDigest(context.getSpoolFileDigest());
+            context.setFinalFileSize(Files.size(source));
+
+            String origStoragePath = context.calcStoragePath();
+            String storagePath = origStoragePath;
             int copies = 1;
             for (;;) {
                 try {
-                    context.setFinalFile(Files.move(source, target));
-                    context.setFinalFileDigest(context.getSpoolFileDigest());
-                    LOG.info("{}: M-WRITE final file - {}", session, target);
-                    LOG.info("{}: M-DELETE spool file - {}", session, source);
+                    storageService.moveFile(storageContext, source, storagePath);
+                    context.setStoragePath(storagePath);
                     return;
-                } catch (FileAlreadyExistsException e) {
-                    target = target.resolveSibling(fileName + '.' + copies++);
+                } catch (ObjectAlreadyExistsException e) {
+                    storagePath = origStoragePath + '.' + copies++;
                 }
             }
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-    }
-
-    @Override
-    public Path calcStorePath(StoreContext context) {
-        StoreSession session = context.getStoreSession();
-        ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        AttributesFormat format = arcAE.getStorageFilePathFormat();
-        if (format == null)
-            throw new IllegalStateException(
-                    "No StorageFilePathFormat configured for "
-                            + session.getLocalAET());
-        String path;
-        synchronized (format) {
-            path = format.format(context.getAttributes());
-        }
-        FileSystem fs = session.getStorageFileSystem();
-        return fs.getPath().resolve(path.replace('/', File.separatorChar));
     }
 
     @Override
@@ -457,7 +443,7 @@ public class StoreServiceImpl implements StoreService {
         Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
         if (context.getStoreAction() != StoreAction.IGNORE
-                && context.getFinalFile() != null) {
+                && context.getStoragePath() != null) {
             context.setFileRef(createFileRef(em, context, instance));
         }
     }
@@ -494,8 +480,8 @@ public class StoreServiceImpl implements StoreService {
     public StoreAction instanceExists(EntityManager em, StoreContext context,
             Instance instance) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Collection<FileRef> fileRefs = instance.getFileRefs();
-        Collection<FileRef> fileAliasRefs = instance.getFileAliasTableRefs();
+        Collection<Location> fileRefs = instance.getLocations();
+        Collection<Location> fileAliasRefs = instance.getOtherLocations();
         if (fileRefs.isEmpty() && fileAliasRefs.isEmpty())
             return StoreAction.RESTORE;
 
@@ -513,12 +499,12 @@ public class StoreServiceImpl implements StoreService {
         return remoteAET.equals(instance.getSeries().getSourceAET());
     }
 
-    private boolean hasFileRefWithDigest(Collection<FileRef> fileRefs,
+    private boolean hasFileRefWithDigest(Collection<Location> fileRefs,
             String digest) {
         if (digest == null)
             return false;
 
-        for (FileRef fileRef : fileRefs) {
+        for (Location fileRef : fileRefs) {
             if (digest.equals(fileRef.getDigest()))
                 return true;
         }
@@ -530,7 +516,7 @@ public class StoreServiceImpl implements StoreService {
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
-        Collection<FileRef> replaced = new ArrayList<FileRef>();
+        Collection<Location> replaced = new ArrayList<Location>();
 
         try {
             Attributes attrs = context.getAttributes();
@@ -548,26 +534,26 @@ public class StoreServiceImpl implements StoreService {
             case IGNORE:
                 return inst;
             case REPLACE:
-                for (Iterator<FileRef> iter = inst.getFileRefs().iterator(); iter
+                for (Iterator<Location> iter = inst.getLocations().iterator(); iter
                         .hasNext();) {
-                    FileRef fileRef = iter.next();
+                    Location fileRef = iter.next();
                     // no other instances referenced through alias table
-                    if (fileRef.getFileAliasTableInstances().isEmpty()) {
-                        fileRef.setStatus(org.dcm4chee.archive.entity.FileRef.Status.REPLACED);
+                    if (fileRef.getInstances().isEmpty()) {
+                        fileRef.setStatus(org.dcm4chee.archive.entity.Location.Status.REPLACED);
                         replaced.add(fileRef);
 
                     }
                     fileRef.setInstance(null);
                     iter.remove();
                 }
-                for (Iterator<FileRef> iter = inst.getFileAliasTableRefs()
+                for (Iterator<Location> iter = inst.getOtherLocations()
                         .iterator(); iter.hasNext();) {
-                    FileRef fileAliasRef = iter.next();
+                    Location fileAliasRef = iter.next();
                     // another instance referenced through original link
                     if (fileAliasRef.getInstance() == null
-                            && fileAliasRef.getFileAliasTableInstances().size() == 1) {
+                            && fileAliasRef.getInstances().size() == 1) {
                         fileAliasRef
-                                .setStatus(org.dcm4chee.archive.entity.FileRef.Status.REPLACED);
+                                .setStatus(org.dcm4chee.archive.entity.Location.Status.REPLACED);
                         replaced.add(fileAliasRef);
                     }
                     iter.remove();
@@ -583,7 +569,7 @@ public class StoreServiceImpl implements StoreService {
         }
 
         Instance newInst = service.createInstance(em, context);
-        for (FileRef replacedRef : replaced)
+        for (Location replacedRef : replaced)
             replacedRef.setInstance(newInst);
         return newInst;
     }
@@ -705,7 +691,6 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
-        FileSystem fs = session.getStorageFileSystem();
         Instance inst = new Instance();
         inst.setSeries(service.findOrCreateSeries(em, context));
         inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
@@ -716,7 +701,7 @@ public class StoreServiceImpl implements StoreService {
                 data.getSequence(Tag.ContentSequence), inst));
         inst.setRetrieveAETs(storeParam.getRetrieveAETs());
         inst.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
-        inst.setAvailability(fs.getAvailability());
+        inst.setAvailability(session.getStorageSystem().getAvailability());
         inst.setAttributes(data,
                 storeParam.getAttributeFilter(Entity.Instance),
                 storeParam.getFuzzyStr());
@@ -725,30 +710,26 @@ public class StoreServiceImpl implements StoreService {
         return inst;
     }
 
-    private FileRef createFileRef(EntityManager em, StoreContext context,
+    private Location createFileRef(EntityManager em, StoreContext context,
             Instance instance) {
 
         StoreSession session = context.getStoreSession();
-        FileSystem fs = session.getStorageFileSystem();
-        Path filePath = context.getFinalFile();
-        FileRef fileRef = new FileRef(fs, unixFilePath(fs.getPath(), filePath),
-                context.getTransferSyntax(), filePath.toFile().length(),
-                context.getFinalFileDigest(), FileRef.Status.OK);
-        // Time zone store adjustments
-        TimeZone sourceTimeZone = session.getSourceTimeZone();
-        if (sourceTimeZone != null)
-            fileRef.setSourceTimeZone(sourceTimeZone.getID());
+        StorageSystem storageSystem = session.getStorageSystem();
+        Location fileRef = new Location.Builder()
+            .storageSystemGroupID(storageSystem.getStorageSystemGroup().getGroupID())
+            .storageSystemID(storageSystem.getStorageSystemID())
+            .storagePath(context.getStoragePath())
+            .digest(context.getFinalFileDigest())
+            .size(context.getFinalFileSize())
+            .transferSyntaxUID(context.getTransferSyntax())
+            .timeZone(session.getSourceTimeZoneID())
+            .build();
         fileRef.setInstance(instance);
 
         em.persist(fileRef);
 
         LOG.info("{}: Create {}", session, fileRef);
         return fileRef;
-    }
-
-    private String unixFilePath(Path fsPath, Path filePath) {
-        return fsPath.relativize(filePath).toString()
-                .replace(File.separatorChar, '/');
     }
 
     @Override

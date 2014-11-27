@@ -54,10 +54,12 @@ import org.dcm4che3.conf.prefs.PreferencesDicomConfiguration;
 import org.dcm4che3.conf.prefs.PreferencesDicomConfigurationExtension;
 import org.dcm4che3.conf.prefs.audit.PreferencesAuditLoggerConfiguration;
 import org.dcm4che3.conf.prefs.audit.PreferencesAuditRecordRepositoryConfiguration;
+import org.dcm4che3.conf.prefs.generic.PreferencesGenericConfigExtension;
 import org.dcm4che3.conf.prefs.hl7.PreferencesHL7Configuration;
 import org.dcm4che3.conf.prefs.hl7.PreferencesHL7ConfigurationExtension;
 import org.dcm4che3.conf.prefs.imageio.PreferencesImageReaderConfiguration;
 import org.dcm4che3.conf.prefs.imageio.PreferencesImageWriterConfiguration;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -83,6 +85,12 @@ public class PreferencesArchiveConfigurationFactory {
     @Produces
     public static PreferencesDicomConfigurationExtension imageWriterConfiguration() {
         return new PreferencesImageWriterConfiguration();
+    }
+
+    @Produces
+    public static PreferencesDicomConfigurationExtension storageConfiguration()
+            throws ConfigurationException {
+        return PreferencesGenericConfigExtension.create(StorageDeviceExtension.class);
     }
 
     @Produces

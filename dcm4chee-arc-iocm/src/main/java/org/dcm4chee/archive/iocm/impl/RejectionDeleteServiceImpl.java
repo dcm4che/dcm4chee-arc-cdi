@@ -44,7 +44,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.iocm.RejectionDeleteService;
@@ -70,7 +70,7 @@ public class RejectionDeleteServiceImpl implements RejectionDeleteService{
 
     @Override
     public void deleteRejected(Object source, Collection<Instance> instances) {
-        Collection<FileRef> tosScheduleForDelete = rejectionServiceDeleter.deleteRejected(source, instances);
+        Collection<Location> tosScheduleForDelete = rejectionServiceDeleter.deleteRejected(source, instances);
         try {
             fileManager.scheduleDelete(tosScheduleForDelete, 0);
         } catch (Exception e) {

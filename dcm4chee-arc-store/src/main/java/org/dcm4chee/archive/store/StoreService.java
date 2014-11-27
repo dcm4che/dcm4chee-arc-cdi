@@ -65,7 +65,7 @@ public interface StoreService {
 
     StoreContext createStoreContext(StoreSession session);
 
-    void initStorageFileSystem(StoreSession session)
+    void initStorageSystem(StoreSession session)
             throws DicomServiceException;
 
     void initSpoolDirectory(StoreSession session) throws DicomServiceException;
@@ -88,8 +88,6 @@ public interface StoreService {
     void coerceAttributes(StoreContext context) throws DicomServiceException;
 
     void processFile(StoreContext context) throws DicomServiceException;
-
-    Path calcStorePath(StoreContext context);
 
     void updateDB(StoreContext context) throws DicomServiceException;
 

@@ -42,11 +42,13 @@ import java.nio.file.Path;
 import java.util.HashMap;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.util.AttributesFormat;
 import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.entity.FileRef;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.storage.StorageContext;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -56,15 +58,17 @@ public class StoreContextImpl implements StoreContext {
 
     private final StoreSession session;
     private Path spoolFile;
-    private Path finalFile;
     private String spoolFileDigest;
     private String finalFileDigest;
+    private long finalFileSize;
+    private String storagePath;
     private String transferSyntax;
     private Attributes attributes;
     private Attributes coercedAttributes = new Attributes();
     private StoreAction storeAction;
+    private StorageContext storageContext;
     private Instance instance;
-    private FileRef fileRef;
+    private Location fileRef;
     private Throwable throwable;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
 
@@ -98,6 +102,16 @@ public class StoreContextImpl implements StoreContext {
     }
 
     @Override
+    public long getFinalFileSize() {
+        return finalFileSize;
+    }
+
+    @Override
+    public void setFinalFileSize(long finalFileSize) {
+        this.finalFileSize = finalFileSize;
+    }
+
+    @Override
     public String getTransferSyntax() {
         return transferSyntax;
     }
@@ -110,16 +124,6 @@ public class StoreContextImpl implements StoreContext {
     @Override
     public void setFinalFileDigest(String finalFileDigest) {
         this.finalFileDigest = finalFileDigest;
-    }
-
-    @Override
-    public Path getFinalFile() {
-        return finalFile;
-    }
-
-    @Override
-    public void setFinalFile(Path finalFile) {
-        this.finalFile = finalFile;
     }
 
     @Override
@@ -158,12 +162,12 @@ public class StoreContextImpl implements StoreContext {
     }
 
     @Override
-    public FileRef getFileRef() {
+    public Location getFileRef() {
         return fileRef;
     }
 
     @Override
-    public void setFileRef(FileRef fileRef) {
+    public void setFileRef(Location fileRef) {
         this.fileRef = fileRef;
     }
 
@@ -206,5 +210,33 @@ public class StoreContextImpl implements StoreContext {
     public boolean isFail() {
         return getStoreAction()!=null && getStoreAction().equals(StoreAction.FAIL);
     }
-    
+
+    @Override
+    public String getStoragePath() {
+        return storagePath;
+    }
+
+    @Override
+    public void setStoragePath(String storagePath) {
+        this.storagePath = storagePath;
+    }
+
+    @Override
+    public String calcStoragePath() {
+        AttributesFormat format = session.getArchiveAEExtension()
+                .getStorageFilePathFormat();
+        synchronized (format) {
+            return format.format(attributes);
+        }
+    }
+
+    @Override
+    public StorageContext getStorageContext() {
+        return storageContext;
+    }
+
+    @Override
+    public void setStorageContext(StorageContext storageContext) {
+        this.storageContext = storageContext;
+    }
 }

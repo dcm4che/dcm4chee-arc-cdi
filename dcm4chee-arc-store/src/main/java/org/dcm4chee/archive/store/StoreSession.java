@@ -46,7 +46,7 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.entity.FileSystem;
+import org.dcm4chee.storage.conf.StorageSystem;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -66,9 +66,9 @@ public interface StoreSession {
 
     String getLocalAET();
 
-    FileSystem getStorageFileSystem();
+    StorageSystem getStorageSystem();
 
-    void setStorageFileSystem(FileSystem fs);
+    void setStorageSystem(StorageSystem storageSystem);
 
     Path getSpoolDirectory();
 
@@ -93,12 +93,15 @@ public interface StoreSession {
     void setProperty(String key, Object value);
 
     Device getDevice();
-    
+
     Device getSourceDevice();
-    
+
     void setSourceDevice(Device source);
 
     TimeZone getSourceTimeZone();
-    
+
     void setSourceTimeZone(TimeZone sourceTimeZone);
+
+    String getSourceTimeZoneID();
+
 }

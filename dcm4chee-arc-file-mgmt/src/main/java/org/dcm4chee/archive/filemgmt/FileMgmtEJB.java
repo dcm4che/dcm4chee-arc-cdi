@@ -38,13 +38,12 @@
 
 package org.dcm4chee.archive.filemgmt;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Collection;
 
 import javax.annotation.Resource;
 import javax.ejb.Stateless;
+import javax.inject.Inject;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -55,10 +54,14 @@ import javax.jms.Session;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.slf4j.LoggerFactory;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.storage.StorageContext;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
-
-import org.dcm4chee.archive.entity.FileRef;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -69,7 +72,13 @@ import org.dcm4chee.archive.entity.FileRef;
 public class FileMgmtEJB implements FileMgmt{
 
     private static final Logger LOG = LoggerFactory.getLogger(FileMgmtEJB.class);
-    
+
+    @Inject
+    private Device device;
+
+    @Inject
+    private StorageService storageService;
+
     @Resource(mappedName="java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
@@ -80,8 +89,8 @@ public class FileMgmtEJB implements FileMgmt{
     private EntityManager em;
 
     @Override
-    public void scheduleDelete(Collection<FileRef> refs, int delay) throws Exception {
-    for(FileRef ref: refs)
+    public void scheduleDelete(Collection<Location> refs, int delay) throws Exception {
+    for(Location ref: refs)
         try {
         Connection conn = connFactory.createConnection();
             try {
@@ -101,12 +110,12 @@ public class FileMgmtEJB implements FileMgmt{
     }
 
     @Override
-    public void failDelete(FileRef ref) {
-        ref.setStatus(FileRef.Status.DELETE_FAILED);
-        LOG.warn("Failed to delete file {}, setting file reference status to {}",ref.getFilePath(),ref.getStatus() );
+    public void failDelete(Location ref) {
+        ref.setStatus(Location.Status.DELETE_FAILED);
+        LOG.warn("Failed to delete file {}, setting file reference status to {}",ref.getStoragePath(),ref.getStatus() );
     }
 
-    private void removeDeadFileRef(FileRef ref) {
+    private void removeDeadFileRef(Location ref) {
 
         try {
             em.remove(ref);
@@ -119,11 +128,14 @@ public class FileMgmtEJB implements FileMgmt{
     }
 
     @Override
-    public boolean doDelete(FileRef ref) {
+    public boolean doDelete(Location ref) {
         try{
-        File tmp = new File(ref.getFileSystem().getPath().toString(),ref.getFilePath());
-
-            Files.delete(tmp.toPath());
+            StorageDeviceExtension ext = device.getDeviceExtensionNotNull(
+                    StorageDeviceExtension.class);
+            StorageSystem storageSystem = ext.getStorageSystem(
+                    ref.getStorageSystemGroupID(), ref.getStorageSystemID());
+            StorageContext cxt = storageService.createStorageContext(storageSystem);
+            storageService.deleteObject(cxt, ref.getStoragePath());
         }
         catch(IOException e)
         {
@@ -134,9 +146,9 @@ public class FileMgmtEJB implements FileMgmt{
     }
 
     @Override
-    public FileRef reattachRef(FileRef ref) {
+    public Location reattachRef(Location ref) {
         long pk = ref.getPk();
-        FileRef reattached =  em.find(FileRef.class, pk);
+        Location reattached =  em.find(Location.class, pk);
         return reattached;
     }
 }

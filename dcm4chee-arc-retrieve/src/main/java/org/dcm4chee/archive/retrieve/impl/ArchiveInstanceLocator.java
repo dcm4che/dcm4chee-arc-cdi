@@ -38,24 +38,107 @@
 package org.dcm4chee.archive.retrieve.impl;
 
 import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4chee.storage.conf.StorageSystem;
 
+/**
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ */
 public class ArchiveInstanceLocator extends InstanceLocator {
 
-    /**
-     * @author Hesham Elbadawi <bsdreko@gmail.com>
-     */
     private static final long serialVersionUID = 7208477744305290578L;
-    private String fileTimeZoneID;
-    public ArchiveInstanceLocator(String cuid, String iuid, String tsuid,
-	    String uri,String fileTz) {
-	super(cuid, iuid, tsuid, uri);
-	this.fileTimeZoneID=fileTz;
+
+    private final String fileTimeZoneID;
+    private final StorageSystem storageSystem;
+    private final String filePath;
+    private final String entryName;
+    private final String retrieveAETs;
+    private final String externalRetrieveAET;
+
+    public static final class Builder {
+        private final String cuid;
+        private final String iuid;
+        private final String tsuid;
+        private StorageSystem storageSystem;
+        private String filePath;
+        private String entryName;
+        private String retrieveAETs;
+        private String externalRetrieveAET;
+        private String fileTimeZoneID;
+
+        public Builder(String cuid, String iuid, String tsuid) {
+            this.cuid = cuid;
+            this.iuid = iuid;
+            this.tsuid = tsuid;
+        }
+
+        public Builder storageSystem(StorageSystem storageSystem) {
+            this.storageSystem = storageSystem;
+            return this;
+        }
+
+        public Builder filePath(String filePath) {
+            this.filePath = filePath;
+            return this;
+        }
+
+        public Builder entryName(String entryName) {
+            this.entryName = entryName;
+            return this;
+        }
+
+        public Builder retrieveAETs(String retrieveAETs) {
+            this.retrieveAETs = retrieveAETs;
+            return this;
+        }
+
+        public Builder externalRetrieveAET(String externalRetrieveAET) {
+            this.externalRetrieveAET = externalRetrieveAET;
+            return this;
+        }
+
+        public Builder fileTimeZoneID(String fileTimeZoneID) {
+            this.fileTimeZoneID = fileTimeZoneID;
+            return this;
+        }
+
+        public ArchiveInstanceLocator build() {
+            return new ArchiveInstanceLocator(this);
+        }
     }
+
+    private ArchiveInstanceLocator(Builder builder) {
+        super(builder.cuid, builder.iuid, builder.tsuid, null);
+        this.fileTimeZoneID = builder.fileTimeZoneID;
+        this.storageSystem = builder.storageSystem;
+        this.filePath = builder.filePath;
+        this.entryName = builder.entryName;
+        this.retrieveAETs = builder.retrieveAETs;
+        this.externalRetrieveAET = builder.externalRetrieveAET;
+   }
+
     public String getFileTimeZoneID() {
-	return fileTimeZoneID;
+        return fileTimeZoneID;
     }
-    public void setFileTimeZoneID(String fileTimeZoneID) {
-	this.fileTimeZoneID = fileTimeZoneID;
+
+    public StorageSystem getStorageSystem() {
+        return storageSystem;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public String getEntryName() {
+        return entryName;
+    }
+
+    public String getRetrieveAETs() {
+        return retrieveAETs;
+    }
+
+    public String getExternalRetrieveAET() {
+        return externalRetrieveAET;
     }
 
 }

@@ -51,12 +51,14 @@ import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.ldap.LdapDicomConfiguration;
 import org.dcm4che3.conf.ldap.audit.LdapAuditLoggerConfiguration;
 import org.dcm4che3.conf.ldap.audit.LdapAuditRecordRepositoryConfiguration;
+import org.dcm4che3.conf.ldap.generic.LdapGenericConfigExtension;
 import org.dcm4che3.conf.ldap.hl7.LdapHL7Configuration;
 import org.dcm4che3.conf.ldap.imageio.LdapImageReaderConfiguration;
 import org.dcm4che3.conf.ldap.imageio.LdapImageWriterConfiguration;
 import org.dcm4che3.conf.prefs.PreferencesDicomConfiguration;
 import org.dcm4che3.conf.prefs.audit.PreferencesAuditLoggerConfiguration;
 import org.dcm4che3.conf.prefs.audit.PreferencesAuditRecordRepositoryConfiguration;
+import org.dcm4che3.conf.prefs.generic.PreferencesGenericConfigExtension;
 import org.dcm4che3.conf.prefs.hl7.PreferencesHL7Configuration;
 import org.dcm4che3.conf.prefs.imageio.PreferencesImageReaderConfiguration;
 import org.dcm4che3.conf.prefs.imageio.PreferencesImageWriterConfiguration;
@@ -72,6 +74,7 @@ import org.dcm4chee.archive.conf.ldap.LdapArchiveConfiguration;
 import org.dcm4chee.archive.conf.ldap.LdapArchiveHL7Configuration;
 import org.dcm4chee.archive.conf.prefs.PreferencesArchiveConfiguration;
 import org.dcm4chee.archive.conf.prefs.PreferencesArchiveHL7Configuration;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -106,11 +109,15 @@ public class ArchiveDeviceTest extends DeviceMocker {
                 new LdapImageReaderConfiguration());
         config.addDicomConfigurationExtension(
                 new LdapImageWriterConfiguration());
+        config.addDicomConfigurationExtension(
+                LdapGenericConfigExtension.create(
+                        StorageDeviceExtension.class));
         this.hl7Config = hl7Config;
         return config;
     }
 
-    private DicomConfiguration newPreferencesArchiveConfiguration() {
+    private DicomConfiguration newPreferencesArchiveConfiguration()
+            throws ConfigurationException {
         PreferencesDicomConfiguration config = new PreferencesDicomConfiguration();
         PreferencesHL7Configuration hl7Config = new PreferencesHL7Configuration();
         hl7Config.addHL7ConfigurationExtension(
@@ -126,6 +133,9 @@ public class ArchiveDeviceTest extends DeviceMocker {
                 new PreferencesImageReaderConfiguration());
         config.addDicomConfigurationExtension(
                 new PreferencesImageWriterConfiguration());
+        config.addDicomConfigurationExtension(
+                PreferencesGenericConfigExtension.create(
+                        StorageDeviceExtension.class));
         this.hl7Config = hl7Config;
         return config;
     }

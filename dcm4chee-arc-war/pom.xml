@@ -162,10 +162,22 @@
       <artifactId>dcm4chee-arc-audit</artifactId>
       <version>${project.version}</version>
     </dependency>
-        <dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-timezone</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-conf</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-service</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-filesystem</artifactId>
     </dependency>
   </dependencies>
   <profiles>

@@ -39,15 +39,13 @@
 package org.dcm4chee.archive.compress.impl;
 
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
@@ -62,6 +60,9 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.storage.ObjectAlreadyExistsException;
+import org.dcm4chee.storage.StorageContext;
+import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +79,10 @@ public abstract class StoreServiceCompressDecorator implements StoreService {
     @Inject @Delegate StoreService storeService;
     
     //injected compression service
+
+    @Inject
+    private StorageService storageService;
+
     @Inject
     private CompressionService compressionService;
 
@@ -106,37 +111,48 @@ public abstract class StoreServiceCompressDecorator implements StoreService {
             return false;
 
         MessageDigest digest = session.getMessageDigest();
+        StorageContext storageContext =
+                storageService.createStorageContext(session.getStorageSystem());
         Path source = context.getSpoolFile();
-        Path target = storeService.calcStorePath(context);
+        String origStoragePath = context.calcStoragePath();
+        String storagePath = origStoragePath;
+        int copies = 1;
+        OutputStream out;
+        for (;;)
+            try {
+                out = storageService.openOutputStream(storageContext, storagePath);
+                break;
+            } catch (ObjectAlreadyExistsException e) {
+                storagePath = origStoragePath + '.' + copies++;
+            } catch (Exception e) {
+                throw new DicomServiceException(Status.UnableToProcess, e);
+            }
         try {
-            Files.createDirectories(target.getParent());
-            String fileName = target.getFileName().toString();
-            int copies = 1;
-            for (;;) {
-                try {
-                    Files.createFile(target);
-                    compressionService.compress(rule, source, target, digest,
-                            context.getTransferSyntax(), attrs);
-                    context.setTransferSyntax(rule.getTransferSyntax());
-                    context.setFinalFile(target);
-                    if (digest != null) {
-                        context.setFinalFileDigest(
-                                TagUtils.toHexString(digest.digest()));
-                    }
-                    LOG.info("{}: M-WRITE compressed file - {}", session, target);
-                    return true;
-                } catch (FileAlreadyExistsException e) {
-                        target = target.resolveSibling(fileName + '.' + copies++);
-                } catch (IOException e) {
-                    LOG.info("{}: Compression failed - {}", session, e);
-                    Files.delete(target);
-                    return false;
-                }
+            try {
+                compressionService.compress(rule, source, out, digest,
+                                context.getTransferSyntax(), attrs);
+            } finally {
+                out.close();
             }
         } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
+            LOG.info("{}: Compression failed:", session, e);
+            try {
+                storageService.deleteObject(storageContext, storagePath);
+            } catch (IOException e1) {
+                LOG.warn("{}: Failed to delete compressed file - {}",
+                        context.getStoreSession(), storagePath, e);
+            }
+            return false;
         }
-    }
+        context.setStorageContext(storageContext);
+        context.setStoragePath(storagePath);
+        context.setFinalFileSize(storageContext.getFileSize());
+        context.setTransferSyntax(rule.getTransferSyntax());
+        if (digest != null) {
+            context.setFinalFileDigest(
+                    TagUtils.toHexString(digest.digest()));
+        }
+        return true;
+     }
 
-   
 }
