@@ -24,7 +24,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang.ClassUtils;
 
 /**
  * Test two objects for equivalence with a 'deep' comparison.  This will traverse 
@@ -322,25 +322,25 @@ public class DeepEquals
         
     	// try sorting
         
-        if (len >0 ) {
-        	if (Array.get(array1, 0) instanceof Comparable) 
-        	{
-        		
-        		Class<?> c = Array.get(array1, 0).getClass();
-        		
-        		if (ClassUtils.isPrimitiveOrWrapper(c))
-        		{
-            	/*	Arrays.sort(array1);
-                    Arrays.sort((Object[]) array2);*/
-        			
-        		} else {
-        	
-        		Arrays.sort((Object[]) array1);
-                Arrays.sort((Object[]) array2);
-        		}
-        		
-        	}
-        }
+//        if (len >0 ) {
+//        	if (Array.get(array1, 0) instanceof Comparable)
+//        	{
+//
+//        		Class<?> c = Array.get(array1, 0).getClass();
+//
+//        		if (ClassUtils.isPrimitiveOrWrapper(c))
+//        		{
+//            	/*	Arrays.sort(array1);
+//                    Arrays.sort((Object[]) array2);*/
+//
+//        		} else {
+//
+//        		Arrays.sort((Object[]) array1);
+//                Arrays.sort((Object[]) array2);
+//        		}
+//
+//        	}
+//        }
         
         for (int i = 0; i < len; i++)
         {
