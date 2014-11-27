@@ -3,127 +3,127 @@ dn: cn=schema
 objectClass: top
 objectClass: ldapSubentry
 objectClass: subschema
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.1 NAME 'dcmProviderName'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.1 NAME 'dcmProviderName'
   DESC 'Provider Name'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.2 NAME 'dcmStorageSystemGroupID'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.2 NAME 'dcmStorageSystemGroupID'
   DESC 'Storage System Group ID'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.3 NAME 'dcmStorageSystemID'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.3 NAME 'dcmStorageSystemID'
   DESC 'Storage System ID'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.4 NAME 'dcmNextStorageSystemID'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.4 NAME 'dcmNextStorageSystemID'
   DESC 'Next Storage System ID'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.5 NAME 'dcmActiveStorageSystemID'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.5 NAME 'dcmActiveStorageSystemID'
   DESC 'Next Storage System ID'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.6 NAME 'dcmStorageSystemPath'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.6 NAME 'dcmStorageSystemPath'
   DESC 'Storage System ID'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.7 NAME 'dcmStorageSystemStatus'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.7 NAME 'dcmStorageSystemStatus'
   DESC 'Storage System Status: OK, FULL or NOT_ACCESSABLE. OK if absent'
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.8 NAME 'dcmStorageReadOnly'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.8 NAME 'dcmStorageReadOnly'
   DESC 'Indicates if Storage is read-only. false if absent'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.9 NAME 'dcmStorageAccessTime'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.9 NAME 'dcmStorageAccessTime'
   DESC 'Storage Access Time. 0 if absent'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.10 NAME 'dcmStorageMinFreeSpace'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.10 NAME 'dcmStorageMinFreeSpace'
   DESC 'Threshold of free space of active Storage System in format <integer>{kB|MB|GB|KiB|MiB|GiB}.'
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.11 NAME 'dcmStorageMountCheckFile'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.11 NAME 'dcmStorageMountCheckFile'
   DESC 'Specifies path of file which appearance indicates a failed mount'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.12 NAME 'dcmStorageSystemAPI'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.12 NAME 'dcmStorageSystemAPI'
   DESC 'Storage System API'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.13 NAME 'dcmStorageSystemIdentity'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.13 NAME 'dcmStorageSystemIdentity'
   DESC 'Storage System Identity'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.14 NAME 'dcmStorageSystemCredential'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.14 NAME 'dcmStorageSystemCredential'
   DESC 'Storage System Credential'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.15 NAME 'dcmStorageSystemContainer'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.15 NAME 'dcmStorageSystemContainer'
   DESC 'Storage System Container'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.16 NAME 'dcmStorageSystemMaxConnections'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.16 NAME 'dcmStorageSystemMaxConnections'
   DESC 'Maximum number of connections; 5 if absent'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.17 NAME 'dcmStorageSystemConnectionTimeout'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.17 NAME 'dcmStorageSystemConnectionTimeout'
   DESC 'Connection timeout in ms; 0 (=no limit) if absent'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.18 NAME 'dcmStorageSystemSocketTimeout'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.18 NAME 'dcmStorageSystemSocketTimeout'
   DESC 'Socket timeout in ms; 0 (=no limit) if absent'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.19 NAME 'dcmStorageSystemMultipartUpload'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.19 NAME 'dcmStorageSystemMultipartUpload'
   DESC 'Indicates if a single object is uploaded as a set or parts. true if absent'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.20 NAME 'dcmStorageSystemMultipartChunkSize'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.20 NAME 'dcmStorageSystemMultipartChunkSize'
   DESC 'Multipart upload chunk size in format <integer>{kB|MB|GB|KiB|MiB|GiB}. 32MB if absent'
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.30.3.21 NAME 'dcmInstanceAvailability'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.21 NAME 'dcmInstanceAvailability'
   DESC 'Instance Availability: ONLINE, NEARLINE or OFFLINE. ONLINE if absent.'
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
   SINGLE-VALUE )
-objectClasses: ( 1.2.40.0.13.1.15.30.4.1 NAME 'dcmStorageDeviceExtension'
+objectClasses: ( 1.2.40.0.13.1.15.40.4.1 NAME 'dcmStorageDeviceExtension'
   DESC 'Storage Device Extension'
   SUP top STRUCTURAL
   MUST (
     cn ) )
-objectClasses: ( 1.2.40.0.13.1.15.30.4.2 NAME 'dcmStorageSystemGroup'
+objectClasses: ( 1.2.40.0.13.1.15.40.4.2 NAME 'dcmStorageSystemGroup'
   DESC 'Storage System Group'
   SUP top STRUCTURAL
   MUST (
@@ -132,7 +132,7 @@ objectClasses: ( 1.2.40.0.13.1.15.30.4.2 NAME 'dcmStorageSystemGroup'
     dcmActiveStorageSystemID $
     dcmNextStorageSystemID $
     dicomInstalled) )
-objectClasses: ( 1.2.40.0.13.1.15.30.4.3 NAME 'dcmStorageSystem'
+objectClasses: ( 1.2.40.0.13.1.15.40.4.3 NAME 'dcmStorageSystem'
   DESC 'Storage System'
   SUP top STRUCTURAL
   MUST (
@@ -157,13 +157,13 @@ objectClasses: ( 1.2.40.0.13.1.15.30.4.3 NAME 'dcmStorageSystem'
     dcmStorageSystemSocketTimeout $
     dcmStorageSystemMultipartUpload $
     dcmStorageSystemMultipartChunkSize) )
-objectClasses: ( 1.2.40.0.13.1.15.30.4.4 NAME 'dcmStorageArchiver'
+objectClasses: ( 1.2.40.0.13.1.15.40.4.4 NAME 'dcmStorageArchiver'
   DESC 'Storage Archiver'
   SUP top STRUCTURAL
   MUST (
     cn $
     dcmProviderName ) )
-objectClasses: ( 1.2.40.0.13.1.15.30.4.5 NAME 'dcmStorageFileCache'
+objectClasses: ( 1.2.40.0.13.1.15.40.4.5 NAME 'dcmStorageFileCache'
   DESC 'Storage File Cache'
   SUP top STRUCTURAL
   MUST (
