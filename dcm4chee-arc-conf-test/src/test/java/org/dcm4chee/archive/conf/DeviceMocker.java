@@ -63,9 +63,7 @@ import org.dcm4chee.storage.conf.StorageSystemStatus;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.dcm4che3.net.TransferCapability.Role.SCP;
@@ -550,8 +548,11 @@ public class DeviceMocker {
     private Device init(Device device, Issuer issuer, Code institutionCode)
             throws Exception {
         String name = device.getDeviceName();
-        device.setThisNodeCertificates(config.deviceRef(name),
-                (X509Certificate) keystore.getCertificate(name));
+
+        //TODO: implement
+//        device.setThisNodeCertificates(config.deviceRef(name),
+//                (X509Certificate) keystore.getCertificate(name));
+
         device.setIssuerOfPatientID(issuer);
         device.setIssuerOfAccessionNumber(issuer);
         if (institutionCode != null) {
@@ -635,16 +636,17 @@ public class DeviceMocker {
         device.setKeyStoreURL(DCM4CHEE_ARC_KEY_JKS);
         device.setKeyStoreType("JKS");
         device.setKeyStorePin("secret");
-        device.setThisNodeCertificates(config.deviceRef(name),
-                (X509Certificate) keystore.getCertificate(name));
-        for (String other : OTHER_DEVICES)
-            device.setAuthorizedNodeCertificates(config.deviceRef(other),
-                    (X509Certificate) keystore.getCertificate(other));
 
-        device.addApplicationEntity(
-                createAE("DCM4CHEE", dicom, dicomTLS,
+//        device.setThisNodeCertificates(config.deviceRef(name),
+//                (X509Certificate) keystore.getCertificate(name));
+//        for (String other : OTHER_DEVICES)
+//            device.setAuthorizedNodeCertificates(config.deviceRef(other),
+//                    (X509Certificate) keystore.getCertificate(other));
+
+        device.addApplicationEntity(createAE("DCM4CHEE", dicom, dicomTLS,
                     IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
                     HIDE_REJECTED_VIEW, null, PIX_MANAGER));
+
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_ADMIN", dicom, dicomTLS,
                     IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
@@ -916,7 +918,7 @@ public class DeviceMocker {
         // patient selector
         PatientSelectorConfig ps = new PatientSelectorConfig();
         ps.setPatientSelectorClassName("org.dcm4chee.archive.patient.DemographicsPatientSelector");
-        Map<String,String> sels = new HashMap<>();
+        Map<String,String> sels = new LinkedHashMap<>();
         sels.put("familyName", "BROAD");
         sels.put("givenName", "BROAD");
         ps.setPatientSelectorProperties(sels);
