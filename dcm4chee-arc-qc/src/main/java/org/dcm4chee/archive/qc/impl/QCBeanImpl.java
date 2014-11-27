@@ -56,7 +56,6 @@ import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import javax.persistence.Tuple;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
@@ -253,7 +252,6 @@ public class QCBeanImpl  implements QCBean{
                 sourceUIDs.add(inst.getSopInstanceUID());
                 //update identical document sequence
                 if(series.getModality().equalsIgnoreCase("KO")
-                        || series.getModality().equalsIgnoreCase("PR")
                         || series.getModality().equalsIgnoreCase("SR"))
                 for(Instance ident: getIdenticalDocumentReferencedInstances(newInstance)) {
                     removeIdenticalDocumentSequence(ident, inst);
@@ -1556,7 +1554,7 @@ public class QCBeanImpl  implements QCBean{
         Collection<RequestAttributes> reqAttrs = new ArrayList<RequestAttributes>();
         for(Attributes attrs : requestedAttrsSeq) {
             RequestAttributes newReqAttr = new RequestAttributes(
-                    attrs,getIssuerOfAccessionNumber(attrs),
+                    attrs,attrs.contains(Tag.IssuerOfAccessionNumberSequence)?getIssuerOfAccessionNumber(attrs):null,
                     archiveDeviceExtension.getFuzzyStr());
             newReqAttr.setSeries(newSeries);
             reqAttrs.add(newReqAttr);
@@ -1814,8 +1812,9 @@ public class QCBeanImpl  implements QCBean{
             Collection<String> moved, String seriesType) {
             Sequence currentEvidenceSequence = inst.getAttributes()
                     .getSequence(Tag.CurrentRequestedProcedureEvidenceSequence);
-            Collection<String> allReferencedSopUIDs = seriesType.equalsIgnoreCase("PR")? getAggregatedReferencedSopInstancesForSeries(inst.getAttributes()
-                    .getSequence(Tag.ReferencedSeriesSequence)): getAggregatedReferencedSopInstancesForStudy(
+            Sequence referencedSeriesSeq = inst.getAttributes()
+            .getSequence(Tag.ReferencedSeriesSequence);
+            Collection<String> allReferencedSopUIDs = seriesType.equalsIgnoreCase("PR")? getAggregatedReferencedSopInstancesForSeries(referencedSeriesSeq): getAggregatedReferencedSopInstancesForStudy(
                     studyInstanceUID, currentEvidenceSequence);
             int allReferencesCount=allReferencedSopUIDs.size();
             if(allReferencesCount==0)
@@ -1969,6 +1968,7 @@ public class QCBeanImpl  implements QCBean{
                     instancesHistory.add(instanceHistory);
                     targetUIDs.add(newInstance.getSopInstanceUID());
                     sourceUIDs.add(inst.getSopInstanceUID());
+                    if(series.getModality().equalsIgnoreCase("KOSR")) {
                     for(Instance ident: getIdenticalDocumentReferencedInstances(newInstance)) {
                         removeIdenticalDocumentSequence(ident, inst);
                         removeIdenticalDocumentSequence(inst,ident);
@@ -1978,6 +1978,7 @@ public class QCBeanImpl  implements QCBean{
                                 && !ident.getSeries().getStudy().getStudyInstanceUID()
                                 .equalsIgnoreCase(sourceStudy.getStudyInstanceUID()))
                             addIdenticalDocumentSequenceHistory(ident, studyHistory.getAction());
+                    }
                     }
                     break;
                     
@@ -2007,8 +2008,10 @@ public class QCBeanImpl  implements QCBean{
                     instancesHistory.add(instanceHistory);
                     targetUIDs.add(newInstance.getSopInstanceUID());
                     sourceUIDs.add(inst.getSopInstanceUID());
+                    if(series.getModality().equalsIgnoreCase("KOSR")) {
                     addIdenticalDocumentSequence(newInstance, inst);
                     addIdenticalDocumentSequence(inst, newInstance);
+                    
                     for(Instance ident: getIdenticalDocumentReferencedInstances(newInstance)) {
                         addIdenticalDocumentSequence(ident, newInstance);
                         addIdenticalDocumentSequence(newInstance, ident);
@@ -2016,6 +2019,7 @@ public class QCBeanImpl  implements QCBean{
                                 && !ident.getSeries().getStudy().getStudyInstanceUID()
                                 .equalsIgnoreCase(sourceStudy.getStudyInstanceUID()))
                             addIdenticalDocumentSequenceHistory(ident, studyHistory.getAction());
+                    }
                     }
                     break;
                     
@@ -2382,221 +2386,16 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public Collection<String> scanForReferencedStudyUIDs(Attributes attrs) {
-        //identical document sequence is omitted since it's already part of the QC operation  
-        ArrayList<String> studiesReferenced = new ArrayList<String>();
-        //root study iuid
-        studiesReferenced.add(attrs.getString(Tag.StudyInstanceUID));
-        //Current RequestedProcedure EvidenceSequence
-        if(attrs.contains(Tag.CurrentRequestedProcedureEvidenceSequence))
-            studiesReferenced.addAll(getStudyFromAllItems(
-                    attrs.getSequence(Tag.CurrentRequestedProcedureEvidenceSequence)));
-        //Pertinent Other EvidenceSequence
-        if(attrs.contains(Tag.PertinentOtherEvidenceSequence))
-            studiesReferenced.addAll(getStudyFromAllItems(
-                    attrs.getSequence(Tag.PertinentOtherEvidenceSequence)));
-        //Referenced Study Sequence (includes only sop class and sop instance for the study)
-        if(attrs.contains(Tag.ReferencedStudySequence))
-            studiesReferenced.addAll(getReferencedStudiesFromReferencedStudySequence(
-                    attrs.getSequence(Tag.ReferencedStudySequence)));
-        //Predecessor DocumentsSequence
-        if(attrs.contains(Tag.PredecessorDocumentsSequence)) {
-            studiesReferenced.addAll(getStudyFromAllItems(
-                    attrs.getSequence(Tag.PredecessorDocumentsSequence)));
+    public void scanForReferencedStudyUIDs(Attributes attrs, Collection<String> initialColl) {
+        if(attrs.contains(Tag.StudyInstanceUID)) {
+            initialColl.add(attrs.getString(Tag.StudyInstanceUID));
         }
-        //Referenced Raw DataSequence
-        if(attrs.contains(Tag.ReferencedRawDataSequence)) {
-            studiesReferenced.addAll(getStudyFromAllItems(
-                    attrs.getSequence(Tag.ReferencedRawDataSequence)));
-        }
-        //Referenced WaveformSequence
-        if(attrs.contains(Tag.ReferencedWaveformSequence)) {
-          studiesReferenced.addAll(getStudyFromAllItems(
-                  attrs.getSequence(Tag.ReferencedWaveformSequence)));  
-        }
-        //Referenced ImageEvidence Sequence
-        if(attrs.contains(Tag.ReferencedImageEvidenceSequence))
-            studiesReferenced.addAll(getStudyFromAllItems(
-                    attrs.getSequence(Tag.ReferencedImageEvidenceSequence)));
-        //Source Image EvidenceSequence
-        if(attrs.contains(Tag.SourceImageEvidenceSequence))
-            studiesReferenced.addAll(getStudyFromAllItems(
-                    attrs.getSequence(Tag.SourceImageEvidenceSequence)));
-        //The associated study to all references must be fetched for the following Sequences
-        //Source Image Sequence
-        if(attrs.contains(Tag.SourceImageSequence)) {
-            Collection<Instance> instances = locateInstances(getReferencedInstances(
-                    attrs.getSequence(Tag.SourceImageSequence)));
-            for(Instance inst : instances){
-                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
+        for(int i : attrs.tags()) {
+            if(attrs.getVR(i) == VR.SQ) {
+                for(Attributes item : attrs.getSequence(i))
+                scanForReferencedStudyUIDs(item, initialColl);
             }
         }
-      //Referenced SpatialRegistration Sequence
-        if(attrs.contains(Tag.ReferencedSpatialRegistrationSequence)) {
-            Collection<Instance> instances = locateInstances(getReferencedInstances(
-                    attrs.getSequence(Tag.ReferencedSpatialRegistrationSequence)));
-            for(Instance inst : instances){
-                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-            }
-        } 
-        //Referenced Image Sequence 
-        if(attrs.contains(Tag.ReferencedImageSequence)) {
-            Collection<Instance> instances = locateInstances(getReferencedInstances(
-                    attrs.getSequence(Tag.ReferencedImageSequence)));
-            for(Instance inst : instances){
-                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-            }
-        }
-        //Referenced Image Sequence (witin) Displayed AreaSelection Sequence
-        if(attrs.contains(Tag.DisplayedAreaSelectionSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.DisplayedAreaSelectionSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-            }
-            }
-        }
-      //Referenced Image Sequence (witin) Graphic Annotation Sequence
-        if(attrs.contains(Tag.GraphicAnnotationSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.GraphicAnnotationSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-            }
-            }
-        }
-        //Referenced Image Sequence (witin) Softcopy VOI LUTSequence
-        if(attrs.contains(Tag.SoftcopyVOILUTSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.SoftcopyVOILUTSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-                }
-            }
-        }
-      //Referenced Stereometric Instance Sequence (witin) Structured Display ImageBox Sequence
-        if(attrs.contains(Tag.StructuredDisplayImageBoxSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.StructuredDisplayImageBoxSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedStereometricInstanceSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-                }
-            }
-        }
-      //Referenced Image Sequence (witin) Mask SubtractionSequence
-        if(attrs.contains(Tag.MaskSubtractionSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.MaskSubtractionSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-                }
-            }
-        }
-        //Referenced Image Sequence (witin) Frame Display Shutter Sequence
-        if(attrs.contains(Tag.FrameDisplayShutterSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.FrameDisplayShutterSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-                }
-            }
-        }
-      //Referenced Image Sequence (witin) Multi-frame Presentation Sequence
-        if(attrs.contains(Tag.MultiFramePresentationSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.MultiFramePresentationSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-                }
-            }
-        }
-        //Referenced Image Sequence (witin) Deformable Registration Sequence
-        if(attrs.contains(Tag.DeformableRegistrationSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.DeformableRegistrationSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-                }
-            }
-        }
-      //Referenced Image Sequence (witin) Fiducial Set Sequence
-        if(attrs.contains(Tag.FiducialSetSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.FiducialSetSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-                }
-            }
-        }
-        //Referenced Image Sequence (witin) Referenced Image Real World Value Mapping Sequence
-        if(attrs.contains(Tag.ReferencedImageRealWorldValueMappingSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.ReferencedImageRealWorldValueMappingSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-                }
-            }
-        }
-        //Referenced PresentationState Sequence
-        if(attrs.contains(Tag.ReferencedPresentationStateSequence)) {
-            Collection<Instance> instances = locateInstances(getReferencedInstances(
-                    attrs.getSequence(Tag.ReferencedPresentationStateSequence)));
-            for(Instance inst : instances){
-                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-            }
-        }
-        //Referenced InstanceSequence
-        if(attrs.contains(Tag.ReferencedInstanceSequence)) {
-            Collection<Instance> instances = locateInstances(getReferencedInstances(
-                    attrs.getSequence(Tag.ReferencedInstanceSequence)));
-            for(Instance inst : instances){
-                studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-            }
-        }
-
-        //Referenced Image Sequence (witin) Referenced Series Sequence for Presentation states
-        if(attrs.contains(Tag.ReferencedSeriesSequence)) {
-            for(Attributes item : attrs.getSequence(Tag.ReferencedSeriesSequence)) {
-                if(item.contains(Tag.ReferencedImageSequence)) {
-                Collection<Instance> instances = locateInstances(getReferencedInstances(
-                        item.getSequence(Tag.ReferencedImageSequence)));
-                for(Instance inst : instances){
-                    studiesReferenced.add(inst.getSeries().getStudy().getStudyInstanceUID());
-                }
-                }
-            }
-        }
-        return studiesReferenced;
     }
 
     private String[] getReferencedInstances(Sequence sequence) {
@@ -2624,6 +2423,15 @@ public class QCBeanImpl  implements QCBean{
         }
         
         return studyInstanceUIDs;
+    }
+
+    @Override
+    public Collection<QCInstanceHistory> getReferencedHistory(
+            Collection<String> referencedStudyInstanceUIDs) {
+        Query query = em.createNamedQuery(QCInstanceHistory
+                .FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST);
+        query.setParameter("uids", referencedStudyInstanceUIDs);
+        return query.getResultList();
     }
 
 

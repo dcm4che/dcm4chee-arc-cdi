@@ -48,6 +48,7 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.PatientID;
+import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.qc.impl.QCPostProcessor;
@@ -431,8 +432,20 @@ public interface QCBean {
      * 
      * @param attrs
      *            Attributes for the retrieved object
-     * @return the QC event
+     * @return boolean
      */
-    public Collection<String> scanForReferencedStudyUIDs(Attributes attrs);
+    public void scanForReferencedStudyUIDs(Attributes attrs, Collection<String> initialColl);
+
+    /**
+     * Get Referenced History
+     * Used by the RetrieveQCDecorator to get the list of all instances
+     * from the history tables belonging to the given studies.
+     * 
+     * @param referencedStudyInstanceUIDs
+     *            A collection of study instance uids
+     * @return a collection of instance history
+     */
+    public Collection<QCInstanceHistory> getReferencedHistory(
+            Collection<String> referencedStudyInstanceUIDs);
     
 }
