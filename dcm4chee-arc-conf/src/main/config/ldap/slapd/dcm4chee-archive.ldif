@@ -10,6 +10,7 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.1 NAME 'dcmInitFileSystemURI'
   SINGLE-VALUE )
 olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.2 NAME 'dcmFileSystemGroupID'
   DESC 'ID of File System Group where received objects are stored'
+  OBSOLETE
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
@@ -409,8 +410,7 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   DESC 'DICOM Archive Network AE related information'
   SUP top AUXILIARY
   MAY (
-    dcmInitFileSystemURI $
-    dcmFileSystemGroupID $
+    dcmStorageSystemGroupID $
     dcmSpoolDirectoryPath $
     dcmStorageFilePathFormat $
     dcmDigestAlgorithm $

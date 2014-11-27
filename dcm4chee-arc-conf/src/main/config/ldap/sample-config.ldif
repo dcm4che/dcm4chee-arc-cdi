@@ -927,7 +927,6 @@ dcmStorageSystemStatus: OK
 dn: dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dcmDigestAlgorithm: MD5
 dcmQueryRetrieveViewID: hideRejected
-dcmFileSystemGroupID: DEFAULT
 dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomAssociationAcceptor: TRUE
@@ -945,6 +944,7 @@ dcmReturnOtherPatientNames: TRUE
 dcmMatchUnknown: TRUE
 dcmSendPendingCGet: TRUE
 dicomAETitle: DCM4CHEE
+dcmStorageSystemGroupID: DEFAULT
 dcmReturnOtherPatientIDs: TRUE
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.11
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.22

@@ -1083,7 +1083,7 @@ public class QCIT {
         storeParam.setRetrieveAETs(RETRIEVE_AETS);
         StoreSession session = storeService.createStoreSession(storeService); 
         session.setStoreParam(storeParam);
-        String groupID = arcAEExt.getFileSystemGroupID();
+        String groupID = arcAEExt.getStorageSystemGroupID();
         session.setStorageSystem(new StorageSystem());
         session.setSource(new GenericParticipant("localhost", "updateTest-QCIT"));
         session.setRemoteAET(SOURCE_AET);
