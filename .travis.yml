@@ -7,4 +7,9 @@ before_install:
   - git show | head
   - mvn install -Dmaven.skip.test=true
   - popd
+  - git clone --depth 1 https://github.com/dcm4che/dcm4chee-storage2.git tmp-dcm4chee-storage2
+  - pushd tmp-dcm4chee-storage2
+  - git show | head
+  - mvn install -Dmaven.skip.test=true
+  - popd
 script: "mvn -B verify"
