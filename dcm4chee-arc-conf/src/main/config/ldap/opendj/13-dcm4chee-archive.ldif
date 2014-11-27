@@ -514,9 +514,9 @@ objectClasses: ( 1.2.40.0.13.1.15.10.4.19 NAME 'dcmRejectionNote'
   DESC 'Specifies behavior on Rejection Note Stored'
   SUP top STRUCTURAL
   MUST (
-    cn $
     dcmRejectionNoteTitle )
   MAY (
+    cn $
     dcmRevokeRejection $
     dcmRejectedObjectRetentionTime $
     dcmRejectedObjectRetentionTimeUnit $

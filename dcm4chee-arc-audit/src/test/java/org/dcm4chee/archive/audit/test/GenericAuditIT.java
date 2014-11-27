@@ -42,7 +42,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
 import org.dcm4che3.audit.AuditMessage;
-import org.dcm4che3.audit.AuditMessages;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
@@ -82,7 +81,7 @@ public class GenericAuditIT {
             c = new Connection("testARR", ARR_HOST, ARR_PORT_UNSECURE);
             c.setProtocol(Protocol.SYSLOG_UDP);
         }
-        c.setInstalled(true);
+        c.setConnectionInstalled(true);
         AuditRecordRepository arrExt = new AuditRecordRepository();
         arrExt.getConnections().add(c);
         arr.addDeviceExtension(arrExt);
@@ -112,7 +111,7 @@ public class GenericAuditIT {
         else {
             clientconn.setProtocol(Protocol.SYSLOG_UDP);
         }
-        clientconn.setInstalled(true);
+        clientconn.setConnectionInstalled(true);
         test.addConnection(clientconn);
         
         return test;

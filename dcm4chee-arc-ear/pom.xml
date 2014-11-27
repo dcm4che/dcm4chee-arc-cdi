@@ -178,32 +178,12 @@
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-filesystem</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-cdi-conf</artifactId>
+      <version>${dcm4che.version}</version>
+    </dependency>
   </dependencies>
-  <profiles>
-    <profile>
-      <id>prefs</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.dcm4che.dcm4chee-arc</groupId>
-          <artifactId>dcm4chee-arc-conf-prefs</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>ldap</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.dcm4che.dcm4chee-arc</groupId>
-          <artifactId>dcm4chee-arc-conf-ldap</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-    </profile>
-  </profiles>
   <build>
     <plugins>
       <plugin>

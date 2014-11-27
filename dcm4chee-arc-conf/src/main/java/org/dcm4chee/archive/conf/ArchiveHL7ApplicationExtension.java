@@ -39,11 +39,15 @@
 package org.dcm4chee.archive.conf;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.hl7.HL7ApplicationExtension;
 import org.dcm4che3.util.StringUtils;
@@ -51,43 +55,62 @@ import org.dcm4che3.util.StringUtils;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
+@LDAP(objectClasses = "dcmArchiveHL7Application", noContainerNode = true)
+@ConfigurableClass
 public class ArchiveHL7ApplicationExtension extends HL7ApplicationExtension {
 
     private static final long serialVersionUID = 4640015816709554649L;
 
-    private final LinkedHashMap<String, String> templatesURIs =
+
+    private final Map<String, String> templateURIMap =
             new LinkedHashMap<String, String>();
 
-    public void addTemplatesURI(String key, String uri) {
-        templatesURIs.put(key, uri);
-    }
+    /**
+     * 'Proxy' property, actually stores/reads templateURIMap
+     */
+    @ConfigurableProperty(name = "labeledURI")
+    private String[] labeledURIs;
 
-    public String getTemplatesURI(String key) {
-        return templatesURIs.get(key);
-    }
-
-    public String removeTemplatesURI(String key) {
-        return templatesURIs.remove(key);
-    }
-
-    public void clearTemplatesURIs() {
-        templatesURIs.clear();
-    }
-
-    public final String[] getTemplatesURIs() {
-        String[] ss = new String[templatesURIs.size()];
+    public final String[] getLabeledURIs() {
+        String[] ss = new String[templateURIMap.size()];
         int i = 0;
-        for (Map.Entry<String, String> entry : templatesURIs.entrySet())
+        for (Map.Entry<String, String> entry : templateURIMap.entrySet())
             ss[i++] = entry.getValue() + " " + entry.getKey();
         return ss ;
     }
 
-    public void setTemplatesURIs(String[] ss) {
+    public void setLabeledURIs(String[] labeledURIs) {
         clearTemplatesURIs();
-        for (String s : ss) {
+        for (String s : labeledURIs) {
             int end = s.indexOf(' ');
-            addTemplatesURI(s.substring(end+1), s.substring(0, end));
+            addTemplatesURI(s.substring(end + 1), s.substring(0, end));
         }
+    }
+    public void addTemplatesURI(String key, String uri) {
+        templateURIMap.put(key, uri);
+    }
+
+    public Map<String, String> getTemplateURIMap() {
+        return templateURIMap;
+    }
+
+    public void setTemplateURIMap(Map<String, String> templateURIMap) {
+        clearTemplatesURIs();
+        for (Map.Entry<String, String> entry : templateURIMap.entrySet()) {
+            this.templateURIMap.put(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public String getTemplatesURI(String key) {
+        return templateURIMap.get(key);
+    }
+
+    public String removeTemplatesURI(String key) {
+        return templateURIMap.remove(key);
+    }
+
+    public void clearTemplatesURIs() {
+        templateURIMap.clear();
     }
 
     public Templates getTemplates(String key)
@@ -104,8 +127,8 @@ public class ArchiveHL7ApplicationExtension extends HL7ApplicationExtension {
     public void reconfigure(HL7ApplicationExtension src) {
         ArchiveHL7ApplicationExtension arcapp = 
                 (ArchiveHL7ApplicationExtension) src;
-        templatesURIs.clear();
-        templatesURIs.putAll(arcapp.templatesURIs);
+        templateURIMap.clear();
+        templateURIMap.putAll(arcapp.templateURIMap);
     }
 
 }

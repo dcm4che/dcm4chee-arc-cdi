@@ -38,12 +38,17 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
+import org.dcm4che3.conf.core.util.ConfigIterators;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.DeviceExtension;
@@ -54,47 +59,82 @@ import org.dcm4che3.util.StringUtils;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
+@LDAP(objectClasses = "dcmArchiveDevice", noContainerNode = true)
+@ConfigurableClass
 public class ArchiveDeviceExtension extends DeviceExtension {
 
     private static final long serialVersionUID = -3611223780276386740L;
-    public static final String ARCHIVE_HOST_AE_MAP_NODE="HostNameAETitleMap";
+
+    @ConfigurableProperty(name = "dcmIncorrectWorklistEntrySelectedCode")
     private Code incorrectWorklistEntrySelectedCode;
+
+    @ConfigurableProperty(name = "dcmFuzzyAlgorithmClass")
     private String fuzzyAlgorithmClass;
-    private final AttributeFilter[] attributeFilters =
-            new AttributeFilter[Entity.values().length];
+
+    @LDAP(noContainerNode = true)
+    @ConfigurableProperty(name = "dcmAttributeFilter")
+    private final Map<Entity, AttributeFilter> attributeFilters = new EnumMap<Entity, AttributeFilter>(Entity.class);
+
+    @ConfigurableProperty(name = "dcmConfigurationStaleTimeout", defaultValue = "0")
     private int configurationStaleTimeout;
+
+    @ConfigurableProperty(name = "dcmWadoAttributesStaleTimeout", defaultValue = "0")
     private int wadoAttributesStaleTimeout;
 
-    private transient FuzzyStr fuzzyStr;
-    private transient TemplatesCache templatesCache;
-    
-    private boolean hostnameAEresoultion;
+
+    @ConfigurableProperty(name = "dcmHostnameAEResolution", defaultValue = "false")
+    private boolean hostnameAEResolution;
+
+    @ConfigurableProperty(name = "dcmDeIdentifyLogs", defaultValue = "false")
     private boolean deIdentifyLogs;
+
+    @ConfigurableProperty(name = "dcmUpdateDbRetries", defaultValue = "1")
     private int updateDbRetries;
-    private Collection<HostNameAEEntry> hostNameAEList =
-            new ArrayList<HostNameAEEntry>();
+
+    @LDAP(
+            distinguishingField = "dicomAETitle",
+            mapValueAttribute = "dicomHostName",
+            mapEntryObjectClass= "dcmHostNameAEEntry"
+    )
+    @ConfigurableProperty(name = "HostNameAETitleMap")
+    private final Map<String, String> hostNameToAETitleMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+
+    @LDAP(noContainerNode = true)
+    @ConfigurableProperty(name = "rejectionParams")
     private RejectionParam[] rejectionParams = {};
+
+    @LDAP(noContainerNode = true)
+    @ConfigurableProperty(name = "queryRetrieveViews")
     private QueryRetrieveView[] queryRetrieveViews = {};
+
+    @ConfigurableProperty(name = "dcmRejectedObjectsCleanUpPollInterval")
     private int rejectedObjectsCleanUpPollInterval;
+
+    @ConfigurableProperty(name = "dcmRejectedObjectsCleanUpMaxNumberOfDeletes")
     private int rejectedObjectsCleanUpMaxNumberOfDeletes;
+
+    @ConfigurableProperty(name = "dcmMppsEmulationPollInterval")
     private int mppsEmulationPollInterval;
     
-    public boolean isHostnameAEresoultion() {
-        return hostnameAEresoultion;
+    private transient FuzzyStr fuzzyStr;
+    private transient TemplatesCache templatesCache;
+
+    public boolean isHostnameAEResolution() {
+        return hostnameAEResolution;
     }
 
-    public void setHostnameAEresoultion(boolean hostnameAEresoultion) {
-        this.hostnameAEresoultion = hostnameAEresoultion;
+    public void setHostnameAEResolution(boolean hostnameAEResolution) {
+        this.hostnameAEResolution = hostnameAEResolution;
     }
 
-    public Collection<HostNameAEEntry> getHostNameAEList() {
-        return hostNameAEList;
+    public Map<String, String> getHostNameToAETitleMap() {
+        return hostNameToAETitleMap;
     }
 
-    public void setHostNameAEList(Collection<HostNameAEEntry> hostNameAEList) {
-        this.hostNameAEList = hostNameAEList != null
-                ? hostNameAEList
-                : new ArrayList<HostNameAEEntry>();
+    public void setHostNameToAETitleMap(Map<String, String> hostNameToAETitleMap) {
+        this.hostNameToAETitleMap.clear();
+        if (hostNameToAETitleMap!=null)
+            this.hostNameToAETitleMap.putAll(hostNameToAETitleMap);
     }
 
     public Code getIncorrectWorklistEntrySelectedCode() {
@@ -212,19 +252,24 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     }
 
     public void setAttributeFilter(Entity entity, AttributeFilter filter) {
-        attributeFilters[entity.ordinal()] = filter;
+        attributeFilters.put(entity,filter);
     }
 
     public AttributeFilter getAttributeFilter(Entity entity) {
-        return attributeFilters[entity.ordinal()];
+        return attributeFilters.get(entity);
     }
 
-    public AttributeFilter[] getAttributeFilters() {
+    public Map<Entity, AttributeFilter> getAttributeFilters() {
         return attributeFilters;
     }
 
     public QueryRetrieveView[] getQueryRetrieveViews() {
         return queryRetrieveViews;
+    }
+
+    public void setAttributeFilters(Map<Entity, AttributeFilter> attributeFilters) {
+        this.attributeFilters.clear();
+        this.attributeFilters.putAll(attributeFilters);
     }
 
     public void setQueryRetrieveViews(QueryRetrieveView... queryRetrieveViews) {
@@ -243,19 +288,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @Override
     public void reconfigure(DeviceExtension from) {
         ArchiveDeviceExtension arcdev = (ArchiveDeviceExtension) from;
-        setIncorrectWorklistEntrySelectedCode(arcdev.incorrectWorklistEntrySelectedCode);
-        setFuzzyAlgorithmClass(arcdev.fuzzyAlgorithmClass);
-        setConfigurationStaleTimeout(arcdev.configurationStaleTimeout);
-        System.arraycopy(arcdev.attributeFilters, 0,
-                attributeFilters, 0, attributeFilters.length);
-        setHostNameAEList(hostNameAEList);
-        setHostnameAEresoultion(arcdev.hostnameAEresoultion);
-        setRejectionParams(arcdev.rejectionParams);
-        setQueryRetrieveViews(arcdev.getQueryRetrieveViews());
-        setWadoAttributesStaleTimeout(arcdev.getWadoAttributesStaleTimeout());
-        setRejectedObjectsCleanUpPollInterval(arcdev.getRejectedObjectsCleanUpPollInterval());
-        setRejectedObjectsCleanUpMaxNumberOfDeletes(arcdev.getRejectedObjectsCleanUpMaxNumberOfDeletes());
-        setMppsEmulationPollInterval(arcdev.mppsEmulationPollInterval);
+        ConfigIterators.reconfigure(arcdev, this, ArchiveDeviceExtension.class);
     }
 
     public StoreParam getStoreParam() {
