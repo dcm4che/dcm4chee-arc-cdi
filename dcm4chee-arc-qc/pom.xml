@@ -13,6 +13,16 @@
       <artifactId>dcm4chee-arc-rs-common</artifactId>
       <version>${project.version}</version>
     </dependency>
+        <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-service</artifactId>
+      <version>2.0.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-filesystem</artifactId>
+      <version>2.0.0-SNAPSHOT</version>
+    </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-file-mgmt</artifactId>
@@ -260,7 +270,7 @@
             <configuration>
               <archive>
                 <manifestEntries>
-                  <Dependencies>org.dcm4che.net, org.dcm4che.conf.api, org.dcm4che.soundex</Dependencies>
+                  <Dependencies>org.codehaus.jackson.jackson-jaxrs,org.codehaus.jackson.jackson-mapper-asl,org.dcm4che.net, org.dcm4che.soundex, org.dcm4che.conf.api</Dependencies>
                 </manifestEntries>
               </archive>
             </configuration>

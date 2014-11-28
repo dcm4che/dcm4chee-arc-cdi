@@ -41,8 +41,16 @@ package org.dcm4chee.archive.qc.test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -63,13 +71,21 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.PDVInputStream;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.util.SafeClose;
+import org.dcm4che3.util.StreamUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Location;
@@ -97,6 +113,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
@@ -188,8 +205,8 @@ public class QCIT {
     };
 
     private static final String[] DELETE_QUERIES = {
-        "DELETE FROM  `rel_instance_file_ref`;",
-        "DELETE FROM  `file_ref`;",
+        "DELETE FROM  `rel_instance_location`;",
+        "DELETE FROM  `location`;",
         "DELETE FROM  `content_item`;",
         "DELETE FROM  `verify_observer`;",
         "DELETE FROM  `instance`;",
@@ -230,6 +247,9 @@ public class QCIT {
         }
         for (String resourceName : ALL_RESOURCES)
             war.addAsResource(resourceName);
+        
+        war.as(ZipExporter.class).exportTo(
+                new File("test.war"), true);
         return war;
     }
 
@@ -1048,7 +1068,7 @@ public class QCIT {
 
 
     private Collection<Location> getFileAliasRefs(Instance instance) {
-        Query query = em.createQuery("SELECT i.fileAliasTableRefs FROM Instance"
+        Query query = em.createQuery("SELECT i.otherLocations FROM Instance"
                 + " i where i.sopInstanceUID = ?1");
         query.setParameter(1, instance.getSopInstanceUID());
         return query.getResultList();
@@ -1077,22 +1097,23 @@ public class QCIT {
 
         ArchiveAEExtension arcAEExt = device.getApplicationEntity("DCM4CHEE")
                 .getAEExtension(ArchiveAEExtension.class);
-        
+
         try {
-        StoreParam storeParam = ParamFactory.createStoreParam();
-        storeParam.setRetrieveAETs(RETRIEVE_AETS);
-        StoreSession session = storeService.createStoreSession(storeService); 
-        session.setStoreParam(storeParam);
-        String groupID = arcAEExt.getStorageSystemGroupID();
-        session.setStorageSystem(new StorageSystem());
-        session.setSource(new GenericParticipant("localhost", "updateTest-QCIT"));
-        session.setRemoteAET(SOURCE_AET);
-        session.setArchiveAEExtension(device.getApplicationEntity("DCM4CHEE")
-                .getAEExtension(ArchiveAEExtension.class));
-            StoreContext storeContext = storeService.createStoreContext(session);
-            storeContext.setAttributes(load(updateResource));
-            storeContext = setFileAttrs(storeContext);
-            storeService.updateDB(storeContext);
+            StoreParam storeParam = ParamFactory.createStoreParam();
+            storeParam.setRetrieveAETs(RETRIEVE_AETS);
+            StoreSession session = storeService.createStoreSession(storeService); 
+            session = storeService.createStoreSession(storeService);
+            session.setSource(new GenericParticipant("", "qcTest"));
+            session.setRemoteAET("none");
+            session.setArchiveAEExtension(arcAEExt);
+            storeService.initStorageSystem(session);
+            storeService.initSpoolDirectory(session);
+            StoreContext context = storeService.createStoreContext(session);
+            Attributes fmi = new Attributes();
+            fmi.setString(Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2");
+            storeService.writeSpoolFile(context, fmi, load(updateResource));
+            storeService.parseSpoolFile(context);
+            storeService.store(context);
         }
         catch(Exception e) {
             return false;
@@ -1102,11 +1123,11 @@ public class QCIT {
 
     private StoreContext setFileAttrs(StoreContext storeContext) 
             throws URISyntaxException {
-//        File f = new File(storeContext.getStoreSession().getStorageFileSystem()
-//                .getPath()+"/tmp");
+        File f = new File(storeContext.getStoreSession().getStorageSystem().getStorageSystemPath()
+                +"/tmp");
         storeContext.setFinalFileDigest("ABC");
         storeContext.setTransferSyntax("1.2.840.10008.1.2");
-//        storeContext.setFinalFile(f.toPath());
+        storeContext.setSpoolFile(f.toPath());
         return storeContext;
     }
 

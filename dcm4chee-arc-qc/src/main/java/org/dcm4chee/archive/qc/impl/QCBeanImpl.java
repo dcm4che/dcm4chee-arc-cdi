@@ -1968,7 +1968,8 @@ public class QCBeanImpl  implements QCBean{
                     instancesHistory.add(instanceHistory);
                     targetUIDs.add(newInstance.getSopInstanceUID());
                     sourceUIDs.add(inst.getSopInstanceUID());
-                    if(series.getModality().equalsIgnoreCase("KOSR")) {
+                    if(series.getModality().equalsIgnoreCase("KO") ||
+                            series.getModality().equalsIgnoreCase("SR")) {
                     for(Instance ident: getIdenticalDocumentReferencedInstances(newInstance)) {
                         removeIdenticalDocumentSequence(ident, inst);
                         removeIdenticalDocumentSequence(inst,ident);
@@ -2008,7 +2009,8 @@ public class QCBeanImpl  implements QCBean{
                     instancesHistory.add(instanceHistory);
                     targetUIDs.add(newInstance.getSopInstanceUID());
                     sourceUIDs.add(inst.getSopInstanceUID());
-                    if(series.getModality().equalsIgnoreCase("KOSR")) {
+                    if(series.getModality().equalsIgnoreCase("KO") ||
+                            series.getModality().equalsIgnoreCase("SR")) {
                     addIdenticalDocumentSequence(newInstance, inst);
                     addIdenticalDocumentSequence(inst, newInstance);
                     
