@@ -101,7 +101,7 @@ public class ArchiveDeviceProducer {
     private Device findDevice() throws ConfigurationException {
         String name = System.getProperty(DEVICE_NAME_PROPERTY, DEF_DEVICE_NAME);
         Device arcDevice = conf.findDevice(name);
-        if (device==null)
+        if (arcDevice==null)
             throw new ConfigurationException("Archive device '" + name + "' does not exist in the configuration");
 
         return arcDevice;
