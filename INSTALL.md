@@ -218,6 +218,7 @@ See also [Converting old style slapd.conf file to cn=config format][1]
         include         /etc/openldap/schema/core.schema
         include         /etc/openldap/schema/dicom.schema
         include         /etc/openldap/schema/dcm4che.schema
+        include         /etc/openldap/schema/dcm4chee-storage.schema
         include         /etc/openldap/schema/dcm4chee-archive.schema
 
 3.  You may also change the default values for 
@@ -236,6 +237,7 @@ See also [Converting old style slapd.conf file to cn=config format][1]
 
         > ldapadd -xW -Dcn=config -f $DCM4CHEE_ARC/ldap/slapd/dicom.ldif
         > ldapadd -xW -Dcn=config -f $DCM4CHEE_ARC/ldap/slapd/dcm4che.ldif
+        > ldapadd -xW -Dcn=config -f $DCM4CHEE_ARC/ldap/slapd/dcm4chee-storage.ldif
         > ldapadd -xW -Dcn=config -f $DCM4CHEE_ARC/ldap/slapd/dcm4chee-archive.ldif
 
     If you don't know the root user and its password of the config backend, you may
@@ -296,6 +298,7 @@ See also [Converting old style slapd.conf file to cn=config format][1]
 
         $DCM4CHEE_ARC/ldap/apacheds/dicom.ldif
         $DCM4CHEE_ARC/ldap/apacheds/dcm4che.ldif
+        $DCM4CHEE_ARC/ldap/apacheds/dcm4chee-storage.ldif
         $DCM4CHEE_ARC/ldap/apacheds/dcm4chee-archive.ldif
 
     using the LDIF import function of Apache Directory Studio LDAP Browser.
