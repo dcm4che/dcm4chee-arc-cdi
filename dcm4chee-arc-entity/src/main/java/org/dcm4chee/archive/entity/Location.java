@@ -104,7 +104,7 @@ public class Location implements Serializable {
     private String timeZone;
     
     @Basic(optional = false)
-    @Column(name = "size", updatable = false)
+    @Column(name = "object_size", updatable = false)
     private long size;
 
     @Basic(optional = true)
