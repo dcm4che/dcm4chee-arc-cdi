@@ -63,7 +63,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.conf.api, org.dcm4che.net-hl7, org.dcm4che.net-imageio</Dependencies>
+              <Dependencies>org.dcm4che.conf.api, org.dcm4che.net-hl7, org.dcm4che.net-imageio, org.dcm4che.net-audit</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>
