@@ -36,8 +36,6 @@
           <descriptors>
             <descriptor>src/main/assembly/dist.xml</descriptor>
           </descriptors>
-          <attach>false</attach>
-          <appendAssemblyId>false</appendAssemblyId>
         </configuration>
         <executions>
           <execution>
