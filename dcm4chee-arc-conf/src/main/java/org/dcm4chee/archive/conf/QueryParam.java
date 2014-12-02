@@ -41,6 +41,8 @@ package org.dcm4chee.archive.conf;
 import org.dcm4che3.data.Issuer;
 import org.dcm4che3.soundex.FuzzyStr;
 
+import java.util.Map;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
@@ -48,7 +50,7 @@ import org.dcm4che3.soundex.FuzzyStr;
 public class QueryParam {
 
     private FuzzyStr fuzzyStr;
-    private AttributeFilter[] attributeFilters;
+    private Map<Entity, AttributeFilter> attributeFilters;
     private boolean combinedDatetimeMatching;
     private boolean fuzzySemanticMatching;
     private boolean personNameComponentOrderInsensitiveMatching;
@@ -117,12 +119,12 @@ public class QueryParam {
         return fuzzyStr;
     }
 
-    public final void setAttributeFilters(AttributeFilter[] attributeFilters) {
+    public void setAttributeFilters(Map<Entity, AttributeFilter> attributeFilters) {
         this.attributeFilters = attributeFilters;
     }
 
     public final AttributeFilter getAttributeFilter(Entity entity) {
-        return attributeFilters[entity.ordinal()];
+        return attributeFilters.get(entity);
     }
 
     public Issuer getDefaultIssuerOfPatientID() {

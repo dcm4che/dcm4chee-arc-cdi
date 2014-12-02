@@ -8,38 +8,20 @@
   <artifactId>dcm4chee-arc-conf-test</artifactId>
   <dependencies>
     <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-conf-ldap</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-conf-prefs</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-conf-ldap-hl7</artifactId>
+      <artifactId>dcm4che-net-audit</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-conf-ldap-audit</artifactId>
+      <artifactId>dcm4che-net-imageio</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-conf-ldap-imageio</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-conf-prefs-hl7</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-conf-prefs-audit</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-conf-prefs-imageio</artifactId>
+      <artifactId>dcm4che-conf-api-hl7</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
@@ -54,44 +36,18 @@
       <artifactId>dcm4chee-storage-conf</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.3</version>
-    </dependency>    
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-imageio</artifactId>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <version>4.11</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-conf</artifactId>
+    </dependency>
   </dependencies>
-  <profiles>
-    <profile>
-      <id>prefs</id>
-      <activation><activeByDefault>true</activeByDefault></activation>
-    </profile>
-    <profile>
-      <id>ldap</id>
-      <activation><property><name>ldap</name></property></activation>
-      <build>
-        <filters>
-          <filter>src/test/filters/${ldap}.properties</filter>
-        </filters>
-        <testResources>
-          <testResource>
-            <directory>src/test/resources</directory>
-            <excludes>
-              <exclude>ldap.properties</exclude>
-            </excludes>
-          </testResource>
-          <testResource>
-            <directory>src/test/resources</directory>
-            <includes>
-              <include>ldap.properties</include>
-            </includes>
-            <filtering>true</filtering>
-          </testResource>
-        </testResources>
-      </build>
-    </profile>
-  </profiles>
 </project>

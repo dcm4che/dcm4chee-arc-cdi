@@ -40,13 +40,16 @@ package org.dcm4chee.archive.conf;
 
 import org.dcm4che3.soundex.FuzzyStr;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
 public class StoreParam {
 
     private FuzzyStr fuzzyStr;
-    private AttributeFilter[] attributeFilters;
+    private Map<Entity, AttributeFilter> attributeFilters;
     private boolean storeOriginalAttributes;
     private String modifyingSystem;
     private String[] retrieveAETs;
@@ -94,12 +97,12 @@ public class StoreParam {
         return fuzzyStr;
     }
 
-    public final void setAttributeFilters(AttributeFilter[] attributeFilters) {
+    public void setAttributeFilters(Map<Entity, AttributeFilter> attributeFilters) {
         this.attributeFilters = attributeFilters;
     }
 
     public AttributeFilter getAttributeFilter(Entity entity) {
-        return attributeFilters[entity.ordinal()];
+        return attributeFilters.get(entity);
     }
 
     public PatientSelectorConfig getPatientSelectorConfig() {

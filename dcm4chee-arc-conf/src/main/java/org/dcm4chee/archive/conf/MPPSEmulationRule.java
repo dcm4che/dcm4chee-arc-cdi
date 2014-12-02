@@ -1,21 +1,23 @@
 package org.dcm4chee.archive.conf;
 
-import org.dcm4che3.conf.api.generic.ConfigClass;
-import org.dcm4che3.conf.api.generic.ConfigField;
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
 
-@ConfigClass(objectClass = "dcmMPPSEmulationRule")
+@LDAP(objectClasses = "dcmMPPSEmulationRule", distinguishingField = "cn")
+@ConfigurableClass
 public final class MPPSEmulationRule {
 
-    @ConfigField(name = "cn")
+    @ConfigurableProperty(name = "cn")
     private String commonName;
 
-    @ConfigField(name = "dcmAETitle")
+    @ConfigurableProperty(name = "dcmAETitle")
     private String[] sourceAETs;
 
-    @ConfigField(name = "dicomAETitle")
+    @ConfigurableProperty(name = "dicomAETitle")
     private String emulatorAET;
 
-    @ConfigField(name = "dcmMPPSEmulationDelay")
+    @ConfigurableProperty(name = "dcmMPPSEmulationDelay")
     private int emulationDelay;
 
     public String getCommonName() {

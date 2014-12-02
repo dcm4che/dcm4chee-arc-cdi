@@ -39,11 +39,11 @@
 package org.dcm4chee.archive.conf;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
 
-import org.dcm4che3.conf.api.generic.ConfigClass;
-import org.dcm4che3.conf.api.generic.ConfigField;
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
 
 /**
  *  
@@ -51,18 +51,21 @@ import org.dcm4che3.conf.api.generic.ConfigField;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@ConfigClass(objectClass = "dcmPatientSelectorClass")
+@LDAP(objectClasses = "dcmPatientSelectorClass")
+@ConfigurableClass
 public class PatientSelectorConfig implements Serializable {
 
     private static final long serialVersionUID = -8495883562439944206L;
 
-    @ConfigField(name = "dcmPatientSelectorClassName")
+    @ConfigurableProperty(name = "dcmPatientSelectorClassName")
     private String patientSelectorClassName;
 
-    @ConfigField(mapName = "dcmPatientSelectorProperties",
-                  mapKey = "dcmPatientSelectorProperty",
-                  name = "dcmPatientSelectorValue",
-                  mapElementObjectClass = "dcmPatientSelectorEntry")
+    @LDAP(
+            distinguishingField ="dcmPatientSelectorProperty",
+            mapEntryObjectClass = "dcmPatientSelectorEntry",
+            mapValueAttribute = "dcmPatientSelectorValue"
+    )
+    @ConfigurableProperty(name = "dcmPatientSelectorProperties")
     private Map<String, String> patientSelectorProperties;
 
     public String getPatientSelectorClassName() {
