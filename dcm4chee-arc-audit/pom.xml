@@ -86,7 +86,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.audit</Dependencies>
+              <Dependencies>org.dcm4che.audit, org.dcm4che.net-audit</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>
