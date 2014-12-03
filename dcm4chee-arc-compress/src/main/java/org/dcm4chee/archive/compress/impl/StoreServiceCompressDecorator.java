@@ -78,8 +78,6 @@ public abstract class StoreServiceCompressDecorator implements StoreService {
     // injected StoreService to be decorated
     @Inject @Delegate StoreService storeService;
     
-    //injected compression service
-
     @Inject
     private StorageService storageService;
 
@@ -109,6 +107,8 @@ public abstract class StoreServiceCompressDecorator implements StoreService {
         CompressionRule rule = rules.findCompressionRule(session.getRemoteAET(), attrs);
         if (rule == null)
             return false;
+        else
+            LOG.info("Compression rule selected:"+rule.getCommonName());
 
         MessageDigest digest = session.getMessageDigest();
         StorageContext storageContext =

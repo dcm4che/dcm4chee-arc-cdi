@@ -826,6 +826,7 @@ public class DeviceMocker {
                 0,                              // Pixel Representation
                 new String[] { "JPEG_LOSSY" },  // Source AETs
                 null,                           // SOP Classes
+                null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGBaseline1,
                 "compressionQuality=0.8",
@@ -841,6 +842,7 @@ public class DeviceMocker {
                 0,                              // Pixel Representation
                 new String[] { "JPEG_LOSSY" },  // Source AETs
                 null,                           // SOP Classes
+                null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGExtended24,
                 "compressionQuality=0.8",
@@ -859,6 +861,7 @@ public class DeviceMocker {
                 -1,                              // Pixel Representation
                 new String[] { "JPEG_LOSSLESS" },  // Source AETs
                 null,                           // SOP Classes
+                null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGLossless,
                 "maxPixelValueError=0"
@@ -875,6 +878,7 @@ public class DeviceMocker {
                 -1,                             // Pixel Representation
                 new String[] { "JPEG_LS" },     // Source AETs
                 null,                           // SOP Classes
+                null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGLSLossless,
                 "maxPixelValueError=0"
@@ -891,6 +895,7 @@ public class DeviceMocker {
                 -1,                             // Pixel Representation
                 new String[] { "JPEG_2000" },   // Source AETs
                 null,                           // SOP Classes
+                null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEG2000LosslessOnly,
                 "maxPixelValueError=0"
@@ -975,6 +980,7 @@ public class DeviceMocker {
                 -1,                              // Pixel Representation
                 new String[] { "JPEG_LOSSLESS" },  // Source AETs
                 null,                           // SOP Classes
+                null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGLossless,
                 "maxPixelValueError=0"
@@ -991,6 +997,7 @@ public class DeviceMocker {
                 -1,                             // Pixel Representation
                 new String[] { "JPEG_LS" },     // Source AETs
                 null,                           // SOP Classes
+                null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGLSLossless,
                 "maxPixelValueError=0"
@@ -1007,6 +1014,7 @@ public class DeviceMocker {
                 -1,                             // Pixel Representation
                 new String[] { "JPEG_2000" },   // Source AETs
                 null,                           // SOP Classes
+                null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEG2000LosslessOnly,
                 "maxPixelValueError=0"
