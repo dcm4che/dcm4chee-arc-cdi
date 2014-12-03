@@ -19,6 +19,14 @@
       <lineEnding>dos</lineEnding>
     </fileSet>
     <fileSet>
+      <directory>${project.build.directory}/maven-shared-archive-resources</directory>
+      <outputDirectory>.</outputDirectory>
+      <includes>
+        <include>ldap/**</include>
+      </includes>
+      <lineEnding>dos</lineEnding>
+    </fileSet>
+    <fileSet>
       <directory>../dcm4chee-arc-conf/src/main/config</directory>
       <outputDirectory>.</outputDirectory>
       <includes>

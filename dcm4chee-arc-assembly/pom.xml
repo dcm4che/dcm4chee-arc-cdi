@@ -13,6 +13,23 @@
     <finalName>dcm4chee-arc-${project.version}-${db}</finalName>
     <plugins>
       <plugin>
+        <artifactId>maven-remote-resources-plugin</artifactId>
+        <version>1.5</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>process</goal>
+            </goals>
+            <configuration>
+              <resourceBundles>
+                <resourceBundle>org.dcm4che:dcm4che-conf-ldap:${dcm4che.version}</resourceBundle>
+              </resourceBundles>
+              <attachToMain>false</attachToMain>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.3</version>
         <configuration>
