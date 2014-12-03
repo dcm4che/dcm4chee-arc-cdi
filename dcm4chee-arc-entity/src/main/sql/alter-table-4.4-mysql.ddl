@@ -473,7 +473,7 @@ alter table file_ref rename location;
 alter table location
     change filepath storage_path varchar(255) not null,
     change file_digest digest varchar(255),
-    change file_size size bigint not null,
+    change file_size object_size bigint not null,
     change file_status status integer not null,
     change file_time_zone time_zone varchar(255),
     change file_tsuid tsuid varchar(255) not null,
