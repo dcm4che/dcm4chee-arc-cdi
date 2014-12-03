@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE elements [
+<!ENTITY security-constraint SYSTEM "security-constraint.xml">
+<!ENTITY login-config SYSTEM "login-config.xml">
+<!ENTITY security-role SYSTEM "security-role.xml">
+]>
+<web-app
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://java.sun.com/xml/ns/javaee"
+  xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+  xsi:schemaLocation="
+    http://java.sun.com/xml/ns/javaee
+    http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+  version="2.5">
+  <display-name>dcm4chee-arc</display-name>
+  <welcome-file-list>
+    <welcome-file>browse.html</welcome-file>
+  </welcome-file-list>
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>DICOM</web-resource-name>
+      <url-pattern>/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>user</role-name>
+    </auth-constraint>
+  </security-constraint>
+  <login-config>
+    <auth-method>KEYCLOAK</auth-method>
+    <realm-name>dcm4che</realm-name>
+  </login-config>
+  <security-role>
+    <role-name>user</role-name>
+  </security-role>
+</web-app>
