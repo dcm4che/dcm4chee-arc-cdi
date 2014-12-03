@@ -103,17 +103,12 @@ attributeTypes: ( 1.2.40.0.13.1.15.40.3.18 NAME 'dcmStorageSystemSocketTimeout'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.40.3.19 NAME 'dcmStorageSystemMultipartUpload'
-  DESC 'Indicates if a single object is uploaded as a set or parts. true if absent'
-  EQUALITY booleanMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
-  SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.40.3.20 NAME 'dcmStorageSystemMultipartChunkSize'
-  DESC 'Multipart upload chunk size in format <integer>{kB|MB|GB|KiB|MiB|GiB}. 32MB if absent'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.19 NAME 'dcmStorageSystemMultipartUploadSize'
+  DESC 'Part size when a single object is uploaded as a set of parts in format <integer>{kB|MB|GB|KiB|MiB|GiB}. 32MB if absent; 0=disable multipart upload'
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.40.3.21 NAME 'dcmInstanceAvailability'
+attributeTypes: ( 1.2.40.0.13.1.15.40.3.20 NAME 'dcmInstanceAvailability'
   DESC 'Instance Availability: ONLINE, NEARLINE or OFFLINE. ONLINE if absent.'
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
@@ -155,8 +150,7 @@ objectClasses: ( 1.2.40.0.13.1.15.40.4.3 NAME 'dcmStorageSystem'
     dcmStorageSystemMaxConnections $
     dcmStorageSystemConnectionTimeout $
     dcmStorageSystemSocketTimeout $
-    dcmStorageSystemMultipartUpload $
-    dcmStorageSystemMultipartChunkSize) )
+    dcmStorageSystemMultipartUploadSize) )
 objectClasses: ( 1.2.40.0.13.1.15.40.4.4 NAME 'dcmStorageArchiver'
   DESC 'Storage Archiver'
   SUP top STRUCTURAL

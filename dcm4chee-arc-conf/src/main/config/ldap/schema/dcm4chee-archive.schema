@@ -597,7 +597,6 @@ objectclass ( 1.2.40.0.13.1.15.10.4.19 NAME 'dcmRejectionNote'
   MUST (
     dcmRejectionNoteTitle )
   MAY (
-    cn $
     dcmRevokeRejection $
     dcmRejectedObjectRetentionTime $
     dcmRejectedObjectRetentionTimeUnit $
