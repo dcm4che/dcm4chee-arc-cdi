@@ -46,7 +46,6 @@ import org.dcm4che3.conf.core.normalization.DefaultsFilterDecorator;
 import org.dcm4che3.conf.core.storage.SingleJsonFileConfigurationStorage;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.ldap.LdapConfigurationStorage;
-
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.net.*;
 import org.dcm4che3.net.Connection.Protocol;
@@ -63,6 +62,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.InputStream;
 import java.util.*;
 
 import static org.junit.Assert.assertTrue;
@@ -103,13 +103,11 @@ public class ArchiveDeviceTest extends DeviceMocker {
         Configuration storage;
 
         if (System.getProperty("ldap") != null) {
-            Hashtable<String, String> env = new Hashtable<String, String>();
-            env.put("java.naming.provider.url", "ldap://localhost:389/dc=example,dc=com");
-            env.put("java.naming.factory.initial", "com.sun.jndi.ldap.LdapCtxFactory");
-            env.put("java.naming.ldap.attributes.binary", "dicomVendorData");
-            env.put("java.naming.security.principal", "cn=Directory Manager ");
-            env.put("java.naming.security.credentials", "1");
-
+            Properties env = new Properties();
+            try (InputStream inStream = Thread.currentThread()
+                    .getContextClassLoader().getResourceAsStream("ldap.properties")) {
+                env.load(inStream);
+            }
             storage = new DefaultsFilterDecorator(
                     new CachedRootNodeConfiguration(
                             new LdapConfigurationStorage(env, allExtensionClasses)
