@@ -35,13 +35,28 @@ then
 
       # Stage the release, setting the version number and the commit hash
       mvn versions:set -DnewVersion="${BUILD_VERSION}"
+
+      # This is required to workaround ARCH-152; it can be moved back to install.sh
+      # once ARCH-152 is fixed
+      mvn -P ossrh-down install -DskipTests=true
+
       mvn -s .travis.d/settings.xml -P ossrh-down,ossrh-up,travis-secret \
         deploy -Ddb=oracle -Dscm.revision="${TRAVIS_COMMIT}"
     else
       echo "A later release candidate has been committed: attempt to verify."
+
+      # This is required to workaround ARCH-152; it can be moved back to install.sh
+      # once ARCH-152 is fixed
+      mvn -P ossrh-down install -DskipTests=true
+
       mvn verify
     fi
 else
   echo "The current commit is not a release candidate: attempt to verify."
+
+  # This is required to workaround ARCH-152; it can be moved back to install.sh
+  # once ARCH-152 is fixed
+  mvn -P ossrh-down install -DskipTests=true
+
   mvn verify
 fi
