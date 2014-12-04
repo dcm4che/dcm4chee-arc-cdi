@@ -40,7 +40,7 @@ then
       # once ARCH-152 is fixed
       mvn -P ossrh-down install -DskipTests=true
 
-      mvn verify
+      mvn -P ossrh-down verify
       #mvn -s .travis.d/settings.xml -P ossrh-down,ossrh-up,travis-secret \
         #deploy -Ddb=oracle -Dscm.revision="${TRAVIS_COMMIT}"
     else
@@ -50,7 +50,7 @@ then
       # once ARCH-152 is fixed
       mvn -P ossrh-down install -DskipTests=true
 
-      mvn verify
+      mvn -P ossrh-down verify
     fi
 else
   echo "The current commit is not a release candidate: attempt to verify."
@@ -59,5 +59,5 @@ else
   # once ARCH-152 is fixed
   mvn -P ossrh-down install -DskipTests=true
 
-  mvn verify
+  mvn -P ossrh-down verify
 fi
