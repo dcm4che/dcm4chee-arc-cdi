@@ -35,6 +35,12 @@
   <profiles>
     <profile>
       <id>secure</id>
+      <activation>
+        <property>
+          <name>secure</name>
+          <value>true</value>
+        </property>
+      </activation>      
       <build>
         <plugins>
           <plugin>

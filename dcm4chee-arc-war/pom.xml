@@ -11,6 +11,7 @@
   <artifactId>dcm4chee-arc-war</artifactId>
   <packaging>war</packaging>
   <properties>
+    <wildfly-skip>true</wildfly-skip>
   </properties>
   <dependencies>
     <dependency>
@@ -189,15 +190,6 @@
   </dependencies>
   <profiles>
     <profile>
-      <id>do-not-deploy</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <wildfly-skip>true</wildfly-skip>
-      </properties>
-    </profile>
-    <profile>
       <id>wildfly-deploy</id>
       <properties>
         <wildfly-skip>false</wildfly-skip>
@@ -207,6 +199,12 @@
     </profile>
     <profile>
       <id>secure</id>
+      <activation>
+        <property>
+          <name>secure</name>
+          <value>true</value>
+        </property>
+      </activation>
       <build>
         <plugins>
           <plugin>
