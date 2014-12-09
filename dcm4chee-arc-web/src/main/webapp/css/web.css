@@ -1,56 +1,75 @@
+body {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: smaller;
+}
+
+input[type="text"] {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: smaller;
+	text-shadow: 0 1px 0 #fff;
+}
+
+select option
+{
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: smaller;
+}
+
 .nav {
-    background-color: #333333;
-    margin: 0;
+	background-color: #333333;
+	margin: 0;
 }
 
 .nav a {
-    color: #AAAAAA;
-    font-weight: bold;
-    text-decoration: none
+	color: #AAAAAA;
+	font-weight: bold;
+	text-decoration: none
 }
 
 .nav span,a:hover {
-    color: #FFFFFF;
-    font-weight: bold;
-    text-decoration: none
+	color: #FFFFFF;
+	text-decoration: none
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0;
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
 }
 
 table,td,th {
-    border: 1px solid black;
+	border: 1px solid black;
 }
 
 th {
-    text-align: left;
-    vertical-align: center;
+	text-align: left;
+	vertical-align: center;
+	font-weight: bold;
 }
 
 td {
-    text-align: left;
-    vertical-align: top;
+	text-align: left;
+	vertical-align: top;
 }
 
 tr.attributes td {
-    padding: 0;
+	padding: 0;
 }
 
-tr.attributes td table{
-    margin: -1px;
+tr.attributes td table {
+	margin: -1px;
 }
 
 tr.study,tr.study+tr.attributes td table tbody tr {
-    background-color: #66A366;
+	background-color: #66A366;
 }
 
 tr.series,tr.series+tr.attributes td table tbody tr {
-    background-color: #99C299;
+	background-color: #99C299;
 }
 
 tr.instance,tr.instance+tr.attributes td table tbody tr {
-    background-color: #CCE0CC;
+	background-color: #CCE0CC;
 }
+
+tr td:hover { background: #999; color: #000; }
