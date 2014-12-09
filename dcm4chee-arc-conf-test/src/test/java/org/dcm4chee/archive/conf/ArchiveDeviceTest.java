@@ -38,34 +38,31 @@
 
 package org.dcm4chee.archive.conf;
 
+import static org.junit.Assert.assertTrue;
+
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Properties;
+
 import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
-import org.dcm4che3.conf.core.Configuration;
-import org.dcm4che3.conf.core.storage.CachedRootNodeConfiguration;
-import org.dcm4che3.conf.core.normalization.DefaultsFilterDecorator;
-import org.dcm4che3.conf.core.storage.SingleJsonFileConfigurationStorage;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
-import org.dcm4che3.conf.ldap.LdapConfigurationStorage;
+import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
 import org.dcm4che3.imageio.codec.CompressionRules;
-import org.dcm4che3.net.*;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Connection.Protocol;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.SSLManagerFactory;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
-import org.dcm4che3.net.hl7.HL7ApplicationExtension;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.util.ResourceLocator;
 import org.dcm4chee.archive.conf.DeepEquals.CustomDeepEquals;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.InputStream;
-import java.util.*;
-
-import static org.junit.Assert.assertTrue;
 
 public class ArchiveDeviceTest extends DeviceMocker {
 
@@ -74,57 +71,31 @@ public class ArchiveDeviceTest extends DeviceMocker {
         keystore = SSLManagerFactory.loadKeyStore("JKS",
                 ResourceLocator.resourceURL("cacerts.jks"), "secret");
 
-        Class[] deviceExtensionClasses = {
-                ArchiveDeviceExtension.class,
-                StorageDeviceExtension.class,
-                HL7DeviceExtension.class,
-                ImageReaderExtension.class,
-                ImageWriterExtension.class,
-                AuditRecordRepository.class,
-                AuditLogger.class};
-
-        Class[] aeExtensionClasses = {
-                ArchiveAEExtension.class
-        };
-
-        Class[] hl7AppExtensionClasses = {
-                ArchiveHL7ApplicationExtension.class
-        };
-
-        List deviceExtensionClassList = Arrays.<Class<DeviceExtension>>asList(deviceExtensionClasses);
-        List aeExtensionClassList = Arrays.<Class<AEExtension>>asList(aeExtensionClasses);
-        List hl7ApplicationExtensionClassList = Arrays.<Class<HL7ApplicationExtension>>asList(hl7AppExtensionClasses);
-
-        List<Class<?>> allExtensionClasses = new ArrayList<>();
-        allExtensionClasses.addAll(deviceExtensionClassList);
-        allExtensionClasses.addAll(aeExtensionClassList);
-        allExtensionClasses.addAll(hl7ApplicationExtensionClassList);
-
-        Configuration storage;
-
+        DicomConfigurationBuilder builder;
         if (System.getProperty("ldap") != null) {
             Properties env = new Properties();
             try (InputStream inStream = Thread.currentThread()
                     .getContextClassLoader().getResourceAsStream("ldap.properties")) {
                 env.load(inStream);
             }
-            storage = new DefaultsFilterDecorator(
-                    new CachedRootNodeConfiguration(
-                            new LdapConfigurationStorage(env, allExtensionClasses)
-                    ));
+            builder = DicomConfigurationBuilder.newLdapConfigurationBuilder(env);
         } else {
-            storage = new SingleJsonFileConfigurationStorage("target/config.json");
+            builder = DicomConfigurationBuilder.newJsonConfigurationBuilder("target/config.json");
         }
+        builder.registerDeviceExtension(ArchiveDeviceExtension.class);
+        builder.registerDeviceExtension(StorageDeviceExtension.class);
+        builder.registerDeviceExtension(HL7DeviceExtension.class);
+        builder.registerDeviceExtension(ImageReaderExtension.class);
+        builder.registerDeviceExtension(ImageWriterExtension.class);
+        builder.registerDeviceExtension(AuditRecordRepository.class);
+        builder.registerDeviceExtension(AuditLogger.class);
+        builder.registerAEExtension(ArchiveAEExtension.class);
+        builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
 
-        CommonDicomConfigurationWithHL7 theConfig = new CommonDicomConfigurationWithHL7(
-                storage,
-                deviceExtensionClassList,
-                aeExtensionClassList,
-                hl7ApplicationExtensionClassList
-        );
 
-        config = theConfig;
-        hl7Config = theConfig;
+        CommonDicomConfigurationWithHL7 configWithHL7 = builder.cache().build();
+        config = configWithHL7;
+        hl7Config = configWithHL7;
 
         cleanUp();
     }
