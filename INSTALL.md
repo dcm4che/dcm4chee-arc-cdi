@@ -429,26 +429,7 @@ Import sample configuration into LDAP Server
 Setup WildFly
 --------------
 
-1.  To configure the Archive to use LDAP, put the following into WildFly's configuration/standalone.xml, and adjust the
-    parameters according to the LDAP server installed :
-
-    <system-properties>
-      <property name="org.dcm4che.conf.storage" value="ldap" />
-      <property name="org.dcm4che.conf.ldap.url" value="ldap://localhost:10389/dc=example,dc=com" />
-      <property name="org.dcm4che.conf.ldap.principal" value="uid=admin,ou=system" />
-      <property name="org.dcm4che.conf.ldap.credentials" value="secret" />
-    </system-properties>
-
-    Alternatively, a flat json file can be used as configuration source as follows:
-    <system-properties>
-      <property name="org.dcm4che.conf.storage" value="json_file" />
-      <property name="org.dcm4che.conf.filename" value="../standalone/configuration/configuration.json" />
-    </system-properties>
-
-    Check the application log during startup to see which values are actually used.
-
-
-2.  Copy configuration files into the WildFly installation:
+1.  Copy configuration files into the WildFly installation:
 
         > cp -r $DCM4CHEE_ARC/configuration/dcm4chee-arc $JBOSS_HOME/standalone/configuration [UNIX]
         > xcopy %DCM4CHEE_ARC%\configuration\dcm4chee-arc %JBOSS_HOME%\standalone\configuration [Windows]
@@ -456,6 +437,25 @@ Setup WildFly
     *Note*: Beside LDAP Connection configuration, the private key used in TLS connections
     and XSLT stylesheets specifing attribute coercion in incoming or outgoing DICOM messages
     and mapping of HL7 fields in incoming HL7 messages are not stored in LDAP.
+
+2.  To configure the Archive to use LDAP, put the following into WildFly's configuration/standalone.xml, and adjust the
+    parameters according to the LDAP server installed:
+
+        <system-properties>
+            <property name="org.dcm4che.conf.storage" value="ldap" />
+            <property name="org.dcm4che.conf.ldap.url" value="ldap://localhost:10389/dc=example,dc=com" />
+            <property name="org.dcm4che.conf.ldap.principal" value="uid=admin,ou=system" />
+            <property name="org.dcm4che.conf.ldap.credentials" value="secret" />
+        </system-properties>
+
+    Alternatively, a flat json file can be used as configuration source as follows:
+
+        <system-properties>
+            <property name="org.dcm4che.conf.storage" value="json_file" />
+            <property name="org.dcm4che.conf.filename" value="../standalone/configuration/configuration.json" />
+        </system-properties>
+
+    Check the application log during startup to see which values are actually used.
 
 3.  Install DCM4CHE 3.3.3 libraries as WildFly module:
 
