@@ -8,6 +8,26 @@
   </parent>
   <artifactId>dcm4chee-arc-store</artifactId>
   <dependencies>
+  <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-net</artifactId>
+    </dependency>
+            <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-api</artifactId>
+    </dependency>
+            <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-api-hl7</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-soundex</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-imageio</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-conf</artifactId>
@@ -104,6 +124,11 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-file-mgmt</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-patient-api</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -125,19 +150,7 @@
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-service</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-net</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-soundex</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-imageio</artifactId>
-    </dependency>
-  </dependencies>
+    </dependencies>  
   <!--<build>
     <resources>
       <resource>
@@ -165,7 +178,7 @@
               <configuration>
                 <archive>
                   <manifestEntries>
-                    <Dependencies>org.dcm4che.net, org.dcm4che.soundex</Dependencies>
+                    <Dependencies>org.dcm4che.net, org.dcm4che.soundex, org.dcm4che.conf.api, org.dcm4che.conf.api-hl7</Dependencies>
                   </manifestEntries>
                 </archive>
               </configuration>
@@ -224,7 +237,7 @@
             <configuration>
               <archive>
                 <manifestEntries>
-                  <Dependencies>org.dcm4che.net, org.dcm4che.soundex</Dependencies>
+                  <Dependencies>org.dcm4che.net,org.dcm4che.net-hl7, org.dcm4che.soundex, org.dcm4che.conf.api, org.dcm4che.conf.api-hl7</Dependencies>
                 </manifestEntries>
               </archive>
             </configuration>

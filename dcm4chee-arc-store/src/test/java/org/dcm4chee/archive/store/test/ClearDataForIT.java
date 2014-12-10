@@ -138,12 +138,13 @@ public class ClearDataForIT {
         war.addClass(ParamFactory.class);
         JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies().resolve()
-                .withTransitivity().as(JavaArchive.class);
+                .withoutTransitivity().as(JavaArchive.class);
         for (JavaArchive a : archs) {
             a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
             war.addAsLibrary(a);
         }
-
+//      war.as(ZipExporter.class).exportTo(
+//      new File("test.war"), true);
         war.addAsLibraries(archs);
         return war;
     }

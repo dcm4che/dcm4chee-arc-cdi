@@ -42,6 +42,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.ESoundex;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.conf.AttributeFilter;
 
@@ -342,6 +343,10 @@ public abstract class ParamFactory {
         QueryParam queryParam = new QueryParam();
         queryParam.setAttributeFilters(ATTRIBUTE_FILTERS);
         queryParam.setFuzzyStr(new ESoundex());
+        QueryRetrieveView queryRetrieveView = new QueryRetrieveView();
+        queryRetrieveView.setViewID("DCM4CHEE");
+        queryRetrieveView.setHideNotRejectedInstances(false);
+        queryParam.setQueryRetrieveView(queryRetrieveView);
         return queryParam;
     }
 }

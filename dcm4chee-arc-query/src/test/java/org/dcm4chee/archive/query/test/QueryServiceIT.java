@@ -42,9 +42,19 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.util.TreeSet;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
+import javax.transaction.UserTransaction;
 
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
@@ -54,6 +64,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
@@ -61,10 +72,12 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -78,13 +91,34 @@ public class QueryServiceIT {
 
     private static final Logger log = Logger.getLogger(QueryServiceIT.class);
     private Query query;
+    @Inject
+    PatientService patientService;
+    @PersistenceContext
+    EntityManager em;
+
+    @Resource
+    UserTransaction utx;
+
+    @Before
+    public void setup() throws NotSupportedException, SystemException {
+        utx.begin();
+        em.joinTransaction();
+    }
 
     @After
-    public void closeQuery() {
+    public void closeQuery()  throws SecurityException, IllegalStateException,
+    RollbackException, HeuristicMixedException,
+    HeuristicRollbackException, SystemException {
+        javax.persistence.Query q = em.createNativeQuery("DELETE study_query_attrs");
+        q.executeUpdate();
+        q = em.createNativeQuery("DELETE series_query_attrs");
+        q.executeUpdate();
         if (query != null) {
             query.close();
             query = null;
         }
+        utx.commit();
+        em.clear();
     }
 
     @Inject
@@ -94,12 +128,15 @@ public class QueryServiceIT {
         WebArchive war= ShrinkWrap.create(WebArchive.class, "test.war"); 
         war.addClass(ParamFactory.class);
         war.addClass(QueryServiceIT.class);
-        JavaArchive[] archs =   Maven.resolver().loadPomFromFile("testpom.xml").importRuntimeAndTestDependencies().resolve().withTransitivity().as(JavaArchive.class);
+        JavaArchive[] archs =   Maven.resolver().loadPomFromFile("testpom.xml")
+                .importRuntimeAndTestDependencies().resolve().withoutTransitivity().as(JavaArchive.class);
         for(JavaArchive a: archs)
         {
             a.addAsManifestResource(EmptyAsset.INSTANCE,"beans.xml");
             war.addAsLibrary(a);
         }
+      war.as(ZipExporter.class).exportTo(
+      new File("test.war"), true);
         return war;
     }
     private String[] matches(Query query,int tag)

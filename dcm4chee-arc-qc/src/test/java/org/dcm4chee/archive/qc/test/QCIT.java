@@ -205,30 +205,30 @@ public class QCIT {
     };
 
     private static final String[] DELETE_QUERIES = {
-        "DELETE FROM  `rel_instance_location`;",
-        "DELETE FROM  `location`;",
-        "DELETE FROM  `content_item`;",
-        "DELETE FROM  `verify_observer`;",
-        "DELETE FROM  `instance`;",
-        "DELETE FROM  `series_query_attrs`;",
-        "DELETE FROM  `series_req`;",
-        "DELETE FROM  `series`;",
-        "DELETE FROM  `study_query_attrs`;",
-        "DELETE FROM  `rel_study_pcode`;",
-        "DELETE FROM  `study`;",
-        "DELETE FROM  `rel_linked_patient_id`;",
-        "DELETE FROM   `patient_id`;",
-        "DELETE FROM  `id_issuer`;",
-        "DELETE FROM  `patient`;",
-        "DELETE FROM  `soundex_code`;",
-        "DELETE FROM  `person_name`;",
-        "DELETE FROM  `qc_instance_history`;",
-        "DELETE FROM  `qc_series_history`;",
-        "DELETE FROM  `qc_study_history`;",
-        "DELETE FROM  `qc_action_history`;",
-        "DELETE FROM  `qc_update_history`;",
-        "DELETE FROM  `code`;",
-        "DELETE FROM `dicomattrs`;" 
+        "DELETE FROM rel_instance_location",
+        "DELETE FROM location",
+        "DELETE FROM content_item",
+        "DELETE FROM verify_observer",
+        "DELETE FROM instance",
+        "DELETE FROM series_query_attrs",
+        "DELETE FROM series_req",
+        "DELETE FROM series",
+        "DELETE FROM study_query_attrs",
+        "DELETE FROM rel_study_pcode",
+        "DELETE FROM study",
+        "DELETE FROM rel_linked_patient_id",
+        "DELETE FROM patient_id",
+        "DELETE FROM id_issuer",
+        "DELETE FROM patient",
+        "DELETE FROM soundex_code",
+        "DELETE FROM person_name",
+        "DELETE FROM qc_instance_history",
+        "DELETE FROM qc_series_history",
+        "DELETE FROM qc_study_history",
+        "DELETE FROM qc_action_history",
+        "DELETE FROM qc_update_history",
+        "DELETE FROM code",
+        "DELETE FROM dicomattrs" 
     };
 
     @Deployment
@@ -239,7 +239,7 @@ public class QCIT {
         JavaArchive[] archs =   Maven.resolver()
                 .loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies()
-                .resolve().withTransitivity()
+                .resolve().withoutTransitivity()
                 .as(JavaArchive.class);
         for(JavaArchive a: archs) {
             a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
@@ -1068,7 +1068,7 @@ public class QCIT {
 
 
     private Collection<Location> getFileAliasRefs(Instance instance) {
-        Query query = em.createQuery("SELECT i.otherLocations FROM Instance"
+        Query query = em.createQuery("SELECT i.locations FROM Instance"
                 + " i where i.sopInstanceUID = ?1");
         query.setParameter(1, instance.getSopInstanceUID());
         return query.getResultList();

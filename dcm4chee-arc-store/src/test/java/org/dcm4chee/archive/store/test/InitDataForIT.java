@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.store.test;
 
+import java.io.File;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -55,6 +57,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
@@ -134,7 +137,7 @@ public class InitDataForIT {
         JavaArchive[] archs =   Maven.resolver()
                 .loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies()
-                .resolve().withTransitivity()
+                .resolve().withoutTransitivity()
                 .as(JavaArchive.class);
         for(JavaArchive a: archs) {
             a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
@@ -142,6 +145,8 @@ public class InitDataForIT {
         }
         for (String resourceName : INSTANCES)
             war.addAsResource(resourceName);
+//        war.as(ZipExporter.class).exportTo(
+//                new File("test.war"), true);
         return war;
     }
     @Test

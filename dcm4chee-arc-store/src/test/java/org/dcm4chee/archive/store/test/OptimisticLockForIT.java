@@ -112,7 +112,7 @@ public class OptimisticLockForIT {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
         JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies().resolve()
-                .withTransitivity().as(JavaArchive.class);
+                .withoutTransitivity().as(JavaArchive.class);
         for (JavaArchive a : archs) {
             a.addAsManifestResource(new File(
                     "src/test/resources/testdata/beans.xml"), "beans.xml");
@@ -133,8 +133,8 @@ public class OptimisticLockForIT {
                 "src/test/resources/testdata/beans.xml"), "beans.xml");
 
         war.addAsLibrary(jar);
-        war.as(ZipExporter.class).exportTo(
-                new File("/home/umberto/tmp/test.war"), true);
+//        war.as(ZipExporter.class).exportTo(
+//                new File("test.war"), true);
 
         return war;
     }

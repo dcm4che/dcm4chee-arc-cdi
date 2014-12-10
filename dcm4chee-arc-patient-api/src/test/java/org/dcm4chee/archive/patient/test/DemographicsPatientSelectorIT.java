@@ -111,7 +111,7 @@ public class DemographicsPatientSelectorIT {
         war.addClass(DemographicsPatientSelectorIT.class);
         JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies().resolve()
-                .withTransitivity().as(JavaArchive.class);
+                .withoutTransitivity().as(JavaArchive.class);
         war.addAsLibraries(archs);
 
         return war;

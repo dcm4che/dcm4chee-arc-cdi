@@ -9,23 +9,40 @@
   <artifactId>custom-resolver-query-tests</artifactId>
   <dependencies>
     <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-entity</artifactId>
-      <classifier>${db}</classifier>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-core</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-net</artifactId>
     </dependency>
+	<dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-json</artifactId>
+    </dependency>
+	    <dependency>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-multipart-provider</artifactId>
+      <version>${resteasy.multipart.version}</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-conf-ldap</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-jackson-provider</artifactId>
+      <version>${jacksonprovider.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-api</artifactId>
+    </dependency>
+            <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-api-hl7</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-soundex</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-imageio</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -34,7 +51,29 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-entity</artifactId>
+      <classifier>${db}</classifier>
+      <version>${project.version}</version>
+    </dependency>
+	<dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-entity-ext</artifactId>
+      <classifier>${db}</classifier>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-conf-producer</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-patient-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-patient-impl</artifactId>
       <version>${project.version}</version>
     </dependency>
         <dependency>
@@ -42,9 +81,9 @@
       <artifactId>dcm4chee-arc-qc</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
+	<dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-patient-impl</artifactId>
+      <artifactId>dcm4chee-arc-code</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -62,23 +101,37 @@
       <artifactId>dcm4chee-arc-store</artifactId>
       <version>${project.version}</version>
     </dependency>
+	<dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-file-mgmt</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+	<dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-service</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+	<dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-retrieve</artifactId>
+      <version>${project.version}</version>
+    </dependency>
             <dependency>
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-service</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-iocm</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+	    <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-conf</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-filesystem</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-code</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-service</artifactId>
-      <version>${project.version}</version>
-    </dependency>       
   </dependencies>
 </project>
