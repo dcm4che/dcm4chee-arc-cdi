@@ -38,9 +38,9 @@ then
 
       # This is required to workaround ARCH-152; it can be moved back to install.sh
       # once ARCH-152 is fixed
-      mvn -P ossrh-down install -DskipTests=true
+      mvn -P ossrh-down install -Ddb=mysql -DskipTests=true
 
-      mvn -P ossrh-down verify
+      mvn -P ossrh-down verify -Ddb=mysql
       #mvn -s .travis.d/settings.xml -P ossrh-down,ossrh-up,travis-secret \
         #deploy -Ddb=oracle -Dscm.revision="${TRAVIS_COMMIT}"
     else
@@ -48,16 +48,16 @@ then
 
       # This is required to workaround ARCH-152; it can be moved back to install.sh
       # once ARCH-152 is fixed
-      mvn -P ossrh-down install -DskipTests=true
+      mvn -P ossrh-down install -Ddb=mysql -DskipTests=true
 
-      mvn -P ossrh-down verify
+      mvn -P ossrh-down verify -Ddb=mysql
     fi
 else
   echo "The current commit is not a release candidate: attempt to verify."
 
   # This is required to workaround ARCH-152; it can be moved back to install.sh
   # once ARCH-152 is fixed
-  mvn -P ossrh-down install -DskipTests=true
+  mvn -P ossrh-down install -Ddb=mysql -DskipTests=true
 
-  mvn -P ossrh-down verify
+  mvn -P ossrh-down verify -Ddb=mysql
 fi
