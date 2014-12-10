@@ -42,7 +42,6 @@
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
-          <classifier>${db}</classifier>
           <archive>
             <manifestEntries>
               <Dependencies>com.mysema.querydsl</Dependencies>
