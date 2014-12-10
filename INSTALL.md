@@ -477,7 +477,12 @@ Setup WildFly
         > cd  $JBOSS_HOME
         > unzip $DCM4CHEE_ARC/jboss-module/querydsl-jboss-modules-3.2.3.zip
 
-6.  Install JDBC Driver. DCM4CHEE Archive 4.x binary distributions do not include
+6.  Install Jclouds 1.8.1 libraries as WildFly module:
+
+        > cd  $JBOSS_HOME
+        > unzip $DCM4CHEE_ARC/jboss-module/jclouds-jboss-modules-1.8.1.zip
+
+7.  Install JDBC Driver. DCM4CHEE Archive 4.x binary distributions do not include
     a JDBC driver for the database for license issues. You may download it from:
     -   [MySQL](http://www.mysql.com/products/connector/)
     -   [PostgreSQL]( http://jdbc.postgresql.org/)
@@ -518,7 +523,7 @@ Setup WildFly
          </module>
 
 
-7.  Start WildFly in standalone mode with the Java EE 6 Full Profile configuration.
+8.  Start WildFly in standalone mode with the Java EE 6 Full Profile configuration.
     To preserve the original WildFly configuration you may copy the original
     configuration file for JavaEE 6 Full Profile:
 
@@ -553,7 +558,7 @@ Setup WildFly
                 
     Running WildFly in domain mode should work, but was not yet tested.
 
-8.  Add JDBC Driver into the server configuration using WildFly CLI in a new console window:
+9.  Add JDBC Driver into the server configuration using WildFly CLI in a new console window:
 
         > $JBOSS_HOME/bin/jboss-cli.sh -c [UNIX]
         > %JBOSS_HOME%\bin\jboss-cli.bat -c [Windows]
@@ -568,7 +573,7 @@ Setup WildFly
 
         [standalone@localhost:9999 /] /subsystem=datasources/jdbc-driver=mysql:add(driver-name=mysql,driver-module-name=com.mysql,driver-class-name=com.mysql.jdbc.Driver)    
 
-9.  Create and enable a new Data Source bound to JNDI name `java:/PacsDS` using WildFly CLI:
+10.  Create and enable a new Data Source bound to JNDI name `java:/PacsDS` using WildFly CLI:
 
         [standalone@localhost:9999 /] data-source add --name=PacsDS \
         >     --driver-name=<driver-name> \
@@ -586,14 +591,14 @@ Setup WildFly
     -  Oracle: `jdbc:oracle:thin:@localhost:1521:<database-name>`
     -  Microsoft SQL Server: `jdbc:sqlserver://localhost:1433;databaseName=<database-name>`
 
-10. Create JMS Queues using WildFly CLI:
+11. Create JMS Queues using WildFly CLI:
 
         [standalone@localhost:9999 /] jms-queue add --queue-address=ianscu --entries=queue/ianscu
         [standalone@localhost:9999 /] jms-queue add --queue-address=mppsscu --entries=queue/mppsscu
         [standalone@localhost:9999 /] jms-queue add --queue-address=stgcmtscp --entries=queue/stgcmtscp
         [standalone@localhost:9999 /] jms-queue add --queue-address=delete --entries=queue/delete
 
-11. Set system property `org.dcm4chee.archive.ldap` to the location of the LDAP Connection configuration file,
+12. Set system property `org.dcm4chee.archive.ldap` to the location of the LDAP Connection configuration file,
     using WildFly CLI, e.g.:
 
         [standalone@localhost:9999 /] /system-property=org.dcm4chee.archive.ldap:add(value=/home/gunter/wildfly-8.0.0.Final/standalone/configuration/dcm4chee-arc/ldap.properties)
@@ -611,13 +616,13 @@ Setup WildFly
           - Producer Method [IApplicationEntityCache] with qualifiers [@Any @Default] declared as [[BackedAnnotatedMethod] @Produces @ApplicationScoped public static org.dcm4chee.archive.conf.ldap.LdapArchiveConfigurationFactory.getApplicationEntityCache(DicomConfiguration)]
         :
 
-12. At default, DCM4CHEE Archive 4.x will assume `dcm4chee-arc` as its Device Name, used to find its
+13. At default, DCM4CHEE Archive 4.x will assume `dcm4chee-arc` as its Device Name, used to find its
     configuration in the configuration backend (LDAP Server or Java Preferences). You may specify a different
     Device Name by system property `org.dcm4chee.archive.deviceName` using WildFly CLI:
 
         [standalone@localhost:9999 /] /system-property=org.dcm4chee.archive.deviceName:add(value=<device-name>)
 
-13. Deploy DCM4CHEE Archive 4.x using WildFly CLI, e.g.:
+14. Deploy DCM4CHEE Archive 4.x using WildFly CLI, e.g.:
 
         [standalone@localhost:9999 /] deploy $DCM4CHEE_ARC/deploy/dcm4chee-arc-war-4.3.0.Alpha4-mysql.war
 
@@ -633,7 +638,7 @@ Setup WildFly
         13:52:34,775 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-11) JBAS017534: Registered web context: /dcm4chee-arc
         13:52:34,814 INFO  [org.jboss.as.server] (ServerService Thread Pool -- 32) JBAS018559: Deployed "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war" (runtime-name : "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war")
 
-14. You may undeploy DCM4CHEE Archive at any time using WildFly CLI, e.g.:
+15. You may undeploy DCM4CHEE Archive at any time using WildFly CLI, e.g.:
 
         [standalone@localhost:9999 /] undeploy dcm4chee-arc-war-4.3.0.Alpha4-mysql.war
 
@@ -647,7 +652,7 @@ Setup WildFly
         13:59:14,927 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-14) JBAS015877: Stopped deployment dcm4chee-arc-war-4.3.0.Alpha4-mysql.war (runtime-name: dcm4chee-arc-war-4.3.0.Alpha4-mysql.war) in 110ms
         13:59:14,983 INFO  [org.jboss.as.server] (management-handler-thread - 2) JBAS018558: Undeployed "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war" (runtime-name: "dcm4chee-arc-war-4.3.0.Alpha4-mysql.war")
 
-15. You may deploy the web interface using the provided dcm4chee-arc-web-4.3.0.Alpha4.war using wildfly CLI, e.g.:
+16. You may deploy the web interface using the provided dcm4chee-arc-web-4.3.0.Alpha4.war using wildfly CLI, e.g.:
 
         [standalone@localhost:9999 /] deploy $DCM4CHEE_ARC/deploy/dcm4chee-arc-web-4.3.0.Alpha4.war
         
@@ -655,7 +660,7 @@ Setup WildFly
         14:04:46,185 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-15) JBAS017534: Registered web context: /dcm4chee-web
         14:04:46,210 INFO  [org.jboss.as.server] (management-handler-thread - 12) JBAS018559: Deployed "dcm4chee-arc-web-4.3.0.Alpha4.war" (runtime-name: "dcm4chee-arc-web-4.3.0.alpha4.war")
 
-16. You may undeploy the web interface at any time using the WildFly CLI, e.g.:
+17. You may undeploy the web interface at any time using the WildFly CLI, e.g.:
 
         [standalone@localhost:9999 /] undeploy dcm4chee-arc-web-4.3.0.Alpha4.war
         
