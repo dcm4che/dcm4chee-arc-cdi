@@ -429,16 +429,24 @@ Import sample configuration into LDAP Server
 Setup WildFly
 --------------
 
-1.  Adjust DCM4CHEE Archive LDAP Connection configuration file
-    `$DCM4CHEE_ARC/configuration/dcm4chee-arc/ldap.properties`:
+1.  To configure the Archive to use LDAP, put the following into WildFly's configuration/standalone.xml, and adjust the
+    parameters according to the LDAP server installed :
 
-        java.naming.factory.initial=com.sun.jndi.ldap.LdapCtxFactory
-        java.naming.ldap.attributes.binary=dicomVendorData
-        java.naming.provider.url=ldap://localhost:1389/dc=example,dc=com
-        java.naming.security.principal=cn=Directory Manager
-        java.naming.security.credentials=secret
+    <system-properties>
+      <property name="org.dcm4che.conf.storage" value="ldap" />
+      <property name="org.dcm4che.conf.ldap.url" value="ldap://localhost:10389/dc=example,dc=com" />
+      <property name="org.dcm4che.conf.ldap.principal" value="uid=admin,ou=system" />
+      <property name="org.dcm4che.conf.ldap.credentials" value="secret" />
+    </system-properties>
 
-    to your LDAP Server configuration.
+    Alternatively, a flat json file can be used as configuration source as follows:
+    <system-properties>
+      <property name="org.dcm4che.conf.storage" value="json_file" />
+      <property name="org.dcm4che.conf.filename" value="../standalone/configuration/configuration.json" />
+    </system-properties>
+
+    Check the application log during startup to see which values are actually used.
+
 
 2.  Copy configuration files into the WildFly installation:
 

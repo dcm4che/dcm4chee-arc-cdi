@@ -30,8 +30,8 @@
       <directory>../dcm4chee-arc-conf/src/main/config</directory>
       <outputDirectory>.</outputDirectory>
       <includes>
-        <include>configuration/dcm4chee-arc/ldap.properties</include>
         <include>configuration/dcm4chee-arc/*.xsl</include>
+        <include>configuration/dcm4chee-arc/*.json</include>
         <include>ldap/**</include>
         <include>prefs/**</include>
       </includes>
