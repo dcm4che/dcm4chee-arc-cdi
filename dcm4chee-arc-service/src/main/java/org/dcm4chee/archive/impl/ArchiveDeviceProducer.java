@@ -79,8 +79,12 @@ public class ArchiveDeviceProducer {
     private Device device;
 
     @PostConstruct
-    private void init() throws ConfigurationException {
-        device = findDevice();
+    private void init() {
+        try {
+            device = findDevice();
+        } catch (ConfigurationException e) {
+            throw new RuntimeException(e);
+        }
         findOrCreateRejectionCodes();
         initImageReaderFactory();
         initImageWriterFactory();
@@ -101,8 +105,9 @@ public class ArchiveDeviceProducer {
     private Device findDevice() throws ConfigurationException {
         String name = System.getProperty(DEVICE_NAME_PROPERTY, DEF_DEVICE_NAME);
         Device arcDevice = conf.findDevice(name);
-        if (arcDevice==null)
-            throw new ConfigurationException("Archive device '" + name + "' does not exist in the configuration");
+        if (arcDevice == null)
+            throw new ConfigurationException("Archive device '" + name
+                    + "' does not exist in the configuration");
 
         return arcDevice;
     }

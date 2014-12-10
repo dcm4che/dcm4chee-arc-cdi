@@ -54,7 +54,9 @@
     <powermock.version>1.5.5</powermock.version>
     <jacksonprovider.version>3.0.10.Final</jacksonprovider.version>
     <resteasy.multipart.version>3.0.8.Final</resteasy.multipart.version>
+<!--
     <db>mysql</db>
+-->
     <ds>java:/PacsDS</ds>
   </properties>
   <name>dcm4chee archive server</name>
@@ -112,11 +114,6 @@
           <artifactId>dcm4che-conf-core</artifactId>
           <version>${dcm4che.version}</version>
           <scope>provided</scope>
-      </dependency>
-      <dependency>
-          <groupId>org.dcm4che.dcm4chee-arc</groupId>
-          <artifactId>dcm4chee-arc-conf</artifactId>
-          <version>${project.version}</version>
       </dependency>
       <!--<dependency>
         <groupId>org.dcm4che</groupId>
@@ -483,6 +480,7 @@
     <module>dcm4chee-arc-junit</module>
     <module>dcm4chee-arc-mpps</module>
     <module>dcm4chee-arc-mpps-emulate</module>
+    <module>dcm4chee-arc-conf-producer</module>
   </modules>
   <profiles>
     <profile>

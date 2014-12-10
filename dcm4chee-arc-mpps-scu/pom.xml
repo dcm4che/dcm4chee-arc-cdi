@@ -17,7 +17,6 @@
       <artifactId>dcm4chee-arc-entity</artifactId>
       <classifier>${db}</classifier>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>

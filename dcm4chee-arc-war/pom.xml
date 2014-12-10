@@ -21,12 +21,23 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-conf-producer</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-service</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-entity</artifactId>
+      <classifier>${db}</classifier>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-entity-ext</artifactId>
       <classifier>${db}</classifier>
       <version>${project.version}</version>
     </dependency>
@@ -182,11 +193,6 @@
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-filesystem</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-cdi-conf</artifactId>
-      <version>${dcm4che.version}</version>
-    </dependency>
   </dependencies>
   <profiles>
     <profile>
@@ -222,7 +228,6 @@
     <plugins>
       <plugin>
         <artifactId>maven-war-plugin</artifactId>
-        <version>2.1.1</version>
         <configuration>
           <classifier>${db}</classifier>
           <webappDirectory>${project.build.directory}/${project.build.finalName}-${db}</webappDirectory>
