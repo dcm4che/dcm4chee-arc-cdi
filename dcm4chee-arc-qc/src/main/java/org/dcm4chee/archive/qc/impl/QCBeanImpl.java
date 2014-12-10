@@ -494,14 +494,14 @@ public class QCBeanImpl  implements QCBean{
         try {
             
             newInstance = createInstance(source, target);
+            Collection<Location> locations  = newInstance.getLocations() ;
             
-            if(newInstance.getOtherLocations()==null)
-            newInstance.setOtherLocations(new ArrayList<Location>());
+            if(newInstance.getLocations()==null) {
+                locations = new ArrayList<Location>();
+                newInstance.setLocations(locations);
+            };
             
-            newInstance.getOtherLocations().add(
-                    !source.getLocations().isEmpty()
-                    ?getFirst(source.getLocations(), newInstance)
-                    :getFirst(source.getOtherLocations(), newInstance));
+            locations.add(getFirst(source.getLocations(), newInstance));
             
         } catch (Exception e) {
             LOG.error("{} : Unable to create replacement instance for {},"
@@ -525,14 +525,14 @@ public class QCBeanImpl  implements QCBean{
         }
         try {
             newInstance = createInstance(source, target);
-
-            if(newInstance.getOtherLocations()==null)
-            newInstance.setOtherLocations(new ArrayList<Location>());
-
-            newInstance.getOtherLocations().add(
-                    !source.getLocations().isEmpty()
-                    ?getFirst(source.getLocations(), newInstance)
-                    :getFirst(source.getOtherLocations(), newInstance));
+            Collection<Location> locations  = newInstance.getLocations() ;
+            
+            if(newInstance.getLocations()==null) {
+                locations = new ArrayList<Location>();
+                newInstance.setLocations(locations);
+            };
+            
+            locations.add(getFirst(source.getLocations(), newInstance));
             
         } catch (Exception e) {
             LOG.error("{} : Unable to create replacement instance for {},"

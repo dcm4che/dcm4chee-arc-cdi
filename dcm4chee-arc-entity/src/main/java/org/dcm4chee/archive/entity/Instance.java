@@ -218,8 +218,8 @@ public class Instance implements Serializable {
     @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<ContentItem> contentItems;
 
-    @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = false)
-    private Collection<Location> locations;
+//    @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = false)
+//    private Collection<Location> locations;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "series_fk")
@@ -229,7 +229,7 @@ public class Instance implements Serializable {
     @JoinTable(name="rel_instance_location",
     joinColumns={@JoinColumn(name="instance_fk", referencedColumnName="pk")},
     inverseJoinColumns={@JoinColumn(name="location_fk", referencedColumnName="pk")})
-    private Collection<Location> otherLocations;
+    private Collection<Location> locations;
 
     @Transient
     private Attributes cachedAttributes;
@@ -400,12 +400,16 @@ public class Instance implements Serializable {
         return locations;
     }
 
-    public void setOtherLocations(Collection<Location> otherLocations) {
-        this.otherLocations = otherLocations;
-    }
+//    public void setOtherLocations(Collection<Location> otherLocations) {
+//        this.otherLocations = otherLocations;
+//    }
+//
+//    public Collection<Location> getOtherLocations() {
+//        return otherLocations;
+//    }
 
-    public Collection<Location> getOtherLocations() {
-        return otherLocations;
+    public void setLocations(Collection<Location> locations) {
+        this.locations = locations;
     }
 
     public Series getSeries() {

@@ -68,7 +68,7 @@ public class Location implements Serializable {
 
     private static final long serialVersionUID = -3832203362617593125L;
 
-    public enum Status { OK, DELETE_FAILED, REPLACED };
+    public enum Status { OK, DELETE_FAILED };
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -116,11 +116,7 @@ public class Location implements Serializable {
     @Column(name = "status", updatable = true)
     private Status status;
 
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name = "instance_fk", updatable = true)
-    private Instance instance;
-
-    @ManyToMany(mappedBy="otherLocations")
+    @ManyToMany(mappedBy="locations")
     private Collection<Instance> instances;
 
     public static final class Builder {
@@ -250,14 +246,6 @@ public class Location implements Serializable {
 
     public void setStatus(Status status) {
         this.status = status;
-    }
-
-    public Instance getInstance() {
-        return instance;
-    }
-
-    public void setInstance(Instance instance) {
-        this.instance = instance;
     }
 
     public Collection<Instance> getInstances() {

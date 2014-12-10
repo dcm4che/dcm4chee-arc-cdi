@@ -4,7 +4,6 @@ create index FK318FE3199F40BC4C on content_item (name_fk);
 create index FK211694958151AFEA on instance (series_fk);
 create index FK2116949540F8410A on instance (reject_code_fk);
 create index FK211694954DC50E6B on instance (srcode_fk);
-create index FK714F9FB537EDB1AA on location (instance_fk);
 create index FK333EE69DC28D5C on mpps (drcode_fk);
 create index FK333EE6A511AE1E on mpps (patient_fk);
 create index FK8F9D3D30A511AE1E on mwl_item (patient_fk);

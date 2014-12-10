@@ -32,7 +32,7 @@ create index inst_custom1_idx on instance (inst_custom1);
 create index inst_custom2_idx on instance (inst_custom2);
 create index inst_custom3_idx on instance (inst_custom3);
 
-create unique index pat_id_idx on patient_id (pat_id, issuer_fk);
+create index pat_id_idx on patient_id (pat_id, issuer_fk);
 
 create index no_pat_id_idx on patient (no_pat_id);
 create index pat_birthdate_idx on patient (pat_birthdate);

@@ -91,7 +91,6 @@ public class DefaultRetrieveService implements RetrieveService {
 
     private static final Logger LOG = Logger.getLogger(DefaultRetrieveService.class);
 
-    static final QLocation otherLocation = new QLocation("otherLocation");
 
     private static final Expression<?>[] SELECT = {
         QLocation.location.storagePath,
@@ -100,12 +99,6 @@ public class DefaultRetrieveService implements RetrieveService {
         QLocation.location.timeZone,
         QLocation.location.storageSystemGroupID,
         QLocation.location.storageSystemID,
-        otherLocation.storagePath,
-        otherLocation.entryName,
-        otherLocation.timeZone,
-        otherLocation.transferSyntaxUID,
-        otherLocation.storageSystemGroupID,
-        otherLocation.storageSystemID,
         QSeries.series.pk,
         QInstance.instance.pk,
         QInstance.instance.sopClassUID,
@@ -140,7 +133,7 @@ public class DefaultRetrieveService implements RetrieveService {
     public List<ArchiveInstanceLocator> calculateMatches(IDWithIssuer[] pids,
             Attributes keys, QueryParam queryParam) {
 
-        return locate(ejb.query(SELECT, otherLocation,
+        return locate(ejb.query(SELECT,
                 pids,
                 keys.getStrings(Tag.StudyInstanceUID),
                 keys.getStrings(Tag.SeriesInstanceUID),
@@ -155,7 +148,7 @@ public class DefaultRetrieveService implements RetrieveService {
     public List<ArchiveInstanceLocator> calculateMatches(String studyIUID,
             String seriesIUID, String objectIUID, QueryParam queryParam) {
 
-        return locate(ejb.query(SELECT, otherLocation,
+        return locate(ejb.query(SELECT,
                 null,
                 new String[] { studyIUID },
                 new String[] { seriesIUID },
@@ -187,7 +180,7 @@ public class DefaultRetrieveService implements RetrieveService {
                         tuple, seriesAttrs);
             }
             
-            builder.addFileRefs(tuple, otherLocation);
+            builder.addFileRefs(tuple);
             instPk = nextInstPk;
         }
         if (builder != null)

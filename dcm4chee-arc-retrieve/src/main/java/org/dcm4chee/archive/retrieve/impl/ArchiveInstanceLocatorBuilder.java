@@ -34,7 +34,7 @@ class ArchiveInstanceLocatorBuilder {
         this.attrs = Utils.mergeAndNormalize(seriesAttrs, instanceAttrs );
     }
 
-    void addFileRefs(Tuple tuple, QLocation otherLocation) {
+    void addFileRefs(Tuple tuple) {
         addFileRef(
                 tuple.get(QLocation.location.storageSystemGroupID),
                 tuple.get(QLocation.location.storageSystemID),
@@ -42,13 +42,6 @@ class ArchiveInstanceLocatorBuilder {
                 tuple.get(QLocation.location.entryName),
                 tuple.get(QLocation.location.transferSyntaxUID),
                 tuple.get(QLocation.location.timeZone));
-        addFileRef(
-                tuple.get(otherLocation.storageSystemGroupID),
-                tuple.get(otherLocation.storageSystemID),
-                tuple.get(otherLocation.storagePath),
-                tuple.get(otherLocation.entryName),
-                tuple.get(otherLocation.transferSyntaxUID),
-                tuple.get(otherLocation.timeZone));
     }
  
     private void addFileRef(String groupID, String systemID,

@@ -73,7 +73,7 @@ public class RetrieveServiceEJB {
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
-    public List<Tuple> query(Expression<?>[] select, QLocation otherLocations,
+    public List<Tuple> query(Expression<?>[] select,
             IDWithIssuer[] pids, String[] studyIUIDs, String[] seriesIUIDs,
             String[] objectIUIDs, QueryParam queryParam) {
 
@@ -86,16 +86,12 @@ public class RetrieveServiceEJB {
                 seriesIUIDs, false));
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
                 objectIUIDs, false));
-        builder.and(
-                (otherLocations.status.ne(Location.Status.REPLACED))
-                .or(QLocation.location.status.ne(Location.Status.REPLACED)));
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNote(queryParam));
 
         List<Tuple> query = new HibernateQuery(em.unwrap(Session.class))
                 .from(QInstance.instance)
                 .leftJoin(QInstance.instance.locations, QLocation.location)
-                .leftJoin(QInstance.instance.otherLocations, otherLocations)
                 .innerJoin(QInstance.instance.attributesBlob,
                         QueryBuilder.instanceAttributesBlob)
                 .innerJoin(QInstance.instance.series, QSeries.series)

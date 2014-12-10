@@ -77,7 +77,7 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
             inst = em.merge(inst);
               if(isRejected(inst)){
                 Collection<Location> tmpRefs = clone(inst.getLocations());
-                tmpRefs.addAll(inst.getOtherLocations());
+                tmpRefs.addAll(inst.getLocations());
                 inst.getSeries().clearQueryAttributes();
                 inst.getSeries().getStudy().clearQueryAttributes();
                 toBeDeleted.addAll(detachReferences(inst, tmpRefs));
@@ -115,69 +115,11 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
         
         for(Iterator<Location> iterator = refs.iterator(); iterator.hasNext();) {
             Location ref = iterator.next();
-            
-            if(ref.getInstances().isEmpty()){
-                //no file alias only file ref - normal case - nullify and delete
+            //references only this instance
+            if(ref.getInstances().size() == 1){
                 inst.getLocations().remove(ref);
-                ref.setInstance(null);
+                ref.getInstances().remove(inst);
                 continue;
-            }
-            else {
-                if(ref.getInstances().size() == 1) {
-                    if(ref.getInstances().contains(inst))
-                    {
-                        
-                        if(ref.getInstance()==null) {
-                       //instance referenced only in file alias relation and ref has no reference through file ref relation to another instance - cloned case - remove alias and  delete
-                            ref.getInstances().clear();
-                            inst.getOtherLocations().remove(ref);
-                        continue;
-                        }
-                        else if(ref.getInstance().getSopInstanceUID()
-                            .equalsIgnoreCase(inst.getSopInstanceUID())) {
-                        //instance referenced in both relations and ref has no more instances - remove both and delete
-                            inst.getLocations().remove(ref);
-                            ref.setInstance(null);
-                        ref.getInstances().clear();
-                        inst.getOtherLocations().remove(ref);
-                        continue;
-                        }
-                        else
-                      //instance referenced only in file alias relation and ref has a reference through file ref relation to another instance - cloned case - remove alias and do not  delete
-                            ref.getInstances().clear();
-                            inst.getOtherLocations().remove(ref);
-                    }
-                    else
-                    {
-                        //instance referenced only in file ref relation - file alias relation references another instance - remove file ref relation and do not delete
-                        inst.getLocations().remove(ref);
-                        ref.setInstance(null);
-                    }
-                }
-                else {
-                    //size > 1
-                    if(ref.getInstances().contains(inst) 
-                            && ref.getInstance()!=null 
-                            && ref.getInstance().getSopInstanceUID()
-                            .equalsIgnoreCase(inst.getSopInstanceUID())) {
-                    //ref in both - remove both relations and do not delete
-                        ref.getInstances().remove(inst);
-                        inst.getOtherLocations().remove(ref);
-                        inst.getLocations().remove(ref);
-                        ref.setInstance(null);
-                    }
-                    else if(ref.getInstances().contains(inst))
-                    {
-                    //only ref in file alias relation - remove file alias relation and do not delete
-                        ref.getInstances().remove(inst);
-                        inst.getOtherLocations().remove(ref);
-                    }
-                    else {
-                        //only ref in file ref relation - nullify relation and do not delete
-                        inst.getLocations().remove(ref);
-                        ref.setInstance(null);
-                    }
-                }
             }
             iterator.remove();
         }

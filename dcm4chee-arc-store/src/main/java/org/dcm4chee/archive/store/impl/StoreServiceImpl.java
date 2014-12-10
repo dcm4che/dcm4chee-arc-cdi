@@ -98,6 +98,7 @@ import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
+import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
@@ -120,6 +121,9 @@ import org.slf4j.LoggerFactory;
 public class StoreServiceImpl implements StoreService {
 
     static Logger LOG = LoggerFactory.getLogger(StoreServiceImpl.class);
+
+    @Inject
+    private FileMgmt locationManager;
 
     @Inject
     private StorageService storageService;
@@ -481,15 +485,12 @@ public class StoreServiceImpl implements StoreService {
             Instance instance) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         Collection<Location> fileRefs = instance.getLocations();
-        Collection<Location> fileAliasRefs = instance.getOtherLocations();
-        if (fileRefs.isEmpty() && fileAliasRefs.isEmpty())
+        if (fileRefs.isEmpty())
             return StoreAction.RESTORE;
 
         if (hasSameSourceAET(instance, session.getRemoteAET())
                 && (!hasFileRefWithDigest(fileRefs,
-                        context.getSpoolFileDigest()))
-                || !hasFileRefWithDigest(fileAliasRefs,
-                        context.getSpoolFileDigest()))
+                        context.getSpoolFileDigest())))
             return StoreAction.REPLACE;
 
         return StoreAction.IGNORE;
@@ -538,23 +539,13 @@ public class StoreServiceImpl implements StoreService {
                         .hasNext();) {
                     Location fileRef = iter.next();
                     // no other instances referenced through alias table
-                    if (fileRef.getInstances().isEmpty()) {
-                        fileRef.setStatus(org.dcm4chee.archive.entity.Location.Status.REPLACED);
+                    if (fileRef.getInstances().size() == 1) {
+                        //delete
                         replaced.add(fileRef);
-
                     }
-                    fileRef.setInstance(null);
-                    iter.remove();
-                }
-                for (Iterator<Location> iter = inst.getOtherLocations()
-                        .iterator(); iter.hasNext();) {
-                    Location fileAliasRef = iter.next();
-                    // another instance referenced through original link
-                    if (fileAliasRef.getInstance() == null
-                            && fileAliasRef.getInstances().size() == 1) {
-                        fileAliasRef
-                                .setStatus(org.dcm4chee.archive.entity.Location.Status.REPLACED);
-                        replaced.add(fileAliasRef);
+                    else {
+                        //remove inst
+                        fileRef.getInstances().remove(inst);
                     }
                     iter.remove();
                 }
@@ -569,8 +560,12 @@ public class StoreServiceImpl implements StoreService {
         }
 
         Instance newInst = service.createInstance(em, context);
-        for (Location replacedRef : replaced)
-            replacedRef.setInstance(newInst);
+        //delete replaced
+            try {
+                locationManager.scheduleDelete(replaced, 0);
+            } catch (Exception e) {
+                LOG.error("StoreService : Error deleting replaced location - {}",e);
+            }
         return newInst;
     }
 
@@ -724,10 +719,20 @@ public class StoreServiceImpl implements StoreService {
             .transferSyntaxUID(context.getTransferSyntax())
             .timeZone(session.getSourceTimeZoneID())
             .build();
-        fileRef.setInstance(instance);
-
+        Collection<Instance> instances = fileRef.getInstances();
+        if(instances == null) {
+            fileRef.setInstances(instances);
+            instances = new ArrayList<Instance>();
+        }
+        instances.add(instance);
+        
+        Collection<Location> locations = instance.getLocations();
+        if(locations == null) {
+            locations = new ArrayList<Location>();
+            instance.setLocations(locations);
+        }
+        locations.add(fileRef);
         em.persist(fileRef);
-
         LOG.info("{}: Create {}", session, fileRef);
         return fileRef;
     }
