@@ -9,7 +9,7 @@
     <version>4.4.0-SNAPSHOT</version>
   </parent>
   <artifactId>dcm4chee-arc-ear</artifactId>
-  <packaging>ear</packaging>
+  <packaging>pom</packaging>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -187,21 +187,51 @@
     </dependency>
   </dependencies>
   <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-ear-plugin</artifactId>
-        <configuration>
-          <classifier>${db}</classifier>
-          <defaultLibBundleDir>lib</defaultLibBundleDir>
-          <modules>
-            <webModule>
-              <groupId>org.dcm4che.dcm4chee-arc</groupId>
-              <artifactId>dcm4chee-arc-war-skinny</artifactId>
-              <contextRoot>dcm4chee-arc</contextRoot>
-            </webModule>
-          </modules>
-        </configuration>
-      </plugin>
-    </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-ear-plugin</artifactId>
+          <configuration>
+            <defaultLibBundleDir>lib</defaultLibBundleDir>
+            <modules>
+              <webModule>
+                <groupId>org.dcm4che.dcm4chee-arc</groupId>
+                <artifactId>dcm4chee-arc-war-skinny</artifactId>
+                <contextRoot>dcm4chee-arc</contextRoot>
+              </webModule>
+            </modules>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
+  <profiles>
+    <profile>
+      <id>db-mysql</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>dcm4chee-arc-ear-mysql</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>db-oracle</id>
+      <modules>
+        <module>dcm4chee-arc-ear-oracle</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>db-all</id>
+      <modules>
+        <module>dcm4chee-arc-ear-db2</module>
+        <module>dcm4chee-arc-ear-firebird</module>
+        <module>dcm4chee-arc-ear-h2</module>
+        <module>dcm4chee-arc-ear-mysql</module>
+        <module>dcm4chee-arc-ear-oracle</module>
+        <module>dcm4chee-arc-ear-psql</module>
+        <module>dcm4chee-arc-ear-sqlserver</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>
