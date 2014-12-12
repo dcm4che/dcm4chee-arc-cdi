@@ -54,9 +54,8 @@
     <powermock.version>1.5.5</powermock.version>
     <jacksonprovider.version>3.0.10.Final</jacksonprovider.version>
     <resteasy.multipart.version>3.0.8.Final</resteasy.multipart.version>
-<!--
-    <db>mysql</db>
--->
+    <jdbc-jboss-modules.version>1.0.1-SNAPSHOT</jdbc-jboss-modules.version>
+    <jxpath-jboss-module.version>1.0.0-SNAPSHOT</jxpath-jboss-module.version>
     <ds>java:/PacsDS</ds>
   </properties>
   <name>dcm4chee archive server</name>
@@ -396,6 +395,19 @@
               </manifestEntries>
             </archive>
           </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>1.5</version>
+          <executions>
+            <execution>
+              <id>sign-artifacts</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>sign</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>

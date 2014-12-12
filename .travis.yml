@@ -3,6 +3,10 @@ language: java
 jdk:
 - oraclejdk7
 
+env: 
+  global: 
+  - RELEASE_CANDIDATE=$(.travis.d/release_candidate.sh)
+
 install:
 - .travis.d/install.sh
 

@@ -1,7 +1,5 @@
 #!/bin/bash
 set -ev
 
-mvn -P ossrh-down versions:update-properties -DincludeProperties=dcm4che.version,dcm4chee-storage.version
-
-# This has been moved to script.sh until ARCH-152 is fixed.
-#mvn -P ossrh-down install -Ddb=mysql -DskipTests=true
+mvn -P ossrh-down versions:update-properties -DincludeProperties=jdbc-jboss-modules.version,jxpath-jboss-module.version,dcm4che.version,dcm4chee-storage.version
+mvn -P ossrh-down,db-all install -DskipTests=true
