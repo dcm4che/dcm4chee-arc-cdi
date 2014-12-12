@@ -489,6 +489,23 @@
   </modules>
   <profiles>
     <profile>
+      <id>no-db-specified</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <db>mysql</db>
+      </properties>
+    </profile>
+    <profile>
+      <id>db-specified</id>
+      <activation>
+        <property>
+          <name>db</name>
+        </property>
+      </activation>
+    </profile>
+    <profile>
       <id>ossrh-up</id>
       <build>
         <plugins>
