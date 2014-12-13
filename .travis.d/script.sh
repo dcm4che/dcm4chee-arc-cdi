@@ -24,7 +24,7 @@ then
   mvn versions:set -DnewVersion="${BUILD_VERSION}" | grep -v 'Downloaded: ' | grep -v 'Downloading: ' | grep -v 'Props: ' | grep -v '[[:digit:]]\+ KB'
 
   mvn -s .travis.d/settings.xml -P ossrh-down,ossrh-up,travis-secret,db-all \
-    deploy -Dscm.revision="${TRAVIS_COMMIT}" | grep -v 'Downloaded: ' | grep -v 'Downloading: ' | grep -v 'Props: ' | grep -v '[[:digit:]]\+ KB'
+    clean deploy -Dscm.revision="${TRAVIS_COMMIT}" | grep -v 'Downloaded: ' | grep -v 'Downloading: ' | grep -v 'Props: ' | grep -v '[[:digit:]]\+ KB'
 else
   echo "The current commit is not a release candidate: attempt to verify."
 
