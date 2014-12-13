@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Only release from master if
 # A) we know of no commits since this build's commit and
