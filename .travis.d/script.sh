@@ -21,12 +21,12 @@ then
   BUILD_VERSION="4.4.0-$(printf '%04d' ${TRAVIS_BUILD_NUMBER})$(date -u '+%Y%m%d%H%M%S')"
 
   # Stage the release, setting the version number and the commit hash
-  mvn versions:set -DnewVersion="${BUILD_VERSION}"
+  mvn versions:set -DnewVersion="${BUILD_VERSION}" | grep -v '^Downloaded' | grep -v '^Downloading' | grep -v '^Props'
 
   mvn -s .travis.d/settings.xml -P ossrh-down,ossrh-up,travis-secret,db-all \
-    deploy -Dscm.revision="${TRAVIS_COMMIT}"
+    deploy -Dscm.revision="${TRAVIS_COMMIT}" | grep -v '^Downloaded' | grep -v '^Downloading' | grep -v '^Props'
 else
   echo "The current commit is not a release candidate: attempt to verify."
 
-  mvn -P ossrh-down,db-all verify
+  mvn -P ossrh-down,db-all verify | grep -v '^Downloaded' | grep -v '^Downloading' | grep -v '^Props'
 fi
