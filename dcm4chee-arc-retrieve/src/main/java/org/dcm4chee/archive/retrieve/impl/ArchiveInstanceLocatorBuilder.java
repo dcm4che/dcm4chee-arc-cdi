@@ -68,7 +68,7 @@ class ArchiveInstanceLocatorBuilder {
 
     ArchiveInstanceLocator build() {
         if (locator == null) {
-            new ArchiveInstanceLocator.Builder(cuid, iuid, null)
+            locator = new ArchiveInstanceLocator.Builder(cuid, iuid, null)
                 .retrieveAETs(retrieveAETs)
                 .externalRetrieveAET(externalRetrieveAET)
                 .build();
