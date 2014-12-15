@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ev
 
 # Only release from master if
 # A) we know of no commits since this build's commit and
@@ -20,12 +21,12 @@ then
   BUILD_VERSION="4.4.0-$(printf '%04d' ${TRAVIS_BUILD_NUMBER})$(date -u '+%Y%m%d%H%M%S')"
 
   # Stage the release, setting the version number and the commit hash
-  mvn versions:set -DnewVersion="${BUILD_VERSION}" | grep -v 'Downloaded: ' | grep -v 'Downloading: ' | grep -v 'Props: ' | grep -v '[[:digit:]]\+ KB'
+  mvn versions:set -DnewVersion="${BUILD_VERSION}" | grep -v 'Downloaded: ' | grep -v 'Downloading: ' | grep -v 'Props: '
 
   mvn -s .travis.d/settings.xml -P ossrh-down,ossrh-up,travis-secret,db-all \
-    clean deploy -Dscm.revision="${TRAVIS_COMMIT}" | grep -v 'Downloaded: ' | grep -v 'Downloading: ' | grep -v 'Props: ' | grep -v '[[:digit:]]\+ KB'
+    deploy -Dscm.revision="${TRAVIS_COMMIT}" | grep -v 'Downloaded: ' | grep -v 'Downloading: ' | grep -v 'Props: '
 else
   echo "The current commit is not a release candidate: attempt to verify."
 
-  mvn -P ossrh-down,db-all verify | grep -v 'Downloaded: ' | grep -v 'Downloading: ' | grep -v 'Props: ' | grep -v '[[:digit:]]\+ KB'
+  mvn -P ossrh-down,db-all verify | grep -v 'Downloaded: ' | grep -v 'Downloading: ' | grep -v 'Props: '
 fi
