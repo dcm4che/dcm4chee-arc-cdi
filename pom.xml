@@ -486,7 +486,6 @@
     <module>dcm4chee-arc-mpps</module>
     <module>dcm4chee-arc-mpps-emulate</module>
     <module>dcm4chee-arc-conf-producer</module>
-    <module>dcm4chee-arc-persistence</module>
   </modules>
   <profiles>
     <profile>
