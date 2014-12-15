@@ -736,7 +736,7 @@ public class WadoURI extends Wado {
                     r = 0;
                 else
                     c = 0;
-            sx = r != 0 ? r / (src.getHeight() * sy) : c / src.getWidth();
+            sx = r != 0 ? r / (src.getHeight() * sy) : c / (float)src.getWidth();
             sy *= sx;
         }
         AffineTransformOp op = new AffineTransformOp(
