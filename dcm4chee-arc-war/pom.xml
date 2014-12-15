@@ -29,7 +29,7 @@
           <execution>
             <phase>install</phase>
             <goals>
-              <goal>deploy-only</goal>
+              <goal>deploy</goal>
             </goals>
           </execution>
         </executions>
