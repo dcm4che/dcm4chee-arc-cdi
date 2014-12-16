@@ -717,7 +717,7 @@ public class QCBeanImpl  implements QCBean{
             deleteInstance(inst.getSopInstanceUID());
         }
         
-        em.remove(study);
+//        em.remove(study);
         LOG.info("Removed study entity - " + studyInstanceUID);
         QCEvent deleteEvent = new QCEvent(
                 QCOperation.DELETE, null, null, sopInstanceUIDs, null);
@@ -771,7 +771,6 @@ public class QCBeanImpl  implements QCBean{
         
         Series series = inst.getSeries();
         Study study = series.getStudy();
-        em.remove(inst);
         LOG.info("Removed instance entity - " + sopInstanceUID);
         series.clearQueryAttributes();
         study.clearQueryAttributes();

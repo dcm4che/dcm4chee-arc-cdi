@@ -74,10 +74,9 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
         try {
         Collection<Location> toBeDeleted = new HashSet<Location>();
         for(Instance inst: instances) {
-            inst = em.merge(inst);
+            inst = em.find(Instance.class,inst.getPk());
               if(isRejected(inst)){
                 Collection<Location> tmpRefs = clone(inst.getLocations());
-                tmpRefs.addAll(inst.getLocations());
                 inst.getSeries().clearQueryAttributes();
                 inst.getSeries().getStudy().clearQueryAttributes();
                 toBeDeleted.addAll(detachReferences(inst, tmpRefs));
@@ -116,12 +115,9 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
         for(Iterator<Location> iterator = refs.iterator(); iterator.hasNext();) {
             Location ref = iterator.next();
             //references only this instance
-            if(ref.getInstances().size() == 1){
                 inst.getLocations().remove(ref);
                 ref.getInstances().remove(inst);
-                continue;
-            }
-            iterator.remove();
+                em.flush();
         }
 
         return refs;
