@@ -93,7 +93,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
 
 
-        CommonDicomConfigurationWithHL7 configWithHL7 = builder.cache().build();
+        CommonDicomConfigurationWithHL7 configWithHL7 = builder.build();
         config = configWithHL7;
         hl7Config = configWithHL7;
 
