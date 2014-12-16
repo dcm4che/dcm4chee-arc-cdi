@@ -115,8 +115,15 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
         for(Iterator<Location> iterator = refs.iterator(); iterator.hasNext();) {
             Location ref = iterator.next();
             //references only this instance
+            if(ref.getInstances().size() > 1){
                 inst.getLocations().remove(ref);
                 ref.getInstances().remove(inst);
+                iterator.remove();
+            }
+            else {
+                inst.getLocations().remove(ref);
+                ref.getInstances().remove(inst);
+            }
                 em.flush();
         }
 
