@@ -748,12 +748,19 @@ public class StoreServiceImpl implements StoreService {
                 .getAttributeFilter(Entity.Study);
         Attributes studyAttrs = study.getAttributes();
         Attributes modified = new Attributes();
+        //check if trashed
+        if(isRejected(study)) {
+            em.remove(study.getAttributesBlob());
+            study.setAttributes(new Attributes(data), studyFilter, storeParam.getFuzzyStr());
+        }
+        else {
         if (studyAttrs.updateSelected(data, modified,
                 studyFilter.getSelection())) {
             study.setAttributes(studyAttrs, studyFilter,
                     storeParam.getFuzzyStr());
             LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
                     studyAttrs, modified);
+        }
         }
         service.updatePatient(em, context, study.getPatient());
     }
@@ -778,12 +785,19 @@ public class StoreServiceImpl implements StoreService {
         AttributeFilter seriesFilter = storeParam
                 .getAttributeFilter(Entity.Series);
         Attributes modified = new Attributes();
+        //check if trashed
+        if(isRejected(series)) {
+            em.remove(series.getAttributesBlob());
+            series.setAttributes(new Attributes(data), seriesFilter, storeParam.getFuzzyStr());
+        }
+        else {
         if (seriesAttrs.updateSelected(data, modified,
                 seriesFilter.getSelection())) {
             series.setAttributes(seriesAttrs, seriesFilter,
                     storeParam.getFuzzyStr());
             LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
                     seriesAttrs, modified);
+        }
         }
         service.updateStudy(em, context, series.getStudy());
     }
@@ -897,6 +911,23 @@ public class StoreServiceImpl implements StoreService {
             }
         }
         return list;
+    }
+
+    private boolean isRejected(Study study) {
+        for(Series series : study.getSeries()) {
+            if(!isRejected(series))
+                return false;
+        }
+        return true;
+    }
+
+    private boolean isRejected(Series series) {
+        for(Instance inst : series.getInstances()) {
+            if(inst.getRejectionNoteCode() == null) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
