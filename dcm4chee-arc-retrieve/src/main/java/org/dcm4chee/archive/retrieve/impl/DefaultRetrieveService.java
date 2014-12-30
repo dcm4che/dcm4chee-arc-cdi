@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.retrieve.impl;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -313,9 +314,12 @@ public class DefaultRetrieveService implements RetrieveService {
     public Path getFile(ArchiveInstanceLocator inst) throws IOException {
         org.dcm4chee.storage.RetrieveContext ctx =
                 storageRetrieveService.createRetrieveContext(inst.getStorageSystem());
-        
-        return inst.getEntryName() == null
-                ? storageRetrieveService.getFile(ctx, inst.getFilePath())
-                : storageRetrieveService.getFile(ctx, inst.getFilePath(), inst.getEntryName());
+        try {
+			return inst.getEntryName() == null
+			        ? storageRetrieveService.getFile(ctx, inst.getFilePath())
+			        : storageRetrieveService.getFile(ctx, inst.getFilePath(), inst.getEntryName());
+		} catch (InterruptedException e) {
+			throw new InterruptedIOException();
+		}
     }
 }
