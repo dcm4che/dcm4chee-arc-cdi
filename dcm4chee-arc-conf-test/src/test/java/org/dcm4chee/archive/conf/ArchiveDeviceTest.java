@@ -167,7 +167,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
 
     }
 
-    private void cleanUp() throws Exception {
+    protected void cleanUp() throws Exception {
         config.unregisterAETitle("DCM4CHEE");
         config.unregisterAETitle("DCM4CHEE_ADMIN");
         config.unregisterAETitle("DCM4CHEE_TRASH");
