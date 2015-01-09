@@ -11655,7 +11655,8 @@ dcmAuditMessageFormatXML: FALSE
 dcmAuditTimestampInUTC: FALSE
 objectClass: top
 objectClass: dcmAuditLogger
-dcmAuditRecordRepositoryDeviceReference: syslog
+dcmAuditRecordRepositoryDeviceReference: dicomDeviceName=syslog,cn=Devices,cn=DI
+ COM Configuration,dc=example,dc=com
 dcmAuditMessageSchemaURI: http://www.dcm4che.org/DICOM/audit-message.rnc
 cn: AuditLogger
 dcmAuditIncludeInstanceUID: FALSE
