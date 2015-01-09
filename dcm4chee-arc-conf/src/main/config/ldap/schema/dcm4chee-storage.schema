@@ -143,6 +143,78 @@ attributetype ( 1.2.40.0.13.1.15.40.3.22 NAME 'dcmStorageContainerChecksumEntry'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
 
+attributetype ( 1.2.40.0.13.1.15.40.3.23 NAME 'dcmStorageFileCacheRootDirectory'
+  DESC 'Path of Storage File Cache Root Directory'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.3.24 NAME 'dcmStorageFileCacheJournalRootDirectory'
+  DESC 'Path of Storage File Cache Journal Root Directory'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.3.25 NAME 'dcmStorageFileCacheJournalFileName'
+  DESC 'Name of Journal File of Storage File Cache. journal if absent'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.3.26 NAME 'dcmStorageFileCacheOrphanedFileName'
+  DESC 'Name of log file with list of files which deletion form the Storage File Cache failed and which are no longer referenced by a Journal File; orphaned if absent.'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.3.27 NAME 'dcmStorageFileCacheJournalDirectoryName'
+  DESC 'Name of Journal File Directory of the Storage File Cache; journal.d if absent.'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.3.28 NAME 'dcmStorageFileCacheJournalFileNamePattern'
+  DESC 'Pattern for the name of Journal Files in the Journal File Directory of the Storage File Cache. yyyyMMdd/HHmmss.SSS if absent.'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.3.29 NAME 'dcmStorageFileCacheJournalMaxEntries'
+  DESC 'Maximal number of entries per Journal File of Storage File Cache. 100 if absent.'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.3.30 NAME 'dcmStorageFileCacheAlgorithm'
+  DESC 'Cache Algorithm  of the Storage File Cache: FIFO or LRU. FIFO if absent.'
+  EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.5.1 NAME 'dcmArchiverMaxRetries'
+  DESC 'Maximum number of retries to store archive entries. 24 if absent'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.5.2 NAME 'dcmArchiverRetryInterval'
+  DESC 'Interval between retries to store archive entries in s. 3600 if absent'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.40.5.3 NAME 'dcmArchiverVerifyArchive'
+  DESC 'Indicates if checksums are verified after archive entries are stored. true if absent.'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+
 objectclass ( 1.2.40.0.13.1.15.40.4.1 NAME 'dcmStorageDeviceExtension'
   DESC 'Storage Device Extension'
   SUP top STRUCTURAL
@@ -199,4 +271,24 @@ objectclass ( 1.2.40.0.13.1.15.40.4.5 NAME 'dcmStorageFileCache'
   SUP top STRUCTURAL
   MUST (
     cn $
-    dcmProviderName ) )
+    dcmProviderName $
+    dcmStorageFileCacheRootDirectory $
+    dcmStorageFileCacheJournalRootDirectory )
+  MAY (
+    dcmStorageFileCacheJournalFileName $
+    dcmStorageFileCacheOrphanedFileName $
+    dcmStorageFileCacheJournalDirectoryName $
+    dcmStorageFileCacheJournalFileNamePattern $
+    dcmStorageFileCacheJournalMaxEntries $
+    dcmStorageFileCacheAlgorithm $
+    dcmStorageMinFreeSpace ) )
+
+objectclass ( 1.2.40.0.13.1.15.40.6.1 NAME 'dcmArchiverDeviceExtension'
+  DESC 'Archiver Device Extension'
+  SUP top STRUCTURAL
+  MUST (
+    cn )
+  MAY (
+    dcmArchiverMaxRetries $
+    dcmArchiverRetryInterval $
+    dcmArchiverVerifyArchive) )
