@@ -23,6 +23,7 @@
             <configuration>
               <resourceBundles>
                 <resourceBundle>org.dcm4che:dcm4che-conf-ldap:${dcm4che.version}</resourceBundle>
+                <resourceBundle>org.dcm4che.dcm4chee-storage:dcm4chee-storage-conf-ldap:${dcm4chee-storage.version}</resourceBundle>
               </resourceBundles>
               <attachToMain>false</attachToMain>
             </configuration>
