@@ -112,6 +112,7 @@ public class HostAECacheImpl implements HostAECache{
     private ApplicationEntity lookupAE(String host) {
         try {
             final String aeTitle = arcDevExt.getHostNameToAETitleMap().get(host);
+            if (aeTitle == null) throw new ConfigurationException();
             return aeCache.findApplicationEntity(aeTitle);
         } catch (ConfigurationException e) {
             return null;
