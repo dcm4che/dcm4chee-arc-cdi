@@ -92,8 +92,8 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private int updateDbRetries;
 
     @LDAP(
-            distinguishingField = "dicomAETitle",
-            mapValueAttribute = "dicomHostName",
+            distinguishingField = "dicomHostName",
+            mapValueAttribute = "dicomAETitle",
             mapEntryObjectClass= "dcmHostNameAEEntry"
     )
     @ConfigurableProperty(name = "HostNameAETitleMap")
