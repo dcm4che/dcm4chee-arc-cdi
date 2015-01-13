@@ -40,6 +40,10 @@ package org.dcm4chee.archive.retrieve.scp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -129,22 +133,13 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
         RetrieveService retrieveService = retrieveContext.getRetrieveService();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                 .getTimeZoneOfDevice();
-        Attributes attrs;
-        DicomInputStream in = new DicomInputStream(
-                retrieveService.getFile(inst).toFile());
-        try {
-            if (withoutBulkData) {
-                in.setIncludeBulkData(IncludeBulkData.NO);
-                attrs = in.readDataset(-1, Tag.PixelData);
-            } else {
-                in.setIncludeBulkData(IncludeBulkData.URI);
-                attrs = in.readDataset(-1, -1);
-            }
+        Attributes attrs = null;
 
-        } finally {
-            SafeClose.close(in);
-        }
-
+        if(inst == null)
+            throw new UnsupportedRetrieveException("Unable to retrieve instance, Suppressed by Attributes");
+        
+        attrs = getStreamOrRetryOtherLocators(inst, retrieveService, attrs,inst.getOtherLocators());
+        
         // check for suppression criteria
         Map<String, String> suppressionCriteriaMap = arcAE
                 .getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
@@ -156,9 +151,6 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
                         supressionCriteriaTemplateURI, retrieveContext);
             }
         }
-
-        if(inst == null)
-            throw new UnsupportedRetrieveException("Unable to retrieve instance, Suppressed by Attributes");
 
         if (archiveTimeZone != null) {
             ArchiveInstanceLocator archInst = (ArchiveInstanceLocator) inst;
@@ -172,6 +164,51 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
         retrieveContext.getRetrieveService().coerceRetrievedObject(
                 retrieveContext, storeas.getRemoteAET(), attrs);
         return new DataWriterAdapter(attrs);
+    }
+
+    private Attributes getStreamOrRetryOtherLocators(ArchiveInstanceLocator inst,
+            RetrieveService retrieveService, Attributes attrs, Collection<ArchiveInstanceLocator> fallBackLocations) {
+        DicomInputStream in=null;
+        try{
+        in = new DicomInputStream(
+                retrieveService.getFile(inst).toFile());
+        
+            if (withoutBulkData) {
+                in.setIncludeBulkData(IncludeBulkData.NO);
+                attrs = in.readDataset(-1, Tag.PixelData);
+            } else {
+                in.setIncludeBulkData(IncludeBulkData.URI);
+                attrs = in.readDataset(-1, -1);
+            }
+        }
+        catch(IOException e) {
+            //fallback
+            if(inst.getOtherLocators()!=null) {
+            
+            Collections.sort((List<ArchiveInstanceLocator>)fallBackLocations,
+                    new Comparator<ArchiveInstanceLocator>() {
+                        @Override
+                        public int compare(ArchiveInstanceLocator a,
+                                ArchiveInstanceLocator b) {
+                            return a.getStorageSystem().getStorageAccessTime() < b
+                                    .getStorageSystem().getStorageAccessTime() ? -1
+                                    : a.getStorageSystem()
+                                            .getStorageAccessTime() == b
+                                            .getStorageSystem()
+                                            .getStorageAccessTime() ? 0 : 1;
+                        }
+                    });
+            for(Iterator<ArchiveInstanceLocator> iter = fallBackLocations.iterator();iter.hasNext();) {
+                ArchiveInstanceLocator fallBackLocation = iter.next();
+                iter.remove();
+                return getStreamOrRetryOtherLocators(fallBackLocation, retrieveService, attrs,fallBackLocations);
+            }
+        }
+        }
+        finally {
+            SafeClose.close(in);
+        }
+        return attrs;
     }
 
     @Override

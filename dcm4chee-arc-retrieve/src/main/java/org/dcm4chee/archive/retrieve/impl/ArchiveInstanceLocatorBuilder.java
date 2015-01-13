@@ -53,17 +53,28 @@ class ArchiveInstanceLocatorBuilder {
         StorageSystem storageSystem = storageConf.getStorageSystem(groupID, systemID);
         if (storageSystem == null)
             return;
-
-        if (locator == null
-                || locator.getStorageSystem().getStorageAccessTime()
-                    > storageSystem.getStorageAccessTime())
-            locator = new ArchiveInstanceLocator.Builder(cuid, iuid, tsuid)
-                    .storageSystem(storageSystem)
-                    .filePath(filePath)
-                    .entryName(entryName)
-                    .retrieveAETs(retrieveAETs)
-                    .externalRetrieveAET(externalRetrieveAET)
-                    .build();
+        ArchiveInstanceLocator addedLocator =
+                new ArchiveInstanceLocator.Builder(cuid, iuid, tsuid)
+        .storageSystem(storageSystem)
+        .filePath(filePath)
+        .entryName(entryName)
+        .retrieveAETs(retrieveAETs)
+        .externalRetrieveAET(externalRetrieveAET)
+        .build();
+        
+        if (locator == null){
+            locator = addedLocator;
+        }
+        else if(locator.getStorageSystem().getStorageAccessTime()
+                > storageSystem.getStorageAccessTime()) {
+            if(locator.getOtherLocators()!=null)
+            for(ArchiveInstanceLocator loc : locator.getOtherLocators())
+                addedLocator.addOtherLocators(loc);    
+            addedLocator.addOtherLocators(locator);
+            locator = addedLocator;
+        }
+        
+        locator.addOtherLocators(addedLocator);
     }
 
     ArchiveInstanceLocator build() {

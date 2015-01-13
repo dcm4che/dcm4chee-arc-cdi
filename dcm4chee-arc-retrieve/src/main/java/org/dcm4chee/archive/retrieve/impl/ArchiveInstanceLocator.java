@@ -37,6 +37,9 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.retrieve.impl;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.storage.conf.StorageSystem;
 
@@ -54,6 +57,8 @@ public class ArchiveInstanceLocator extends InstanceLocator {
     private final String entryName;
     private final String retrieveAETs;
     private final String externalRetrieveAET;
+    private Collection<ArchiveInstanceLocator> otherLocators;
+    
 
     public static final class Builder {
         private final String cuid;
@@ -139,6 +144,18 @@ public class ArchiveInstanceLocator extends InstanceLocator {
 
     public String getExternalRetrieveAET() {
         return externalRetrieveAET;
+    }
+
+    public Collection<ArchiveInstanceLocator> getOtherLocators() {
+        return otherLocators;
+    }
+
+    public void addOtherLocators(ArchiveInstanceLocator locator) {
+        if(otherLocators == null)
+            otherLocators = new ArrayList<ArchiveInstanceLocator>();
+        if(locator.getStorageSystem().getStorageSystemID()
+                != storageSystem.getStorageSystemID())
+            otherLocators.add(locator);
     }
 
 }
