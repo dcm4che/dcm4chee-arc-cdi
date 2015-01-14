@@ -482,97 +482,6 @@ public class QCBeanImpl  implements QCBean{
     }
 
     /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#move(org.dcm4chee.archive.entity.Instance,
-     *  org.dcm4chee.archive.entity.Series, org.dcm4che3.data.Code)
-     */
-    @Override
-    public Instance move(Instance source, Series target,
-            org.dcm4che3.data.Code qcRejectionCode) {
-        if(!canApplyQC(source)) {
-            LOG.error("{} : Can't apply QC operation on already QCed"
-                    + " or rejected object",qcSource);
-            throw new EJBException();
-        }
-        ArrayList<Instance> list = new ArrayList<Instance>();
-        list.add(source);
-        reject(list, qcRejectionCode);
-        Instance newInstance;
-        try {
-            
-            newInstance = createInstance(source, target);
-            Collection<Location> locations  = newInstance.getLocations() ;
-            
-            if(newInstance.getLocations()==null) {
-                locations = new ArrayList<Location>();
-                newInstance.setLocations(locations);
-            };
-            
-            locations.add(getFirst(source.getLocations(), newInstance));
-            
-        } catch (Exception e) {
-            LOG.error("{} : Unable to create replacement instance for {},"
-                    + " rolling back move", qcSource,
-                    source);
-            throw new EJBException(e);
-        }
-        return newInstance;
-    }
-
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#clone(org.dcm4chee.archive.entity.Instance, org.dcm4chee.archive.entity.Series)
-     */
-    @Override
-    public Instance clone(Instance source, Series target) {
-        Instance newInstance;
-        if(!canApplyQC(source)) {
-            LOG.error("{} : Can't apply QC operation on already QCed"
-                    + " or rejected object",qcSource);
-            throw new EJBException();
-        }
-        try {
-            newInstance = createInstance(source, target);
-            Collection<Location> locations  = newInstance.getLocations() ;
-            
-            if(newInstance.getLocations()==null) {
-                locations = new ArrayList<Location>();
-                newInstance.setLocations(locations);
-            };
-            
-            locations.add(getFirst(source.getLocations(), newInstance));
-            
-        } catch (Exception e) {
-            LOG.error("{} : Unable to create replacement instance for {},"
-                    + " rolling back move", qcSource,
-                    source);
-            throw new EJBException(e);
-        }
-        return newInstance;
-    }
-
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#reject(java.util.Collection, org.dcm4che3.data.Code)
-     */
-    @Override
-    public QCEvent reject(Collection<Instance> instances, org.dcm4che3.data.Code qcRejectionCode) {
-        //QCActionHistory rejectAction = generateQCAction(QCOperation.REJECT);
-        ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
-        try {
-        rejectionService.reject(qcSource, instances, findOrCreateCode(qcRejectionCode), null);
-        for(Instance inst: instances) {
-            sopInstanceUIDs.add(inst.getSopInstanceUID());
-        }
-        //createRejectHistory(instances, rejectAction);
-        }
-        catch(Exception e) {
-            LOG.error("Reject Failure {}",e);
-            throw new EJBException();
-        }
-        QCEvent rejectEvent = new QCEvent(
-                QCOperation.REJECT, null, null, sopInstanceUIDs,null);
-        return rejectEvent;
-    }
-
-    /* (non-Javadoc)
      * @see org.dcm4chee.archive.qc.QCBean#reject(java.lang.String[], org.dcm4che3.data.Code)
      */
     @Override
@@ -583,22 +492,6 @@ public class QCBeanImpl  implements QCBean{
         QCEvent rejectEvent = new QCEvent(
                 QCOperation.REJECT, null, null, Arrays.asList(sopInstanceUIDs), null);
         return rejectEvent;
-    }
-
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#restore(java.util.Collection)
-     */
-    @Override
-    public QCEvent restore(Collection<Instance> instances) {
-        instances = filterQCed(instances);
-        ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
-        rejectionService.restore(qcSource, instances, null);
-        for(Instance inst: instances) {
-            sopInstanceUIDs.add(inst.getSopInstanceUID());
-        }
-        QCEvent restoreEvent = new QCEvent(
-                QCOperation.RESTORE, null,null, sopInstanceUIDs, null);
-        return restoreEvent;
     }
 
     /* (non-Javadoc)
@@ -717,13 +610,13 @@ public class QCBeanImpl  implements QCBean{
         Study study = query.getSingleResult();
         
         Collection<Series> allSeries = study.getSeries();
-        for(Series series: allSeries)
-        for(Instance inst : series.getInstances()) {
+        for(Series series: allSeries) {
+            Collection<Instance> insts = series.getInstances();
+        for(Instance inst : insts) {
             sopInstanceUIDs.add(inst.getSopInstanceUID());
-            deleteInstance(inst.getSopInstanceUID());
         }
-        
-//        em.remove(study);
+            rejectAndScheduleForDeletion(insts);
+        }
         LOG.info("Removed study entity - " + studyInstanceUID);
         QCEvent deleteEvent = new QCEvent(
                 QCOperation.DELETE, null, null, sopInstanceUIDs, null);
@@ -744,11 +637,11 @@ public class QCBeanImpl  implements QCBean{
         Collection<Instance> insts = series.getInstances();
         for(Instance inst : insts) {
             sopInstanceUIDs.add(inst.getSopInstanceUID());
-            deleteInstance(inst.getSopInstanceUID());
         }
+            rejectAndScheduleForDeletion(insts);
+
 
         Study study = series.getStudy();
-        em.remove(series);
         study.clearQueryAttributes();
         LOG.info("Removed series entity - " + seriesInstanceUID);
         QCEvent deleteEvent = new QCEvent(
@@ -761,27 +654,21 @@ public class QCBeanImpl  implements QCBean{
      */
     @Override
     public QCEvent deleteInstance(String sopInstanceUID) throws Exception {
-        TypedQuery<Instance> query = em.createNamedQuery(
-                Instance.FIND_BY_SOP_INSTANCE_UID_FETCH_LOCATION, Instance.class)
-                .setParameter(1, sopInstanceUID);
-        Instance inst = query.getSingleResult();
-        String[] sopUID = new String[1];
-        sopUID[0]=sopInstanceUID;
-        Collection<Instance> tmpList = locateInstances(sopUID);
-        //reject to make sure no modality retrieves the item after it has been scheduled
-        //for delete and before it's actually deleted
-        rejectionService.reject(this, tmpList, codeService.findOrCreate(
-                new Code("113037","DCM",null,"Rejected for Patient Safety Reasons")), null);
-        //schedule for deletion 
-        rejectionServiceDeleter.deleteRejected(this, tmpList);
+        Collection<Instance> tmpList = locateInstances(new String [] {sopInstanceUID});
         
-        Series series = inst.getSeries();
+        if(tmpList.isEmpty()) {
+            LOG.debug("{} , Error finding instance to delete with SOPInstanceUID={}",qcSource,sopInstanceUID);
+            throw new EJBException();
+        }
+        rejectAndScheduleForDeletion(tmpList);
+        
+        Series series = tmpList.iterator().next().getSeries();
         Study study = series.getStudy();
         LOG.info("Removed instance entity - " + sopInstanceUID);
         series.clearQueryAttributes();
         study.clearQueryAttributes();
         QCEvent deleteEvent = new QCEvent(
-                QCOperation.DELETE, null, null, Arrays.asList(sopUID),null);
+                QCOperation.DELETE, null, null, Arrays.asList(new String [] {sopInstanceUID}),null);
         return deleteEvent;
     }
 
@@ -842,6 +729,146 @@ public class QCBeanImpl  implements QCBean{
         list.add(inst);
         }
         return list;
+    }
+
+
+    @Override
+    public boolean requiresReferenceUpdate(String studyInstanceUID, Attributes attrs) {
+        
+        if(attrs == null) {
+            Query query = em.createNamedQuery(QCInstanceHistory.STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
+            query.setParameter(1, studyInstanceUID);
+            query.setMaxResults(1);
+            return query.getResultList().isEmpty()? false: true;
+        }
+        ArrayList<String> uids = new ArrayList<String>();
+        Patient pat = getPatient(attrs);
+        
+        if(pat == null) {
+            LOG.error("{} : Attributes supplied missing PatientID",qcSource);
+            throw new IllegalArgumentException("Attributes supplied missing PatientID");
+            }
+        
+        for(Study study : pat.getStudies()) {
+            uids.add(study.getStudyInstanceUID());
+            }
+        Query query = em.createNamedQuery(QCInstanceHistory.STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
+        query.setParameter("uids", uids);
+        query.setMaxResults(1);
+        return query.getResultList().isEmpty()? false : true;
+    }
+
+    @Override
+    public void scanForReferencedStudyUIDs(Attributes attrs, Collection<String> initialColl) {
+        if(attrs.contains(Tag.StudyInstanceUID)) {
+            initialColl.add(attrs.getString(Tag.StudyInstanceUID));
+        }
+        for(int i : attrs.tags()) {
+            if(attrs.getVR(i) == VR.SQ) {
+                for(Attributes item : attrs.getSequence(i))
+                scanForReferencedStudyUIDs(item, initialColl);
+            }
+        }
+    }
+
+    @Override
+    public Collection<QCInstanceHistory> getReferencedHistory(
+            Collection<String> referencedStudyInstanceUIDs) {
+        Query query = em.createNamedQuery(QCInstanceHistory
+                .FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST);
+        query.setParameter("uids", referencedStudyInstanceUIDs);
+        return query.getResultList();
+    }
+
+    /* (non-Javadoc)
+     * @see org.dcm4chee.archive.qc.QCBean#move(org.dcm4chee.archive.entity.Instance,
+     *  org.dcm4chee.archive.entity.Series, org.dcm4che3.data.Code)
+     */
+
+    private Instance move(Instance source, Series target,
+            org.dcm4che3.data.Code qcRejectionCode) {
+        if(!canApplyQC(source)) {
+            LOG.error("{} : Can't apply QC operation on already QCed"
+                    + " or rejected object",qcSource);
+            throw new EJBException();
+        }
+        ArrayList<Instance> list = new ArrayList<Instance>();
+        list.add(source);
+        reject(list, qcRejectionCode);
+        Instance newInstance;
+        try {
+            
+            newInstance = createInstance(source, target);
+            Collection<Location> locations  = newInstance.getLocations() ;
+            
+            if(newInstance.getLocations()==null) {
+                locations = new ArrayList<Location>();
+                newInstance.setLocations(locations);
+            };
+            
+            locations.add(getFirst(source.getLocations(), newInstance));
+            
+        } catch (Exception e) {
+            LOG.error("{} : Unable to create replacement instance for {},"
+                    + " rolling back move", qcSource,
+                    source);
+            throw new EJBException(e);
+        }
+        return newInstance;
+    }
+
+    /* (non-Javadoc)
+     * @see org.dcm4chee.archive.qc.QCBean#clone(org.dcm4chee.archive.entity.Instance, org.dcm4chee.archive.entity.Series)
+     */
+
+    private Instance clone(Instance source, Series target) {
+        Instance newInstance;
+        if(!canApplyQC(source)) {
+            LOG.error("{} : Can't apply QC operation on already QCed"
+                    + " or rejected object",qcSource);
+            throw new EJBException();
+        }
+        try {
+            newInstance = createInstance(source, target);
+            Collection<Location> locations  = newInstance.getLocations() ;
+            
+            if(newInstance.getLocations()==null) {
+                locations = new ArrayList<Location>();
+                newInstance.setLocations(locations);
+            };
+            
+            locations.add(getFirst(source.getLocations(), newInstance));
+            
+        } catch (Exception e) {
+            LOG.error("{} : Unable to create replacement instance for {},"
+                    + " rolling back move", qcSource,
+                    source);
+            throw new EJBException(e);
+        }
+        return newInstance;
+    }
+
+    /* (non-Javadoc)
+     * @see org.dcm4chee.archive.qc.QCBean#reject(java.util.Collection, org.dcm4che3.data.Code)
+     */
+    
+    private QCEvent reject(Collection<Instance> instances, org.dcm4che3.data.Code qcRejectionCode) {
+        //QCActionHistory rejectAction = generateQCAction(QCOperation.REJECT);
+        ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
+        try {
+        rejectionService.reject(qcSource, instances, findOrCreateCode(qcRejectionCode), null);
+        for(Instance inst: instances) {
+            sopInstanceUIDs.add(inst.getSopInstanceUID());
+        }
+        //createRejectHistory(instances, rejectAction);
+        }
+        catch(Exception e) {
+            LOG.error("Reject Failure {}",e);
+            throw new EJBException();
+        }
+        QCEvent rejectEvent = new QCEvent(
+                QCOperation.REJECT, null, null, sopInstanceUIDs,null);
+        return rejectEvent;
     }
 
     /**
@@ -2367,101 +2394,9 @@ public class QCBeanImpl  implements QCBean{
         
     }
 
-
-    @Override
-    public boolean requiresReferenceUpdate(String studyInstanceUID, Attributes attrs) {
-        
-        if(attrs == null) {
-            Query query = em.createNamedQuery(QCInstanceHistory.STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
-            query.setParameter(1, studyInstanceUID);
-            query.setMaxResults(1);
-            return query.getResultList().isEmpty()? false: true;
-        }
-        ArrayList<String> uids = new ArrayList<String>();
-        Patient pat = getPatient(attrs);
-        
-        if(pat == null) {
-            LOG.error("{} : Attributes supplied missing PatientID",qcSource);
-            throw new IllegalArgumentException("Attributes supplied missing PatientID");
-            }
-        
-        for(Study study : pat.getStudies()) {
-            uids.add(study.getStudyInstanceUID());
-            }
-        Query query = em.createNamedQuery(QCInstanceHistory.STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
-        query.setParameter("uids", uids);
-        query.setMaxResults(1);
-        return query.getResultList().isEmpty()? false : true;
+    private void rejectAndScheduleForDeletion(Collection<Instance> insts) {
+        rejectionService.reject(this, insts, codeService.findOrCreate(
+                new Code("113037","DCM",null,"Rejected for Patient Safety Reasons")), null); 
+        rejectionServiceDeleter.deleteRejected(this, insts);
     }
-
-    @Override
-    public void scanForReferencedStudyUIDs(Attributes attrs, Collection<String> initialColl) {
-        if(attrs.contains(Tag.StudyInstanceUID)) {
-            initialColl.add(attrs.getString(Tag.StudyInstanceUID));
-        }
-        for(int i : attrs.tags()) {
-            if(attrs.getVR(i) == VR.SQ) {
-                for(Attributes item : attrs.getSequence(i))
-                scanForReferencedStudyUIDs(item, initialColl);
-            }
-        }
-    }
-
-    @Override
-    public Collection<QCInstanceHistory> getReferencedHistory(
-            Collection<String> referencedStudyInstanceUIDs) {
-        Query query = em.createNamedQuery(QCInstanceHistory
-                .FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST);
-        query.setParameter("uids", referencedStudyInstanceUIDs);
-        return query.getResultList();
-    }
-
-
-    
-    
-//    /* (non-Javadoc)
-//     * @see org.dcm4chee.archive.qc.QCBean#getQCed(java.lang.String)
-//     */
-//    @Override
-//    public HashMap<String, String> getQCed(String studyUID) {
-//        HashMap<String, String> mapping = new HashMap<String, String>();
-//        if(studyUID == null) {
-//            LOG.error("{} : Unable to get QCed references for study"
-//                    + " with UID = {}", qcSource, studyUID);
-//            return mapping;
-//        }
-//        Query query = em.createNamedQuery(QCInstanceHistory.FIND_ALLUIDS_OF_ACTION_BY_STUDY_UID);
-//        Collection<Tuple> tuples = query.getResultList();
-//        for (Tuple tuple : tuples) {
-//            String oldInstanceUID = asString(tuple.get(0));
-//            String currentInstanceUID = asString(tuple.get(1));
-//            if(oldInstanceUID!=null && currentInstanceUID!=null)
-//                mapping.put(oldInstanceUID, currentInstanceUID);
-//            
-//            String oldSeriesUID = asString(tuple.get(2));
-//            String currentSeriesUID = asString(tuple.get(3));
-//            if(oldSeriesUID != null && currentSeriesUID != null)
-//                mapping.put(oldSeriesUID, currentSeriesUID);
-//            
-//            String oldStudyUID = asString(tuple.get(4));
-//            String currentStudyUID = asString(tuple.get(5));
-//            if(oldStudyUID != null && currentStudyUID!=null)
-//                mapping.put(oldStudyUID, currentStudyUID);
-//        }
-//        return mapping;
-//    }
-//
-//    private String asString(Object object) {
-//        return object!=null?(String) object:null;
-//    }
 }
-
-//private QCInstanceHistory getFirstInstanceHistory(QCInstanceHistory instance, Collection<QCInstanceHistory> instances) {
-//
-//    for(QCInstanceHistory inst : instances) {
-//        if(inst.getNextUID().equalsIgnoreCase(instance.getOldUID())) {
-//            return getFirstInstanceHistory(inst, instances); 
-//        }
-//    }
-//    return instance;
-//}

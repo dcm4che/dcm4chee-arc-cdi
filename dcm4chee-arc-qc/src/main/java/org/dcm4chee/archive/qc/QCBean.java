@@ -197,8 +197,8 @@ public interface QCBean {
     public void segmentFrame(Instance toMove, Instance toClone,
             int frame, PatientID pid, String targetStudyUID,
             Attributes targetStudyattributes, Attributes targetSeriesattributes);
-
-    /**
+/*
+    *//**
      * Move.
      * 
      * A basic operation that once called on an instance will make a copy
@@ -213,10 +213,10 @@ public interface QCBean {
      * @param qcRejectionCode
      *            the QC rejection code
      * @return the new instance
-     */
-    public Instance move(Instance source, Series target, Code qcRejectionCode);
+     *//*
+     Instance move(Instance source, Series target, Code qcRejectionCode);
 
-    /**
+    *//**
      * Clone.
      * The clone operations is a basic operation that once called on an instance
      * will make a copy of the instance without actually doing any file operations
@@ -228,8 +228,8 @@ public interface QCBean {
      * @param target
      *            the target
      * @return the new instance
-     */
-    public Instance clone(Instance source, Series target);
+     *//*
+    public Instance clone(Instance source, Series target);*/
 
     /**
      * Can apply QC.
@@ -376,19 +376,6 @@ public interface QCBean {
     QCEvent reject(String[] sopInstanceUIDs, Code qcRejectionCode);
 
     /**
-     * Reject.
-     * Used to call the rejection service on some instance give a code.
-     * This interface is used by other clients capable of locating instances.
-     * 
-     * @param instances
-     *            the instances
-     * @param qcRejectionCode
-     *            the QC rejection code
-     * @return the QC event
-     */
-    QCEvent reject(Collection<Instance> instances, Code qcRejectionCode);
-
-    /**
      * Restore.
      * Used to remove the previously applied rejection code on an instance.
      * 
@@ -397,16 +384,6 @@ public interface QCBean {
      * @return the QC event
      */
     QCEvent restore(String[] sopInstanceUIDs);
-
-    /**
-     * Restore.
-     * Used to remove the previously applied rejection code on an instance.
-     * 
-     * @param instances
-     *            the instances
-     * @return the QC event
-     */
-    QCEvent restore(Collection<Instance> instances);
 
     /**
      * Requires Reference Update.
