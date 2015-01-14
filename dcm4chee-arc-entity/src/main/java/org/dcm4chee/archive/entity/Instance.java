@@ -105,6 +105,20 @@ import org.dcm4chee.storage.conf.Availability;
                 + "LEFT JOIN FETCH se.performingPhysicianName ppn "
                 + "WHERE i.sopInstanceUID = ?1"),            
 @NamedQuery(
+        name="Instance.findBySOPInstanceUIDMany.eager",
+        query="SELECT i FROM Instance i "
+                + "JOIN FETCH i.series se "
+                + "JOIN FETCH se.study st "
+                + "JOIN FETCH st.patient p "
+                + "JOIN FETCH i.attributesBlob "
+                + "JOIN FETCH se.attributesBlob "                
+                + "JOIN FETCH st.attributesBlob "                
+                + "JOIN FETCH p.attributesBlob "
+                + "LEFT JOIN FETCH p.patientName pn "
+                + "LEFT JOIN FETCH st.referringPhysicianName rpn "
+                + "LEFT JOIN FETCH se.performingPhysicianName ppn "
+                + "WHERE i.sopInstanceUID IN (:uids)"), 
+@NamedQuery(
     name="Instance.findBySopInstanceUIDFetchLocations",
     query="SELECT i FROM Instance i LEFT JOIN FETCH i.locations "
             + "WHERE i.sopInstanceUID = ?1"),
@@ -121,7 +135,9 @@ public class Instance implements Serializable {
     public static final String FIND_BY_SOP_INSTANCE_UID =
             "Instance.findBySOPInstanceUID";
     public static final String FIND_BY_SOP_INSTANCE_UID_EAGER =
-            "Instance.findBySOPInstanceUID.eager";    
+            "Instance.findBySOPInstanceUID.eager";
+    public static final String FIND_BY_SOP_INSTANCE_UID_EAGER_MANY =
+            "Instance.findBySOPInstanceUIDMany.eager";    
     public static final String FIND_BY_SERIES_INSTANCE_UID =
             "Instance.findBySeriesInstanceUID";
     public static final String FIND_BY_SOP_INSTANCE_UID_FETCH_LOCATION =

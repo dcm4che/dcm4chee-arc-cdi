@@ -716,18 +716,17 @@ public class QCBeanImpl  implements QCBean{
     @Override
     public Collection<Instance> locateInstances(String[] sopInstanceUIDs) {
         ArrayList<Instance> list = new ArrayList<Instance>();
-        if(sopInstanceUIDs == null) {
+        if(sopInstanceUIDs == null || sopInstanceUIDs.length == 0) {
             LOG.error("{} : Unable to locate instances with null UIDs"
                     + " , returning an empty list", qcSource);
             return list;
         }
-        for(String sopInstanceUID : sopInstanceUIDs) {
-        Query query  = em.createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER);
-        query.setParameter(1, sopInstanceUID);
-        Instance inst =(Instance)query.getSingleResult();
-        if(!list.contains(inst))
-        list.add(inst);
-        }
+        ArrayList<String> uids = new ArrayList<String>();
+        uids.addAll(Arrays.asList(sopInstanceUIDs));
+        Query query  = em.createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER_MANY);
+        query.setParameter("uids", uids);
+        list = (ArrayList<Instance>) query.getResultList();
+        
         return list;
     }
 
