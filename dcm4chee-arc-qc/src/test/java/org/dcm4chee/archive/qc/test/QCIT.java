@@ -52,7 +52,6 @@ import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -518,8 +517,10 @@ public class QCIT {
       //test split all from series ( tests all KO references moved case)
         utx.begin();
         String[] toMoveSOPUIDs = {"IMG1", "IMG2"};
+        ArrayList<Instance> toMoveInstances = new ArrayList<Instance>();
+        toMoveInstances.addAll(qcManager.locateInstances(toMoveSOPUIDs));
         
-        QCEvent event = qcManager.split(Arrays.asList(toMoveSOPUIDs), new IDWithIssuer(
+        QCEvent event = qcManager.split(toMoveInstances, new IDWithIssuer(
                 "Bugs1231", new org.dcm4che3.data.Issuer("BugsIssuer1231",
                         null, null)), "STUDY2", new Attributes(),
                 new Attributes(), new org.dcm4che3.data.Code(
@@ -616,6 +617,8 @@ public class QCIT {
       //test split some from series ( tests some KO references moved case, implies a clone)
         utx.begin();
         String[] toMoveSOPUIDs = {"IMG1"};
+        ArrayList<Instance> toMoveInstances = new ArrayList<Instance>();
+        toMoveInstances.addAll(qcManager.locateInstances(toMoveSOPUIDs));
         
         Attributes enrichSeriesAttributes = new Attributes();
         enrichSeriesAttributes.setString(Tag.BodyPartExamined, VR.CS, "HAND");
@@ -623,7 +626,7 @@ public class QCIT {
         createdStudyAttrs.setString(Tag.AccessionNumber, VR.SH, "2525");
         createdStudyAttrs.setString(Tag.StudyDescription, VR.LO, "Created Study by split");
         createdStudyAttrs.setString(Tag.StudyInstanceUID, VR.UI, "CREATEDSTUDYFRSPLIT");
-        QCEvent event = qcManager.split(Arrays.asList(toMoveSOPUIDs), new IDWithIssuer(
+        QCEvent event = qcManager.split(toMoveInstances, new IDWithIssuer(
                 "Bugs1231", new org.dcm4che3.data.Issuer("BugsIssuer1231",
                         null, null)), "CREATEDSTUDYFRSPLIT", createdStudyAttrs,
                 enrichSeriesAttributes, new org.dcm4che3.data.Code(
@@ -716,7 +719,10 @@ public class QCIT {
         //test split all from series ( tests all KO references moved case)
         utx.begin();
         String[] toMoveSOPUIDs = {"IMG1", "IMG2"};
-        QCEvent event = qcManager.segment(Arrays.asList(toMoveSOPUIDs), new ArrayList<String>()
+        ArrayList<Instance> toMoveInstances = new ArrayList<Instance>();
+        toMoveInstances.addAll(qcManager.locateInstances(toMoveSOPUIDs));
+        
+        QCEvent event = qcManager.segment(toMoveInstances, new ArrayList<Instance>()
                 , new IDWithIssuer(
                 "Bugs1231", new org.dcm4che3.data.Issuer("BugsIssuer1231",
                         null, null)), "STUDY2", new Attributes(),
@@ -812,8 +818,10 @@ public class QCIT {
         //test split all from series ( tests all KO references moved case)
         utx.begin();
         String[] toCloneSOPUIDs = {"IMG1", "IMG2"};
+        ArrayList<Instance> toCloneInstances = new ArrayList<Instance>();
+        toCloneInstances.addAll(qcManager.locateInstances(toCloneSOPUIDs));
         
-        QCEvent event = qcManager.segment(new ArrayList<String>(), Arrays.asList(toCloneSOPUIDs)
+        QCEvent event = qcManager.segment(new ArrayList<Instance>(), toCloneInstances
                 , new IDWithIssuer(
                 "Bugs1231", new org.dcm4che3.data.Issuer("BugsIssuer1231",
                         null, null)), "STUDY2", new Attributes(),
@@ -842,9 +850,9 @@ public class QCIT {
         assertTrue(instances.get(1).getSeries().getStudy().getStudyInstanceUID()
                 .equalsIgnoreCase("STUDY2"));
 
-//        //check old ones are not rejected
-//        for(Instance oldInstance : toCloneInstances)
-//        assertTrue(oldInstance.getRejectionNoteCode()==null);
+        //check old ones are not rejected
+        for(Instance oldInstance : toCloneInstances)
+        assertTrue(oldInstance.getRejectionNoteCode()==null);
         
         //test if all are cloned in the history
         assertTrue(newIMG1.isCloned());
@@ -876,14 +884,17 @@ public class QCIT {
         utx.begin();
         String[] toMoveSOPUIDs = {"IMG1"};
         String[] toCloneSOPUIDs = {"IMG2"};
-
+        ArrayList<Instance> toMoveInstances = new ArrayList<Instance>();
+        ArrayList<Instance> toCloneInstances = new ArrayList<Instance>();
+        toMoveInstances.addAll(qcManager.locateInstances(toMoveSOPUIDs));
+        toCloneInstances.addAll(qcManager.locateInstances(toCloneSOPUIDs));
         Attributes enrichSeriesAttributes = new Attributes();
         enrichSeriesAttributes.setString(Tag.BodyPartExamined, VR.CS, "HAND");
         Attributes targetStudyAttrs = new Attributes();
         targetStudyAttrs.setString(Tag.AccessionNumber, VR.SH, "2525");
         targetStudyAttrs.setString(Tag.StudyDescription, VR.LO, "SEGMENTEDSTUDY");
         targetStudyAttrs.setString(Tag.StudyInstanceUID, VR.UI, "STUDY2");
-        QCEvent event = qcManager.segment(Arrays.asList(toMoveSOPUIDs), Arrays.asList(toCloneSOPUIDs)
+        QCEvent event = qcManager.segment(toMoveInstances, toCloneInstances
                 , new IDWithIssuer(
                 "Bugs1231", new org.dcm4che3.data.Issuer("BugsIssuer1231",
                         null, null)), "STUDY2", targetStudyAttrs,

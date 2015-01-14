@@ -277,7 +277,7 @@ public class QCBeanImpl  implements QCBean{
      *   org.dcm4che3.data.Attributes, org.dcm4che3.data.Attributes, org.dcm4che3.data.Code)
      */
     @Override
-    public QCEvent split(Collection<String> toMoveUIDs, IDWithIssuer pid,
+    public QCEvent split(Collection<Instance> toMove, IDWithIssuer pid,
             String targetStudyUID, Attributes createdStudyAttrs,
             Attributes targetSeriesAttrs, org.dcm4che3.data.Code qcRejectionCode) {
         
@@ -285,7 +285,6 @@ public class QCBeanImpl  implements QCBean{
         Collection<String> sourceUIDs = new ArrayList<String>();
         Collection<String> targetUIDs = new ArrayList<String>();
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
-        Collection<Instance> toMove = locateInstances((String[]) toMoveUIDs.toArray());
         Study sourceStudy=getSameSourceStudy(toMove);
 
         if(sourceStudy == null) {
@@ -358,9 +357,9 @@ public class QCBeanImpl  implements QCBean{
      * org.dcm4che3.data.Attributes, org.dcm4che3.data.Attributes, org.dcm4che3.data.Code)
      */
     @Override
-    public QCEvent segment(Collection<String> toMoveUIDs, Collection<String> toCloneUIDs,
+    public QCEvent segment(Collection<Instance> toMove, Collection<Instance> toClone,
             IDWithIssuer pid, String targetStudyUID, 
-            Attributes createdStudyAttrs,Attributes targetSeriesAttrs,
+            Attributes targetStudyAttrs,Attributes targetSeriesAttrs,
             org.dcm4che3.data.Code qcRejectionCode) {
         QCActionHistory segmentAction = generateQCAction(QCOperation.SEGMENT);
         Collection<String> movedSourceUIDs = new ArrayList<String>();
@@ -370,8 +369,6 @@ public class QCBeanImpl  implements QCBean{
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         //check move and clone belong to same study
         ArrayList<Instance> tmpAllInstancesInvolved = new ArrayList<Instance>();
-        Collection<Instance> toMove = locateInstances((String[]) toMoveUIDs.toArray());
-        Collection<Instance> toClone = locateInstances((String[]) toCloneUIDs.toArray());
         tmpAllInstancesInvolved.addAll(toMove);
         tmpAllInstancesInvolved.addAll(toClone);
         Study sourceStudy = getSameSourceStudy(tmpAllInstancesInvolved);
@@ -381,12 +378,8 @@ public class QCBeanImpl  implements QCBean{
         }
         Study targetStudy = getStudy(targetStudyUID);
         if(targetStudy == null) {
-            LOG.debug("{} : Segment info - Target study didn't exist, creating target study",qcSource);
-            targetStudy = createStudy(pid, targetStudyUID, createdStudyAttrs);
-        }
-        else {
-            if(!createdStudyAttrs.isEmpty())
-            updateStudy(archiveDeviceExtension, targetStudyUID, createdStudyAttrs);
+            LOG.error("{} : Segment Failure, Target study doesn't exist",qcSource);
+            throw new EJBException();
         }
         if(sourceStudy.getPatient().getPk()!=targetStudy.getPatient().getPk()) {
             LOG.error("{} : Segment Failure, Source Study {} or Target Study {}"
@@ -394,7 +387,8 @@ public class QCBeanImpl  implements QCBean{
                     qcSource,sourceStudy.getStudyInstanceUID(), targetStudyUID);
             throw new EJBException();
         }
-        
+        if(!targetStudyAttrs.isEmpty())
+            updateStudy(archiveDeviceExtension, targetStudyUID, targetStudyAttrs);
         QCStudyHistory studyHistory = createQCStudyHistory(sourceStudy.getStudyInstanceUID(), 
                 targetStudyUID, sourceStudy.getAttributes(), segmentAction);
         HashMap<String,NewSeriesTuple> oldToNewSeries = new HashMap<String, NewSeriesTuple>();
@@ -1589,11 +1583,9 @@ public class QCBeanImpl  implements QCBean{
         Instance inst = new Instance();
         inst.setSeries(series);
         inst.setConceptNameCode(oldinstance.getConceptNameCode());
-        if(data.contains(Tag.ContentSequence)) {
         Collection<ContentItem> newCItems = copyContentItems(
                 oldinstance.getContentItems(), inst);
         inst.setContentItems(newCItems);
-        }
         
         if(data.contains(Tag.VerifyingObserverSequence)) {
         Collection<VerifyingObserver> newVObservers = copyVerifyingObservers(
@@ -2405,6 +2397,33 @@ public class QCBeanImpl  implements QCBean{
                 scanForReferencedStudyUIDs(item, initialColl);
             }
         }
+    }
+
+    private String[] getReferencedInstances(Sequence sequence) {
+        String[] references = new String[sequence.size()];
+        int i=0;
+        for(Attributes item : sequence) {
+            references[sequence.indexOf(item)] = item.getString(Tag.ReferencedSOPInstanceUID);
+        }
+        return references;
+    }
+
+    private Collection<String> getStudyFromAllItems(Sequence sequence) {
+        ArrayList<String> studyInstanceUIDs = new ArrayList<String>(); 
+        for(Attributes item : sequence) {
+            studyInstanceUIDs.add(item.getString(Tag.StudyInstanceUID));
+        }
+        
+        return studyInstanceUIDs;
+    }
+
+    private Collection<String> getReferencedStudiesFromReferencedStudySequence(Sequence sequence) {
+        ArrayList<String> studyInstanceUIDs = new ArrayList<String>(); 
+        for(Attributes item : sequence) {
+            studyInstanceUIDs.add(item.getString(Tag.ReferencedSOPInstanceUID));
+        }
+        
+        return studyInstanceUIDs;
     }
 
     @Override

@@ -135,7 +135,7 @@ public interface QCBean {
      *            the QC rejection code
      * @return the QC event
      */
-    public QCEvent split(Collection<String> toMove, IDWithIssuer pid,
+    public QCEvent split(Collection<Instance> toMove, IDWithIssuer pid,
             String targetStudyUID, Attributes createdStudyattributes,
             Attributes targetSeriesattributes, Code qcRejectionCode);
 
@@ -167,7 +167,7 @@ public interface QCBean {
      *            the QC rejection code
      * @return the QC event
      */
-    public QCEvent segment(Collection<String> toMove, Collection<String> toClone,
+    public QCEvent segment(Collection<Instance> toMove, Collection<Instance> toClone,
             IDWithIssuer pid, String targetStudyUID,
             Attributes targetStudyattributes, Attributes targetSeriesattributes,
             Code qcRejectionCode);
