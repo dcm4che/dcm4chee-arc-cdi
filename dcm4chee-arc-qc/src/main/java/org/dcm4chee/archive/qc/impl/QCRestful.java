@@ -40,8 +40,8 @@ package org.dcm4chee.archive.qc.impl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import javax.inject.Inject;
@@ -74,7 +74,6 @@ import org.dcm4chee.archive.qc.PatientCommands;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCObject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,17 +157,16 @@ public class QCRestful {
             break;
             
         case "split":
-            event = qcManager.split(
-                        qcManager.locateInstances(object.getMoveSOPUIDS()), pid, 
-                        object.getTargetStudyUID(), object.getTargetStudyData(), 
-                        object.getTargetSeriesData(), code);
+            event = qcManager.split(Arrays.asList(object.getMoveSOPUIDS()), pid,
+                    object.getTargetStudyUID(), object.getTargetStudyData(), 
+                    object.getTargetSeriesData(),  code);
             break;
             
         case "segment":
             
             event = qcManager.segment(
-                    qcManager.locateInstances(object.getMoveSOPUIDS()),
-                    qcManager.locateInstances(object.getCloneSOPUIDs()), pid,
+                    Arrays.asList(object.getMoveSOPUIDS()),
+                    Arrays.asList(object.getCloneSOPUIDs()), pid,
                     object.getTargetStudyUID(), object.getTargetStudyData(), 
                     object.getTargetSeriesData(),  code);
             break;
