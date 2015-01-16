@@ -491,8 +491,8 @@ public class QCIT {
         //instance
         assertTrue(firstKO.getCurrentUID().equalsIgnoreCase(newKO.getCurrentUID()));
         //series
-        assertTrue(firstKO.getCurrentSeriestUID().equalsIgnoreCase(
-                newKO.getCurrentSeriestUID()));
+        assertTrue(firstKO.getCurrentSeriesUID().equalsIgnoreCase(
+                newKO.getCurrentSeriesUID()));
         //study
         assertTrue(firstKO.getCurrentStudyUID().equalsIgnoreCase(
                 newKO.getCurrentStudyUID()));
@@ -580,8 +580,8 @@ public class QCIT {
         //instance 1
         assertTrue(firstKO.getCurrentUID().equalsIgnoreCase(newIMG1.getCurrentUID()));
         //series
-        assertTrue(firstKO.getCurrentSeriestUID().equalsIgnoreCase(
-                newIMG1.getCurrentSeriestUID()));
+        assertTrue(firstKO.getCurrentSeriesUID().equalsIgnoreCase(
+                newIMG1.getCurrentSeriesUID()));
         //study
         assertTrue(firstKO.getCurrentStudyUID().equalsIgnoreCase(
                 newIMG1.getCurrentStudyUID()));
@@ -667,8 +667,8 @@ public class QCIT {
         //instance
         assertTrue(firstIMG.getCurrentUID().equalsIgnoreCase(newIMG1.getCurrentUID()));
         //series
-        assertTrue(firstIMG.getCurrentSeriestUID().equalsIgnoreCase(
-                newIMG1.getCurrentSeriestUID()));
+        assertTrue(firstIMG.getCurrentSeriesUID().equalsIgnoreCase(
+                newIMG1.getCurrentSeriesUID()));
         //study
         assertTrue(firstIMG.getCurrentStudyUID().equalsIgnoreCase(
                 newIMG1.getCurrentStudyUID()));
@@ -778,8 +778,8 @@ public class QCIT {
         //instance 1
         assertTrue(firstKO.getCurrentUID().equalsIgnoreCase(newIMG1.getCurrentUID()));
         //series
-        assertTrue(firstKO.getCurrentSeriestUID().equalsIgnoreCase(
-                newIMG1.getCurrentSeriestUID()));
+        assertTrue(firstKO.getCurrentSeriesUID().equalsIgnoreCase(
+                newIMG1.getCurrentSeriesUID()));
         //study
         assertTrue(firstKO.getCurrentStudyUID().equalsIgnoreCase(
                 newIMG1.getCurrentStudyUID()));
@@ -930,8 +930,8 @@ public class QCIT {
         //instance
         assertTrue(firstIMG.getCurrentUID().equalsIgnoreCase(newIMG1.getCurrentUID()));
         //series
-        assertTrue(firstIMG.getCurrentSeriestUID().equalsIgnoreCase(
-                newIMG1.getCurrentSeriestUID()));
+        assertTrue(firstIMG.getCurrentSeriesUID().equalsIgnoreCase(
+                newIMG1.getCurrentSeriesUID()));
         //study
         assertTrue(firstIMG.getCurrentStudyUID().equalsIgnoreCase(
                 newIMG1.getCurrentStudyUID()));

@@ -102,10 +102,10 @@ import org.hibernate.annotations.Cascade;
     ),
 @NamedQuery(
     name="QCInstanceHistory.findDistinctInstancesWhereStudyOldOrCurrentInList",
-    query="SELECT DISTINCT qci from QCInstanceHistory qci  "
+    query="SELECT qci , qci.series.study.action.createdTime from QCInstanceHistory qci  "
             + "LEFT JOIN qci.series.study qcst "
             + "where qcst.oldStudyUID IN (:uids) "
-            + "OR qci.currentStudyUID IN (:uids))"
+            + "OR qci.currentStudyUID IN (:uids) order by qci.series.study.action.createdTime DESC"
     )
 })
 
@@ -141,7 +141,7 @@ public class QCInstanceHistory implements Serializable{
 
     @Basic(optional = false)
     @Column(name = "current_series_uid", updatable = true)
-    private String currentSeriestUID;
+    private String currentSeriesUID;
 
     @Basic(optional = false)
     @Column(name = "current_study_uid", updatable = true)
@@ -170,7 +170,7 @@ public class QCInstanceHistory implements Serializable{
             String currentUID, String nextUID, boolean cloned) {
         this.cloned=cloned;
         this.oldUID = oldUID;
-        this.currentSeriestUID = currentSeriesUID;
+        this.currentSeriesUID = currentSeriesUID;
         this.currentStudyUID = currentStudyUID;
         this.currentUID = currentUID;
         this.nextUID = nextUID;
@@ -199,12 +199,12 @@ public class QCInstanceHistory implements Serializable{
         this.nextUID = nextUID;
     }
 
-    public String getCurrentSeriestUID() {
-        return currentSeriestUID;
+    public String getCurrentSeriesUID() {
+        return currentSeriesUID;
     }
 
-    public void setCurrentSeriestUID(String currenSeriestUID) {
-        this.currentSeriestUID = currenSeriestUID;
+    public void setCurrentSeriesUID(String currenSeriestUID) {
+        this.currentSeriesUID = currenSeriestUID;
     }
 
     public String getCurrentStudyUID() {
@@ -245,7 +245,7 @@ public class QCInstanceHistory implements Serializable{
                 + ", oldUID= " + oldUID
                 + ", nextUID= " + nextUID
                 + ", currentUID= " + currentUID
-                + ", currentSeriesUID= " + currentSeriestUID
+                + ", currentSeriesUID= " + currentSeriesUID
                 + ", currentStudyUID= " + currentStudyUID
                 + ", cloned= "+ cloned
                 + "]";

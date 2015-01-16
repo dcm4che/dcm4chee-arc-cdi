@@ -72,7 +72,7 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
 
     private static final Logger LOG = LoggerFactory.getLogger(
             RetrieveServiceQCDecorator.class);
-
+    
     @Inject
     @Delegate
     RetrieveService retrieveService;
@@ -89,6 +89,7 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
     public void coerceRetrievedObject(RetrieveContext retrieveContext,
             String remoteAET, Attributes attrs) throws DicomServiceException {
         retrieveService.coerceRetrievedObject(retrieveContext, remoteAET, attrs);
+        final String studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
         ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve =
                 retrieveContext.getArchiveAEExtension().getQcUpdateReferencesOnRetrieve();
         boolean requiresUpdate = false;
@@ -111,15 +112,26 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
             
             final Collection<QCInstanceHistory> referencesHistory = qcManager
                     .getReferencedHistory(referencedStudyInstanceUIDs);
-            final HashMap<String, String> mapping = createUIDMapFromHistory(referencesHistory);
+//            final HashMap<String, String> mapping = createUIDMapFromHistory(referencesHistory);
             final ElementDictionary dict = ElementDictionary.getStandardElementDictionary();
             try {
                  attrs.accept(new Visitor() {
                      private HashMap<String, HashMap<String,ArrayList<String>>> structure = null;
                      Stack<String> sqStack = new Stack<String>();
+                     boolean inIDS=false;
                     @Override
                     public boolean visit(Attributes attrs, int tag, VR vr, Object value) {
+                        if(inIDS) {
+                            if(vr.equals(VR.SQ) && tag != Tag.ReferencedSOPSequence && tag != Tag.ReferencedSeriesSequence)
+                                inIDS=false;
+                            else
+                                return true;
+                        }
+                            
                         if(vr.equals(VR.SQ))
+                            if(tag == Tag.IdenticalDocumentsSequence)
+                                inIDS=true;
+                            else
                         sqStack.push(dict.keywordOf(tag));
                         if(attrs.contains(Tag.ReferencedSOPInstanceUID) 
                                 && !attrs.getParent().isRoot()) {
@@ -133,39 +145,42 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
                                     String oldStudyUID = attrs.getParent().getParent().getString(Tag.StudyInstanceUID);
                                     String oldSeriesUID = attrs.getParent().getString(Tag.SeriesInstanceUID);
                                     String oldSopUID = attrs.getString(Tag.ReferencedSOPInstanceUID);
-                                    if(mapping.get(oldSopUID) != null) {
-                                    extractUpdatedSequencesFullHierarchy(mapping, dict, attrs, tmp,
+//                                    if(mapping.get(oldSopUID) != null) {
+                                    extractUpdatedSequencesFullHierarchy(dict, attrs, tmp,
                                             oldStudyUID, oldSeriesUID,
                                             oldSopUID);
-                                    }
-                                    else if(tag == Tag.ReferencedSOPInstanceUID){
-                                        extractUpdatedSequencesFullHierarchy(null, dict, attrs, tmp,
-                                                oldStudyUID, oldSeriesUID,
-                                                oldSopUID);
-                                    }
+//                                    }
+//                                    else if(tag == Tag.ReferencedSOPInstanceUID){
+//                                        extractUpdatedSequencesFullHierarchy(null, dict, attrs, tmp,
+//                                                oldStudyUID, oldSeriesUID,
+//                                                oldSopUID);
+//                                    }
                                 }
                                 else {
                                     //series reference without study (presentation state)
                                     String oldSeriesUID = attrs.getParent().getString(Tag.SeriesInstanceUID);
                                     String oldSopUID = attrs.getString(Tag.ReferencedSOPInstanceUID);
-                                    if(mapping.get(oldSopUID) != null) {
+//                                    if(mapping.get(oldSopUID) != null) {
                                     extractUpdatedSequenceSeriesHierarchy(
-                                            mapping, dict, attrs, tmp,
+                                            dict, attrs, tmp,
                                             oldSeriesUID, oldSopUID);
-                                    }
-                                    else if(tag == Tag.ReferencedSOPInstanceUID){
-                                        extractUpdatedSequenceSeriesHierarchy(
-                                                null, dict, attrs, tmp,
-                                                oldSeriesUID, oldSopUID);
-                                    }
+//                                    }
+//                                    else if(tag == Tag.ReferencedSOPInstanceUID){
+//                                        extractUpdatedSequenceSeriesHierarchy(
+//                                                null, dict, attrs, tmp,
+//                                                oldSeriesUID, oldSopUID);
+//                                    }
                                 }
                             }
                             else {
                                 //non hierarchical
                                 //change in place
-                                if(mapping.get(attrs.getString(Tag.ReferencedSOPInstanceUID)) != null )
-                                attrs.setString(Tag.ReferencedSOPInstanceUID, VR.UI, mapping.get(
-                                        attrs.getString(Tag.ReferencedSOPInstanceUID)));
+                                QCInstanceHistory foundHistoryEntry = findRequestedReference(
+                                        studyInstanceUID, referencesHistory, null, null, 
+                                        attrs.getString(Tag.ReferencedSOPInstanceUID));
+                                if(foundHistoryEntry != null )
+                                attrs.setString(Tag.ReferencedSOPInstanceUID, VR.UI, 
+                                        foundHistoryEntry.getCurrentUID());
                             }
                         }
                         }
@@ -173,16 +188,16 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
                         return true;
                     }
                     private void extractUpdatedSequenceSeriesHierarchy(
-                            final HashMap<String, String> mapping,
                             final ElementDictionary dict, Attributes attrs,
                             Stack<String> tmp, String oldSeriesUID,
                             String oldSopUID) {
+                        QCInstanceHistory foundReference = findRequestedReference(studyInstanceUID,referencesHistory,null,oldSeriesUID,oldSopUID);
                         Attributes newSeriesAttrs = new Attributes();
-                        newSeriesAttrs.setString(Tag.SeriesInstanceUID, VR.UI,mapping == null ? oldSeriesUID : mapping.get(oldSeriesUID));
+                        newSeriesAttrs.setString(Tag.SeriesInstanceUID, VR.UI,foundReference == null ? oldSeriesUID : foundReference.getCurrentSeriesUID());
                         Sequence sopSeq = newSeriesAttrs.newSequence(dict.tagForKeyword(sqStack.peek()), 1);
                         Attributes newSopAttrs = new Attributes();
                         newSopAttrs.setString(Tag.ReferencedSOPClassUID, VR.UI, attrs.getString(Tag.ReferencedSOPClassUID));
-                        newSopAttrs.setString(Tag.ReferencedSOPInstanceUID, VR.UI, mapping == null ? oldSopUID : mapping.get(oldSopUID));
+                        newSopAttrs.setString(Tag.ReferencedSOPInstanceUID, VR.UI, foundReference == null ? oldSopUID : foundReference.getCurrentUID());
                         sopSeq.add(newSopAttrs);
                         tmp.push(sqStack.pop());
                         Attributes tmpRootAttrs = new Attributes();
@@ -192,18 +207,18 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
                         sqStack.push(tmp.pop());
                     }
                     private void extractUpdatedSequencesFullHierarchy(
-                            final HashMap<String, String> mapping,
                             final ElementDictionary dict, Attributes attrs,
                             Stack<String> tmp, String oldStudyUID,
                             String oldSeriesUID, String oldSopUID) {
+                        QCInstanceHistory foundReference = findRequestedReference(studyInstanceUID,referencesHistory,oldStudyUID,oldSeriesUID,oldSopUID);
                         Attributes newStudyAttrs = new Attributes();
-                        newStudyAttrs.setString(Tag.StudyInstanceUID, VR.UI, mapping == null ? oldStudyUID : mapping.get(oldStudyUID));
+                        newStudyAttrs.setString(Tag.StudyInstanceUID, VR.UI, foundReference==null ? oldStudyUID : foundReference.getCurrentStudyUID());
                         Attributes newSeriesAttrs = new Attributes();
-                        newSeriesAttrs.setString(Tag.SeriesInstanceUID, VR.UI, mapping == null ? oldSeriesUID : mapping.get(oldSeriesUID));
+                        newSeriesAttrs.setString(Tag.SeriesInstanceUID, VR.UI, foundReference==null ? oldSeriesUID : foundReference.getCurrentSeriesUID());
                         Sequence sopSeq = newSeriesAttrs.newSequence(dict.tagForKeyword(sqStack.peek()), 1);
                         Attributes newSopAttrs = new Attributes();
                         newSopAttrs.setString(Tag.ReferencedSOPClassUID, VR.UI, attrs.getString(Tag.ReferencedSOPClassUID));
-                        newSopAttrs.setString(Tag.ReferencedSOPInstanceUID, VR.UI, mapping == null ? oldSopUID : mapping.get(oldSopUID));
+                        newSopAttrs.setString(Tag.ReferencedSOPInstanceUID, VR.UI, foundReference==null ? oldSopUID : foundReference.getCurrentUID());
                         sopSeq.add(newSopAttrs);
                         tmp.push(sqStack.pop());
                         tmp.push(sqStack.pop());
@@ -243,15 +258,52 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
 
     }
 
-    private HashMap<String, String> createUIDMapFromHistory(
-            Collection<QCInstanceHistory> referencesHistory) {
-        HashMap<String, String> mapping = new HashMap<String, String>();
+    protected QCInstanceHistory findRequestedReference(
+            String studyInstanceUID, Collection<QCInstanceHistory> referencesHistory,
+            String oldStudyUID, String oldSeriesUID, String oldSopUID) {
+        int matchesToSameStudy = 0;
+        if(referencesHistory.isEmpty())
+            return null;
+        //get all matches
+        ArrayList<QCInstanceHistory> filteredByOldSopUID = new ArrayList<QCInstanceHistory>();
         for(QCInstanceHistory inst : referencesHistory) {
-            mapping.put(inst.getOldUID(), inst.getCurrentUID());
-            mapping.put(inst.getSeries().getOldSeriesUID(), inst.getCurrentSeriestUID());
-            mapping.put(inst.getSeries().getStudy().getOldStudyUID(), inst.getCurrentStudyUID());
+//            boolean sameSeries = oldSeriesUID!=null?
+//                    inst.getSeries().getOldSeriesUID().equalsIgnoreCase(oldSeriesUID):true;
+            boolean sameStudy = oldStudyUID!=null?
+                    inst.getSeries().getStudy().getOldStudyUID().equalsIgnoreCase(oldStudyUID):true;
+            if(inst.getOldUID().equalsIgnoreCase(oldSopUID) && sameStudy) {
+                if(inst.getCurrentStudyUID().equalsIgnoreCase(studyInstanceUID))
+                    matchesToSameStudy++;
+                filteredByOldSopUID.add(inst);
+            }
         }
-        return mapping;
+        switch(matchesToSameStudy) {
+        //subcase 2 no matches belong to the same study of the retrieved instance then pick latest
+        case 0:
+            if(filteredByOldSopUID.size()==0)
+            return null;
+            else
+                return filteredByOldSopUID.get(0);
+        default:
+            //case - only one operation was done on instance
+            //and one match can be found with olduid=refolduid
+            //or
+            //case - multiple operations were done on the instance
+            //and multiple matches can be found
+            //sub-case 1 all matches belong to the same study 
+            //of the retrieved instance then pick latest (sorted desc)
+            if(matchesToSameStudy == filteredByOldSopUID.size()) {
+                return filteredByOldSopUID.get(0);
+            }
+            else {
+                //sub-case 3 some matches belong to the same study 
+                //of the retrieved instance then pick same study and latest
+                for(QCInstanceHistory inst : filteredByOldSopUID) {
+                    if(inst.getCurrentStudyUID().equals(studyInstanceUID))
+                        return inst;
+                }
+            }
+            return null;
     }
-
+    }
 }
