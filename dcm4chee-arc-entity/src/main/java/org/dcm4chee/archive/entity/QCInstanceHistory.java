@@ -54,8 +54,6 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Cascade;
-
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
