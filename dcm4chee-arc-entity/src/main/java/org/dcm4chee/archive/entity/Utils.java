@@ -41,6 +41,9 @@ package org.dcm4chee.archive.entity;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.util.Arrays;
 
 import org.dcm4che3.data.Attributes;
@@ -51,6 +54,7 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.util.StringUtils;
+import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.storage.conf.Availability;
 
 /**
@@ -69,6 +73,33 @@ public class Utils {
             throw new RuntimeException(e);
         }
         return out.toByteArray();
+    }
+
+    /**
+     * 
+     */
+    public static String digestAttributes(Attributes attrs, MessageDigest digest) throws IOException {
+        
+        OutputStream nulloutputstream = new OutputStream() {
+            /** Discards the specified byte. */
+            @Override public void write(int b) {
+            }
+            /** Discards the specified byte array. */
+            @Override public void write(byte[] b, int off, int len) {
+            }};
+        
+        if (digest != null) {
+            digest.reset();
+            nulloutputstream = new DigestOutputStream(nulloutputstream, digest);
+        }
+        
+        DicomOutputStream dout = new DicomOutputStream(nulloutputstream,
+                UID.ExplicitVRLittleEndian);
+        dout.writeDataset(null, attrs);
+        dout.flush();
+        dout.close();
+        
+        return TagUtils.toHexString(digest.digest());
     }
 
     public static Attributes decodeAttributes(byte[] b) {

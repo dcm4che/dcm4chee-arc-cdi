@@ -104,6 +104,9 @@ public class ArchiveAEExtension extends AEExtension {
 
     @ConfigurableProperty(name = "dcmSuppressWarningCoercionOfDataElements", defaultValue = "false")
     private boolean suppressWarningCoercionOfDataElements;
+    
+    @ConfigurableProperty(name = "dcmCheckNonDBAttributesOnStorage", defaultValue = "false")
+    private boolean checkNonDBAttributesOnStorage;
 
     @ConfigurableProperty(name = "dcmPreserveSpoolFileOnFailure", defaultValue = "false")
     private boolean preserveSpoolFileOnFailure;
@@ -354,6 +357,15 @@ public class ArchiveAEExtension extends AEExtension {
     public void setSuppressWarningCoercionOfDataElements(
             boolean suppressWarningCoercionOfDataElements) {
         this.suppressWarningCoercionOfDataElements = suppressWarningCoercionOfDataElements;
+    }
+    
+    public boolean isCheckNonDBAttributesOnStorage() {
+        return checkNonDBAttributesOnStorage;
+    }
+
+    public void setCheckNonDBAttributesOnStorage(
+            boolean checkNonDBAttributesOnStorage) {
+        this.checkNonDBAttributesOnStorage = checkNonDBAttributesOnStorage;
     }
 
     public boolean isPreserveSpoolFileOnFailure() {

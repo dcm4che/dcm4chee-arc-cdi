@@ -461,6 +461,12 @@ attributetype ( 1.2.40.0.13.1.15.10.3.73 NAME 'dcmQCUpdateReferencesOnRetrieve'
   SUBSTR caseExactSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
+  
+attributetype ( 1.2.40.0.13.1.15.10.3.74 NAME 'dcmCheckNonDBAttributesOnStorage'
+  DESC 'If true a digest for the attributes not strored in the blob will be calculated and checked at store time'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
 
 objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
@@ -494,6 +500,7 @@ objectclass ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
     dcmSendPendingCGet $
     dcmSendPendingCMoveInterval $
     dcmSuppressWarningCoercionOfDataElements $
+    dcmCheckNonDBAttributesOnStorage $
     dcmStoreOriginalAttributes $
     dcmPreserveSpoolFileOnFailure $
     dcmModifyingSystem $

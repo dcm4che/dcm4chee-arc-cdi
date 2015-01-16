@@ -132,5 +132,7 @@ public interface StoreService {
     void cleanup(StoreContext context);
 
     void fireStoreEvent(StoreContext context);
+    
+    int[] getStoreFilters();
 
 }

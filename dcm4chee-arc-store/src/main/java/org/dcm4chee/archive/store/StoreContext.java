@@ -61,6 +61,10 @@ public interface StoreContext {
     String getSpoolFileDigest();
 
     void setSpoolFileDigest(String spoolFileDigest);
+    
+    String getNoDBAttsDigest();
+
+    void setNoDBAttsDigest(String noDBAttsDigest);    
 
     String getTransferSyntax();
 

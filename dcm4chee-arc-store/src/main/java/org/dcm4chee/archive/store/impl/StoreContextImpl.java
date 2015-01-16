@@ -60,6 +60,7 @@ public class StoreContextImpl implements StoreContext {
     private Path spoolFile;
     private String spoolFileDigest;
     private String finalFileDigest;
+    private String noDBAttsDigest;    
     private long finalFileSize;
     private String storagePath;
     private String transferSyntax;
@@ -124,6 +125,16 @@ public class StoreContextImpl implements StoreContext {
     @Override
     public void setFinalFileDigest(String finalFileDigest) {
         this.finalFileDigest = finalFileDigest;
+    }
+
+    @Override    
+    public String getNoDBAttsDigest() {
+        return noDBAttsDigest;
+    }
+
+    @Override
+    public void setNoDBAttsDigest(String noDBAttsDigest) {
+        this.noDBAttsDigest = noDBAttsDigest;
     }
 
     @Override

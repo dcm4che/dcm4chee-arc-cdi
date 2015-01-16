@@ -49,10 +49,12 @@ import java.nio.file.Paths;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
@@ -66,11 +68,13 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.PDVInputStream;
 import org.dcm4che3.net.Status;
@@ -97,6 +101,7 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.issuer.IssuerService;
@@ -107,8 +112,10 @@ import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
 import org.dcm4chee.storage.ObjectAlreadyExistsException;
+import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.service.RetrieveService;
 import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,6 +134,9 @@ public class StoreServiceImpl implements StoreService {
 
     @Inject
     private StorageService storageService;
+    
+    @Inject
+    private RetrieveService retrieveService;
 
     @Inject
     private PatientService patientService;
@@ -146,6 +156,11 @@ public class StoreServiceImpl implements StoreService {
     @Inject
     @StoreSessionClosed
     private Event<StoreSession> storeSessionClosed;
+    
+    @Inject
+    private Device device;
+    
+    private int[] storeFilters = null;
 
     @Override
     public StoreSession createStoreSession(StoreService storeService) {
@@ -157,10 +172,12 @@ public class StoreServiceImpl implements StoreService {
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         String groupID = arcAE.getStorageSystemGroupID();
-        StorageSystem storageSystem = storageService.selectStorageSystem(groupID, 0);
+        StorageSystem storageSystem = storageService.selectStorageSystem(
+                groupID, 0);
         if (storageSystem == null)
             throw new DicomServiceException(Status.OutOfResources,
-                    "No writeable Storage System in Storage System Group " + groupID);
+                    "No writeable Storage System in Storage System Group "
+                            + groupID);
         session.setStorageSystem(storageSystem);
     }
 
@@ -171,8 +188,8 @@ public class StoreServiceImpl implements StoreService {
         Path spoolDir = Paths.get(arcAE.getSpoolDirectoryPath());
         if (!spoolDir.isAbsolute()) {
             StorageSystem storageSystem = session.getStorageSystem();
-            spoolDir = storageService.getBaseDirectory(storageSystem)
-                        .resolve(spoolDir);
+            spoolDir = storageService.getBaseDirectory(storageSystem).resolve(
+                    spoolDir);
         }
         try {
             Files.createDirectories(spoolDir);
@@ -220,7 +237,8 @@ public class StoreServiceImpl implements StoreService {
         String storagePath = context.getStoragePath();
         if (storagePath != null) {
             try {
-                storageService.deleteObject(context.getStorageContext(), storagePath);
+                storageService.deleteObject(context.getStorageContext(),
+                        storagePath);
             } catch (IOException e) {
                 LOG.warn("{}: Failed to delete final file - {}",
                         context.getStoreSession(), storagePath, e);
@@ -391,8 +409,8 @@ public class StoreServiceImpl implements StoreService {
     public void processFile(StoreContext context) throws DicomServiceException {
         try {
             StoreSession session = context.getStoreSession();
-            StorageContext storageContext =
-                    storageService.createStorageContext(session.getStorageSystem());
+            StorageContext storageContext = storageService
+                    .createStorageContext(session.getStorageSystem());
             Path source = context.getSpoolFile();
             context.setStorageContext(storageContext);
             context.setFinalFileDigest(context.getSpoolFileDigest());
@@ -403,7 +421,8 @@ public class StoreServiceImpl implements StoreService {
             int copies = 1;
             for (;;) {
                 try {
-                    storageService.moveFile(storageContext, source, storagePath);
+                    storageService
+                            .moveFile(storageContext, source, storagePath);
                     context.setStoragePath(storagePath);
                     return;
                 } catch (ObjectAlreadyExistsException e) {
@@ -420,11 +439,19 @@ public class StoreServiceImpl implements StoreService {
 
         ArchiveDeviceExtension dE = context.getStoreSession().getDevice()
                 .getDeviceExtension(ArchiveDeviceExtension.class);
-
+        
+        try {
+            String nodbAttrsDigest = noDBAttsDigest(context.getStoragePath(), context.getStoreSession());
+            context.setNoDBAttsDigest(nodbAttrsDigest);
+        } catch (IOException e1) {
+            throw new DicomServiceException(Status.UnableToProcess, e1);
+        }
+        
         for (int i = 0; i <= dE.getUpdateDbRetries(); i++) {
 
             try {
-                LOG.info("{}: try to updateDB, try nr. {}",context.getStoreSession(), i);
+                LOG.info("{}: try to updateDB, try nr. {}",
+                        context.getStoreSession(), i);
                 storeServiceEJB.updateDB(context);
                 break;
             } catch (RuntimeException e) {
@@ -447,6 +474,7 @@ public class StoreServiceImpl implements StoreService {
         Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
         if (context.getStoreAction() != StoreAction.IGNORE
+                && context.getStoreAction() != StoreAction.UPDATEDB
                 && context.getStoragePath() != null) {
             context.setFileRef(createFileRef(em, context, instance));
         }
@@ -485,15 +513,23 @@ public class StoreServiceImpl implements StoreService {
             Instance instance) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         Collection<Location> fileRefs = instance.getLocations();
+        
         if (fileRefs.isEmpty())
             return StoreAction.RESTORE;
+        
+        if (!hasSameSourceAET(instance, session.getRemoteAET()))
+                return StoreAction.IGNORE;
+        
+        if (hasFileRefWithDigest(fileRefs,context.getSpoolFileDigest()))
+                return StoreAction.IGNORE;
 
-        if (hasSameSourceAET(instance, session.getRemoteAET())
-                && (!hasFileRefWithDigest(fileRefs,
-                        context.getSpoolFileDigest())))
-            return StoreAction.REPLACE;
+        if (context.getStoreSession().getArchiveAEExtension()
+                .isCheckNonDBAttributesOnStorage()
+            && (hasFileRefWithOtherAttsDigest(fileRefs,
+                context.getNoDBAttsDigest())))
+            return StoreAction.UPDATEDB;
 
-        return StoreAction.IGNORE;
+        return StoreAction.REPLACE;            
     }
 
     private boolean hasSameSourceAET(Instance instance, String remoteAET) {
@@ -512,14 +548,28 @@ public class StoreServiceImpl implements StoreService {
         return false;
     }
 
+    private boolean hasFileRefWithOtherAttsDigest(
+            Collection<Location> fileRefs, String digest) {
+        if (digest == null)
+            return false;
+
+        for (Location fileRef : fileRefs) {
+            if (digest.equals(fileRef.getOtherAttsDigest()))
+                return true;
+        }
+        return false;
+    }
+
     @Override
     public Instance findOrCreateInstance(EntityManager em, StoreContext context)
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
+        StoreParam storeParam = session.getStoreParam();
         StoreService service = session.getStoreService();
         Collection<Location> replaced = new ArrayList<Location>();
 
         try {
+
             Attributes attrs = context.getAttributes();
             Instance inst = em
                     .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
@@ -531,6 +581,7 @@ public class StoreServiceImpl implements StoreService {
             context.setStoreAction(action);
             switch (action) {
             case RESTORE:
+            case UPDATEDB:
                 service.updateInstance(em, context, inst);
             case IGNORE:
                 return inst;
@@ -540,11 +591,10 @@ public class StoreServiceImpl implements StoreService {
                     Location fileRef = iter.next();
                     // no other instances referenced through alias table
                     if (fileRef.getInstances().size() == 1) {
-                        //delete
+                        // delete
                         replaced.add(fileRef);
-                    }
-                    else {
-                        //remove inst
+                    } else {
+                        // remove inst
                         fileRef.getInstances().remove(inst);
                     }
                     iter.remove();
@@ -560,12 +610,13 @@ public class StoreServiceImpl implements StoreService {
         }
 
         Instance newInst = service.createInstance(em, context);
-        //delete replaced
-            try {
-                locationManager.scheduleDelete(replaced, 0);
-            } catch (Exception e) {
-                LOG.error("StoreService : Error deleting replaced location - {}",e);
-            }
+
+        // delete replaced
+        try {
+            locationManager.scheduleDelete(replaced, 0);
+        } catch (Exception e) {
+            LOG.error("StoreService : Error deleting replaced location - {}", e);
+        }
         return newInst;
     }
 
@@ -711,23 +762,24 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         StorageSystem storageSystem = session.getStorageSystem();
         Location fileRef = new Location.Builder()
-            .storageSystemGroupID(storageSystem.getStorageSystemGroup().getGroupID())
-            .storageSystemID(storageSystem.getStorageSystemID())
-            .storagePath(context.getStoragePath())
-            .digest(context.getFinalFileDigest())
-            .size(context.getFinalFileSize())
-            .transferSyntaxUID(context.getTransferSyntax())
-            .timeZone(session.getSourceTimeZoneID())
-            .build();
+                .storageSystemGroupID(
+                        storageSystem.getStorageSystemGroup().getGroupID())
+                .storageSystemID(storageSystem.getStorageSystemID())
+                .storagePath(context.getStoragePath())
+                .digest(context.getFinalFileDigest())
+                .otherAttsDigest(context.getNoDBAttsDigest())
+                .size(context.getFinalFileSize())
+                .transferSyntaxUID(context.getTransferSyntax())
+                .timeZone(session.getSourceTimeZoneID()).build();
         Collection<Instance> instances = fileRef.getInstances();
-        if(instances == null) {
+        if (instances == null) {
             fileRef.setInstances(instances);
             instances = new ArrayList<Instance>();
         }
         instances.add(instance);
-        
+
         Collection<Location> locations = instance.getLocations();
-        if(locations == null) {
+        if (locations == null) {
             locations = new ArrayList<Location>();
             instance.setLocations(locations);
         }
@@ -748,19 +800,19 @@ public class StoreServiceImpl implements StoreService {
                 .getAttributeFilter(Entity.Study);
         Attributes studyAttrs = study.getAttributes();
         Attributes modified = new Attributes();
-        //check if trashed
-        if(isRejected(study)) {
+        // check if trashed
+        if (isRejected(study)) {
             em.remove(study.getAttributesBlob());
-            study.setAttributes(new Attributes(data), studyFilter, storeParam.getFuzzyStr());
-        }
-        else {
-        if (studyAttrs.updateSelected(data, modified,
-                studyFilter.getSelection())) {
-            study.setAttributes(studyAttrs, studyFilter,
+            study.setAttributes(new Attributes(data), studyFilter,
                     storeParam.getFuzzyStr());
-            LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
-                    studyAttrs, modified);
-        }
+        } else {
+            if (studyAttrs.updateSelected(data, modified,
+                    studyFilter.getSelection())) {
+                study.setAttributes(studyAttrs, studyFilter,
+                        storeParam.getFuzzyStr());
+                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
+                        studyAttrs, modified);
+            }
         }
         service.updatePatient(em, context, study.getPatient());
     }
@@ -785,19 +837,19 @@ public class StoreServiceImpl implements StoreService {
         AttributeFilter seriesFilter = storeParam
                 .getAttributeFilter(Entity.Series);
         Attributes modified = new Attributes();
-        //check if trashed
-        if(isRejected(series)) {
+        // check if trashed
+        if (isRejected(series)) {
             em.remove(series.getAttributesBlob());
-            series.setAttributes(new Attributes(data), seriesFilter, storeParam.getFuzzyStr());
-        }
-        else {
-        if (seriesAttrs.updateSelected(data, modified,
-                seriesFilter.getSelection())) {
-            series.setAttributes(seriesAttrs, seriesFilter,
+            series.setAttributes(new Attributes(data), seriesFilter,
                     storeParam.getFuzzyStr());
-            LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
-                    seriesAttrs, modified);
-        }
+        } else {
+            if (seriesAttrs.updateSelected(data, modified,
+                    seriesFilter.getSelection())) {
+                series.setAttributes(seriesAttrs, seriesFilter,
+                        storeParam.getFuzzyStr());
+                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
+                        seriesAttrs, modified);
+            }
         }
         service.updateStudy(em, context, series.getStudy());
     }
@@ -821,6 +873,38 @@ public class StoreServiceImpl implements StoreService {
         service.updateSeries(em, context, inst.getSeries());
     }
 
+    public int[] getStoreFilters() {
+        
+        if (storeFilters == null) {
+
+            ArchiveDeviceExtension dExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+            storeFilters = merge(dExt.getAttributeFilter(Entity.Patient).getSelection(),
+                                    dExt.getAttributeFilter(Entity.Study).getSelection(),
+                                    dExt.getAttributeFilter(Entity.Series).getSelection(),
+                                    dExt.getAttributeFilter(Entity.Instance).getSelection());
+            Arrays.sort(storeFilters);
+        }
+        
+        return storeFilters;
+    }
+    
+    public int[] merge(final int[] ...arrays ) {
+        int size = 0;
+        for ( int[] a: arrays )
+            size += a.length;
+
+            int[] res = new int[size];
+
+            int destPos = 0;
+            for ( int i = 0; i < arrays.length; i++ ) {
+                if ( i > 0 ) destPos += arrays[i-1].length;
+                int length = arrays[i].length;
+                System.arraycopy(arrays[i], 0, res, destPos, length);
+            }
+
+            return res;
+    }
+    
     private Collection<RequestAttributes> createRequestAttributes(Sequence seq,
             FuzzyStr fuzzyStr, Series series) {
         if (seq == null || seq.isEmpty())
@@ -871,8 +955,8 @@ public class StoreServiceImpl implements StoreService {
                         Tag.ConceptCodeSequence));
                 list.add(contentItem);
             } else if ("TEXT".equals(type)) {
-                contentItem = new ContentItem(item.getString(Tag.RelationshipType)
-                        .toUpperCase(), singleCode(item,
+                contentItem = new ContentItem(item.getString(
+                        Tag.RelationshipType).toUpperCase(), singleCode(item,
                         Tag.ConceptNameCodeSequence), item.getString(
                         Tag.TextValue, "*"));
             }
@@ -914,20 +998,46 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private boolean isRejected(Study study) {
-        for(Series series : study.getSeries()) {
-            if(!isRejected(series))
+        for (Series series : study.getSeries()) {
+            if (!isRejected(series))
                 return false;
         }
         return true;
     }
 
     private boolean isRejected(Series series) {
-        for(Instance inst : series.getInstances()) {
-            if(inst.getRejectionNoteCode() == null) {
+        for (Instance inst : series.getInstances()) {
+            if (inst.getRejectionNoteCode() == null) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Given a reference to a stored object, retrieves it and calculates the digest of
+     * all the attributes (including bulk data), not stored in the database.
+     * This step is optionally skipped by configuration.
+     */
+    private String noDBAttsDigest(String path, StoreSession session) throws IOException {
+        
+        if (session.getArchiveAEExtension().isCheckNonDBAttributesOnStorage()) {
+
+            //retrieves and parses the object
+            RetrieveContext retrieveContext = retrieveService.createRetrieveContext(session.getStorageSystem());
+            InputStream stream = retrieveService.openInputStream(retrieveContext, path);
+            DicomInputStream dstream =  new DicomInputStream(stream);
+            dstream.setIncludeBulkData(IncludeBulkData.URI);
+            Attributes attrs = dstream.readDataset(-1, -1);
+            dstream.close();
+            
+            //selects attributes non stored in the db
+            Attributes noDBAtts = new Attributes();
+            noDBAtts.addNotSelected(attrs, getStoreFilters());
+            
+            return Utils.digestAttributes(noDBAtts, session.getMessageDigest());
+        } else
+            return null;
     }
 
 }

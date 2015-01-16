@@ -47,5 +47,6 @@ public enum StoreAction {
     RESTORE,
     REPLACE,
     IGNORE,
+    UPDATEDB,
     FAIL
 }

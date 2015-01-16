@@ -143,6 +143,7 @@ public class MPPSEmulatorImpl implements MPPSEmulator {
         case REPLACE:
         case RESTORE:
         case STORE:
+        case UPDATEDB:            
             break;
         default:
             return;

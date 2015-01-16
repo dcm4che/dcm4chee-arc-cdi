@@ -111,6 +111,10 @@ public class Location implements Serializable {
     @Column(name = "digest", updatable = false)
     private String digest;
 
+    @Basic(optional = true)
+    @Column(name = "otherAttsDigest", updatable = false)
+    private String otherAttsDigest;
+    
     @Basic(optional = false)
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "status", updatable = true)
@@ -128,6 +132,7 @@ public class Location implements Serializable {
         private String timeZone;
         private long size;
         private String digest;
+        private String otherAttsDigest;
         private Status status = Status.OK;
 
         public Builder storageSystemGroupID(String storageSystemGroupID) {
@@ -165,11 +170,16 @@ public class Location implements Serializable {
             return this;
         }
 
+        public Builder otherAttsDigest(String otherAttsDigest) {
+            this.otherAttsDigest = otherAttsDigest;
+            return this;
+        }
+
         public Builder digest(String digest) {
             this.digest = digest;
             return this;
         }
-
+        
         public Builder status(Status status) {
             this.status = status;
             return this;
@@ -191,6 +201,7 @@ public class Location implements Serializable {
         timeZone = builder.timeZone;
         size = builder.size;
         digest = builder.digest;
+        otherAttsDigest = builder.otherAttsDigest;
         status = builder.status;
     }
 
@@ -240,6 +251,10 @@ public class Location implements Serializable {
         return digest;
     }
 
+    public String getOtherAttsDigest() {
+        return otherAttsDigest;
+    }
+    
     public Status getStatus() {
         return status;
     }
