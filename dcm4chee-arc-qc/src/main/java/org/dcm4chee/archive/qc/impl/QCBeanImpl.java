@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
@@ -55,6 +56,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 
 import org.dcm4che3.data.Attributes;
@@ -919,6 +921,7 @@ public class QCBeanImpl  implements QCBean{
         if(!oldAttributes.isEmpty())
           studyHistory.setUpdatedAttributesBlob(new AttributesBlob(oldAttributes));
         studyHistory.setOldStudyUID(studyInstanceUID);
+        studyHistory.setNextStudyUID(targetStudyUID);
         em.persist(studyHistory);
         return studyHistory;
     }

@@ -37,6 +37,10 @@ public class QCStudyHistory implements Serializable{
     @Column(name = "old_study_uid", updatable = false)
     private String oldStudyUID;
 
+    @Basic(optional = false)
+    @Column(name = "next_study_uid", updatable = false)
+    private String nextStudyUID;
+
     @ManyToOne(cascade=CascadeType.ALL)
     @JoinColumn(name = "qc_action_history_fk")
     private QCActionHistory action;
@@ -81,6 +85,12 @@ public class QCStudyHistory implements Serializable{
 
     public void setOldStudyUID(String oldStudyUID) {
         this.oldStudyUID = oldStudyUID;
+    }
+    public String getNextStudyUID() {
+        return nextStudyUID;
+    }
+    public void setNextStudyUID(String nextStudyUID) {
+        this.nextStudyUID = nextStudyUID;
     }
 
 }

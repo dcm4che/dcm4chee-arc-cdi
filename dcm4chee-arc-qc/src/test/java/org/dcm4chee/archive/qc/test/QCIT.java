@@ -431,6 +431,7 @@ public class QCIT {
         em.persist(prevaction);
         QCStudyHistory prevStudyHistory = new QCStudyHistory(null, prevaction);
         prevStudyHistory.setOldStudyUID("X.X.X");
+        prevStudyHistory.setNextStudyUID("3.3.3.3");
         em.persist(prevStudyHistory);
         QCSeriesHistory prevSeriesHistory = new QCSeriesHistory(null, prevStudyHistory);
         prevSeriesHistory.setOldSeriesUID("Y.Y.Y");
@@ -1038,6 +1039,7 @@ public class QCIT {
         em.persist(prevaction);
         QCStudyHistory prevStudyHistory = new QCStudyHistory(null, prevaction);
         prevStudyHistory.setOldStudyUID("X.X.X");
+        prevStudyHistory.setNextStudyUID("STUDY1");
         em.persist(prevStudyHistory);
         QCSeriesHistory prevSeriesHistory = new QCSeriesHistory(null, prevStudyHistory);
         prevSeriesHistory.setOldSeriesUID("Y.Y.Y");
