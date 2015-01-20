@@ -208,7 +208,7 @@
               <configuration>
                 <archive>
                   <manifestEntries>
-                    <Dependencies>org.codehaus.jackson.jackson-jaxrs,org.codehaus.jackson.jackson-mapper-asl,org.dcm4che.net, org.dcm4che.soundex, org.dcm4che.conf.api</Dependencies>
+                    <Dependencies>org.codehaus.jackson.jackson-jaxrs,org.codehaus.jackson.jackson-mapper-asl,org.dcm4che.net, org.dcm4che.soundex, org.dcm4che.conf.api, org.dcm4che.json</Dependencies>
                   </manifestEntries>
                 </archive>
               </configuration>
@@ -227,7 +227,7 @@
             <configuration>
               <archive>
                 <manifestEntries>
-                  <Dependencies>org.dcm4che.net, org.dcm4che.conf.api, org.dcm4che.soundex</Dependencies>
+                  <Dependencies>org.dcm4che.net, org.dcm4che.conf.api, org.dcm4che.soundex, org.dcm4che.json</Dependencies>
                 </manifestEntries>
               </archive>
             </configuration>
@@ -267,7 +267,7 @@
             <configuration>
               <archive>
                 <manifestEntries>
-                  <Dependencies>org.codehaus.jackson.jackson-jaxrs,org.codehaus.jackson.jackson-mapper-asl,org.dcm4che.net, org.dcm4che.soundex, org.dcm4che.conf.api</Dependencies>
+                  <Dependencies>org.codehaus.jackson.jackson-jaxrs,org.codehaus.jackson.jackson-mapper-asl,org.dcm4che.net, org.dcm4che.soundex, org.dcm4che.conf.api, org.dcm4che.json</Dependencies>
                 </manifestEntries>
               </archive>
             </configuration>
