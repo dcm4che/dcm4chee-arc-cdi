@@ -809,6 +809,7 @@ public class DeviceMocker {
                 Dimse.C_STORE_RQ,
                 SCP,
                 new String[]{"ENSURE_PID"},
+                null,                           // Source Device Names
                 ATTRIBUTE_COERCION_ENSURE_PID_XSL));
         aeExt.addAttributeCoercion(new AttributeCoercion(
                 "Remove person names",
@@ -816,6 +817,7 @@ public class DeviceMocker {
                 Dimse.C_STORE_RQ,
                 SCU,
                 new String[]{"WITHOUT_PN"},
+                null,                           // Source Device Names
                 ATTRIBUTE_COERCION_NULLIFY_PN_XSL));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG 8-bit Lossy",
@@ -826,6 +828,7 @@ public class DeviceMocker {
                 new int[] { 8 },                // Bits Stored
                 0,                              // Pixel Representation
                 new String[] { "JPEG_LOSSY" },  // Source AETs
+                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -842,6 +845,7 @@ public class DeviceMocker {
                 new int[] { 9, 10, 11, 12 },    // Bits Stored
                 0,                              // Pixel Representation
                 new String[] { "JPEG_LOSSY" },  // Source AETs
+                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -861,6 +865,7 @@ public class DeviceMocker {
                 new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
                 -1,                              // Pixel Representation
                 new String[] { "JPEG_LOSSLESS" },  // Source AETs
+                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -878,6 +883,7 @@ public class DeviceMocker {
                 new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
                 -1,                             // Pixel Representation
                 new String[] { "JPEG_LS" },     // Source AETs
+                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -895,6 +901,7 @@ public class DeviceMocker {
                 new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },  // Bits Stored
                 -1,                             // Pixel Representation
                 new String[] { "JPEG_2000" },   // Source AETs
+                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -961,6 +968,7 @@ public class DeviceMocker {
                 Dimse.C_ECHO_RQ,
                 SCU,
                 new String[]{"ENSURE_PID"},
+                null,                           // Source Device Names
                 ATTRIBUTE_COERCION_ENSURE_PID_XSL));
         aeExt.addAttributeCoercion(new AttributeCoercion(
                 "Remove person names",
@@ -968,6 +976,7 @@ public class DeviceMocker {
                 Dimse.C_STORE_RQ,
                 SCP,
                 new String[]{"WITHOUT_PN"},
+                null,                           // Source Device Names
                 ATTRIBUTE_COERCION_NULLIFY_PN_XSL));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG Lossless",
@@ -980,6 +989,7 @@ public class DeviceMocker {
                 new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
                 -1,                              // Pixel Representation
                 new String[] { "JPEG_LOSSLESS" },  // Source AETs
+                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -997,6 +1007,7 @@ public class DeviceMocker {
                 new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
                 -1,                             // Pixel Representation
                 new String[] { "JPEG_LS" },     // Source AETs
+                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -1014,6 +1025,7 @@ public class DeviceMocker {
                 new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },  // Bits Stored
                 -1,                             // Pixel Representation
                 new String[] { "JPEG_2000" },   // Source AETs
+                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
