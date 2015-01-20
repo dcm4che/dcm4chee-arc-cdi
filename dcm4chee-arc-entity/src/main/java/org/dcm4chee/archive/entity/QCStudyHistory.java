@@ -37,7 +37,7 @@ public class QCStudyHistory implements Serializable{
     @Column(name = "old_study_uid", updatable = false)
     private String oldStudyUID;
 
-    @Basic(optional = false)
+    @Basic(optional = true)
     @Column(name = "next_study_uid", updatable = false)
     private String nextStudyUID;
 
