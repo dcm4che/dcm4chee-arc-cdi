@@ -448,14 +448,15 @@ Setup WildFly
             <property name="org.dcm4che.conf.ldap.credentials" value="secret" />
         </system-properties>
 
-    Alternatively, a flat json file can be used as configuration source as follows:
+    Alternatively, a flat .json file can be used as configuration source as follows:
 
         <system-properties>
             <property name="org.dcm4che.conf.storage" value="json_file" />
             <property name="org.dcm4che.conf.filename" value="../standalone/configuration/configuration.json" />
         </system-properties>
 
-    Check the application log during startup to see which values are actually used.
+    Sample json configuration can be found in $DCM4CHEE_ARC/configuration/dcm4chee-arc/sample-config.json.
+    Check the application log during startup to see which parameters are used to initialize the configuration backend.
 
 3.  Install DCM4CHE 3.3.3 libraries as WildFly module:
 
