@@ -39,7 +39,6 @@ package org.dcm4chee.archive.qc.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Stack;
 
 import javax.decorator.Decorator;
@@ -54,8 +53,10 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.data.Attributes.Visitor;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
+import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.QCRetrieveBean;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.slf4j.Logger;
@@ -80,8 +81,11 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
     ArrayList<Attributes> modifications = new ArrayList<Attributes>();
     
     @Inject
-    private QCBean qcManager;
+    private QCRetrieveBean qcRetrieveManager;
 
+    @Inject
+    private QCBean qcManager;
+    
     /* (non-Javadoc)
      * @see org.dcm4chee.archive.retrieve.RetrieveService#coerceRetrievedObject(org.dcm4chee.archive.retrieve.RetrieveContext, java.lang.String, org.dcm4che3.data.Attributes)
      */
@@ -96,11 +100,12 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
         switch(qcUpdateReferencesOnRetrieve) {
         case DEACTIVATE: break;
         case PATIENT :
-            requiresUpdate = qcManager.requiresReferenceUpdate(null,attrs);
+            Patient patient = qcManager.findPatient(attrs);
+            requiresUpdate = qcRetrieveManager.requiresReferenceUpdate(null,patient);
             LOG.debug("Instance Retrieved Requires Update : {}", requiresUpdate);
             break;
         case STUDY:
-            requiresUpdate = qcManager.requiresReferenceUpdate(attrs.getString(
+            requiresUpdate = qcRetrieveManager.requiresReferenceUpdate(attrs.getString(
                     Tag.StudyInstanceUID), null);
             LOG.debug("Instance Retrieved Requires Update : {}", requiresUpdate);
             break;
@@ -108,15 +113,14 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
         if(requiresUpdate) {
             LOG.debug("Performing reference update on {} scope", qcUpdateReferencesOnRetrieve.name());
             Collection<String> referencedStudyInstanceUIDs = new ArrayList<String>(); 
-            qcManager.scanForReferencedStudyUIDs(attrs, referencedStudyInstanceUIDs);
+            qcRetrieveManager.scanForReferencedStudyUIDs(attrs, referencedStudyInstanceUIDs);
             
-            final Collection<QCInstanceHistory> referencesHistory = qcManager
-                    .getReferencedHistory(referencedStudyInstanceUIDs);
+            final Collection<QCInstanceHistory> referencesHistory = qcRetrieveManager
+                    .getReferencedHistory(retrieveContext, referencedStudyInstanceUIDs);
 //            final HashMap<String, String> mapping = createUIDMapFromHistory(referencesHistory);
             final ElementDictionary dict = ElementDictionary.getStandardElementDictionary();
             try {
                  attrs.accept(new Visitor() {
-                     private HashMap<String, HashMap<String,ArrayList<String>>> structure = null;
                      Stack<String> sqStack = new Stack<String>();
                      boolean inIDS=false;
                     @Override
@@ -145,31 +149,17 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
                                     String oldStudyUID = attrs.getParent().getParent().getString(Tag.StudyInstanceUID);
                                     String oldSeriesUID = attrs.getParent().getString(Tag.SeriesInstanceUID);
                                     String oldSopUID = attrs.getString(Tag.ReferencedSOPInstanceUID);
-//                                    if(mapping.get(oldSopUID) != null) {
                                     extractUpdatedSequencesFullHierarchy(dict, attrs, tmp,
                                             oldStudyUID, oldSeriesUID,
                                             oldSopUID);
-//                                    }
-//                                    else if(tag == Tag.ReferencedSOPInstanceUID){
-//                                        extractUpdatedSequencesFullHierarchy(null, dict, attrs, tmp,
-//                                                oldStudyUID, oldSeriesUID,
-//                                                oldSopUID);
-//                                    }
                                 }
                                 else {
                                     //series reference without study (presentation state)
                                     String oldSeriesUID = attrs.getParent().getString(Tag.SeriesInstanceUID);
                                     String oldSopUID = attrs.getString(Tag.ReferencedSOPInstanceUID);
-//                                    if(mapping.get(oldSopUID) != null) {
                                     extractUpdatedSequenceSeriesHierarchy(
                                             dict, attrs, tmp,
                                             oldSeriesUID, oldSopUID);
-//                                    }
-//                                    else if(tag == Tag.ReferencedSOPInstanceUID){
-//                                        extractUpdatedSequenceSeriesHierarchy(
-//                                                null, dict, attrs, tmp,
-//                                                oldSeriesUID, oldSopUID);
-//                                    }
                                 }
                             }
                             else {
@@ -264,11 +254,8 @@ public abstract class RetrieveServiceQCDecorator implements RetrieveService{
         int matchesToSameStudy = 0;
         if(referencesHistory.isEmpty())
             return null;
-        //get all matches
         ArrayList<QCInstanceHistory> filteredByOldSopUID = new ArrayList<QCInstanceHistory>();
         for(QCInstanceHistory inst : referencesHistory) {
-//            boolean sameSeries = oldSeriesUID!=null?
-//                    inst.getSeries().getOldSeriesUID().equalsIgnoreCase(oldSeriesUID):true;
             boolean sameStudy = oldStudyUID!=null?
                     inst.getSeries().getStudy().getOldStudyUID().equalsIgnoreCase(oldStudyUID):true;
             if(inst.getOldUID().equalsIgnoreCase(oldSopUID) && sameStudy) {

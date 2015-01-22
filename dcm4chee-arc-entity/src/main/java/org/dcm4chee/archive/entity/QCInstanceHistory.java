@@ -102,7 +102,7 @@ import org.hibernate.annotations.Cascade;
     ),
 @NamedQuery(
     name="QCInstanceHistory.findDistinctInstancesWhereStudyOldOrCurrentInList",
-    query="SELECT qci , qci.series.study.action.createdTime from QCInstanceHistory qci  "
+    query="SELECT DISTINCT qci , qci.series.study.action.createdTime from QCInstanceHistory qci  "
             + "LEFT JOIN qci.series.study qcst "
             + "where qcst.oldStudyUID IN (:uids) "
             + "OR qci.currentStudyUID IN (:uids) order by qci.series.study.action.createdTime DESC"

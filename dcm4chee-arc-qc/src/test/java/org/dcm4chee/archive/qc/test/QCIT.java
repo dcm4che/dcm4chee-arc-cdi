@@ -41,21 +41,12 @@ package org.dcm4chee.archive.qc.test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -72,21 +63,13 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
-import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.PDVInputStream;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.StreamUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
-import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Location;
@@ -105,11 +88,10 @@ import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
-import org.dcm4chee.archive.qc.QCEvent.QCOperation;
+import org.dcm4chee.archive.qc.QCRetrieveBean;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.storage.conf.StorageSystem;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -132,8 +114,6 @@ import org.junit.runners.MethodSorters;
 @RunWith(Arquillian.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class QCIT {
-    
-    private static final String SOURCE_AET = "DCM4CHEE";
 
     private static final String[] RETRIEVE_AETS = { "RETRIEVE_AET" };
     
@@ -142,6 +122,9 @@ public class QCIT {
 
     @Inject
     private QCBean qcManager;
+
+    @Inject
+    private QCRetrieveBean qcRetrieveManager;
 
     @Inject
     private Device device;
@@ -977,10 +960,10 @@ public class QCIT {
         //test IMG2 is cloned
         assertTrue(newIMG2.isCloned());
         //test getQCed for STUDY1 (IMG2 was not QCed)
-        assertTrue(qcManager.requiresReferenceUpdate("STUDY1", null));
-        
+        assertTrue(qcRetrieveManager.requiresReferenceUpdate("STUDY1", null));
         
     }
+
 
     private boolean allReferencedInIdenticalDocumentSequence(Instance instance,
             Instance instance2, Instance instance3) {
@@ -1108,16 +1091,6 @@ public class QCIT {
             return false;
         }
         return true;
-    }
-
-    private StoreContext setFileAttrs(StoreContext storeContext) 
-            throws URISyntaxException {
-        File f = new File(storeContext.getStoreSession().getStorageSystem().getStorageSystemPath()
-                +"/tmp");
-        storeContext.setFinalFileDigest("ABC");
-        storeContext.setTransferSyntax("1.2.840.10008.1.2");
-        storeContext.setSpoolFile(f.toPath());
-        return storeContext;
     }
 
     private Attributes load(String name) throws Exception {

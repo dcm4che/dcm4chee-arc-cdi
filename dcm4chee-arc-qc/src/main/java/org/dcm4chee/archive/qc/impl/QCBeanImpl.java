@@ -43,8 +43,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJBException;
@@ -56,7 +54,6 @@ import javax.persistence.EntityNotFoundException;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 
 import org.dcm4che3.data.Attributes;
@@ -191,7 +188,7 @@ public class QCBeanImpl  implements QCBean{
         
         }
         catch(Exception e) {
-            LOG.error("Merge Failure : {}",e);
+            LOG.error("{}: QC info[Merge] - Failure, reason {}",e);
             throw new EJBException();
         }
 
@@ -215,17 +212,17 @@ public class QCBeanImpl  implements QCBean{
         Collection<String> targetUIDs = new ArrayList<String>();
 
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
-        Study source = getStudy(sourceStudyUid);
-        Study target = getStudy(targetStudyUID);
+        Study source = findStudy(sourceStudyUid);
+        Study target = findStudy(targetStudyUID);
         
         if(source==null || target==null) {
-            LOG.error("{} : Merge Failure, Source Study {} or Target Study {}"
+            LOG.error("{} : QC info[Merge] - Failure, Source Study {} or Target Study {}"
                     + " not Found",qcSource,sourceStudyUid, targetStudyUID);
             throw new EJBException();
         }
 
         if(!samePatient && source.getPatient().getPk()!=target.getPatient().getPk()) {
-            LOG.error("{} : Merge Failure, Source Study {} or Target Study {}"
+            LOG.error("{} : QC info[Merge] - Failure, Source Study {} or Target Study {}"
                     + " do not belong to the same patient",qcSource,sourceStudyUid,
                     targetStudyUID);
             throw new EJBException();
@@ -255,7 +252,7 @@ public class QCBeanImpl  implements QCBean{
                 //update identical document sequence
                 if(series.getModality().equalsIgnoreCase("KO")
                         || series.getModality().equalsIgnoreCase("SR"))
-                for(Instance ident: getIdenticalDocumentReferencedInstances(newInstance)) {
+                for(Instance ident: findIdenticalDocumentReferences(newInstance)) {
                     removeIdenticalDocumentSequence(ident, inst);
                     removeIdenticalDocumentSequence(inst,ident);
                     addIdenticalDocumentSequence(ident, newInstance);
@@ -288,16 +285,17 @@ public class QCBeanImpl  implements QCBean{
         Collection<String> targetUIDs = new ArrayList<String>();
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         Collection<Instance> toMove = locateInstances((String[]) toMoveUIDs.toArray());
-        Study sourceStudy=getSameSourceStudy(toMove);
+        Study sourceStudy= toMove.iterator().next().getSeries().getStudy();
 
-        if(sourceStudy == null) {
-            LOG.error("{} : Split Failure, Different studie used as source", qcSource);
+        if(!allInstancesFromSameStudy(toMove)) {
+            LOG.error("{} : QC info[Split] - Failure, Different studie used as source", qcSource);
             throw new EJBException();
         }
-        Study targetStudy = getStudy(targetStudyUID);
+        Study targetStudy = findStudy(targetStudyUID);
 
         if(targetStudy == null) {
-            LOG.debug("{} : Split info - Target study didn't exist, creating target study",qcSource);
+            LOG.debug("{} : QC info[Split] - Target study"
+                    + " didn't exist, creating target study",qcSource);
             targetStudy = createStudy(pid, targetStudyUID, createdStudyAttrs);
         }
         else {
@@ -376,14 +374,14 @@ public class QCBeanImpl  implements QCBean{
         Collection<Instance> toClone = locateInstances((String[]) toCloneUIDs.toArray());
         tmpAllInstancesInvolved.addAll(toMove);
         tmpAllInstancesInvolved.addAll(toClone);
-        Study sourceStudy = getSameSourceStudy(tmpAllInstancesInvolved);
-        if(sourceStudy == null) {
-            LOG.error("{} : Segment Failure, Different studie used as source", qcSource);
+        Study sourceStudy = tmpAllInstancesInvolved.get(0).getSeries().getStudy();
+        if(!allInstancesFromSameStudy(tmpAllInstancesInvolved)) {
+            LOG.error("{} : QC info[Segment] Failure, Different studies used as source", qcSource);
             throw new EJBException();
         }
-        Study targetStudy = getStudy(targetStudyUID);
+        Study targetStudy = findStudy(targetStudyUID);
         if(targetStudy == null) {
-            LOG.debug("{} : Segment info - Target study didn't exist, creating target study",qcSource);
+            LOG.debug("{} :  QC info[Segment] info - Target study didn't exist, creating target study",qcSource);
             targetStudy = createStudy(pid, targetStudyUID, createdStudyAttrs);
         }
         else {
@@ -391,7 +389,7 @@ public class QCBeanImpl  implements QCBean{
             updateStudy(archiveDeviceExtension, targetStudyUID, createdStudyAttrs);
         }
         if(sourceStudy.getPatient().getPk()!=targetStudy.getPatient().getPk()) {
-            LOG.error("{} : Segment Failure, Source Study {} or Target Study {}"
+            LOG.error("{} :  QC info[Segment] Failure, Source Study {} or Target Study {}"
                     + " do not belong to the same patient",
                     qcSource,sourceStudy.getStudyInstanceUID(), targetStudyUID);
             throw new EJBException();
@@ -480,7 +478,7 @@ public class QCBeanImpl  implements QCBean{
     public void segmentFrame(Instance toMove, Instance toClone, int frame,
             PatientID pid, String targetStudyUID,
             Attributes targetStudyAttrs, Attributes targetSeriesAttrs) {
-        
+        LOG.info("{} :  QC info[Segment] info - Segmenting frame is not yet supported",qcSource);
     }
 
     /* (non-Javadoc)
@@ -527,6 +525,8 @@ public class QCBeanImpl  implements QCBean{
      */
     @Override
     public void notify(QCEvent event) {
+        LOG.debug("{} :  QC info[Notify] - Operation successfull,"
+                + " notification triggered with event {}",qcSource,event.toString());
         internalNotification.fire(event);
     }
 
@@ -539,11 +539,12 @@ public class QCBeanImpl  implements QCBean{
             QCUpdateScope scope, Attributes attrs)
             throws EntityNotFoundException {
         QCActionHistory updateAction = generateQCAction(QCOperation.UPDATE);
-        LOG.info("Performing QC update DICOM header on {} scope : ", scope);
+        LOG.info("{}:  QC info[Update] info - Performing QC update DICOM header on {} scope : ", qcSource, scope);
         Attributes unmodified;
+        String patientPK=null;
         switch(scope) {
         case PATIENT:
-            unmodified=updatePatient(arcDevExt, attrs);
+            unmodified=updatePatient(arcDevExt, attrs, patientPK);
             break;
         case STUDY: 
             unmodified=updateStudy(arcDevExt,
@@ -558,10 +559,11 @@ public class QCBeanImpl  implements QCBean{
                     attrs.getString(Tag.SOPInstanceUID), attrs);
             break;
         default : 
-            LOG.error("{} : invalid update scope",qcSource);
+            LOG.error("{} : QC info[Update] Failure - invalid update scope",qcSource);
             throw new EJBException();
         }
-        recordUpdateHistoryEntry(updateAction, scope, unmodified);
+        LOG.info("{} : QC info[Update] info - Update successful, adding update history entry",qcSource);
+        addUpdateHistoryEntry(updateAction, scope, unmodified,scope.compareTo(QCUpdateScope.PATIENT)==0?patientPK:null);
         QCEvent updateEvent = new QCEvent(QCOperation.UPDATE,scope.toString(),
                 attrs, null, null);
         return updateEvent;
@@ -596,6 +598,8 @@ public class QCBeanImpl  implements QCBean{
         }
         catch(Exception e)
         {
+            LOG.error("{} :  QC info[Patient Operation] Failure - Patient operation "
+                    + "failed, reason {}", qcSource, e);
             return false;
         }
     }
@@ -619,7 +623,7 @@ public class QCBeanImpl  implements QCBean{
         }
             rejectAndScheduleForDeletion(insts);
         }
-        LOG.info("Removed study entity - " + studyInstanceUID);
+        LOG.info("{}:  QC info[Delete] info - Removed study entity {}",qcSource , studyInstanceUID);
         QCEvent deleteEvent = new QCEvent(
                 QCOperation.DELETE, null, null, sopInstanceUIDs, null);
         return deleteEvent;
@@ -642,10 +646,9 @@ public class QCBeanImpl  implements QCBean{
         }
             rejectAndScheduleForDeletion(insts);
 
-
         Study study = series.getStudy();
         study.clearQueryAttributes();
-        LOG.info("Removed series entity - " + seriesInstanceUID);
+        LOG.info("{}:  QC info[Delete] info - Removed series entity {}",qcSource, seriesInstanceUID);
         QCEvent deleteEvent = new QCEvent(
                 QCOperation.DELETE, null, null, sopInstanceUIDs,null);
         return deleteEvent;
@@ -659,14 +662,15 @@ public class QCBeanImpl  implements QCBean{
         Collection<Instance> tmpList = locateInstances(new String [] {sopInstanceUID});
         
         if(tmpList.isEmpty()) {
-            LOG.debug("{} , Error finding instance to delete with SOPInstanceUID={}",qcSource,sopInstanceUID);
+            LOG.debug("{}:  QC info[Delete] Failure - Error finding "
+                    + "instance to delete with SOPInstanceUID={}",qcSource,sopInstanceUID);
             throw new EJBException();
         }
         rejectAndScheduleForDeletion(tmpList);
         
         Series series = tmpList.iterator().next().getSeries();
         Study study = series.getStudy();
-        LOG.info("Removed instance entity - " + sopInstanceUID);
+        LOG.info("{}:  QC info[Delete] info - Removed instance entity {}", qcSource, sopInstanceUID);
         series.clearQueryAttributes();
         study.clearQueryAttributes();
         QCEvent deleteEvent = new QCEvent(
@@ -686,7 +690,7 @@ public class QCBeanImpl  implements QCBean{
         Series series = query.getSingleResult();
         if(series.getInstances().isEmpty()) {
             em.remove(series);
-            LOG.info("Removed series entity - " + seriesInstanceUID);
+            LOG.info("{}:  QC info[Delete] info - Removed series entity {}", qcSource, seriesInstanceUID);
             return true;
         }
         
@@ -705,21 +709,22 @@ public class QCBeanImpl  implements QCBean{
 
         if (study.getSeries().isEmpty()) {
             em.remove(study);
-            LOG.info("Removed study entity - " + studyInstanceUID);
+            LOG.info("{}:  QC info[Delete] info - Removed study entity {}", qcSource, studyInstanceUID);
             return true;
         }
-
+        
         return false;
     }
 
     /* (non-Javadoc)
      * @see org.dcm4chee.archive.qc.QCBean#locateInstances(java.lang.String[])
      */
+    @SuppressWarnings("unchecked")
     @Override
     public Collection<Instance> locateInstances(String[] sopInstanceUIDs) {
         ArrayList<Instance> list = new ArrayList<Instance>();
         if(sopInstanceUIDs == null || sopInstanceUIDs.length == 0) {
-            LOG.error("{} : Unable to locate instances with null UIDs"
+            LOG.error("{} : QC info[locateInstance] - Unable to locate instances with null UIDs"
                     + " , returning an empty list", qcSource);
             return list;
         }
@@ -733,59 +738,6 @@ public class QCBeanImpl  implements QCBean{
     }
 
 
-    @Override
-    public boolean requiresReferenceUpdate(String studyInstanceUID, Attributes attrs) {
-        
-        if(attrs == null) {
-            Query query = em.createNamedQuery(QCInstanceHistory.STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
-            query.setParameter(1, studyInstanceUID);
-            query.setMaxResults(1);
-            return query.getResultList().isEmpty()? false: true;
-        }
-        ArrayList<String> uids = new ArrayList<String>();
-        Patient pat = getPatient(attrs);
-        
-        if(pat == null) {
-            LOG.error("{} : Attributes supplied missing PatientID",qcSource);
-            throw new IllegalArgumentException("Attributes supplied missing PatientID");
-            }
-        
-        for(Study study : pat.getStudies()) {
-            uids.add(study.getStudyInstanceUID());
-            }
-        Query query = em.createNamedQuery(QCInstanceHistory.STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
-        query.setParameter("uids", uids);
-        query.setMaxResults(1);
-        return query.getResultList().isEmpty()? false : true;
-    }
-
-    @Override
-    public void scanForReferencedStudyUIDs(Attributes attrs, Collection<String> initialColl) {
-        if(attrs.contains(Tag.StudyInstanceUID)) {
-            initialColl.add(attrs.getString(Tag.StudyInstanceUID));
-        }
-        for(int i : attrs.tags()) {
-            if(attrs.getVR(i) == VR.SQ) {
-                for(Attributes item : attrs.getSequence(i))
-                scanForReferencedStudyUIDs(item, initialColl);
-            }
-        }
-    }
-
-    @Override
-    public Collection<QCInstanceHistory> getReferencedHistory(
-            Collection<String> referencedStudyInstanceUIDs) {
-        Collection<QCInstanceHistory> resultList = new ArrayList<QCInstanceHistory>();
-        Query query = em.createNamedQuery(QCInstanceHistory
-                .FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST);
-        query.setParameter("uids", referencedStudyInstanceUIDs);
-        for(Iterator<Object[]> iter =  query.getResultList().iterator();iter.hasNext();) {
-            Object[] row = iter.next();
-            resultList.add((QCInstanceHistory) row[0]);
-        }
-            
-        return resultList;
-    }
 
     /* (non-Javadoc)
      * @see org.dcm4chee.archive.qc.QCBean#move(org.dcm4chee.archive.entity.Instance,
@@ -795,7 +747,7 @@ public class QCBeanImpl  implements QCBean{
     private Instance move(Instance source, Series target,
             org.dcm4che3.data.Code qcRejectionCode) {
         if(!canApplyQC(source)) {
-            LOG.error("{} : Can't apply QC operation on already QCed"
+            LOG.error("{} : QC info[move] Failure - Can't apply QC operation on already QCed"
                     + " or rejected object",qcSource);
             throw new EJBException();
         }
@@ -813,12 +765,12 @@ public class QCBeanImpl  implements QCBean{
                 newInstance.setLocations(locations);
             };
             
-            locations.add(getFirst(source.getLocations(), newInstance));
+            locations.add(getFirstFileRef(source.getLocations(), newInstance));
             
         } catch (Exception e) {
-            LOG.error("{} : Unable to create replacement instance for {},"
-                    + " rolling back move", qcSource,
-                    source);
+            LOG.error("{} : QC info[move] Failure - Unable to"
+                    + " create replacement instance for {},"
+                    + " rolling back move", qcSource,source);
             throw new EJBException(e);
         }
         return newInstance;
@@ -831,7 +783,7 @@ public class QCBeanImpl  implements QCBean{
     private Instance clone(Instance source, Series target) {
         Instance newInstance;
         if(!canApplyQC(source)) {
-            LOG.error("{} : Can't apply QC operation on already QCed"
+            LOG.error("{} : QC info[clone] Can't apply QC operation on already QCed"
                     + " or rejected object",qcSource);
             throw new EJBException();
         }
@@ -844,12 +796,11 @@ public class QCBeanImpl  implements QCBean{
                 newInstance.setLocations(locations);
             };
             
-            locations.add(getFirst(source.getLocations(), newInstance));
+            locations.add(getFirstFileRef(source.getLocations(), newInstance));
             
         } catch (Exception e) {
-            LOG.error("{} : Unable to create replacement instance for {},"
-                    + " rolling back move", qcSource,
-                    source);
+            LOG.error("{} : QC info[clone] Unable to create cloned instance for {},"
+                    + " rolling back clone", qcSource,source);
             throw new EJBException(e);
         }
         return newInstance;
@@ -870,12 +821,18 @@ public class QCBeanImpl  implements QCBean{
         //createRejectHistory(instances, rejectAction);
         }
         catch(Exception e) {
-            LOG.error("Reject Failure {}",e);
+            LOG.error("{} : QC info[reject] Failure - Reject Failure, reason {}", qcSource, e);
             throw new EJBException();
         }
         QCEvent rejectEvent = new QCEvent(
                 QCOperation.REJECT, null, null, sopInstanceUIDs,null);
         return rejectEvent;
+    }
+
+    private void rejectAndScheduleForDeletion(Collection<Instance> insts) {
+        rejectionService.reject(this, insts, codeService.findOrCreate(
+                new Code("113037","DCM",null,"Rejected for Patient Safety Reasons")), null); 
+        rejectionServiceDeleter.deleteRejected(this, insts);
     }
 
     /**
@@ -935,13 +892,14 @@ public class QCBeanImpl  implements QCBean{
      *            the arc dev ext
      * @param attrs
      *            the attrs
+     * @param patientPK 
      * @return the attributes
      * @throws EntityNotFoundException
      *             the entity not found exception
      */
-    private Attributes updatePatient(ArchiveDeviceExtension arcDevExt, Attributes attrs)
+    private Attributes updatePatient(ArchiveDeviceExtension arcDevExt, Attributes attrs, String patientPK)
             throws EntityNotFoundException {
-        Patient patient = getPatient(attrs);
+        Patient patient = findPatient(attrs);
 
         if (patient == null)
             throw new EntityNotFoundException(
@@ -953,11 +911,13 @@ public class QCBeanImpl  implements QCBean{
 
         original.update(attrs, original);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Attributes modified:\n" + attrs.toString());
+            LOG.debug("{} : QC info[Update] info - "
+                    + "Attributes modified:\n {}",qcSource, attrs.toString());
         }
         patient.setAttributes(original,
                 arcDevExt.getAttributeFilter(Entity.Patient),
                 arcDevExt.getFuzzyStr());
+        patientPK=Long.toString(patient.getPk());
         return unmodified;
     }
     
@@ -979,7 +939,7 @@ public class QCBeanImpl  implements QCBean{
     private Attributes updateStudy(ArchiveDeviceExtension arcDevExt,
             String studyInstanceUID, Attributes attrs)
             throws EntityNotFoundException {
-        Study study = getStudy(studyInstanceUID);
+        Study study = findStudy(studyInstanceUID);
         if (study == null)
             throw new EntityNotFoundException(
                     "Unable to find study "+ studyInstanceUID);
@@ -988,21 +948,22 @@ public class QCBeanImpl  implements QCBean{
         unmodified.addAll(study.getAttributes());
         // relations
         if (attrs.contains(Tag.ProcedureCodeSequence)) {
-            Collection<Code> procedureCodes = getProcedureCodes(attrs);
+            Collection<Code> procedureCodes = findProcedureCodes(attrs);
             if (!procedureCodes.isEmpty()) {
                 study.setProcedureCodes(procedureCodes);
             }
         }
         // one item only
         if (attrs.contains(Tag.IssuerOfAccessionNumberSequence)) {
-            Issuer issuerOfAccessionNumber = getIssuerOfAccessionNumber(attrs);
+            Issuer issuerOfAccessionNumber = findIssuerOfAccessionNumber(attrs);
             if (issuerOfAccessionNumber != null) {
                 study.setIssuerOfAccessionNumber(issuerOfAccessionNumber);
             }
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Attributes modified:\n" + attrs.toString());
+            LOG.debug("{} : QC info[Update] info - "
+                    + "Attributes modified:\n" + attrs.toString());
         }
         original.update(attrs, original);
         study.setAttributes(original,
@@ -1030,7 +991,7 @@ public class QCBeanImpl  implements QCBean{
             String seriesInstanceUID, Attributes attrs)
             throws EntityNotFoundException {
         
-        Series series = getSeries(seriesInstanceUID);
+        Series series = findSeries(seriesInstanceUID);
         
         if (series == null)
             throw new EntityNotFoundException("Unable to find series "
@@ -1041,7 +1002,7 @@ public class QCBeanImpl  implements QCBean{
         // relations
         // institutionCode
         if (attrs.contains(Tag.InstitutionCodeSequence)) {
-                Code institutionCode = getInstitutionalCode(attrs);
+                Code institutionCode = findInstitutionalCode(attrs);
                 if (institutionCode != null) {
                     series.setInstitutionCode(institutionCode);
                 }
@@ -1049,13 +1010,14 @@ public class QCBeanImpl  implements QCBean{
         // Requested Procedure Step
         if (attrs.contains(Tag.RequestAttributesSequence)) {
 
-            Collection<RequestAttributes> requestAttrs = getRequestAttributes(
+            Collection<RequestAttributes> requestAttrs = findRequestAttributes(
                     series, attrs, arcDevExt, original);
                 series.setRequestAttributes(requestAttrs);
         }
         
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Attributes modified:\n" + attrs.toString());
+            LOG.debug("{} : QC info[Update] info - "
+                    + "Attributes modified:\n" + attrs.toString());
         }
         
         original.update(attrs, original);
@@ -1084,7 +1046,7 @@ public class QCBeanImpl  implements QCBean{
             String sopInstanceUID, Attributes attrs)
             throws EntityNotFoundException {
         
-        Instance instance = getInstance(sopInstanceUID);
+        Instance instance = findInstance(sopInstanceUID);
         
         if (instance == null)
             throw new EntityNotFoundException("Unable to find instance "
@@ -1096,7 +1058,7 @@ public class QCBeanImpl  implements QCBean{
         // relations
         // Concept name Code Sequence on root level (SR)
         if (attrs.contains(Tag.ConceptNameCodeSequence)) {
-            Code conceptNameCode = getConceptNameCode(attrs);
+            Code conceptNameCode = findConceptNameCode(attrs);
             if (conceptNameCode != null) {
                 instance.setConceptNameCode(conceptNameCode);
             }
@@ -1104,7 +1066,7 @@ public class QCBeanImpl  implements QCBean{
         
         // verifying observers
         if (attrs.contains(Tag.VerifyingObserverSequence)) {
-            Collection<VerifyingObserver> newObservers = getVerifyingObservers(
+            Collection<VerifyingObserver> newObservers = findVerifyingObservers(
                     instance, attrs, original, arcDevExt);
             if (newObservers != null) {
                 instance.setVerifyingObservers(newObservers);
@@ -1112,7 +1074,8 @@ public class QCBeanImpl  implements QCBean{
         }
         
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Attributes modified:\n" + attrs.toString());
+            LOG.debug("{} : QC info[Update] info - "
+                    + "Attributes modified:\n" + attrs.toString());
         }
         
         original.update(attrs, original);
@@ -1122,16 +1085,13 @@ public class QCBeanImpl  implements QCBean{
         return unmodified;
     }
 
-    /**
-     * Gets the patient from the archive.
-     * 
-     * @param attrs
-     *            the attributes with the patient id and issuer
-     * @return the patient
+    /* (non-Javadoc)
+     * @see org.dcm4chee.archive.qc.QCBean#findPatient(org.dcm4che3.data.Attributes)
      */
-    private Patient getPatient(Attributes attrs) {
+    @Override
+    public Patient findPatient(Attributes attrs) {
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
-        Collection<PatientID> queryIDs = findOrCreatePatientIDs(pids);
+        Collection<PatientID> queryIDs = findPatientIDs(pids);
         
         if(queryIDs.isEmpty())
         return null;
@@ -1144,7 +1104,10 @@ public class QCBeanImpl  implements QCBean{
                 return null;
             }
         }
-        
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("{} : QC info[findPatient] info - "
+                    + "Found patient {}", qcSource, pat.toString());
+        }
         return pat;
     }
 
@@ -1155,7 +1118,7 @@ public class QCBeanImpl  implements QCBean{
      *            the study instance UID
      * @return the study
      */
-    private Study getStudy(String studyInstanceUID) {
+    private Study findStudy(String studyInstanceUID) {
         try{
         Query query = em.createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID_EAGER);
         query.setParameter(1, studyInstanceUID);
@@ -1163,6 +1126,10 @@ public class QCBeanImpl  implements QCBean{
         return study;
         }
         catch(NoResultException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("{} : QC info[findStudy] Failure - "
+                        + "Unable to find study {}", qcSource, studyInstanceUID);
+            }
             return null;
         }
     }
@@ -1174,10 +1141,14 @@ public class QCBeanImpl  implements QCBean{
      *            the series instance UID
      * @return the series
      */
-    private Series getSeries(String seriesInstanceUID) {
+    private Series findSeries(String seriesInstanceUID) {
         Query query = em.createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID_EAGER);
         query.setParameter(1, seriesInstanceUID);
         Series series = (Series) query.getSingleResult();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("{} : QC info[findSeries] info - "
+                    + "Found series {}", qcSource, series.toString());
+        }
         return series;
     }
 
@@ -1188,10 +1159,14 @@ public class QCBeanImpl  implements QCBean{
      *            the SOP instance UID of the instance
      * @return single instance of QCBeanImpl
      */
-    private Instance getInstance(String sopInstanceUID) {
+    private Instance findInstance(String sopInstanceUID) {
         Query query = em.createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER);
         query.setParameter(1, sopInstanceUID);
         Instance instance = (Instance) query.getSingleResult();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("{} : QC info[findInstance] info - "
+                    + "Found instance {}", qcSource, instance.toString());
+        }
         return instance;
     }
 
@@ -1203,7 +1178,7 @@ public class QCBeanImpl  implements QCBean{
      *            ProcedureCodeSequence
      * @return the procedure codes
      */
-    private Collection<Code> getProcedureCodes(Attributes attrs) {
+    private Collection<Code> findProcedureCodes(Attributes attrs) {
         ArrayList<Code> resultCode = new ArrayList<Code>();
         for (Attributes codeAttrs : attrs
                 .getSequence(Tag.ProcedureCodeSequence)) {
@@ -1221,7 +1196,7 @@ public class QCBeanImpl  implements QCBean{
      *            ConceptNameCodeSequence
      * @return the concept name code
      */
-    private Code getConceptNameCode(Attributes attrs) {
+    private Code findConceptNameCode(Attributes attrs) {
         Attributes codeAttrs  = attrs.getNestedDataset(Tag.ConceptNameCodeSequence);
         Code code = null;
         if (codeAttrs != null)
@@ -1242,7 +1217,7 @@ public class QCBeanImpl  implements QCBean{
      *            InstitutionCodeSequence
      * @return the institutional code
      */
-    private Code getInstitutionalCode(Attributes attrs) {
+    private Code findInstitutionalCode(Attributes attrs) {
         Attributes codeAttrs  = attrs.getSequence(Tag.InstitutionCodeSequence).get(0);
         Code code = codeService.findOrCreate(new Code(codeAttrs));
         return code;
@@ -1256,7 +1231,7 @@ public class QCBeanImpl  implements QCBean{
      *            IssuerOfAccessionNumberSequence
      * @return the issuer of accession number
      */
-    private Issuer getIssuerOfAccessionNumber(Attributes attrs) {
+    private Issuer findIssuerOfAccessionNumber(Attributes attrs) {
         Attributes issuerAttrs = attrs.getSequence(Tag.IssuerOfAccessionNumberSequence).get(0);
         Issuer issuer = issuerService.findOrCreate(new Issuer(issuerAttrs));
 
@@ -1282,7 +1257,7 @@ public class QCBeanImpl  implements QCBean{
      *            the original
      * @return the request attributes
      */
-    private Collection<RequestAttributes> getRequestAttributes(Series series,
+    private Collection<RequestAttributes> findRequestAttributes(Series series,
             Attributes attrs, ArchiveDeviceExtension arcDevExt, Attributes original) {
         
         Collection<RequestAttributes> oldRequests = series
@@ -1295,8 +1270,13 @@ public class QCBeanImpl  implements QCBean{
         if (oldSequence != null)
             for (Attributes oldItem : oldSequence) {
                 if (!updateSequence.contains(oldItem)) {
-                    RequestAttributes tmp = getRequestAttr(oldItem, series);
+                    RequestAttributes tmp = findRequestAttr(oldItem, series);
                     oldRequests.remove(tmp);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("{} : QC info[findRequestAttributes] info - "
+                                + "Removing Deprecated request attribute"
+                                + " {}", qcSource, tmp.toString());
+                    }
                 }
                 
             }
@@ -1304,11 +1284,16 @@ public class QCBeanImpl  implements QCBean{
         for (Attributes request : updateSequence) {
             if (oldSequence == null
                     || (oldSequence != null && !oldSequence.contains(request))) {
-                Issuer issuerOfAccessionNumber = getIssuerOfAccessionNumber(request);
+                Issuer issuerOfAccessionNumber = findIssuerOfAccessionNumber(request);
                 RequestAttributes newRequest = new RequestAttributes(request,
                         issuerOfAccessionNumber, arcDevExt.getFuzzyStr());
                 newRequest.setSeries(series);
                 oldRequests.add(newRequest);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("{} : QC info[findRequestAttributes] info - "
+                            + "Adding new request attribute"
+                            + " {}", qcSource, newRequest.toString());
+                }
             }
         }
         return oldRequests;
@@ -1324,7 +1309,7 @@ public class QCBeanImpl  implements QCBean{
      *            the series
      * @return the request attr
      */
-    private RequestAttributes getRequestAttr(Attributes attrs, Series series) {
+    private RequestAttributes findRequestAttr(Attributes attrs, Series series) {
         Query query = em.createQuery("SELECT r FROM RequestAttributes r "
                 + "WHERE r.studyInstanceUID = ?1  and "
                 + "r.scheduledProcedureStepID = ?2 and "
@@ -1355,7 +1340,7 @@ public class QCBeanImpl  implements QCBean{
      *            the arc dev ext
      * @return the verifying observers
      */
-    private Collection<VerifyingObserver> getVerifyingObservers(
+    private Collection<VerifyingObserver> findVerifyingObservers(
             Instance instance, Attributes attrs, Attributes original,
             ArchiveDeviceExtension arcDevExt) {
         Collection<VerifyingObserver> oldObservers = instance
@@ -1368,9 +1353,14 @@ public class QCBeanImpl  implements QCBean{
         if (verifyingObserversOld != null)
             for (Attributes observer : verifyingObserversOld) {
                 if (!verifyingObserversNew.contains(observer)) {
-                    VerifyingObserver tmp = getVerifyingObserver(observer,
+                    VerifyingObserver tmp = findVerifyingObserver(observer,
                             instance, arcDevExt);
                     oldObservers.remove(tmp);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("{} : QC info[findVerifyingObservers] info - "
+                                + "Removing deprecated verifying observer"
+                                + " {}", qcSource, tmp.getVerifyingObserverName());
+                    }
                 }
             }
         // add missing ones
@@ -1382,6 +1372,11 @@ public class QCBeanImpl  implements QCBean{
                         arcDevExt.getFuzzyStr());
                 newObserver.setInstance(instance);
                 oldObservers.add(newObserver);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("{} : QC info[findVerifyingObservers] info - "
+                            + "Adding new verifying observer"
+                            + " {}", qcSource, newObserver.getVerifyingObserverName());
+                }
             }
         }
         return oldObservers;
@@ -1400,7 +1395,7 @@ public class QCBeanImpl  implements QCBean{
      *            the arc dev ext
      * @return the verifying observer
      */
-    private VerifyingObserver getVerifyingObserver(Attributes observerAttrs,
+    private VerifyingObserver findVerifyingObserver(Attributes observerAttrs,
             Instance instance, ArchiveDeviceExtension arcDevExt) {
         Query query = em.createQuery("Select o from VerifyingObserver o "
                 + "where o.instance = ?1");
@@ -1412,14 +1407,13 @@ public class QCBeanImpl  implements QCBean{
     /**
      * Find or create patientIDs.
      * The method looks for patient IDs in the database
-     * if found they are returned else new ones are created
-     * with the provided IDs in the parameter collection.
+     * if found they are returned else returns null
      * 
      * @param ids
      *            the ids
      * @return the collection
      */
-    private Collection<PatientID> findOrCreatePatientIDs(Collection<IDWithIssuer> ids) {
+    private Collection<PatientID> findPatientIDs(Collection<IDWithIssuer> ids) {
         ArrayList<PatientID> foundIDs = new ArrayList<PatientID>();
         for(IDWithIssuer id : ids){
         Issuer issuer =  issuerService.findOrCreate(new Issuer(id.getIssuer()));
@@ -1457,7 +1451,7 @@ public class QCBeanImpl  implements QCBean{
      *            the to move
      * @return the same source study (if applicable)
      */
-    private Study getSameSourceStudy(Collection<Instance> toMove) {
+    private boolean allInstancesFromSameStudy(Collection<Instance> toMove) {
         Study study = null;
         for(Instance instance: toMove) {
             if(study==null)
@@ -1465,9 +1459,9 @@ public class QCBeanImpl  implements QCBean{
             Study currentStudy = instance.getSeries().getStudy();
             if(!currentStudy.getStudyInstanceUID()
                     .equalsIgnoreCase(study.getStudyInstanceUID()))
-                return null;
+                return false;
         }
-        return study;
+        return true;
     }
 
     /**
@@ -1478,10 +1472,10 @@ public class QCBeanImpl  implements QCBean{
      *            the pid
      * @return the patient
      */
-    private Patient getPatient(IDWithIssuer pid) {
+    private Patient findPatient(IDWithIssuer pid) {
         Collection<IDWithIssuer> pids = new ArrayList<IDWithIssuer>();
         pids.add(pid);
-        Collection<PatientID> queryIDs = findOrCreatePatientIDs(pids);
+        Collection<PatientID> queryIDs = findPatientIDs(pids);
         
         if(queryIDs.isEmpty())
         return null;
@@ -1511,21 +1505,22 @@ public class QCBeanImpl  implements QCBean{
             Attributes createdStudyAttrs) {
         
         Study study = new Study();
-        Patient patient = getPatient(pid);
+        Patient patient = findPatient(pid);
         if(patient == null) {
-            LOG.error("{} : Study Creation failed, Patient not found",qcSource);
+            LOG.error("{} : QC info[createStudy] Failure - Study "
+                    + "Creation failed, Patient not found",qcSource);
             throw new EJBException();
         }
         study.setPatient(patient);
         if (createdStudyAttrs.contains(Tag.ProcedureCodeSequence)) {
-            Collection<Code> procedureCodes = getProcedureCodes(createdStudyAttrs);
+            Collection<Code> procedureCodes = findProcedureCodes(createdStudyAttrs);
             if (!procedureCodes.isEmpty()) {
                 study.setProcedureCodes(procedureCodes);
             }
         }
         
         if (createdStudyAttrs.contains(Tag.IssuerOfAccessionNumberSequence)) {
-            Issuer issuerOfAccessionNumber = getIssuerOfAccessionNumber(createdStudyAttrs);
+            Issuer issuerOfAccessionNumber = findIssuerOfAccessionNumber(createdStudyAttrs);
             if (issuerOfAccessionNumber != null) {
                 study.setIssuerOfAccessionNumber(issuerOfAccessionNumber);
             }
@@ -1536,7 +1531,7 @@ public class QCBeanImpl  implements QCBean{
                 archiveDeviceExtension.getFuzzyStr());
         
         em.persist(study);
-        LOG.info("{}: Create {}", qcSource, study);
+        LOG.info("{}: QC info[createStudy] info - Creating study {}", qcSource, study);
         return study;
     }
 
@@ -1573,32 +1568,8 @@ public class QCBeanImpl  implements QCBean{
                 archiveDeviceExtension.getAttributeFilter(Entity.Series),
                 archiveDeviceExtension.getFuzzyStr());
         em.persist(newSeries);
-        LOG.info("{}: Create {}", qcSource, newSeries);
+        LOG.info("{}: QC info[createSeries] info - Creating series {}", qcSource, newSeries);
         return newSeries;
-    }
-
-    /**
-     * Copy requested attributes.
-     * The method copies the requested attributes from one series
-     * to be used by the {@link #createSeries(Series, Study, Attributes)} method.
-     * 
-     * @param requestedAttrsSeq
-     *            the requested attrs seq
-     * @param newSeries
-     *            the new series
-     * @return the collection
-     */
-    private Collection<RequestAttributes> copyReqAttrs(
-            Sequence requestedAttrsSeq, Series newSeries) {
-        Collection<RequestAttributes> reqAttrs = new ArrayList<RequestAttributes>();
-        for(Attributes attrs : requestedAttrsSeq) {
-            RequestAttributes newReqAttr = new RequestAttributes(
-                    attrs,attrs.contains(Tag.IssuerOfAccessionNumberSequence)?getIssuerOfAccessionNumber(attrs):null,
-                    archiveDeviceExtension.getFuzzyStr());
-            newReqAttr.setSeries(newSeries);
-            reqAttrs.add(newReqAttr);
-        }
-        return reqAttrs;
     }
 
     /**
@@ -1642,9 +1613,34 @@ public class QCBeanImpl  implements QCBean{
                 archiveDeviceExtension.getAttributeFilter(Entity.Instance),
                 archiveDeviceExtension.getFuzzyStr());
         em.persist(inst);
-        LOG.info("{}: Create {}", qcSource, inst);
+        LOG.info("{}: QC info[createInstance] info - Creating instance {}", qcSource, inst);
         return inst;
     }
+
+    /**
+     * Copy requested attributes.
+     * The method copies the requested attributes from one series
+     * to be used by the {@link #createSeries(Series, Study, Attributes)} method.
+     * 
+     * @param requestedAttrsSeq
+     *            the requested attrs seq
+     * @param newSeries
+     *            the new series
+     * @return the collection
+     */
+    private Collection<RequestAttributes> copyReqAttrs(
+            Sequence requestedAttrsSeq, Series newSeries) {
+        Collection<RequestAttributes> reqAttrs = new ArrayList<RequestAttributes>();
+        for(Attributes attrs : requestedAttrsSeq) {
+            RequestAttributes newReqAttr = new RequestAttributes(
+                    attrs,attrs.contains(Tag.IssuerOfAccessionNumberSequence)?findIssuerOfAccessionNumber(attrs):null,
+                    archiveDeviceExtension.getFuzzyStr());
+            newReqAttr.setSeries(newSeries);
+            reqAttrs.add(newReqAttr);
+        }
+        return reqAttrs;
+    }
+
 
     /**
      * Copy verifying observers.
@@ -1710,12 +1706,13 @@ public class QCBeanImpl  implements QCBean{
      * @throws IllegalArgumentException
      *             the illegal argument exception
      */
-    private Location getFirst(Collection<Location> refs, Instance inst)
+    private Location getFirstFileRef(Collection<Location> refs, Instance inst)
             throws IllegalArgumentException{
         Location reference = null;
         if(refs.isEmpty()){
-            LOG.error("Invalid instance {} - must have a referenced file "
-                    + "either via fileref or file alias",inst);
+            LOG.error("{} : QC info[getFirstFileRef] Failure - Invalid "
+                    + "instance {}, must have a referenced file "
+                    + "either via fileref or file alias",qcSource, inst);
             throw new IllegalArgumentException();
         }
         else{
@@ -1733,14 +1730,14 @@ public class QCBeanImpl  implements QCBean{
      * of a KO/SR object.
      * The method will create an identical document sequence if not found.
      * 
-     * @param ident
+     * @param targetIdent
      *            the KO/SR to be updated
      * @param newInstance
      *            the new instance to add reference for in the KO/SR
      */
-    private void addIdenticalDocumentSequence(Instance ident, Instance newInstance) {
+    private void addIdenticalDocumentSequence(Instance targetIdent, Instance newInstance) {
         
-        Attributes identicalDocumentAttributes = ident.getAttributes();
+        Attributes identicalDocumentAttributes = targetIdent.getAttributes();
         
         Attributes newStudyItem = new Attributes();
         newStudyItem.setString(Tag.StudyInstanceUID, VR.UI,
@@ -1769,7 +1766,10 @@ public class QCBeanImpl  implements QCBean{
             if(!seq.contains(newStudyItem))
                 seq.add(newStudyItem);
         }
-        ident.getAttributesBlob().setAttributes(identicalDocumentAttributes);
+        LOG.info("{} : QC info[addIdenticalDocumentSequence] info - "
+                + "Added Identical Document Sequence to reference {} "
+                + " to instance {}",qcSource, newInstance, targetIdent);
+        targetIdent.getAttributesBlob().setAttributes(identicalDocumentAttributes);
     }
 
     /**
@@ -1778,13 +1778,13 @@ public class QCBeanImpl  implements QCBean{
      * provided KO/SR.
      * The method will do nothing if no identical document sequence found.
      * 
-     * @param ident
+     * @param removeFromIdent
      *            the KO/SR to be updated
      * @param oldInstance
      *            the old instance to remove reference for in the KO/SR
      */
-    private void removeIdenticalDocumentSequence(Instance ident, Instance oldInstance) {
-        Attributes identicalDocumentAttributes = ident.getAttributes();
+    private void removeIdenticalDocumentSequence(Instance removeFromIdent, Instance oldInstance) {
+        Attributes identicalDocumentAttributes = removeFromIdent.getAttributes();
         for (Attributes identStudyItems : identicalDocumentAttributes
                 .getSequence(Tag.IdenticalDocumentsSequence)) {
             for ( Iterator<Attributes> iter =  identStudyItems
@@ -1802,7 +1802,10 @@ public class QCBeanImpl  implements QCBean{
                 }
             }
         }
-        ident.setAttributes(identicalDocumentAttributes, archiveDeviceExtension
+        LOG.info("{} : QC info[removeIdenticalDocumentSequence] info - "
+                + "Removed Identical Document Sequence item referencing {} "
+                + " from instance {}",qcSource, oldInstance, removeFromIdent);
+        removeFromIdent.setAttributes(identicalDocumentAttributes, archiveDeviceExtension
                 .getAttributeFilter(Entity.Instance),
                 archiveDeviceExtension.getFuzzyStr());
     }
@@ -1815,14 +1818,14 @@ public class QCBeanImpl  implements QCBean{
      *            the instance containing the identical document sequence
      * @return the identical document referenced instances collection
      */
-    private Collection<Instance> getIdenticalDocumentReferencedInstances(Instance inst) {
+    private Collection<Instance> findIdenticalDocumentReferences(Instance inst) {
         Collection<Instance> foundIdents = new ArrayList<Instance>();
         Attributes attrs = inst.getAttributes();
         if(attrs.contains(Tag.IdenticalDocumentsSequence)) {
             for(Attributes studyItems : attrs.getSequence(Tag.IdenticalDocumentsSequence)) {
                 for(Attributes seriesItems : studyItems.getSequence(Tag.ReferencedSeriesSequence)) {
                     for(Attributes sopItems : seriesItems.getSequence(Tag.ReferencedSOPSequence)) {
-                        Instance newInstance = getInstance(sopItems.getString(Tag.ReferencedSOPInstanceUID));
+                        Instance newInstance = findInstance(sopItems.getString(Tag.ReferencedSOPInstanceUID));
                         foundIdents.add(newInstance);
                         }
                     }
@@ -1851,13 +1854,13 @@ public class QCBeanImpl  implements QCBean{
      *            the moved instances
      * @return the reference state
      */
-    private ReferenceState getReferenceState(String studyInstanceUID, Instance inst,
+    private ReferenceState findReferenceState(String studyInstanceUID, Instance inst,
             Collection<String> moved, String seriesType) {
             Sequence currentEvidenceSequence = inst.getAttributes()
                     .getSequence(Tag.CurrentRequestedProcedureEvidenceSequence);
             Sequence referencedSeriesSeq = inst.getAttributes()
             .getSequence(Tag.ReferencedSeriesSequence);
-            Collection<String> allReferencedSopUIDs = seriesType.equalsIgnoreCase("PR")? getAggregatedReferencedSopInstancesForSeries(referencedSeriesSeq): getAggregatedReferencedSopInstancesForStudy(
+            Collection<String> allReferencedSopUIDs = seriesType.equalsIgnoreCase("PR")? findAggregatedReferencedSopInstancesForSeries(referencedSeriesSeq): findAggregatedReferencedSopInstancesForStudy(
                     studyInstanceUID, currentEvidenceSequence);
             int allReferencesCount=allReferencedSopUIDs.size();
             if(allReferencesCount==0)
@@ -1888,7 +1891,7 @@ public class QCBeanImpl  implements QCBean{
      *            the current evidence sequence
      * @return the aggregated referenced SOP instances for study
      */
-    private Collection<String> getAggregatedReferencedSopInstancesForStudy(
+    private Collection<String> findAggregatedReferencedSopInstancesForStudy(
             String studyInstanceUID, Sequence currentEvidenceSequence) {
         Collection<String> aggregatedSopUIDs = new ArrayList<String>();
         for(Attributes studyItems : currentEvidenceSequence) {
@@ -1903,7 +1906,7 @@ public class QCBeanImpl  implements QCBean{
         return aggregatedSopUIDs;
     }
 
-    private Collection<String> getAggregatedReferencedSopInstancesForSeries(
+    private Collection<String> findAggregatedReferencedSopInstancesForSeries(
             Sequence referencedSeriesSequence) {
         Collection<String> aggregatedSopUIDs = new ArrayList<String>();
         for(Attributes seriesItems : referencedSeriesSequence) {
@@ -1974,11 +1977,11 @@ public class QCBeanImpl  implements QCBean{
              for(Instance inst:series.getInstances()) {
                  ReferenceState referenceState = null;
                  if(series.getModality().equalsIgnoreCase("PR")) {
-                     referenceState = getReferenceState(
+                     referenceState = findReferenceState(
                              sourceStudy.getStudyInstanceUID(),inst,sourceUIDs, "PR"); 
                  }
                  else {
-                     referenceState = getReferenceState(
+                     referenceState = findReferenceState(
                              sourceStudy.getStudyInstanceUID(),inst,sourceUIDs, "KOSR");
                  }
                  
@@ -1988,6 +1991,10 @@ public class QCBeanImpl  implements QCBean{
                  switch (referenceState) {
                  
                 case ALLMOVED:
+                    LOG.info("{} : QC info[handleKOPRSR] info - "
+                            + " All referenced items within {} moved "
+                            + " attempting to move {}",
+                            qcSource, series.getModality(), series.getModality());
                     if(!oldToNewSeries.keySet().contains(
                             inst.getSeries().getSeriesInstanceUID())) {
                         newSeries= createSeries(inst.getSeries(), targetStudy, 
@@ -2013,7 +2020,7 @@ public class QCBeanImpl  implements QCBean{
                     sourceUIDs.add(inst.getSopInstanceUID());
                     if(series.getModality().equalsIgnoreCase("KO") ||
                             series.getModality().equalsIgnoreCase("SR")) {
-                    for(Instance ident: getIdenticalDocumentReferencedInstances(newInstance)) {
+                    for(Instance ident: findIdenticalDocumentReferences(newInstance)) {
                         removeIdenticalDocumentSequence(ident, inst);
                         removeIdenticalDocumentSequence(inst,ident);
                         addIdenticalDocumentSequence(ident, newInstance);
@@ -2027,6 +2034,10 @@ public class QCBeanImpl  implements QCBean{
                     break;
                     
                 case SOMEMOVED:
+                    LOG.info("{} : QC info[handleKOPRSR] info - "
+                            + " Some referenced items within {} moved "
+                            + " attempting to create a copy {}",
+                            qcSource, series.getModality(), series.getModality());
                     if(!oldToNewSeries.keySet().contains(
                             inst.getSeries().getSeriesInstanceUID())) {
                         newSeries= createSeries(inst.getSeries(), targetStudy, 
@@ -2057,7 +2068,7 @@ public class QCBeanImpl  implements QCBean{
                     addIdenticalDocumentSequence(newInstance, inst);
                     addIdenticalDocumentSequence(inst, newInstance);
                     
-                    for(Instance ident: getIdenticalDocumentReferencedInstances(newInstance)) {
+                    for(Instance ident: findIdenticalDocumentReferences(newInstance)) {
                         if(ident.getPk()!=inst.getPk()) {
                         addIdenticalDocumentSequence(ident, newInstance);
 //                        addIdenticalDocumentSequence(newInstance, ident); already exists
@@ -2071,7 +2082,10 @@ public class QCBeanImpl  implements QCBean{
                     break;
                     
                 case NONEMOVED:
-                    //do nothing
+                    LOG.info("{} : QC info[handleKOPRSR] info - "
+                            + " No referenced items within {} where "
+                            + "moved during the operation, no invisible object handling required",
+                            qcSource, series.getModality());
                     break;
                 default:
                     break;
@@ -2107,8 +2121,11 @@ public class QCBeanImpl  implements QCBean{
      */
     private void recordHistoryEntry(Collection<QCInstanceHistory> instances) {
         updateOldHistoryRecords(instances);
-        for(QCInstanceHistory instance : instances)
-        em.persist(instance);
+        for(QCInstanceHistory instance : instances) {
+            LOG.debug("{} : QC info[recordHistoryEntry] info - "
+                    + "Adding history entry {}",qcSource,instance.toString());
+            em.persist(instance);
+        }
     }
 
     /**
@@ -2124,7 +2141,7 @@ public class QCBeanImpl  implements QCBean{
         for(QCInstanceHistory newInstanceRecord : instanceRecords) {
             if(!newInstanceRecord.isCloned()) {
                 if(!newInstanceRecord.getSeries().getStudy().getAction().getAction().equalsIgnoreCase(QCOperation.REJECT.name())) {
-                    associatedRecords = getRecordsByCurrentUID(newInstanceRecord.getOldUID());
+                    associatedRecords = findInstanceHistoryByCurrentUID(newInstanceRecord.getOldUID());
                     for(QCInstanceHistory associatedRecord : associatedRecords) {
                         if(associatedRecord.getNextUID().equalsIgnoreCase(associatedRecord.getCurrentUID())) {
                             associatedRecord.setNextUID(newInstanceRecord.getOldUID());
@@ -2137,9 +2154,11 @@ public class QCBeanImpl  implements QCBean{
                 }
             }
         if(associatedRecords.isEmpty())
-            LOG.info("No associated records");
+            LOG.debug("{} : QC info[updateOldHistoryRecords] info - No associated history"
+                    + " records found, no history update required", qcSource);
         for(QCInstanceHistory record : associatedRecords) {
-            LOG.info("Updating the following QCHistory Records for referential integrity :");
+            LOG.info("{} : QC info[updateOldHistoryRecords] info - Updating the following QCHistory Records"
+                    + " for referential integrity :\n", qcSource);
             LOG.info(record.toString());
         }
     }
@@ -2153,7 +2172,7 @@ public class QCBeanImpl  implements QCBean{
      * @return the records found by current UID
      */
     @SuppressWarnings("unchecked")
-    private Collection<QCInstanceHistory> getRecordsByCurrentUID(String oldUID) {
+    private Collection<QCInstanceHistory> findInstanceHistoryByCurrentUID(String oldUID) {
         Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_CURRENT_UID);
         query.setParameter(1, oldUID);
         return query.getResultList();
@@ -2172,19 +2191,15 @@ public class QCBeanImpl  implements QCBean{
      * @param unmodified
      *            the unmodified
      */
-    private void recordUpdateHistoryEntry(QCActionHistory action, 
-            QCUpdateScope scope, Attributes unmodified) {
+    private void addUpdateHistoryEntry(QCActionHistory action, 
+            QCUpdateScope scope, Attributes unmodified, String patientPK) {
         QCUpdateHistory qcUpdateHistory = new QCUpdateHistory();
         qcUpdateHistory.setCreatedTime(new Date());
         qcUpdateHistory.setScope(scope);
         qcUpdateHistory.setUpdatedAttributesBlob(new AttributesBlob(unmodified));
         switch (scope) {
         case PATIENT:
-            Set<IDWithIssuer> pids = IDWithIssuer.pidsOf(unmodified);
-            String patientObjectID = "";
-            for(IDWithIssuer pid : pids)
-                patientObjectID+=pid.toString();
-            qcUpdateHistory.setObjectUID(patientObjectID);
+            qcUpdateHistory.setObjectUID(patientPK);
             break;
         case STUDY:
             qcUpdateHistory.setObjectUID(unmodified.getString(Tag.StudyInstanceUID));
@@ -2196,10 +2211,11 @@ public class QCBeanImpl  implements QCBean{
             qcUpdateHistory.setObjectUID(unmodified.getString(Tag.SOPInstanceUID));
             break;
         default:
-            LOG.error("{} : Unsupported Scode provided to update history creation", qcSource);
+            LOG.error("{} : QC info[adUpdateHistoryEntry] Failure -  "
+                    + "Unsupported Scode provided to update history creation", qcSource);
             throw new EJBException();
         }
-        QCUpdateHistory prevHistoryNode = getPrevHistoryNode(
+        QCUpdateHistory prevHistoryNode = findPreviousHistoryNode(
                 qcUpdateHistory.getObjectUID());
         if(prevHistoryNode != null) {
             prevHistoryNode.setNext(qcUpdateHistory);
@@ -2224,7 +2240,8 @@ public class QCBeanImpl  implements QCBean{
             Instance inst = iter.next();
             if(isQCed(inst.getSopInstanceUID()))
                 iter.remove();
-            LOG.debug("{} : Restore info - Unable to restore {} -  still QCed",qcSource, inst);
+            LOG.debug("{} : QC info[filterQCed] Failure - "
+                    + " Unable to restore {} -  still QCed",qcSource, inst);
         }
         return instancesFiltered;
     }
@@ -2252,7 +2269,7 @@ public class QCBeanImpl  implements QCBean{
      *            the object uid
      * @return the prev history node
      */
-    private QCUpdateHistory getPrevHistoryNode(String objectUID) {
+    private QCUpdateHistory findPreviousHistoryNode(String objectUID) {
         Query query = em.createNamedQuery(QCUpdateHistory.FIND_FIRST_UPDATE_ENTRY);
         query.setParameter(1, objectUID);
         QCUpdateHistory result=null;
@@ -2289,6 +2306,9 @@ public class QCBeanImpl  implements QCBean{
         identInstanceHistory.setPreviousAtributesBlob(ident.getAttributesBlob());
         identInstanceHistory.setSeries(identSeriesHistory);
         em.persist(identInstanceHistory);
+        LOG.info("{} : QC info[addIdenticalDocumentSequence] info - "
+                + " Added identical document sequence history entry for {}",
+                qcSource, ident);
     }
 
     /**
@@ -2304,7 +2324,7 @@ public class QCBeanImpl  implements QCBean{
      */
     private boolean identicalDocumentSequenceHistoryExists(Instance ident,
             QCActionHistory identHistoryAction) {
-        QCInstanceHistory identHistory = findIdentHistory(ident, identHistoryAction);
+        QCInstanceHistory identHistory = findIdenticalDocumentHistory(ident, identHistoryAction);
         return identHistory==null ? false : true;
     }
 
@@ -2319,7 +2339,7 @@ public class QCBeanImpl  implements QCBean{
      *            the ident history action
      * @return the QC instance history
      */
-    private QCInstanceHistory findIdentHistory(Instance ident, 
+    private QCInstanceHistory findIdenticalDocumentHistory(Instance ident, 
             QCActionHistory identHistoryAction) {
         QCInstanceHistory result;
         Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_CURRENT_UID_FOR_ACTION);
@@ -2329,6 +2349,9 @@ public class QCBeanImpl  implements QCBean{
             result = (QCInstanceHistory) query.getSingleResult();
         }
         catch (NoResultException e) {
+            LOG.error("{} : QC info[findIdenticalDocumentHistory] Failure - "
+                    + " Unable to find identical document sequence history ",
+                    qcSource);
             result = null;
         }
         return result;
@@ -2403,11 +2426,5 @@ public class QCBeanImpl  implements QCBean{
             this.seriesHistory = seriesHistory;
         }
         
-    }
-
-    private void rejectAndScheduleForDeletion(Collection<Instance> insts) {
-        rejectionService.reject(this, insts, codeService.findOrCreate(
-                new Code("113037","DCM",null,"Rejected for Patient Safety Reasons")), null); 
-        rejectionServiceDeleter.deleteRejected(this, insts);
     }
 }

@@ -220,22 +220,15 @@ public class QCRestful {
         
         if (command == null)
             throw new WebApplicationException(
-                    "Unable to decide patient command - supported commands {merge, link, unlink}");
-        ArrayList<HashMap<String, String>> query = new ArrayList<HashMap<String, String>>();
+                    "Unable to decide patient command - supported commands {merge, link, unlink, updateids}");
         ArrayList<Attributes> attrs = null;
         try {
-            attrs = parseJSONAttributesToList(in, query);
-
-            if (query.size()%2!=0)
-                throw new WebApplicationException(new Exception(
-                        "Unable to decide request data"), Response.Status.BAD_REQUEST);
+            attrs = parseJSONAttributesToList(in);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Received Attributes for patient operation - "+patientOperation);
-                for(int i=0; i< query.size();i++){
+                for(int i=0; i< attrs.size();i++){
                     LOG.debug(i%2==0 ? "Source data[{}]: ":"Target data[{}]: ",(i/2)+1);
-                for (String key : query.get(i).keySet()) {
-                    LOG.debug(key + "=" + query.get(i).get(key));
-                }
+                    LOG.debug(attrs.get(i).toString(0, attrs.get(i).size()));
                 }
             }
         }
@@ -416,14 +409,11 @@ public class QCRestful {
      * 
      * @param in
      *            the input stream
-     * @param query
-     *            the query
      * @return the array list
      * @throws IOException
      *             Signals that an I/O exception has occurred.
      */
-    private ArrayList<Attributes> parseJSONAttributesToList(InputStream in,
-            ArrayList<HashMap<String, String>> query) throws IOException {
+    private ArrayList<Attributes> parseJSONAttributesToList(InputStream in) throws IOException {
 
         JSONReader reader = new JSONReader(
                 Json.createParser(new InputStreamReader(in, "UTF-8")));
@@ -446,16 +436,17 @@ public class QCRestful {
             if (TagUtils.isPrivateTag(ds.tags()[j])) {
                 dict = ElementDictionary.getElementDictionary(ds
                         .getPrivateCreator(ds.tags()[j]));
-                query.get(i).put(dict.keywordOf(ds.tags()[j]),
-                        ds.getString(ds.tags()[j]));
             } else {
                 dict = ElementDictionary.getStandardElementDictionary();
                 tmpQMap.put(dict.keywordOf(ds.tags()[j]),
                         ds.getString(ds.tags()[j]));
             }
         }
-        query.add(tmpQMap);
+        
         }
+        if (attributesList.size()%2!=0)
+            throw new WebApplicationException(new Exception(
+                    "Unable to decide request data"), Response.Status.BAD_REQUEST);
 
         return attributesList;
     }
