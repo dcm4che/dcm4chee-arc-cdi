@@ -100,5 +100,11 @@
       <version>1.8.1</version>
       <type>zip</type>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>jxpath-jboss-module</artifactId>
+      <version>1.3</version>
+      <type>zip</type>
+    </dependency>
   </dependencies>
 </project>
