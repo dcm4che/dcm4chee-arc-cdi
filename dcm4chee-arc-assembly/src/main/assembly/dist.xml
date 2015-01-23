@@ -94,6 +94,7 @@
         <include>org.dcm4che.dcm4chee-arc:json-jboss-modules</include>
         <include>org.dcm4che:jclouds-jboss-modules</include>
         <include>org.dcm4che:jxpath-jboss-module</include>
+        <include>org.dcm4che:compress-jboss-module</include>
       </includes>
       <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>
