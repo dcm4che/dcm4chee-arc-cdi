@@ -872,8 +872,8 @@ dicomManufacturer: dcm4che.org
 dcmMPPSEmulationPollInterval: 60
 dicomDeviceName: dcm4chee-arc
 dcmKeyStoreType: JKS
+dcmArchivingSchedulerPollInterval: 60
 dicomSoftwareVersion: 4.2.0.Alpha3
-dcmArchivingPollInterval: 60
 objectClass: dcmDevice
 objectClass: dicomDevice
 objectClass: dcmArchiveDevice
@@ -5430,9 +5430,10 @@ cn: MPPS Emulation Rule 1
 
 dn: cn=Archiving Rule,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmArchivingRule
+dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip
 dcmAETitle: ARCHIVE
 dcmStorageSystemGroupID: ARCHIVE
-dcmArchivingDelayInSeconds: 300
+dcmDelayAfterInstanceStored: 60
 cn: Archiving Rule
 
 dn: cn=dcmPatientSelector,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
