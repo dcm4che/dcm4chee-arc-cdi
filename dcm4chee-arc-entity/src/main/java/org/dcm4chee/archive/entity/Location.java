@@ -273,7 +273,7 @@ public class Location implements Serializable {
 
     @Override
     public String toString() {
-        return "Storage[pk=" + pk
+        return "Location[pk=" + pk
                 + ", groupID=" + storageSystemGroupID
                 + ", systemID=" + storageSystemID
                 + ", path=" + storagePath

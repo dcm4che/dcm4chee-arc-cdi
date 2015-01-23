@@ -58,16 +58,20 @@ public class CodeServiceEJB implements CodeService {
     private EntityManager em;
 
     @Override
-    public Code findOrCreate(Code code) {
+    public Code findOrCreate(org.dcm4che3.data.Code code) {
+        if (code == null)
+            return null;
         try {
             return find(code);
         } catch (NoResultException e) {
+            if (!(code instanceof Code))
+                code = new Code(code);
             em.persist(code);
-            return code;
+            return (Code) code;
         }
     }
 
-    private Code find(Code code) {
+    private Code find(org.dcm4che3.data.Code code) {
         String codingSchemeVersion = code.getCodingSchemeVersion();
         TypedQuery<Code> query = em.createNamedQuery(
                 codingSchemeVersion == null

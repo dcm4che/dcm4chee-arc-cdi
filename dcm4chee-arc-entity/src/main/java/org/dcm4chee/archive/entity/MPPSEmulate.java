@@ -50,6 +50,8 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -97,6 +99,7 @@ public class MPPSEmulate implements Serializable {
     private String studyInstanceUID;
 
     @Basic(optional = false)
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "emulation_time")
     private Date emulationTime;
 

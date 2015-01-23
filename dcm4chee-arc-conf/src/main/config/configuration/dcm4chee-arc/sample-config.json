@@ -959,40 +959,15 @@
             "dicomSupportedCharacterSet" : [ ],
             "aeExtensions" : {
               "ArchiveAEExtension" : {
-                "dcmMPPSEmulationRules" : {
-                  "MPPS Emulation Rule 1" : {
-                    "dcmMPPSEmulationDelay" : 120,
-                    "cn" : "MPPS Emulation Rule 1",
-                    "dicomAETitle" : "DCM4CHEE",
-                    "dcmAETitle" : [ "EMULATE_MPPS" ]
-                  }
-                },
+                "dcmMPPSEmulationRules" : [ {
+                  "dcmMPPSEmulationDelay" : 120,
+                  "cn" : "MPPS Emulation Rule 1",
+                  "dicomAETitle" : "DCM4CHEE",
+                  "dcmAETitle" : [ "EMULATE_MPPS" ]
+                } ],
                 "dcmRetrieveSuppressionCriteria" : {
                   "dcmCheckTransferCapabilities" : false,
                   "dcmRetrieveSuppressionCriteriaMap" : { }
-                },
-                "dcmAtrributeCoercions" : {
-                  "dcmAttributeCoercionList" : [ {
-                    "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl",
-                    "condition" : {
-                      "dicomTransferRole" : "SCU",
-                      "dcmAETitle" : [ "WITHOUT_PN" ],
-                      "dcmDeviceName" : [ ],
-                      "dcmSOPClass" : [ ],
-                      "dcmDIMSE" : "C_STORE_RQ"
-                    },
-                    "cn" : "Remove person names"
-                  }, {
-                    "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl",
-                    "condition" : {
-                      "dicomTransferRole" : "SCP",
-                      "dcmAETitle" : [ "ENSURE_PID" ],
-                      "dcmDeviceName" : [ ],
-                      "dcmSOPClass" : [ ],
-                      "dcmDIMSE" : "C_STORE_RQ"
-                    },
-                    "cn" : "Supplement missing PID"
-                  } ]
                 },
                 "dcmPreserveSpoolFileOnFailure" : true,
                 "dcmStorageSystemGroupID" : "DEFAULT",
@@ -1089,6 +1064,29 @@
                 "dcmIanRetryInterval" : 60,
                 "dcmQCUpdateReferencesOnRetrieve" : "DEACTIVATE",
                 "dcmPersonNameComponentOrderInsensitiveMatching" : false,
+                "dcmAttributeCoercions" : {
+                  "dcmAttributeCoercionList" : [ {
+                    "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl",
+                    "condition" : {
+                      "dicomTransferRole" : "SCU",
+                      "dcmAETitle" : [ "WITHOUT_PN" ],
+                      "dcmDeviceName" : [ ],
+                      "dcmSOPClass" : [ ],
+                      "dcmDIMSE" : "C_STORE_RQ"
+                    },
+                    "cn" : "Remove person names"
+                  }, {
+                    "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl",
+                    "condition" : {
+                      "dicomTransferRole" : "SCP",
+                      "dcmAETitle" : [ "ENSURE_PID" ],
+                      "dcmDeviceName" : [ ],
+                      "dcmSOPClass" : [ ],
+                      "dcmDIMSE" : "C_STORE_RQ"
+                    },
+                    "cn" : "Supplement missing PID"
+                  } ]
+                },
                 "dcmStgCmtRetryInterval" : 60,
                 "dcmReturnOtherPatientIDs" : true,
                 "dcmStgCmtMaxRetries" : 0,
@@ -1098,6 +1096,17 @@
                 "dcmQueryRetrieveViewID" : "hideRejected",
                 "dcmSendPendingCMoveInterval" : 5000,
                 "dcmFwdMppsRetryInterval" : 60,
+                "dcmArchivingRules" : {
+                  "list" : [ {
+                    "dcmDelayAfterInstanceStored" : 60,
+                    "condition" : {
+                      "dcmAETitle" : [ "ARCHIVE" ]
+                    },
+                    "cn" : "Archiving Rule",
+                    "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip",
+                    "dcmStorageSystemGroupID" : "ARCHIVE"
+                  } ]
+                },
                 "dcmMatchUnknown" : true,
                 "dcmDigestAlgorithm" : "MD5",
                 "dcmQidoMaxNumberOfResults" : 1000,
@@ -2508,13 +2517,10 @@
             "dicomSupportedCharacterSet" : [ ],
             "aeExtensions" : {
               "ArchiveAEExtension" : {
-                "dcmMPPSEmulationRules" : { },
+                "dcmMPPSEmulationRules" : [ ],
                 "dcmRetrieveSuppressionCriteria" : {
                   "dcmCheckTransferCapabilities" : false,
                   "dcmRetrieveSuppressionCriteriaMap" : { }
-                },
-                "dcmAtrributeCoercions" : {
-                  "dcmAttributeCoercionList" : [ ]
                 },
                 "dcmPreserveSpoolFileOnFailure" : false,
                 "dcmReturnOtherPatientNames" : true,
@@ -2531,6 +2537,9 @@
                 "dcmIanRetryInterval" : 60,
                 "dcmQCUpdateReferencesOnRetrieve" : "DEACTIVATE",
                 "dcmPersonNameComponentOrderInsensitiveMatching" : false,
+                "dcmAttributeCoercions" : {
+                  "dcmAttributeCoercionList" : [ ]
+                },
                 "dcmStgCmtRetryInterval" : 60,
                 "dcmStgCmtMaxRetries" : 0,
                 "dcmReturnOtherPatientIDs" : true,
@@ -2540,6 +2549,9 @@
                 "dcmQueryRetrieveViewID" : "regularUse",
                 "dcmSendPendingCMoveInterval" : 5000,
                 "dcmFwdMppsRetryInterval" : 60,
+                "dcmArchivingRules" : {
+                  "list" : [ ]
+                },
                 "dcmMatchUnknown" : true,
                 "dcmQidoMaxNumberOfResults" : 1000,
                 "dcmMatchLinkedPatientIDs" : false,
@@ -3283,13 +3295,10 @@
             "dicomSupportedCharacterSet" : [ ],
             "aeExtensions" : {
               "ArchiveAEExtension" : {
-                "dcmMPPSEmulationRules" : { },
+                "dcmMPPSEmulationRules" : [ ],
                 "dcmRetrieveSuppressionCriteria" : {
                   "dcmCheckTransferCapabilities" : false,
                   "dcmRetrieveSuppressionCriteriaMap" : { }
-                },
-                "dcmAtrributeCoercions" : {
-                  "dcmAttributeCoercionList" : [ ]
                 },
                 "dcmPreserveSpoolFileOnFailure" : false,
                 "dcmReturnOtherPatientNames" : true,
@@ -3306,6 +3315,9 @@
                 "dcmIanRetryInterval" : 60,
                 "dcmQCUpdateReferencesOnRetrieve" : "DEACTIVATE",
                 "dcmPersonNameComponentOrderInsensitiveMatching" : false,
+                "dcmAttributeCoercions" : {
+                  "dcmAttributeCoercionList" : [ ]
+                },
                 "dcmStgCmtRetryInterval" : 60,
                 "dcmStgCmtMaxRetries" : 0,
                 "dcmReturnOtherPatientIDs" : true,
@@ -3315,6 +3327,9 @@
                 "dcmQueryRetrieveViewID" : "trashView",
                 "dcmSendPendingCMoveInterval" : 5000,
                 "dcmFwdMppsRetryInterval" : 60,
+                "dcmArchivingRules" : {
+                  "list" : [ ]
+                },
                 "dcmMatchUnknown" : true,
                 "dcmQidoMaxNumberOfResults" : 1000,
                 "dcmMatchLinkedPatientIDs" : false,
@@ -4287,6 +4302,7 @@
             } ],
             "dcmMppsEmulationPollInterval" : 60,
             "dcmRejectedObjectsCleanUpPollInterval" : 0,
+            "dcmArchivingSchedulerPollInterval" : 60,
             "dcmWadoAttributesStaleTimeout" : 60,
             "dcmHostnameAEResolution" : false,
             "dcmDeIdentifyLogs" : false,
@@ -4370,11 +4386,47 @@
                     "dcmStorageSystemID" : "fs1",
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
                     "dcmStorageReadOnly" : false,
-                    "dcmStorageAccessTime" : 0,
+                    "dcmStorageAccessTime" : 1000,
                     "dcmInstanceAvailability" : "ONLINE",
                     "dcmStorageSystemConnectionTimeout" : 0,
                     "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/fs1"
                   }
+                }
+              },
+              "ARCHIVE" : {
+                "dcmActiveStorageSystemID" : [ "nearline" ],
+                "dcmStorageSystemGroupID" : "ARCHIVE",
+                "Storage Systems" : {
+                  "nearline" : {
+                    "dcmStorageSystemMaxConnections" : 5,
+                    "dcmStorageCacheOnStore" : false,
+                    "dcmStorageSystemStatus" : "OK",
+                    "dcmStorageSystemMultipartUploadSize" : "32MB",
+                    "dcmStorageSystemSocketTimeout" : 0,
+                    "dcmStorageSystemID" : "nearline",
+                    "dcmProviderName" : "org.dcm4chee.storage.filesystem",
+                    "dcmStorageReadOnly" : false,
+                    "dcmStorageAccessTime" : 2000,
+                    "dcmInstanceAvailability" : "NEARLINE",
+                    "dcmStorageSystemConnectionTimeout" : 0,
+                    "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/nearline"
+                  }
+                },
+                "Storage File Cache" : {
+                  "dcmStorageFileCacheOrphanedFileName" : "orphaned",
+                  "dcmStorageFileCacheJournalRootDirectory" : "/var/local/dcm4chee-arc/nearline-cache",
+                  "dcmStorageFileCacheRootDirectory" : "/var/local/dcm4chee-arc/nearline-cache/data",
+                  "dcmStorageFileCacheJournalFileNamePattern" : "yyyyMMdd/HHmmss.SSS",
+                  "dcmProviderName" : "org.dcm4chee.storage.filecache",
+                  "dcmStorageFileCacheJournalFileName" : "journal",
+                  "dcmStorageFileCacheJournalMaxEntries" : 100,
+                  "dcmStorageFileCacheAlgorithm" : "LRU",
+                  "dcmStorageMinFreeSpace" : "100MiB",
+                  "dcmStorageFileCacheJournalDirectoryName" : "journal.d"
+                },
+                "Storage Container" : {
+                  "dcmStorageContainerCompress" : false,
+                  "dcmProviderName" : "org.dcm4chee.storage.zip"
                 }
               }
             }

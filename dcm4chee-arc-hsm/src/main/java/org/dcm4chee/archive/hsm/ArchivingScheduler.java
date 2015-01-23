@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011-2015
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,15 +36,20 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.code;
+package org.dcm4chee.archive.hsm;
 
-import org.dcm4chee.archive.entity.Code;
+import java.io.IOException;
+
+import org.dcm4chee.archive.entity.ArchivingTask;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public interface CodeService {
+public interface ArchivingScheduler {
 
-    Code findOrCreate(org.dcm4che3.data.Code code);
+    int scheduleReadyArchivingTasks();
+
+    ArchivingTask scheduleNextArchivingTask() throws IOException;
+
 }

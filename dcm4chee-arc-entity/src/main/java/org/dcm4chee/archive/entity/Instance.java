@@ -80,18 +80,7 @@ import org.dcm4chee.storage.conf.Availability;
  */
 @NamedQueries({
 @NamedQuery(
-    name="Instance.findBySOPInstanceUID",
-    query="SELECT i FROM Instance i "
-            + "WHERE i.sopInstanceUID = ?1"),
-@NamedQuery(
-    name="Instance.findBySOPInstanceUIDFetchConceptCodeAndVerifyingObserver",
-    query="SELECT i FROM Instance i "
-            + "JOIN i.conceptNameCode "
-            + "JOIN i.verifyingObservers "
-            + "JOIN i.attributesBlob "
-            + "WHERE i.sopInstanceUID = ?1"),
-@NamedQuery(
-        name="Instance.findBySOPInstanceUID.eager",
+        name=Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
         query="SELECT i FROM Instance i "
                 + "JOIN FETCH i.series se "
                 + "JOIN FETCH se.study st "
@@ -105,7 +94,7 @@ import org.dcm4chee.storage.conf.Availability;
                 + "LEFT JOIN FETCH se.performingPhysicianName ppn "
                 + "WHERE i.sopInstanceUID = ?1"),            
 @NamedQuery(
-        name="Instance.findBySOPInstanceUIDMany.eager",
+        name=Instance.FIND_BY_SOP_INSTANCE_UID_EAGER_MANY,
         query="SELECT i FROM Instance i "
                 + "JOIN FETCH i.series se "
                 + "JOIN FETCH se.study st "
@@ -119,11 +108,7 @@ import org.dcm4chee.storage.conf.Availability;
                 + "LEFT JOIN FETCH se.performingPhysicianName ppn "
                 + "WHERE i.sopInstanceUID IN (:uids)"), 
 @NamedQuery(
-    name="Instance.findBySopInstanceUIDFetchLocations",
-    query="SELECT i FROM Instance i LEFT JOIN FETCH i.locations "
-            + "WHERE i.sopInstanceUID = ?1"),
-@NamedQuery(
-    name="Instance.findBySeriesInstanceUID",
+    name=Instance.FIND_BY_SERIES_INSTANCE_UID,
     query="SELECT i FROM Instance i "
             + "WHERE i.series.seriesInstanceUID = ?1")})
 @Entity
@@ -131,19 +116,13 @@ import org.dcm4chee.storage.conf.Availability;
 public class Instance implements Serializable {
 
     private static final long serialVersionUID = -6510894512195470408L;
-    
-    public static final String FIND_BY_SOP_INSTANCE_UID =
-            "Instance.findBySOPInstanceUID";
+
     public static final String FIND_BY_SOP_INSTANCE_UID_EAGER =
             "Instance.findBySOPInstanceUID.eager";
     public static final String FIND_BY_SOP_INSTANCE_UID_EAGER_MANY =
-            "Instance.findBySOPInstanceUIDMany.eager";    
+            "Instance.findBySOPInstanceUIDMany.eager";
     public static final String FIND_BY_SERIES_INSTANCE_UID =
             "Instance.findBySeriesInstanceUID";
-    public static final String FIND_BY_SOP_INSTANCE_UID_FETCH_LOCATION =
-            "Instance.findBySopInstanceUIDFetchLocations";
-    public static final String FIND_BY_SOP_INSTANCE_UID_FETCH_CONCEPT_CODE_AND_VERIFYING_OBSERVER =
-            "Instance.findBySOPInstanceUIDFetchConceptCodeAndVerifyingObserver";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

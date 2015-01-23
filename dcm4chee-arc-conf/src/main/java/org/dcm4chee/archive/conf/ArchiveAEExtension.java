@@ -58,8 +58,11 @@ import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
+
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -155,7 +158,7 @@ public class ArchiveAEExtension extends AEExtension {
     private int IANRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
 
     @LDAP(noContainerNode = true)
-    @ConfigurableProperty(name = "dcmAtrributeCoercions")
+    @ConfigurableProperty(name = "dcmAttributeCoercions")
     private AttributeCoercions attributeCoercions = new AttributeCoercions();
 
     @LDAP(noContainerNode = true)
@@ -202,14 +205,16 @@ public class ArchiveAEExtension extends AEExtension {
         this.retrieveSuppressionCriteria = retrieveSuppressionCriteria;
     }
 
-    // will be converted to Collection<Rule>, when supported by generic configuration
-    @LDAP(distinguishingField = "cn")
+    @LDAP(noContainerNode=true)
     @ConfigurableProperty(name = "dcmMPPSEmulationRules")
-    private Map<String, MPPSEmulationRule> mppsEmulationRules =
-            new HashMap<String, MPPSEmulationRule>();
+    private List<MPPSEmulationRule> mppsEmulationRules = new ArrayList<MPPSEmulationRule>();
 
     private Map<String, MPPSEmulationRule> mppsEmulationRuleMap =
             new HashMap<String, MPPSEmulationRule>();
+
+    @LDAP(noContainerNode=true)
+    @ConfigurableProperty(name = "dcmArchivingRules")
+    private ArchivingRules archivingRules = new ArchivingRules();
 
     @ConfigurableProperty(name = "dcmPatientSelector")
     private PatientSelectorConfig patientSelectorConfig;
@@ -536,6 +541,24 @@ public class ArchiveAEExtension extends AEExtension {
         this.QIDOMaxNumberOfResults = qidoMaxNumberOfResults;
     }
 
+    public ArchivingRules getArchivingRules() {
+        return archivingRules;
+    }
+
+    public void addArchivingRule(ArchivingRule rule) {
+        archivingRules.add(rule);
+    }
+
+    public void setArchivingRules(ArchivingRules rules) {
+        archivingRules.clear();
+        if (rules != null)
+            archivingRules.add(rules);
+    }
+
+    public boolean removeArchivingRule(ArchivingRule ac) {
+        return archivingRules.remove(ac);
+    }
+
     @Override
     public void reconfigure(AEExtension from) {
         ArchiveAEExtension arcae = (ArchiveAEExtension) from;
@@ -544,6 +567,7 @@ public class ArchiveAEExtension extends AEExtension {
 
         setAttributeCoercions(arcae.getAttributeCoercions());
         setCompressionRules(arcae.getCompressionRules());
+        setArchivingRules(arcae.getArchivingRules());
     }
 
     public StoreParam getStoreParam() {
@@ -592,14 +616,14 @@ public class ArchiveAEExtension extends AEExtension {
         this.queryRetrieveViewID = queryRetrieveViewID;
     }
 
-    public Map<String, MPPSEmulationRule> getMppsEmulationRules() {
+    public List<MPPSEmulationRule> getMppsEmulationRules() {
         return mppsEmulationRules;
     }
 
-    public void setMppsEmulationRules(Map<String, MPPSEmulationRule> rules) {
+    public void setMppsEmulationRules(List<MPPSEmulationRule> rules) {
         this.mppsEmulationRules.clear();
         this.mppsEmulationRuleMap.clear();
-        for (MPPSEmulationRule rule : rules.values()) {
+        for (MPPSEmulationRule rule : rules) {
             addMppsEmulationRule(rule);
         }
     }
@@ -609,7 +633,7 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public void addMppsEmulationRule(MPPSEmulationRule rule) {
-        mppsEmulationRules.put(rule.getCommonName(), rule);
+        mppsEmulationRules.add(rule);
         for (String sourceAET : rule.getSourceAETs()) {
             mppsEmulationRuleMap.put(sourceAET, rule);
         }

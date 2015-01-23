@@ -115,7 +115,10 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     @ConfigurableProperty(name = "dcmMppsEmulationPollInterval")
     private int mppsEmulationPollInterval;
-    
+
+    @ConfigurableProperty(name = "dcmArchivingSchedulerPollInterval")
+    private int archivingSchedulerPollInterval;
+
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
 
@@ -236,6 +239,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     public void setMppsEmulationPollInterval(int mppsEmulationPollInterval) {
         this.mppsEmulationPollInterval = mppsEmulationPollInterval;
+    }
+
+    public int getArchivingSchedulerPollInterval() {
+        return archivingSchedulerPollInterval;
+    }
+
+    public void setArchivingSchedulerPollInterval(int archivingPollInterval) {
+        this.archivingSchedulerPollInterval = archivingPollInterval;
     }
 
     public void clearTemplatesCache() {

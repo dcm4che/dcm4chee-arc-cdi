@@ -223,6 +223,27 @@
       </dependency>
       <dependency>
         <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-archiver</artifactId>
+        <version>${dcm4chee-storage.version}</version>
+        <type>ejb</type>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-filecache</artifactId>
+        <version>${dcm4chee-storage.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-tar</artifactId>
+        <version>${dcm4chee-storage.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-zip</artifactId>
+        <version>${dcm4chee-storage.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
         <artifactId>dcm4chee-storage-filesystem</artifactId>
         <version>${dcm4chee-storage.version}</version>
       </dependency>
@@ -484,6 +505,7 @@
     <module>dcm4chee-arc-mpps</module>
     <module>dcm4chee-arc-mpps-emulate</module>
     <module>dcm4chee-arc-conf-producer</module>
+    <module>dcm4chee-arc-hsm</module>
   </modules>
   <profiles>
     <profile>

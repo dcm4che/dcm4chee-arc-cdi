@@ -56,13 +56,14 @@ import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.util.AttributesFormat;
+import org.dcm4chee.storage.conf.Availability;
+import org.dcm4chee.storage.conf.Container;
+import org.dcm4chee.storage.conf.FileCache;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
-import org.dcm4chee.storage.conf.StorageSystemStatus;
 
 import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -485,6 +486,8 @@ public class DeviceMocker {
         "ORM^O01"
     };
     private static final int MPPS_EMULATOR_POLL_INTERVAL = 60;
+    private static final int ARCHIVING_POLL_INTERVAL = 60;
+
     private static QueryRetrieveView[] QUERY_RETRIEVE_VIEWS = {
             HIDE_REJECTED_VIEW,
             REGULAR_USE_VIEW,
@@ -660,22 +663,48 @@ public class DeviceMocker {
     }
 
     private void addStorageDeviceExtension(Device device) {
-        StorageDeviceExtension ext = new StorageDeviceExtension();
-        device.addDeviceExtension(ext);
-        StorageSystemGroup group = new StorageSystemGroup();
-        group.setGroupID("DEFAULT");
-        group.addStorageSystem(newFileSystem("fs1", "/var/local/dcm4chee-arc/fs1"));
-        group.setActiveStorageSystemIDs("fs1");
-        ext.addStorageSystemGroup(group);
-    }
+        StorageSystem fs1 = new StorageSystem();
+        fs1.setStorageSystemID("fs1");
+        fs1.setProviderName("org.dcm4chee.storage.filesystem");
+        fs1.setStorageSystemPath("/var/local/dcm4chee-arc/fs1");
+        fs1.setStorageAccessTime(1000);
+        fs1.setAvailability(Availability.ONLINE);
 
-    private StorageSystem newFileSystem(String id, String path) {
-        StorageSystem fs = new StorageSystem();
-        fs.setStorageSystemID(id);
-        fs.setStorageSystemPath(path);
-        fs.setProviderName("org.dcm4chee.storage.filesystem");
-        fs.setStorageSystemStatus(StorageSystemStatus.OK);
-        return fs;
+        StorageSystem arc = new StorageSystem();
+        arc.setStorageSystemID("nearline");
+        arc.setProviderName("org.dcm4chee.storage.filesystem");
+        arc.setStorageSystemPath("/var/local/dcm4chee-arc/nearline");
+        arc.setStorageAccessTime(2000);
+        arc.setAvailability(Availability.NEARLINE);
+
+        Container container = new Container();
+        container.setProviderName("org.dcm4chee.storage.zip");
+
+        FileCache fileCache = new FileCache();
+        fileCache.setProviderName("org.dcm4chee.storage.filecache");
+        fileCache.setFileCacheRootDirectory(
+                "/var/local/dcm4chee-arc/nearline-cache/data");
+        fileCache.setJournalRootDirectory(
+                "/var/local/dcm4chee-arc/nearline-cache");
+        fileCache.setMinFreeSpace("100MiB");
+        fileCache.setCacheAlgorithm(FileCache.Algorithm.LRU);
+
+        StorageSystemGroup online = new StorageSystemGroup();
+        online.setGroupID("DEFAULT");
+        online.addStorageSystem(fs1);
+        online.setActiveStorageSystemIDs(fs1.getStorageSystemID());
+
+        StorageSystemGroup nearline = new StorageSystemGroup();
+        nearline.setGroupID("ARCHIVE");
+        nearline.addStorageSystem(arc);
+        nearline.setActiveStorageSystemIDs(arc.getStorageSystemID());
+        nearline.setContainer(container);
+        nearline.setFileCache(fileCache);
+
+        StorageDeviceExtension ext = new StorageDeviceExtension();
+        ext.addStorageSystemGroup(online);
+        ext.addStorageSystemGroup(nearline);
+        device.addDeviceExtension(ext);
     }
 
     private void addAuditLogger(Device device, Device arrDevice) {
@@ -728,6 +757,7 @@ public class DeviceMocker {
         ext.setRejectionParams(createRejectionNotes());
         ext.setQueryRetrieveViews(QUERY_RETRIEVE_VIEWS);
         ext.setMppsEmulationPollInterval(MPPS_EMULATOR_POLL_INTERVAL);
+        ext.setArchivingSchedulerPollInterval(ARCHIVING_POLL_INTERVAL);
         ext.setAttributeFilter(Entity.Patient,
                 new AttributeFilter(PATIENT_ATTRS));
         ext.setAttributeFilter(Entity.Study,
@@ -908,6 +938,16 @@ public class DeviceMocker {
                 UID.JPEG2000LosslessOnly,
                 "maxPixelValueError=0"
                 ));
+
+        ArchivingRule archivingRule = new ArchivingRule();
+        archivingRule.setCommonName("Archiving Rule");
+        archivingRule.setStorageSystemGroupID("ARCHIVE");
+        archivingRule.setStorageFilePathFormat(new AttributesFormat(
+                "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip"));
+        archivingRule.setDelayAfterInstanceStored(60);
+        archivingRule.setAeTitles(new String[] { "ARCHIVE" });
+        aeExt.addArchivingRule(archivingRule);
+                
         addTCs(ae, null, SCP, IMAGE_CUIDS, image_tsuids);
         addTCs(ae, null, SCP, VIDEO_CUIDS, video_tsuids);
         addTCs(ae, null, SCP, OTHER_CUIDS, other_tsuids);

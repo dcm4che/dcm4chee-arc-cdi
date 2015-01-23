@@ -480,6 +480,7 @@ alter table location
     add storage_group_id varchar(255),
     add storage_id varchar(255),
     add entry_name varchar(255),
+    add otherAttsDigest varchar(255),
     drop foreign key FKD42DBF50206F5C8A,
     drop filesystem_fk;
 
@@ -505,4 +506,20 @@ alter table rel_instance_location
     add constraint FK877EA1F937EDB1AA 
     foreign key (instance_fk) 
     references instance (pk);
+
+create table archiving_task (
+    pk bigint not null auto_increment,
+    archiving_time datetime not null,
+    series_iuid varchar(255) not null,
+    source_stg_group_id varchar(255) not null,
+    target_name varchar(255) not null,
+    target_stg_group_id varchar(255) not null,
+    delay_reason_code_fk bigint,
+    primary key (pk)
+) ENGINE=InnoDB;
+
+alter table archiving_task 
+    add constraint FKD72560C52DC908EB 
+    foreign key (delay_reason_code_fk) 
+    references code (pk);
 
