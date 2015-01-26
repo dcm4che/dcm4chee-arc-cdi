@@ -96,9 +96,6 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
     private String storageSystemGroupID;
 
-    @ConfigurableProperty(name = "dcmDigestAlgorithm")
-    private String digestAlgorithm;
-
     @ConfigurableProperty(name = "dcmSpoolDirectoryPath")
     private String spoolDirectoryPath;
 
@@ -321,14 +318,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setStorageSystemGroupID(String storageSystemGroupID) {
         this.storageSystemGroupID = storageSystemGroupID;
-    }
-
-    public String getDigestAlgorithm() {
-        return digestAlgorithm;
-    }
-
-    public void setDigestAlgorithm(String digestAlgorithm) {
-        this.digestAlgorithm = digestAlgorithm;
     }
 
     public String getSpoolDirectoryPath() {

@@ -124,14 +124,6 @@ public class StoreSessionImpl implements StoreSession {
         this.arcAE = arcAE;
         this.arcAE = arcAE;
         this.storeParam = arcAE.getStoreParam();
-        try {
-            String algorithm = arcAE.getDigestAlgorithm();
-            this.messageDigest = algorithm != null
-                    ? MessageDigest.getInstance(algorithm)
-                    : null;
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -152,6 +144,14 @@ public class StoreSessionImpl implements StoreSession {
     @Override
     public void setStorageSystem(StorageSystem storageSystem) {
         this.storageSystem = storageSystem;
+        try {
+            String algorithm = storageSystem.getDigestAlgorithm();
+            this.messageDigest = algorithm != null
+                    ? MessageDigest.getInstance(algorithm)
+                    : null;
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

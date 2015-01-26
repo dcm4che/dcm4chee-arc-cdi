@@ -16,62 +16,24 @@ dicomIssuerOfPatientID: Site B&1.2.40.0.13.1.1.999.222.2222&ISO
 dicomDeviceName: dcmqrscp
 
 dn: cn=dicom,dicomDeviceName=dcmqrscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 11113
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
+dicomPort: 11113
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=dcmqrscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 2763
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomPort: 2763
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom-tls
 
 dn: dicomAETitle=DCMQRSCP,dicomDeviceName=dcmqrscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
@@ -94,62 +56,24 @@ dcmLimitOpenAssociations: 0
 dicomDeviceName: stgcmtscu
 
 dn: cn=dicom,dicomDeviceName=stgcmtscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 11114
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
+dicomPort: 11114
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=stgcmtscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 2765
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomPort: 2765
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom-tls
 
 dn: dicomAETitle=STGCMTSCU,dicomDeviceName=stgcmtscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
@@ -174,62 +98,24 @@ dicomIssuerOfPatientID: Site A&1.2.40.0.13.1.1.999.111.1111&ISO
 dicomDeviceName: storescp
 
 dn: cn=dicom,dicomDeviceName=storescp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 11115
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
+dicomPort: 11115
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=storescp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 2766
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomPort: 2766
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom-tls
 
 dn: dicomAETitle=STORESCP,dicomDeviceName=storescp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
@@ -254,62 +140,24 @@ dicomIssuerOfPatientID: Site A&1.2.40.0.13.1.1.999.111.1111&ISO
 dicomDeviceName: mppsscp
 
 dn: cn=dicom,dicomDeviceName=mppsscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 11116
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
+dicomPort: 11116
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=mppsscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 2767
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomPort: 2767
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom-tls
 
 dn: dicomAETitle=MPPSSCP,dicomDeviceName=mppsscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
@@ -332,62 +180,24 @@ dcmLimitOpenAssociations: 0
 dicomDeviceName: ianscp
 
 dn: cn=dicom,dicomDeviceName=ianscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 11117
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
+dicomPort: 11117
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=ianscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 2768
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomPort: 2768
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom-tls
 
 dn: dicomAETitle=IANSCP,dicomDeviceName=ianscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
@@ -414,62 +224,22 @@ dicomIssuerOfPatientID: Site A&1.2.40.0.13.1.1.999.111.1111&ISO
 dicomDeviceName: storescu
 
 dn: cn=dicom,dicomDeviceName=storescu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: -1
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=storescu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: -1
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom-tls
 
 dn: dicomAETitle=STORESCU,dicomDeviceName=storescu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
@@ -494,62 +264,22 @@ dicomIssuerOfPatientID: Site A&1.2.40.0.13.1.1.999.111.1111&ISO
 dicomDeviceName: mppsscu
 
 dn: cn=dicom,dicomDeviceName=mppsscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: -1
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=mppsscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: -1
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom-tls
 
 dn: dicomAETitle=MPPSSCU,dicomDeviceName=mppsscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
@@ -574,62 +304,22 @@ dicomIssuerOfPatientID: Site A&1.2.40.0.13.1.1.999.111.1111&ISO
 dicomDeviceName: findscu
 
 dn: cn=dicom,dicomDeviceName=findscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: -1
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=findscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: -1
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom-tls
 
 dn: dicomAETitle=FINDSCU,dicomDeviceName=findscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
@@ -654,62 +344,22 @@ dicomIssuerOfPatientID: Site A&1.2.40.0.13.1.1.999.111.1111&ISO
 dicomDeviceName: getscu
 
 dn: cn=dicom,dicomDeviceName=getscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: -1
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=getscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: -1
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: dicom-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom-tls
 
 dn: dicomAETitle=GETSCU,dicomDeviceName=getscu,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
@@ -750,62 +400,26 @@ dicomIssuerOfPatientID: Site A&1.2.40.0.13.1.1.999.111.1111&ISO
 dicomDeviceName: hl7rcv
 
 dn: cn=hl7,dicomDeviceName=hl7rcv,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 2576
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: HL7
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: hl7
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
+dicomPort: 2576
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmProtocol: HL7
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: hl7
 
 dn: cn=hl7-tls,dicomDeviceName=hl7rcv,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 12576
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: HL7
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: hl7-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomPort: 12576
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmProtocol: HL7
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: hl7-tls
 
 dn: hl7ApplicationName=HL7RCV^DCM4CHEE,dicomDeviceName=hl7rcv,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: hl7Application
@@ -821,32 +435,14 @@ dcmLimitOpenAssociations: 0
 dicomDeviceName: syslog
 
 dn: cn=audit-udp,dicomDeviceName=syslog,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: 514
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: SYSLOG_UDP
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: audit-udp
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
+dicomPort: 514
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmProtocol: SYSLOG_UDP
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: audit-udp
 
 dn: cn=AuditRecordRepository,dicomDeviceName=syslog,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmAuditRecordRepository
@@ -866,11 +462,10 @@ objectClass: dicomUniqueAETitle
 dicomAETitle: DCM4CHEE_TRASH
 
 dn: dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmDeIdentifyLogs: FALSE
 dcmConfigurationStaleTimeout: 60
 dicomManufacturer: dcm4che.org
-dcmMPPSEmulationPollInterval: 60
 dicomDeviceName: dcm4chee-arc
+dcmMPPSEmulationPollInterval: 60
 dcmKeyStoreType: JKS
 dcmArchivingSchedulerPollInterval: 60
 dicomSoftwareVersion: 4.2.0.Alpha3
@@ -881,176 +476,79 @@ dcmRejectedObjectsCleanUpPollInterval: 0
 dcmKeyStoreURL: ${jboss.server.config.url}/dcm4chee-arc/key.jks
 dcmFuzzyAlgorithmClass: org.dcm4che3.soundex.ESoundex
 dcmLimitOpenAssociations: 0
-dcmUpdateDbRetries: 0
 dicomInstalled: TRUE
 dcmRejectedObjectsCleanUpMaxNumberOfDeletes: 0
 dcmWadoAttributesStaleTimeout: 60
 dcmKeyStorePin: secret
 dcmIncorrectWorklistEntrySelectedCode: (110514, DCM, "Incorrect worklist entry selected")
 dicomManufacturerModelName: dcm4chee-arc
-dcmHostNameAEResolution: FALSE
 
 dn: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 0
-dcmBindAddress: 0.0.0.0
-dicomPort: 11112
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 0
-cn: dicom
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
+dicomPort: 11112
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmMaxOpsPerformed: 0
+dcmBindAddress: 0.0.0.0
+dcmMaxOpsInvoked: 0
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: dicom
 
 dn: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 0
-dcmBindAddress: 0.0.0.0
-dicomPort: 2762
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: DICOM
-dcmAARQTimeout: 0
 dcmMaxOpsPerformed: 0
-cn: dicom-tls
-dcmRetrieveTimeout: 0
 dcmTLSProtocol: TLSv1
 dcmTLSProtocol: SSLv3
+dicomPort: 2762
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dcmBindAddress: 0.0.0.0
+dcmMaxOpsInvoked: 0
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+cn: dicom-tls
 
 dn: cn=hl7,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dcmBindAddress: 0.0.0.0
-dicomPort: 2575
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: HL7
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: hl7
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
+dicomPort: 2575
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmBindAddress: 0.0.0.0
+dcmProtocol: HL7
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: hl7
 
 dn: cn=hl7-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dcmBindAddress: 0.0.0.0
-dicomPort: 12575
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: HL7
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: hl7-tls
-dcmRetrieveTimeout: 0
-dcmTLSProtocol: TLSv1
-dcmTLSProtocol: SSLv3
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
+dicomPort: 12575
+dicomHostname: localhost
 dicomTLSCipherSuite: TLS_RSA_WITH_AES_128_CBC_SHA
 dicomTLSCipherSuite: SSL_RSA_WITH_3DES_EDE_CBC_SHA
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
-dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
-
-dn: cn=audit-udp,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmMaxOpsInvoked: 1
-dicomPort: -1
-dcmTCPCloseDelay: 50
-dcmTCPBacklog: 50
-dcmResponseTimeout: 0
-dcmProtocol: SYSLOG_UDP
-dcmAARQTimeout: 0
-dcmMaxOpsPerformed: 1
-cn: audit-udp
-dcmRetrieveTimeout: 0
+dcmBindAddress: 0.0.0.0
+dcmProtocol: HL7
 dcmTLSProtocol: TLSv1
 dcmTLSProtocol: SSLv3
+cn: hl7-tls
+
+dn: cn=audit-udp,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dicomNetworkConnection
 objectClass: dcmNetworkConnection
-dcmTCPNoDelay: TRUE
-dcmIdleTimeout: 0
-dcmTCPSendBufferSize: 0
-dcmAAACTimeout: 0
-dcmPackPDV: TRUE
 dicomHostname: localhost
-dcmSendPDULength: 16378
-dcmARRPTimeout: 0
-dcmTCPReceiveBufferSize: 0
-dcmReceivePDULength: 16378
-dcmTLSNeedClientAuth: TRUE
-dcmTCPConnectTimeout: 0
+dcmProtocol: SYSLOG_UDP
+dcmTLSProtocol: TLSv1
+dcmTLSProtocol: SSLv3
+cn: audit-udp
 
 dn: dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmStgCmtRetryInterval: 60
 dcmReturnOtherPatientNames: TRUE
 dcmRetrieveAET: DCM4CHEE
 dicomAETitle: DCM4CHEE
-dcmStgCmtMaxRetries: 0
 dcmQidoMaxNumberOfResults: 1000
 dicomAssociationAcceptor: TRUE
-dcmIanRetryInterval: 60
-dcmFwdMppsMaxRetries: 0
-dcmDigestAlgorithm: MD5
 dicomAssociationInitiator: TRUE
-dcmPersonNameComponentOrderInsensitiveMatching: FALSE
 dcmReturnOtherPatientIDs: TRUE
 dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -1059,19 +557,12 @@ objectClass: dicomNetworkAE
 objectClass: dcmArchiveNetworkAE
 dcmSendPendingCMoveInterval: 5000
 hl7PIXManagerApplication: HL7RCV^DCM4CHEE
-dcmStgCmtDelay: 0
 dcmSpoolDirectoryPath: spool
-dcmIanMaxRetries: 0
 dcmWadoOverlayRendering: FALSE
 dcmSendPendingCGet: TRUE
 dcmWadoSRTemplateURI: ${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl
 dcmStorageSystemGroupID: DEFAULT
-dcmQCUpdateReferencesOnRetrieve: DEACTIVATE
 dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
-dcmFwdMppsRetryInterval: 60
-dcmCheckNonDBAttributesOnStorage: FALSE
-dcmMatchLinkedPatientIDs: FALSE
-dcmSuppressWarningCoercionOfDataElements: FALSE
 dcmQueryRetrieveViewID: hideRejected
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.11
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.22
@@ -5318,7 +4809,6 @@ cn: Supplement missing PID
 
 dn: cn=JPEG Lossless,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmCompressionRule
-dcmPixelRepresentation: -1
 dcmImageWriteParam: maxPixelValueError=0.0
 dcmAETitle: JPEG_LOSSLESS
 dcmPhotometricInterpretation: YBR_FULL
@@ -5340,7 +4830,6 @@ cn: JPEG Lossless
 
 dn: cn=JPEG 2000 Lossless,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmCompressionRule
-dcmPixelRepresentation: -1
 dcmImageWriteParam: maxPixelValueError=0.0
 dcmAETitle: JPEG_2000
 dcmPhotometricInterpretation: YBR_FULL
@@ -5362,7 +4851,6 @@ cn: JPEG 2000 Lossless
 
 dn: cn=JPEG LS Lossless,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmCompressionRule
-dcmPixelRepresentation: -1
 dcmImageWriteParam: maxPixelValueError=0.0
 dcmAETitle: JPEG_LS
 dcmPhotometricInterpretation: YBR_FULL
@@ -5384,7 +4872,6 @@ cn: JPEG LS Lossless
 
 dn: cn=JPEG 12-bit Lossy,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmCompressionRule
-dcmPixelRepresentation: -1
 dcmImageWriteParam: compressionQuality=0.8
 dcmImageWriteParam: maxPixelValueError=20.0
 dcmImageWriteParam: avgPixelValueBlockSize=8.0
@@ -5400,7 +4887,6 @@ cn: JPEG 12-bit Lossy
 
 dn: cn=JPEG 8-bit Lossy,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmCompressionRule
-dcmPixelRepresentation: -1
 dcmImageWriteParam: compressionQuality=0.8
 dcmImageWriteParam: maxPixelValueError=10.0
 dcmImageWriteParam: avgPixelValueBlockSize=8.0
@@ -5414,7 +4900,6 @@ cn: JPEG 8-bit Lossy
 
 dn: cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRetrieveSuppressionCriteria
-dcmCheckTransferCapabilities: FALSE
 cn: dcmRetrieveSuppressionCriteria
 
 dn: cn=dcmRetrieveSuppressionCriteriaMap,cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -5456,35 +4941,18 @@ dcmPatientSelectorValue: BROAD
 dcmPatientSelectorProperty: givenName
 
 dn: dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmStgCmtRetryInterval: 60
-dcmReturnOtherPatientNames: TRUE
-dicomAETitle: DCM4CHEE_ADMIN
-dcmStgCmtMaxRetries: 0
-dcmQidoMaxNumberOfResults: 1000
-dicomAssociationAcceptor: TRUE
-dcmIanRetryInterval: 60
-dcmFwdMppsMaxRetries: 0
-dicomAssociationInitiator: TRUE
-dcmPersonNameComponentOrderInsensitiveMatching: FALSE
-dcmReturnOtherPatientIDs: TRUE
-dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmQueryRetrieveViewID: regularUse
+hl7PIXManagerApplication: HL7RCV^DCM4CHEE
+dcmSendPendingCMoveInterval: 5000
 objectClass: dcmNetworkAE
 objectClass: dicomNetworkAE
 objectClass: dcmArchiveNetworkAE
-dcmSendPendingCMoveInterval: 5000
-hl7PIXManagerApplication: HL7RCV^DCM4CHEE
-dcmStgCmtDelay: 0
-dcmIanMaxRetries: 0
-dcmWadoOverlayRendering: FALSE
-dcmSendPendingCGet: TRUE
+dcmReturnOtherPatientNames: TRUE
+dcmQidoMaxNumberOfResults: 1000
+dcmReturnOtherPatientIDs: TRUE
+dicomAssociationInitiator: TRUE
 dcmWadoSRTemplateURI: ${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl
-dcmQCUpdateReferencesOnRetrieve: DEACTIVATE
-dcmFwdMppsRetryInterval: 60
-dcmCheckNonDBAttributesOnStorage: FALSE
-dcmMatchLinkedPatientIDs: FALSE
-dcmSuppressWarningCoercionOfDataElements: FALSE
-dcmQueryRetrieveViewID: regularUse
+dcmSendPendingCGet: TRUE
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.11
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.22
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.33
@@ -5497,8 +4965,12 @@ dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.67
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.68
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.69
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.70
-dcmPreserveSpoolFileOnFailure: FALSE
+dcmWadoOverlayRendering: FALSE
 dcmMatchUnknown: TRUE
+dicomAssociationAcceptor: TRUE
+dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dicomAETitle: DCM4CHEE_ADMIN
 
 dn: cn=Patient Root Query Retrieve Information Model - FIND SCP,dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dcmFuzzySemanticMatching: TRUE
@@ -7662,7 +7134,6 @@ dicomTransferSyntax: 1.2.840.10008.1.2
 
 dn: cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRetrieveSuppressionCriteria
-dcmCheckTransferCapabilities: FALSE
 cn: dcmRetrieveSuppressionCriteria
 
 dn: cn=dcmRetrieveSuppressionCriteriaMap,cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE_ADMIN,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -7670,35 +7141,18 @@ objectClass: dcmCollection
 cn: dcmRetrieveSuppressionCriteriaMap
 
 dn: dicomAETitle=DCM4CHEE_TRASH,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmStgCmtRetryInterval: 60
-dcmReturnOtherPatientNames: TRUE
-dicomAETitle: DCM4CHEE_TRASH
-dcmStgCmtMaxRetries: 0
-dcmQidoMaxNumberOfResults: 1000
-dicomAssociationAcceptor: TRUE
-dcmIanRetryInterval: 60
-dcmFwdMppsMaxRetries: 0
-dicomAssociationInitiator: TRUE
-dcmPersonNameComponentOrderInsensitiveMatching: FALSE
-dcmReturnOtherPatientIDs: TRUE
-dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dcmQueryRetrieveViewID: trashView
+hl7PIXManagerApplication: HL7RCV^DCM4CHEE
+dcmSendPendingCMoveInterval: 5000
 objectClass: dcmNetworkAE
 objectClass: dicomNetworkAE
 objectClass: dcmArchiveNetworkAE
-dcmSendPendingCMoveInterval: 5000
-hl7PIXManagerApplication: HL7RCV^DCM4CHEE
-dcmStgCmtDelay: 0
-dcmIanMaxRetries: 0
-dcmWadoOverlayRendering: FALSE
-dcmSendPendingCGet: TRUE
+dcmReturnOtherPatientNames: TRUE
+dcmQidoMaxNumberOfResults: 1000
+dcmReturnOtherPatientIDs: TRUE
+dicomAssociationInitiator: TRUE
 dcmWadoSRTemplateURI: ${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl
-dcmQCUpdateReferencesOnRetrieve: DEACTIVATE
-dcmFwdMppsRetryInterval: 60
-dcmCheckNonDBAttributesOnStorage: FALSE
-dcmMatchLinkedPatientIDs: FALSE
-dcmSuppressWarningCoercionOfDataElements: FALSE
-dcmQueryRetrieveViewID: trashView
+dcmSendPendingCGet: TRUE
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.11
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.22
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.33
@@ -7711,8 +7165,12 @@ dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.67
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.68
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.69
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.70
-dcmPreserveSpoolFileOnFailure: FALSE
+dcmWadoOverlayRendering: FALSE
 dcmMatchUnknown: TRUE
+dicomAssociationAcceptor: TRUE
+dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dicomAETitle: DCM4CHEE_TRASH
 
 dn: cn=Patient Root Query Retrieve Information Model - FIND SCP,dicomAETitle=DCM4CHEE_TRASH,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dcmFuzzySemanticMatching: TRUE
@@ -9876,7 +9334,6 @@ dicomTransferSyntax: 1.2.840.10008.1.2
 
 dn: cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE_TRASH,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRetrieveSuppressionCriteria
-dcmCheckTransferCapabilities: FALSE
 cn: dcmRetrieveSuppressionCriteria
 
 dn: cn=dcmRetrieveSuppressionCriteriaMap,cn=dcmRetrieveSuppressionCriteria,dicomAETitle=DCM4CHEE_TRASH,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -10100,7 +9557,6 @@ dcmAcceptPreviousRejectedInstance: IGNORE
 dcmRejectionNoteTitle: (113001, DCM, "Rejected for Quality Reasons")
 dcmRejectedObjectRetentionTime: -1
 dcmRejectedObjectRetentionTimeUnit: DAYS
-dcmRevokeRejection: FALSE
 
 dn: dcmRejectionNoteTitle=(113037\2C DCM\2C \22Rejected for Patient Safety Reasons\22),dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRejectionNote
@@ -10108,7 +9564,6 @@ dcmOverwritePreviousRejection: (113001, DCM, "Rejected for Quality Reasons")
 dcmRejectionNoteTitle: (113037, DCM, "Rejected for Patient Safety Reasons")
 dcmRejectedObjectRetentionTime: -1
 dcmRejectedObjectRetentionTimeUnit: DAYS
-dcmRevokeRejection: FALSE
 
 dn: dcmRejectionNoteTitle=(110514\2C DCM\2C \22Incorrect worklist entry selected\22),dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRejectionNote
@@ -10116,7 +9571,6 @@ dcmOverwritePreviousRejection: (113001, DCM, "Rejected for Quality Reasons")
 dcmRejectionNoteTitle: (110514, DCM, "Incorrect worklist entry selected")
 dcmRejectedObjectRetentionTime: -1
 dcmRejectedObjectRetentionTimeUnit: DAYS
-dcmRevokeRejection: FALSE
 
 dn: dcmRejectionNoteTitle=(113038\2C DCM\2C \22Incorrect Modality Worklist Entry\22),dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRejectionNote
@@ -10124,7 +9578,6 @@ dcmOverwritePreviousRejection: (113001, DCM, "Rejected for Quality Reasons")
 dcmRejectionNoteTitle: (113038, DCM, "Incorrect Modality Worklist Entry")
 dcmRejectedObjectRetentionTime: -1
 dcmRejectedObjectRetentionTimeUnit: DAYS
-dcmRevokeRejection: FALSE
 
 dn: dcmRejectionNoteTitle=(113039\2C DCM\2C \22Data Retention Policy Expired\22),dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRejectionNote
@@ -10133,7 +9586,6 @@ dcmAcceptPreviousRejectedInstance: REPLACE
 dcmRejectionNoteTitle: (113039, DCM, "Data Retention Policy Expired")
 dcmRejectedObjectRetentionTime: -1
 dcmRejectedObjectRetentionTimeUnit: DAYS
-dcmRevokeRejection: FALSE
 
 dn: dcmRejectionNoteTitle=(REVOKE_REJECTION\2C 99DCM4CHEE\2C \22Restore rejected Instances\22),dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmRejectionNote
@@ -10171,24 +9623,12 @@ dcmShowInstancesRejectedByCode: (113039, DCM, "Data Retention Policy Expired")
 dcmHideNotRejectedInstances: TRUE
 
 dn: cn=AuditLogger,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmAuditLoggerRetryInterval: 0
-dcmAuditSeriousFailureSeverity: 3
-dcmAuditMessageEncoding: UTF-8
-cn: AuditLogger
-dcmAuditMessageBOM: TRUE
-dcmAuditMajorFailureSeverity: 2
-dicomNetworkConnectionReference: cn=audit-udp,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmAuditLogger
-dcmAuditSourceTypeCode: 4
+dicomNetworkConnectionReference: cn=audit-udp,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dcmAuditIncludeInstanceUID: FALSE
-dcmAuditSuccessSeverity: 5
-dcmAuditMessageFormatXML: FALSE
-dcmAuditMessageSchemaURI: http://www.dcm4che.org/DICOM/audit-message.rnc
-dcmAuditMessageID: DICOM+RFC3881
-dcmAuditMinorFailureSeverity: 4
+dcmAuditSourceTypeCode: 4
 dcmAuditRecordRepositoryDeviceReference: dicomDeviceName=syslog,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmAuditTimestampInUTC: FALSE
-dcmAuditFacility: 10
+cn: AuditLogger
 
 dn: cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageDeviceExtension
@@ -10208,19 +9648,12 @@ objectClass: dcmCollection
 cn: Storage Systems
 
 dn: dcmStorageSystemID=fs1,cn=Storage Systems,dcmStorageSystemGroupID=DEFAULT,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmStorageAccessTime: 1000
-dcmStorageSystemSocketTimeout: 0
-dcmStorageSystemID: fs1
 objectClass: dcmStorageSystem
-dcmStorageSystemMultipartUploadSize: 32MB
-dcmStorageSystemConnectionTimeout: 0
-dcmStorageSystemMaxConnections: 5
-dcmStorageCacheOnStore: FALSE
-dcmInstanceAvailability: ONLINE
-dcmStorageReadOnly: FALSE
+dcmDigestAlgorithm: MD5
 dcmProviderName: org.dcm4chee.storage.filesystem
-dcmStorageSystemStatus: OK
+dcmStorageAccessTime: 1000
 dcmStorageSystemPath: /var/local/dcm4chee-arc/fs1
+dcmStorageSystemID: fs1
 
 dn: dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystemGroup
@@ -10232,39 +9665,26 @@ objectClass: dcmCollection
 cn: Storage Systems
 
 dn: dcmStorageSystemID=nearline,cn=Storage Systems,dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmStorageAccessTime: 2000
-dcmStorageSystemSocketTimeout: 0
-dcmStorageSystemID: nearline
 objectClass: dcmStorageSystem
-dcmStorageSystemMultipartUploadSize: 32MB
-dcmStorageSystemConnectionTimeout: 0
-dcmStorageSystemMaxConnections: 5
-dcmStorageCacheOnStore: FALSE
-dcmInstanceAvailability: NEARLINE
-dcmStorageReadOnly: FALSE
 dcmProviderName: org.dcm4chee.storage.filesystem
-dcmStorageSystemStatus: OK
+dcmStorageAccessTime: 2000
 dcmStorageSystemPath: /var/local/dcm4chee-arc/nearline
+dcmInstanceAvailability: NEARLINE
+dcmStorageSystemID: nearline
 
 dn: cn=Storage Container,dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageContainer
 dcmProviderName: org.dcm4chee.storage.zip
-dcmStorageContainerCompress: FALSE
 cn: Storage Container
 
 dn: cn=Storage File Cache,dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-dcmStorageFileCacheRootDirectory: /var/local/dcm4chee-arc/nearline-cache/data
-dcmStorageFileCacheJournalFileName: journal
-dcmStorageMinFreeSpace: 100MiB
-dcmStorageFileCacheAlgorithm: LRU
 objectClass: dcmStorageFileCache
-dcmStorageFileCacheJournalFileNamePattern: yyyyMMdd/HHmmss.SSS
-dcmStorageFileCacheJournalMaxEntries: 100
-dcmStorageFileCacheJournalDirectoryName: journal.d
-dcmStorageFileCacheJournalRootDirectory: /var/local/dcm4chee-arc/nearline-cache
-cn: Storage File Cache
 dcmProviderName: org.dcm4chee.storage.filecache
-dcmStorageFileCacheOrphanedFileName: orphaned
+dcmStorageFileCacheAlgorithm: LRU
+dcmStorageMinFreeSpace: 100MiB
+dcmStorageFileCacheJournalRootDirectory: /var/local/dcm4chee-arc/nearline-cache
+dcmStorageFileCacheRootDirectory: /var/local/dcm4chee-arc/nearline-cache/data
+cn: Storage File Cache
 
 dn: cn=Image Reader Factory,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmImageReaderFactory

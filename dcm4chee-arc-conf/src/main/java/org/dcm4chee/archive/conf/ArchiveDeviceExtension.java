@@ -89,7 +89,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private boolean deIdentifyLogs;
 
     @ConfigurableProperty(name = "dcmUpdateDbRetries", defaultValue = "1")
-    private int updateDbRetries;
+    private int updateDbRetries = 1;
 
     @LDAP(
             distinguishingField = "dicomHostName",
@@ -113,10 +113,10 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmRejectedObjectsCleanUpMaxNumberOfDeletes")
     private int rejectedObjectsCleanUpMaxNumberOfDeletes;
 
-    @ConfigurableProperty(name = "dcmMppsEmulationPollInterval")
+    @ConfigurableProperty(name = "dcmMppsEmulationPollInterval", defaultValue = "0")
     private int mppsEmulationPollInterval;
 
-    @ConfigurableProperty(name = "dcmArchivingSchedulerPollInterval")
+    @ConfigurableProperty(name = "dcmArchivingSchedulerPollInterval", defaultValue = "0")
     private int archivingSchedulerPollInterval;
 
     private transient FuzzyStr fuzzyStr;

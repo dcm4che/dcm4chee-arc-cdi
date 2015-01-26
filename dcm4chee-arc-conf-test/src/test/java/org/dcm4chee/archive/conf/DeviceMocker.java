@@ -669,6 +669,7 @@ public class DeviceMocker {
         fs1.setStorageSystemPath("/var/local/dcm4chee-arc/fs1");
         fs1.setStorageAccessTime(1000);
         fs1.setAvailability(Availability.ONLINE);
+        fs1.setDigestAlgorithm("MD5");
 
         StorageSystem arc = new StorageSystem();
         arc.setStorageSystemID("nearline");
@@ -819,7 +820,6 @@ public class DeviceMocker {
         aeExt.setSpoolDirectoryPath("spool");
         aeExt.setStorageFilePathFormat(new AttributesFormat(
                 "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
-        aeExt.setDigestAlgorithm("MD5");
         aeExt.setRetrieveAETs(aet);
         aeExt.setPreserveSpoolFileOnFailure(true);
         aeExt.setSuppressWarningCoercionOfDataElements(false);
@@ -994,7 +994,6 @@ public class DeviceMocker {
         aeExt.setSpoolDirectoryPath("archive/anotherspool");
         aeExt.setStorageFilePathFormat(new AttributesFormat(
                 "archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
-        aeExt.setDigestAlgorithm("MD6");
         aeExt.setRetrieveAETs(aet);
         aeExt.setPreserveSpoolFileOnFailure(true);
         aeExt.setSuppressWarningCoercionOfDataElements(false);

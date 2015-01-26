@@ -689,7 +689,6 @@
                   } ]
                 },
                 "dcmMatchUnknown" : true,
-                "dcmDigestAlgorithm" : "MD5",
                 "dcmQidoMaxNumberOfResults" : 1000,
                 "dcmIanDestination" : [ ]
               }
@@ -3767,7 +3766,6 @@
             "dcmWadoAttributesStaleTimeout" : 60,
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",
-            "dcmUpdateDbRetries" : 0,
             "dcmRejectedObjectsCleanUpMaxNumberOfDeletes" : 0,
             "dcmConfigurationStaleTimeout" : 60,
             "rejectionParams" : [ {
@@ -3820,6 +3818,7 @@
                 "dcmStorageSystemGroupID" : "DEFAULT",
                 "Storage Systems" : {
                   "fs1" : {
+                    "dcmDigestAlgorithm" : "MD5",
                     "dcmStorageSystemID" : "fs1",
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
                     "dcmStorageAccessTime" : 1000,
