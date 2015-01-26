@@ -43,8 +43,6 @@ import java.util.TimeZone;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
-import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -74,30 +72,20 @@ public abstract class RetrieveServiceTimeZoneDecorator implements
     @Delegate
     RetrieveService retrieveService;
 
-    @Inject
-    private IApplicationEntityCache aeCache;
-
     @Override
     public void coerceRetrievedObject(RetrieveContext retrieveContext,
             String remoteAET, Attributes attrs) throws DicomServiceException {
         ArchiveAEExtension aeExt = retrieveContext.getArchiveAEExtension();
-        ApplicationEntity sourceAE = null;
+        ApplicationEntity destAE = retrieveContext.getDestinationAE();
         TimeZone sourceTimeZone=null;
         try {
             retrieveService.coerceRetrievedObject(retrieveContext, remoteAET,
                     attrs);
-            try {
-                sourceAE = aeCache.get(remoteAET);
-            } catch (ConfigurationException e1) {
-                LOG.warn(
-                        "Failed to access configuration for query source {} - no Timezone support:",
-                        remoteAET, e1);
-            }
             TimeZone archiveTimeZone = aeExt.getApplicationEntity().getDevice()
                     .getTimeZoneOfDevice();
             if (archiveTimeZone != null) {
-                if(sourceAE!=null){
-                sourceTimeZone = sourceAE.getDevice()
+                if(destAE!=null){
+                sourceTimeZone = destAE.getDevice()
                         .getTimeZoneOfDevice();
                 }
                 attrs.setDefaultTimeZone(archiveTimeZone);
