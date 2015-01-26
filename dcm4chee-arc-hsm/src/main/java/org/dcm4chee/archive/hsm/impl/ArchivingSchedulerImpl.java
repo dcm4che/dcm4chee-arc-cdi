@@ -94,7 +94,8 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
 
         StoreSession storeSession = storeContext.getStoreSession();
         ArchiveAEExtension arcAE = storeSession.getArchiveAEExtension();
-        ArchivingRule archivingRule = arcAE.getArchivingRules().findArchivingRule(null, 
+        ArchivingRule archivingRule = arcAE.getArchivingRules().findArchivingRule(
+                storeSession.getSourceDeviceName(), 
                 storeSession.getRemoteAET(),
                 storeContext.getAttributes());
 

@@ -104,4 +104,7 @@ public interface StoreSession {
 
     String getSourceTimeZoneID();
 
+    String getSourceDeviceName();
+
+
 }

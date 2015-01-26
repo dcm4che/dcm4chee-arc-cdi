@@ -211,5 +211,10 @@ public class StoreSessionImpl implements StoreSession {
     public String getSourceTimeZoneID() {
         return sourceTimeZone != null ? sourceTimeZone.getID() : null;
     }
+
+    @Override
+    public String getSourceDeviceName() {
+        return sourceDevice != null ? sourceDevice.getDeviceName() : null;
+    }
 }
 
