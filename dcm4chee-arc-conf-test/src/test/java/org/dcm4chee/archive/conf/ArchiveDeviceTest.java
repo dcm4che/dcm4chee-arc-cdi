@@ -95,7 +95,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
 
         CommonDicomConfigurationWithHL7 configWithHL7 = builder
                 .cache(false)
-                .filterDefaults(true)
+                .persistDefaults(false)
                 .build();
         config = configWithHL7;
         hl7Config = configWithHL7;
