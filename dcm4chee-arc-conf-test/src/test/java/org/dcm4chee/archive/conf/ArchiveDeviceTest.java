@@ -80,7 +80,8 @@ public class ArchiveDeviceTest extends DeviceMocker {
             }
             builder = DicomConfigurationBuilder.newLdapConfigurationBuilder(env);
         } else {
-            builder = DicomConfigurationBuilder.newJsonConfigurationBuilder("../dcm4chee-arc-conf/src/main/config/configuration/dcm4chee-arc/sample-config.json");
+            builder = DicomConfigurationBuilder.newJsonConfigurationBuilder(
+                    "../dcm4chee-arc-conf/src/main/config/configuration/dcm4chee-arc/sample-config.json");
         }
         builder.registerDeviceExtension(ArchiveDeviceExtension.class);
         builder.registerDeviceExtension(StorageDeviceExtension.class);
@@ -92,8 +93,10 @@ public class ArchiveDeviceTest extends DeviceMocker {
         builder.registerAEExtension(ArchiveAEExtension.class);
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
 
-
-        CommonDicomConfigurationWithHL7 configWithHL7 = builder.build();
+        CommonDicomConfigurationWithHL7 configWithHL7 = builder
+                .cache(false)
+                .filterDefaults(true)
+                .build();
         config = configWithHL7;
         hl7Config = configWithHL7;
 
