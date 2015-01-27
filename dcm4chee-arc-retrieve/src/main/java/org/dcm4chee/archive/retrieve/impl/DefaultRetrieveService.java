@@ -151,9 +151,9 @@ public class DefaultRetrieveService implements RetrieveService {
 
         return locate(ejb.query(SELECT,
                 null,
-                new String[] { studyIUID },
-                new String[] { seriesIUID },
-                new String[] { objectIUID }, queryParam));
+                studyIUID  == null ? null: new String[] { studyIUID }
+              , seriesIUID == null ? null: new String[] { seriesIUID }
+              , objectIUID == null ? null: new String[] { objectIUID }, queryParam));
     }
 
     private List<ArchiveInstanceLocator> locate(List<Tuple> tuples) {
