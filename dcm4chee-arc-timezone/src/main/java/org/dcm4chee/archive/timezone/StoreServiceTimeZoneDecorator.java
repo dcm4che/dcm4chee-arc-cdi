@@ -106,9 +106,9 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
                             session.getRemoteAET(), e1);
                 }
                 if (remoteAETimeZone != null)
-                    session.setSourceTimeZone(remoteAETimeZone);
+                    context.setSourceTimeZone(remoteAETimeZone);
                 else
-                    session.setSourceTimeZone(archiveTimeZone);
+                    context.setSourceTimeZone(archiveTimeZone);
 
                 if (attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
                     LOG.debug("(TimeZone Support):Found TimezoneOffsetFromUTC Attribute. \n "
@@ -116,18 +116,18 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
                             + attrs.getString(Tag.TimezoneOffsetFromUTC)
                             + "(TimeZone Support): Setting sourceTimeZoneCache \n"
                             + "(TimeZone Support): Setting time zone to archive time.");
-                    session.setSourceTimeZone(attrs.getTimeZone());
+                    context.setSourceTimeZone(attrs.getTimeZone());
                     attrs.setTimezone(archiveTimeZone);
-                } else if (session.getSourceTimeZone() == null) {
+                } else if (context.getSourceTimeZone() == null) {
                     LOG.debug("(TimeZone Support): SourceTimeZoneCache is null \n "
                             + "(TimeZone Support): No device time zone"
                             + "(TimeZone Support): No TimezoneOffsetFromUTC Attribute."
                             + "Using archive time zone");
-                    session.setSourceTimeZone(archiveTimeZone);
+                    context.setSourceTimeZone(archiveTimeZone);
                 }
                 LOG.debug("(TimeZone Support): converting time zone from source time zone \n "
-                        + session.getSourceTimeZone().getID());
-                attrs.setDefaultTimeZone(session.getSourceTimeZone());
+                        + context.getSourceTimeZone().getID());
+                attrs.setDefaultTimeZone(context.getSourceTimeZone());
                 LOG.debug("(TimeZone Support): converting time zone to archive time zone \n "
                         + archiveTimeZone.getID());
                 attrs.setTimezone(archiveTimeZone);

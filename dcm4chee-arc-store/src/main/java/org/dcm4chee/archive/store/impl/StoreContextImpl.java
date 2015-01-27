@@ -40,6 +40,7 @@ package org.dcm4chee.archive.store.impl;
 
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.TimeZone;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.util.AttributesFormat;
@@ -72,7 +73,8 @@ public class StoreContextImpl implements StoreContext {
     private Location fileRef;
     private Throwable throwable;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
-
+    private TimeZone sourceTimeZone;
+    
     public StoreContextImpl(StoreSession session) {
         this.session = session;
     }
@@ -250,4 +252,19 @@ public class StoreContextImpl implements StoreContext {
     public void setStorageContext(StorageContext storageContext) {
         this.storageContext = storageContext;
     }
+    
+    @Override
+    public TimeZone getSourceTimeZone() {
+        return sourceTimeZone;
+    }
+    @Override
+    public void setSourceTimeZone(TimeZone sourceTimeZone) {
+        this.sourceTimeZone = sourceTimeZone;
+    }
+
+    @Override
+    public String getSourceTimeZoneID() {
+        return sourceTimeZone != null ? sourceTimeZone.getID() : null;
+    }
+
 }

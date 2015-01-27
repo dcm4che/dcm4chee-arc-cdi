@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.store;
 
 import java.nio.file.Path;
+import java.util.TimeZone;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.conf.StoreAction;
@@ -120,4 +121,9 @@ public interface StoreContext {
 
     String calcStoragePath();
 
+    TimeZone getSourceTimeZone();
+
+    void setSourceTimeZone(TimeZone sourceTimeZone);
+
+    String getSourceTimeZoneID();
 }

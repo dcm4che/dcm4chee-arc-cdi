@@ -54,7 +54,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
@@ -68,7 +67,6 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
-import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
@@ -666,8 +664,8 @@ public class StoreServiceImpl implements StoreService {
     public Patient findOrCreatePatient(EntityManager em, StoreContext context)
             throws DicomServiceException {
         try {
-            ArchiveAEExtension arcAE = context.getStoreSession()
-                    .getArchiveAEExtension();
+             // ArchiveAEExtension arcAE = context.getStoreSession()
+             //         .getArchiveAEExtension();
             // PatientSelector selector = arcAE.getPatientSelector();
             // System.out.println("Selector Class Name:"+selector.getPatientSelectorClassName());
             // for (String key :
@@ -770,7 +768,7 @@ public class StoreServiceImpl implements StoreService {
                 .otherAttsDigest(context.getNoDBAttsDigest())
                 .size(context.getFinalFileSize())
                 .transferSyntaxUID(context.getTransferSyntax())
-                .timeZone(session.getSourceTimeZoneID()).build();
+                .timeZone(context.getSourceTimeZoneID()).build();
         Collection<Instance> instances = fileRef.getInstances();
         if (instances == null) {
             fileRef.setInstances(instances);

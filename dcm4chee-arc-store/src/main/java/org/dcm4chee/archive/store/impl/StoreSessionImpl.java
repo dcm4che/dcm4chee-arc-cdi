@@ -42,7 +42,6 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.TimeZone;
 
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -68,7 +67,6 @@ public class StoreSessionImpl implements StoreSession {
     private Path spoolDirectory;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
     private Device sourceDevice;
-    private TimeZone sourceTimeZone;
 
     public StoreSessionImpl(StoreService storeService) {
         this.storeService = storeService;
@@ -197,19 +195,6 @@ public class StoreSessionImpl implements StoreSession {
     @Override
     public void setSourceDevice(Device source) {
         this.sourceDevice=source;
-    }
-    @Override
-    public TimeZone getSourceTimeZone() {
-        return sourceTimeZone;
-    }
-    @Override
-    public void setSourceTimeZone(TimeZone sourceTimeZone) {
-        this.sourceTimeZone = sourceTimeZone;
-    }
-
-    @Override
-    public String getSourceTimeZoneID() {
-        return sourceTimeZone != null ? sourceTimeZone.getID() : null;
     }
 
     @Override
