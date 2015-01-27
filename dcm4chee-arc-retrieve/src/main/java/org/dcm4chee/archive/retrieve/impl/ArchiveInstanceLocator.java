@@ -37,6 +37,8 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.retrieve.impl;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -113,7 +115,7 @@ public class ArchiveInstanceLocator extends InstanceLocator {
     }
 
     private ArchiveInstanceLocator(Builder builder) {
-        super(builder.cuid, builder.iuid, builder.tsuid, null);
+        super(builder.cuid, builder.iuid, builder.tsuid, createRetrieveURI(builder));
         this.fileTimeZoneID = builder.fileTimeZoneID;
         this.storageSystem = builder.storageSystem;
         this.filePath = builder.filePath;
@@ -122,7 +124,12 @@ public class ArchiveInstanceLocator extends InstanceLocator {
         this.externalRetrieveAET = builder.externalRetrieveAET;
    }
 
-    public String getFileTimeZoneID() {
+    private static String createRetrieveURI(Builder builder) {
+    	Path basePath = Paths.get(builder.storageSystem.getStorageSystemPath());
+    	return basePath.resolve(builder.filePath).toUri().toString();
+	}
+
+	public String getFileTimeZoneID() {
         return fileTimeZoneID;
     }
 
