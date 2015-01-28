@@ -408,6 +408,11 @@ attributeTypes: ( 1.2.40.0.13.1.15.10.3.77 NAME 'dcmArchivingSchedulerPollInterv
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.78 NAME 'dcmIgnoreDuplicatesOnStorage'
+  DESC 'If true instances already existing are ignored on storage. Default is true.'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
 objectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -441,6 +446,7 @@ objectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
     dcmSendPendingCMoveInterval $
     dcmSuppressWarningCoercionOfDataElements $
     dcmCheckNonDBAttributesOnStorage $
+    dcmIgnoreDuplicatesOnStorage $
     dcmStoreOriginalAttributes $
     dcmPreserveSpoolFileOnFailure $
     dcmModifyingSystem $
