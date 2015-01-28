@@ -107,6 +107,9 @@ public class ArchiveAEExtension extends AEExtension {
     
     @ConfigurableProperty(name = "dcmCheckNonDBAttributesOnStorage", defaultValue = "false")
     private boolean checkNonDBAttributesOnStorage;
+    
+    @ConfigurableProperty(name = "dcmIgnoreDuplicatesOnStorage", defaultValue = "true")
+    private boolean ignoreDuplicatesOnStorage;
 
     @ConfigurableProperty(name = "dcmPreserveSpoolFileOnFailure", defaultValue = "false")
     private boolean preserveSpoolFileOnFailure;
@@ -361,8 +364,16 @@ public class ArchiveAEExtension extends AEExtension {
             boolean checkNonDBAttributesOnStorage) {
         this.checkNonDBAttributesOnStorage = checkNonDBAttributesOnStorage;
     }
+    
+    public boolean isIgnoreDuplicatesOnStorage() {
+		return ignoreDuplicatesOnStorage;
+	}
 
-    public boolean isPreserveSpoolFileOnFailure() {
+	public void setIgnoreDuplicatesOnStorage(boolean ignoreDuplicatesOnStorage) {
+		this.ignoreDuplicatesOnStorage = ignoreDuplicatesOnStorage;
+	}
+
+	public boolean isPreserveSpoolFileOnFailure() {
         return preserveSpoolFileOnFailure;
     }
 

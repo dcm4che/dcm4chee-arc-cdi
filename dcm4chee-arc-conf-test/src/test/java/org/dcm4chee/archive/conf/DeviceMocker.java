@@ -824,6 +824,7 @@ public class DeviceMocker {
         aeExt.setPreserveSpoolFileOnFailure(true);
         aeExt.setSuppressWarningCoercionOfDataElements(false);
         aeExt.setCheckNonDBAttributesOnStorage(false);
+        aeExt.setIgnoreDuplicatesOnStorage(true);
 
         aeExt.setMatchUnknown(true);
         aeExt.setSendPendingCGet(true);

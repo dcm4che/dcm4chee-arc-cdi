@@ -125,917 +125,929 @@ import org.slf4j.LoggerFactory;
 @ApplicationScoped
 public class StoreServiceImpl implements StoreService {
 
-    static Logger LOG = LoggerFactory.getLogger(StoreServiceImpl.class);
-
-    @Inject
-    private FileMgmt locationManager;
-
-    @Inject
-    private StorageService storageService;
-    
-    @Inject
-    private RetrieveService retrieveService;
-
-    @Inject
-    private PatientService patientService;
-
-    @Inject
-    private IssuerService issuerService;
-
-    @Inject
-    private CodeService codeService;
-
-    @Inject
-    private StoreServiceEJB storeServiceEJB;
-
-    @Inject
-    private Event<StoreContext> storeEvent;
-
-    @Inject
-    @StoreSessionClosed
-    private Event<StoreSession> storeSessionClosed;
-    
-    @Inject
-    private Device device;
-    
-    private int[] storeFilters = null;
-
-    @Override
-    public StoreSession createStoreSession(StoreService storeService) {
-        return new StoreSessionImpl(storeService);
-    }
-
-    @Override
-    public void initStorageSystem(StoreSession session)
-            throws DicomServiceException {
-        ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        String groupID = arcAE.getStorageSystemGroupID();
-        StorageSystem storageSystem = storageService.selectStorageSystem(
-                groupID, 0);
-        if (storageSystem == null)
-            throw new DicomServiceException(Status.OutOfResources,
-                    "No writeable Storage System in Storage System Group "
-                            + groupID);
-        session.setStorageSystem(storageSystem);
-    }
-
-    @Override
-    public void initSpoolDirectory(StoreSession session)
-            throws DicomServiceException {
-        ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        Path spoolDir = Paths.get(arcAE.getSpoolDirectoryPath());
-        if (!spoolDir.isAbsolute()) {
-            StorageSystem storageSystem = session.getStorageSystem();
-            spoolDir = storageService.getBaseDirectory(storageSystem).resolve(
-                    spoolDir);
-        }
-        try {
-            Files.createDirectories(spoolDir);
-            Path dir = Files.createTempDirectory(spoolDir, null);
-            LOG.info("{}: M-WRITE spool directory - {}", session, dir);
-            session.setSpoolDirectory(dir);
-        } catch (IOException e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
-
-    @Override
-    public StoreContext createStoreContext(StoreSession session) {
-        return new StoreContextImpl(session);
-    }
-
-    @Override
-    public void writeSpoolFile(StoreContext context, Attributes fmi,
-            InputStream data) throws DicomServiceException {
-        writeSpoolFile(context, fmi, null, data);
-    }
-
-    @Override
-    public void writeSpoolFile(StoreContext context, Attributes fmi,
-            Attributes attrs) throws DicomServiceException {
-        writeSpoolFile(context, fmi, attrs, null);
-        context.setTransferSyntax(fmi.getString(Tag.TransferSyntaxUID));
-        context.setAttributes(attrs);
-    }
-
-    @Override
-    public void onClose(StoreSession session) {
-        deleteSpoolDirectory(session);
-        storeSessionClosed.fire(session);
-    }
-
-    @Override
-    public void cleanup(StoreContext context) {
-        if (context.getFileRef() == null) {
-            deleteFinalFile(context);
-        }
-    }
-
-    private void deleteFinalFile(StoreContext context) {
-        String storagePath = context.getStoragePath();
-        if (storagePath != null) {
-            try {
-                storageService.deleteObject(context.getStorageContext(),
-                        storagePath);
-            } catch (IOException e) {
-                LOG.warn("{}: Failed to delete final file - {}",
-                        context.getStoreSession(), storagePath, e);
-            }
-        }
-    }
-
-    private void deleteSpoolDirectory(StoreSession session) {
-        Path dir = session.getSpoolDirectory();
-        try (DirectoryStream<Path> directory = Files.newDirectoryStream(dir)) {
-            for (Path file : directory) {
-                try {
-                    Files.delete(file);
-                    LOG.info("{}: M-DELETE spool file - {}", session, file);
-                } catch (IOException e) {
-                    LOG.warn("{}: Failed to M-DELETE spool file - {}", session,
-                            file, e);
-                }
-            }
-            Files.delete(dir);
-            LOG.info("{}: M-DELETE spool directory - {}", session, dir);
-        } catch (IOException e) {
-            LOG.warn("{}: Failed to M-DELETE spool directory - {}", session,
-                    dir, e);
-        }
-    }
-
-    private void writeSpoolFile(StoreContext context, Attributes fmi,
-            Attributes ds, InputStream in) throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        MessageDigest digest = session.getMessageDigest();
-        try {
-            context.setSpoolFile(spool(session, fmi, ds, in, ".dcm", digest));
-            if (digest != null)
-                context.setSpoolFileDigest(TagUtils.toHexString(digest.digest()));
-        } catch (IOException e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
-
-    @Override
-    public void parseSpoolFile(StoreContext context)
-            throws DicomServiceException {
-        Path path = context.getSpoolFile();
-        try (DicomInputStream in = new DicomInputStream(path.toFile());) {
-            in.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes fmi = in.readFileMetaInformation();
-            Attributes ds = in.readDataset(-1, -1);
-            context.setTransferSyntax(fmi != null ? fmi
-                    .getString(Tag.TransferSyntaxUID)
-                    : UID.ImplicitVRLittleEndian);
-            context.setAttributes(ds);
-        } catch (IOException e) {
-            throw new DicomServiceException(DATA_SET_NOT_PARSEABLE);
-        }
-    }
-
-    @Override
-    public Path spool(StoreSession session, InputStream in, String suffix)
-            throws IOException {
-        return spool(session, null, null, in, suffix, null);
-    }
-
-    private Path spool(StoreSession session, Attributes fmi, Attributes ds,
-            InputStream in, String suffix, MessageDigest digest)
-            throws IOException {
-        Path spoolDirectory = session.getSpoolDirectory();
-        Path path = Files.createTempFile(spoolDirectory, null, suffix);
-        OutputStream out = Files.newOutputStream(path);
-        try {
-            if (digest != null) {
-                digest.reset();
-                out = new DigestOutputStream(out, digest);
-            }
-            out = new BufferedOutputStream(out);
-            if (fmi != null) {
-                @SuppressWarnings("resource")
-                DicomOutputStream dout = new DicomOutputStream(out,
-                        UID.ExplicitVRLittleEndian);
-                if (ds == null)
-                    dout.writeFileMetaInformation(fmi);
-                else
-                    dout.writeDataset(fmi, ds);
-                out = dout;
-            }
-            if (in instanceof PDVInputStream) {
-                ((PDVInputStream) in).copyTo(out);
-            } else if (in != null) {
-                StreamUtils.copy(in, out);
-            }
-        } finally {
-            SafeClose.close(out);
-        }
-        LOG.info("{}: M-WRITE spool file - {}", session, path);
-        return path;
-    }
-
-    @Override
-    public void store(StoreContext context) throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        try {
-            service.coerceAttributes(context);
-            service.processFile(context);
-            service.updateDB(context);
-        } catch (DicomServiceException e) {
-            context.setStoreAction(StoreAction.FAIL);
-            context.setThrowable(e);
-            throw e;
-        } finally {
-            service.fireStoreEvent(context);
-            service.cleanup(context);
-        }
-    }
-
-    @Override
-    public void fireStoreEvent(StoreContext context) {
-        storeEvent.fire(context);
-    }
-
-    /*
-     * coerceAttributes applies a loaded XSL stylesheet on the keys if given
-     * currently 15/4/2014 modifies date and time attributes in the keys per
-     * request
-     */
-    @Override
-    public void coerceAttributes(final StoreContext context)
-            throws DicomServiceException {
-
-        final StoreSession session = context.getStoreSession();
-        ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        Attributes attrs = context.getAttributes();
-        try {
-            Attributes modified = context.getCoercedOriginalAttributes();
-            Templates tpl = session.getRemoteAET() != null ? arcAE
-                    .getAttributeCoercionTemplates(
-                            attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
-                            TransferCapability.Role.SCP, session.getRemoteAET())
-                    : null;
-            if (tpl != null) {
-                attrs.update(SAXTransformer.transform(attrs, tpl, false, false,
-                        new SetupTransformer() {
-
-                            @Override
-                            public void setup(Transformer transformer) {
-                                setParameters(transformer, session);
-                            }
-                        }), modified);
-            }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-        // store service time zone support moved to decorator
-
-    }
-
-    private void setParameters(Transformer tr, StoreSession session) {
-        Date date = new Date();
-        String currentDate = DateUtils.formatDA(null, date);
-        String currentTime = DateUtils.formatTM(null, date);
-        tr.setParameter("date", currentDate);
-        tr.setParameter("time", currentTime);
-        tr.setParameter("calling", session.getRemoteAET());
-        tr.setParameter("called", session.getLocalAET());
-    }
-
-    @Override
-    public void processFile(StoreContext context) throws DicomServiceException {
-        try {
-            StoreSession session = context.getStoreSession();
-            StorageContext storageContext = storageService
-                    .createStorageContext(session.getStorageSystem());
-            Path source = context.getSpoolFile();
-            context.setStorageContext(storageContext);
-            context.setFinalFileDigest(context.getSpoolFileDigest());
-            context.setFinalFileSize(Files.size(source));
-
-            String origStoragePath = context.calcStoragePath();
-            String storagePath = origStoragePath;
-            int copies = 1;
-            for (;;) {
-                try {
-                    storageService
-                            .moveFile(storageContext, source, storagePath);
-                    context.setStoragePath(storagePath);
-                    return;
-                } catch (ObjectAlreadyExistsException e) {
-                    storagePath = origStoragePath + '.' + copies++;
-                }
-            }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
-
-    @Override
-    public void updateDB(StoreContext context) throws DicomServiceException {
-
-        ArchiveDeviceExtension dE = context.getStoreSession().getDevice()
-                .getDeviceExtension(ArchiveDeviceExtension.class);
-        
-        try {
-            String nodbAttrsDigest = noDBAttsDigest(context.getStoragePath(), context.getStoreSession());
-            context.setNoDBAttsDigest(nodbAttrsDigest);
-        } catch (IOException e1) {
-            throw new DicomServiceException(Status.UnableToProcess, e1);
-        }
-        
-        for (int i = 0; i <= dE.getUpdateDbRetries(); i++) {
-
-            try {
-                LOG.info("{}: try to updateDB, try nr. {}",
-                        context.getStoreSession(), i);
-                storeServiceEJB.updateDB(context);
-                break;
-            } catch (RuntimeException e) {
-                if (i >= dE.getUpdateDbRetries()) // last try failed
-                    throw new DicomServiceException(Status.UnableToProcess, e);
-                else
-                    LOG.warn("{}: Failed to updateDB, try nr. {}",
-                            context.getStoreSession(), i, e);
-            }
-        }
-
-        updateAttributes(context);
-    }
-
-    @Override
-    public void updateDB(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Instance instance = service.findOrCreateInstance(em, context);
-        context.setInstance(instance);
-        if (context.getStoreAction() != StoreAction.IGNORE
-                && context.getStoreAction() != StoreAction.UPDATEDB
-                && context.getStoragePath() != null) {
-            context.setFileRef(createFileRef(em, context, instance));
-        }
-    }
-
-    private void updateAttributes(StoreContext context) {
-        Instance instance = context.getInstance();
-        Series series = instance.getSeries();
-        Study study = series.getStudy();
-        Patient patient = study.getPatient();
-        Attributes attrs = context.getAttributes();
-        Attributes modified = new Attributes();
-        attrs.update(patient.getAttributes(), modified);
-        attrs.update(study.getAttributes(), modified);
-        attrs.update(series.getAttributes(), modified);
-        attrs.update(instance.getAttributes(), modified);
-        if (!modified.isEmpty()) {
-            modified.addAll(context.getCoercedOriginalAttributes());
-            context.setCoercedOrginalAttributes(modified);
-        }
-        logCoercedAttributes(context);
-    }
-
-    private void logCoercedAttributes(StoreContext context) {
-        StoreSession session = context.getStoreSession();
-        Attributes attrs = context.getCoercedOriginalAttributes();
-        if (!attrs.isEmpty()) {
-            LOG.info("{}: Coerced Attributes:\n{}New Attributes:\n{}", session,
-                    attrs,
-                    new Attributes(context.getAttributes(), attrs.tags()));
-        }
-    }
-
-    @Override
-    public StoreAction instanceExists(EntityManager em, StoreContext context,
-            Instance instance) throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        Collection<Location> fileRefs = instance.getLocations();
-        
-        if (fileRefs.isEmpty())
-            return StoreAction.RESTORE;
-        
-        if (!hasSameSourceAET(instance, session.getRemoteAET()))
-                return StoreAction.IGNORE;
-        
-        if (hasFileRefWithDigest(fileRefs,context.getSpoolFileDigest()))
-                return StoreAction.IGNORE;
-
-        if (context.getStoreSession().getArchiveAEExtension()
-                .isCheckNonDBAttributesOnStorage()
-            && (hasFileRefWithOtherAttsDigest(fileRefs,
-                context.getNoDBAttsDigest())))
-            return StoreAction.UPDATEDB;
-
-        return StoreAction.REPLACE;            
-    }
-
-    private boolean hasSameSourceAET(Instance instance, String remoteAET) {
-        return remoteAET.equals(instance.getSeries().getSourceAET());
-    }
-
-    private boolean hasFileRefWithDigest(Collection<Location> fileRefs,
-            String digest) {
-        if (digest == null)
-            return false;
-
-        for (Location fileRef : fileRefs) {
-            if (digest.equals(fileRef.getDigest()))
-                return true;
-        }
-        return false;
-    }
-
-    private boolean hasFileRefWithOtherAttsDigest(
-            Collection<Location> fileRefs, String digest) {
-        if (digest == null)
-            return false;
-
-        for (Location fileRef : fileRefs) {
-            if (digest.equals(fileRef.getOtherAttsDigest()))
-                return true;
-        }
-        return false;
-    }
-
-    @Override
-    public Instance findOrCreateInstance(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreParam storeParam = session.getStoreParam();
-        StoreService service = session.getStoreService();
-        Collection<Location> replaced = new ArrayList<Location>();
-
-        try {
-
-            Attributes attrs = context.getAttributes();
-            Instance inst = em
-                    .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
-                            Instance.class)
-                    .setParameter(1, attrs.getString(Tag.SOPInstanceUID))
-                    .getSingleResult();
-            StoreAction action = service.instanceExists(em, context, inst);
-            LOG.info("{}: {} already exists - {}", session, inst, action);
-            context.setStoreAction(action);
-            switch (action) {
-            case RESTORE:
-            case UPDATEDB:
-                service.updateInstance(em, context, inst);
-            case IGNORE:
-                return inst;
-            case REPLACE:
-                for (Iterator<Location> iter = inst.getLocations().iterator(); iter
-                        .hasNext();) {
-                    Location fileRef = iter.next();
-                    // no other instances referenced through alias table
-                    if (fileRef.getInstances().size() == 1) {
-                        // delete
-                        replaced.add(fileRef);
-                    } else {
-                        // remove inst
-                        fileRef.getInstances().remove(inst);
-                    }
-                    iter.remove();
-                }
-                em.remove(inst);
-            }
-        } catch (NoResultException e) {
-            context.setStoreAction(StoreAction.STORE);
-        } catch (DicomServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-
-        Instance newInst = service.createInstance(em, context);
-
-        // delete replaced
-        try {
-            locationManager.scheduleDelete(replaced, 0);
-        } catch (Exception e) {
-            LOG.error("StoreService : Error deleting replaced location - {}", e);
-        }
-        return newInst;
-    }
-
-    @Override
-    public Series findOrCreateSeries(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes attrs = context.getAttributes();
-        try {
-            Series series = em
-                    .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID_EAGER,
-                            Series.class)
-                    .setParameter(1, attrs.getString(Tag.SeriesInstanceUID))
-                    .getSingleResult();
-            service.updateSeries(em, context, series);
-            return series;
-        } catch (NoResultException e) {
-            return service.createSeries(em, context);
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
-
-    @Override
-    public Study findOrCreateStudy(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes attrs = context.getAttributes();
-        try {
-            Study study = em
-                    .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID_EAGER,
-                            Study.class)
-                    .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
-                    .getSingleResult();
-            service.updateStudy(em, context, study);
-            return study;
-        } catch (NoResultException e) {
-            return service.createStudy(em, context);
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
-
-    @Override
-    public Patient findOrCreatePatient(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        try {
-             // ArchiveAEExtension arcAE = context.getStoreSession()
-             //         .getArchiveAEExtension();
-            // PatientSelector selector = arcAE.getPatientSelector();
-            // System.out.println("Selector Class Name:"+selector.getPatientSelectorClassName());
-            // for (String key :
-            // selector.getPatientSelectorProperties().keySet())
-            // System.out.println("Property:("+key+","+selector.getPatientSelectorProperties().get(key)+")");
-
-            StoreSession session = context.getStoreSession();
-            return patientService.updateOrCreatePatientOnCStore(context
-                    .getAttributes(), PatientSelectorFactory
-                    .createSelector(context.getStoreSession().getStoreParam()),
-                    session.getStoreParam());
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
-
-    @Override
-    public Study createStudy(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes attrs = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        Study study = new Study();
-        study.setPatient(service.findOrCreatePatient(em, context));
-        study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
-        study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
-                storeParam.getFuzzyStr());
-        study.setIssuerOfAccessionNumber(findOrCreateIssuer(attrs
-                .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
-        em.persist(study);
-        LOG.info("{}: Create {}", session, study);
-        return study;
-    }
-
-    private Issuer findOrCreateIssuer(Attributes item) {
-        return item != null ? issuerService.findOrCreate(new Issuer(item))
-                : null;
-    }
-
-    @Override
-    public Series createSeries(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        Series series = new Series();
-        series.setStudy(service.findOrCreateStudy(em, context));
-        series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
-        series.setRequestAttributes(createRequestAttributes(
-                data.getSequence(Tag.RequestAttributesSequence),
-                storeParam.getFuzzyStr(), series));
-        series.setSourceAET(session.getRemoteAET());
-        series.setAttributes(data,
-                storeParam.getAttributeFilter(Entity.Series),
-                storeParam.getFuzzyStr());
-        em.persist(series);
-        LOG.info("{}: Create {}", session, series);
-        return series;
-    }
-
-    @Override
-    public Instance createInstance(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        Instance inst = new Instance();
-        inst.setSeries(service.findOrCreateSeries(em, context));
-        inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
-        inst.setVerifyingObservers(createVerifyingObservers(
-                data.getSequence(Tag.VerifyingObserverSequence),
-                storeParam.getFuzzyStr(), inst));
-        inst.setContentItems(createContentItems(
-                data.getSequence(Tag.ContentSequence), inst));
-        inst.setRetrieveAETs(storeParam.getRetrieveAETs());
-        inst.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
-        inst.setAvailability(session.getStorageSystem().getAvailability());
-        inst.setAttributes(data,
-                storeParam.getAttributeFilter(Entity.Instance),
-                storeParam.getFuzzyStr());
-        em.persist(inst);
-        LOG.info("{}: Create {}", session, inst);
-        return inst;
-    }
-
-    private Location createFileRef(EntityManager em, StoreContext context,
-            Instance instance) {
-
-        StoreSession session = context.getStoreSession();
-        StorageSystem storageSystem = session.getStorageSystem();
-        Location fileRef = new Location.Builder()
-                .storageSystemGroupID(
-                        storageSystem.getStorageSystemGroup().getGroupID())
-                .storageSystemID(storageSystem.getStorageSystemID())
-                .storagePath(context.getStoragePath())
-                .digest(context.getFinalFileDigest())
-                .otherAttsDigest(context.getNoDBAttsDigest())
-                .size(context.getFinalFileSize())
-                .transferSyntaxUID(context.getTransferSyntax())
-                .timeZone(context.getSourceTimeZoneID()).build();
-        Collection<Instance> instances = fileRef.getInstances();
-        if (instances == null) {
-            fileRef.setInstances(instances);
-            instances = new ArrayList<Instance>();
-        }
-        instances.add(instance);
-
-        Collection<Location> locations = instance.getLocations();
-        if (locations == null) {
-            locations = new ArrayList<Location>();
-            instance.setLocations(locations);
-        }
-        locations.add(fileRef);
-        em.persist(fileRef);
-        LOG.info("{}: Create {}", session, fileRef);
-        return fileRef;
-    }
-
-    @Override
-    public void updateStudy(EntityManager em, StoreContext context, Study study) {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        study.clearQueryAttributes();
-        AttributeFilter studyFilter = storeParam
-                .getAttributeFilter(Entity.Study);
-        Attributes studyAttrs = study.getAttributes();
-        Attributes modified = new Attributes();
-        // check if trashed
-        if (isRejected(study)) {
-            em.remove(study.getAttributesBlob());
-            study.setAttributes(new Attributes(data), studyFilter,
-                    storeParam.getFuzzyStr());
-        } else {
-            if (studyAttrs.updateSelected(data, modified,
-                    studyFilter.getSelection())) {
-                study.setAttributes(studyAttrs, studyFilter,
-                        storeParam.getFuzzyStr());
-                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
-                        studyAttrs, modified);
-            }
-        }
-        service.updatePatient(em, context, study.getPatient());
-    }
-
-    @Override
-    public void updatePatient(EntityManager em, StoreContext context,
-            Patient patient) {
-        StoreSession session = context.getStoreSession();
-        patientService.updatePatientByCStore(patient, context.getAttributes(),
-                session.getStoreParam());
-    }
-
-    @Override
-    public void updateSeries(EntityManager em, StoreContext context,
-            Series series) throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        series.clearQueryAttributes();
-        Attributes seriesAttrs = series.getAttributes();
-        AttributeFilter seriesFilter = storeParam
-                .getAttributeFilter(Entity.Series);
-        Attributes modified = new Attributes();
-        // check if trashed
-        if (isRejected(series)) {
-            em.remove(series.getAttributesBlob());
-            series.setAttributes(new Attributes(data), seriesFilter,
-                    storeParam.getFuzzyStr());
-        } else {
-            if (seriesAttrs.updateSelected(data, modified,
-                    seriesFilter.getSelection())) {
-                series.setAttributes(seriesAttrs, seriesFilter,
-                        storeParam.getFuzzyStr());
-                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
-                        seriesAttrs, modified);
-            }
-        }
-        service.updateStudy(em, context, series.getStudy());
-    }
-
-    @Override
-    public void updateInstance(EntityManager em, StoreContext context,
-            Instance inst) throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        Attributes instAttrs = inst.getAttributes();
-        AttributeFilter instFilter = storeParam
-                .getAttributeFilter(Entity.Instance);
-        Attributes modified = new Attributes();
-        if (instAttrs.updateSelected(data, modified, instFilter.getSelection())) {
-            inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
-            LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
-                    modified);
-        }
-        service.updateSeries(em, context, inst.getSeries());
-    }
-
-    public int[] getStoreFilters() {
-        
-        if (storeFilters == null) {
-
-            ArchiveDeviceExtension dExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
-            storeFilters = merge(dExt.getAttributeFilter(Entity.Patient).getSelection(),
-                                    dExt.getAttributeFilter(Entity.Study).getSelection(),
-                                    dExt.getAttributeFilter(Entity.Series).getSelection(),
-                                    dExt.getAttributeFilter(Entity.Instance).getSelection());
-            Arrays.sort(storeFilters);
-        }
-        
-        return storeFilters;
-    }
-    
-    public int[] merge(final int[] ...arrays ) {
-        int size = 0;
-        for ( int[] a: arrays )
-            size += a.length;
-
-            int[] res = new int[size];
-
-            int destPos = 0;
-            for ( int i = 0; i < arrays.length; i++ ) {
-                if ( i > 0 ) destPos += arrays[i-1].length;
-                int length = arrays[i].length;
-                System.arraycopy(arrays[i], 0, res, destPos, length);
-            }
-
-            return res;
-    }
-    
-    private Collection<RequestAttributes> createRequestAttributes(Sequence seq,
-            FuzzyStr fuzzyStr, Series series) {
-        if (seq == null || seq.isEmpty())
-            return null;
-
-        ArrayList<RequestAttributes> list = new ArrayList<RequestAttributes>(
-                seq.size());
-        for (Attributes item : seq) {
-            RequestAttributes request = new RequestAttributes(
-                    item,
-                    findOrCreateIssuer(item
-                            .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
-                    fuzzyStr);
-            request.setSeries(series);
-            list.add(request);
-        }
-        return list;
-    }
-
-    private Collection<VerifyingObserver> createVerifyingObservers(
-            Sequence seq, FuzzyStr fuzzyStr, Instance instance) {
-        if (seq == null || seq.isEmpty())
-            return null;
-
-        ArrayList<VerifyingObserver> list = new ArrayList<VerifyingObserver>(
-                seq.size());
-        for (Attributes item : seq) {
-            VerifyingObserver observer = new VerifyingObserver(item, fuzzyStr);
-            observer.setInstance(instance);
-            list.add(observer);
-        }
-        return list;
-    }
-
-    private Collection<ContentItem> createContentItems(Sequence seq,
-            Instance inst) {
-        if (seq == null || seq.isEmpty())
-            return null;
-
-        Collection<ContentItem> list = new ArrayList<ContentItem>(seq.size());
-        for (Attributes item : seq) {
-            String type = item.getString(Tag.ValueType);
-            ContentItem contentItem = null;
-            if ("CODE".equals(type)) {
-                contentItem = new ContentItem(item.getString(
-                        Tag.RelationshipType).toUpperCase(), singleCode(item,
-                        Tag.ConceptNameCodeSequence), singleCode(item,
-                        Tag.ConceptCodeSequence));
-                list.add(contentItem);
-            } else if ("TEXT".equals(type)) {
-                contentItem = new ContentItem(item.getString(
-                        Tag.RelationshipType).toUpperCase(), singleCode(item,
-                        Tag.ConceptNameCodeSequence), item.getString(
-                        Tag.TextValue, "*"));
-            }
-            if (contentItem != null) {
-                contentItem.setInstance(inst);
-                list.add(contentItem);
-            }
-        }
-        return list;
-    }
-
-    private Code singleCode(Attributes attrs, int seqTag) {
-        Attributes item = attrs.getNestedDataset(seqTag);
-        if (item != null)
-            try {
-                return codeService.findOrCreate(new Code(item));
-            } catch (Exception e) {
-                LOG.info("Illegal code item in Sequence {}:\n{}",
-                        TagUtils.toString(seqTag), item);
-            }
-        return null;
-    }
-
-    private Collection<Code> codeList(Attributes attrs, int seqTag) {
-        Sequence seq = attrs.getSequence(seqTag);
-        if (seq == null || seq.isEmpty())
-            return Collections.emptyList();
-
-        ArrayList<Code> list = new ArrayList<Code>(seq.size());
-        for (Attributes item : seq) {
-            try {
-                list.add(codeService.findOrCreate(new Code(item)));
-            } catch (Exception e) {
-                LOG.info("Illegal code item in Sequence {}:\n{}",
-                        TagUtils.toString(seqTag), item);
-            }
-        }
-        return list;
-    }
-
-    private boolean isRejected(Study study) {
-        for (Series series : study.getSeries()) {
-            if (!isRejected(series))
-                return false;
-        }
-        return true;
-    }
-
-    private boolean isRejected(Series series) {
-        for (Instance inst : series.getInstances()) {
-            if (inst.getRejectionNoteCode() == null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Given a reference to a stored object, retrieves it and calculates the digest of
-     * all the attributes (including bulk data), not stored in the database.
-     * This step is optionally skipped by configuration.
-     */
-    private String noDBAttsDigest(String path, StoreSession session) throws IOException {
-        
-        if (session.getArchiveAEExtension().isCheckNonDBAttributesOnStorage()) {
-
-            //retrieves and parses the object
-            RetrieveContext retrieveContext = retrieveService.createRetrieveContext(session.getStorageSystem());
-            InputStream stream = retrieveService.openInputStream(retrieveContext, path);
-            DicomInputStream dstream =  new DicomInputStream(stream);
-            dstream.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes attrs = dstream.readDataset(-1, -1);
-            dstream.close();
-            
-            //selects attributes non stored in the db
-            Attributes noDBAtts = new Attributes();
-            noDBAtts.addNotSelected(attrs, getStoreFilters());
-            
-            return Utils.digestAttributes(noDBAtts, session.getMessageDigest());
-        } else
-            return null;
-    }
+	static Logger LOG = LoggerFactory.getLogger(StoreServiceImpl.class);
+
+	@Inject
+	private FileMgmt locationManager;
+
+	@Inject
+	private StorageService storageService;
+
+	@Inject
+	private RetrieveService retrieveService;
+
+	@Inject
+	private PatientService patientService;
+
+	@Inject
+	private IssuerService issuerService;
+
+	@Inject
+	private CodeService codeService;
+
+	@Inject
+	private StoreServiceEJB storeServiceEJB;
+
+	@Inject
+	private Event<StoreContext> storeEvent;
+
+	@Inject
+	@StoreSessionClosed
+	private Event<StoreSession> storeSessionClosed;
+
+	@Inject
+	private Device device;
+
+	private int[] storeFilters = null;
+
+	@Override
+	public StoreSession createStoreSession(StoreService storeService) {
+		return new StoreSessionImpl(storeService);
+	}
+
+	@Override
+	public void initStorageSystem(StoreSession session)
+			throws DicomServiceException {
+		ArchiveAEExtension arcAE = session.getArchiveAEExtension();
+		String groupID = arcAE.getStorageSystemGroupID();
+		StorageSystem storageSystem = storageService.selectStorageSystem(
+				groupID, 0);
+		if (storageSystem == null)
+			throw new DicomServiceException(Status.OutOfResources,
+					"No writeable Storage System in Storage System Group "
+							+ groupID);
+		session.setStorageSystem(storageSystem);
+	}
+
+	@Override
+	public void initSpoolDirectory(StoreSession session)
+			throws DicomServiceException {
+		ArchiveAEExtension arcAE = session.getArchiveAEExtension();
+		Path spoolDir = Paths.get(arcAE.getSpoolDirectoryPath());
+		if (!spoolDir.isAbsolute()) {
+			StorageSystem storageSystem = session.getStorageSystem();
+			spoolDir = storageService.getBaseDirectory(storageSystem).resolve(
+					spoolDir);
+		}
+		try {
+			Files.createDirectories(spoolDir);
+			Path dir = Files.createTempDirectory(spoolDir, null);
+			LOG.info("{}: M-WRITE spool directory - {}", session, dir);
+			session.setSpoolDirectory(dir);
+		} catch (IOException e) {
+			throw new DicomServiceException(Status.UnableToProcess, e);
+		}
+	}
+
+	@Override
+	public StoreContext createStoreContext(StoreSession session) {
+		return new StoreContextImpl(session);
+	}
+
+	@Override
+	public void writeSpoolFile(StoreContext context, Attributes fmi,
+			InputStream data) throws DicomServiceException {
+		writeSpoolFile(context, fmi, null, data);
+	}
+
+	@Override
+	public void writeSpoolFile(StoreContext context, Attributes fmi,
+			Attributes attrs) throws DicomServiceException {
+		writeSpoolFile(context, fmi, attrs, null);
+		context.setTransferSyntax(fmi.getString(Tag.TransferSyntaxUID));
+		context.setAttributes(attrs);
+	}
+
+	@Override
+	public void onClose(StoreSession session) {
+		deleteSpoolDirectory(session);
+		storeSessionClosed.fire(session);
+	}
+
+	@Override
+	public void cleanup(StoreContext context) {
+		if (context.getFileRef() == null) {
+			deleteFinalFile(context);
+		}
+	}
+
+	private void deleteFinalFile(StoreContext context) {
+		String storagePath = context.getStoragePath();
+		if (storagePath != null) {
+			try {
+				storageService.deleteObject(context.getStorageContext(),
+						storagePath);
+			} catch (IOException e) {
+				LOG.warn("{}: Failed to delete final file - {}",
+						context.getStoreSession(), storagePath, e);
+			}
+		}
+	}
+
+	private void deleteSpoolDirectory(StoreSession session) {
+		Path dir = session.getSpoolDirectory();
+		try (DirectoryStream<Path> directory = Files.newDirectoryStream(dir)) {
+			for (Path file : directory) {
+				try {
+					Files.delete(file);
+					LOG.info("{}: M-DELETE spool file - {}", session, file);
+				} catch (IOException e) {
+					LOG.warn("{}: Failed to M-DELETE spool file - {}", session,
+							file, e);
+				}
+			}
+			Files.delete(dir);
+			LOG.info("{}: M-DELETE spool directory - {}", session, dir);
+		} catch (IOException e) {
+			LOG.warn("{}: Failed to M-DELETE spool directory - {}", session,
+					dir, e);
+		}
+	}
+
+	private void writeSpoolFile(StoreContext context, Attributes fmi,
+			Attributes ds, InputStream in) throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		MessageDigest digest = session.getMessageDigest();
+		try {
+			context.setSpoolFile(spool(session, fmi, ds, in, ".dcm", digest));
+			if (digest != null)
+				context.setSpoolFileDigest(TagUtils.toHexString(digest.digest()));
+		} catch (IOException e) {
+			throw new DicomServiceException(Status.UnableToProcess, e);
+		}
+	}
+
+	@Override
+	public void parseSpoolFile(StoreContext context)
+			throws DicomServiceException {
+		Path path = context.getSpoolFile();
+		try (DicomInputStream in = new DicomInputStream(path.toFile());) {
+			in.setIncludeBulkData(IncludeBulkData.URI);
+			Attributes fmi = in.readFileMetaInformation();
+			Attributes ds = in.readDataset(-1, -1);
+			context.setTransferSyntax(fmi != null ? fmi
+					.getString(Tag.TransferSyntaxUID)
+					: UID.ImplicitVRLittleEndian);
+			context.setAttributes(ds);
+		} catch (IOException e) {
+			throw new DicomServiceException(DATA_SET_NOT_PARSEABLE);
+		}
+	}
+
+	@Override
+	public Path spool(StoreSession session, InputStream in, String suffix)
+			throws IOException {
+		return spool(session, null, null, in, suffix, null);
+	}
+
+	private Path spool(StoreSession session, Attributes fmi, Attributes ds,
+			InputStream in, String suffix, MessageDigest digest)
+			throws IOException {
+		Path spoolDirectory = session.getSpoolDirectory();
+		Path path = Files.createTempFile(spoolDirectory, null, suffix);
+		OutputStream out = Files.newOutputStream(path);
+		try {
+			if (digest != null) {
+				digest.reset();
+				out = new DigestOutputStream(out, digest);
+			}
+			out = new BufferedOutputStream(out);
+			if (fmi != null) {
+				@SuppressWarnings("resource")
+				DicomOutputStream dout = new DicomOutputStream(out,
+						UID.ExplicitVRLittleEndian);
+				if (ds == null)
+					dout.writeFileMetaInformation(fmi);
+				else
+					dout.writeDataset(fmi, ds);
+				out = dout;
+			}
+			if (in instanceof PDVInputStream) {
+				((PDVInputStream) in).copyTo(out);
+			} else if (in != null) {
+				StreamUtils.copy(in, out);
+			}
+		} finally {
+			SafeClose.close(out);
+		}
+		LOG.info("{}: M-WRITE spool file - {}", session, path);
+		return path;
+	}
+
+	@Override
+	public void store(StoreContext context) throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		try {
+			service.coerceAttributes(context);
+			service.processFile(context);
+			service.updateDB(context);
+		} catch (DicomServiceException e) {
+			context.setStoreAction(StoreAction.FAIL);
+			context.setThrowable(e);
+			throw e;
+		} finally {
+			service.fireStoreEvent(context);
+			service.cleanup(context);
+		}
+	}
+
+	@Override
+	public void fireStoreEvent(StoreContext context) {
+		storeEvent.fire(context);
+	}
+
+	/*
+	 * coerceAttributes applies a loaded XSL stylesheet on the keys if given
+	 * currently 15/4/2014 modifies date and time attributes in the keys per
+	 * request
+	 */
+	@Override
+	public void coerceAttributes(final StoreContext context)
+			throws DicomServiceException {
+
+		final StoreSession session = context.getStoreSession();
+		ArchiveAEExtension arcAE = session.getArchiveAEExtension();
+		Attributes attrs = context.getAttributes();
+		try {
+			Attributes modified = context.getCoercedOriginalAttributes();
+			Templates tpl = session.getRemoteAET() != null ? arcAE
+					.getAttributeCoercionTemplates(
+							attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
+							TransferCapability.Role.SCP, session.getRemoteAET())
+					: null;
+			if (tpl != null) {
+				attrs.update(SAXTransformer.transform(attrs, tpl, false, false,
+						new SetupTransformer() {
+
+							@Override
+							public void setup(Transformer transformer) {
+								setParameters(transformer, session);
+							}
+						}), modified);
+			}
+		} catch (Exception e) {
+			throw new DicomServiceException(Status.UnableToProcess, e);
+		}
+		// store service time zone support moved to decorator
+
+	}
+
+	private void setParameters(Transformer tr, StoreSession session) {
+		Date date = new Date();
+		String currentDate = DateUtils.formatDA(null, date);
+		String currentTime = DateUtils.formatTM(null, date);
+		tr.setParameter("date", currentDate);
+		tr.setParameter("time", currentTime);
+		tr.setParameter("calling", session.getRemoteAET());
+		tr.setParameter("called", session.getLocalAET());
+	}
+
+	@Override
+	public void processFile(StoreContext context) throws DicomServiceException {
+		try {
+			StoreSession session = context.getStoreSession();
+			StorageContext storageContext = storageService
+					.createStorageContext(session.getStorageSystem());
+			Path source = context.getSpoolFile();
+			context.setStorageContext(storageContext);
+			context.setFinalFileDigest(context.getSpoolFileDigest());
+			context.setFinalFileSize(Files.size(source));
+
+			String origStoragePath = context.calcStoragePath();
+			String storagePath = origStoragePath;
+			int copies = 1;
+			for (;;) {
+				try {
+					storageService
+							.moveFile(storageContext, source, storagePath);
+					context.setStoragePath(storagePath);
+					return;
+				} catch (ObjectAlreadyExistsException e) {
+					storagePath = origStoragePath + '.' + copies++;
+				}
+			}
+		} catch (Exception e) {
+			throw new DicomServiceException(Status.UnableToProcess, e);
+		}
+	}
+
+	@Override
+	public void updateDB(StoreContext context) throws DicomServiceException {
+
+		ArchiveDeviceExtension dE = context.getStoreSession().getDevice()
+				.getDeviceExtension(ArchiveDeviceExtension.class);
+
+		try {
+			String nodbAttrsDigest = noDBAttsDigest(context.getStoragePath(),
+					context.getStoreSession());
+			context.setNoDBAttsDigest(nodbAttrsDigest);
+		} catch (IOException e1) {
+			throw new DicomServiceException(Status.UnableToProcess, e1);
+		}
+
+		for (int i = 0; i <= dE.getUpdateDbRetries(); i++) {
+
+			try {
+				LOG.info("{}: try to updateDB, try nr. {}",
+						context.getStoreSession(), i);
+				storeServiceEJB.updateDB(context);
+				break;
+			} catch (RuntimeException e) {
+				if (i >= dE.getUpdateDbRetries()) // last try failed
+					throw new DicomServiceException(Status.UnableToProcess, e);
+				else
+					LOG.warn("{}: Failed to updateDB, try nr. {}",
+							context.getStoreSession(), i, e);
+			}
+		}
+
+		updateAttributes(context);
+	}
+
+	@Override
+	public void updateDB(EntityManager em, StoreContext context)
+			throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		Instance instance = service.findOrCreateInstance(em, context);
+		context.setInstance(instance);
+		if (context.getStoreAction() != StoreAction.IGNORE
+				&& context.getStoreAction() != StoreAction.UPDATEDB
+				&& context.getStoragePath() != null) {
+			context.setFileRef(createFileRef(em, context, instance));
+		}
+	}
+
+	private void updateAttributes(StoreContext context) {
+		Instance instance = context.getInstance();
+		Series series = instance.getSeries();
+		Study study = series.getStudy();
+		Patient patient = study.getPatient();
+		Attributes attrs = context.getAttributes();
+		Attributes modified = new Attributes();
+		attrs.update(patient.getAttributes(), modified);
+		attrs.update(study.getAttributes(), modified);
+		attrs.update(series.getAttributes(), modified);
+		attrs.update(instance.getAttributes(), modified);
+		if (!modified.isEmpty()) {
+			modified.addAll(context.getCoercedOriginalAttributes());
+			context.setCoercedOrginalAttributes(modified);
+		}
+		logCoercedAttributes(context);
+	}
+
+	private void logCoercedAttributes(StoreContext context) {
+		StoreSession session = context.getStoreSession();
+		Attributes attrs = context.getCoercedOriginalAttributes();
+		if (!attrs.isEmpty()) {
+			LOG.info("{}: Coerced Attributes:\n{}New Attributes:\n{}", session,
+					attrs,
+					new Attributes(context.getAttributes(), attrs.tags()));
+		}
+	}
+
+	@Override
+	public StoreAction instanceExists(EntityManager em, StoreContext context,
+			Instance instance) throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+
+		if (context.getStoreSession().getArchiveAEExtension()
+				.isIgnoreDuplicatesOnStorage())
+			return StoreAction.IGNORE;
+
+		Collection<Location> fileRefs = instance.getLocations();
+		
+		if (fileRefs.isEmpty())
+			return StoreAction.RESTORE;
+
+		if (!hasSameSourceAET(instance, session.getRemoteAET()))
+			return StoreAction.IGNORE;
+
+		if (hasFileRefWithDigest(fileRefs, context.getSpoolFileDigest()))
+			return StoreAction.IGNORE;
+
+		if (context.getStoreSession().getArchiveAEExtension()
+				.isCheckNonDBAttributesOnStorage()
+				&& (hasFileRefWithOtherAttsDigest(fileRefs,
+						context.getNoDBAttsDigest())))
+			return StoreAction.UPDATEDB;
+
+		return StoreAction.REPLACE;
+	}
+
+	private boolean hasSameSourceAET(Instance instance, String remoteAET) {
+		return remoteAET.equals(instance.getSeries().getSourceAET());
+	}
+
+	private boolean hasFileRefWithDigest(Collection<Location> fileRefs,
+			String digest) {
+		if (digest == null)
+			return false;
+
+		for (Location fileRef : fileRefs) {
+			if (digest.equals(fileRef.getDigest()))
+				return true;
+		}
+		return false;
+	}
+
+	private boolean hasFileRefWithOtherAttsDigest(
+			Collection<Location> fileRefs, String digest) {
+		if (digest == null)
+			return false;
+
+		for (Location fileRef : fileRefs) {
+			if (digest.equals(fileRef.getOtherAttsDigest()))
+				return true;
+		}
+		return false;
+	}
+
+	@Override
+	public Instance findOrCreateInstance(EntityManager em, StoreContext context)
+			throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreParam storeParam = session.getStoreParam();
+		StoreService service = session.getStoreService();
+		Collection<Location> replaced = new ArrayList<Location>();
+
+		try {
+
+			Attributes attrs = context.getAttributes();
+			Instance inst = em
+					.createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
+							Instance.class)
+					.setParameter(1, attrs.getString(Tag.SOPInstanceUID))
+					.getSingleResult();
+			StoreAction action = service.instanceExists(em, context, inst);
+			LOG.info("{}: {} already exists - {}", session, inst, action);
+			context.setStoreAction(action);
+			switch (action) {
+			case RESTORE:
+			case UPDATEDB:
+				service.updateInstance(em, context, inst);
+			case IGNORE:
+				return inst;
+			case REPLACE:
+				for (Iterator<Location> iter = inst.getLocations().iterator(); iter
+						.hasNext();) {
+					Location fileRef = iter.next();
+					// no other instances referenced through alias table
+					if (fileRef.getInstances().size() == 1) {
+						// delete
+						replaced.add(fileRef);
+					} else {
+						// remove inst
+						fileRef.getInstances().remove(inst);
+					}
+					iter.remove();
+				}
+				em.remove(inst);
+			}
+		} catch (NoResultException e) {
+			context.setStoreAction(StoreAction.STORE);
+		} catch (DicomServiceException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new DicomServiceException(Status.UnableToProcess, e);
+		}
+
+		Instance newInst = service.createInstance(em, context);
+
+		// delete replaced
+		try {
+			locationManager.scheduleDelete(replaced, 0);
+		} catch (Exception e) {
+			LOG.error("StoreService : Error deleting replaced location - {}", e);
+		}
+		return newInst;
+	}
+
+	@Override
+	public Series findOrCreateSeries(EntityManager em, StoreContext context)
+			throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		Attributes attrs = context.getAttributes();
+		try {
+			Series series = em
+					.createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID_EAGER,
+							Series.class)
+					.setParameter(1, attrs.getString(Tag.SeriesInstanceUID))
+					.getSingleResult();
+			service.updateSeries(em, context, series);
+			return series;
+		} catch (NoResultException e) {
+			return service.createSeries(em, context);
+		} catch (Exception e) {
+			throw new DicomServiceException(Status.UnableToProcess, e);
+		}
+	}
+
+	@Override
+	public Study findOrCreateStudy(EntityManager em, StoreContext context)
+			throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		Attributes attrs = context.getAttributes();
+		try {
+			Study study = em
+					.createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID_EAGER,
+							Study.class)
+					.setParameter(1, attrs.getString(Tag.StudyInstanceUID))
+					.getSingleResult();
+			service.updateStudy(em, context, study);
+			return study;
+		} catch (NoResultException e) {
+			return service.createStudy(em, context);
+		} catch (Exception e) {
+			throw new DicomServiceException(Status.UnableToProcess, e);
+		}
+	}
+
+	@Override
+	public Patient findOrCreatePatient(EntityManager em, StoreContext context)
+			throws DicomServiceException {
+		try {
+			// ArchiveAEExtension arcAE = context.getStoreSession()
+			// .getArchiveAEExtension();
+			// PatientSelector selector = arcAE.getPatientSelector();
+			// System.out.println("Selector Class Name:"+selector.getPatientSelectorClassName());
+			// for (String key :
+			// selector.getPatientSelectorProperties().keySet())
+			// System.out.println("Property:("+key+","+selector.getPatientSelectorProperties().get(key)+")");
+
+			StoreSession session = context.getStoreSession();
+			return patientService.updateOrCreatePatientOnCStore(context
+					.getAttributes(), PatientSelectorFactory
+					.createSelector(context.getStoreSession().getStoreParam()),
+					session.getStoreParam());
+		} catch (Exception e) {
+			throw new DicomServiceException(Status.UnableToProcess, e);
+		}
+	}
+
+	@Override
+	public Study createStudy(EntityManager em, StoreContext context)
+			throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		Attributes attrs = context.getAttributes();
+		StoreParam storeParam = session.getStoreParam();
+		Study study = new Study();
+		study.setPatient(service.findOrCreatePatient(em, context));
+		study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
+		study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
+				storeParam.getFuzzyStr());
+		study.setIssuerOfAccessionNumber(findOrCreateIssuer(attrs
+				.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
+		em.persist(study);
+		LOG.info("{}: Create {}", session, study);
+		return study;
+	}
+
+	private Issuer findOrCreateIssuer(Attributes item) {
+		return item != null ? issuerService.findOrCreate(new Issuer(item))
+				: null;
+	}
+
+	@Override
+	public Series createSeries(EntityManager em, StoreContext context)
+			throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		Attributes data = context.getAttributes();
+		StoreParam storeParam = session.getStoreParam();
+		Series series = new Series();
+		series.setStudy(service.findOrCreateStudy(em, context));
+		series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
+		series.setRequestAttributes(createRequestAttributes(
+				data.getSequence(Tag.RequestAttributesSequence),
+				storeParam.getFuzzyStr(), series));
+		series.setSourceAET(session.getRemoteAET());
+		series.setAttributes(data,
+				storeParam.getAttributeFilter(Entity.Series),
+				storeParam.getFuzzyStr());
+		em.persist(series);
+		LOG.info("{}: Create {}", session, series);
+		return series;
+	}
+
+	@Override
+	public Instance createInstance(EntityManager em, StoreContext context)
+			throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		Attributes data = context.getAttributes();
+		StoreParam storeParam = session.getStoreParam();
+		Instance inst = new Instance();
+		inst.setSeries(service.findOrCreateSeries(em, context));
+		inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
+		inst.setVerifyingObservers(createVerifyingObservers(
+				data.getSequence(Tag.VerifyingObserverSequence),
+				storeParam.getFuzzyStr(), inst));
+		inst.setContentItems(createContentItems(
+				data.getSequence(Tag.ContentSequence), inst));
+		inst.setRetrieveAETs(storeParam.getRetrieveAETs());
+		inst.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
+		inst.setAvailability(session.getStorageSystem().getAvailability());
+		inst.setAttributes(data,
+				storeParam.getAttributeFilter(Entity.Instance),
+				storeParam.getFuzzyStr());
+		em.persist(inst);
+		LOG.info("{}: Create {}", session, inst);
+		return inst;
+	}
+
+	private Location createFileRef(EntityManager em, StoreContext context,
+			Instance instance) {
+
+		StoreSession session = context.getStoreSession();
+		StorageSystem storageSystem = session.getStorageSystem();
+		Location fileRef = new Location.Builder()
+				.storageSystemGroupID(
+						storageSystem.getStorageSystemGroup().getGroupID())
+				.storageSystemID(storageSystem.getStorageSystemID())
+				.storagePath(context.getStoragePath())
+				.digest(context.getFinalFileDigest())
+				.otherAttsDigest(context.getNoDBAttsDigest())
+				.size(context.getFinalFileSize())
+				.transferSyntaxUID(context.getTransferSyntax())
+				.timeZone(context.getSourceTimeZoneID()).build();
+		Collection<Instance> instances = fileRef.getInstances();
+		if (instances == null) {
+			fileRef.setInstances(instances);
+			instances = new ArrayList<Instance>();
+		}
+		instances.add(instance);
+
+		Collection<Location> locations = instance.getLocations();
+		if (locations == null) {
+			locations = new ArrayList<Location>();
+			instance.setLocations(locations);
+		}
+		locations.add(fileRef);
+		em.persist(fileRef);
+		LOG.info("{}: Create {}", session, fileRef);
+		return fileRef;
+	}
+
+	@Override
+	public void updateStudy(EntityManager em, StoreContext context, Study study) {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		Attributes data = context.getAttributes();
+		StoreParam storeParam = session.getStoreParam();
+		study.clearQueryAttributes();
+		AttributeFilter studyFilter = storeParam
+				.getAttributeFilter(Entity.Study);
+		Attributes studyAttrs = study.getAttributes();
+		Attributes modified = new Attributes();
+		// check if trashed
+		if (isRejected(study)) {
+			em.remove(study.getAttributesBlob());
+			study.setAttributes(new Attributes(data), studyFilter,
+					storeParam.getFuzzyStr());
+		} else {
+			if (studyAttrs.updateSelected(data, modified,
+					studyFilter.getSelection())) {
+				study.setAttributes(studyAttrs, studyFilter,
+						storeParam.getFuzzyStr());
+				LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
+						studyAttrs, modified);
+			}
+		}
+		service.updatePatient(em, context, study.getPatient());
+	}
+
+	@Override
+	public void updatePatient(EntityManager em, StoreContext context,
+			Patient patient) {
+		StoreSession session = context.getStoreSession();
+		patientService.updatePatientByCStore(patient, context.getAttributes(),
+				session.getStoreParam());
+	}
+
+	@Override
+	public void updateSeries(EntityManager em, StoreContext context,
+			Series series) throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		Attributes data = context.getAttributes();
+		StoreParam storeParam = session.getStoreParam();
+		series.clearQueryAttributes();
+		Attributes seriesAttrs = series.getAttributes();
+		AttributeFilter seriesFilter = storeParam
+				.getAttributeFilter(Entity.Series);
+		Attributes modified = new Attributes();
+		// check if trashed
+		if (isRejected(series)) {
+			em.remove(series.getAttributesBlob());
+			series.setAttributes(new Attributes(data), seriesFilter,
+					storeParam.getFuzzyStr());
+		} else {
+			if (seriesAttrs.updateSelected(data, modified,
+					seriesFilter.getSelection())) {
+				series.setAttributes(seriesAttrs, seriesFilter,
+						storeParam.getFuzzyStr());
+				LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
+						seriesAttrs, modified);
+			}
+		}
+		service.updateStudy(em, context, series.getStudy());
+	}
+
+	@Override
+	public void updateInstance(EntityManager em, StoreContext context,
+			Instance inst) throws DicomServiceException {
+		StoreSession session = context.getStoreSession();
+		StoreService service = session.getStoreService();
+		Attributes data = context.getAttributes();
+		StoreParam storeParam = session.getStoreParam();
+		Attributes instAttrs = inst.getAttributes();
+		AttributeFilter instFilter = storeParam
+				.getAttributeFilter(Entity.Instance);
+		Attributes modified = new Attributes();
+		if (instAttrs.updateSelected(data, modified, instFilter.getSelection())) {
+			inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
+			LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
+					modified);
+		}
+		service.updateSeries(em, context, inst.getSeries());
+	}
+
+	public int[] getStoreFilters() {
+
+		if (storeFilters == null) {
+
+			ArchiveDeviceExtension dExt = device
+					.getDeviceExtension(ArchiveDeviceExtension.class);
+			storeFilters = merge(dExt.getAttributeFilter(Entity.Patient)
+					.getSelection(), dExt.getAttributeFilter(Entity.Study)
+					.getSelection(), dExt.getAttributeFilter(Entity.Series)
+					.getSelection(), dExt.getAttributeFilter(Entity.Instance)
+					.getSelection());
+			Arrays.sort(storeFilters);
+		}
+
+		return storeFilters;
+	}
+
+	public int[] merge(final int[]... arrays) {
+		int size = 0;
+		for (int[] a : arrays)
+			size += a.length;
+
+		int[] res = new int[size];
+
+		int destPos = 0;
+		for (int i = 0; i < arrays.length; i++) {
+			if (i > 0)
+				destPos += arrays[i - 1].length;
+			int length = arrays[i].length;
+			System.arraycopy(arrays[i], 0, res, destPos, length);
+		}
+
+		return res;
+	}
+
+	private Collection<RequestAttributes> createRequestAttributes(Sequence seq,
+			FuzzyStr fuzzyStr, Series series) {
+		if (seq == null || seq.isEmpty())
+			return null;
+
+		ArrayList<RequestAttributes> list = new ArrayList<RequestAttributes>(
+				seq.size());
+		for (Attributes item : seq) {
+			RequestAttributes request = new RequestAttributes(
+					item,
+					findOrCreateIssuer(item
+							.getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
+					fuzzyStr);
+			request.setSeries(series);
+			list.add(request);
+		}
+		return list;
+	}
+
+	private Collection<VerifyingObserver> createVerifyingObservers(
+			Sequence seq, FuzzyStr fuzzyStr, Instance instance) {
+		if (seq == null || seq.isEmpty())
+			return null;
+
+		ArrayList<VerifyingObserver> list = new ArrayList<VerifyingObserver>(
+				seq.size());
+		for (Attributes item : seq) {
+			VerifyingObserver observer = new VerifyingObserver(item, fuzzyStr);
+			observer.setInstance(instance);
+			list.add(observer);
+		}
+		return list;
+	}
+
+	private Collection<ContentItem> createContentItems(Sequence seq,
+			Instance inst) {
+		if (seq == null || seq.isEmpty())
+			return null;
+
+		Collection<ContentItem> list = new ArrayList<ContentItem>(seq.size());
+		for (Attributes item : seq) {
+			String type = item.getString(Tag.ValueType);
+			ContentItem contentItem = null;
+			if ("CODE".equals(type)) {
+				contentItem = new ContentItem(item.getString(
+						Tag.RelationshipType).toUpperCase(), singleCode(item,
+						Tag.ConceptNameCodeSequence), singleCode(item,
+						Tag.ConceptCodeSequence));
+				list.add(contentItem);
+			} else if ("TEXT".equals(type)) {
+				contentItem = new ContentItem(item.getString(
+						Tag.RelationshipType).toUpperCase(), singleCode(item,
+						Tag.ConceptNameCodeSequence), item.getString(
+						Tag.TextValue, "*"));
+			}
+			if (contentItem != null) {
+				contentItem.setInstance(inst);
+				list.add(contentItem);
+			}
+		}
+		return list;
+	}
+
+	private Code singleCode(Attributes attrs, int seqTag) {
+		Attributes item = attrs.getNestedDataset(seqTag);
+		if (item != null)
+			try {
+				return codeService.findOrCreate(new Code(item));
+			} catch (Exception e) {
+				LOG.info("Illegal code item in Sequence {}:\n{}",
+						TagUtils.toString(seqTag), item);
+			}
+		return null;
+	}
+
+	private Collection<Code> codeList(Attributes attrs, int seqTag) {
+		Sequence seq = attrs.getSequence(seqTag);
+		if (seq == null || seq.isEmpty())
+			return Collections.emptyList();
+
+		ArrayList<Code> list = new ArrayList<Code>(seq.size());
+		for (Attributes item : seq) {
+			try {
+				list.add(codeService.findOrCreate(new Code(item)));
+			} catch (Exception e) {
+				LOG.info("Illegal code item in Sequence {}:\n{}",
+						TagUtils.toString(seqTag), item);
+			}
+		}
+		return list;
+	}
+
+	private boolean isRejected(Study study) {
+		for (Series series : study.getSeries()) {
+			if (!isRejected(series))
+				return false;
+		}
+		return true;
+	}
+
+	private boolean isRejected(Series series) {
+		for (Instance inst : series.getInstances()) {
+			if (inst.getRejectionNoteCode() == null) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Given a reference to a stored object, retrieves it and calculates the
+	 * digest of all the attributes (including bulk data), not stored in the
+	 * database. This step is optionally skipped by configuration.
+	 */
+	private String noDBAttsDigest(String path, StoreSession session)
+			throws IOException {
+
+		if (session.getArchiveAEExtension().isCheckNonDBAttributesOnStorage()) {
+
+			// retrieves and parses the object
+			RetrieveContext retrieveContext = retrieveService
+					.createRetrieveContext(session.getStorageSystem());
+			InputStream stream = retrieveService.openInputStream(
+					retrieveContext, path);
+			DicomInputStream dstream = new DicomInputStream(stream);
+			dstream.setIncludeBulkData(IncludeBulkData.URI);
+			Attributes attrs = dstream.readDataset(-1, -1);
+			dstream.close();
+
+			// selects attributes non stored in the db
+			Attributes noDBAtts = new Attributes();
+			noDBAtts.addNotSelected(attrs, getStoreFilters());
+
+			return Utils.digestAttributes(noDBAtts, session.getMessageDigest());
+		} else
+			return null;
+	}
 
 }
