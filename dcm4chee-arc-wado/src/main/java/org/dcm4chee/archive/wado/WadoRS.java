@@ -212,7 +212,7 @@ public class WadoRS extends Wado {
                     if (relatedType
                             .isCompatible(MediaTypes.APPLICATION_DICOM_TYPE)) {
                         acceptDicom = true;
-                        acceptedTransferSyntaxes.add(relatedType
+                        acceptedTransferSyntaxes.add(mediaType
                                 .getParameters().get("transfer-syntax"));
                     } else if (relatedType
                             .isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE)) {
@@ -309,7 +309,7 @@ public class WadoRS extends Wado {
         if (acceptOctetStream && ImageReaderFactory.canDecompress(ts)) {
             return MediaType.APPLICATION_OCTET_STREAM_TYPE;
         }
-        return null;
+        return requiredMediaType;
     }
 
     @GET
