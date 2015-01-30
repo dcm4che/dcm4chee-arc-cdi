@@ -79,11 +79,14 @@ public final class ArchivingRule
     }
 
     public void setCondition(Condition condition) {
-        this.condition = condition;
+        this.condition = condition != null ? condition : new Condition();
     }
 
-    public boolean matchesCondition(String deviceName, String aeTitle) {
-        return condition.matches(deviceName, aeTitle);
+    public boolean matchesCondition(String deviceName, String aeTitle,
+            String institutionName, String institutionalDepartmentName,
+            String modality) {
+        return condition.matches(deviceName, aeTitle, institutionName,
+                institutionalDepartmentName, modality);
     }
 
     public String[] getDeviceNames() {
@@ -110,13 +113,13 @@ public final class ArchivingRule
         condition.setInstitutionNames(institutionNames);
     }
 
-    public String[] getInstitutionalDepartmenNames() {
-        return condition.getInstitutionalDepartmenNames();
+    public String[] getInstitutionalDepartmentNames() {
+        return condition.getInstitutionalDepartmentNames();
     }
 
-    public void setInstitutionalDepartmenNames(
-            String[] institutionalDepartmenNames) {
-        condition.setInstitutionalDepartmenNames(institutionalDepartmenNames);
+    public void setInstitutionalDepartmentNames(
+            String[] institutionalDepartmentNames) {
+        condition.setInstitutionalDepartmentNames(institutionalDepartmentNames);
     }
 
     public String[] getModalities() {
@@ -148,7 +151,7 @@ public final class ArchivingRule
         private String[] institutionNames;
 
         @ConfigurableProperty(name = "dicomInstitutionalDepartmentName")
-        private String[] institutionalDepartmenNames;
+        private String[] institutionalDepartmentNames;
 
         @ConfigurableProperty(name = "dcmModality")
         private String[] modalities;
@@ -185,13 +188,13 @@ public final class ArchivingRule
             weight = -1;
        }
 
-        public String[] getInstitutionalDepartmenNames() {
-            return institutionalDepartmenNames;
+        public String[] getInstitutionalDepartmentNames() {
+            return institutionalDepartmentNames;
         }
 
-        public void setInstitutionalDepartmenNames(
+        public void setInstitutionalDepartmentNames(
                 String[] institutionalDepartmenNames) {
-            this.institutionalDepartmenNames = institutionalDepartmenNames;
+            this.institutionalDepartmentNames = institutionalDepartmenNames;
             weight = -1;
         }
 
@@ -209,7 +212,7 @@ public final class ArchivingRule
                 weight = (aeTitles.length != 0 ? 16 : 0)
                     + (deviceNames.length != 0 ? 8 : 0)
                     + (institutionNames.length != 0 ? 4 : 0)
-                    + (institutionalDepartmenNames.length != 0 ? 2 : 0)
+                    + (institutionalDepartmentNames.length != 0 ? 2 : 0)
                     + (modalities.length != 0 ? 1 : 0);
             return weight;
         }
@@ -219,15 +222,21 @@ public final class ArchivingRule
             return o.weight() - weight();
         }
 
-        public boolean matches(String deviceName, String aeTitle) {
+        public boolean matches(String deviceName, String aeTitle,
+                String institutionName, String institutionalDepartmenName,
+                String modality) {
             return isEmptyOrContains(this.deviceNames, deviceName)
-                    && isEmptyOrContains(this.aeTitles, aeTitle);
-        }
+                    && isEmptyOrContains(this.aeTitles, aeTitle)
+                    && isEmptyOrContains(this.institutionNames, institutionName)
+                    && isEmptyOrContains(this.institutionalDepartmentNames,
+                            institutionalDepartmenName)
+                    && isEmptyOrContains(this.modalities, modality);
 
+        }
     }
 
     private static boolean isEmptyOrContains(Object[] a, Object o) {
-        if (o == null || a.length == 0)
+        if (o == null || a == null || a.length == 0)
             return true;
 
         for (int i = 0; i < a.length; i++)

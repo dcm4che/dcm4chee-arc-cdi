@@ -315,11 +315,11 @@ public class DefaultRetrieveService implements RetrieveService {
         org.dcm4chee.storage.RetrieveContext ctx =
                 storageRetrieveService.createRetrieveContext(inst.getStorageSystem());
         try {
-			return inst.getEntryName() == null
-			        ? storageRetrieveService.getFile(ctx, inst.getFilePath())
-			        : storageRetrieveService.getFile(ctx, inst.getFilePath(), inst.getEntryName());
-		} catch (InterruptedException e) {
-			throw new InterruptedIOException();
-		}
+            return inst.getEntryName() == null
+                    ? storageRetrieveService.getFile(ctx, inst.getFilePath())
+                    : storageRetrieveService.getFile(ctx, inst.getFilePath(), inst.getEntryName());
+        } catch (InterruptedException e) {
+            throw new InterruptedIOException();
+        }
     }
 }

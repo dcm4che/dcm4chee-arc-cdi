@@ -48,6 +48,7 @@ import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -102,10 +103,20 @@ public class ArchivingRules implements Iterable<ArchivingRule>, Serializable{
         return null;
     }
 
+    public ArchivingRule findArchivingRule(String deviceName, String aeTitle,
+            Attributes attrs) {
+        return findArchivingRule(deviceName, aeTitle,
+                attrs.getString(Tag.InstitutionName),
+                attrs.getString(Tag.InstitutionalDepartmentName),
+                attrs.getString(Tag.Modality));
+    }
+
     public ArchivingRule findArchivingRule(String deviceName,
-            String aeTitle, Attributes attrs) {
+            String aeTitle, String institutionName, String institutionalDepartmentName,
+            String modality) {
         for (ArchivingRule rule : list)
-            if (rule.matchesCondition(deviceName, aeTitle))
+            if (rule.matchesCondition(deviceName, aeTitle, institutionName,
+                    institutionalDepartmentName, modality))
                 return rule;
         return null;
     }
