@@ -57,9 +57,15 @@
                   <directory>src/secure</directory>
                   <includes>
                     <include>**/*.json</include>
+                    <include>**/picketlink.xml</include>
                   </includes>
                 </resource>
               </webResources>
+              <archive>
+                <manifestEntries>
+                  <Dependencies>org.picketlink</Dependencies>
+                </manifestEntries>
+              </archive>
             </configuration>
           </plugin>
         </plugins>
