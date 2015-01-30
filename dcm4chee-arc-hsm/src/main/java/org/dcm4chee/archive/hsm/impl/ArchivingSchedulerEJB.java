@@ -43,7 +43,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 
 import javax.ejb.Stateless;
@@ -157,7 +156,6 @@ public class ArchivingSchedulerEJB {
                 .getResultList();
         ArrayList<ContainerEntry> entries =
                 new ArrayList<ContainerEntry>(insts.size());
-        HashSet<String> digestAlgorithmSet = new HashSet<String>();
         for (Instance inst : insts) {
             Location location = selectLocation(inst, task);
             if (location != null) {
@@ -178,20 +176,11 @@ public class ArchivingSchedulerEJB {
                 entry.setProperty(TRANSFER_SYNTAX, location.getTransferSyntaxUID());
                 entry.setProperty(TIME_ZONE, location.getTimeZone());
                 entries.add(entry);
-                digestAlgorithmSet.add(storageSystem.getDigestAlgorithm());
             }
-        }
-        String digestAlgorithm = null;
-        if (digestAlgorithmSet.size() == 1) {
-            digestAlgorithm = digestAlgorithmSet.iterator().next();
-        } else {
-            LOG.warn("No common digest Algorithm of entries: {} - cannot verify container",
-                    digestAlgorithmSet);
         }
         ArchiverContext ctx = archiverService.createContext(
                 task.getTargetStorageSystemGroupID(),
-                task.getTargetName(),
-                digestAlgorithm);
+                task.getTargetName());
         ctx.setEntries(entries);
         archiverService.scheduleStore(ctx);
         LOG.info("Scheduled {}", task);
