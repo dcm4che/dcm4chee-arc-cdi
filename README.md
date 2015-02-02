@@ -3,7 +3,6 @@ DCM4CHEE Archive 4.x
 Sources: https://github.com/dcm4che/dcm4chee-arc-cdi  
 Binaries: https://sourceforge.net/projects/dcm4che/files/dcm4chee-arc4  
 Issue Tracker: http://www.dcm4che.org/jira/browse/ARCH  
-Build Status: [![Build Status](https://travis-ci.org/dcm4che/dcm4chee-arc-cdi.svg?branch=master)](https://travis-ci.org/dcm4che/dcm4chee-arc-cdi)
 
 DICOM Archive Java EE application running in JBoss WildFly.
 
