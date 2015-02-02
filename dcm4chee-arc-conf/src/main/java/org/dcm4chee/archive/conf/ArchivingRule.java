@@ -6,7 +6,6 @@ import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.data.Code;
-import org.dcm4che3.util.AttributesFormat;
 
 @LDAP(objectClasses = "dcmArchivingRule", distinguishingField = "cn")
 @ConfigurableClass
@@ -28,9 +27,6 @@ public final class ArchivingRule
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
     private String storageSystemGroupID;
 
-    @ConfigurableProperty(name = "dcmStorageFilePathFormat")
-    private AttributesFormat storageFilePathFormat;
-
     @ConfigurableProperty(name = "dcmDelayReasonCode")
     private Code delayReasonCode;
 
@@ -48,14 +44,6 @@ public final class ArchivingRule
 
     public void setStorageSystemGroupID(String storageSystemGroupID) {
         this.storageSystemGroupID = storageSystemGroupID;
-    }
-
-    public AttributesFormat getStorageFilePathFormat() {
-        return storageFilePathFormat;
-    }
-
-    public void setStorageFilePathFormat(AttributesFormat storageFilePathFormat) {
-        this.storageFilePathFormat = storageFilePathFormat;
     }
 
     public int getDelayAfterInstanceStored() {

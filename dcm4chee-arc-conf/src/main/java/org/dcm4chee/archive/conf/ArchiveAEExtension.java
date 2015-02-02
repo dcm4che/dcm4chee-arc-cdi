@@ -38,6 +38,15 @@
 
 package org.dcm4chee.archive.conf;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerConfigurationException;
+
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
@@ -52,18 +61,8 @@ import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
-import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
-
-import javax.xml.transform.Templates;
-import javax.xml.transform.TransformerConfigurationException;
-
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -98,9 +97,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     @ConfigurableProperty(name = "dcmSpoolDirectoryPath")
     private String spoolDirectoryPath;
-
-    @ConfigurableProperty(name = "dcmStorageFilePathFormat")
-    private AttributesFormat storageFilePathFormat;
 
     @ConfigurableProperty(name = "dcmSuppressWarningCoercionOfDataElements", defaultValue = "false")
     private boolean suppressWarningCoercionOfDataElements;
@@ -329,14 +325,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setSpoolDirectoryPath(String spoolDirectoryPath) {
         this.spoolDirectoryPath = spoolDirectoryPath;
-    }
-
-    public AttributesFormat getStorageFilePathFormat() {
-        return storageFilePathFormat;
-    }
-
-    public void setStorageFilePathFormat(AttributesFormat storageFilePathFormat) {
-        this.storageFilePathFormat = storageFilePathFormat;
     }
 
     public Templates getAttributeCoercionTemplates(String cuid, Dimse dimse,

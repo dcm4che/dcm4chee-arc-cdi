@@ -332,7 +332,6 @@
 <entry key="dcmSendPendingCGet" value="true"/>
 <entry key="dcmSendPendingCMoveInterval" value="5000"/>
 <entry key="dcmSpoolDirectoryPath" value="spool"/>
-<entry key="dcmStorageFilePathFormat" value="{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}"/>
 <entry key="dcmStorageSystemGroupID" value="DEFAULT"/>
 <entry key="dcmWadoOverlayRendering" value="false"/>
 <entry key="dcmWadoSRTemplateURI" value="${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl"/>
@@ -7059,6 +7058,7 @@
 <entry key="dcmActiveStorageSystemID.#" value="1"/>
 <entry key="dcmActiveStorageSystemID.1" value="fs1"/>
 <entry key="dcmStorageSystemGroupID" value="DEFAULT"/>
+<entry key="dcmStorageFilePathFormat" value="{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}"/>
 </map>
 <node name="Storage Systems">
 <map/>

@@ -55,11 +55,14 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.util.AttributesFormat;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.storage.ContainerEntry;
 import org.dcm4chee.storage.RetrieveContext;
@@ -67,6 +70,7 @@ import org.dcm4chee.storage.archiver.service.ArchiverContext;
 import org.dcm4chee.storage.archiver.service.ArchiverService;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +91,7 @@ public class ArchivingSchedulerEJB {
     private static final String FILE_SIZE = "fileSize";
     private static final String TRANSFER_SYNTAX = "transferSyntax";
     private static final String TIME_ZONE = "timeZone";
+    private static final String DELETE_SOURCE = "deleteSource";
 
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
@@ -123,7 +128,7 @@ public class ArchivingSchedulerEJB {
             task.setArchivingTime(archivingTime);
             task.setSourceStorageSystemGroupID(storeContext.getFileRef().getStorageSystemGroupID());
             task.setTargetStorageSystemGroupID(archivingRule.getStorageSystemGroupID());
-            task.setTargetName(archivingRule.getStorageFilePathFormat().format(attrs));
+            task.setTargetName(getTargetName(archivingRule, attrs));
             Code delayReasonCode = archivingRule.getDelayReasonCode();
             if (delayReasonCode != null)
                 task.setDelayReasonCode(codeService.findOrCreate(delayReasonCode));
@@ -131,6 +136,12 @@ public class ArchivingSchedulerEJB {
             LOG.info("Create {}", task);
         }
     }
+
+	private String getTargetName(ArchivingRule archivingRule, Attributes attrs) {
+		StorageSystemGroup grp = storageDeviceExtension().getStorageSystemGroup(archivingRule.getStorageSystemGroupID());
+		String pattern = "";
+		return AttributesFormat.valueOf(pattern).format(attrs);
+	}
 
     public ArchivingTask scheduleNextArchivingTask() throws IOException {
         List<ArchivingTask> results = em.createNamedQuery(
@@ -154,10 +165,44 @@ public class ArchivingSchedulerEJB {
                         Instance.class)
                 .setParameter(1, task.getSeriesInstanceUID())
                 .getResultList();
+        scheduleInstances(insts, task.getSourceStorageSystemGroupID(), task.getTargetStorageSystemGroupID(), task.getTargetName(), false);
+        LOG.info("Scheduled {}", task);
+    }
+    
+    public void scheduleStudy(String studyIUID, String sourceGroupID, String targetGroupID, String targetName, boolean deleteSource) throws IOException {
+        LOG.info("Scheduling archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}", 
+        		studyIUID, sourceGroupID, targetGroupID, deleteSource);
+        List<String> seriesUIDs = em.createQuery("SELECT se.seriesInstanceUID FROM Series se JOIN FETCH se.study st WHERE st.studyInstanceUID = ?1",
+                        String.class)
+                .setParameter(1, studyIUID)
+                .getResultList();
+        for (String uid : seriesUIDs) {
+        	scheduleSeries(uid, sourceGroupID, targetGroupID, targetName, deleteSource);
+        }
+        LOG.info("Scheduled archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}", 
+        		new Object[] {studyIUID, sourceGroupID, targetGroupID, deleteSource});
+    	
+    }
+    
+    public void scheduleSeries(String seriesIUID, String sourceGroupID, String targetGroupID, String targetName, boolean deleteSource) throws IOException {
+        LOG.info("Scheduling archiving series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}", 
+        		new Object[] {seriesIUID, sourceGroupID, targetGroupID, deleteSource});
+        List<Instance> insts = em
+                .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID,
+                        Instance.class)
+                .setParameter(1, seriesIUID)
+                .getResultList();
+        scheduleInstances(insts, sourceGroupID, targetGroupID, targetName, deleteSource);
+        LOG.info("Scheduled archiving series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}", 
+        		new Object[] {seriesIUID, sourceGroupID, targetGroupID, deleteSource});
+    	
+    }
+    
+    public void scheduleInstances(List<Instance> insts, String sourceGroupID, String targetGroupID, String targetName, boolean deleteSource) throws IOException {
         ArrayList<ContainerEntry> entries =
                 new ArrayList<ContainerEntry>(insts.size());
         for (Instance inst : insts) {
-            Location location = selectLocation(inst, task);
+            Location location = selectLocation(inst, sourceGroupID, targetGroupID);
             if (location != null) {
                 StorageSystem storageSystem =
                         storageDeviceExtension().getStorageSystem(
@@ -178,34 +223,42 @@ public class ArchivingSchedulerEJB {
                 entries.add(entry);
             }
         }
+        String digestAlgorithm = null;
+        if (digestAlgorithmSet.size() == 1) {
+            digestAlgorithm = digestAlgorithmSet.iterator().next();
+        } else {
+            LOG.warn("No common digest Algorithm of entries: {} - cannot verify container",
+                    digestAlgorithmSet);
+        }
         ArchiverContext ctx = archiverService.createContext(
-                task.getTargetStorageSystemGroupID(),
-                task.getTargetName());
+        		targetGroupID,
+                targetName,
+                digestAlgorithm);
         ctx.setEntries(entries);
+        ctx.setProperty(DELETE_SOURCE, new Boolean(deleteSource));
         archiverService.scheduleStore(ctx);
-        LOG.info("Scheduled {}", task);
     }
 
     private StorageDeviceExtension storageDeviceExtension() {
         return device.getDeviceExtension(StorageDeviceExtension.class);
     }
 
-    private Location selectLocation(Instance inst, ArchivingTask task) {
+    private Location selectLocation(Instance inst, String sourceGroupID, String targetGroupID) {
         Location selected = null;
         Collection<Location> locations = inst.getLocations();
         for (Location location : locations) {
             String storageSystemGroupID = location.getStorageSystemGroupID();
-            if (storageSystemGroupID.equals(task.getTargetStorageSystemGroupID())) {
+            if (storageSystemGroupID.equals(targetGroupID)) {
                 LOG.info("{} already archived to Storage System Group {} - skip from archiving",
                         inst, storageSystemGroupID);
                 return null;
             }
-            if (storageSystemGroupID.equals(task.getSourceStorageSystemGroupID()))
+            if (storageSystemGroupID.equals(sourceGroupID))
                 selected = location;
         }
         if (selected == null)
             LOG.info("{} not available at Storage System Group {} - skip from archiving",
-                    inst, task.getSourceStorageSystemGroupID());
+                    inst, sourceGroupID);
         return selected;
     }
 
