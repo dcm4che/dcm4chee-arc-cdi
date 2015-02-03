@@ -675,7 +675,6 @@ public class DeviceMocker {
         fs1.setStorageSystemPath("/var/local/dcm4chee-arc/fs1");
         fs1.setStorageAccessTime(1000);
         fs1.setAvailability(Availability.ONLINE);
-        fs1.setDigestAlgorithm("MD5");
 
         StorageSystem arc = new StorageSystem();
         arc.setStorageSystemID("nearline");
@@ -698,6 +697,7 @@ public class DeviceMocker {
 
         StorageSystemGroup online = new StorageSystemGroup();
         online.setGroupID("DEFAULT");
+        online.setDigestAlgorithm("MD5");
         online.addStorageSystem(fs1);
         online.setActiveStorageSystemIDs(fs1.getStorageSystemID());
 
