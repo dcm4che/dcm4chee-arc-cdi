@@ -26,7 +26,7 @@ public final class ArchivingRule
     private int delayAfterInstanceStored;
 
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
-    private String storageSystemGroupID;
+    private String[] storageSystemGroupIDs;
 
     @ConfigurableProperty(name = "dcmStorageFilePathFormat")
     private AttributesFormat storageFilePathFormat;
@@ -42,12 +42,12 @@ public final class ArchivingRule
         this.commonName = commonName;
     }
 
-    public String getStorageSystemGroupID() {
-        return storageSystemGroupID;
+    public String[] getStorageSystemGroupIDs() {
+        return storageSystemGroupIDs;
     }
 
-    public void setStorageSystemGroupID(String storageSystemGroupID) {
-        this.storageSystemGroupID = storageSystemGroupID;
+    public void setStorageSystemGroupIDs(String ... storageSystemGroupIDs) {
+        this.storageSystemGroupIDs = storageSystemGroupIDs;
     }
 
     public AttributesFormat getStorageFilePathFormat() {

@@ -122,7 +122,7 @@ public class ArchivingSchedulerEJB {
             task.setSeriesInstanceUID(seriesInstanceUID);
             task.setArchivingTime(archivingTime);
             task.setSourceStorageSystemGroupID(storeContext.getFileRef().getStorageSystemGroupID());
-            task.setTargetStorageSystemGroupID(archivingRule.getStorageSystemGroupID());
+            task.setTargetStorageSystemGroupIDs(archivingRule.getStorageSystemGroupIDs());
             task.setTargetName(archivingRule.getStorageFilePathFormat().format(attrs));
             Code delayReasonCode = archivingRule.getDelayReasonCode();
             if (delayReasonCode != null)
@@ -150,14 +150,25 @@ public class ArchivingSchedulerEJB {
     public void scheduleArchivingTask(ArchivingTask task) throws IOException {
         LOG.info("Scheduling {}", task);
         List<Instance> insts = em
-                .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID,
-                        Instance.class)
-                .setParameter(1, task.getSeriesInstanceUID())
-                .getResultList();
-        ArrayList<ContainerEntry> entries =
-                new ArrayList<ContainerEntry>(insts.size());
+                .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID, Instance.class)
+                .setParameter(1, task.getSeriesInstanceUID()).getResultList();
+        for (String targetStorageSystemGroupID : task.getTargetStorageSystemGroupIDs()) {
+            ArchiverContext ctx = archiverService.createContext(targetStorageSystemGroupID,
+                    task.getTargetName());
+            ctx.setEntries(makeEntries(insts, task.getSourceStorageSystemGroupID(),
+                    targetStorageSystemGroupID));
+            archiverService.scheduleStore(ctx);
+        }
+        LOG.info("Scheduled {}", task);
+    }
+
+    private List<ContainerEntry> makeEntries(List<Instance> insts,
+            String sourceStorageSystemGroupID, String targetStorageSystemGroupID)
+            throws IOException {
+        ArrayList<ContainerEntry> entries = new ArrayList<ContainerEntry>(insts.size());
         for (Instance inst : insts) {
-            Location location = selectLocation(inst, task);
+            Location location = selectLocation(inst, sourceStorageSystemGroupID,
+                    targetStorageSystemGroupID);
             if (location != null) {
                 StorageSystem storageSystem =
                         storageDeviceExtension().getStorageSystem(
@@ -178,34 +189,30 @@ public class ArchivingSchedulerEJB {
                 entries.add(entry);
             }
         }
-        ArchiverContext ctx = archiverService.createContext(
-                task.getTargetStorageSystemGroupID(),
-                task.getTargetName());
-        ctx.setEntries(entries);
-        archiverService.scheduleStore(ctx);
-        LOG.info("Scheduled {}", task);
+        return entries;
     }
 
     private StorageDeviceExtension storageDeviceExtension() {
         return device.getDeviceExtension(StorageDeviceExtension.class);
     }
 
-    private Location selectLocation(Instance inst, ArchivingTask task) {
+    private Location selectLocation(Instance inst, String sourceStorageSystemGroupID,
+            String targetStorageSystemGroupID) {
         Location selected = null;
         Collection<Location> locations = inst.getLocations();
         for (Location location : locations) {
             String storageSystemGroupID = location.getStorageSystemGroupID();
-            if (storageSystemGroupID.equals(task.getTargetStorageSystemGroupID())) {
+            if (storageSystemGroupID.equals(targetStorageSystemGroupID)) {
                 LOG.info("{} already archived to Storage System Group {} - skip from archiving",
                         inst, storageSystemGroupID);
                 return null;
             }
-            if (storageSystemGroupID.equals(task.getSourceStorageSystemGroupID()))
+            if (storageSystemGroupID.equals(sourceStorageSystemGroupID))
                 selected = location;
         }
         if (selected == null)
             LOG.info("{} not available at Storage System Group {} - skip from archiving",
-                    inst, task.getSourceStorageSystemGroupID());
+                    inst, sourceStorageSystemGroupID);
         return selected;
     }
 

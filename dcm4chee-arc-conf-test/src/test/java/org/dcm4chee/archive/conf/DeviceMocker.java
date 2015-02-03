@@ -942,7 +942,7 @@ public class DeviceMocker {
 
         ArchivingRule archivingRule = new ArchivingRule();
         archivingRule.setCommonName("Archiving Rule");
-        archivingRule.setStorageSystemGroupID("ARCHIVE");
+        archivingRule.setStorageSystemGroupIDs("ARCHIVE");
         archivingRule.setStorageFilePathFormat(new AttributesFormat(
                 "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip"));
         archivingRule.setDelayAfterInstanceStored(60);
