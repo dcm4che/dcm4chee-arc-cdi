@@ -43,12 +43,9 @@ import java.util.TimeZone;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
-import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
@@ -73,9 +70,6 @@ public abstract class QueryServiceTimeZoneDecorator implements QueryService {
     @Delegate
     QueryService queryService;
 
-    @Inject
-    private IApplicationEntityCache aeCache;
-
     @Override
     public void coerceRequestAttributes(QueryContext context)
             throws DicomServiceException {
@@ -87,8 +81,7 @@ public abstract class QueryServiceTimeZoneDecorator implements QueryService {
             TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                     .getTimeZoneOfDevice();
             if (archiveTimeZone != null) {
-                TimeZone sourceTimeZone = getSourceTimeZone(keys, arcAE,
-                        context.getRemoteAET());
+                TimeZone sourceTimeZone = getSourceTimeZone(keys, context);
                 if (sourceTimeZone != null) {
                     LOG.debug("(TimeZone Support): Query request with a requested timezone. \n "
                             + "(TimeZone Support): Converting to archive time and setting the requested time zone");
@@ -104,29 +97,20 @@ public abstract class QueryServiceTimeZoneDecorator implements QueryService {
 
     }
 
-    private TimeZone getSourceTimeZone(Attributes keys,
-            ArchiveAEExtension arcAE, String sourceAET) {
+    private TimeZone getSourceTimeZone(Attributes keys, QueryContext context) {
         if (keys.containsValue(Tag.TimezoneOffsetFromUTC))
             return keys.getTimeZone();
-        try {
-            ApplicationEntity ae = aeCache.get(sourceAET);
-            TimeZone sourceTimeZone = ae.getDevice().getTimeZoneOfDevice(); 
+            
+            TimeZone sourceTimeZone = context.getRemoteDevice().getTimeZoneOfDevice(); 
             if (sourceTimeZone != null ) {
                 LOG.debug("Loaded Device for remote Application entity AETitle: "
-                        + ae.getAETitle()
+                        + context.getRemoteAET()
                         + " and device name: "
-                        + ae.getDevice().getDeviceName());
+                        + context.getRemoteDevice().getDeviceName());
                 LOG.debug("with Time zone: "
-                        + ae.getDevice().getTimeZoneOfDevice().getID());
-                return ae.getDevice().getTimeZoneOfDevice();
+                        + context.getRemoteDevice().getTimeZoneOfDevice().getID());
+                return context.getRemoteDevice().getTimeZoneOfDevice();
             }
-        } catch (ConfigurationException e) {
-            LOG.warn(
-                    "Failed to access configuration for query source {} - no Timezone support:",
-                    sourceAET, e);
-            // TODO log
-            return null;
-        }
         return null;
     }
 

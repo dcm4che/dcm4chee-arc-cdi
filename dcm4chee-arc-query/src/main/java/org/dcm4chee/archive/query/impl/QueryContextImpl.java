@@ -43,6 +43,7 @@ import java.util.TimeZone;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.QueryContext;
@@ -71,6 +72,8 @@ public class QueryContextImpl implements QueryContext {
     private Attributes keysOriginal;
     
     private TimeZone requestedTimeZone;
+    
+    private Device remoteDevice;
     
     private final HashMap<String,Object> properties = new HashMap<String,Object>();
     
@@ -173,5 +176,15 @@ public class QueryContextImpl implements QueryContext {
     @Override
     public TimeZone getRequestedTimeZone() {
         return this.requestedTimeZone;
+    }
+
+    @Override
+    public void setRemoteDevice(Device device) {
+        this.remoteDevice = device;
+    }
+
+    @Override
+    public Device getRemoteDevice() {
+        return this.remoteDevice;
     }
 }

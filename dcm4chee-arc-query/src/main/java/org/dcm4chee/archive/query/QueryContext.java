@@ -42,6 +42,7 @@ import java.util.TimeZone;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 
@@ -88,4 +89,8 @@ public interface QueryContext {
     void setRequestedTimeZone(TimeZone tz);
 
     TimeZone getRequestedTimeZone();
+
+    void setRemoteDevice(Device device);
+    
+    Device getRemoteDevice();
 }

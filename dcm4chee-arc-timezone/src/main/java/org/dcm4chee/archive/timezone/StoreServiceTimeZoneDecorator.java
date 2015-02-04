@@ -72,9 +72,6 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
     @Delegate
     StoreService storeService;
 
-    @Inject
-    private IApplicationEntityCache aeCache;
-
     @Override
     public void coerceAttributes(StoreContext context)
             throws DicomServiceException {
@@ -88,23 +85,17 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
         try {
             // Time zone store adjustments
             if (archiveTimeZone != null) {
-                try {
-                    ApplicationEntity remoteAE =aeCache.get(session.getRemoteAET()); 
-                    remoteAETimeZone = remoteAE!=null?remoteAE.getDevice().getTimeZoneOfDevice():null;
+                    remoteAETimeZone = session.getSourceDevice()!=null?session.getSourceDevice().getTimeZoneOfDevice():null;
                     if(remoteAETimeZone!=null){
                     LOG.debug("(TimeZone Support):Loaded Device for remote Application entity AETitle: "
-                            + remoteAE.getAETitle()
+                            + session.getRemoteAET()
                             + " and device name: "
-                            + remoteAE.getDevice().getDeviceName());
+                            + session.getSourceDeviceName());
                     LOG.debug("(TimeZone Support):-with Time zone: "
                             + remoteAETimeZone
                                     .getID());
                     }
-                } catch (ConfigurationException e1) {
-                    LOG.warn(
-                            "(TimeZone Support): Failed to access configuration for query source {} - no Timezone support:",
-                            session.getRemoteAET(), e1);
-                }
+                
                 if (remoteAETimeZone != null)
                     context.setSourceTimeZone(remoteAETimeZone);
                 else

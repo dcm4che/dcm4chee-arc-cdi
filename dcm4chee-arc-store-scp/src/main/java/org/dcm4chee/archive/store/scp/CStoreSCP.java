@@ -44,6 +44,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -71,6 +72,9 @@ public class CStoreSCP extends BasicCStoreSCP {
     @Inject
     private StoreService storeService;
 
+    @Inject
+    private IApplicationEntityCache aeCache;
+    
     @Override
     protected void store(Association as, PresentationContext pc, Attributes rq,
             PDVInputStream data, Attributes rsp) throws IOException {
@@ -84,6 +88,7 @@ public class CStoreSCP extends BasicCStoreSCP {
                 session = storeService.createStoreSession(storeService);
                 session.setSource(new LocalAssociationParticipant(as));
                 session.setRemoteAET(as.getRemoteAET());
+                session.setSourceDevice(aeCache.findApplicationEntity(as.getRemoteAET()).getDevice());
                 session.setArchiveAEExtension(arcAE);
                 storeService.initStorageSystem(session);
                 storeService.initSpoolDirectory(session);

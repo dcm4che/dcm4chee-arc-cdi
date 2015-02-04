@@ -839,6 +839,7 @@ public class WadoURI extends Wado {
                     mediaType = MediaTypes.VIDEO_MP4_TYPE;
                 else{
                     mediaType = MediaTypes.IMAGE_JPEG_TYPE;
+                    list.add(mediaType);
                     mediaType = MediaTypes.IMAGE_GIF_TYPE;
                 }
                 list.add(mediaType);

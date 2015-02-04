@@ -43,8 +43,8 @@ import java.util.EnumSet;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
@@ -79,6 +79,9 @@ public class CFindSCP extends BasicCFindSCP {
     @Inject
     private Event<QueryEvent> queryEvent; 
     
+    @Inject
+    private IApplicationEntityCache aeCache;
+    
     public CFindSCP(String sopClass, String... qrLevels) {
         super(sopClass);
         this.qrLevels = qrLevels;
@@ -102,6 +105,7 @@ public class CFindSCP extends BasicCFindSCP {
                     as, as.getRemoteAET(), arcAE, queryOpts, null);
             QueryContext ctx = queryService.createQueryContext(queryService);
             ctx.setRemoteAET(as.getRemoteAET());
+            ctx.setRemoteDevice(aeCache.findApplicationEntity(as.getRemoteAET()).getDevice());
             ctx.setServiceSOPClassUID(rq.getString(Tag.AffectedSOPClassUID));
             ctx.setArchiveAEExtension(arcAE);
             ctx.setKeys(keys);
