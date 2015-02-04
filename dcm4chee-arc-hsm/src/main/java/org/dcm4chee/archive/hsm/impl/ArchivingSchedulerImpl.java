@@ -175,4 +175,15 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
             LOG.info("Arching Scheduler: stop polling for scheduled Archiving tasks");
         }
     }
+
+	@Override
+	public void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException {
+		ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, false);
+		
+	}
+
+	@Override
+	public void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException {
+		ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, true);
+	}
 }
