@@ -162,7 +162,7 @@ public class ArchivingSchedulerEJB {
                         location.getDigest())
                     .setSourceStorageSystemGroupID(location.getStorageSystemGroupID())
                     .setSourceStorageSystemID(location.getStorageSystemID())
-                    .setSourceName(location.getStorageSystemID())
+                    .setSourceName(location.getStoragePath())
                     .setProperty(INSTANCE_PK, inst.getPk())
                     .setProperty(DIGEST, location.getDigest())
                     .setProperty(OTHER_ATTRS_DIGEST, location.getOtherAttsDigest())
