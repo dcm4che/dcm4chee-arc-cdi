@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.hsm.impl;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -54,7 +53,6 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.entity.ArchivingTask;
@@ -62,12 +60,8 @@ import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.storage.ContainerEntry;
-import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.archiver.service.ArchiverContext;
 import org.dcm4chee.storage.archiver.service.ArchiverService;
-import org.dcm4chee.storage.conf.StorageDeviceExtension;
-import org.dcm4chee.storage.conf.StorageSystem;
-import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,16 +86,10 @@ public class ArchivingSchedulerEJB {
     private EntityManager em;
 
     @Inject
-    private Device device;
-
-    @Inject
     private CodeService codeService;
 
     @Inject
     private ArchiverService archiverService;
-
-    @Inject
-    private RetrieveService retrieveService;
 
     public void onStoreInstance(StoreContext storeContext,
             ArchivingRule archivingRule) {
@@ -170,34 +158,25 @@ public class ArchivingSchedulerEJB {
             Location location = selectLocation(inst, sourceStorageSystemGroupID,
                     targetStorageSystemGroupID);
             if (location != null) {
-                StorageSystem storageSystem =
-                        storageDeviceExtension().getStorageSystem(
-                                location.getStorageSystemGroupID(),
-                                location.getStorageSystemID());
-                RetrieveContext ctx = retrieveService.createRetrieveContext(storageSystem);
-                Path file = retrieveService.getFile(ctx, location.getStoragePath());
-                ContainerEntry entry = new ContainerEntry(
-                        inst.getSopInstanceUID(),
-                        file,
-                        location.getDigest());
-                entry.setProperty(INSTANCE_PK, inst.getPk());
-                entry.setProperty(DIGEST, location.getDigest());
-                entry.setProperty(OTHER_ATTRS_DIGEST, location.getOtherAttsDigest());
-                entry.setProperty(FILE_SIZE, location.getSize());
-                entry.setProperty(TRANSFER_SYNTAX, location.getTransferSyntaxUID());
-                entry.setProperty(TIME_ZONE, location.getTimeZone());
+                ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),
+                        location.getDigest())
+                    .setSourceStorageSystemGroupID(location.getStorageSystemGroupID())
+                    .setSourceStorageSystemID(location.getStorageSystemID())
+                    .setSourceName(location.getStorageSystemID())
+                    .setProperty(INSTANCE_PK, inst.getPk())
+                    .setProperty(DIGEST, location.getDigest())
+                    .setProperty(OTHER_ATTRS_DIGEST, location.getOtherAttsDigest())
+                    .setProperty(FILE_SIZE, location.getSize())
+                    .setProperty(TRANSFER_SYNTAX, location.getTransferSyntaxUID())
+                    .setProperty(TIME_ZONE, location.getTimeZone()).build();
                 entries.add(entry);
             }
         }
         return entries;
     }
 
-    private StorageDeviceExtension storageDeviceExtension() {
-        return device.getDeviceExtension(StorageDeviceExtension.class);
-    }
-
-    private Location selectLocation(Instance inst, String sourceStorageSystemGroupID,
-            String targetStorageSystemGroupID) {
+    private Location selectLocation(Instance inst,
+            String sourceStorageSystemGroupID, String targetStorageSystemGroupID) {
         Location selected = null;
         Collection<Location> locations = inst.getLocations();
         for (Location location : locations) {
@@ -221,7 +200,7 @@ public class ArchivingSchedulerEJB {
         for (ContainerEntry entry : entries) {
             Instance inst = em.find(Instance.class, entry.getProperty(INSTANCE_PK));
             Location location = new Location.Builder()
-                .storageSystemGroupID(ctx.getGroupID())
+                .storageSystemGroupID(ctx.getStorageSystemGroupID())
                 .storageSystemID(ctx.getStorageSystemID())
                 .storagePath(ctx.getName())
                 .entryName(entry.getName())
