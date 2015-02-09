@@ -33,8 +33,9 @@
         <include>configuration/dcm4chee-arc/*.xsl</include>
         <include>configuration/dcm4chee-arc/*.json</include>
         <include>ldap/**</include>
-        <include>prefs/**</include>
+        <include>jboss-cli/*.cli</include>
       </includes>
+      <filtered>true</filtered>
       <excludes>
         <exclude>ldap/unldif.sed</exclude>
       </excludes>

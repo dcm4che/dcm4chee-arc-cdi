@@ -34,6 +34,9 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.3</version>
         <configuration>
+          <filters>
+            <filter>${basedir}/../dcm4chee-arc-conf/src/main/config/jboss-cli/${db}.properties</filter>
+          </filters>
           <descriptors>
             <descriptor>src/main/assembly/dist.xml</descriptor>
           </descriptors>
