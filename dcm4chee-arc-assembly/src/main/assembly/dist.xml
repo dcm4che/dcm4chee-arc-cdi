@@ -70,6 +70,7 @@
       <directory>../dcm4chee-arc-entity/target</directory>
       <includes>
         <include>create-table-${db}.ddl</include>
+        <include>drop-table-${db}.ddl</include>
       </includes>
       <outputDirectory>sql</outputDirectory>
       <lineEnding>dos</lineEnding>
