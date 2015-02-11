@@ -530,6 +530,7 @@ public class DeviceMocker {
         rule.setEmulationDelay(emulationDelay);
         rule.setEmulatorAET(emulatorAET);
         rule.setSourceAETs(sourceAETs);
+        rule.setCreationRule(MPPSCreationRule.ALWAYS);
         return rule ;
     }
 

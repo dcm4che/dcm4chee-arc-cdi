@@ -20,6 +20,9 @@ public final class MPPSEmulationRule {
     @ConfigurableProperty(name = "dcmMPPSEmulationDelay")
     private int emulationDelay;
 
+    @ConfigurableProperty(name = "dcmdcmMPPSEmulationCreationRule",  defaultValue = "ALWAYS")
+    private MPPSCreationRule creationRule = MPPSCreationRule.ALWAYS;    
+    
     public String getCommonName() {
         return commonName;
     }
@@ -50,6 +53,14 @@ public final class MPPSEmulationRule {
 
     public void setEmulationDelay(int emulationDelay) {
         this.emulationDelay = emulationDelay;
+    }
+
+    public MPPSCreationRule getCreationRule() {
+        return creationRule;
+    }
+
+    public void setCreationRule(MPPSCreationRule creationRule) {
+        this.creationRule = creationRule;
     }
 
 }

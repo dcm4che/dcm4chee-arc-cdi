@@ -74,7 +74,8 @@ import org.slf4j.LoggerFactory;
 @ApplicationScoped
 public class MPPSEmulatorImpl implements MPPSEmulator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MPPSEmulatorImpl.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(MPPSEmulatorImpl.class);
 
     @Inject
     private Device device;
@@ -93,16 +94,16 @@ public class MPPSEmulatorImpl implements MPPSEmulator {
             String sourceAET, String studyInstanceUID)
             throws DicomServiceException {
         ApplicationEntity ae = device.getApplicationEntity(emulatorAET);
-        MPPS mpps = ejb.emulatePerformedProcedureStep(ae,
-                sourceAET, studyInstanceUID, mppsService);
+        MPPS mpps = ejb.emulatePerformedProcedureStep(ae, sourceAET,
+                studyInstanceUID, mppsService);
         fireMPPSEvents(ae, mpps.getAttributes(), mpps);
         return mpps;
     }
 
     private void fireMPPSEvents(ApplicationEntity ae, Attributes attrs,
             MPPS mpps) {
-        mppsService.fireCreateMPPSEvent(ae, 
-                setStatus(attrs, MPPS.IN_PROGRESS), mpps);
+        mppsService.fireCreateMPPSEvent(ae, setStatus(attrs, MPPS.IN_PROGRESS),
+                mpps);
         mppsService.fireFinalMPPSEvent(ae,
                 setStatus(new Attributes(1), MPPS.COMPLETED), mpps);
     }
@@ -115,13 +116,14 @@ public class MPPSEmulatorImpl implements MPPSEmulator {
     @Override
     public void scheduleMPPSEmulation(String sourceAET,
             String studyInstanceUID, MPPSEmulationRule mppsEmulationRule) {
-        ejb.scheduleMPPSEmulation(sourceAET, studyInstanceUID, mppsEmulationRule);
+        ejb.scheduleMPPSEmulation(sourceAET, studyInstanceUID,
+                mppsEmulationRule);
     }
 
     @Override
     public MPPS emulateNextScheduled() throws DicomServiceException {
-        EmulationResult result =
-                ejb.emulateNextPerformedProcedureStep(device, mppsService);
+        EmulationResult result = ejb.emulateNextPerformedProcedureStep(device,
+                mppsService);
         if (result == null)
             return null;
 
@@ -143,7 +145,7 @@ public class MPPSEmulatorImpl implements MPPSEmulator {
         case REPLACE:
         case RESTORE:
         case STORE:
-        case UPDATEDB:            
+        case UPDATEDB:
             break;
         default:
             return;
@@ -151,11 +153,11 @@ public class MPPSEmulatorImpl implements MPPSEmulator {
 
         StoreSession storeSession = storeContext.getStoreSession();
         ArchiveAEExtension arcAE = storeSession.getArchiveAEExtension();
-        MPPSEmulationRule mppsEmulationRule =
-                arcAE.getMppsEmulationRule(storeSession.getRemoteAET());
+        MPPSEmulationRule mppsEmulationRule = arcAE
+                .getMppsEmulationRule(storeSession.getRemoteAET());
         if (mppsEmulationRule != null)
-            ejb.scheduleMPPSEmulation(storeSession.getRemoteAET(),
-                    storeContext.getAttributes().getString(Tag.StudyInstanceUID),
+            ejb.scheduleMPPSEmulation(storeSession.getRemoteAET(), storeContext
+                    .getAttributes().getString(Tag.StudyInstanceUID),
                     mppsEmulationRule);
     }
 
@@ -185,21 +187,20 @@ public class MPPSEmulatorImpl implements MPPSEmulator {
 
     private synchronized void startPolling(int pollInterval) {
         if (polling == null && pollInterval > 0) {
-            polling = device.scheduleWithFixedDelay(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                emulateAllScheduled();
-                            } catch (DicomServiceException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
-                        }
-                    },
-                    pollInterval, pollInterval, TimeUnit.SECONDS);
+            polling = device.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        emulateAllScheduled();
+                    } catch (DicomServiceException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }, pollInterval, pollInterval, TimeUnit.SECONDS);
             currentPollInterval = pollInterval;
-            LOG.info("MPPS Emulator Service: start polling for scheduled MPPS Emulations with interval {}s",
+            LOG.info(
+                    "MPPS Emulator Service: start polling for scheduled MPPS Emulations with interval {}s",
                     pollInterval);
         }
     }
