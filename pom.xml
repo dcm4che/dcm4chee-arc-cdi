@@ -385,73 +385,6 @@
             </execution>
           </executions>
         </plugin>
-        <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>2.5</version>
-          <configuration>
-            <archive>
-              <manifestEntries>
-                <Revision>${scm.revision}</Revision>
-              </manifestEntries>
-            </archive>
-          </configuration>
-        </plugin>
-        <plugin>
-          <artifactId>maven-war-plugin</artifactId>
-          <version>2.5</version>
-          <configuration>
-            <archive>
-              <manifestEntries>
-                <Revision>${scm.revision}</Revision>
-              </manifestEntries>
-            </archive>
-          </configuration>
-        </plugin>
-        <plugin>
-          <artifactId>maven-ear-plugin</artifactId>
-          <version>2.9.1</version>
-          <configuration>
-            <archive>
-              <manifestEntries>
-                <Revision>${scm.revision}</Revision>
-              </manifestEntries>
-            </archive>
-          </configuration>
-        </plugin>
-        <plugin>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.10.1</version>
-          <executions>
-            <execution>
-              <id>attach-javadocs</id>
-              <goals>
-                <goal>jar</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-        <plugin>
-          <artifactId>maven-source-plugin</artifactId>
-          <version>2.2.1</version>
-          <executions>
-            <execution>
-              <id>attach-sources</id>
-              <goals>
-                <goal>jar-no-fork</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-        <plugin>
-          <groupId>org.sonatype.plugins</groupId>
-          <artifactId>nexus-staging-maven-plugin</artifactId>
-          <version>1.6.5</version>
-          <extensions>true</extensions>
-          <configuration>
-            <serverId>ossrh</serverId>
-            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-          </configuration>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -474,7 +407,7 @@
     <module>dcm4chee-arc-stow</module>
     <module>dcm4chee-arc-ctrl</module>
     <module>dcm4chee-arc-qc</module>
-	<module>dcm4chee-arc-file-mgmt</module>
+    <module>dcm4chee-arc-file-mgmt</module>
     <module>dcm4chee-arc-war</module>
     <module>dcm4chee-arc-compress</module>
     <module>dcm4chee-arc-stgcmt-scp</module>
@@ -524,45 +457,6 @@
           <name>db</name>
         </property>
       </activation>
-    </profile>
-    <profile>
-      <id>ossrh-up</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <artifactId>maven-gpg-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <artifactId>maven-source-plugin</artifactId>
-          </plugin>
-        </plugins>
-      </build>
-      <distributionManagement>
-        <snapshotRepository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-      </distributionManagement>
-    </profile>
-    <profile>
-      <id>ossrh-down</id>
-      <repositories>
-        <repository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/content/groups/staging</url>
-        </repository>
-      </repositories>
     </profile>
   </profiles>
 </project>
