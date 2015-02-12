@@ -236,8 +236,9 @@ public class StoreContextImpl implements StoreContext {
 
     @Override
     public String calcStoragePath() {
-        AttributesFormat format = session.getArchiveAEExtension()
+        String pattern = session.getStorageSystem().getStorageSystemGroup()
                 .getStorageFilePathFormat();
+        AttributesFormat format = AttributesFormat.valueOf(pattern);
         synchronized (format) {
             return format.format(attributes);
         }

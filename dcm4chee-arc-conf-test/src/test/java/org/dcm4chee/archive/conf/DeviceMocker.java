@@ -38,6 +38,15 @@
 
  package org.dcm4chee.archive.conf;
 
+import static org.dcm4che3.net.TransferCapability.Role.SCP;
+import static org.dcm4che3.net.TransferCapability.Role.SCU;
+
+import java.security.KeyStore;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
@@ -48,27 +57,24 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
-import org.dcm4che3.net.*;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Connection;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.QueryOption;
+import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7Application;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
-import org.dcm4che3.util.AttributesFormat;
 import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.Container;
 import org.dcm4chee.storage.conf.FileCache;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
-
-import java.security.KeyStore;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static org.dcm4che3.net.TransferCapability.Role.SCP;
-import static org.dcm4che3.net.TransferCapability.Role.SCU;
 
 public class DeviceMocker {
 
@@ -670,7 +676,6 @@ public class DeviceMocker {
         fs1.setStorageSystemPath("/var/local/dcm4chee-arc/fs1");
         fs1.setStorageAccessTime(1000);
         fs1.setAvailability(Availability.ONLINE);
-        fs1.setDigestAlgorithm("MD5");
 
         StorageSystem arc = new StorageSystem();
         arc.setStorageSystemID("nearline");
@@ -693,6 +698,7 @@ public class DeviceMocker {
 
         StorageSystemGroup online = new StorageSystemGroup();
         online.setGroupID("DEFAULT");
+        online.setDigestAlgorithm("MD5");
         online.addStorageSystem(fs1);
         online.setActiveStorageSystemIDs(fs1.getStorageSystemID());
 
@@ -819,8 +825,6 @@ public class DeviceMocker {
         ae.setAssociationInitiator(true);
         aeExt.setStorageSystemGroupID("DEFAULT");
         aeExt.setSpoolDirectoryPath("spool");
-        aeExt.setStorageFilePathFormat(new AttributesFormat(
-                "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
         aeExt.setRetrieveAETs(aet);
         aeExt.setPreserveSpoolFileOnFailure(true);
         aeExt.setSuppressWarningCoercionOfDataElements(false);
@@ -944,8 +948,6 @@ public class DeviceMocker {
         ArchivingRule archivingRule = new ArchivingRule();
         archivingRule.setCommonName("Archiving Rule");
         archivingRule.setStorageSystemGroupIDs("ARCHIVE");
-        archivingRule.setStorageFilePathFormat(new AttributesFormat(
-                "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip"));
         archivingRule.setDelayAfterInstanceStored(60);
         archivingRule.setAeTitles(new String[] { "ARCHIVE" });
         aeExt.addArchivingRule(archivingRule);
@@ -994,8 +996,6 @@ public class DeviceMocker {
         ae.setAssociationInitiator(true);
         aeExt.setStorageSystemGroupID("notDEFAULT");
         aeExt.setSpoolDirectoryPath("archive/anotherspool");
-        aeExt.setStorageFilePathFormat(new AttributesFormat(
-                "archive/{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}") );
         aeExt.setRetrieveAETs(aet);
         aeExt.setPreserveSpoolFileOnFailure(true);
         aeExt.setSuppressWarningCoercionOfDataElements(false);

@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.hsm.impl;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -53,15 +54,24 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.util.AttributesFormat;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.storage.ContainerEntry;
+import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.archiver.service.ArchiverContext;
 import org.dcm4chee.storage.archiver.service.ArchiverService;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
+import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,15 +91,22 @@ public class ArchivingSchedulerEJB {
     private static final String FILE_SIZE = "fileSize";
     private static final String TRANSFER_SYNTAX = "transferSyntax";
     private static final String TIME_ZONE = "timeZone";
+    private static final String DELETE_SOURCE = "deleteSource";
 
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
+
+    @Inject
+    private Device device;
 
     @Inject
     private CodeService codeService;
 
     @Inject
     private ArchiverService archiverService;
+
+    @Inject
+    private RetrieveService retrieveService;
 
     public void onStoreInstance(StoreContext storeContext,
             ArchivingRule archivingRule) {
@@ -111,7 +128,7 @@ public class ArchivingSchedulerEJB {
             task.setArchivingTime(archivingTime);
             task.setSourceStorageSystemGroupID(storeContext.getFileRef().getStorageSystemGroupID());
             task.setTargetStorageSystemGroupIDs(archivingRule.getStorageSystemGroupIDs());
-            task.setTargetName(archivingRule.getStorageFilePathFormat().format(attrs));
+            task.setTargetName(getTargetName(attrs, archivingRule.getStorageSystemGroupIDs()));
             Code delayReasonCode = archivingRule.getDelayReasonCode();
             if (delayReasonCode != null)
                 task.setDelayReasonCode(codeService.findOrCreate(delayReasonCode));
@@ -140,60 +157,118 @@ public class ArchivingSchedulerEJB {
         List<Instance> insts = em
                 .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID, Instance.class)
                 .setParameter(1, task.getSeriesInstanceUID()).getResultList();
-        for (String targetStorageSystemGroupID : task.getTargetStorageSystemGroupIDs()) {
-            ArchiverContext ctx = archiverService.createContext(targetStorageSystemGroupID,
-                    task.getTargetName());
-            ctx.setEntries(makeEntries(insts, task.getSourceStorageSystemGroupID(),
-                    targetStorageSystemGroupID));
-            archiverService.scheduleStore(ctx);
-        }
+        scheduleInstances(insts, task.getSourceStorageSystemGroupID(), task.getTargetStorageSystemGroupIDs(), task.getTargetName(), false);
         LOG.info("Scheduled {}", task);
     }
-
-    private List<ContainerEntry> makeEntries(List<Instance> insts,
-            String sourceStorageSystemGroupID, String targetStorageSystemGroupID)
-            throws IOException {
-        ArrayList<ContainerEntry> entries = new ArrayList<ContainerEntry>(insts.size());
+    
+    public void scheduleStudy(String studyIUID, String sourceGroupID, String targetGroupID, boolean deleteSource) throws IOException {
+        LOG.info("Scheduling archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}", 
+        		studyIUID, sourceGroupID, targetGroupID, deleteSource);
+        List<String> seriesUIDs = em.createQuery("SELECT se.seriesInstanceUID FROM Series se JOIN FETCH se.study st WHERE st.studyInstanceUID = ?1",
+                        String.class)
+                .setParameter(1, studyIUID)
+                .getResultList();
+        for (String uid : seriesUIDs) {
+        	scheduleSeries(uid, sourceGroupID, targetGroupID, deleteSource);
+        }
+        LOG.info("Scheduled archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}", 
+        		new Object[] {studyIUID, sourceGroupID, targetGroupID, deleteSource});
+    	
+    }
+    
+    public void scheduleSeries(String seriesIUID, String sourceGroupID, String targetGroupID, boolean deleteSource) throws IOException {
+        LOG.info("Scheduling archiving series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}", 
+        		new Object[] {seriesIUID, sourceGroupID, targetGroupID, deleteSource});
+        List<Instance> insts = em
+                .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID,
+                        Instance.class)
+                .setParameter(1, seriesIUID)
+                .getResultList();
+        if (insts.size() > 0) {
+	        scheduleInstances(insts, sourceGroupID, new String[]{targetGroupID}, getTargetName(insts.get(0), targetGroupID), deleteSource);
+	        LOG.info("Scheduled archiving {} instances of series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}", 
+	        		new Object[] {insts.size(), seriesIUID, sourceGroupID, targetGroupID, deleteSource});
+        }    	
+    }
+    
+	public void scheduleInstances(List<Instance> insts, String sourceGroupID, String[] targetStorageSystemGroupIDs, String targetName, boolean deleteSource) throws IOException {
+        @SuppressWarnings("unchecked")
+		ArrayList<ContainerEntry>[] entriesPerTarget = new ArrayList[targetStorageSystemGroupIDs.length];
+        for (int i = 0 ; i < entriesPerTarget.length ; i++)
+        	entriesPerTarget[i] = new ArrayList<ContainerEntry>(insts.size());
+        Location selected;
+        String storageSystemGroupID;
         for (Instance inst : insts) {
-            Location location = selectLocation(inst, sourceStorageSystemGroupID,
-                    targetStorageSystemGroupID);
-            if (location != null) {
-                ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),
-                        location.getDigest())
-                    .setSourceStorageSystemGroupID(location.getStorageSystemGroupID())
-                    .setSourceStorageSystemID(location.getStorageSystemID())
-                    .setSourceName(location.getStoragePath())
-                    .setProperty(INSTANCE_PK, inst.getPk())
-                    .setProperty(DIGEST, location.getDigest())
-                    .setProperty(OTHER_ATTRS_DIGEST, location.getOtherAttsDigest())
-                    .setProperty(FILE_SIZE, location.getSize())
-                    .setProperty(TRANSFER_SYNTAX, location.getTransferSyntaxUID())
-                    .setProperty(TIME_ZONE, location.getTimeZone()).build();
-                entries.add(entry);
+        	selected = null;
+        	boolean[] existsOnTarget = new boolean[entriesPerTarget.length];
+            for (Location location : inst.getLocations()) {
+                storageSystemGroupID = location.getStorageSystemGroupID();
+            	if (storageSystemGroupID.equals(sourceGroupID)) {
+                    selected = location;
+            	} else {
+	            	for (int i = 0 ; i < entriesPerTarget.length ; i++) {
+	                    if (storageSystemGroupID.equals(targetStorageSystemGroupIDs[i])) {
+	                        LOG.info("{} already archived to Storage System Group {} - skip from archiving",
+	                                inst, storageSystemGroupID);
+	                        existsOnTarget[i] = true;
+	                    } 
+	                }
+            	}
+                if (selected == null) {
+                    LOG.info("{} not available at Storage System Group {} - skip from archiving", inst, sourceGroupID);
+                } else {
+	                StorageSystem storageSystem =
+	                        storageDeviceExtension().getStorageSystem(
+	                        		selected.getStorageSystemGroupID(),
+	                        		selected.getStorageSystemID());
+	                RetrieveContext ctx = retrieveService.createRetrieveContext(storageSystem);
+	                Path file = retrieveService.getFile(ctx, selected.getStoragePath());
+	                ContainerEntry entry = newContainerEntry(inst, selected, file);
+	                for (int i = 0 ; i < entriesPerTarget.length ; i++) {
+	                	if (!existsOnTarget[i])
+	                		entriesPerTarget[i].add(entry);
+	                }
+                }
             }
         }
-        return entries;
+        for (int i = 0 ; i < entriesPerTarget.length ; i++) {
+	        ArchiverContext ctx = archiverService.createContext(
+	        		targetStorageSystemGroupIDs[i],
+	                targetName);
+	        ctx.setEntries(entriesPerTarget[i]);
+	        ctx.setProperty(DELETE_SOURCE, new Boolean(deleteSource));
+	        archiverService.scheduleStore(ctx);
+        }
     }
 
-    private Location selectLocation(Instance inst,
-            String sourceStorageSystemGroupID, String targetStorageSystemGroupID) {
-        Location selected = null;
-        Collection<Location> locations = inst.getLocations();
-        for (Location location : locations) {
-            String storageSystemGroupID = location.getStorageSystemGroupID();
-            if (storageSystemGroupID.equals(targetStorageSystemGroupID)) {
-                LOG.info("{} already archived to Storage System Group {} - skip from archiving",
-                        inst, storageSystemGroupID);
-                return null;
-            }
-            if (storageSystemGroupID.equals(sourceStorageSystemGroupID))
-                selected = location;
-        }
-        if (selected == null)
-            LOG.info("{} not available at Storage System Group {} - skip from archiving",
-                    inst, sourceStorageSystemGroupID);
-        return selected;
+	private ContainerEntry newContainerEntry(Instance inst, Location location,
+			Path file) {
+		ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),location.getDigest())
+			.setSourcePath(file).build();
+		entry.setProperty(INSTANCE_PK, inst.getPk());
+		entry.setProperty(DIGEST, location.getDigest());
+		entry.setProperty(OTHER_ATTRS_DIGEST, location.getOtherAttsDigest());
+		entry.setProperty(FILE_SIZE, location.getSize());
+		entry.setProperty(TRANSFER_SYNTAX, location.getTransferSyntaxUID());
+		entry.setProperty(TIME_ZONE, location.getTimeZone());
+		return entry;
+	}
+
+    private StorageDeviceExtension storageDeviceExtension() {
+        return device.getDeviceExtension(StorageDeviceExtension.class);
     }
+
+	private String getTargetName(Attributes attrs, String... groupIDs ) {
+		StorageSystemGroup grp = storageDeviceExtension().getStorageSystemGroup(groupIDs[0]);
+		String pattern = grp.getStorageFilePathFormat();
+		return AttributesFormat.valueOf(pattern).format(attrs);
+	}
+	
+    private String getTargetName(Instance instance, String... groupIDs) {
+		Attributes attrs = Utils.mergeAndNormalize(instance.getSeries().getStudy().getAttributes(),instance.getSeries().getAttributes(),instance.getAttributes());
+		return getTargetName(attrs, groupIDs);
+	}
+
 
     public void onContainerEntriesStored(ArchiverContext ctx) {
         List<ContainerEntry> entries = ctx.getEntries();

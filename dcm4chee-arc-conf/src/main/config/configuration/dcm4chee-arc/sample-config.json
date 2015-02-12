@@ -636,7 +636,6 @@
                     "cn" : "JPEG 8-bit Lossy"
                   } ]
                 },
-                "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmWadoSupportedSRClasses" : [ "1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33", "1.2.840.10008.5.1.4.1.1.88.34", "1.2.840.10008.5.1.4.1.1.88.40", "1.2.840.10008.5.1.4.1.1.88.50", "1.2.840.10008.5.1.4.1.1.88.59", "1.2.840.10008.5.1.4.1.1.88.65", "1.2.840.10008.5.1.4.1.1.88.67", "1.2.840.10008.5.1.4.1.1.88.68", "1.2.840.10008.5.1.4.1.1.88.69", "1.2.840.10008.5.1.4.1.1.88.70" ],
                 "dcmWadoSRTemplateURI" : "${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl",
                 "hl7PIXManagerApplication" : "HL7RCV^DCM4CHEE",
@@ -684,7 +683,6 @@
                       "dcmAETitle" : [ "ARCHIVE" ]
                     },
                     "cn" : "Archiving Rule",
-                    "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip",
                     "dcmStorageSystemGroupID" : [ "ARCHIVE" ]
                   } ]
                 },
@@ -3816,11 +3814,11 @@
           "StorageDeviceExtension" : {
             "Storage System Groups" : {
               "DEFAULT" : {
+                "dcmDigestAlgorithm" : "MD5",
                 "dcmActiveStorageSystemID" : [ "fs1" ],
                 "dcmStorageSystemGroupID" : "DEFAULT",
                 "Storage Systems" : {
                   "fs1" : {
-                    "dcmDigestAlgorithm" : "MD5",
                     "dcmStorageSystemID" : "fs1",
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
                     "dcmStorageAccessTime" : 1000,

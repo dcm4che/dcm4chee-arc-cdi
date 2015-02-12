@@ -51,5 +51,8 @@ public interface ArchivingScheduler {
     int scheduleReadyArchivingTasks();
 
     ArchivingTask scheduleNextArchivingTask() throws IOException;
+    
+    void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
+    void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
 
 }

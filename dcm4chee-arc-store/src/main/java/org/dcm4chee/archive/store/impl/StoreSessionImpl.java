@@ -143,7 +143,7 @@ public class StoreSessionImpl implements StoreSession {
     public void setStorageSystem(StorageSystem storageSystem) {
         this.storageSystem = storageSystem;
         try {
-            String algorithm = storageSystem.getDigestAlgorithm();
+            String algorithm = storageSystem.getStorageSystemGroup().getDigestAlgorithm();
             this.messageDigest = algorithm != null
                     ? MessageDigest.getInstance(algorithm)
                     : null;

@@ -562,7 +562,6 @@ dcmWadoOverlayRendering: FALSE
 dcmSendPendingCGet: TRUE
 dcmWadoSRTemplateURI: ${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl
 dcmStorageSystemGroupID: DEFAULT
-dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
 dcmQueryRetrieveViewID: hideRejected
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.11
 dcmWadoSupportedSRClasses: 1.2.840.10008.5.1.4.1.1.88.22
@@ -4915,7 +4914,6 @@ cn: MPPS Emulation Rule 1
 
 dn: cn=Archiving Rule,dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmArchivingRule
-dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip
 dcmAETitle: ARCHIVE
 dcmStorageSystemGroupID: ARCHIVE
 dcmDelayAfterInstanceStored: 60
@@ -9642,6 +9640,7 @@ dn: dcmStorageSystemGroupID=DEFAULT,cn=Storage System Groups,cn=StorageDeviceExt
 objectClass: dcmStorageSystemGroup
 dcmActiveStorageSystemID: fs1
 dcmStorageSystemGroupID: DEFAULT
+dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
 
 dn: cn=Storage Systems,dcmStorageSystemGroupID=DEFAULT,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmCollection
@@ -9659,6 +9658,7 @@ dn: dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExt
 objectClass: dcmStorageSystemGroup
 dcmActiveStorageSystemID: nearline
 dcmStorageSystemGroupID: ARCHIVE
+dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip
 
 dn: cn=Storage Systems,dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmCollection
