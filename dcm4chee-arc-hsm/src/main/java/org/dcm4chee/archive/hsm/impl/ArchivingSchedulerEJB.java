@@ -39,9 +39,7 @@
 package org.dcm4chee.archive.hsm.impl;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -61,17 +59,13 @@ import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
-import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.storage.ContainerEntry;
-import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.archiver.service.ArchiverContext;
 import org.dcm4chee.storage.archiver.service.ArchiverService;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
-import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
-import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,8 +99,6 @@ public class ArchivingSchedulerEJB {
     @Inject
     private ArchiverService archiverService;
 
-    @Inject
-    private RetrieveService retrieveService;
 
     public void onStoreInstance(StoreContext storeContext,
             ArchivingRule archivingRule) {
@@ -217,17 +209,24 @@ public class ArchivingSchedulerEJB {
                 if (selected == null) {
                     LOG.info("{} not available at Storage System Group {} - skip from archiving", inst, sourceGroupID);
                 } else {
-	                StorageSystem storageSystem =
-	                        storageDeviceExtension().getStorageSystem(
-	                        		selected.getStorageSystemGroupID(),
-	                        		selected.getStorageSystemID());
-	                RetrieveContext ctx = retrieveService.createRetrieveContext(storageSystem);
-	                Path file = retrieveService.getFile(ctx, selected.getStoragePath());
-	                ContainerEntry entry = newContainerEntry(inst, selected, file);
+	                ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),
+	                        location.getDigest())
+	                    .setSourceStorageSystemGroupID(location.getStorageSystemGroupID())
+	                    .setSourceStorageSystemID(location.getStorageSystemID())
+	                    .setSourceName(location.getStorageSystemID())
+	                    .setProperty(INSTANCE_PK, inst.getPk())
+	                    .setProperty(DIGEST, location.getDigest())
+	                    .setProperty(OTHER_ATTRS_DIGEST, location.getOtherAttsDigest())
+	                    .setProperty(FILE_SIZE, location.getSize())
+	                    .setProperty(TRANSFER_SYNTAX, location.getTransferSyntaxUID())
+	                    .setProperty(TIME_ZONE, location.getTimeZone()).build();
+
 	                for (int i = 0 ; i < entriesPerTarget.length ; i++) {
 	                	if (!existsOnTarget[i])
 	                		entriesPerTarget[i].add(entry);
 	                }
+	                
+	                
                 }
             }
         }
@@ -240,19 +239,6 @@ public class ArchivingSchedulerEJB {
 	        archiverService.scheduleStore(ctx);
         }
     }
-
-	private ContainerEntry newContainerEntry(Instance inst, Location location,
-			Path file) {
-		ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),location.getDigest())
-			.setSourcePath(file).build();
-		entry.setProperty(INSTANCE_PK, inst.getPk());
-		entry.setProperty(DIGEST, location.getDigest());
-		entry.setProperty(OTHER_ATTRS_DIGEST, location.getOtherAttsDigest());
-		entry.setProperty(FILE_SIZE, location.getSize());
-		entry.setProperty(TRANSFER_SYNTAX, location.getTransferSyntaxUID());
-		entry.setProperty(TIME_ZONE, location.getTimeZone());
-		return entry;
-	}
 
     private StorageDeviceExtension storageDeviceExtension() {
         return device.getDeviceExtension(StorageDeviceExtension.class);
