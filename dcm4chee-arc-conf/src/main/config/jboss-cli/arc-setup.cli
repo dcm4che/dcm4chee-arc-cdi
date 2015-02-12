@@ -1,5 +1,7 @@
 ${data-source-string}
 
+data-source --name=PacsDS --enabled=true
+
 jms-queue add --queue-address=ianscu --entries=queue/ianscu
 jms-queue add --queue-address=mppsscu --entries=queue/mppsscu
 jms-queue add --queue-address=stgcmtscp --entries=queue/stgcmtscp
