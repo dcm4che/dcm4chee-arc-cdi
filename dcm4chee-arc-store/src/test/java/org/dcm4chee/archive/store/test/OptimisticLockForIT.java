@@ -58,6 +58,7 @@ import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -177,7 +178,11 @@ public class OptimisticLockForIT {
 
         StoreSession session = storeService.createStoreSession(storeService);
         session.setStoreParam(storeParam);
-        session.setStorageSystem(new StorageSystem());
+        StorageSystem storageSystem = new StorageSystem();
+        StorageSystemGroup grp = new StorageSystemGroup();
+        grp.setGroupID("test_grp");
+        grp.addStorageSystem(storageSystem);
+        session.setStorageSystem(storageSystem);
         session.setSource(new GenericParticipant("localhost", "testidentity"));
         session.setRemoteAET(SOURCE_AET);
         

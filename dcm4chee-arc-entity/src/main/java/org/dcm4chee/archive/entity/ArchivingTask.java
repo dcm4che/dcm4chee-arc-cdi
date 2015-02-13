@@ -55,8 +55,6 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.dcm4che3.util.StringUtils;
-
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
@@ -94,8 +92,8 @@ public class ArchivingTask implements Serializable {
     private String seriesInstanceUID;
 
     @Basic(optional = false)
-    @Column(name = "target_stg_group_ids", updatable = false)
-    private String targetStorageSystemGroupIDs;
+    @Column(name = "target_stg_group_id", updatable = false)
+    private String targetStorageSystemGroupID;
 
     @Basic(optional = false)
     @Column(name = "source_stg_group_id", updatable = false)
@@ -142,14 +140,12 @@ public class ArchivingTask implements Serializable {
         this.delayReasonCode = delayReasonCode;
     }
 
-    public String[] getTargetStorageSystemGroupIDs() {
-        return StringUtils.split(targetStorageSystemGroupIDs, '\\');
+    public String getTargetStorageSystemGroupID() {
+        return targetStorageSystemGroupID;
     }
 
-    public void setTargetStorageSystemGroupIDs(
-            String... targetStorageSystemGroupIDs) {
-        this.targetStorageSystemGroupIDs = StringUtils.concat(
-                targetStorageSystemGroupIDs, '\\');
+    public void setTargetStorageSystemGroupID(String targetStorageSystemGroupID) {
+        this.targetStorageSystemGroupID = targetStorageSystemGroupID;
     }
 
     public String getSourceStorageSystemGroupID() {
@@ -173,7 +169,7 @@ public class ArchivingTask implements Serializable {
         return "ArchivingTask[pk=" + pk 
                 + ", series=" + seriesInstanceUID
                 + ", sourceStorageGroupID=" + sourceStorageSystemGroupID
-                + ", targetStorageGroupIDs=" + targetStorageSystemGroupIDs
+                + ", targetStorageGroupID=" + targetStorageSystemGroupID
                 + "]";
     }
 }
