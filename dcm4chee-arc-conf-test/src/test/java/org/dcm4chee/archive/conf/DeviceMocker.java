@@ -700,11 +700,13 @@ public class DeviceMocker {
         online.setGroupID("DEFAULT");
         online.setDigestAlgorithm("MD5");
         online.addStorageSystem(fs1);
+        online.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         online.setActiveStorageSystemIDs(fs1.getStorageSystemID());
 
         StorageSystemGroup nearline = new StorageSystemGroup();
         nearline.setGroupID("ARCHIVE");
         nearline.addStorageSystem(arc);
+        nearline.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         nearline.setActiveStorageSystemIDs(arc.getStorageSystemID());
         nearline.setContainer(container);
         nearline.setFileCache(fileCache);
