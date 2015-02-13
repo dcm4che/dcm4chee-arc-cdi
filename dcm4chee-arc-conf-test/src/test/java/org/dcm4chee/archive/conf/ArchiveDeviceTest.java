@@ -49,10 +49,8 @@ import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
 import org.dcm4che3.imageio.codec.CompressionRules;
-import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.*;
 import org.dcm4che3.net.Connection.Protocol;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.SSLManagerFactory;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
@@ -123,6 +121,12 @@ public class ArchiveDeviceTest extends DeviceMocker {
         config.registerAETitle("DCM4CHEE_TRASH");
 
         Device arc = createArchiveDevice("dcm4chee-arc", arrDevice);
+
+//        StorageOptions storageOptions = new StorageOptions();
+//        storageOptions.setDigitalSignatureSupport(StorageOptions.DigitalSignatureSupport.LEVEL_3);
+//        TransferCapability dcm4CHEE = arc.getApplicationEntity("DCM4CHEE").getTransferCapabilities().iterator().next();
+//        dcm4CHEE.setStorageOptions(storageOptions);
+
         config.persist(arc);
 
         config.sync();
