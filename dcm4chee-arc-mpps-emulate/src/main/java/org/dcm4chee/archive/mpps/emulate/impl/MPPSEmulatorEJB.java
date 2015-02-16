@@ -38,18 +38,18 @@
 
 package org.dcm4chee.archive.mpps.emulate.impl;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.ejb.Stateless;
-import javax.faces.component.UIGraphic;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
+import javax.swing.ListModel;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.DatePrecision;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -62,9 +62,12 @@ import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveConfigurationException;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.MPPSCreationRule;
 import org.dcm4chee.archive.conf.MPPSEmulationRule;
 import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.entity.MPPS.Status;
 import org.dcm4chee.archive.entity.MPPSEmulate;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Series;
@@ -75,6 +78,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini
  *
  */
 
@@ -94,10 +98,6 @@ public class MPPSEmulatorEJB {
 
     private static final int[] STUDY_Selection = { Tag.ProcedureCodeSequence,
             Tag.StudyID };
-
-    private static final int[] SERIES_PPS_Selection = {
-            Tag.PerformedProcedureStepStartDate,
-            Tag.PerformedProcedureStepStartTime, Tag.PerformedProcedureStepID };
 
     public static final class EmulationResult {
         public final ApplicationEntity ae;
@@ -159,28 +159,41 @@ public class MPPSEmulatorEJB {
         MPPS mpps = emulatePerformedProcedureStep(ae, emulate.getSourceAET(),
                 emulate.getStudyInstanceUID(), mppsService);
         em.remove(emulate);
+
+        if (mpps == null)
+            return null;
+
         return new EmulationResult(ae, mpps);
     }
 
     public MPPS emulatePerformedProcedureStep(ApplicationEntity ae,
             String sourceAET, String studyInstanceUID, MPPSService mppsService)
             throws DicomServiceException {
-        List<Series> series = em
+
+        List<Series> seriesList = em
                 .createNamedQuery(
                         Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
                         Series.class).setParameter(1, studyInstanceUID)
                 .setParameter(2, sourceAET).getResultList();
-        if (series.isEmpty())
+        if (seriesList.isEmpty())
+            return null;
+
+        ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
+        MPPSCreationRule creationRule = arcAE.getMppsEmulationRule(sourceAET)
+                .getCreationRule();
+
+        // checks if emulated MPPS should be created, according to configured
+        // rule
+        if (!checkCreationRule(creationRule, seriesList))
             return null;
 
         LOG.info("Emulate MPPS for Study[iuid={}] received from {}",
                 studyInstanceUID, sourceAET);
-        ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
         String mppsIUID = UIDUtils.createUID();
         MPPS mpps = mppsService.createPerformedProcedureStep(arcAE, mppsIUID,
-                createMPPS(series), series.get(0).getStudy().getPatient(),
-                mppsService);
-        updateMPPSReferences(mppsIUID, series, arcAE.getStoreParam());
+                createMPPS(seriesList), seriesList.get(0).getStudy()
+                        .getPatient(), mppsService);
+        updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
         return mpps;
     }
 
@@ -209,6 +222,8 @@ public class MPPSEmulatorEJB {
         String modality = firstSeries.getModality() == null ? "OT"
                 : firstSeries.getModality();
 
+        // pps information
+        mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.COMPLETED);
         mppsAttrs.addSelected(patient.getAttributes(), PATIENT_Selection);
         mppsAttrs.addSelected(study.getAttributes(), STUDY_Selection);
         mppsAttrs.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
@@ -218,33 +233,122 @@ public class MPPSEmulatorEJB {
                 firstSeries.getSourceAET());
         mppsAttrs.setString(Tag.PerformedStationName, VR.SH,
                 firstSeries.getStationName());
+        mppsAttrs.setNull(Tag.PerformedLocation, VR.SH);
         mppsAttrs.setString(Tag.Modality, VR.CS, modality);
         mppsAttrs.setString(Tag.PerformedProcedureStepID, VR.SH,
                 makePPSID(modality, study.getStudyInstanceUID()));
         mppsAttrs.setString(Tag.PerformedProcedureStepDescription, VR.LO,
                 study.getStudyDescription());
 
-        Sequence ssa = mppsAttrs.newSequence(
-                Tag.ScheduledStepAttributesSequence, seriesList.size());
+        // scheduled attribute sequence
+        // TODO scheduled/unscheduled
+        Sequence SchedStepAttSq = mppsAttrs.newSequence(
+                Tag.ScheduledStepAttributesSequence, 1);
+        Attributes ssasItem = new Attributes();
+        ssasItem.setString(Tag.StudyInstanceUID, VR.UI,
+                study.getStudyInstanceUID());
+        ssasItem.setString(Tag.AccessionNumber, VR.SH,
+                study.getAccessionNumber());
+        ssasItem.setNull(Tag.RequestedProcedureID, VR.SH);
+        ssasItem.setNull(Tag.RequestedProcedureDescription, VR.LO);
+        ssasItem.setNull(Tag.ScheduledProcedureStepID, VR.SH);
+        ssasItem.setNull(Tag.ScheduledProcedureStepDescription, VR.LO);
+        ssasItem.newSequence(Tag.ScheduledProtocolCodeSequence, 0);
+        ssasItem.newSequence(Tag.ReferencedStudySequence, 0);
+        SchedStepAttSq.add(ssasItem);
 
-        Date date = null;
-
+        // performed series sequence
+        Sequence perfSeriesSq = mppsAttrs.newSequence(
+                Tag.PerformedSeriesSequence, seriesList.size());
+        Date start_date = null, end_date = null;
         for (Series series : seriesList) {
-
-            Date ppsDate = DateUtils.parseDT(
-                    null,
-                    series.getPerformedProcedureStepStartDate()
-                            + series.getPerformedProcedureStepStartTime(),
-                    new DatePrecision());
-            if (date == null
-                    || (ppsDate != null && ppsDate.compareTo(date) > 0))
-                date = ppsDate;
+            Attributes pssqItem = new Attributes();
+            pssqItem.addSelected(series.getAttributes(), SERIES_Selection);
+            Sequence refImgSq = pssqItem.newSequence(
+                    Tag.ReferencedImageSequence, series.getInstances().size());
+            for (Instance inst : series.getInstances()) {
+                start_date = choseDate(start_date, inst.getCreatedTime(), false);
+                end_date = choseDate(end_date, inst.getCreatedTime(), true);
+                Attributes refImg = new Attributes();
+                refImg.setString(Tag.SOPClassUID, VR.UI, inst.getSopClassUID());
+                refImg.setString(Tag.SOPInstanceUID, VR.UI,
+                        inst.getSopInstanceUID());
+                refImgSq.add(refImg);
+            }
+            perfSeriesSq.add(pssqItem);
         }
 
-        if (date != null)
-            mppsAttrs.setDate(Tag.PerformedProcedureStepStartDateAndTime, date);
+        mppsAttrs.setString(Tag.PerformedProcedureStepStartDate, VR.DA,
+                DateUtils.formatDA(null, start_date));
+        mppsAttrs.setString(Tag.PerformedProcedureStepStartTime, VR.TM,
+                DateUtils.formatTM(null, start_date));
+        mppsAttrs.setString(Tag.PerformedProcedureStepEndDate, VR.DA,
+                DateUtils.formatDA(null, end_date));
+        mppsAttrs.setString(Tag.PerformedProcedureStepEndTime, VR.TM,
+                DateUtils.formatTM(null, end_date));
 
         return mppsAttrs;
+    }
+
+    private boolean checkCreationRule(MPPSCreationRule rule,
+            List<Series> seriesList) {
+
+        // check if referenced mpps exists
+        List<String> refMppsList = new ArrayList<String>();
+        for (Series series : seriesList) {
+            Sequence refPpsSeq = series.getAttributes().getSequence(
+                    Tag.ReferencedPerformedProcedureStepSequence);
+            if (refPpsSeq != null
+                    && refPpsSeq.size() > 0
+                    && refPpsSeq.get(0).getString(Tag.ReferencedSOPInstanceUID) != null)
+                refMppsList.add(refPpsSeq.get(0).getString(
+                        Tag.ReferencedSOPInstanceUID));
+        }
+
+        if (refMppsList.size() == 0) {
+            LOG.debug("Emulate MPPS (No Reference found always emulate)");
+            return true;
+        }
+
+        // various cases in case of reference
+        List<MPPS> mppsList = null;
+        switch (rule) {
+        case ALWAYS:
+            LOG.debug("Emulate MPPS (reference found and rule ALWAYS)");
+            return true;
+        case NEVER:
+            LOG.debug("NO MPPS Emulation (reference found and rule NEVER)");
+            return false;
+        case NO_MPPS_CREATE:
+            mppsList = fetchMPPS(refMppsList);
+            if (mppsList == null || mppsList.size() == 0) {
+                //TODO delete existing MPPS
+                LOG.debug("Emulate MPPS (reference found, no mpps stored and rule NO_MPPS_CREATE)");
+                return true;
+            } else {
+                LOG.debug("NO MPPS Emulation (reference found, mpps stored and rule NO_MPPS_CREATE)");
+                return false;
+            }
+        case NO_MPPS_FINAL:
+            mppsList = fetchMPPS(refMppsList);
+            for (MPPS mpps : mppsList) {
+                if (mpps.getStatus() == Status.IN_PROGRESS) {
+                    //TODO delete existing MPPS
+                    LOG.debug("Emulate MPPS (reference found, mpps stored, at least one MPPS not finalized and rule NO_MPPS_FINAL)");
+                    return true;
+                }
+            }
+            LOG.debug("NO MPPS Emulation (reference found, mpps stored, all MPPS finalized and rule NO_MPPS_FINAL)");
+            return false;
+        default:
+            return true; // default = emulate MPPS
+        }
+    }
+
+    private List<MPPS> fetchMPPS(List<String> refMppsList) {
+        return (refMppsList.size() > 0) ? em
+                .createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UIDs, MPPS.class)
+                .setParameter(1, refMppsList).getResultList() : null;
     }
 
     private String makePPSID(String modality, String studyInstanceUID) {
@@ -253,4 +357,14 @@ public class MPPSEmulatorEJB {
                         studyInstanceUID.length() - 14));
     }
 
+    private Date choseDate(Date date1, Date date2, boolean returnMostRecent) {
+        if (date1 == null)
+            return date2;
+        if (date2 == null)
+            return date1;
+        if (date1.compareTo(date2) > 0)
+            return returnMostRecent ? date1 : date2;
+        else
+            return returnMostRecent ? date2 : date1;
+    }
 }
