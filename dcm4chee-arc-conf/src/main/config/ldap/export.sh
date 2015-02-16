@@ -1,11 +1,11 @@
 #!/bin/sh
 
-LDAP_SEARCH=${LDAP_SEARCH:-$HOME/opendj/bin/ldapsearch}
+LDAP_SEARCH=${LDAP_SEARCH:-ldapsearch -xLL}
 SED=${SED:-sed}
 HOST=${HOST:-localhost}
-PORT=${PORT:-1389}
+PORT=${PORT:-389}
 ROOT_DN=${ROOT_DN:-"dc=example,dc=com"}
-BIND_DN=${BIND_DN:-"cn=Directory Manager"}
+BIND_DN=${BIND_DN:-"cn=Manager,$ROOT_DN"}
 BIND_PW=${BIND_PW:-secret}
 
 BASE_DN="cn=Devices,cn=DICOM Configuration,$ROOT_DN"
