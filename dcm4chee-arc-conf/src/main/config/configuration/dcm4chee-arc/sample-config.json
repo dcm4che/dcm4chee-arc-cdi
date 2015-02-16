@@ -3816,7 +3816,6 @@
               "DEFAULT" : {
                 "dcmDigestAlgorithm" : "MD5",
                 "dcmActiveStorageSystemID" : [ "fs1" ],
-                "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "DEFAULT",
                 "Storage Systems" : {
                   "fs1" : {
@@ -3829,7 +3828,6 @@
               },
               "ARCHIVE" : {
                 "dcmActiveStorageSystemID" : [ "nearline" ],
-                "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "ARCHIVE",
                 "Storage Systems" : {
                   "nearline" : {
