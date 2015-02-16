@@ -105,7 +105,7 @@ public class CFindSCP extends BasicCFindSCP {
                     as, as.getRemoteAET(), arcAE, queryOpts, null);
             QueryContext ctx = queryService.createQueryContext(queryService);
             ctx.setRemoteAET(as.getRemoteAET());
-            ctx.setRemoteDevice(aeCache.findApplicationEntity(as.getRemoteAET()).getDevice());
+            ctx.setRemoteApplicationEntity(aeCache.get(as.getRemoteAET()));
             ctx.setServiceSOPClassUID(rq.getString(Tag.AffectedSOPClassUID));
             ctx.setArchiveAEExtension(arcAE);
             ctx.setKeys(keys);

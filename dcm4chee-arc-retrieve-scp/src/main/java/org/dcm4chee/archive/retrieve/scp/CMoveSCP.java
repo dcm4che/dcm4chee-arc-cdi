@@ -117,7 +117,7 @@ public class CMoveSCP extends BasicCMoveSCP {
         String dest = rq.getString(Tag.MoveDestination);
         try {
             final ApplicationEntity destAE =
-                    aeCache.findApplicationEntity(dest);
+                    aeCache.get(dest);
             ApplicationEntity ae = as.getApplicationEntity();
             ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
             QueryParam queryParam = arcAE.getQueryParam(queryOpts,

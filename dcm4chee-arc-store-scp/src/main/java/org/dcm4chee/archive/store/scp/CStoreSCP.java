@@ -88,7 +88,7 @@ public class CStoreSCP extends BasicCStoreSCP {
                 session = storeService.createStoreSession(storeService);
                 session.setSource(new LocalAssociationParticipant(as));
                 session.setRemoteAET(as.getRemoteAET());
-                session.setSourceDevice(aeCache.findApplicationEntity(as.getRemoteAET()).getDevice());
+                session.setRemoteApplicationEntity(aeCache.get(as.getRemoteAET()));
                 session.setArchiveAEExtension(arcAE);
                 storeService.initStorageSystem(session);
                 storeService.initSpoolDirectory(session);

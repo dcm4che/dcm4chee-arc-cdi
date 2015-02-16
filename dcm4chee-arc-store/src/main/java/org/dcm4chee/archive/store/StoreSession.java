@@ -41,6 +41,7 @@ package org.dcm4chee.archive.store;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
@@ -95,7 +96,7 @@ public interface StoreSession {
 
     Device getSourceDevice();
 
-    void setSourceDevice(Device source);
+    void setRemoteApplicationEntity(ApplicationEntity ae);
 
     String getSourceDeviceName();
 

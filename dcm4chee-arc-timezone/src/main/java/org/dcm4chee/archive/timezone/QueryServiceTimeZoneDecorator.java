@@ -101,7 +101,7 @@ public abstract class QueryServiceTimeZoneDecorator implements QueryService {
         if (keys.containsValue(Tag.TimezoneOffsetFromUTC))
             return keys.getTimeZone();
             
-            TimeZone sourceTimeZone = context.getRemoteDevice().getTimeZoneOfDevice(); 
+            TimeZone sourceTimeZone = context.getRemoteDevice()!=null?context.getRemoteDevice().getTimeZoneOfDevice():null; 
             if (sourceTimeZone != null ) {
                 LOG.debug("Loaded Device for remote Application entity AETitle: "
                         + context.getRemoteAET()

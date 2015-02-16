@@ -43,6 +43,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
@@ -66,7 +67,7 @@ public class StoreSessionImpl implements StoreSession {
     private StorageSystem storageSystem;
     private Path spoolDirectory;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
-    private Device sourceDevice;
+    private ApplicationEntity remoteAE;
 
     public StoreSessionImpl(StoreService storeService) {
         this.storeService = storeService;
@@ -189,17 +190,17 @@ public class StoreSessionImpl implements StoreSession {
 
     @Override
     public Device getSourceDevice() {
-        return sourceDevice;
+        return this.remoteAE!=null?this.remoteAE.getDevice():null;
     }
 
     @Override
-    public void setSourceDevice(Device source) {
-        this.sourceDevice=source;
+    public void setRemoteApplicationEntity(ApplicationEntity ae) {
+        this.remoteAE=ae;
     }
 
     @Override
     public String getSourceDeviceName() {
-        return sourceDevice != null ? sourceDevice.getDeviceName() : null;
+        return getSourceDevice()!= null ? getSourceDevice().getDeviceName() : null;
     }
 }
 
