@@ -1,12 +1,12 @@
 package org.dcm4chee.archive.conf;
 
-import java.io.Serializable;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
+
+import java.io.Serializable;
+import java.util.Map;
+import java.util.TreeMap;
 
 @LDAP(objectClasses = "dcmRetrieveSuppressionCriteria")
 @ConfigurableClass
@@ -23,7 +23,7 @@ private boolean checkTransferCapabilities;
         mapValueAttribute = "labeledURI"
 )
 @ConfigurableProperty(name = "dcmRetrieveSuppressionCriteriaMap")
-private Map<String, String> suppressionCriteriaMap = new LinkedHashMap<String, String>();
+private Map<String, String> suppressionCriteriaMap = new TreeMap<String, String>();
 
 public boolean isCheckTransferCapabilities() {
     return checkTransferCapabilities;

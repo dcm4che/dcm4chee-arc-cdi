@@ -45,6 +45,7 @@ import java.security.KeyStore;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
@@ -859,13 +860,13 @@ public class DeviceMocker {
                 ATTRIBUTE_COERCION_NULLIFY_PN_XSL));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG 8-bit Lossy",
-                new String[] {
-                    "MONOCHROME1",
-                    "MONOCHROME2",
-                    "RGB" },
-                new int[] { 8 },                // Bits Stored
+                new String[]{
+                        "MONOCHROME1",
+                        "MONOCHROME2",
+                        "RGB"},
+                new int[]{8},                // Bits Stored
                 0,                              // Pixel Representation
-                new String[] { "JPEG_LOSSY" },  // Source AETs
+                new String[]{"JPEG_LOSSY"},  // Source AETs
                 null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
@@ -874,7 +875,7 @@ public class DeviceMocker {
                 "compressionQuality=0.8",
                 "maxPixelValueError=10",
                 "avgPixelValueBlockSize=8"
-                ));
+        ));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG 12-bit Lossy",
                 new String[] {
@@ -977,7 +978,7 @@ public class DeviceMocker {
         // patient selector
         PatientSelectorConfig ps = new PatientSelectorConfig();
         ps.setPatientSelectorClassName("org.dcm4chee.archive.patient.DemographicsPatientSelector");
-        Map<String,String> sels = new LinkedHashMap<>();
+        Map<String,String> sels = new TreeMap<>();
         sels.put("familyName", "BROAD");
         sels.put("givenName", "BROAD");
         ps.setPatientSelectorProperties(sels);
