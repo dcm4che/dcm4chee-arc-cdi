@@ -143,7 +143,7 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
         // check for suppression criteria
         Map<String, String> suppressionCriteriaMap = arcAE
                 .getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
-        if (suppressionCriteriaMap.containsKey(retrieveContext.getDestinationAE().getAETitle())) {
+        if (suppressionCriteriaMap.containsKey(retrieveContext.getDestinationAE()!=null?retrieveContext.getDestinationAE().getAETitle():null)) {
             String supressionCriteriaTemplateURI = suppressionCriteriaMap
                     .get(retrieveContext.getDestinationAE().getAETitle());
             if (supressionCriteriaTemplateURI != null) {
