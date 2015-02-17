@@ -197,9 +197,9 @@ public class StowRS {
         }
         wadoURL = uriInfo.getBaseUri() + "wado/" + ae.getAETitle() + "/studies/";
         if (studyInstanceUID != null)
-            response.setString(Tag.RetrieveURL, VR.UT, wadoURL + studyInstanceUID);
+            response.setString(Tag.RetrieveURL, VR.UR, wadoURL + studyInstanceUID);
         else
-            response.setNull(Tag.RetrieveURL, VR.UT);
+            response.setNull(Tag.RetrieveURL, VR.UR);
         sopSequence = response.newSequence(Tag.ReferencedSOPSequence, 10);
     }
 
@@ -504,7 +504,7 @@ public class StowRS {
         String study_iuid = attrs.getString(Tag.StudyInstanceUID);
         sopRef.setString(Tag.ReferencedSOPClassUID, VR.UI, cuid);
         sopRef.setString(Tag.ReferencedSOPInstanceUID, VR.UI, iuid);
-        sopRef.setString(Tag.RetrieveURL, VR.UT, wadoURL
+        sopRef.setString(Tag.RetrieveURL, VR.UR, wadoURL
                 + study_iuid + "/series/"
                 + series_iuid + "/instances/"
                 + iuid);

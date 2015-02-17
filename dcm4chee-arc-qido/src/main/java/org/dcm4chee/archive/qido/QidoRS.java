@@ -631,7 +631,7 @@ public class QidoRS {
     }
     
     private Attributes addRetrieveURL(Attributes match, QueryRetrieveLevel qrlevel) {
-        match.setString(Tag.RetrieveURL, VR.UT, RetrieveURL(match, qrlevel));
+        match.setString(Tag.RetrieveURL, VR.UR, RetrieveURL(match, qrlevel));
         return match;
     }
 
