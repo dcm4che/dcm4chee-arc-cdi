@@ -513,13 +513,12 @@ create table archiving_task (
     series_iuid varchar(255) not null,
     source_stg_group_id varchar(255) not null,
     target_name varchar(255) not null,
-    target_stg_group_ids varchar(255) not null,
+    target_stg_group_id varchar(255) not null,
     delay_reason_code_fk bigint,
     primary key (pk)
 ) ENGINE=InnoDB;
 
-alter table archiving_task 
-    add constraint FKD72560C52DC908EB 
-    foreign key (delay_reason_code_fk) 
+alter table archiving_task
+    add constraint FKD72560C52DC908EB
+    foreign key (delay_reason_code_fk)
     references code (pk);
-
