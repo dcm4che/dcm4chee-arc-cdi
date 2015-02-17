@@ -75,7 +75,10 @@ import org.dcm4che3.data.Tag;
             query="SELECT mpps FROM MPPS mpps WHERE mpps.sopInstanceUID = ?1)"),
     @NamedQuery(
             name="MPPS.findBySOPInstanceUIDs",
-            query="SELECT mpps FROM MPPS mpps WHERE mpps.sopInstanceUID IN :idList)")            
+            query="SELECT mpps FROM MPPS mpps WHERE mpps.sopInstanceUID IN :idList)"),
+    @NamedQuery(
+            name="MPPS.deleteBySOPInstanceUIDs",
+            query="DELETE FROM MPPS mpps WHERE mpps.sopInstanceUID IN :idList)"),            
 })
 @Entity
 @Table(name = "mpps")
@@ -89,6 +92,8 @@ public class MPPS implements Serializable {
             "MPPS.findBySOPInstanceUID";
     public static final String FIND_BY_SOP_INSTANCE_UIDs =
             "MPPS.findBySOPInstanceUIDs";
+    public static final String DELETE_BY_SOP_INSTANCE_UIDs =
+            "MPPS.deleteBySOPInstanceUIDs";
 
     public static final String IN_PROGRESS = "IN PROGRESS";
     public static final String COMPLETED = "COMPLETED";

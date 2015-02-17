@@ -223,7 +223,8 @@ public class MPPSEmulatorEJB {
                 : firstSeries.getModality();
 
         // pps information
-        mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.COMPLETED);
+        mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS,
+                MPPS.COMPLETED);
         mppsAttrs.addSelected(patient.getAttributes(), PATIENT_Selection);
         mppsAttrs.addSelected(study.getAttributes(), STUDY_Selection);
         mppsAttrs.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
@@ -310,11 +311,12 @@ public class MPPSEmulatorEJB {
             return true;
         }
 
-        // various cases in case of reference
+        // cases when there is an existing reference (refMppsList.size()>0)
         List<MPPS> mppsList = null;
         switch (rule) {
         case ALWAYS:
             LOG.debug("Emulate MPPS (reference found and rule ALWAYS)");
+            deleteMPPS(refMppsList);
             return true;
         case NEVER:
             LOG.debug("NO MPPS Emulation (reference found and rule NEVER)");
@@ -322,7 +324,6 @@ public class MPPSEmulatorEJB {
         case NO_MPPS_CREATE:
             mppsList = fetchMPPS(refMppsList);
             if (mppsList == null || mppsList.size() == 0) {
-                //TODO delete existing MPPS
                 LOG.debug("Emulate MPPS (reference found, no mpps stored and rule NO_MPPS_CREATE)");
                 return true;
             } else {
@@ -333,8 +334,8 @@ public class MPPSEmulatorEJB {
             mppsList = fetchMPPS(refMppsList);
             for (MPPS mpps : mppsList) {
                 if (mpps.getStatus() == Status.IN_PROGRESS) {
-                    //TODO delete existing MPPS
                     LOG.debug("Emulate MPPS (reference found, mpps stored, at least one MPPS not finalized and rule NO_MPPS_FINAL)");
+                    deleteMPPS(refMppsList);
                     return true;
                 }
             }
@@ -348,7 +349,13 @@ public class MPPSEmulatorEJB {
     private List<MPPS> fetchMPPS(List<String> refMppsList) {
         return (refMppsList.size() > 0) ? em
                 .createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UIDs, MPPS.class)
-                .setParameter(1, refMppsList).getResultList() : null;
+                .setParameter("idList", refMppsList).getResultList() : null;
+    }
+
+    private void deleteMPPS(List<String> refMppsList) {
+        if (refMppsList.size() > 0)
+            em.createNamedQuery(MPPS.DELETE_BY_SOP_INSTANCE_UIDs)
+                    .setParameter("idList", refMppsList).executeUpdate();
     }
 
     private String makePPSID(String modality, String studyInstanceUID) {
