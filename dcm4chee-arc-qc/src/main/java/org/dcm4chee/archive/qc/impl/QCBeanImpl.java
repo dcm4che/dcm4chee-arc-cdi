@@ -370,8 +370,8 @@ public class QCBeanImpl  implements QCBean{
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         //check move and clone belong to same study
         ArrayList<Instance> tmpAllInstancesInvolved = new ArrayList<Instance>();
-        Collection<Instance> toMove = locateInstances((String[]) toMoveUIDs.toArray());
-        Collection<Instance> toClone = locateInstances((String[]) toCloneUIDs.toArray());
+        Collection<Instance> toMove = locateInstances(toMoveUIDs.isEmpty()?new String[]{}:(String[]) toMoveUIDs.toArray());
+        Collection<Instance> toClone = locateInstances(toCloneUIDs.isEmpty()?new String[]{}:(String[]) toCloneUIDs.toArray());
         tmpAllInstancesInvolved.addAll(toMove);
         tmpAllInstancesInvolved.addAll(toClone);
         Study sourceStudy = tmpAllInstancesInvolved.get(0).getSeries().getStudy();
@@ -541,10 +541,13 @@ public class QCBeanImpl  implements QCBean{
         QCActionHistory updateAction = generateQCAction(QCOperation.UPDATE);
         LOG.info("{}:  QC info[Update] info - Performing QC update DICOM header on {} scope : ", qcSource, scope);
         Attributes unmodified;
+        PatientAttrsPKTuple unmodifiedAndPK;
         String patientPK=null;
         switch(scope) {
         case PATIENT:
-            unmodified=updatePatient(arcDevExt, attrs, patientPK);
+            unmodifiedAndPK=updatePatient(arcDevExt, attrs);
+            unmodified = unmodifiedAndPK.getUnModifiedAttrs();
+            patientPK=Long.toString(unmodifiedAndPK.getPK());
             break;
         case STUDY: 
             unmodified=updateStudy(arcDevExt,
@@ -897,10 +900,10 @@ public class QCBeanImpl  implements QCBean{
      * @throws EntityNotFoundException
      *             the entity not found exception
      */
-    private Attributes updatePatient(ArchiveDeviceExtension arcDevExt, Attributes attrs, String patientPK)
+    private PatientAttrsPKTuple updatePatient(ArchiveDeviceExtension arcDevExt, Attributes attrs)
             throws EntityNotFoundException {
         Patient patient = findPatient(attrs);
-
+        long patientPK=patient.getPk();
         if (patient == null)
             throw new EntityNotFoundException(
                     "Unable to find patient or multiple patients found");
@@ -917,8 +920,8 @@ public class QCBeanImpl  implements QCBean{
         patient.setAttributes(original,
                 arcDevExt.getAttributeFilter(Entity.Patient),
                 arcDevExt.getFuzzyStr());
-        patientPK=Long.toString(patient.getPk());
-        return unmodified;
+
+        return new PatientAttrsPKTuple(patientPK, unmodified);
     }
     
     /**
@@ -2426,5 +2429,19 @@ public class QCBeanImpl  implements QCBean{
             this.seriesHistory = seriesHistory;
         }
         
+    }
+    class PatientAttrsPKTuple{
+        long pk;
+        Attributes unmodified;
+        PatientAttrsPKTuple(long pk, Attributes attrs) {
+            this.pk= pk;
+            this.unmodified = attrs;
+        }
+        public long getPK() {
+            return this.pk;
+        }
+        public Attributes getUnModifiedAttrs() {
+            return this.unmodified;
+        }
     }
 }

@@ -250,8 +250,9 @@ public class QCIT {
      @Test
     public void testAUpdatePatientAttrs() throws Exception {
         
-        utx.begin();
+
         store(UPDATE_RESOURCES[0]);
+        utx.begin();
         String[] instancesSopUID = { "1.1.1" };
         ArrayList<Instance> instances = (ArrayList<Instance>) qcManager
                 .locateInstances(instancesSopUID);
@@ -267,8 +268,9 @@ public class QCIT {
 
     @Test
     public void testBUpdateStudyAttrs() throws Exception {
-        utx.begin();
+
         store(UPDATE_RESOURCES[1]);
+        utx.begin();
         String[] instancesSOPUID = {"1.1.1.1"};
         ArrayList<Instance> instances = (ArrayList<Instance>) qcManager
                 .locateInstances(instancesSOPUID);
@@ -304,8 +306,8 @@ public class QCIT {
     }
     @Test
     public void testCUpdateStudyAttrsAndLinkToNextUpdateHistory() throws Exception {
-        utx.begin();
         store(UPDATE_RESOURCES[1]);
+        utx.begin();
         String[] instancesSOPUID = {"1.1.1.1"};
         ArrayList<Instance> instances = (ArrayList<Instance>) qcManager
                 .locateInstances(instancesSOPUID);
@@ -342,9 +344,7 @@ public class QCIT {
 
     @Test
     public void testDUpdateSeriesAttrs() throws Exception {
-        utx.begin();
         store(UPDATE_RESOURCES[2]);
-        utx.commit();
         utx.begin();
         String[] instanceSOPUID = {"1.1.1.2"};
         ArrayList<Instance> instances = new ArrayList<Instance>();
@@ -370,9 +370,7 @@ public class QCIT {
 
     @Test
     public void testEUpdateInstanceAttrs() throws Exception {
-        utx.begin();
         store(UPDATE_RESOURCES[3]);
-        utx.commit();
         utx.begin();
         String[] instanceSOPUID = {"1.1.1.3"};
         ArrayList<Instance> instances = new ArrayList<Instance>();
@@ -423,11 +421,12 @@ public class QCIT {
                 "3.3.3.3", "2.2.2.100", "KOX", "KO1", "KO1", false);
         prevInstForKO.setSeries(prevSeriesHistory);
         em.persist(prevInstForKO);
-
-        for(String resource : MERGE_RESOURCES)
-            store(resource);
         utx.commit();
-
+        
+        for(String resource : MERGE_RESOURCES) {
+            store(resource);
+    }
+        
         utx.begin();
         String[] sourceStudyUids = {"3.3.3.3"};
         String targetStudyUID = "3.3.3.2";
@@ -1031,10 +1030,10 @@ public class QCIT {
                 "STUDY1", "SERIES2", "IMGX", "IMG1", "IMG1", false);
         prevInstForKO.setSeries(prevSeriesHistory);
         em.persist(prevInstForKO);
-
+        utx.commit();
         for(String resource : SPLIT_RESOURCES)
             store(resource);
-        utx.commit();
+
     }
 
 
@@ -1067,10 +1066,13 @@ public class QCIT {
 
     private boolean store(String updateResource) {
 
+
         ArchiveAEExtension arcAEExt = device.getApplicationEntity("DCM4CHEE")
                 .getAEExtension(ArchiveAEExtension.class);
 
         try {
+            utx.begin();
+            em.joinTransaction();   
             StoreParam storeParam = ParamFactory.createStoreParam();
             storeParam.setRetrieveAETs(RETRIEVE_AETS);
             StoreSession session = storeService.createStoreSession(storeService); 
@@ -1086,10 +1088,13 @@ public class QCIT {
             storeService.writeSpoolFile(context, fmi, load(updateResource));
             storeService.parseSpoolFile(context);
             storeService.store(context);
+            utx.commit();
+            em.clear();
         }
         catch(Exception e) {
             return false;
         }
+
         return true;
     }
 

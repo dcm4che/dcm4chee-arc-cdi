@@ -54,6 +54,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.Status;
 
@@ -139,7 +140,9 @@ public class QCRestful {
 
             if(object.getUpdateScope() == null) {
                 LOG.error("Unable to decide update Scope for QC update");
-                throw new WebApplicationException("Malformed update scope");
+                throw new WebApplicationException( Response.status(Status.CONFLICT)
+                        .entity("Unrecognized update scope")
+                        .build());
             }
             else {
                 //here merge provided data with pid, study uid, series uid , instance uid
@@ -188,7 +191,9 @@ public class QCRestful {
         }
         catch(Exception e) {
             LOG.error("{} : Error in performing QC - Restful interface", e);
-            throw new WebApplicationException(e.getMessage());
+            throw new WebApplicationException( Response.status(Status.CONFLICT)
+                    .entity(e.getMessage())
+                    .build());
         }
         qcManager.notify(event);
         String strEvent = event.toString();
@@ -219,8 +224,10 @@ public class QCRestful {
                                 : null;
         
         if (command == null)
-            throw new WebApplicationException(
-                    "Unable to decide patient command - supported commands {merge, link, unlink, updateids}");
+            throw new WebApplicationException( Response.status(Status.CONFLICT)
+                    .entity("Unable to decide patient command - supported commands {merge, link, unlink, updateids}")
+                    .build()
+                    );
         ArrayList<Attributes> attrs = null;
         try {
             attrs = parseJSONAttributesToList(in);
@@ -234,8 +241,10 @@ public class QCRestful {
         }
         catch(Exception e)
         {
-            throw new WebApplicationException(
-                    "Unable to process patient operation request data");
+            throw new WebApplicationException( Response.status(Status.CONFLICT)
+                    .entity("Unable to process patient operation request data")
+                    .build()
+                    );
         }
 
         return aggregatePatientOpResponse(attrs,device.getApplicationEntity(aeTitle),command, patientOperation);
