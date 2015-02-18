@@ -101,11 +101,11 @@ public class MppsEmulationGeneral {
         ArchiveDeviceExtension ext = new ArchiveDeviceExtension();
         ext.setFuzzyAlgorithmClass("org.dcm4che3.soundex.ESoundex");
         ext.setAttributeFilter(Entity.Patient, new AttributeFilter(
-                PATIENT_ATTRS));
-        ext.setAttributeFilter(Entity.Study, new AttributeFilter(STUDY_ATTRS));
-        ext.setAttributeFilter(Entity.Series, new AttributeFilter(SERIES_ATTRS));
+                ParamFactory.PATIENT_ATTRS));
+        ext.setAttributeFilter(Entity.Study, new AttributeFilter(ParamFactory.STUDY_ATTRS));
+        ext.setAttributeFilter(Entity.Series, new AttributeFilter(ParamFactory.SERIES_ATTRS));
         ext.setAttributeFilter(Entity.Instance, new AttributeFilter(
-                INSTANCE_ATTRS));
+                ParamFactory.INSTANCE_ATTRS));
         device.addDeviceExtension(ext);
         device.addApplicationEntity(ae);
 
@@ -119,37 +119,6 @@ public class MppsEmulationGeneral {
 
         return ae;
     }
-
-    private static final int[] PATIENT_ATTRS = { Tag.SpecificCharacterSet,
-            Tag.PatientName, Tag.PatientID, Tag.IssuerOfPatientID,
-            Tag.IssuerOfPatientIDQualifiersSequence, Tag.PatientBirthDate,
-            Tag.PatientBirthTime, Tag.PatientSex,
-            Tag.PatientInsurancePlanCodeSequence,
-            Tag.PatientPrimaryLanguageCodeSequence, Tag.OtherPatientNames,
-            Tag.OtherPatientIDsSequence, Tag.PatientBirthName, Tag.PatientAge,
-            Tag.PatientSize, Tag.PatientSizeCodeSequence, Tag.PatientWeight,
-            Tag.PatientAddress, Tag.PatientMotherBirthName, Tag.MilitaryRank,
-            Tag.BranchOfService, Tag.MedicalRecordLocator, Tag.MedicalAlerts,
-            Tag.Allergies, Tag.CountryOfResidence, Tag.RegionOfResidence,
-            Tag.PatientTelephoneNumbers, Tag.EthnicGroup, Tag.Occupation,
-            Tag.SmokingStatus, Tag.AdditionalPatientHistory,
-            Tag.PregnancyStatus, Tag.LastMenstrualDate,
-            Tag.PatientReligiousPreference, Tag.PatientSpeciesDescription,
-            Tag.PatientSpeciesCodeSequence, Tag.PatientSexNeutered,
-            Tag.PatientBreedDescription, Tag.PatientBreedCodeSequence,
-            Tag.BreedRegistrationSequence, Tag.ResponsiblePerson,
-            Tag.ResponsiblePersonRole, Tag.ResponsibleOrganization,
-            Tag.PatientComments, Tag.ClinicalTrialSponsorName,
-            Tag.ClinicalTrialProtocolID, Tag.ClinicalTrialProtocolName,
-            Tag.ClinicalTrialSiteID, Tag.ClinicalTrialSiteName,
-            Tag.ClinicalTrialSubjectID, Tag.ClinicalTrialSubjectReadingID,
-            Tag.PatientIdentityRemoved, Tag.DeidentificationMethod,
-            Tag.DeidentificationMethodCodeSequence,
-            Tag.ClinicalTrialProtocolEthicsCommitteeName,
-            Tag.ClinicalTrialProtocolEthicsCommitteeApprovalNumber,
-            Tag.SpecialNeeds, Tag.PertinentDocumentsSequence, Tag.PatientState,
-            Tag.PatientClinicalTrialParticipationSequence,
-            Tag.ConfidentialityConstraintOnPatientDataDescription };
 
     protected void store(String name) throws Exception {
         StoreParam storeParam = ParamFactory.createStoreParam();
@@ -274,36 +243,6 @@ public class MppsEmulationGeneral {
         utx.commit();
         em.clear();
     }
-
-    private static final int[] STUDY_ATTRS = { Tag.SpecificCharacterSet,
-            Tag.StudyDate, Tag.StudyTime, Tag.AccessionNumber,
-            Tag.IssuerOfAccessionNumberSequence, Tag.ReferringPhysicianName,
-            Tag.StudyDescription, Tag.ProcedureCodeSequence, Tag.PatientAge,
-            Tag.PatientSize, Tag.PatientSizeCodeSequence, Tag.PatientWeight,
-            Tag.Occupation, Tag.AdditionalPatientHistory,
-            Tag.PatientSexNeutered, Tag.StudyInstanceUID, Tag.StudyID };
-    private static final int[] SERIES_ATTRS = { Tag.SpecificCharacterSet,
-            Tag.Modality, Tag.Manufacturer, Tag.InstitutionName,
-            Tag.InstitutionCodeSequence, Tag.StationName,
-            Tag.SeriesDescription, Tag.InstitutionalDepartmentName,
-            Tag.PerformingPhysicianName, Tag.ManufacturerModelName,
-            Tag.ReferencedPerformedProcedureStepSequence, Tag.BodyPartExamined,
-            Tag.SeriesInstanceUID, Tag.SeriesNumber, Tag.Laterality,
-            Tag.PerformedProcedureStepStartDate,
-            Tag.PerformedProcedureStepStartTime, Tag.RequestAttributesSequence };
-    private static final int[] INSTANCE_ATTRS = { Tag.SpecificCharacterSet,
-            Tag.ImageType, Tag.SOPClassUID, Tag.SOPInstanceUID,
-            Tag.ContentDate, Tag.ContentTime, Tag.ReferencedSeriesSequence,
-            Tag.InstanceNumber, Tag.NumberOfFrames, Tag.Rows, Tag.Columns,
-            Tag.BitsAllocated, Tag.ObservationDateTime,
-            Tag.ConceptNameCodeSequence, Tag.VerifyingObserverSequence,
-            Tag.ReferencedRequestSequence, Tag.CompletionFlag,
-            Tag.VerificationFlag, Tag.DocumentTitle,
-            Tag.MIMETypeOfEncapsulatedDocument, Tag.ContentLabel,
-            Tag.ContentDescription, Tag.PresentationCreationDate,
-            Tag.PresentationCreationTime, Tag.ContentCreatorName,
-            Tag.OriginalAttributesSequence, Tag.IdenticalDocumentsSequence,
-            Tag.CurrentRequestedProcedureEvidenceSequence };
 
     public MppsEmulationGeneral() {
         super();

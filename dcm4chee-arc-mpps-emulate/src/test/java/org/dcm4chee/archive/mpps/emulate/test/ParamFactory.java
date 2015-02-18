@@ -54,7 +54,7 @@ import java.util.Map;
  */
 public abstract class ParamFactory {
 
-    private static final int[] PATIENT_ATTRS = {
+    public static final int[] PATIENT_ATTRS = {
         Tag.SpecificCharacterSet,
         Tag.PatientName,
         Tag.PatientID,
@@ -117,7 +117,7 @@ public abstract class ParamFactory {
         Tag.PatientClinicalTrialParticipationSequence,
         Tag.ConfidentialityConstraintOnPatientDataDescription
     };
-    private static final int[] STUDY_ATTRS = {
+    public static final int[] STUDY_ATTRS = {
         Tag.SpecificCharacterSet,
         Tag.StudyDate,
         Tag.StudyTime,
@@ -136,7 +136,7 @@ public abstract class ParamFactory {
         Tag.StudyInstanceUID,
         Tag.StudyID 
     };
-    private static final int[] SERIES_ATTRS = {
+    public static final int[] SERIES_ATTRS = {
         Tag.SpecificCharacterSet,
         Tag.Modality,
         Tag.Manufacturer,
@@ -156,7 +156,7 @@ public abstract class ParamFactory {
         Tag.PerformedProcedureStepStartTime,
         Tag.RequestAttributesSequence
     };
-    private static final int[] INSTANCE_ATTRS = {
+    public static final int[] INSTANCE_ATTRS = {
         Tag.SpecificCharacterSet,
         Tag.ImageType,
         Tag.SOPClassUID,
