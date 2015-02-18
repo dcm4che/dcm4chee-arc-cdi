@@ -347,7 +347,6 @@ public class WadoURI extends Wado {
                             .getLocalAddr(), null), new GenericParticipant(
                             request.getRemoteAddr(), request.getRemoteUser()),
                     device, insts, instscompleted, instswarning, instsfailed));
-            System.out.println("fired:" + retrieveEvent);
         }
     }
 
