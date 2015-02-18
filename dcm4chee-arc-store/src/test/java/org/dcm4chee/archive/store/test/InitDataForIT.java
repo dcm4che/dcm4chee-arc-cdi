@@ -160,6 +160,7 @@ public class InitDataForIT {
         StoreSession session = storeService.createStoreSession(storeService); 
         session.setStoreParam(storeParam);
         StorageSystem storageSystem = new StorageSystem();
+        storageSystem.setStorageSystemID("test_ss");        
         StorageSystemGroup grp = new StorageSystemGroup();
         grp.setGroupID("test_grp");
         grp.addStorageSystem(storageSystem);
