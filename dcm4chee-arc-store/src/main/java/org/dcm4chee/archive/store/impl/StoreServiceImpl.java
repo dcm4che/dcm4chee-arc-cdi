@@ -339,8 +339,8 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
         try {
-            service.coerceAttributes(context);
             service.processFile(context);
+            service.coerceAttributes(context);
             service.updateDB(context);
         } catch (DicomServiceException e) {
             context.setStoreAction(StoreAction.FAIL);
