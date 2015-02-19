@@ -472,6 +472,7 @@ public class WadoRS extends Wado {
             // check for suppression criteria
             Map<String, String> suppressionCriteriaMap = arcAE
                     .getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
+            if(context.getSourceAET()!=null)
             if (suppressionCriteriaMap.containsKey(context.getSourceAET())) {
                 String supressionCriteriaTemplateURI = suppressionCriteriaMap
                         .get(context.getSourceAET());
