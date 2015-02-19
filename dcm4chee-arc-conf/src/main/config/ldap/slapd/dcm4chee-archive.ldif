@@ -407,7 +407,7 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.78 NAME 'dcmIgnoreDuplicatesOnStorage
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
-olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.79 NAME 'dcmdcmMPPSEmulationCreationRule'
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.79 NAME 'dcmMPPSEmulationCreationRule'
   DESC 'Specifies behavior for MPPS Emulator in case a reference to a MPPS is found in the DICOM object. Enumerated values: ALWAYS, NEVER, NO_MPPS_CREATE, NO_MPPS_FINAL. If absent, MPPS are always created.'
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
@@ -563,7 +563,7 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.21 NAME 'dcmMPPSEmulationRule'
     dicomAETitle $
     dcmMPPSEmulationDelay ) 
   MAY (
-    dcmdcmMPPSEmulationCreationRule
+    dcmMPPSEmulationCreationRule
   ) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.22 NAME 'dcmArchivingRule'
   DESC 'Specifies Archiving rule'

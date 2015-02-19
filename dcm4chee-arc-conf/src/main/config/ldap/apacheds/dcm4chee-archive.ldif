@@ -1029,7 +1029,7 @@ objectclass: metaAttributeType
 objectclass: metaTop
 objectclass: top
 m-oid: 1.2.40.0.13.1.15.10.3.79
-m-name: dcmdcmMPPSEmulationCreationRule
+m-name: dcmMPPSEmulationCreationRule
 m-description: Specifies behavior for MPPS Emulator in case a reference to a MPP
  S is found in the DICOM object. Enumerated values: ALWAYS, NEVER, NO_MPPS_CREAT
  E, NO_MPPS_FINAL. If absent, MPPS are always created.
@@ -1303,7 +1303,7 @@ m-must: cn
 m-must: dcmAETitle
 m-must: dicomAETitle
 m-must: dcmMPPSEmulationDelay
-m-may: dcmdcmMPPSEmulationCreationRule
+m-may: dcmMPPSEmulationCreationRule
 
 dn: m-oid=1.2.40.0.13.1.15.10.4.22, ou=objectclasses, cn=dcm4chee-archive, ou=sc
  hema
