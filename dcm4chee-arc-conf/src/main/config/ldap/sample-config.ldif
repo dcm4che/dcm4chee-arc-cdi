@@ -7822,21 +7822,13 @@ dn: cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM C
 objectClass: dcmStorageDeviceExtension
 cn: StorageDeviceExtension
 
-dn: cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-objectClass: dcmCollection
-cn: Storage System Groups
-
-dn: dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dn: dcmStorageSystemGroupID=ARCHIVE,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystemGroup
 dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
 dcmActiveStorageSystemID: nearline
 dcmStorageSystemGroupID: ARCHIVE
 
-dn: cn=Storage Systems,dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-objectClass: dcmCollection
-cn: Storage Systems
-
-dn: dcmStorageSystemID=nearline,cn=Storage Systems,dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dn: dcmStorageSystemID=nearline,dcmStorageSystemGroupID=ARCHIVE,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystem
 dcmProviderName: org.dcm4chee.storage.filesystem
 dcmStorageAccessTime: 2000
@@ -7844,12 +7836,12 @@ dcmStorageSystemPath: /var/local/dcm4chee-arc/nearline
 dcmInstanceAvailability: NEARLINE
 dcmStorageSystemID: nearline
 
-dn: cn=Storage Container,dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dn: cn=Storage Container,dcmStorageSystemGroupID=ARCHIVE,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageContainer
 dcmProviderName: org.dcm4chee.storage.zip
 cn: Storage Container
 
-dn: cn=Storage File Cache,dcmStorageSystemGroupID=ARCHIVE,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dn: cn=Storage File Cache,dcmStorageSystemGroupID=ARCHIVE,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageFileCache
 dcmProviderName: org.dcm4chee.storage.filecache
 dcmStorageFileCacheAlgorithm: LRU
@@ -7858,18 +7850,14 @@ dcmStorageFileCacheJournalRootDirectory: /var/local/dcm4chee-arc/nearline-cache
 dcmStorageFileCacheRootDirectory: /var/local/dcm4chee-arc/nearline-cache/data
 cn: Storage File Cache
 
-dn: dcmStorageSystemGroupID=DEFAULT,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dn: dcmStorageSystemGroupID=DEFAULT,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystemGroup
 dcmDigestAlgorithm: MD5
 dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
 dcmActiveStorageSystemID: fs1
 dcmStorageSystemGroupID: DEFAULT
 
-dn: cn=Storage Systems,dcmStorageSystemGroupID=DEFAULT,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
-objectClass: dcmCollection
-cn: Storage Systems
-
-dn: dcmStorageSystemID=fs1,cn=Storage Systems,dcmStorageSystemGroupID=DEFAULT,cn=Storage System Groups,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+dn: dcmStorageSystemID=fs1,dcmStorageSystemGroupID=DEFAULT,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystem
 dcmProviderName: org.dcm4chee.storage.filesystem
 dcmStorageAccessTime: 1000
