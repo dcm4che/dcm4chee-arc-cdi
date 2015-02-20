@@ -62,6 +62,13 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-ear</artifactId>
+      <version>${project.version}</version>
+      <classifier>${db}</classifier>
+      <type>ear</type>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-web</artifactId>
       <version>${project.version}</version>
       <type>war</type>

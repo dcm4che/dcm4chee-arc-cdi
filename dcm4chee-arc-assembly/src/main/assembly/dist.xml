@@ -82,6 +82,7 @@
       <includes>
         <include>org.dcm4che.dcm4chee-arc:dcm4chee-arc-war</include>
         <include>org.dcm4che.dcm4chee-arc:dcm4chee-arc-web</include>
+        <include>org.dcm4che.dcm4chee-arc:dcm4chee-arc-ear</include>
       </includes>
 <!--       <outputFileNameMapping>${artifact.artifactId}-${project.version}${dashClassifier?}.${artifact.extension}</outputFileNameMapping>
  -->      <useProjectArtifact>false</useProjectArtifact>
