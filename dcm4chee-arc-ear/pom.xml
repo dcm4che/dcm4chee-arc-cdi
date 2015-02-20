@@ -10,6 +10,9 @@
   </parent>
   <artifactId>dcm4chee-arc-ear</artifactId>
   <packaging>ear</packaging>
+  <properties>
+      <conf-web-classifier>-unsecure</conf-web-classifier>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -220,8 +223,23 @@
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-cloud</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4chee</groupId>
+      <artifactId>dcm4chee-conf-web</artifactId>
+      <classifier>arc${conf-web-classifier}</classifier>
+      <type>war</type>
+      <version>${dcm4chee-conf-web.version}</version>
+    </dependency>
+
   </dependencies>
   <profiles>
+      <profile>
+          <id>secure</id>
+          <properties>
+              <!-- replaces default which is -unsecure -->
+              <conf-web-classifier></conf-web-classifier>
+          </properties>
+      </profile>
     <profile>
       <id>monitoring</id>
       <activation>
@@ -237,8 +255,9 @@
 	      <version>1.55.0</version>
 	    </dependency>    
 	  </dependencies>      
-    </profile>    
-  </profiles>	  
+    </profile>
+
+  </profiles>
   <build>
     <plugins>
       <plugin>
@@ -252,9 +271,15 @@
               <artifactId>dcm4chee-arc-war-skinny</artifactId>
               <contextRoot>dcm4chee-arc</contextRoot>
             </webModule>
+            <webModule>
+              <groupId>org.dcm4chee</groupId>
+              <artifactId>dcm4chee-conf-web</artifactId>
+              <contextRoot>config</contextRoot>
+            </webModule>
           </modules>
         </configuration>
       </plugin>
     </plugins>
   </build>
+
 </project>
