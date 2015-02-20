@@ -55,6 +55,7 @@
     <powermock.version>1.5.5</powermock.version>
     <jacksonprovider.version>3.0.10.Final</jacksonprovider.version>
     <resteasy.multipart.version>3.0.8.Final</resteasy.multipart.version>
+    <jacoco.version>0.7.1.201405082137</jacoco.version>
 <!--
     <db>mysql</db>
 -->
@@ -337,6 +338,13 @@
         <artifactId>xalan</artifactId>
         <version>2.7.1</version>
       </dependency>
+      <!-- Required by jacoco code coverage plugin -->
+      <dependency>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>${jacoco.version}</version>
+</dependency>
+      
     </dependencies>
   </dependencyManagement>
   <dependencies>
@@ -392,7 +400,26 @@
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
       </plugin>
-    </plugins>
+    <plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>${jacoco.version}</version>
+    <executions>
+    <execution>
+    <goals>
+    <goal>prepare-agent</goal>
+    </goals>
+    </execution>
+    <execution>
+    <id>report</id>
+    <phase>prepare-package</phase>
+    <goals>
+    <goal>report</goal>
+    </goals>
+    </execution>
+    </executions>
+</plugin>
+</plugins>
   </build>
   <modules>
     <module>dcm4chee-arc-conf</module>
