@@ -50,6 +50,7 @@ import org.dcm4che3.conf.api.hl7.HL7ApplicationCache;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.conf.api.hl7.IHL7ApplicationCache;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
+import org.dcm4che3.conf.dicom.DicomConfigurationManager;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
@@ -68,7 +69,7 @@ public class DicomConfigurationProducer {
 
     @Produces
     @ApplicationScoped
-    public static DicomConfiguration getDicomConfiguration()
+    public static DicomConfigurationManager getDicomConfiguration()
             throws ConfigurationException {
         DicomConfigurationBuilder builder = DicomConfigurationBuilder
                 .newConfigurationBuilder(System.getProperties());
