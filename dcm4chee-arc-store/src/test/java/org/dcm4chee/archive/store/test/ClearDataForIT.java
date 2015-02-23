@@ -112,7 +112,7 @@ public class ClearDataForIT {
             "CONCEPT_NAME_CODE_SEQ", "VERIFYING_OBSERVER_SEQ", "DOB_20010101",
             "DOB_20020202", "DOB_NONE", "TF_INFO", "FUZZY_GEORGE",
             "FUZZY_JOERG", "FUZZY_LUKE", "FUZZY_NONE", "FUZZY_NUMERICAL",
-            "OOMIYA_SHOUGO", "MWL_TEST", };
+            "OOMIYA_SHOUGO", "MWL_TEST", "STORE_SERVICE_TEST"};
 
     private static final String[] ISSUERS = { "DCM4CHEE_TESTDATA",
             "DCM4CHEE_TESTDATA_ACCNO_ISSUER_1","DCM4CHEE_TESTDATA_ACCNO_ISSUER_2", "Issuer No_2", "Issuer No_1" };
