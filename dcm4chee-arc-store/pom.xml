@@ -208,6 +208,16 @@
             <version>2.1.1</version>
             <extensions>true</extensions>
           </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+	       	  <excludes>
+	          	<exclude>**/InitDataForIT.java</exclude>
+	          	<exclude>**/ClearDataForIT.java</exclude>
+	          </excludes>
+	      	</configuration>
+ 	      </plugin>
         </plugins>
       </build>
       <dependencies>
@@ -248,6 +258,16 @@
             <version>2.1.1</version>
             <extensions>true</extensions>
           </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+	       	  <excludes>
+	          	<exclude>**/InitDataForIT.java</exclude>
+	          	<exclude>**/ClearDataForIT.java</exclude>
+	          </excludes>
+	      	</configuration>
+ 	      </plugin>
         </plugins>
       </build>
       <dependencies>

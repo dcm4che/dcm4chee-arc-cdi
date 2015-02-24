@@ -46,6 +46,11 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.EJBTransactionRolledbackException;
 import javax.inject.Inject;
 import javax.persistence.OptimisticLockException;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
 
 import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
@@ -54,6 +59,9 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.archive.patient.NonUniquePatientException;
+import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -62,10 +70,10 @@ import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -75,7 +83,7 @@ import org.junit.runner.RunWith;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @RunWith(Arquillian.class)
-public class OptimisticLockForIT {
+public class OptimisticLockForIT extends BaseStoreIT {
 
     private static final String SOURCE_AET = "SOURCE_AET";
     private static final String[] RETRIEVE_AETS = { "RETRIEVE_AET" };
@@ -93,10 +101,13 @@ public class OptimisticLockForIT {
 
     @Inject
     private Device device;
-
+    
     private static final String INSTANCE1 = "testdata/concurrent-1.xml";
     private static final String INSTANCE1a = "testdata/concurrent-1a.xml";
     private static final String INSTANCE1b = "testdata/concurrent-1b.xml";
+    
+    private static final String[] PIDS = new String[]{"STORE_SERVICE_TEST"};
+    private static final String[] ISSUERS = new String[]{"DCM4CHEE_TESTDATA"};
 
     @Before
     public void setup() throws Exception {
@@ -106,6 +117,16 @@ public class OptimisticLockForIT {
                 TimeUnit.SECONDS))
             throw new RuntimeException("Child threads got broken somewhere - 1");
         semaphores.getDone().release();
+    }
+    
+    @After
+    public void terminate() throws SecurityException, IllegalStateException,
+            RollbackException, HeuristicMixedException,
+            HeuristicRollbackException, SystemException, NotSupportedException, NonUniquePatientException, PatientCircularMergedException {
+        utx.begin();
+        super.clearTestData(PIDS, ISSUERS, new Code[0]);
+        utx.commit();
+        em.clear();
     }
 
     @Deployment
@@ -121,6 +142,7 @@ public class OptimisticLockForIT {
         }
 
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "test.jar");
+        jar.addClass(BaseStoreIT.class);
         jar.addClass(OptimisticLockForIT.class);
         jar.addClass(ParamFactory.class);
         jar.addClass(ConcurrentStoreServiceDecorator.class);
