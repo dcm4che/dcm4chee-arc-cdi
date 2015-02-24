@@ -189,7 +189,7 @@ public class ArchiveAEExtension extends AEExtension {
                     + ", the update check is performed according to that scope")
     private ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve = ReferenceUpdateOnRetrieveScope.DEACTIVATE;
 
-    @ConfigurableProperty(name = "dcmRetrieveSuppressionCriteria", defaultValue = "null")
+    @ConfigurableProperty(name = "dcmRetrieveSuppressionCriteria")
     private RetrieveSuppressionCriteria retrieveSuppressionCriteria = new RetrieveSuppressionCriteria();
 
     public RetrieveSuppressionCriteria getRetrieveSuppressionCriteria() {
