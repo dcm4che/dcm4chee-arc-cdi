@@ -41,26 +41,29 @@ class ArchiveInstanceLocatorBuilder {
                 tuple.get(QLocation.location.storagePath),
                 tuple.get(QLocation.location.entryName),
                 tuple.get(QLocation.location.transferSyntaxUID),
-                tuple.get(QLocation.location.timeZone));
+                tuple.get(QLocation.location.timeZone),
+                tuple.get(QLocation.location.withoutBulkData));
     }
  
     private void addFileRef(String groupID, String systemID,
             String filePath, String entryName, String tsuid,
-            String fileTimeZone) {
+            String fileTimeZone, boolean withoutBulkData) {
         if (groupID == null)
             return;
 
         StorageSystem storageSystem = storageConf.getStorageSystem(groupID, systemID);
         if (storageSystem == null)
             return;
+
         ArchiveInstanceLocator addedLocator =
                 new ArchiveInstanceLocator.Builder(cuid, iuid, tsuid)
-        .storageSystem(storageSystem)
-        .filePath(filePath)
-        .entryName(entryName)
-        .retrieveAETs(retrieveAETs)
-        .externalRetrieveAET(externalRetrieveAET)
-        .build();
+                        .storageSystem(storageSystem)
+                        .filePath(filePath)
+                        .entryName(entryName)
+                        .retrieveAETs(retrieveAETs)
+                        .externalRetrieveAET(externalRetrieveAET)
+                        .withoutBulkdata(withoutBulkData)
+                        .build();
         
         if (locator == null){
             locator = addedLocator;

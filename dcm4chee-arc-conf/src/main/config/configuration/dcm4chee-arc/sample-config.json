@@ -750,7 +750,7 @@
                   }
                 },
                 "dcmActiveStorageSystemID" : [ "nearline" ],
-                "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
+                "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}",
                 "dcmStorageSystemGroupID" : "ARCHIVE"
               },
               "DEFAULT" : {
@@ -766,6 +766,18 @@
                 "dcmDigestAlgorithm" : "MD5",
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "DEFAULT"
+              },
+              "METADATA" : {
+                "Storage Systems" : {
+                  "metadata" : {
+                    "dcmProviderName" : "org.dcm4chee.storage.filesystem",
+                    "dcmStorageSystemID" : "metadata",
+                    "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/metadata"
+                  }
+                },
+                "dcmActiveStorageSystemID" : [ "metadata" ],
+                "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
+                "dcmStorageSystemGroupID" : "METADATA"
               }
             }
           }
@@ -938,6 +950,7 @@
                   "dicomAETitle" : "DCM4CHEE"
                 } ],
                 "dcmMatchUnknown" : true,
+                "dcmMetaDataStorageSystemGroupID" : "METADATA",
                 "dcmPatientSelector" : {
                   "dcmPatientSelectorClassName" : "org.dcm4chee.archive.patient.DemographicsPatientSelector",
                   "dcmPatientSelectorProperties" : {

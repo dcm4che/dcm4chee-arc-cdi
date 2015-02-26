@@ -68,6 +68,9 @@ public interface StoreService {
     void initStorageSystem(StoreSession session)
             throws DicomServiceException;
 
+    void initMetaDataStorageSystem(StoreSession session)
+            throws DicomServiceException;
+
     void initSpoolDirectory(StoreSession session) throws DicomServiceException;
 
     void writeSpoolFile(StoreContext session, Attributes fmi, Attributes attrs)
@@ -135,4 +138,5 @@ public interface StoreService {
     
     int[] getStoreFilters();
 
+    void storeMetaData(StoreContext context) throws DicomServiceException;
 }

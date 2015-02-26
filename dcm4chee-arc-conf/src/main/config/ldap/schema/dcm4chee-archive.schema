@@ -488,6 +488,12 @@ attributetype ( 1.2.40.0.13.1.15.10.3.79 NAME 'dcmMPPSEmulationCreationRule'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )  
 
+attributetype ( 1.2.40.0.13.1.15.10.3.80 NAME 'dcmMetaDataStorageSystemGroupID'
+  DESC 'Storage System Group ID for Meta Data'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
 objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -511,7 +517,7 @@ objectclass ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   MAY (
     dcmStorageSystemGroupID $
     dcmSpoolDirectoryPath $
-    dcmDigestAlgorithm $
+    dcmMetaDataStorageSystemGroupID $
     dcmRetrieveAET $
     dcmExternalRetrieveAET $
     dcmPersonNameComponentOrderInsensitiveMatching $

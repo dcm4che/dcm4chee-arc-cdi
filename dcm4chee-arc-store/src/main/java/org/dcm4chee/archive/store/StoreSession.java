@@ -70,6 +70,10 @@ public interface StoreSession {
 
     void setStorageSystem(StorageSystem storageSystem);
 
+    StorageSystem getMetaDataStorageSystem();
+
+    void setMetaDataStorageSystem(StorageSystem storageSystem);
+
     Path getSpoolDirectory();
 
     void setSpoolDirectory(Path spoolDirectory);

@@ -98,6 +98,9 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigurableProperty(name = "dcmSpoolDirectoryPath")
     private String spoolDirectoryPath;
 
+    @ConfigurableProperty(name = "dcmMetaDataStorageSystemGroupID")
+    private String metaDataStorageSystemGroupID;
+
     @ConfigurableProperty(name = "dcmSuppressWarningCoercionOfDataElements", defaultValue = "false")
     private boolean suppressWarningCoercionOfDataElements;
     
@@ -325,6 +328,14 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setSpoolDirectoryPath(String spoolDirectoryPath) {
         this.spoolDirectoryPath = spoolDirectoryPath;
+    }
+
+    public String getMetaDataStorageSystemGroupID() {
+        return metaDataStorageSystemGroupID;
+    }
+
+    public void setMetaDataStorageSystemGroupID(String metaDataStorageSystemGroupID) {
+        this.metaDataStorageSystemGroupID = metaDataStorageSystemGroupID;
     }
 
     public Templates getAttributeCoercionTemplates(String cuid, Dimse dimse,

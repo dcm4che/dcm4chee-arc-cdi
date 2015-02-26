@@ -57,11 +57,7 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.imageio.codec.Decompressor;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che3.net.Association;
-import org.dcm4che3.net.DataWriter;
-import org.dcm4che3.net.DataWriterAdapter;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.*;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicRetrieveTask;
@@ -141,16 +137,12 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
         attrs = getStreamOrRetryOtherLocators(inst, retrieveService, attrs,inst.getOtherLocators());
         
         // check for suppression criteria
-        Map<String, String> suppressionCriteriaMap = arcAE
-                .getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
-        if (suppressionCriteriaMap.containsKey(retrieveContext.getDestinationAE()!=null?retrieveContext.getDestinationAE().getAETitle():null)) {
-            String supressionCriteriaTemplateURI = suppressionCriteriaMap
-                    .get(retrieveContext.getDestinationAE().getAETitle());
-            if (supressionCriteriaTemplateURI != null) {
-                inst = retrieveService.applySuppressionCriteria(inst, attrs,
-                        supressionCriteriaTemplateURI, retrieveContext);
-            }
-        }
+        String templateURI = arcAE.getRetrieveSuppressionCriteria()
+                .getSuppressionCriteriaMap()
+                .get(storeas.getRemoteAET());
+        if (templateURI != null)
+            inst = retrieveService.applySuppressionCriteria(inst, attrs,
+                    templateURI, retrieveContext);
 
         if (archiveTimeZone != null) {
             ArchiveInstanceLocator archInst = (ArchiveInstanceLocator) inst;
@@ -169,17 +161,22 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
     private Attributes getStreamOrRetryOtherLocators(ArchiveInstanceLocator inst,
             RetrieveService retrieveService, Attributes attrs, Collection<ArchiveInstanceLocator> fallBackLocations) {
         DicomInputStream in=null;
-        try{
-        in = new DicomInputStream(
+        try {
+            in = new DicomInputStream(
                 retrieveService.getFile(inst).toFile());
-        
+
+            IncludeBulkData includeBulkData = IncludeBulkData.URI;
+            int stopTag = -1;
             if (withoutBulkData) {
-                in.setIncludeBulkData(IncludeBulkData.NO);
-                attrs = in.readDataset(-1, Tag.PixelData);
-            } else {
-                in.setIncludeBulkData(IncludeBulkData.URI);
-                attrs = in.readDataset(-1, -1);
+                if (inst.isWithoutBulkdata()) {
+                    includeBulkData = IncludeBulkData.YES;
+                } else {
+                    includeBulkData = IncludeBulkData.NO;
+                    stopTag = Tag.PixelData;
+                }
             }
+            in.setIncludeBulkData(includeBulkData);
+            attrs = in.readDataset(-1, stopTag);
         }
         catch(IOException e) {
             //fallback

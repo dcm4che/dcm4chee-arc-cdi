@@ -59,6 +59,7 @@ public class ArchiveInstanceLocator extends InstanceLocator {
     private final String entryName;
     private final String retrieveAETs;
     private final String externalRetrieveAET;
+    private final boolean withoutBulkdata;
     private Collection<ArchiveInstanceLocator> otherLocators;
     
 
@@ -72,6 +73,7 @@ public class ArchiveInstanceLocator extends InstanceLocator {
         private String retrieveAETs;
         private String externalRetrieveAET;
         private String fileTimeZoneID;
+        private boolean withoutBulkdata;
 
         public Builder(String cuid, String iuid, String tsuid) {
             this.cuid = cuid;
@@ -109,6 +111,11 @@ public class ArchiveInstanceLocator extends InstanceLocator {
             return this;
         }
 
+        public Builder withoutBulkdata(boolean withoutBulkdata) {
+            this.withoutBulkdata = withoutBulkdata;
+            return this;
+        }
+
         public ArchiveInstanceLocator build() {
             return new ArchiveInstanceLocator(this);
         }
@@ -122,6 +129,7 @@ public class ArchiveInstanceLocator extends InstanceLocator {
         this.entryName = builder.entryName;
         this.retrieveAETs = builder.retrieveAETs;
         this.externalRetrieveAET = builder.externalRetrieveAET;
+        this.withoutBulkdata = builder.withoutBulkdata;
    }
 
     private static String createRetrieveURI(Builder builder) {
@@ -151,6 +159,10 @@ public class ArchiveInstanceLocator extends InstanceLocator {
 
     public String getExternalRetrieveAET() {
         return externalRetrieveAET;
+    }
+
+    public boolean isWithoutBulkdata() {
+        return withoutBulkdata;
     }
 
     public Collection<ArchiveInstanceLocator> getOtherLocators() {

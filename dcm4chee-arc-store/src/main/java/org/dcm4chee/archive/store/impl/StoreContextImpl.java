@@ -50,6 +50,7 @@ import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.storage.StorageContext;
+import org.dcm4chee.storage.conf.StorageSystem;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -64,6 +65,7 @@ public class StoreContextImpl implements StoreContext {
     private String noDBAttsDigest;    
     private long finalFileSize;
     private String storagePath;
+    private String metaDataStoragePath;
     private String transferSyntax;
     private Attributes attributes;
     private Attributes coercedAttributes = new Attributes();
@@ -236,8 +238,26 @@ public class StoreContextImpl implements StoreContext {
 
     @Override
     public String calcStoragePath() {
-        String pattern = session.getStorageSystem().getStorageSystemGroup()
-                .getStorageFilePathFormat();
+        return calcStoragePath(session.getStorageSystem());
+    }
+
+    @Override
+    public String getMetaDataStoragePath() {
+        return metaDataStoragePath;
+    }
+
+    @Override
+    public void setMetaDataStoragePath(String metaDataStoragePath) {
+        this.metaDataStoragePath = metaDataStoragePath;
+    }
+
+    @Override
+    public String calcMetaDataStoragePath() {
+        return calcStoragePath(session.getMetaDataStorageSystem());
+    }
+
+    private String calcStoragePath(StorageSystem storageSystem) {
+        String pattern = storageSystem.getStorageSystemGroup().getStorageFilePathFormat();
         AttributesFormat format = AttributesFormat.valueOf(pattern);
         synchronized (format) {
             return format.format(attributes);

@@ -67,6 +67,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.io.BulkDataDescriptor;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
@@ -180,6 +181,22 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+    public void initMetaDataStorageSystem(StoreSession session)
+            throws DicomServiceException {
+        ArchiveAEExtension arcAE = session.getArchiveAEExtension();
+        String groupID = arcAE.getMetaDataStorageSystemGroupID();
+        if (groupID != null) {
+            StorageSystem storageSystem = storageService.selectStorageSystem(
+                    groupID, 0);
+            if (storageSystem == null)
+                throw new DicomServiceException(Status.OutOfResources,
+                        "No writeable Storage System in Storage System Group "
+                                + groupID);
+            session.setMetaDataStorageSystem(storageSystem);
+        }
+    }
+
+    @Override
     public void initSpoolDirectory(StoreSession session)
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
@@ -228,6 +245,20 @@ public class StoreServiceImpl implements StoreService {
     public void cleanup(StoreContext context) {
         if (context.getFileRef() == null) {
             deleteFinalFile(context);
+            deleteMetaData(context);
+        }
+    }
+
+    private void deleteMetaData(StoreContext context) {
+        String storagePath = context.getMetaDataStoragePath();
+        if (storagePath != null) {
+            try {
+                StorageSystem storageSystem = context.getStoreSession().getMetaDataStorageSystem();
+                storageService.deleteObject(storageService.createStorageContext(storageSystem), storagePath);
+            } catch (IOException e) {
+                LOG.warn("{}: Failed to delete meta data - {}",
+                        context.getStoreSession(), storagePath, e);
+            }
         }
     }
 
@@ -339,6 +370,7 @@ public class StoreServiceImpl implements StoreService {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
         try {
+            service.storeMetaData(context);
             service.processFile(context);
             service.coerceAttributes(context);
             service.updateDB(context);
@@ -475,7 +507,14 @@ public class StoreServiceImpl implements StoreService {
         if (context.getStoreAction() != StoreAction.IGNORE
                 && context.getStoreAction() != StoreAction.UPDATEDB
                 && context.getStoragePath() != null) {
-            context.setFileRef(createFileRef(em, context, instance));
+            Collection<Location> locations = instance.getLocations(2);
+            Location fileRef = createFileRef(em, context);
+            locations.add(fileRef);
+            if (context.getMetaDataStoragePath() != null) {
+                Location metaDataRef = createMetaDataRef(em, context);
+                locations.add(metaDataRef);
+            }
+            context.setFileRef(fileRef);
         }
     }
 
@@ -760,9 +799,7 @@ public class StoreServiceImpl implements StoreService {
         return inst;
     }
 
-    private Location createFileRef(EntityManager em, StoreContext context,
-            Instance instance) {
-
+    private Location createFileRef(EntityManager em, StoreContext context) {
         StoreSession session = context.getStoreSession();
         StorageSystem storageSystem = session.getStorageSystem();
         Location fileRef = new Location.Builder()
@@ -774,20 +811,25 @@ public class StoreServiceImpl implements StoreService {
                 .otherAttsDigest(context.getNoDBAttsDigest())
                 .size(context.getFinalFileSize())
                 .transferSyntaxUID(context.getTransferSyntax())
-                .timeZone(context.getSourceTimeZoneID()).build();
-        Collection<Instance> instances = fileRef.getInstances();
-        if (instances == null) {
-            fileRef.setInstances(instances);
-            instances = new ArrayList<Instance>();
-        }
-        instances.add(instance);
+                .timeZone(context.getSourceTimeZoneID())
+                .build();
+        em.persist(fileRef);
+        LOG.info("{}: Create {}", session, fileRef);
+        return fileRef;
+    }
 
-        Collection<Location> locations = instance.getLocations();
-        if (locations == null) {
-            locations = new ArrayList<Location>();
-            instance.setLocations(locations);
-        }
-        locations.add(fileRef);
+    private Location createMetaDataRef(EntityManager em, StoreContext context) {
+        StoreSession session = context.getStoreSession();
+        StorageSystem storageSystem = session.getMetaDataStorageSystem();
+        Location fileRef = new Location.Builder()
+                .storageSystemGroupID(
+                        storageSystem.getStorageSystemGroup().getGroupID())
+                .storageSystemID(storageSystem.getStorageSystemID())
+                .storagePath(context.getStoragePath())
+                .transferSyntaxUID(UID.ExplicitVRLittleEndian)
+                .timeZone(context.getSourceTimeZoneID())
+                .withoutBulkdata(true)
+                .build();
         em.persist(fileRef);
         LOG.info("{}: Create {}", session, fileRef);
         return fileRef;
@@ -892,6 +934,42 @@ public class StoreServiceImpl implements StoreService {
         }
 
         return storeFilters;
+    }
+
+    @Override
+    public void storeMetaData(StoreContext context) throws DicomServiceException {
+        StoreSession session = context.getStoreSession();
+        StorageSystem storageSystem = session.getMetaDataStorageSystem();
+        if (storageSystem == null)
+            return;
+
+        try {
+            StorageContext storageContext = storageService.createStorageContext(storageSystem);
+            String origStoragePath = context.calcMetaDataStoragePath();
+            String storagePath = origStoragePath;
+            int copies = 1;
+            for (;;) {
+                try {
+                    try (DicomOutputStream out = new DicomOutputStream(
+                            storageService.openOutputStream(storageContext, storagePath),
+                            UID.ExplicitVRLittleEndian)) {
+                        storeMetaDataTo(context.getAttributes(), out);
+                    }
+                    context.setMetaDataStoragePath(storagePath);
+                    return;
+                } catch (ObjectAlreadyExistsException e) {
+                    storagePath = origStoragePath + '.' + copies++;
+                }
+            }
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.UnableToProcess, e);
+        }
+    }
+
+    private void storeMetaDataTo(Attributes attrs, DicomOutputStream out) throws IOException {
+        Attributes metaData = new Attributes(attrs.bigEndian(), attrs.size());
+        metaData.addWithoutBulkData(attrs, BulkDataDescriptor.DEFAULT);
+        out.writeDataset(metaData.createFileMetaInformation(UID.ExplicitVRLittleEndian), metaData);
     }
 
     public int[] merge(final int[]... arrays) {

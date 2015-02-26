@@ -233,6 +233,7 @@ public class StowRS {
         session.setArchiveAEExtension(arcAE);
         storeService.initStorageSystem(session);
         storeService.initSpoolDirectory(session);
+        storeService.initMetaDataStorageSystem(session);
         try {
             new MultipartParser(boundary).parse(in, new MultipartParser.Handler() {
                 

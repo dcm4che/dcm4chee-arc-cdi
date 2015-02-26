@@ -64,10 +64,10 @@ public interface RetrieveService {
     IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys);
 
     List<ArchiveInstanceLocator> calculateMatches(IDWithIssuer[] pids,
-            Attributes keys, QueryParam queryParam);
+            Attributes keys, QueryParam queryParam, boolean withoutBulkData);
     
     List<ArchiveInstanceLocator> calculateMatches(String studyUID, String seriesUID,
-            String objectUID, QueryParam queryParam);
+            String objectUID, QueryParam queryParam, boolean withoutBulkData);
 
     void coerceRetrievedObject(RetrieveContext retrieveContext,
             String remoteAET, Attributes attrs) throws DicomServiceException;

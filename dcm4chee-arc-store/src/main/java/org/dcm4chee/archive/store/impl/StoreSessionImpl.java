@@ -65,6 +65,7 @@ public class StoreSessionImpl implements StoreSession {
     private StoreParam storeParam;
     private MessageDigest messageDigest;
     private StorageSystem storageSystem;
+    private StorageSystem metaDataStorageSystem;
     private Path spoolDirectory;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
     private ApplicationEntity remoteAE;
@@ -151,6 +152,16 @@ public class StoreSessionImpl implements StoreSession {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public StorageSystem getMetaDataStorageSystem() {
+        return metaDataStorageSystem;
+    }
+
+    @Override
+    public void setMetaDataStorageSystem(StorageSystem storageSystem) {
+        this.metaDataStorageSystem = storageSystem;
     }
 
     @Override

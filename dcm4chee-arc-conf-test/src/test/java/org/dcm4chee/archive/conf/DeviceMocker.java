@@ -685,6 +685,13 @@ public class DeviceMocker {
         arc.setStorageAccessTime(2000);
         arc.setAvailability(Availability.NEARLINE);
 
+        StorageSystem metadata = new StorageSystem();
+        metadata.setStorageSystemID("metadata");
+        metadata.setProviderName("org.dcm4chee.storage.filesystem");
+        metadata.setStorageSystemPath("/var/local/dcm4chee-arc/metadata");
+        metadata.setStorageAccessTime(0);
+        metadata.setAvailability(Availability.ONLINE);
+
         Container container = new Container();
         container.setProviderName("org.dcm4chee.storage.zip");
 
@@ -707,14 +714,21 @@ public class DeviceMocker {
         StorageSystemGroup nearline = new StorageSystemGroup();
         nearline.setGroupID("ARCHIVE");
         nearline.addStorageSystem(arc);
-        nearline.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
+        nearline.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}");
         nearline.setActiveStorageSystemIDs(arc.getStorageSystemID());
         nearline.setContainer(container);
         nearline.setFileCache(fileCache);
 
+        StorageSystemGroup metadataG = new StorageSystemGroup();
+        metadataG.setGroupID("METADATA");
+        metadataG.addStorageSystem(metadata);
+        metadataG.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
+        metadataG.setActiveStorageSystemIDs(metadata.getStorageSystemID());
+
         StorageDeviceExtension ext = new StorageDeviceExtension();
         ext.addStorageSystemGroup(online);
         ext.addStorageSystemGroup(nearline);
+        ext.addStorageSystemGroup(metadataG);
         device.addDeviceExtension(ext);
     }
 
@@ -827,6 +841,7 @@ public class DeviceMocker {
         ae.setAssociationAcceptor(true);
         ae.setAssociationInitiator(true);
         aeExt.setStorageSystemGroupID("DEFAULT");
+        aeExt.setMetaDataStorageSystemGroupID("METADATA");
         aeExt.setSpoolDirectoryPath("spool");
         aeExt.setRetrieveAETs(aet);
         aeExt.setPreserveSpoolFileOnFailure(true);

@@ -83,6 +83,8 @@ public interface StoreContext {
 
     void setStoragePath(String storagePath);
 
+    String calcMetaDataStoragePath();
+
     StorageContext getStorageContext();
 
     void setStorageContext(StorageContext storageContext);
@@ -126,4 +128,8 @@ public interface StoreContext {
     void setSourceTimeZone(TimeZone sourceTimeZone);
 
     String getSourceTimeZoneID();
+
+    String getMetaDataStoragePath();
+
+    void setMetaDataStoragePath(String storagePath);
 }

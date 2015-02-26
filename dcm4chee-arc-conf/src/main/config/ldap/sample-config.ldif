@@ -504,6 +504,7 @@ objectClass: dcmNetworkAE
 objectClass: dicomNetworkAE
 objectClass: dcmArchiveNetworkAE
 dcmSendPendingCMoveInterval: 5000
+dcmMetaDataStorageSystemGroupID: METADATA
 hl7PIXManagerApplication: HL7RCV^DCM4CHEE
 dcmSpoolDirectoryPath: spool
 dcmWadoOverlayRendering: FALSE
@@ -7824,7 +7825,7 @@ cn: StorageDeviceExtension
 
 dn: dcmStorageSystemGroupID=ARCHIVE,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystemGroup
-dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
+dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}
 dcmActiveStorageSystemID: nearline
 dcmStorageSystemGroupID: ARCHIVE
 
@@ -7863,4 +7864,16 @@ dcmProviderName: org.dcm4chee.storage.filesystem
 dcmStorageAccessTime: 1000
 dcmStorageSystemPath: /var/local/dcm4chee-arc/fs1
 dcmStorageSystemID: fs1
+
+dn: dcmStorageSystemGroupID=METADATA,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dcmStorageSystemGroup
+dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
+dcmActiveStorageSystemID: metadata
+dcmStorageSystemGroupID: METADATA
+
+dn: dcmStorageSystemID=metadata,dcmStorageSystemGroupID=METADATA,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
+objectClass: dcmStorageSystem
+dcmProviderName: org.dcm4chee.storage.filesystem
+dcmStorageSystemPath: /var/local/dcm4chee-arc/metadata
+dcmStorageSystemID: metadata
 

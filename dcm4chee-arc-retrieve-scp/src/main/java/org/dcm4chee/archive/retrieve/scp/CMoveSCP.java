@@ -137,7 +137,7 @@ public class CMoveSCP extends BasicCMoveSCP {
             context.setDestinationAE(destAE);
             IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
             List<ArchiveInstanceLocator> matches =
-                     retrieveService.calculateMatches(pids, keys, queryParam);
+                     retrieveService.calculateMatches(pids, keys, queryParam, false);
             if (matches.isEmpty())
                 return null;
             

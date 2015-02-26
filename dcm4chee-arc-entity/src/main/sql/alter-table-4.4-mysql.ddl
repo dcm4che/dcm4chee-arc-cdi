@@ -481,14 +481,16 @@ alter table location
     add storage_id varchar(255),
     add entry_name varchar(255),
     add otherAttsDigest varchar(255),
+    add wo_bulkdata bit,
     drop foreign key FKD42DBF50206F5C8A,
     drop filesystem_fk;
 
-update location set storage_group_id='DEFAULT', storage_id='fs1';
+update location set storage_group_id='DEFAULT', storage_id='fs1', wo_bulkdata=false;
 
 alter table location
     modify storage_group_id varchar(255) not null,
-    modify storage_id varchar(255) not null;
+    modify storage_id varchar(255) not null,
+    modify wo_bulkdata bit not null;
 
 drop table filesystem;
 

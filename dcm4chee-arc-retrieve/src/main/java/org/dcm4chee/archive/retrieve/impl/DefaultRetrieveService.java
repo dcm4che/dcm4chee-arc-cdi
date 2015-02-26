@@ -92,7 +92,6 @@ public class DefaultRetrieveService implements RetrieveService {
 
     private static final Logger LOG = Logger.getLogger(DefaultRetrieveService.class);
 
-
     private static final Expression<?>[] SELECT = {
         QLocation.location.storagePath,
         QLocation.location.entryName,
@@ -100,6 +99,7 @@ public class DefaultRetrieveService implements RetrieveService {
         QLocation.location.timeZone,
         QLocation.location.storageSystemGroupID,
         QLocation.location.storageSystemID,
+        QLocation.location.withoutBulkData,
         QSeries.series.pk,
         QInstance.instance.pk,
         QInstance.instance.sopClassUID,
@@ -132,13 +132,17 @@ public class DefaultRetrieveService implements RetrieveService {
 
     @Override
     public List<ArchiveInstanceLocator> calculateMatches(IDWithIssuer[] pids,
-            Attributes keys, QueryParam queryParam) {
+            Attributes keys, QueryParam queryParam, boolean withoutBulkData) {
 
-        return locate(ejb.query(SELECT,
-                pids,
-                keys.getStrings(Tag.StudyInstanceUID),
-                keys.getStrings(Tag.SeriesInstanceUID),
-                keys.getStrings(Tag.SOPInstanceUID), queryParam));
+        return locate(
+                ejb.query(SELECT,
+                        pids,
+                        keys.getStrings(Tag.StudyInstanceUID),
+                        keys.getStrings(Tag.SeriesInstanceUID),
+                        keys.getStrings(Tag.SOPInstanceUID),
+                        queryParam),
+                withoutBulkData
+        );
     }
 
     /**
@@ -147,16 +151,19 @@ public class DefaultRetrieveService implements RetrieveService {
      */
     @Override
     public List<ArchiveInstanceLocator> calculateMatches(String studyIUID,
-            String seriesIUID, String objectIUID, QueryParam queryParam) {
+            String seriesIUID, String objectIUID, QueryParam queryParam, boolean withoutBulkData) {
 
-        return locate(ejb.query(SELECT,
-                null,
-                studyIUID  == null ? null: new String[] { studyIUID }
-              , seriesIUID == null ? null: new String[] { seriesIUID }
-              , objectIUID == null ? null: new String[] { objectIUID }, queryParam));
+        return locate(
+                ejb.query(SELECT,
+                        null,
+                        studyIUID == null ? null : new String[]{studyIUID},
+                        seriesIUID == null ? null : new String[]{seriesIUID},
+                        objectIUID == null ? null : new String[]{objectIUID},
+                        queryParam),
+                withoutBulkData);
     }
 
-    private List<ArchiveInstanceLocator> locate(List<Tuple> tuples) {
+    private List<ArchiveInstanceLocator> locate(List<Tuple> tuples, boolean withoutBulkData) {
 
         List<ArchiveInstanceLocator> locators =
                 new ArrayList<ArchiveInstanceLocator>(tuples.size());
@@ -166,6 +173,9 @@ public class DefaultRetrieveService implements RetrieveService {
         ArchiveInstanceLocatorBuilder builder = null;
 
         for (Tuple tuple : tuples) {
+            if (tuple.get(QLocation.location.withoutBulkData) && !withoutBulkData)
+                continue;
+
             long nextSeriesPk = tuple.get(QSeries.series.pk);
             long nextInstPk = tuple.get(QInstance.instance.pk);
 

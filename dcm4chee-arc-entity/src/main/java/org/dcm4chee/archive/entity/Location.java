@@ -120,6 +120,10 @@ public class Location implements Serializable {
     @Column(name = "status", updatable = true)
     private Status status;
 
+    @Basic(optional = false)
+    @Column(name = "wo_bulkdata", updatable = false)
+    private boolean withoutBulkData;
+
     @ManyToMany(mappedBy="locations")
     private Collection<Instance> instances;
 
@@ -134,6 +138,7 @@ public class Location implements Serializable {
         private String digest;
         private String otherAttsDigest;
         private Status status = Status.OK;
+        private boolean withoutBulkData;
 
         public Builder storageSystemGroupID(String storageSystemGroupID) {
             this.storageSystemGroupID = storageSystemGroupID;
@@ -185,6 +190,11 @@ public class Location implements Serializable {
             return this;
         }
 
+        public Builder withoutBulkdata(boolean withoutBulkData) {
+            this.withoutBulkData = withoutBulkData;
+            return this;
+        }
+
         public Location build() {
             return new Location(this);
         }
@@ -203,6 +213,7 @@ public class Location implements Serializable {
         digest = builder.digest;
         otherAttsDigest = builder.otherAttsDigest;
         status = builder.status;
+        withoutBulkData = builder.withoutBulkData;
     }
 
     @PrePersist
@@ -263,6 +274,14 @@ public class Location implements Serializable {
         this.status = status;
     }
 
+    public boolean isWithoutBulkData() {
+        return withoutBulkData;
+    }
+
+    public void setWithoutBulkData(boolean withoutBulkData) {
+        this.withoutBulkData = withoutBulkData;
+    }
+
     public Collection<Instance> getInstances() {
         return instances;
     }
@@ -281,6 +300,7 @@ public class Location implements Serializable {
                 + ", tsuid=" + transferSyntaxUID
                 + ", size=" + size
                 + ", status=" + status
+                + ", withoutBulkData=" + withoutBulkData
                 + "]";
     }
 

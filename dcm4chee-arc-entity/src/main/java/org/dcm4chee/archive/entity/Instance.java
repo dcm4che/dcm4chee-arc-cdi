@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
@@ -392,6 +393,12 @@ public class Instance implements Serializable {
     }
 
     public Collection<Location> getLocations() {
+        return locations;
+    }
+
+    public Collection<Location> getLocations(int initSize) {
+        if (locations == null)
+            locations = new ArrayList<Location>(initSize);
         return locations;
     }
 

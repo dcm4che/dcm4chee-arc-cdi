@@ -92,6 +92,7 @@ public class CStoreSCP extends BasicCStoreSCP {
                 session.setArchiveAEExtension(arcAE);
                 storeService.initStorageSystem(session);
                 storeService.initSpoolDirectory(session);
+                storeService.initMetaDataStorageSystem(session);
                 as.setProperty(StoreSession.class.getName(), session);
             }
             Attributes fmi = as.createFileMetaInformation(

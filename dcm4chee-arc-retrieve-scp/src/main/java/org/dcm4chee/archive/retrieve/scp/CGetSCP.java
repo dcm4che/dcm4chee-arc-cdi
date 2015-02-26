@@ -133,8 +133,8 @@ public class CGetSCP extends BasicCGetSCP {
                     retrieveService, as.getRemoteAET(), aeExt);
             context.setDestinationAE(aeCache.get(as.getRemoteAET()));
             IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
-            List<ArchiveInstanceLocator> matches = 
-                    (List<ArchiveInstanceLocator>) retrieveService.calculateMatches(pids, keys, queryParam);
+            List<ArchiveInstanceLocator> matches =
+                    retrieveService.calculateMatches(pids, keys, queryParam, withoutBulkData);
             if (matches.isEmpty())
                 return null;
 
