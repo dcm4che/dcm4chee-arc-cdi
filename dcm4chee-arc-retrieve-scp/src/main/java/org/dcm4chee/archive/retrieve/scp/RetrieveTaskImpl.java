@@ -64,6 +64,7 @@ import org.dcm4che3.net.service.BasicRetrieveTask;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.entity.Utils;
@@ -123,90 +124,62 @@ class RetrieveTaskImpl extends BasicRetrieveTask<ArchiveInstanceLocator> {
     }
 
     @Override
-    protected DataWriter createDataWriter(ArchiveInstanceLocator inst,
-            String tsuid) throws IOException, UnsupportedRetrieveException {
-        ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
-        RetrieveService retrieveService = retrieveContext.getRetrieveService();
-        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                .getTimeZoneOfDevice();
-        Attributes attrs = null;
-
-        if(inst == null)
+    protected DataWriter createDataWriter(ArchiveInstanceLocator locator, String tsuid)
+            throws IOException, UnsupportedRetrieveException {
+        if (locator == null)
             throw new UnsupportedRetrieveException("Unable to retrieve instance, Suppressed by Attributes");
-        
-        attrs = getStreamOrRetryOtherLocators(inst, retrieveService, attrs,inst.getOtherLocators());
-        
+
+        Attributes attrs = null;
+        do {
+            try {
+                attrs = readFrom(locator);
+            } catch (IOException e) {
+                locator = locator.getFallbackLocator();
+                if (locator == null)
+                    throw e;
+            }
+        } while (attrs == null);
+
+        ArchiveAEExtension arcAEExt = retrieveContext.getArchiveAEExtension();
+        RetrieveService retrieveService = retrieveContext.getRetrieveService();
         // check for suppression criteria
-        String templateURI = arcAE.getRetrieveSuppressionCriteria()
+        String templateURI = arcAEExt.getRetrieveSuppressionCriteria()
                 .getSuppressionCriteriaMap()
                 .get(storeas.getRemoteAET());
         if (templateURI != null)
-            inst = retrieveService.applySuppressionCriteria(inst, attrs,
-                    templateURI, retrieveContext);
+            locator = retrieveService.applySuppressionCriteria(
+                    locator, attrs, templateURI, retrieveContext);
 
-        if (archiveTimeZone != null) {
-            ArchiveInstanceLocator archInst = (ArchiveInstanceLocator) inst;
-            retrieveContext.getRetrieveService().coerceFileBeforeMerge(
-                    archInst, retrieveContext, storeas.getRemoteAET(), attrs);
-        }
-        attrs = Utils.mergeAndNormalize(attrs,(Attributes) inst.getObject());
-        if (!tsuid.equals(inst.tsuid))
-            Decompressor.decompress(attrs, inst.tsuid);
+        retrieveContext.getRetrieveService().coerceFileBeforeMerge(
+                locator, retrieveContext, storeas.getRemoteAET(), attrs);
+        attrs = Utils.mergeAndNormalize(attrs,(Attributes) locator.getObject());
+        if (!tsuid.equals(locator.tsuid))
+            Decompressor.decompress(attrs, locator.tsuid);
 
         retrieveContext.getRetrieveService().coerceRetrievedObject(
                 retrieveContext, storeas.getRemoteAET(), attrs);
         return new DataWriterAdapter(attrs);
     }
 
-    private Attributes getStreamOrRetryOtherLocators(ArchiveInstanceLocator inst,
-            RetrieveService retrieveService, Attributes attrs, Collection<ArchiveInstanceLocator> fallBackLocations) {
-        DicomInputStream in=null;
-        try {
-            in = new DicomInputStream(
-                retrieveService.getFile(inst).toFile());
-
+    private Attributes readFrom(ArchiveInstanceLocator locator) throws IOException {
+        RetrieveService retrieveService = retrieveContext.getRetrieveService();
+        try (DicomInputStream din = new DicomInputStream(
+                retrieveService.getFile(locator).toFile())) {
             IncludeBulkData includeBulkData = IncludeBulkData.URI;
             int stopTag = -1;
             if (withoutBulkData) {
-                if (inst.isWithoutBulkdata()) {
+                if (locator.isWithoutBulkdata()) {
                     includeBulkData = IncludeBulkData.YES;
                 } else {
                     includeBulkData = IncludeBulkData.NO;
                     stopTag = Tag.PixelData;
                 }
             }
-            in.setIncludeBulkData(includeBulkData);
-            attrs = in.readDataset(-1, stopTag);
+            din.setIncludeBulkData(includeBulkData);
+            return din.readDataset(-1, stopTag);
         }
-        catch(IOException e) {
-            //fallback
-            if(inst.getOtherLocators()!=null) {
-            
-            Collections.sort((List<ArchiveInstanceLocator>)fallBackLocations,
-                    new Comparator<ArchiveInstanceLocator>() {
-                        @Override
-                        public int compare(ArchiveInstanceLocator a,
-                                ArchiveInstanceLocator b) {
-                            return a.getStorageSystem().getStorageAccessTime() < b
-                                    .getStorageSystem().getStorageAccessTime() ? -1
-                                    : a.getStorageSystem()
-                                            .getStorageAccessTime() == b
-                                            .getStorageSystem()
-                                            .getStorageAccessTime() ? 0 : 1;
-                        }
-                    });
-            for(Iterator<ArchiveInstanceLocator> iter = fallBackLocations.iterator();iter.hasNext();) {
-                ArchiveInstanceLocator fallBackLocation = iter.next();
-                iter.remove();
-                return getStreamOrRetryOtherLocators(fallBackLocation, retrieveService, attrs,fallBackLocations);
-            }
-        }
-        }
-        finally {
-            SafeClose.close(in);
-        }
-        return attrs;
     }
+
 
     @Override
     protected void close() {

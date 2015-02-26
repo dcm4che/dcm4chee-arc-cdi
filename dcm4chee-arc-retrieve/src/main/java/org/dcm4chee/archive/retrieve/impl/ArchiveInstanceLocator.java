@@ -39,8 +39,6 @@ package org.dcm4chee.archive.retrieve.impl;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
 
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.storage.conf.StorageSystem;
@@ -49,7 +47,8 @@ import org.dcm4chee.storage.conf.StorageSystem;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-public class ArchiveInstanceLocator extends InstanceLocator {
+public class ArchiveInstanceLocator extends InstanceLocator
+        implements Comparable<ArchiveInstanceLocator> {
 
     private static final long serialVersionUID = 7208477744305290578L;
 
@@ -60,15 +59,14 @@ public class ArchiveInstanceLocator extends InstanceLocator {
     private final String retrieveAETs;
     private final String externalRetrieveAET;
     private final boolean withoutBulkdata;
-    private Collection<ArchiveInstanceLocator> otherLocators;
-    
+    private ArchiveInstanceLocator fallbackLocator;
 
     public static final class Builder {
         private final String cuid;
         private final String iuid;
         private final String tsuid;
         private StorageSystem storageSystem;
-        private String filePath;
+        private String storagePath;
         private String entryName;
         private String retrieveAETs;
         private String externalRetrieveAET;
@@ -86,8 +84,8 @@ public class ArchiveInstanceLocator extends InstanceLocator {
             return this;
         }
 
-        public Builder filePath(String filePath) {
-            this.filePath = filePath;
+        public Builder storagePath(String storagePath) {
+            this.storagePath = storagePath;
             return this;
         }
 
@@ -125,7 +123,7 @@ public class ArchiveInstanceLocator extends InstanceLocator {
         super(builder.cuid, builder.iuid, builder.tsuid, createRetrieveURI(builder));
         this.fileTimeZoneID = builder.fileTimeZoneID;
         this.storageSystem = builder.storageSystem;
-        this.filePath = builder.filePath;
+        this.filePath = builder.storagePath;
         this.entryName = builder.entryName;
         this.retrieveAETs = builder.retrieveAETs;
         this.externalRetrieveAET = builder.externalRetrieveAET;
@@ -134,7 +132,7 @@ public class ArchiveInstanceLocator extends InstanceLocator {
 
     private static String createRetrieveURI(Builder builder) {
     	Path basePath = Paths.get(builder.storageSystem.getStorageSystemPath());
-    	return basePath.resolve(builder.filePath).toUri().toString();
+    	return basePath.resolve(builder.storagePath).toUri().toString();
 	}
 
 	public String getFileTimeZoneID() {
@@ -165,16 +163,17 @@ public class ArchiveInstanceLocator extends InstanceLocator {
         return withoutBulkdata;
     }
 
-    public Collection<ArchiveInstanceLocator> getOtherLocators() {
-        return otherLocators;
+    public ArchiveInstanceLocator getFallbackLocator() {
+        return fallbackLocator;
     }
 
-    public void addOtherLocators(ArchiveInstanceLocator locator) {
-        if(otherLocators == null)
-            otherLocators = new ArrayList<ArchiveInstanceLocator>();
-        if(locator.getStorageSystem().getStorageSystemID()
-                != storageSystem.getStorageSystemID())
-            otherLocators.add(locator);
+    public void setFallbackLocator(ArchiveInstanceLocator fallbackLocator) {
+        this.fallbackLocator = fallbackLocator;
+    }
+
+    @Override
+    public int compareTo(ArchiveInstanceLocator o) {
+        return storageSystem.getStorageAccessTime() - o.storageSystem.getStorageAccessTime();
     }
 
 }

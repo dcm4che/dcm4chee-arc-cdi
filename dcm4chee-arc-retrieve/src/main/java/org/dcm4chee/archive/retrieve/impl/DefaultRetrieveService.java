@@ -72,10 +72,12 @@ import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QSeries;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystem;
 import org.jboss.logging.Logger;
 
 import com.mysema.query.Tuple;
@@ -165,15 +167,17 @@ public class DefaultRetrieveService implements RetrieveService {
 
     private List<ArchiveInstanceLocator> locate(List<Tuple> tuples, boolean withoutBulkData) {
 
-        List<ArchiveInstanceLocator> locators =
-                new ArrayList<ArchiveInstanceLocator>(tuples.size());
+        List<ArchiveInstanceLocator> locators = new ArrayList<ArchiveInstanceLocator>(tuples.size());
+        StorageDeviceExtension storageConf = device.getDeviceExtension(StorageDeviceExtension.class);
         long instPk = -1;
         long seriesPk = -1;
         Attributes seriesAttrs = null;
-        ArchiveInstanceLocatorBuilder builder = null;
+        ArchiveInstanceLocator locator = null;
 
         for (Tuple tuple : tuples) {
-            if (tuple.get(QLocation.location.withoutBulkData) && !withoutBulkData)
+            Boolean b = tuple.get(QLocation.location.withoutBulkData);
+            if (b == null // no Location
+                    || b && !withoutBulkData)
                 continue;
 
             long nextSeriesPk = tuple.get(QSeries.series.pk);
@@ -184,19 +188,66 @@ public class DefaultRetrieveService implements RetrieveService {
                 seriesPk = nextSeriesPk;
             }
             if (instPk != nextInstPk) {
-                if (builder != null)
-                    locators.add(builder.build());
-                builder = new ArchiveInstanceLocatorBuilder(
-                        device.getDeviceExtensionNotNull(StorageDeviceExtension.class),
-                        tuple, seriesAttrs);
+                if (locator != null)
+                    locators.add(locator);
+                locator = null;
             }
-            
-            builder.addFileRefs(tuple);
             instPk = nextInstPk;
+            locator = updateLocator(storageConf, locator, seriesAttrs, tuple);
         }
-        if (builder != null)
-            locators.add(builder.build());
+        if (locator != null)
+            locators.add(locator);
         return locators;
+    }
+
+    private static ArchiveInstanceLocator updateLocator(
+            StorageDeviceExtension storageConf,
+            ArchiveInstanceLocator locator,
+            Attributes seriesAttrs,
+            Tuple tuple) {
+        String cuid = tuple.get(QInstance.instance.sopClassUID);
+        String iuid = tuple.get(QInstance.instance.sopInstanceUID);
+        String retrieveAETs = tuple.get(QInstance.instance.retrieveAETs);
+        String externalRetrieveAET =
+                tuple.get(QInstance.instance.externalRetrieveAET);
+        String storageSystemGroupID = tuple.get(QLocation.location.storageSystemGroupID);
+        String storageSystemID = tuple.get(QLocation.location.storageSystemID);
+        String storagePath = tuple.get(QLocation.location.storagePath);
+        String entryName = tuple.get(QLocation.location.entryName);
+        String tsuid = tuple.get(QLocation.location.transferSyntaxUID);
+        String timeZone = tuple.get(QLocation.location.timeZone);
+        boolean withoutBulkData = tuple.get(QLocation.location.withoutBulkData);
+        StorageSystem storageSystem = storageConf.getStorageSystem(storageSystemGroupID, storageSystemID);
+        ArchiveInstanceLocator newLocator = new ArchiveInstanceLocator.Builder(cuid, iuid, tsuid)
+                .storageSystem(storageSystem)
+                .storagePath(storagePath)
+                .entryName(entryName)
+                .fileTimeZoneID(timeZone)
+                .retrieveAETs(retrieveAETs)
+                .externalRetrieveAET(externalRetrieveAET)
+                .withoutBulkdata(withoutBulkData)
+                .build();
+        if (locator == null) {
+            byte[] encodedInstanceAttrs =
+                    tuple.get(QueryBuilder.instanceAttributesBlob.encodedAttributes);
+            Attributes instanceAttrs = Utils.decodeAttributes(encodedInstanceAttrs);
+            newLocator.setObject(Utils.mergeAndNormalize(seriesAttrs, instanceAttrs));
+            return newLocator;
+        }
+        newLocator.setObject(locator.getObject());
+        return updateFallbackLocator(locator, newLocator);
+    }
+
+    private static ArchiveInstanceLocator updateFallbackLocator(
+            ArchiveInstanceLocator locator, ArchiveInstanceLocator newLocator) {
+        if (locator == null || newLocator.compareTo(locator) < 0) {
+            newLocator.setFallbackLocator(locator);
+            return newLocator;
+        }
+
+        locator.setFallbackLocator(
+                updateFallbackLocator(locator.getFallbackLocator(), newLocator));
+        return locator;
     }
 
     private void setParameters(Transformer tr, RetrieveContext retrieveContext) {

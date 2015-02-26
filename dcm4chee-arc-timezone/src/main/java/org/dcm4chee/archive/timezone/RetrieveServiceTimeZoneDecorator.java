@@ -124,11 +124,10 @@ public abstract class RetrieveServiceTimeZoneDecorator implements
             ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
             TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                     .getTimeZoneOfDevice();
-            TimeZone sourceTimeZone = TimeZone.getTimeZone(inst
-                    .getFileTimeZoneID());
-            if (sourceTimeZone != null) {
+            String fileTimeZoneID = inst.getFileTimeZoneID();
+            if (archiveTimeZone != null && fileTimeZoneID != null) {
                 LOG.debug("(TimeZone Support): In coerceFileBeforeMerge: Converting time in file attributes to archive time zone. \n");
-                attrs.setDefaultTimeZone(sourceTimeZone);
+                attrs.setDefaultTimeZone(TimeZone.getTimeZone(fileTimeZoneID));
                 attrs.setTimezone(archiveTimeZone);
             }
 
