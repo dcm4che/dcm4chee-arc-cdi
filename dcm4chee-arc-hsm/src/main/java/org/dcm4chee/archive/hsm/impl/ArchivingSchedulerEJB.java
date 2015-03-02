@@ -59,6 +59,7 @@ import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.storage.ContainerEntry;
 import org.dcm4chee.storage.archiver.service.ArchiverContext;
@@ -85,6 +86,7 @@ public class ArchivingSchedulerEJB {
     private static final String TRANSFER_SYNTAX = "transferSyntax";
     private static final String TIME_ZONE = "timeZone";
     private static final String DELETE_SOURCE = "deleteSource";
+    private static final String LOCATION = "location";
 
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
@@ -98,6 +100,8 @@ public class ArchivingSchedulerEJB {
     @Inject
     private ArchiverService archiverService;
 
+    @Inject
+    private FileMgmt fileMgt;
 
     public void onStoreInstance(StoreContext storeContext,
             ArchivingRule archivingRule) {
@@ -219,7 +223,8 @@ public class ArchivingSchedulerEJB {
                 .setProperty(OTHER_ATTRS_DIGEST, selected.getOtherAttsDigest())
                 .setProperty(FILE_SIZE, selected.getSize())
                 .setProperty(TRANSFER_SYNTAX, selected.getTransferSyntaxUID())
-                .setProperty(TIME_ZONE, selected.getTimeZone()).build();
+                .setProperty(TIME_ZONE, selected.getTimeZone())
+                .setProperty(LOCATION, selected).build();
 
                 entries.add(entry);
             }
@@ -242,13 +247,16 @@ public class ArchivingSchedulerEJB {
 
     public void onContainerEntriesStored(ArchiverContext ctx) {
         List<ContainerEntry> entries = ctx.getEntries();
+        List<Location> locations = new ArrayList<Location>(entries.size());
+        boolean notInContainer = ctx.isNotInContainer();
+        boolean deleteSrc = (Boolean)ctx.getProperty(DELETE_SOURCE);
         for (ContainerEntry entry : entries) {
             Instance inst = em.find(Instance.class, entry.getProperty(INSTANCE_PK));
             Location location = new Location.Builder()
             .storageSystemGroupID(ctx.getStorageSystemGroupID())
             .storageSystemID(ctx.getStorageSystemID())
-            .storagePath(ctx.getName())
-            .entryName(entry.getName())
+            .storagePath(notInContainer ? entry.getNotInContainerName() : ctx.getName())
+            .entryName(notInContainer ? null : entry.getName())
             .digest((String) entry.getProperty(DIGEST))
             .otherAttsDigest((String) entry.getProperty(OTHER_ATTRS_DIGEST))
             .size((Long) entry.getProperty(FILE_SIZE))
@@ -256,10 +264,22 @@ public class ArchivingSchedulerEJB {
             .timeZone((String) entry.getProperty(TIME_ZONE))
             .build();
             inst.getLocations().add(location);
+            if (deleteSrc) {
+                inst.getLocations().remove((Location) entry.getProperty(LOCATION));
+                locations.add((Location) entry.getProperty(LOCATION));
+            }
             em.persist(location);
             LOG.info("Create {}", location);
         }
         em.flush();
+        if (deleteSrc) {
+            LOG.debug("Schedule deletion of source Locations:{}",locations);
+            try {
+                fileMgt.scheduleDelete(locations, 0);
+            } catch (Exception x) {
+                LOG.error("Schedule deletion of source Locations failed! locations:{}", locations, x);
+            }
+        }
     }
 
 }

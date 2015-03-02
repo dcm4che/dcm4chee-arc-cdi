@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.hsm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,7 +66,6 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
-import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -79,6 +79,7 @@ import org.dcm4chee.archive.conf.ArchivingRules;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.ArchivingTask;
+import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Study;
@@ -86,13 +87,16 @@ import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.archiver.service.ArchiverContext;
 import org.dcm4chee.storage.archiver.service.ContainerEntriesStored;
 import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.Container;
+import org.dcm4chee.storage.conf.FileCache;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
+import org.dcm4chee.storage.service.RetrieveService;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -103,10 +107,10 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -114,9 +118,11 @@ import org.junit.runners.MethodSorters;
  */
 
 @RunWith(Arquillian.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class HsmArchiveIT {
 
+    private static final long DEFAULT_TASK_TIMEOUT = 1000l;
+    private static final long DEFAULT_WAIT_AFTER = 500;
+    
     private static final String TARGET_PATH = "target";
     private static final String FS_NEARLINE_BASE_PATH = TARGET_PATH+"/test/fs/nearline";
 
@@ -124,7 +130,9 @@ public class HsmArchiveIT {
 
     private static final String TEST_ONLINE = "TEST_ONLINE";
 
-    private static final String TEST_NEARLINE = "TEST_NEARLINE";
+    private static final String TEST_NEARLINE_FLAT = "TEST_NEARLINE_FLAT";
+    private static final String TEST_NEARLINE_ZIP = "TEST_NEARLINE_ZIP";
+    private static final String TEST_NEARLINE_TAR = "TEST_NEARLINE_TAR";
 
     private static final String SOURCE_AET = "HSM_TEST_SRC";
 
@@ -147,8 +155,10 @@ public class HsmArchiveIT {
     @Inject @ArchiveServiceReloaded
     private Event<StartStopReloadEvent> archiveServiceReloaded;
 
-    private static final Logger log = Logger
-            .getLogger(HsmArchiveIT.class);
+    @Inject
+    private RetrieveService retrieveService; 
+
+    private static final Logger LOG = LoggerFactory.getLogger(HsmArchiveIT.class);
 
     private static final String[] RESOURCES_STUDY_1 = {
         "testdata/study_1_series_1_1.xml",
@@ -167,6 +177,8 @@ public class HsmArchiveIT {
     private static final String[][] ALL_RESOURCES = {
         RESOURCES_STUDY_1,RESOURCES_STUDY_2};
 
+    private static final String FLAG_RESOURCE_KEEP = "flags/keep.flag";
+    
     private static final String BASE_UID = "1.2.40.0.13.1.1.99.777.";
 
     private static final String STUDY_INSTANCE_UID_1 = BASE_UID+"1";
@@ -178,6 +190,7 @@ public class HsmArchiveIT {
     private static final String FIRST_INSTANCE_STUDY_2 = SERIES_INSTANCE_UID_2_1+".1";
 
     private static ArrayList<String> finishedTargets = new ArrayList<String>();
+    private Object waitObject = new Object();
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -199,7 +212,10 @@ public class HsmArchiveIT {
                 war.addAsResource(ALL_RESOURCES[i][j]);
             }
         }
-
+        
+        if ( ! "false".equals(System.getProperty("keep", "false"))) {
+            war.addAsResource(FLAG_RESOURCE_KEEP);
+        }
         war.as(ZipExporter.class).exportTo(
                 new File("test.war"), true);
         return war;
@@ -235,14 +251,14 @@ public class HsmArchiveIT {
         ArchivingRule rule = new ArchivingRule();
         rule.setAeTitles(new String[]{SOURCE_AET});
         rule.setDelayAfterInstanceStored(1);
-        rule.setStorageSystemGroupIDs(TEST_NEARLINE+"1");
+        rule.setStorageSystemGroupIDs(TEST_NEARLINE_ZIP);
         ArchiveAEExtension arcAEExt = getConfiguredAEExtension(rule);
         store(RESOURCES_STUDY_2, arcAEExt);
         List<ArchivingTask> tasks = getArchivingTasks(SERIES_INSTANCE_UID_2_1);
         assertEquals("#ArchivingTasks for "+SERIES_INSTANCE_UID_2_1, 1, tasks.size());
         List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
         assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
-        waitForFinishedTasks(2, 2000l, 5);
+        waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkLocations(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2.length, 2);
     }
 
@@ -251,7 +267,7 @@ public class HsmArchiveIT {
         ArchivingRule rule = new ArchivingRule();
         rule.setAeTitles(new String[]{SOURCE_AET});
         rule.setDelayAfterInstanceStored(1);
-        rule.setStorageSystemGroupIDs(TEST_NEARLINE+"1");
+        rule.setStorageSystemGroupIDs(TEST_NEARLINE_ZIP);
         ArchiveAEExtension arcAEExt = getConfiguredAEExtension(rule);
         store(RESOURCES_STUDY_1, arcAEExt);
         List<ArchivingTask> tasks = getArchivingTasks(SERIES_INSTANCE_UID_1_1);
@@ -260,7 +276,7 @@ public class HsmArchiveIT {
         assertEquals("#ArchivingTasks for "+SERIES_INSTANCE_UID_1_2, 1, tasks.size());
         List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_1);
         assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_1, 1, locations.size());
-        waitForFinishedTasks(2, 4000l, 5);
+        waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, 2000);
         checkLocations(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1.length, 2);
     }
     
@@ -297,8 +313,8 @@ public class HsmArchiveIT {
         store(RESOURCES_STUDY_2, arcAEExt);
         List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
         assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
-        scheduler.copyStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE+"1");
-        waitForFinishedTasks(1, 2000l, 5);
+        scheduler.copyStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkLocations(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2.length, 2);
     }
 
@@ -308,11 +324,56 @@ public class HsmArchiveIT {
         store(RESOURCES_STUDY_1, arcAEExt);
         List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_1);
         assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_1, 1, locations.size());
-        scheduler.copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE+"1");
-        waitForFinishedTasks(2, 2000l, 5);
+        scheduler.copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT+3000, 5, DEFAULT_WAIT_AFTER+5000);
         checkLocations(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1.length, 2);
     }
-    
+
+    @Test
+    public void testMoveStudyOneSeries() throws Exception {
+        ArchiveAEExtension arcAEExt = getConfiguredAEExtension((ArchivingRule[])null);
+        store(RESOURCES_STUDY_2, arcAEExt);
+        List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
+        assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
+        scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
+        checkLocations(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2.length, 1);
+    }
+
+    @Test
+    public void testMoveStudyTwoSeries() throws Exception {
+        ArchiveAEExtension arcAEExt = getConfiguredAEExtension((ArchivingRule[])null);
+        store(RESOURCES_STUDY_1, arcAEExt);
+        List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_1);
+        assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_1, 1, locations.size());
+        scheduler.moveStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
+        checkLocations(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1.length, 1);
+    }
+
+    @Test
+    public void testMoveStudyOneSeriesToTar() throws Exception {
+        ArchiveAEExtension arcAEExt = getConfiguredAEExtension((ArchivingRule[])null);
+        store(RESOURCES_STUDY_2, arcAEExt);
+        List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
+        assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
+        scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_TAR);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
+        checkLocations(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2.length, 1);
+    }
+
+    @Test
+    public void testCopyStudyOneSeriesToFlat() throws Exception {
+        ArchiveAEExtension arcAEExt = getConfiguredAEExtension((ArchivingRule[])null);
+        store(RESOURCES_STUDY_2, arcAEExt);
+        List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
+        assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
+        scheduler.copyStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_FLAT);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
+        checkLocations(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2.length, 2);
+    }
+
+
     @SuppressWarnings("unchecked")
     private List<Location> getLocations(String sopInstanceUID) {
         Query query = em.createQuery("SELECT i.locations FROM Instance"
@@ -322,16 +383,31 @@ public class HsmArchiveIT {
     }
     
     private void checkLocations(String studyInstanceUID, int nrOfInstances, int nrOfLocationsPerInstance) {
-        Query query = em.createQuery("SELECT i.sopInstanceUID, count(l) FROM Instance i LEFT JOIN i.series.study st LEFT JOIN i.locations l"
-                + " where st.studyInstanceUID = ?1 GROUP BY i.sopInstanceUID");
+        Query query = em.createQuery("SELECT DISTINCT i FROM Instance i LEFT JOIN i.series.study st LEFT JOIN FETCH i.locations l"
+                + " where st.studyInstanceUID = ?1", Instance.class);
         query.setParameter(1, studyInstanceUID);
         @SuppressWarnings("unchecked")
-        List<Object[]> result = query.getResultList();
-        log.info("result.size:"+result.size());
+        List<Instance> result = query.getResultList();
+        LOG.info("result.size:"+result.size());
         assertEquals("Number of Instances of study "+studyInstanceUID, nrOfInstances, result.size());
-        for ( Object[] oa : result) {
-            log.info("i.pk:"+oa[0]+"  count(l):"+oa[1]);
-            assertEquals("Number of Locations for instance "+oa[0], (long)nrOfLocationsPerInstance, (long)oa[1]);
+        for ( Instance inst : result) {
+            assertEquals("Number of Locations for instance "+inst, nrOfLocationsPerInstance, inst.getLocations().size());
+            LOG.info("Instance.locations:{}",inst.getLocations());
+            for (Location ref : inst.getLocations()) {
+                RetrieveContext ctx = retrieveService.createRetrieveContext(this.getStorageSystem(ref));
+                try {
+                    Path file = ref.getEntryName() == null ? retrieveService.getFile(ctx, ref.getStoragePath()) :
+                        retrieveService.getFile(ctx, ref.getStoragePath(), ref.getEntryName());
+                    LOG.info("Location file:{}", file);
+                    if (!Files.exists(file)) {
+                        LOG.info("Location file does not exist! file:{}", file);
+                        fail("File "+file+" for location "+ref+" do not exist!");
+                    }
+                } catch (Exception e) {
+                    LOG.error("getFile for location {} failed!", ref, e);
+                    fail("getFile for location "+ref+" failed!");
+                }
+            }
         }
     }
 
@@ -346,7 +422,7 @@ public class HsmArchiveIT {
     private boolean store(String[] dicomResources, ArchiveAEExtension arcAEExt) throws SecurityException, IllegalStateException, NotSupportedException, SystemException, RollbackException, HeuristicMixedException, HeuristicRollbackException {
         for (String s : dicomResources) {
             if (!store(s, arcAEExt)) {
-                log.error("Store of dicom resource failed:"+s);
+                LOG.error("Store of dicom resource failed:"+s);
                 return false;
             }
         }
@@ -370,11 +446,11 @@ public class HsmArchiveIT {
             fmi.setString(Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2");
             storeService.writeSpoolFile(context, fmi, load(dicomResource));
             storeService.parseSpoolFile(context);
-            log.info("#### call storeService.store()!");
+            LOG.info("#### call storeService.store()!");
             storeService.store(context);
-            log.info("#### call storeService.store() finished!");
+            LOG.info("#### call storeService.store() finished!");
         } catch(Exception e) {
-            log.error("store failed!", e);
+            LOG.error("store failed!", e);
             return false;
         } finally {
             utx.commit();
@@ -383,12 +459,12 @@ public class HsmArchiveIT {
     }
 
     public void onContainerEntriesStored(@Observes @ContainerEntriesStored ArchiverContext archiverContext) {
-        log.info("###### onContainerEntriesStored for "+archiverContext.getStorageSystemGroupID());
+        LOG.info("###### onContainerEntriesStored for "+archiverContext.getStorageSystemGroupID());
         synchronized (finishedTargets) {
             finishedTargets.add(archiverContext.getStorageSystemGroupID()+":"+archiverContext.getName());
             finishedTargets.notifyAll();
         }
-        log.info("after notifyAll");
+        LOG.info("after notifyAll");
     }
 
     private Attributes load(String name) throws Exception {
@@ -413,10 +489,11 @@ public class HsmArchiveIT {
         storageExtension.addStorageSystemGroup(getOnlineStorageGroup() );
         Container zipContainer = new Container();
         zipContainer.setProviderName("org.dcm4chee.storage.zip");
-        storageExtension.addStorageSystemGroup(getNearlineStorageGroup("1", zipContainer));
         Container tarContainer = new Container();
         tarContainer.setProviderName("org.dcm4chee.storage.tar");
-        storageExtension.addStorageSystemGroup(getNearlineStorageGroup("2", zipContainer));
+        storageExtension.addStorageSystemGroup(getNearlineStorageGroup(TEST_NEARLINE_FLAT, null));
+        storageExtension.addStorageSystemGroup(getNearlineStorageGroup(TEST_NEARLINE_ZIP, zipContainer));
+        storageExtension.addStorageSystemGroup(getNearlineStorageGroup(TEST_NEARLINE_TAR, tarContainer));
         ArchiveAEExtension aeExtension = device.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class);
         aeExtension.setStorageSystemGroupID(TEST_ONLINE);
         device.getDeviceExtension(ArchiveDeviceExtension.class).setArchivingSchedulerPollInterval(3);
@@ -436,17 +513,24 @@ public class HsmArchiveIT {
         testOnlineGroup.activate(onlineFS, true);
         return testOnlineGroup;
     }
-    private StorageSystemGroup getNearlineStorageGroup(String postfix, Container container) {
+    private StorageSystemGroup getNearlineStorageGroup(String groupID, Container container) {
         StorageSystemGroup grp = new StorageSystemGroup();
-        grp.setGroupID(TEST_NEARLINE+postfix);
+        grp.setGroupID(groupID);
         grp.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         StorageSystem fs = new StorageSystem();
-        fs.setStorageSystemID("test_nearline"+postfix);
+        fs.setStorageSystemID(groupID.toLowerCase()+"1");
         fs.setAvailability(Availability.NEARLINE);
-        fs.setStorageSystemPath(Paths.get(FS_NEARLINE_BASE_PATH,"/fs_"+postfix).toAbsolutePath().toString());
+        fs.setStorageSystemPath(Paths.get(FS_NEARLINE_BASE_PATH,"/fs_"+groupID.toLowerCase()+"1").toAbsolutePath().toString());
         fs.setProviderName("org.dcm4chee.storage.filesystem");
         grp.addStorageSystem(fs);
-        grp.setContainer(container);
+        if (container != null) {
+            grp.setContainer(container);
+            FileCache fileCache = new FileCache();
+            fileCache.setProviderName("org.dcm4chee.storage.filecache");
+            fileCache.setFileCacheRootDirectory("target/filecache");
+            fileCache.setJournalRootDirectory("target/journaldir");
+            grp.setFileCache(fileCache);
+        }
         grp.activate(fs, true);
         return grp;
     }
@@ -454,7 +538,7 @@ public class HsmArchiveIT {
     
     @After
     public void after() throws Exception {
-        if (!Boolean.getBoolean("keep")) {
+        if (Thread.currentThread().getContextClassLoader().getResource(FLAG_RESOURCE_KEEP) == null) {
             clearDB();
             clearFS();
         }
@@ -469,12 +553,12 @@ public class HsmArchiveIT {
         HashSet<Patient> patients = new HashSet<Patient>();
         for (Study study : studies) {
             em.remove(study);
-            log.info("Study removed:"+study);
+            LOG.info("Study removed:"+study);
             patients.add(study.getPatient());
         }
         for (Patient p : patients) {
             em.remove(p);
-            log.info("Patient removed:"+p);
+            LOG.info("Patient removed:"+p);
         }
         //remove ArchingTasks
         query = em.createQuery("SELECT t from ArchivingTask t where t.seriesInstanceUID like ?1");
@@ -483,19 +567,19 @@ public class HsmArchiveIT {
         List<ArchivingTask> tasks = query.getResultList();
         for (ArchivingTask task : tasks) {
             em.remove(task);
-            log.info("ArchivingTask removed:"+task);
+            LOG.info("ArchivingTask removed:"+task);
         }
         //remove Locations
         query = em.createQuery("DELETE from Location l where l.storageSystemGroupID like ?1");
         query.setParameter(1, "TEST_%");
         int x = query.executeUpdate();
-        log.info(x+" Locations removed!");
+        LOG.info(x+" Locations removed!");
         utx.commit();
     }
     
     private void clearFS() {
-        log.info(deleteFiles(Paths.get(FS_ONLINE_PATH))+" Files deleted from "+FS_ONLINE_PATH);
-        log.info(deleteFiles(Paths.get(FS_NEARLINE_BASE_PATH))+" Files deleted from "+FS_NEARLINE_BASE_PATH);
+        LOG.info(deleteFiles(Paths.get(FS_ONLINE_PATH))+" Files deleted from "+FS_ONLINE_PATH);
+        LOG.info(deleteFiles(Paths.get(FS_NEARLINE_BASE_PATH))+" Files deleted from "+FS_NEARLINE_BASE_PATH);
         deleteFiles(Paths.get(TARGET_PATH));
     }
     private int deleteFiles(Path path) {
@@ -517,25 +601,34 @@ public class HsmArchiveIT {
                     }
                  });
             } catch (IOException x) {
-                log.error("Failed to delete directory "+path, x);
+                LOG.error("Failed to delete directory "+path, x);
             }
         }
         return count[0];
     }
 
-    private void waitForFinishedTasks(int numberOfFinishedTasks, long waitTime, int maxTries) throws InterruptedException {
-        log.info("############# wait for "+numberOfFinishedTasks+" finished tasks!");
+    private void waitForFinishedTasks(int numberOfFinishedTasks, long waitTime, int maxTries, long waitAfter) throws InterruptedException {
+        LOG.info("############# wait for "+numberOfFinishedTasks+" finished tasks!");
         synchronized (finishedTargets) {
             finishedTargets.clear();
             int tries = 0;
             while (finishedTargets.size() < numberOfFinishedTasks && tries++ < maxTries) {
                 finishedTargets.wait(waitTime);
-                log.info("####### Copies on "+finishedTargets);
+                LOG.info("####### Copies on "+finishedTargets);
             }
-            log.info("########## wait additional "+waitTime+"ms!");
-            finishedTargets.wait(waitTime);
-            log.info("################ wait DONE!");
         }
+        if (waitAfter > 0) {
+            LOG.info("########## wait additional "+waitAfter+"ms after finished tasks!");
+            synchronized (waitObject) {
+                waitObject.wait(waitAfter);
+            }
+        }
+        LOG.info("################ wait DONE!");
+    }
+
+    public StorageSystem getStorageSystem(Location ref) {
+        StorageDeviceExtension devExt = device.getDeviceExtension(StorageDeviceExtension.class);
+        return devExt.getStorageSystem(ref.getStorageSystemGroupID(), ref.getStorageSystemID());
     }
 
 }
