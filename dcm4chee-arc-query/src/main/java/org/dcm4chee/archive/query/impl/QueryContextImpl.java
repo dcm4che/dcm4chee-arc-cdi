@@ -186,6 +186,11 @@ public class QueryContextImpl implements QueryContext {
 
     @Override
     public Device getRemoteDevice() {
-        return this.remoteAE!=null?this.remoteAE.getDevice():null;
+        return this.remoteAE != null ? this.remoteAE.getDevice() : null;
+    }
+
+    @Override
+    public TimeZone getRemoteDeviceTimeZone() {
+       return this.remoteAE != null? this.remoteAE.getDevice().getTimeZoneOfDevice() : null;
     }
 }

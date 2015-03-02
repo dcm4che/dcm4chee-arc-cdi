@@ -42,6 +42,8 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 
+import java.util.TimeZone;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
@@ -67,4 +69,6 @@ public interface RetrieveContext {
     ApplicationEntity getDestinationAE();
 
     void setDestinationAE(ApplicationEntity destinationAE);
+
+    TimeZone getDestinationTimeZone();
 }

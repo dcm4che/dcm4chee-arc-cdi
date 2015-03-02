@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.timezone;
 
+import java.util.Date;
 import java.util.TimeZone;
 
 import javax.decorator.Decorator;
@@ -59,7 +60,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- * 
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ *
  */
 @Decorator
 public abstract class RetrieveServiceTimeZoneDecorator implements
@@ -73,66 +75,71 @@ public abstract class RetrieveServiceTimeZoneDecorator implements
     RetrieveService retrieveService;
 
     @Override
-    public void coerceRetrievedObject(RetrieveContext retrieveContext,
-            String remoteAET, Attributes attrs) throws DicomServiceException {
-        ArchiveAEExtension aeExt = retrieveContext.getArchiveAEExtension();
-        ApplicationEntity destAE = retrieveContext.getDestinationAE();
-        TimeZone sourceTimeZone=null;
-        try {
-            retrieveService.coerceRetrievedObject(retrieveContext, remoteAET,
-                    attrs);
-            TimeZone archiveTimeZone = aeExt.getApplicationEntity().getDevice()
-                    .getTimeZoneOfDevice();
-            if (archiveTimeZone != null) {
-                if(destAE!=null){
-                sourceTimeZone = destAE.getDevice()
-                        .getTimeZoneOfDevice();
-                }
-                attrs.setDefaultTimeZone(archiveTimeZone);
-                LOG.debug("(TimeZone Support): In coerceRetrievedObject: Setting default time zone to archive. \n");
-                if (sourceTimeZone != null) {
-                    attrs.setTimezone(sourceTimeZone);
-                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Converting time in blob to destination time zone. \n");
-                }
-                if (!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
-                    LOG.debug("(TimeZone Support): In coerceRetrievedObject: Adding TimezoneOffsetFromUTC with: \n");
-                    if (sourceTimeZone != null) {
-                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
-                                DateUtils.formatTimezoneOffsetFromUTC(
-                                        sourceTimeZone,
-                                        attrs.getDate(Tag.StudyDateAndTime)));
-                        LOG.debug("(TimeZone Support): destination device as value.");
-                    } else {
-                        attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH,
-                                DateUtils.formatTimezoneOffsetFromUTC(
-                                        archiveTimeZone,
-                                        attrs.getDate(Tag.StudyDateAndTime)));
-                        LOG.debug("(TimeZone Support): archive device as value.");
-                    }
-                }
-            }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
-
-    @Override
-    public void coerceFileBeforeMerge(ArchiveInstanceLocator inst,
-            RetrieveContext retrieveContext, String remoteAET, Attributes attrs)
+    public void coerceFileBeforeMerge(ArchiveInstanceLocator inst, RetrieveContext context,
+                                      String remoteAET, Attributes attrs)
             throws DicomServiceException {
+        retrieveService.coerceRetrievedObject(context, remoteAET, attrs);
+        ArchiveAEExtension arcAE = context.getArchiveAEExtension();
+        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
+        if (archiveTimeZone == null)    // no Timezone support configured
+            return;
+
+        String fileTimeZoneID = inst.getFileTimeZoneID();
+        if (fileTimeZoneID == null) {
+            LOG.debug("Missing Timezone information for persisted object");
+            return;
+        }
+
         try {
-            ArchiveAEExtension arcAE = retrieveContext.getArchiveAEExtension();
-            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                    .getTimeZoneOfDevice();
-            String fileTimeZoneID = inst.getFileTimeZoneID();
-            if (archiveTimeZone != null && fileTimeZoneID != null) {
-                LOG.debug("(TimeZone Support): In coerceFileBeforeMerge: Converting time in file attributes to archive time zone. \n");
-                attrs.setDefaultTimeZone(TimeZone.getTimeZone(fileTimeZoneID));
+            TimeZone timeZone = TimeZone.getTimeZone(fileTimeZoneID);
+            if (!timeZone.hasSameRules(archiveTimeZone)) {
+                LOG.debug("Coerce persisted object attributes from Timezone {} to Archive Timezone {}",
+                        timeZone.getID(), archiveTimeZone.getID());
+                attrs.setDefaultTimeZone(timeZone);
                 attrs.setTimezone(archiveTimeZone);
             }
 
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
+    }
+
+    @Override
+    public void coerceRetrievedObject(RetrieveContext context,
+            String remoteAET, Attributes attrs) throws DicomServiceException {
+        retrieveService.coerceRetrievedObject(context, remoteAET, attrs);
+
+        ArchiveAEExtension arcAE = context.getArchiveAEExtension();
+        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
+        if (archiveTimeZone == null)    // no Timezone support configured
+            return;
+
+        try {
+            TimeZone timeZone = context.getDestinationTimeZone();
+            if (timeZone == null) {
+                LOG.debug("{}: No Timezone configured for destination - assume Archive Timezone: {}",
+                        remoteAET, archiveTimeZone.getID());
+                timeZone = archiveTimeZone;
+            }
+            if (!timeZone.hasSameRules(archiveTimeZone)) {
+                LOG.debug("{}: Coerce attributes from Archive Timezone {} to destination Timezone {}",
+                        remoteAET, archiveTimeZone.getID(), timeZone.getID());
+                attrs.setDefaultTimeZone(archiveTimeZone);
+                attrs.setTimezone(timeZone);
+            }
+            if (!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
+                String offsetFromUTC = DateUtils.formatTimezoneOffsetFromUTC(timeZone, dateOf(attrs));
+                attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, offsetFromUTC);
+                LOG.debug("{}: Supplement attributes with Timezone Offset From UTC {}",
+                        remoteAET, offsetFromUTC);
+            }
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.UnableToProcess, e);
+        }
+    }
+
+    private Date dateOf(Attributes attrs) {
+        Date date = attrs.getDate(Tag.ContentDateAndTime);
+        return date != null ? date : attrs.getDate(Tag.StudyDateAndTime);
     }
 }

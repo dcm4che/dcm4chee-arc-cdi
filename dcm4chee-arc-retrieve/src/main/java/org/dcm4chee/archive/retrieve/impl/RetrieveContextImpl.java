@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.retrieve.impl;
 
 import java.util.HashMap;
+import java.util.TimeZone;
 
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.ApplicationEntity;
@@ -95,6 +96,11 @@ public class RetrieveContextImpl implements RetrieveContext {
     @Override
     public void setDestinationAE(ApplicationEntity destinationAE) {
         this.destinationAE = destinationAE;
+    }
+
+    @Override
+    public TimeZone getDestinationTimeZone() {
+        return destinationAE != null ? destinationAE.getDevice().getTimeZoneOfDevice() : null;
     }
 
     @Override

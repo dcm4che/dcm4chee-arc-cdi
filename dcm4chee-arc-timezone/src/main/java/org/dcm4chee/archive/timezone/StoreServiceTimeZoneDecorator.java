@@ -60,6 +60,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  * 
  */
 @Decorator
@@ -73,54 +74,33 @@ public abstract class StoreServiceTimeZoneDecorator implements StoreService {
     StoreService storeService;
 
     @Override
-    public void coerceAttributes(StoreContext context)
-            throws DicomServiceException {
+    public void coerceAttributes(StoreContext context) throws DicomServiceException {
         storeService.coerceAttributes(context);
         StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        Attributes attrs = context.getAttributes();
-        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                .getTimeZoneOfDevice();
-        TimeZone remoteAETimeZone = null;
-        try {
-            // Time zone store adjustments
-            if (archiveTimeZone != null) {
-                    remoteAETimeZone = session.getSourceDevice()!=null?session.getSourceDevice().getTimeZoneOfDevice():null;
-                    if(remoteAETimeZone!=null){
-                    LOG.debug("(TimeZone Support):Loaded Device for remote Application entity AETitle: "
-                            + session.getRemoteAET()
-                            + " and device name: "
-                            + session.getSourceDeviceName());
-                    LOG.debug("(TimeZone Support):-with Time zone: "
-                            + remoteAETimeZone
-                                    .getID());
-                    }
-                
-                if (remoteAETimeZone != null)
-                    context.setSourceTimeZone(remoteAETimeZone);
-                else
-                    context.setSourceTimeZone(archiveTimeZone);
+        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
+        if (archiveTimeZone == null)    // no Timezone support configured
+            return;
 
-                if (attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
-                    LOG.debug("(TimeZone Support):Found TimezoneOffsetFromUTC Attribute. \n "
-                            + "(TimeZone Support): With value: "
-                            + attrs.getString(Tag.TimezoneOffsetFromUTC)
-                            + "(TimeZone Support): Setting sourceTimeZoneCache \n"
-                            + "(TimeZone Support): Setting time zone to archive time.");
-                    context.setSourceTimeZone(attrs.getTimeZone());
-                    attrs.setTimezone(archiveTimeZone);
-                } else if (context.getSourceTimeZone() == null) {
-                    LOG.debug("(TimeZone Support): SourceTimeZoneCache is null \n "
-                            + "(TimeZone Support): No device time zone"
-                            + "(TimeZone Support): No TimezoneOffsetFromUTC Attribute."
-                            + "Using archive time zone");
-                    context.setSourceTimeZone(archiveTimeZone);
-                }
-                LOG.debug("(TimeZone Support): converting time zone from source time zone \n "
-                        + context.getSourceTimeZone().getID());
-                attrs.setDefaultTimeZone(context.getSourceTimeZone());
-                LOG.debug("(TimeZone Support): converting time zone to archive time zone \n "
-                        + archiveTimeZone.getID());
+        Attributes attrs = context.getAttributes();
+        if (!attrs.containsTimezoneOffsetFromUTC()) {
+            TimeZone remoteAETimeZone = session.getSourceDeviceTimeZone();
+            if (remoteAETimeZone != null) {
+                LOG.debug("{}: No Timezone Offset in received object received - use configured Timezone: {}",
+                        session, remoteAETimeZone.getID());
+                attrs.setDefaultTimeZone(remoteAETimeZone);
+            } else {
+                LOG.debug("{}: No Timezone configured for remote AE - assume Archive Timezone: {}",
+                        session, archiveTimeZone.getID());
+                attrs.setDefaultTimeZone(archiveTimeZone);
+            }
+        }
+        try {
+            TimeZone timeZone = attrs.getTimeZone();
+            context.setSourceTimeZone(timeZone);
+            if (!timeZone.hasSameRules(archiveTimeZone)) {
+                LOG.debug("{}: Coerce attributes from Timezone: {} to Archive Timezone: {}",
+                        session, timeZone.getID(), archiveTimeZone.getID());
                 attrs.setTimezone(archiveTimeZone);
             }
         } catch (Exception e) {

@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.TimeZone;
 
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
@@ -211,7 +212,12 @@ public class StoreSessionImpl implements StoreSession {
 
     @Override
     public String getSourceDeviceName() {
-        return getSourceDevice()!= null ? getSourceDevice().getDeviceName() : null;
+        return getSourceDevice() !=  null ? getSourceDevice().getDeviceName() : null;
+    }
+
+    @Override
+    public TimeZone getSourceDeviceTimeZone() {
+        return getSourceDevice() != null ? getSourceDevice().getTimeZoneOfDevice() : null;
     }
 }
 

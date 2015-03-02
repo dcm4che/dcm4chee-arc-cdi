@@ -94,4 +94,6 @@ public interface QueryContext {
     void setRemoteApplicationEntity(ApplicationEntity ae);
     
     Device getRemoteDevice();
+
+    TimeZone getRemoteDeviceTimeZone();
 }
