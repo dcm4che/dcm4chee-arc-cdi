@@ -51,14 +51,15 @@ public interface FileMgmt {
 
     //deletes a file and returns true if deleted otherwise returns false
     boolean doDelete(Location ref);
+    int doDelete(Collection<Long> refPks);
 
     //send a file delete message to the queue
     void scheduleDelete(Collection<Location> refs, int delay) throws Exception;
+    void scheduleDeleteByPks(Collection<Long> refPks, int delay) throws Exception;
 
     //sets file-ref status to delete failed
     void failDelete(Location ref);
 
-    Location reattachRef(Location ref);
-
+    Location getLocation(Long pk);
 
 }

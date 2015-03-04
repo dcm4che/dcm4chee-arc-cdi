@@ -39,7 +39,11 @@
 package org.dcm4chee.archive.filemgmt;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 
 import javax.annotation.Resource;
 import javax.ejb.Stateless;
@@ -53,6 +57,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.entity.Location;
@@ -90,13 +95,20 @@ public class FileMgmtEJB implements FileMgmt{
 
     @Override
     public void scheduleDelete(Collection<Location> refs, int delay) throws Exception {
-    for(Location ref: refs)
+        ArrayList<Long> refPks = new ArrayList<Long>(refs.size());
+        for (Location ref : refs) 
+            refPks.add(ref.getPk());
+        scheduleDeleteByPks(refPks, delay);
+    }
+    
+    @Override
+    public void scheduleDeleteByPks(Collection<Long> refPks, int delay) throws Exception {
         try {
-        Connection conn = connFactory.createConnection();
+            Connection conn = connFactory.createConnection();
             try {
                 Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 MessageProducer producer = session.createProducer(deleteQueue);
-                ObjectMessage msg = session.createObjectMessage(ref);
+                ObjectMessage msg = session.createObjectMessage((Serializable) refPks);
                 if (delay > 0)
                     msg.setLongProperty("_HQ_SCHED_DELIVERY",
                             System.currentTimeMillis() + delay);
@@ -144,11 +156,75 @@ public class FileMgmtEJB implements FileMgmt{
         removeDeadFileRef(ref);
         return true;
     }
+    
+    @Override
+    public int doDelete(Collection<Long> refPks) {
+        LOG.debug("Called doDelete refPks:{}", refPks);
+        if (refPks == null || refPks.isEmpty())
+            return 0;
+        int count = 0;
+        Query query = em.createQuery("SELECT l FROM Location l WHERE l.pk IN :pks", Location.class);
+        query.setParameter("pks", refPks);
+        List<Location> result = query.getResultList();
+        HashMap<String, Location> containerLocations = new HashMap<String, Location>();
+        Location ref;
+        count += result.size();
+        for (int i = 0, len = result.size() ; i < len ; i++) {
+            ref = result.get(i);
+            if (ref.getEntryName() == null) {
+                LOG.debug("Location is not in a container, we can delete stored object and entity!");
+                if (!doDelete(ref)) {
+                    LOG.warn("Deletion of {} failed! Mark Location as DELETION_FAILED", ref);
+                    failDelete(ref);
+                    count--;
+                }
+            } else {
+                LOG.debug("Location is in a container, we can not delete the container at this moment!");
+                String key = ref.getStorageSystemID()+"_&_"+ref.getStoragePath();
+                if (containerLocations.containsKey(key)) {
+                    removeDeadFileRef(ref);
+                } else {
+                    containerLocations.put(key, ref);
+                    count--;
+                }
+            }
+        }
+        if (containerLocations.size() > 0) {
+            count += deleteContainer(containerLocations);
+        }
+        return count;
+    }
+
+    private int deleteContainer(HashMap<String, Location> containerLocations) {
+        List<Location> result;
+        int count = 0;
+        Query queryRemaining = em.createQuery("SELECT l from Location l WHERE l.storageSystemGroupID = :storageSystemGroupID"+
+                                        " AND l.storageSystemID = :storageID AND l.storagePath = :storagePath", Location.class);
+        for (Location l : containerLocations.values()) {
+            queryRemaining.setParameter("storageSystemGroupID", l.getStorageSystemGroupID());
+            queryRemaining.setParameter("storageID", l.getStorageSystemID());
+            queryRemaining.setParameter("storagePath", l.getStoragePath());
+            result = queryRemaining.getResultList();
+            LOG.debug("Remaining Locations for container: {}", result);
+            if (result.size() == 1 && result.get(0).getPk() == l.getPk()) {
+                LOG.debug("Only one Location (from the delete request) reference the container {}. We can delete the container", queryRemaining.getParameters());
+                if (doDelete(l)) {
+                    count++;
+                } else {
+                    LOG.warn("Deletion of {} failed! mark Location as DELETION_FAILED", l);
+                    failDelete(l);
+                }
+            } else {
+                LOG.debug("Container is still referenced by other Locations. Deletion skipped!");
+                removeDeadFileRef(l);
+                count++;
+            }
+        }
+        return count;
+    }
 
     @Override
-    public Location reattachRef(Location ref) {
-        long pk = ref.getPk();
-        Location reattached =  em.find(Location.class, pk);
-        return reattached;
+    public Location getLocation(Long pk) {
+        return em.find(Location.class, pk);
     }
 }

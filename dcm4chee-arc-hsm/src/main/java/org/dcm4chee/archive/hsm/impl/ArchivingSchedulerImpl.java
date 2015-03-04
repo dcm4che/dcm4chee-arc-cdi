@@ -99,8 +99,8 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
                 storeSession.getRemoteAET(),
                 storeContext.getAttributes());
 
-         if (archivingRule != null)
-             ejb.onStoreInstance(storeContext, archivingRule);
+        if (archivingRule != null)
+            ejb.onStoreInstance(storeContext, archivingRule);
     }
 
     public void onContainerEntriesStored(
@@ -110,17 +110,17 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
 
     @Override
     public int scheduleReadyArchivingTasks() {
-         int count = 0;
-         for (;;) {
-             try {
+        int count = 0;
+        for (;;) {
+            try {
                 if (scheduleNextArchivingTask() == null)
-                     break;
+                    break;
                 count++;
             } catch (IOException e) {
                 LOG.error("Failed to schedule archiving task", e);
             }
-         }
-         return count;
+        }
+        return count;
     }
 
     @Override
@@ -176,14 +176,14 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
         }
     }
 
-	@Override
-	public void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException {
-		ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, false);
-		
-	}
+    @Override
+    public void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException {
+        ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, false);
 
-	@Override
-	public void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException {
-		ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, true);
-	}
+    }
+
+    @Override
+    public void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException {
+        ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, true);
+    }
 }

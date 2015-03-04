@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.filemgmt;
 
+import java.util.Collection;
+
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
@@ -47,7 +49,6 @@ import javax.jms.ObjectMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcm4chee.archive.entity.Location;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -72,17 +73,12 @@ public class FileMgmtMDB implements MessageListener{
     public void onMessage(Message message) {
         try {
             //TODO - AUDIT here using provided properties
-            Location refAttached = fileManager.reattachRef((Location)((ObjectMessage) message).getObject());
-            if(fileManager.doDelete(refAttached)){
-                LOG.info("Delete {} ",refAttached.getStoragePath());
-            }
-            else
-            {
-                fileManager.failDelete(refAttached);
-            }
+            @SuppressWarnings("unchecked")
+            Collection<Long> refPks = (Collection<Long>) ((ObjectMessage) message).getObject();
+            LOG.info("{} Locations removed!",fileManager.doDelete(refPks));
         } catch (Throwable th) {
             LOG.warn("Failed to process " + message, th);
-        }   
+        } 
     }
     
 

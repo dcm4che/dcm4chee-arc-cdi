@@ -41,6 +41,7 @@ package org.dcm4chee.archive.hsm.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.ejb.Stateless;
@@ -218,6 +219,7 @@ public class ArchivingSchedulerEJB {
                 .setSourceStorageSystemGroupID(selected.getStorageSystemGroupID())
                 .setSourceStorageSystemID(selected.getStorageSystemID())
                 .setSourceName(selected.getStoragePath())
+                .setSourceEntryName(selected.getEntryName())
                 .setProperty(INSTANCE_PK, inst.getPk())
                 .setProperty(DIGEST, selected.getDigest())
                 .setProperty(OTHER_ATTRS_DIGEST, selected.getOtherAttsDigest())
@@ -265,7 +267,13 @@ public class ArchivingSchedulerEJB {
             .build();
             inst.getLocations().add(location);
             if (deleteSrc) {
-                inst.getLocations().remove((Location) entry.getProperty(LOCATION));
+                long srcLocationPk = ((Location) entry.getProperty(LOCATION)).getPk();
+                for (Iterator<Location> it = inst.getLocations().iterator() ; it.hasNext() ;) {
+                    if (it.next().getPk() == srcLocationPk) {
+                        it.remove();
+                        break;
+                    }
+                }
                 locations.add((Location) entry.getProperty(LOCATION));
             }
             em.persist(location);
