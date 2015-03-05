@@ -231,10 +231,14 @@ public class ArchivingSchedulerEJB {
                 entries.add(entry);
             }
         }
-        ArchiverContext ctx = archiverService.createContext(targetStorageSystemGroupID, targetName);
-        ctx.setEntries(entries);
-        ctx.setProperty(DELETE_SOURCE, new Boolean(deleteSource));
-        archiverService.scheduleStore(ctx);
+        if (entries.size() > 0) {
+            ArchiverContext ctx = archiverService.createContext(targetStorageSystemGroupID, targetName);
+            ctx.setEntries(entries);
+            ctx.setProperty(DELETE_SOURCE, new Boolean(deleteSource));
+            archiverService.scheduleStore(ctx);
+        } else {
+            LOG.info("No source Locations found! Skip copy/move of {} instances from {} to {}.", insts.size(), sourceGroupID, targetStorageSystemGroupID);
+        }
     }
 
     private StorageDeviceExtension storageDeviceExtension() {

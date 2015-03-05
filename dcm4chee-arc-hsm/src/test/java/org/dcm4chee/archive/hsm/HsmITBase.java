@@ -281,13 +281,14 @@ public class HsmITBase {
     
     protected Set<String> checkLocationsOfInstances(List<Instance> instances, int nrOfLocationsPerInstance) {
         HashSet<String> groupIDs = new HashSet<String>(nrOfLocationsPerInstance);
+        if (instances.size() > 0)
+            clearFileCache(instances.get(0).getLocations());
         for ( Instance inst : instances) {
             assertEquals("Number of Locations for instance "+inst, nrOfLocationsPerInstance, inst.getLocations().size());
             LOG.info("Instance.locations:{}",inst.getLocations());
             for (Location ref : inst.getLocations()) {
                 groupIDs.add(ref.getStorageSystemGroupID());
                 RetrieveContext ctx = retrieveService.createRetrieveContext(this.getStorageSystem(ref));
-                clearFileCache(ctx);
                 try {
                     Path file = ref.getEntryName() == null ? retrieveService.getFile(ctx, ref.getStoragePath()) :
                         retrieveService.getFile(ctx, ref.getStoragePath(), ref.getEntryName());
@@ -318,13 +319,12 @@ public class HsmITBase {
     }
 
     protected void checkLocationsDeleted(Collection<Location> locations) {
+        clearFileCache(locations);
         for (Location ref : locations) {
             RetrieveContext ctx = retrieveService.createRetrieveContext(this.getStorageSystem(ref));
-            clearFileCache(ctx);
             try {
                 Path file = ref.getEntryName() == null ? retrieveService.getFile(ctx, ref.getStoragePath()) :
                     retrieveService.getFile(ctx, ref.getStoragePath(), ref.getEntryName());
-                LOG.info("Location file:{}", file);
                 if (Files.exists(file)) {
                     LOG.info("Location file still exists! file:{}", file);
                     fail("File "+file+" for location "+ref+" is not deleted! file still exists!");
@@ -337,13 +337,17 @@ public class HsmITBase {
 
     }
 
-    private void clearFileCache(RetrieveContext ctx) {
-        FileCacheProvider cache = ctx.getFileCacheProvider();
-        if (cache != null) {
-            try {
-                cache.clearCache();
-            } catch (IOException e) {
-                LOG.warn("Clear File Cache failed!", e);
+    private void clearFileCache(Collection<Location> locations) {
+        for (Location l : locations) {
+            RetrieveContext ctx = retrieveService.createRetrieveContext(this.getStorageSystem(l));
+            FileCacheProvider cache = ctx.getFileCacheProvider();
+            if (cache != null) {
+                try {
+                    cache.clearCache();
+                } catch (IOException e) {
+                    LOG.warn("Clear File Cache failed!", e);
+                }
+                break;
             }
         }
     }

@@ -54,6 +54,8 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Franz Willer <franz.willer@gmail.com>
@@ -63,6 +65,8 @@ import org.junit.runner.RunWith;
 @RunWith(Arquillian.class)
 public class HsmMoveIT extends HsmITBase {
 
+    private static final Logger LOG = LoggerFactory.getLogger(HsmMoveIT.class);
+    
     @Inject
     private ArchivingSchedulerEJB ejb;
 
@@ -75,7 +79,7 @@ public class HsmMoveIT extends HsmITBase {
         store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
         List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
         List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_1, TEST_ONLINE);
-        assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
+        assertEquals("Number of Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
         scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
@@ -165,5 +169,29 @@ public class HsmMoveIT extends HsmITBase {
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_FLAT);
         checkLocationsDeleted(zipRefs);
+    }
+    
+    @Test
+    public void testMoveMovedStudy() throws Exception {
+        store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_ONLINE);
+        assertEquals("ONLINE Refs", 4, onlineRefs.size());
+        scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER+10000);
+        checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
+        checkLocationsDeleted(onlineRefs);
+        List<Location> zipRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER+2000);
+        checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
+        List<Location> zipRefsAfter = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        assertEquals("ZIP Refs after 2nd move.", zipRefs.size(), zipRefsAfter.size());
+        loop: for (Location l1 : zipRefsAfter) {
+            for (Location l2: zipRefs) {
+                if (l1.getPk() == l2.getPk())
+                    continue loop;
+            }
+            fail("Locations after 2nd move are different! new Location:"+l1);
+        } /*_*/
     }
 }
