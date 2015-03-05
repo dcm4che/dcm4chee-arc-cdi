@@ -70,10 +70,12 @@ public abstract class StoreServiceMIMADecorator implements StoreService {
 
         StoreSession session = context.getStoreSession();
         try {
+            if(session.getRemoteAET() != null){
             ApplicationEntity remoteAE = aeCache.get(session.getRemoteAET());
             if (remoteAE != null) {
                 Supplements.supplementComposite(session, context.getAttributes(),
                         remoteAE.getDevice());
+            }
             }
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
