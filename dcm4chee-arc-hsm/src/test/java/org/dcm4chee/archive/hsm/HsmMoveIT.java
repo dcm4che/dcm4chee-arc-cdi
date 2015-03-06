@@ -192,6 +192,31 @@ public class HsmMoveIT extends HsmITBase {
                     continue loop;
             }
             fail("Locations after 2nd move are different! new Location:"+l1);
-        } /*_*/
+        }
+    }
+
+    @Test
+    public void testStoreCopyMoveStudy() throws Exception {
+        store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_ONLINE);
+        assertEquals("ONLINE Refs", 4, onlineRefs.size());
+        scheduler.copyStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER+10000);
+        checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 2), true, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        List<Location> zipRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER+2000);
+        checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
+        List<Location> zipRefsAfter = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        assertEquals("ZIP Refs after move.", zipRefs.size(), zipRefsAfter.size());
+        loop: for (Location l1 : zipRefsAfter) {
+            for (Location l2: zipRefs) {
+                if (l1.getPk() == l2.getPk())
+                    continue loop;
+            }
+            fail("Locations after move are different! new Location:"+l1);
+        }
+        onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_ONLINE);
+        assertEquals("ONLINE Refs after move", 0, onlineRefs.size());
     }
 }

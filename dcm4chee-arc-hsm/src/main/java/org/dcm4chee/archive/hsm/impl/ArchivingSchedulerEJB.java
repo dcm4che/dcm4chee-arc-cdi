@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.hsm.impl;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -88,6 +89,7 @@ public class ArchivingSchedulerEJB {
     private static final String TIME_ZONE = "timeZone";
     private static final String DELETE_SOURCE = "deleteSource";
     private static final String LOCATION = "location";
+    private static final String SOURCE_LOCATION_PKS_TO_DELETE = "srcLocationPksToDelete";
 
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
@@ -199,14 +201,21 @@ public class ArchivingSchedulerEJB {
         Location selected;
         String storageSystemGroupID;
         List<ContainerEntry> entries = new ArrayList<ContainerEntry>(insts.size());
+        List<Long> srcLocationPksToDelete = deleteSource ? new ArrayList<Long>() : null;
+        boolean instOnTarget;
         inst: for (Instance inst : insts) {
             selected = null;
+            instOnTarget = false;
             for (Location location : inst.getLocations()) {
                 storageSystemGroupID = location.getStorageSystemGroupID();
                 if (storageSystemGroupID.equals(targetStorageSystemGroupID)) {
                     LOG.info("{} already archived to Storage System Group {} - skip from archiving",
                             inst, storageSystemGroupID);
-                    continue inst;
+                    if (!deleteSource) {
+                        continue inst;
+                    } else {
+                        instOnTarget = true;
+                    }
                 } else if (storageSystemGroupID.equals(sourceGroupID)) {
                     selected = location;
                 }
@@ -214,30 +223,40 @@ public class ArchivingSchedulerEJB {
             if (selected == null) {
                 LOG.info("{} not available at Storage System Group {} - skip from archiving", inst, sourceGroupID);
             } else {
-                ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),
-                        selected.getDigest())
-                .setSourceStorageSystemGroupID(selected.getStorageSystemGroupID())
-                .setSourceStorageSystemID(selected.getStorageSystemID())
-                .setSourceName(selected.getStoragePath())
-                .setSourceEntryName(selected.getEntryName())
-                .setProperty(INSTANCE_PK, inst.getPk())
-                .setProperty(DIGEST, selected.getDigest())
-                .setProperty(OTHER_ATTRS_DIGEST, selected.getOtherAttsDigest())
-                .setProperty(FILE_SIZE, selected.getSize())
-                .setProperty(TRANSFER_SYNTAX, selected.getTransferSyntaxUID())
-                .setProperty(TIME_ZONE, selected.getTimeZone())
-                .setProperty(LOCATION, selected).build();
-
-                entries.add(entry);
+                if (deleteSource)
+                    srcLocationPksToDelete.add(selected.getPk());
+                if (!instOnTarget) {
+                    ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),
+                            selected.getDigest())
+                    .setSourceStorageSystemGroupID(selected.getStorageSystemGroupID())
+                    .setSourceStorageSystemID(selected.getStorageSystemID())
+                    .setSourceName(selected.getStoragePath())
+                    .setSourceEntryName(selected.getEntryName())
+                    .setProperty(INSTANCE_PK, inst.getPk())
+                    .setProperty(DIGEST, selected.getDigest())
+                    .setProperty(OTHER_ATTRS_DIGEST, selected.getOtherAttsDigest())
+                    .setProperty(FILE_SIZE, selected.getSize())
+                    .setProperty(TRANSFER_SYNTAX, selected.getTransferSyntaxUID())
+                    .setProperty(TIME_ZONE, selected.getTimeZone())
+                    .setProperty(LOCATION, selected).build();
+    
+                    entries.add(entry);
+                }
             }
         }
         if (entries.size() > 0) {
             ArchiverContext ctx = archiverService.createContext(targetStorageSystemGroupID, targetName);
             ctx.setEntries(entries);
             ctx.setProperty(DELETE_SOURCE, new Boolean(deleteSource));
+            if (deleteSource)
+                ctx.setProperty(SOURCE_LOCATION_PKS_TO_DELETE, (Serializable) srcLocationPksToDelete);
             archiverService.scheduleStore(ctx);
         } else {
             LOG.info("No source Locations found! Skip copy/move of {} instances from {} to {}.", insts.size(), sourceGroupID, targetStorageSystemGroupID);
+            if (deleteSource && srcLocationPksToDelete.size() > 0) {
+                LOG.debug("Deletion of source Locations:{}",srcLocationPksToDelete);
+                deleteLocations(srcLocationPksToDelete);
+            }
         }
     }
 
@@ -253,9 +272,7 @@ public class ArchivingSchedulerEJB {
 
     public void onContainerEntriesStored(ArchiverContext ctx) {
         List<ContainerEntry> entries = ctx.getEntries();
-        List<Location> locations = new ArrayList<Location>(entries.size());
         boolean notInContainer = ctx.isNotInContainer();
-        boolean deleteSrc = (Boolean)ctx.getProperty(DELETE_SOURCE);
         for (ContainerEntry entry : entries) {
             Instance inst = em.find(Instance.class, entry.getProperty(INSTANCE_PK));
             Location location = new Location.Builder()
@@ -270,27 +287,40 @@ public class ArchivingSchedulerEJB {
             .timeZone((String) entry.getProperty(TIME_ZONE))
             .build();
             inst.getLocations().add(location);
-            if (deleteSrc) {
-                long srcLocationPk = ((Location) entry.getProperty(LOCATION)).getPk();
-                for (Iterator<Location> it = inst.getLocations().iterator() ; it.hasNext() ;) {
-                    if (it.next().getPk() == srcLocationPk) {
-                        it.remove();
-                        break;
-                    }
-                }
-                locations.add((Location) entry.getProperty(LOCATION));
-            }
             em.persist(location);
             LOG.info("Create {}", location);
         }
         em.flush();
-        if (deleteSrc) {
-            LOG.debug("Schedule deletion of source Locations:{}",locations);
-            try {
-                fileMgt.scheduleDelete(locations, 0);
-            } catch (Exception x) {
-                LOG.error("Schedule deletion of source Locations failed! locations:{}", locations, x);
+        @SuppressWarnings("unchecked")
+        List<Long> srcLocationPksToDelete = (List<Long>) ctx.getProperty(SOURCE_LOCATION_PKS_TO_DELETE);
+        if (srcLocationPksToDelete != null) {
+            LOG.info("Source Locations to delete:{}", srcLocationPksToDelete);
+            deleteLocations(srcLocationPksToDelete);
+        }
+    }
+    
+    private void deleteLocations(List<Long> locationPks) {
+        List<Location> locations = em.createQuery("SELECT l FROM Location l JOIN FETCH l.instances WHERE l.pk IN :locationPks",
+                Location.class)
+                .setParameter("locationPks", locationPks)
+                .getResultList();
+        for (Location l : locations) {
+            Instance inst;
+            for (Iterator<Instance> it = l.getInstances().iterator() ; it.hasNext() ;) {
+                inst = it.next();
+                for (Iterator<Location> itL = inst.getLocations().iterator() ; itL.hasNext() ;) {
+                    if (itL.next().getPk() == l.getPk()) {
+                        itL.remove();
+                        break;
+                    }
+                }
             }
+        }
+        LOG.debug("Schedule deletion of source Locations:{}",locations);
+        try {
+            fileMgt.scheduleDeleteByPks(locationPks, 0);
+        } catch (Exception x) {
+            LOG.error("Schedule deletion of source Locations failed! locations:{}", locations, x);
         }
     }
 
