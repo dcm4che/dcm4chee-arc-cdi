@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,50 +36,24 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.mima.impl;
+package org.dcm4chee.archive.store.scu;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
-import javax.inject.Inject;
+import java.util.List;
 
-import org.dcm4che3.conf.api.IApplicationEntityCache;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.StoreService;
-import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4che3.net.service.InstanceLocator;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-@Decorator
-public abstract class StoreServiceMIMADecorator implements StoreService {
+public interface CStoreSCU {
 
-    @Inject @Delegate
-    private StoreService storeService;
+    public abstract void cstore(String localAET, String remoteAET,
+            List<InstanceLocator> inst, int priority, int retries)
+            throws DicomServiceException;
 
-    @Inject
-    private IApplicationEntityCache aeCache;
-
-    @Override
-    public void coerceAttributes(StoreContext context)
-            throws DicomServiceException {
-        storeService.coerceAttributes(context);
-
-        StoreSession session = context.getStoreSession();
-        try {
-            if(session.getRemoteAET() != null){
-            ApplicationEntity remoteAE = aeCache.get(session.getRemoteAET());
-            if (remoteAE != null) {
-                Supplements.supplementComposite(session, context.getAttributes(),
-                        remoteAE.getDevice());
-            }
-            }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
-
+    public abstract void scheduleStoreSCU(String localAET, String remoteAET,
+            List<? extends InstanceLocator> insts, int retries, int priority,
+            long delay);
 }

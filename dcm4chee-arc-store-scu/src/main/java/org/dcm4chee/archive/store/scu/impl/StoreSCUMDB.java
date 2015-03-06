@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,51 +35,53 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.store.scu.impl;
 
-package org.dcm4chee.archive.mima.impl;
+import java.util.List;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.MessageDriven;
 import javax.inject.Inject;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
 
-import org.dcm4che3.conf.api.IApplicationEntityCache;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.StoreService;
-import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4chee.archive.store.scu.CStoreSCU;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-@Decorator
-public abstract class StoreServiceMIMADecorator implements StoreService {
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType",
+                                  propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination",
+                                  propertyValue = "queue/storescu"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode",
+                                  propertyValue = "Auto-acknowledge") })
+public class StoreSCUMDB implements MessageListener {
 
-    @Inject @Delegate
-    private StoreService storeService;
+    private static final Logger LOG = LoggerFactory.getLogger(StoreSCUMDB.class);
 
     @Inject
-    private IApplicationEntityCache aeCache;
+    private CStoreSCU cstorescu;
 
     @Override
-    public void coerceAttributes(StoreContext context)
-            throws DicomServiceException {
-        storeService.coerceAttributes(context);
-
-        StoreSession session = context.getStoreSession();
+    public void onMessage(Message msg) {
         try {
-            if(session.getRemoteAET() != null){
-            ApplicationEntity remoteAE = aeCache.get(session.getRemoteAET());
-            if (remoteAE != null) {
-                Supplements.supplementComposite(session, context.getAttributes(),
-                        remoteAE.getDevice());
-            }
-            }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
+            cstorescu.cstore(
+                msg.getStringProperty("LocalAET"),
+                msg.getStringProperty("RemoteAET"),                
+                (List<InstanceLocator>) ((ObjectMessage) msg).getObject(),
+                msg.getIntProperty("Priority"),
+                msg.getIntProperty("Retries"));
+        } catch (Throwable th) {
+            LOG.warn("Failed to process " + msg, th);
         }
     }
+
 
 }
