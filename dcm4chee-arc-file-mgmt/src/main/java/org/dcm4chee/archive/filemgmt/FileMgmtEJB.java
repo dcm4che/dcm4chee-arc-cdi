@@ -141,6 +141,10 @@ public class FileMgmtEJB implements FileMgmt{
 
     @Override
     public boolean doDelete(Location ref) {
+        if (ref.getInstances().size() > 0) {
+            LOG.warn("Deletion failed! Location {} is still referenced by instances:{}", ref, ref.getInstances());
+            return false;
+        }
         try{
             StorageDeviceExtension ext = device.getDeviceExtensionNotNull(
                     StorageDeviceExtension.class);

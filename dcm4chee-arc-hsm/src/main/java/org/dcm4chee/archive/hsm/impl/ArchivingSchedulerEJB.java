@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.hsm.impl;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -201,7 +200,7 @@ public class ArchivingSchedulerEJB {
         Location selected;
         String storageSystemGroupID;
         List<ContainerEntry> entries = new ArrayList<ContainerEntry>(insts.size());
-        List<Long> srcLocationPksToDelete = deleteSource ? new ArrayList<Long>() : null;
+        LocationDeleteContext srcLocationToDeleteCtx = deleteSource ? new LocationDeleteContext(insts.size()) : null;
         boolean instOnTarget;
         inst: for (Instance inst : insts) {
             selected = null;
@@ -224,7 +223,7 @@ public class ArchivingSchedulerEJB {
                 LOG.info("{} not available at Storage System Group {} - skip from archiving", inst, sourceGroupID);
             } else {
                 if (deleteSource)
-                    srcLocationPksToDelete.add(selected.getPk());
+                    srcLocationToDeleteCtx.add(selected.getPk(), inst.getPk());
                 if (!instOnTarget) {
                     ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),
                             selected.getDigest())
@@ -249,13 +248,13 @@ public class ArchivingSchedulerEJB {
             ctx.setEntries(entries);
             ctx.setProperty(DELETE_SOURCE, new Boolean(deleteSource));
             if (deleteSource)
-                ctx.setProperty(SOURCE_LOCATION_PKS_TO_DELETE, (Serializable) srcLocationPksToDelete);
+                ctx.setProperty(SOURCE_LOCATION_PKS_TO_DELETE, srcLocationToDeleteCtx);
             archiverService.scheduleStore(ctx);
         } else {
             LOG.info("No source Locations found! Skip copy/move of {} instances from {} to {}.", insts.size(), sourceGroupID, targetStorageSystemGroupID);
-            if (deleteSource && srcLocationPksToDelete.size() > 0) {
-                LOG.debug("Deletion of source Locations:{}",srcLocationPksToDelete);
-                deleteLocations(srcLocationPksToDelete);
+            if (deleteSource && srcLocationToDeleteCtx.size() > 0) {
+                LOG.debug("Deletion of source Locations:{}",srcLocationToDeleteCtx.getLocationPks());
+                deleteLocations(srcLocationToDeleteCtx);
             }
         }
     }
@@ -291,37 +290,50 @@ public class ArchivingSchedulerEJB {
             LOG.info("Create {}", location);
         }
         em.flush();
-        @SuppressWarnings("unchecked")
-        List<Long> srcLocationPksToDelete = (List<Long>) ctx.getProperty(SOURCE_LOCATION_PKS_TO_DELETE);
+        LocationDeleteContext srcLocationPksToDelete = (LocationDeleteContext) ctx.getProperty(SOURCE_LOCATION_PKS_TO_DELETE);
         if (srcLocationPksToDelete != null) {
             LOG.info("Source Locations to delete:{}", srcLocationPksToDelete);
             deleteLocations(srcLocationPksToDelete);
         }
     }
     
-    private void deleteLocations(List<Long> locationPks) {
+    private void deleteLocations(LocationDeleteContext srcLocationToDeleteCtx) {
         List<Location> locations = em.createQuery("SELECT l FROM Location l JOIN FETCH l.instances WHERE l.pk IN :locationPks",
                 Location.class)
-                .setParameter("locationPks", locationPks)
+                .setParameter("locationPks", srcLocationToDeleteCtx.locationPks)
                 .getResultList();
+        ArrayList<Location> locationToDeletePks = new ArrayList<Location>(locations.size());
         for (Location l : locations) {
+            long instPk = srcLocationToDeleteCtx.getInstancePk(l.getPk());
             Instance inst;
             for (Iterator<Instance> it = l.getInstances().iterator() ; it.hasNext() ;) {
                 inst = it.next();
-                for (Iterator<Location> itL = inst.getLocations().iterator() ; itL.hasNext() ;) {
-                    if (itL.next().getPk() == l.getPk()) {
-                        itL.remove();
-                        break;
+                if (inst.getPk() == instPk) {
+                    for (Iterator<Location> itL = inst.getLocations().iterator() ; itL.hasNext() ;) {
+                        if (itL.next().getPk() == l.getPk()) {
+                            itL.remove();
+                            break;
+                        }
                     }
+                    it.remove();
                 }
             }
+            em.merge(l);
+            if (l.getInstances().size() == 0) {
+                locationToDeletePks.add(l);
+                LOG.info("Add Location {} to deletionPk list!", l);
+            }
         }
-        LOG.debug("Schedule deletion of source Locations:{}",locations);
-        try {
-            fileMgt.scheduleDeleteByPks(locationPks, 0);
-        } catch (Exception x) {
-            LOG.error("Schedule deletion of source Locations failed! locations:{}", locations, x);
+        em.flush();
+        if (locationToDeletePks.isEmpty()) {
+            LOG.info("No unreferenced Location to delete!");
+        } else {
+            LOG.debug("Schedule deletion of source Locations:{}",locations);
+            try {
+                fileMgt.scheduleDelete(locationToDeletePks, 100);
+            } catch (Exception x) {
+                LOG.error("Schedule deletion of source Locations failed! locations:{}", locations, x);
+            }
         }
     }
-
 }

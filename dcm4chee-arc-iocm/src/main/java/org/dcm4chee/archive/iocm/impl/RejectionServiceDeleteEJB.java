@@ -76,10 +76,9 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
         for(Instance inst: instances) {
             inst = em.find(Instance.class,inst.getPk());
               if(isRejected(inst)){
-                Collection<Location> tmpRefs = clone(inst.getLocations());
                 inst.getSeries().clearQueryAttributes();
                 inst.getSeries().getStudy().clearQueryAttributes();
-                toBeDeleted.addAll(detachReferences(inst, tmpRefs));
+                toBeDeleted.addAll(detachReferences(inst));
                 em.remove(inst);
                 LOG.info("Removing {} and Scheduling delete for associated file references" , inst);
             }
@@ -98,36 +97,19 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
         return inst.getRejectionNoteCode()!=null;
     }
 
-    private Collection<Location> clone(Collection<Location> refs)
-    {
-        ArrayList<Location> clone = new ArrayList<Location>();
-        Iterator<Location> iter = refs.iterator();
-        while(iter.hasNext())
-        {
-            Location ref = iter.next();
-            clone.add(ref);
-        }
-        return clone;
-    }
-
-    private Collection<Location> detachReferences(Instance inst, Collection<Location> refs) {
-        
-        for(Iterator<Location> iterator = refs.iterator(); iterator.hasNext();) {
+    private Collection<Location> detachReferences(Instance inst) {
+        ArrayList<Location> toDelete = new ArrayList<Location>(inst.getLocations().size());
+        for(Iterator<Location> iterator = inst.getLocations().iterator(); iterator.hasNext();) {
             Location ref = iterator.next();
+            iterator.remove();
+            ref.getInstances().remove(inst);
             //references only this instance
-            if(ref.getInstances().size() > 1){
-                inst.getLocations().remove(ref);
-                ref.getInstances().remove(inst);
-                iterator.remove();
+            if(ref.getInstances().size() == 0) {
+                toDelete.add(ref);
             }
-            else {
-                inst.getLocations().remove(ref);
-                ref.getInstances().remove(inst);
-            }
-                em.flush();
+            em.flush();
         }
-
-        return refs;
+        return toDelete;
     }
 
     @Override
