@@ -292,7 +292,7 @@ public class ArchivingSchedulerEJB {
         em.flush();
         LocationDeleteContext srcLocationPksToDelete = (LocationDeleteContext) ctx.getProperty(SOURCE_LOCATION_PKS_TO_DELETE);
         if (srcLocationPksToDelete != null) {
-            LOG.info("Source Locations to delete:{}", srcLocationPksToDelete);
+            LOG.info("Source Locations to delete:{}", srcLocationPksToDelete.getLocationPks());
             deleteLocations(srcLocationPksToDelete);
         }
     }
@@ -300,7 +300,7 @@ public class ArchivingSchedulerEJB {
     private void deleteLocations(LocationDeleteContext srcLocationToDeleteCtx) {
         List<Location> locations = em.createQuery("SELECT l FROM Location l JOIN FETCH l.instances WHERE l.pk IN :locationPks",
                 Location.class)
-                .setParameter("locationPks", srcLocationToDeleteCtx.locationPks)
+                .setParameter("locationPks", srcLocationToDeleteCtx.getLocationPks())
                 .getResultList();
         ArrayList<Location> locationToDeletePks = new ArrayList<Location>(locations.size());
         for (Location l : locations) {

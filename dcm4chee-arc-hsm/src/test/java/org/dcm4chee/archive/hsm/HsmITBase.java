@@ -84,6 +84,7 @@ import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Location.Status;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
@@ -123,7 +124,7 @@ import org.slf4j.LoggerFactory;
 public class HsmITBase {
 
     protected static final long DEFAULT_TASK_TIMEOUT = 1000l;
-    protected static final long DEFAULT_WAIT_AFTER = 500;
+    protected static final long DEFAULT_WAIT_AFTER = 800;
     
     protected static final String TARGET_PATH = "target";
     protected static final String FS_NEARLINE_BASE_PATH = TARGET_PATH+"/test/fs/nearline";
@@ -246,9 +247,17 @@ public class HsmITBase {
     }
     
     @SuppressWarnings("unchecked")
-    protected List<Location> getLocationsOnStorageGroup(String studyInstanceUID, String grpID) {
+    protected List<Location> getLocationsOnStorageGroup(String grpID) {
         Query query = em.createQuery("SELECT l FROM Location l WHERE l.storageSystemGroupID =?1");
         query.setParameter(1, grpID);
+        return query.getResultList();
+    }
+    @SuppressWarnings("unchecked")
+    protected List<Location> getStudyLocationsOnStorageGroup(String studyInstanceUID, String grpID) {
+        Query query = em.createQuery("SELECT DISTINCT l FROM Location l LEFT JOIN FETCH l.instances JOIN l.instances i JOIN i.series.study st WHERE l.storageSystemGroupID =?1"+
+                " AND st.studyInstanceUID =?2", Location.class);
+        query.setParameter(1, grpID);
+        query.setParameter(2, studyInstanceUID);
         return query.getResultList();
     }
     
@@ -318,7 +327,7 @@ public class HsmITBase {
         }
     }
 
-    protected void checkLocationsDeleted(Collection<Location> locations) {
+    protected void checkLocationsDeleted(Collection<Location> locations, boolean allowStatusDeletionFailed) {
         clearFileCache(locations);
         for (Location ref : locations) {
             RetrieveContext ctx = retrieveService.createRetrieveContext(this.getStorageSystem(ref));
@@ -327,7 +336,19 @@ public class HsmITBase {
                     retrieveService.getFile(ctx, ref.getStoragePath(), ref.getEntryName());
                 if (Files.exists(file)) {
                     LOG.info("Location file still exists! file:{}", file);
-                    fail("File "+file+" for location "+ref+" is not deleted! file still exists!");
+                    Location l = em.find(Location.class, ref.getPk());
+                    LOG.info("Current Location (pk={}):{}", ref.getPk(), l);
+                    if (l == null) {
+                        fail("File "+file+" for Location "+ref+" is not deleted! file still exists but Location is removed!");
+                    } else if (l.getStatus() == Status.DELETE_FAILED) {
+                        if (allowStatusDeletionFailed) {
+                            LOG.info("Location still exists with Location.status DELETE_FAILED! (NOT a failure) location:{}", l);
+                        } else {
+                            fail("File "+file+" for location "+ref+" is not deleted! file still exists and Location.status is DELETION_FAILED!");
+                        }
+                    } else {
+                        fail("File "+file+" for location "+ref+" is not deleted! file still exists and Location.status is not DELETION_FAILED!");
+                    }
                 }
                 LOG.info("Location file not found as expected! file:{}", file);
             } catch (Exception ignore) {

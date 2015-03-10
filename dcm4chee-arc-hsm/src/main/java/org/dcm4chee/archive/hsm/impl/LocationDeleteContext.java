@@ -48,8 +48,8 @@ import java.util.List;
 public class LocationDeleteContext implements Serializable {
     private static final long serialVersionUID = 20150319001100L;
     
-    ArrayList<Long> locationPks;
-    ArrayList<Long> instancePks;
+    private ArrayList<Long> locationPks;
+    private ArrayList<Long> instancePks;
     
     public LocationDeleteContext(int size) {
         locationPks = new ArrayList<Long>(size);

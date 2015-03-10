@@ -78,88 +78,88 @@ public class HsmMoveIT extends HsmITBase {
     public void testMoveStudyOneSeries() throws Exception {
         store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
         List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
-        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_1, TEST_ONLINE);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         assertEquals("Number of Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
         scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
-        checkLocationsDeleted(onlineRefs);
+        checkLocationsDeleted(onlineRefs, false);
     }
 
     @Test
     public void testMoveStudyTwoSeries() throws Exception {
         store(RESOURCES_STUDY_1_2SERIES, arcAEExt);
-        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_1, TEST_ONLINE);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         scheduler.moveStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1_2SERIES.length, 1), true, TEST_NEARLINE_ZIP);
-        checkLocationsDeleted(onlineRefs);
+        checkLocationsDeleted(onlineRefs, true);
     }
 
     @Test
     public void testMoveStudyOneSeriesToTar() throws Exception {
         store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
-        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_1, TEST_ONLINE);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_TAR);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_TAR);
-        checkLocationsDeleted(onlineRefs);
+        checkLocationsDeleted(onlineRefs, true);
     }
 
     @Test
     public void testMoveStudyTwoSeriesToFlat() throws Exception {
         store(RESOURCES_STUDY_1_2SERIES, arcAEExt);
-        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_1, TEST_ONLINE);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         scheduler.moveStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_FLAT);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1_2SERIES.length, 1), true, TEST_NEARLINE_FLAT);
-        checkLocationsDeleted(onlineRefs);
+        checkLocationsDeleted(onlineRefs, true);
     }
 
     @Test
     public void testMoveStudyTwoSeriesAfterEachSeries() throws Exception {
         store(Arrays.copyOfRange(RESOURCES_STUDY_1_2SERIES, 0, 3), arcAEExt);
-        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_1, TEST_ONLINE);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         scheduler.moveStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_1, 3, 1), true, TEST_NEARLINE_ZIP);
-        checkLocationsDeleted(onlineRefs);
+        checkLocationsDeleted(onlineRefs, true);
         store(Arrays.copyOfRange(RESOURCES_STUDY_1_2SERIES, 3, 5), arcAEExt);
         checkStorageSystemGroups(checkLocationsOfSeries(SERIES_INSTANCE_UID_1_1, 3, 1), true, TEST_NEARLINE_ZIP);
         checkStorageSystemGroups(checkLocationsOfSeries(SERIES_INSTANCE_UID_1_2, 2, 1), true, TEST_ONLINE);
-        onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_1, TEST_ONLINE);
+        onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         scheduler.moveStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1_2SERIES.length, 1), true, TEST_NEARLINE_ZIP);
-        checkLocationsDeleted(onlineRefs);
+        checkLocationsDeleted(onlineRefs, true);
     }
 
     @Test
     public void testMoveStudyTwoSeriesFromZipToFlat() throws Exception {
         store(RESOURCES_STUDY_1_2SERIES, arcAEExt);
-        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_1, TEST_ONLINE);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         assertEquals("ONLINE Refs", 5, onlineRefs.size());
         scheduler.moveStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1_2SERIES.length, 1), true, TEST_NEARLINE_ZIP);
-        checkLocationsDeleted(onlineRefs);
-        List<Location> zipRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_1, TEST_NEARLINE_ZIP);
+        checkLocationsDeleted(onlineRefs, true);
+        List<Location> zipRefs = getLocationsOnStorageGroup(TEST_NEARLINE_ZIP);
         scheduler.moveStudy(STUDY_INSTANCE_UID_1, TEST_NEARLINE_ZIP, TEST_NEARLINE_FLAT);
         waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1_2SERIES.length, 1), true, TEST_NEARLINE_FLAT);
-        checkLocationsDeleted(zipRefs);
+        checkLocationsDeleted(zipRefs, true);
     }
     
     @Test
     public void testMoveStudyKeepSourceContainer() throws Exception {
         store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
-        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_ONLINE);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         assertEquals("ONLINE Refs", 4, onlineRefs.size());
         scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
-        checkLocationsDeleted(onlineRefs);
-        List<Location> zipRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        checkLocationsDeleted(onlineRefs, true);
+        List<Location> zipRefs = getLocationsOnStorageGroup(TEST_NEARLINE_ZIP);
         String targetName = zipRefs.get(0).getStoragePath()+"_inst";
         List<Instance> instances = getInstancesOfStudy(STUDY_INSTANCE_UID_2);
         ejb.scheduleInstances(instances.subList(0, 2), TEST_NEARLINE_ZIP, TEST_NEARLINE_FLAT, targetName, true);
@@ -168,23 +168,23 @@ public class HsmMoveIT extends HsmITBase {
         scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP, TEST_NEARLINE_FLAT);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_FLAT);
-        checkLocationsDeleted(zipRefs);
+        checkLocationsDeleted(zipRefs, true);
     }
     
     @Test
     public void testMoveMovedStudy() throws Exception {
         store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
-        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_ONLINE);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         assertEquals("ONLINE Refs", 4, onlineRefs.size());
         scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER+10000);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
-        checkLocationsDeleted(onlineRefs);
-        List<Location> zipRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        checkLocationsDeleted(onlineRefs, true);
+        List<Location> zipRefs = getLocationsOnStorageGroup(TEST_NEARLINE_ZIP);
         scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER+2000);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
-        List<Location> zipRefsAfter = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        List<Location> zipRefsAfter = getLocationsOnStorageGroup(TEST_NEARLINE_ZIP);
         assertEquals("ZIP Refs after 2nd move.", zipRefs.size(), zipRefsAfter.size());
         loop: for (Location l1 : zipRefsAfter) {
             for (Location l2: zipRefs) {
@@ -198,16 +198,16 @@ public class HsmMoveIT extends HsmITBase {
     @Test
     public void testStoreCopyMoveStudy() throws Exception {
         store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
-        List<Location> onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_ONLINE);
+        List<Location> onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         assertEquals("ONLINE Refs", 4, onlineRefs.size());
         scheduler.copyStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER+10000);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 2), true, TEST_ONLINE, TEST_NEARLINE_ZIP);
-        List<Location> zipRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        List<Location> zipRefs = getLocationsOnStorageGroup(TEST_NEARLINE_ZIP);
         scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER+2000);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
-        List<Location> zipRefsAfter = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        List<Location> zipRefsAfter = getLocationsOnStorageGroup(TEST_NEARLINE_ZIP);
         assertEquals("ZIP Refs after move.", zipRefs.size(), zipRefsAfter.size());
         loop: for (Location l1 : zipRefsAfter) {
             for (Location l2: zipRefs) {
@@ -216,7 +216,32 @@ public class HsmMoveIT extends HsmITBase {
             }
             fail("Locations after move are different! new Location:"+l1);
         }
-        onlineRefs = getLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_ONLINE);
+        onlineRefs = getLocationsOnStorageGroup(TEST_ONLINE);
         assertEquals("ONLINE Refs after move", 0, onlineRefs.size());
+    }
+    @Test
+    public void testMoveStudyLocationWithTwoInstances() throws Exception {
+        store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
+        List<Location> onlineRefs = getStudyLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_ONLINE);
+        assertEquals("ONLINE Refs Study 2", RESOURCES_STUDY_2_1SERIES.length, onlineRefs.size());
+        store(RESOURCES_STUDY_1_2SERIES, arcAEExt);
+        List<Instance> instancesStudy1 = getInstancesOfStudy(STUDY_INSTANCE_UID_1);
+        assertEquals("Instances Study 1", RESOURCES_STUDY_1_2SERIES.length, instancesStudy1.size());
+        List<Location> onlineRefsTot = getLocationsOnStorageGroup(TEST_ONLINE);
+        assertEquals("ONLINE Refs Study 1 & 2", RESOURCES_STUDY_2_1SERIES.length+RESOURCES_STUDY_1_2SERIES.length, onlineRefsTot.size());
+
+        utx.begin();
+        instancesStudy1.get(0).getLocations().add(onlineRefs.get(0));
+        em.merge(instancesStudy1.get(0));
+        em.flush();
+        utx.commit();
+        
+        scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER+2000);
+        checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 1), true, TEST_NEARLINE_ZIP);
+        List<Location> zipRefs = getStudyLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
+        assertEquals("ZIP Refs after move.", RESOURCES_STUDY_2_1SERIES.length, zipRefs.size());
+        List<Location>onlineRefsAfter = getLocationsOnStorageGroup(TEST_ONLINE);
+        assertEquals("ONLINE Refs after move (study 2 + 1 additional Location of first instance of Study 2)", RESOURCES_STUDY_1_2SERIES.length + 1, onlineRefsAfter.size());
     }
 }
