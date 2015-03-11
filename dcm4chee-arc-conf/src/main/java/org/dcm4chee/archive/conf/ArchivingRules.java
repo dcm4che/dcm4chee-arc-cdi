@@ -40,7 +40,6 @@ package org.dcm4chee.archive.conf;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -67,10 +66,7 @@ public class ArchivingRules implements Iterable<ArchivingRule>, Serializable{
         if (findByCommonName(rule.getCommonName()) != null)
             throw new IllegalStateException("ArchivingRule with cn: '"
                     + rule.getCommonName() + "' already exists");
-        int index = Collections.binarySearch(list, rule);
-        if (index < 0)
-            index = -(index+1);
-        list.add(index, rule);
+        list.add(rule);
     }
 
     public List<ArchivingRule> getList() {
@@ -103,7 +99,7 @@ public class ArchivingRules implements Iterable<ArchivingRule>, Serializable{
         return null;
     }
 
-    public ArchivingRule findArchivingRule(String deviceName, String aeTitle,
+    public List<ArchivingRule> findArchivingRule(String deviceName, String aeTitle,
             Attributes attrs) {
         return findArchivingRule(deviceName, aeTitle,
                 attrs.getString(Tag.InstitutionName),
@@ -111,14 +107,15 @@ public class ArchivingRules implements Iterable<ArchivingRule>, Serializable{
                 attrs.getString(Tag.Modality));
     }
 
-    public ArchivingRule findArchivingRule(String deviceName,
+    public List<ArchivingRule> findArchivingRule(String deviceName,
             String aeTitle, String institutionName, String institutionalDepartmentName,
             String modality) {
+        List<ArchivingRule> matchingRules = new ArrayList<ArchivingRule>();
         for (ArchivingRule rule : list)
             if (rule.matchesCondition(deviceName, aeTitle, institutionName,
                     institutionalDepartmentName, modality))
-                return rule;
-        return null;
+                matchingRules.add(rule);
+        return matchingRules;
     }
 
     @Override

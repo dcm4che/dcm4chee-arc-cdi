@@ -9,8 +9,7 @@ import org.dcm4che3.data.Code;
 
 @LDAP(objectClasses = "dcmArchivingRule", distinguishingField = "cn")
 @ConfigurableClass
-public final class ArchivingRule
-    implements Comparable<ArchivingRule>, Serializable {
+public final class ArchivingRule implements Serializable {
 
     private static final long serialVersionUID = -9026606766186878147L;
 
@@ -118,14 +117,8 @@ public final class ArchivingRule
         condition.setModalities(modalities);
     }
 
-    @Override
-    public int compareTo(ArchivingRule o) {
-        return condition.compareTo(o.condition);
-    }
-
     @ConfigurableClass
-    public static class Condition
-            implements Comparable<Condition>, Serializable {
+    public static class Condition implements Serializable {
 
         private static final long serialVersionUID = 1986950374484515200L;
 
@@ -144,8 +137,6 @@ public final class ArchivingRule
         @ConfigurableProperty(name = "dcmModality")
         private String[] modalities;
 
-        int weight = -1;
-
         public Condition() {
         }
 
@@ -155,7 +146,6 @@ public final class ArchivingRule
 
         public void setDeviceNames(String[] deviceNames) {
             this.deviceNames = deviceNames;
-            weight = -1;
         }
 
         public String[] getAeTitles() {
@@ -164,7 +154,6 @@ public final class ArchivingRule
 
         public void setAeTitles(String[] aeTitles) {
             this.aeTitles = aeTitles;
-            weight = -1;
         }
 
         public String[] getInstitutionNames() {
@@ -173,7 +162,6 @@ public final class ArchivingRule
 
         public void setInstitutionNames(String[] institutionNames) {
             this.institutionNames = institutionNames;
-            weight = -1;
        }
 
         public String[] getInstitutionalDepartmentNames() {
@@ -183,7 +171,6 @@ public final class ArchivingRule
         public void setInstitutionalDepartmentNames(
                 String[] institutionalDepartmenNames) {
             this.institutionalDepartmentNames = institutionalDepartmenNames;
-            weight = -1;
         }
 
         public String[] getModalities() {
@@ -192,22 +179,6 @@ public final class ArchivingRule
 
         public void setModalities(String[] modalities) {
             this.modalities = modalities;
-            weight = -1;
-        }
-
-        private int weight() {
-            if (weight < 0)
-                weight = (aeTitles.length != 0 ? 16 : 0)
-                    + (deviceNames.length != 0 ? 8 : 0)
-                    + (institutionNames.length != 0 ? 4 : 0)
-                    + (institutionalDepartmentNames.length != 0 ? 2 : 0)
-                    + (modalities.length != 0 ? 1 : 0);
-            return weight;
-        }
-
-        @Override
-        public int compareTo(Condition o) {
-            return o.weight() - weight();
         }
 
         public boolean matches(String deviceName, String aeTitle,

@@ -270,6 +270,7 @@ public class ArchivingSchedulerEJB {
     }
 
     public void onContainerEntriesStored(ArchiverContext ctx) {
+        LOG.debug("onContainerEntriesStored for {} called", ctx.getStorageSystemGroupID());
         List<ContainerEntry> entries = ctx.getEntries();
         boolean notInContainer = ctx.isNotInContainer();
         for (ContainerEntry entry : entries) {
@@ -286,8 +287,9 @@ public class ArchivingSchedulerEJB {
             .timeZone((String) entry.getProperty(TIME_ZONE))
             .build();
             inst.getLocations().add(location);
-            em.persist(location);
             LOG.info("Create {}", location);
+            em.persist(location);
+            em.merge(inst);
         }
         em.flush();
         LocationDeleteContext srcLocationPksToDelete = (LocationDeleteContext) ctx.getProperty(SOURCE_LOCATION_PKS_TO_DELETE);
@@ -295,6 +297,7 @@ public class ArchivingSchedulerEJB {
             LOG.info("Source Locations to delete:{}", srcLocationPksToDelete.getLocationPks());
             deleteLocations(srcLocationPksToDelete);
         }
+        LOG.debug("onContainerEntriesStored for {} finished", ctx.getStorageSystemGroupID());
     }
     
     private void deleteLocations(LocationDeleteContext srcLocationToDeleteCtx) {

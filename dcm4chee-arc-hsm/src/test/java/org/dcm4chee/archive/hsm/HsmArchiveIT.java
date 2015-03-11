@@ -106,35 +106,52 @@ public class HsmArchiveIT extends HsmITBase {
         assertEquals("#ArchivingTasks for "+SERIES_INSTANCE_UID_1_1, 1, tasks.size());
         tasks = getArchivingTasks(SERIES_INSTANCE_UID_1_2);
         assertEquals("#ArchivingTasks for "+SERIES_INSTANCE_UID_1_2, 1, tasks.size());
-        waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, 2000);
+        waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkLocationsOfStudy(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1_2SERIES.length, 2);
     }
     
- /*
     @Test
-    public void testStoreOneRuleTwoTargets() throws Exception {
-        log.info("##################################################################################");
-        log.info("##################################################################################");
-        log.info("TEST: testStoreOneRuleTwoTargets");
-        ArchivingRule rule = new ArchivingRule();
-        rule.setAeTitles(new String[]{SOURCE_AET});
-        rule.setDelayAfterInstanceStored(1);
-        rule.setStorageSystemGroupIDs(TEST_NEARLINE+"1",TEST_NEARLINE+"2");
+    public void testStoreTwoRules() throws Exception {
+        ArchivingRule rule1 = new ArchivingRule();
+        rule1.setAeTitles(new String[]{SOURCE_AET});
+        rule1.setDelayAfterInstanceStored(1);
+        rule1.setStorageSystemGroupIDs(TEST_NEARLINE_ZIP);
+        rule1.setCommonName(TEST_NEARLINE_ZIP);
         ArchivingRule rule2 = new ArchivingRule();
         rule2.setAeTitles(new String[]{SOURCE_AET});
         rule2.setDelayAfterInstanceStored(1);
-        rule2.setStorageSystemGroupIDs(TEST_NEARLINE+"2");
-        ArchiveAEExtension arcAEExt = getConfiguredAEExtension(rule);
-        store(RESOURCES_STUDY_2, arcAEExt);
+        rule2.setStorageSystemGroupIDs(TEST_NEARLINE_TAR);
+        rule2.setCommonName(TEST_NEARLINE_TAR);
+        ArchiveAEExtension arcAEExt = getConfiguredAEExtension(rule1, rule2);
+        store(HsmITBase.RESOURCES_STUDY_2_1SERIES, arcAEExt);
         List<ArchivingTask> tasks = getArchivingTasks(SERIES_INSTANCE_UID_2_1);
         assertEquals("#ArchivingTasks for "+SERIES_INSTANCE_UID_2_1, 2, tasks.size());
         List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
         assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
-        waitForFinishedTasks(2, 4000l, 10);
+        waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 10, DEFAULT_WAIT_AFTER);
         locations = getLocations(FIRST_INSTANCE_STUDY_2);
         assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 3, locations.size());
-        log.info("##################################################################################");
-        log.info("##################################################################################");
+        checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 3),
+                true, TEST_ONLINE, TEST_NEARLINE_ZIP, TEST_NEARLINE_TAR);
     }
-/*_*/
+
+    @Test
+    public void testStoreOneRuleTwoTargets() throws Exception {
+        ArchivingRule rule = new ArchivingRule();
+        rule.setAeTitles(new String[]{SOURCE_AET});
+        rule.setDelayAfterInstanceStored(1);
+        rule.setStorageSystemGroupIDs(TEST_NEARLINE_ZIP,TEST_NEARLINE_TAR);
+        rule.setCommonName("ZIPandTAR");
+        ArchiveAEExtension arcAEExt = getConfiguredAEExtension(rule);
+        store(HsmITBase.RESOURCES_STUDY_2_1SERIES, arcAEExt);
+        List<ArchivingTask> tasks = getArchivingTasks(SERIES_INSTANCE_UID_2_1);
+        assertEquals("#ArchivingTasks for "+SERIES_INSTANCE_UID_2_1, 2, tasks.size());
+        List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
+        assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
+        waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 10, DEFAULT_WAIT_AFTER);
+        locations = getLocations(FIRST_INSTANCE_STUDY_2);
+        assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 3, locations.size());
+        checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 3),
+                true, TEST_ONLINE, TEST_NEARLINE_ZIP, TEST_NEARLINE_TAR);
+    }
 }

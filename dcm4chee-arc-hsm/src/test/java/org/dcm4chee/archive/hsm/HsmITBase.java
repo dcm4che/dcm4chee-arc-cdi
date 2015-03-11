@@ -421,12 +421,12 @@ public class HsmITBase {
     }
 
     public void onContainerEntriesStored(@Observes @ContainerEntriesStored ArchiverContext archiverContext) {
-        LOG.info("onContainerEntriesStored for "+archiverContext.getStorageSystemGroupID());
+        if (this.getClass() == HsmITBase.class)
+            return;
         synchronized (finishedTargets) {
             finishedTargets.add(archiverContext.getStorageSystemGroupID()+":"+archiverContext.getName());
             finishedTargets.notifyAll();
         }
-        LOG.info("after notifyAll");
     }
 
     protected Attributes load(String name) throws Exception {

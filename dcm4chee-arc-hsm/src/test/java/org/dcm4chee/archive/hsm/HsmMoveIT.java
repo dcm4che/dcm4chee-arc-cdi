@@ -242,6 +242,6 @@ public class HsmMoveIT extends HsmITBase {
         List<Location> zipRefs = getStudyLocationsOnStorageGroup(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP);
         assertEquals("ZIP Refs after move.", RESOURCES_STUDY_2_1SERIES.length, zipRefs.size());
         List<Location>onlineRefsAfter = getLocationsOnStorageGroup(TEST_ONLINE);
-        assertEquals("ONLINE Refs after move (study 2 + 1 additional Location of first instance of Study 2)", RESOURCES_STUDY_1_2SERIES.length + 1, onlineRefsAfter.size());
+        assertEquals("ONLINE Refs after move (study 2 + 1 additional Location of first instance of Study 1)", RESOURCES_STUDY_1_2SERIES.length + 1, onlineRefsAfter.size());
     }
 }

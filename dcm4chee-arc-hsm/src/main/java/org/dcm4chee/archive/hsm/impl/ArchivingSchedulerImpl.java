@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.hsm.impl;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -94,16 +95,16 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
 
         StoreSession storeSession = storeContext.getStoreSession();
         ArchiveAEExtension arcAE = storeSession.getArchiveAEExtension();
-        ArchivingRule archivingRule = arcAE.getArchivingRules().findArchivingRule(
+        List<ArchivingRule> archivingRules = arcAE.getArchivingRules().findArchivingRule(
                 storeSession.getSourceDeviceName(), 
                 storeSession.getRemoteAET(),
                 storeContext.getAttributes());
 
-        if (archivingRule != null)
-            ejb.onStoreInstance(storeContext, archivingRule);
+        for (ArchivingRule rule : archivingRules)
+            ejb.onStoreInstance(storeContext, rule);
     }
 
-    public void onContainerEntriesStored(
+    public synchronized void onContainerEntriesStored(
             @Observes @ContainerEntriesStored ArchiverContext archiverContext) {
         ejb.onContainerEntriesStored(archiverContext);
     }
