@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
+
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 import javax.ws.rs.WebApplicationException;
@@ -55,11 +56,10 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.json.JSONWriter;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4chee.archive.retrieve.RetrieveContext;
-import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -69,16 +69,18 @@ public class DicomJSONOutput implements StreamingOutput {
 
     private final List<ArchiveInstanceLocator> refs;
     private String bulkDataURI;
-    private RetrieveContext context;
-    private RetrieveService service;
+    private CStoreSCUContext context;
+    private CStoreSCUService service;
     private UriInfo uriInfo;
     private String aeTitle;
 
-    public DicomJSONOutput(String aeTitle, UriInfo uriInfo, List<ArchiveInstanceLocator> refs,RetrieveContext ctx) {
+    public DicomJSONOutput(String aeTitle, UriInfo uriInfo,
+            List<ArchiveInstanceLocator> refs, CStoreSCUContext ctx,
+            CStoreSCUService srv) {
         this.refs = refs;
         this.context = ctx;
-        service = ctx.getRetrieveService();
-        this.aeTitle=aeTitle;
+        this.service = srv;
+        this.aeTitle = aeTitle;
         this.uriInfo = uriInfo;
     }
 
@@ -91,21 +93,21 @@ public class DicomJSONOutput implements StreamingOutput {
 
         for (ArchiveInstanceLocator ref : refs) {
             bulkDataURI = toBulkDataURI(ref.uri);
-            DicomInputStream dis = new DicomInputStream(service.getFile(ref).toFile());
+            DicomInputStream dis = new DicomInputStream(service.getFile(ref)
+                    .toFile());
             try {
                 dis.setURI(bulkDataURI);
                 dis.setIncludeBulkData(IncludeBulkData.URI);
                 Attributes dataset = dis.readDataset(-1, -1);
 
-                if (context.getSourceAET() != null) {
+                if (context.getRemoteAE() != null) {
                     service.coerceFileBeforeMerge((ArchiveInstanceLocator) ref,
-                            context, context.getSourceAET(), dataset);
+                            dataset, context);
 
-                    service.coerceRetrievedObject(context,
-                            context.getSourceAET(), dataset);
+                    service.coerceAttributes(dataset, context);
                 }
 
-                dataset.addAll((Attributes)ref.getObject());
+                dataset.addAll((Attributes) ref.getObject());
                 Object pixelData = dataset.getValue(Tag.PixelData);
                 if (pixelData instanceof Fragments) {
                     Fragments frags = (Fragments) pixelData;
@@ -133,6 +135,7 @@ public class DicomJSONOutput implements StreamingOutput {
         gen.writeEnd();
         gen.flush();
     }
+
     private String toBulkDataURI(String uri) {
         return uriInfo.getBaseUri() + "wado/" + aeTitle + "/bulkdata/"
                 + URI.create(uri).getPath();

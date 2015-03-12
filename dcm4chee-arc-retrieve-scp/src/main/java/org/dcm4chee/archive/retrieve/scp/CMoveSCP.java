@@ -59,6 +59,8 @@ import org.dcm4che3.net.pdu.AAssociateRQ;
 import org.dcm4che3.net.pdu.ExtendedNegotiation;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicCMoveSCP;
+import org.dcm4che3.net.service.BasicRetrieveTask;
+import org.dcm4che3.net.service.CStoreSCU;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
@@ -69,12 +71,13 @@ import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
-import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.scu.impl.CStoreSCUImpl;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -85,10 +88,10 @@ public class CMoveSCP extends BasicCMoveSCP {
     private final QueryRetrieveLevel rootLevel;
 
     @Inject
-    private QueryService queryService;
-
-    @Inject
     private RetrieveService retrieveService;
+    
+    @Inject
+    private CStoreSCUService storescuService;
 
     @Inject
     private IApplicationEntityCache aeCache;
@@ -143,8 +146,10 @@ public class CMoveSCP extends BasicCMoveSCP {
             
             AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, matches);
             Association storeas = openStoreAssociation(as, destAE, aarq);
-            RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(
-                    Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, context, false, retrieveAfterEvent);
+            CStoreSCU<ArchiveInstanceLocator> cstorescu = new CStoreSCUImpl (
+                    ae, destAE, storescuService);
+            BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = new BasicRetrieveTask<ArchiveInstanceLocator>(
+                    Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, cstorescu);
 //            retrieveTask.setDestinationDevice(destAE.getDevice());
             retrieveTask.setSendPendingRSPInterval(arcAE.getSendPendingCMoveInterval());
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());

@@ -38,36 +38,29 @@
 
 package org.dcm4chee.archive.store.scu.impl;
 
-import java.io.Serializable;
-import java.util.List;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Set;
 
-import javax.annotation.Resource;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.Session;
-
-import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.imageio.codec.Decompressor;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.pdu.AAssociateRQ;
+import org.dcm4che3.net.DataWriter;
+import org.dcm4che3.net.DataWriterAdapter;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.BasicCStoreSCU;
-import org.dcm4che3.net.service.BasicCStoreSCUResp;
-import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.net.service.CStoreSCU;
 import org.dcm4che3.net.service.InstanceLocator;
-import org.dcm4chee.archive.store.scu.CStoreSCU;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,102 +68,149 @@ import org.slf4j.LoggerFactory;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-@ApplicationScoped
-public class CStoreSCUImpl implements CStoreSCU {
+public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
+        implements CStoreSCU<ArchiveInstanceLocator> {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(CStoreSCUImpl.class);
 
-    @Resource(mappedName = "java:/ConnectionFactory")
-    private ConnectionFactory connFactory;
+    private CStoreSCUContext context;
+    private CStoreSCUService service;
+    private int retries;
+    private boolean withoutBulkData;
 
-    @Resource(mappedName = "java:/queue/storescu")
-    private Queue storeSCUQueue;
+    /**
+     * @param localAE
+     * @param remoteAE
+     * @param storeSCUService
+     */
+    public CStoreSCUImpl(ApplicationEntity localAE, ApplicationEntity remoteAE,
+            CStoreSCUService storeSCUService) {
+        super();
+        this.context = new CStoreSCUContext(localAE, remoteAE);
+        this.service = storeSCUService;
+    }
 
-    @Inject
-    private Device device;
+    public void setRetries(int retries) {
+        this.retries = retries;
+    }
 
-    @Inject
-    private IApplicationEntityCache aeCache;
-
-    @Inject
-    private Event<BasicCStoreSCUResp> storeSCUEvent;
-
-    @Override
-    public void cstore(String localAET, String remoteAET,
-            List<InstanceLocator> insts, int priority, int retries)
-            throws DicomServiceException {
-        try {
-            ApplicationEntity localAE = device.getApplicationEntity(localAET);
-            ApplicationEntity destAE = aeCache.findApplicationEntity(remoteAET);
-            if (localAE == null) {
-                LOG.warn("Failed to store to {} - no such local AE: {}",
-                        remoteAET, localAET);
-                return;
-            }
-            AAssociateRQ aarq = makeAAssociateRQ(localAET, remoteAET, insts);
-            Association storeas = localAE.connect(destAE, aarq);
-            BasicCStoreSCU<InstanceLocator> cstorescu = new BasicCStoreSCU<>(
-                    insts, storeas, priority);
-            BasicCStoreSCUResp storeRsp = cstorescu.store();
-            LOG.info("Instances stored:{} - success:{}", insts.size(),
-                    storeRsp.getCompleted());
-            storeSCUEvent.fire(storeRsp);
-
-        } catch (ConfigurationException e) {
-            throw new DicomServiceException(Status.MoveDestinationUnknown,
-                    "Unknown Store/Move Destination: " + remoteAET);
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess,
-                    "Unable to Process: " + e.getMessage());
-        }
-
+    public void setWithoutBulkData(boolean withoutBulkData) {
+        this.withoutBulkData = withoutBulkData;
     }
 
     @Override
-    public void scheduleStoreSCU(String localAET, String remoteAET,
-            List<? extends InstanceLocator> insts, int retries, int priority,
-            long delay) {
-        try {
-            Connection conn = connFactory.createConnection();
+    protected DataWriter createDataWriter(ArchiveInstanceLocator inst,
+            String tsuid) throws IOException, UnsupportedStoreSCUException {
+        if (inst == null || !(inst instanceof ArchiveInstanceLocator))
+            throw new UnsupportedStoreSCUException("Unable to send instance");
+
+        ArchiveAEExtension arcAEExt = context.getLocalAE().getAEExtension(
+                ArchiveAEExtension.class);
+
+        Attributes attrs = null;
+        do {
             try {
-                Session session = conn.createSession(false,
-                        Session.AUTO_ACKNOWLEDGE);
-                MessageProducer producer = session
-                        .createProducer(storeSCUQueue);
-                ObjectMessage msg = session
-                        .createObjectMessage((Serializable) insts);
-                msg.setStringProperty("LocalAET", localAET);
-                msg.setStringProperty("RemoteAET", remoteAET);
-                msg.setIntProperty("Priority", priority);
-                msg.setIntProperty("Retries", retries);
-                if (delay > 0)
-                    msg.setLongProperty("_HQ_SCHED_DELIVERY",
-                            System.currentTimeMillis() + delay);
-                producer.send(msg);
-            } finally {
-                conn.close();
+                attrs = readFrom(inst);
+            } catch (IOException e) {
+                inst = ((ArchiveInstanceLocator) inst).getFallbackLocator();
+                if (inst == null)
+                    throw e;
             }
-        } catch (JMSException e) {
-            throw new RuntimeException(e);
+        } while (attrs == null);
+
+        // check for suppression criteria
+        String templateURI = arcAEExt.getRetrieveSuppressionCriteria()
+                .getSuppressionCriteriaMap().get(context.getRemoteAE().getAETitle());
+        if (templateURI != null)
+            inst = service.applySuppressionCriteria(inst, attrs, templateURI,
+                    context);
+
+        service.coerceFileBeforeMerge(inst, attrs, context);
+
+        attrs = Utils.mergeAndNormalize(attrs, (Attributes) inst.getObject());
+        if (!tsuid.equals(inst.tsuid))
+            Decompressor.decompress(attrs, inst.tsuid);
+
+        service.coerceAttributes(attrs, context);
+
+        return new DataWriterAdapter(attrs);
+    }
+
+    private Attributes readFrom(ArchiveInstanceLocator inst) throws IOException {
+
+        try (DicomInputStream din = new DicomInputStream(service.getFile(inst)
+                .toFile())) {
+            IncludeBulkData includeBulkData = IncludeBulkData.URI;
+            int stopTag = -1;
+            if (withoutBulkData) {
+                if (((ArchiveInstanceLocator) inst).isWithoutBulkdata()) {
+                    includeBulkData = IncludeBulkData.YES;
+                } else {
+                    includeBulkData = IncludeBulkData.NO;
+                    stopTag = Tag.PixelData;
+                }
+            }
+            din.setIncludeBulkData(includeBulkData);
+            return din.readDataset(-1, stopTag);
         }
     }
 
-    private AAssociateRQ makeAAssociateRQ(String callingAET, String calledAET,
-            List<InstanceLocator> insts) {
-        AAssociateRQ aarq = new AAssociateRQ();
-        aarq.setCalledAET(calledAET);
-        aarq.setCallingAET(callingAET);
-        for (InstanceLocator inst : insts) {
-            if (aarq.addPresentationContextFor(inst.cuid, inst.tsuid)) {
-                if (!UID.ExplicitVRLittleEndian.equals(inst.tsuid))
-                    aarq.addPresentationContextFor(inst.cuid,
-                            UID.ExplicitVRLittleEndian);
-                if (!UID.ImplicitVRLittleEndian.equals(inst.tsuid))
-                    aarq.addPresentationContextFor(inst.cuid,
-                            UID.ImplicitVRLittleEndian);
+    @Override
+    protected String selectTransferSyntaxFor(Association storeas,
+            ArchiveInstanceLocator inst) throws UnsupportedStoreSCUException {
+        Set<String> acceptedTransferSyntax = storeas
+                .getTransferSyntaxesFor(inst.cuid);
+        // check for SOP classes elimination
+        if (context.getArchiveAEExtension().getRetrieveSuppressionCriteria()
+                .isCheckTransferCapabilities()) {
+            inst = service.eliminateUnSupportedSOPClasses(inst, context);
+
+            // check if eliminated then throw exception
+            if (inst == null)
+                throw new UnsupportedStoreSCUException(
+                        "Unable to send instance, SOP class not configured");
+
+            if (isConfiguredAndAccepted(inst,
+                    storeas.getTransferSyntaxesFor(inst.cuid)))
+                return inst.tsuid;
+            else
+                return getDefaultConfiguredTransferSyntax(inst);
+        }
+
+        if (acceptedTransferSyntax.contains(inst.tsuid))
+            return inst.tsuid;
+
+        return storeas.getTransferSyntaxesFor(inst.cuid).contains(
+                UID.ExplicitVRLittleEndian) ? UID.ExplicitVRLittleEndian
+                : UID.ImplicitVRLittleEndian;
+    }
+
+    private boolean isConfiguredAndAccepted(InstanceLocator ref,
+            Set<String> negotiated) {
+        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
+        for (TransferCapability supportedTC : aeTCs) {
+            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0
+                    && supportedTC.containsTransferSyntax(ref.tsuid)
+                    && negotiated.contains(ref.tsuid)) {
+                return true;
             }
         }
-        return aarq;
+        return false;
     }
+
+    private String getDefaultConfiguredTransferSyntax(InstanceLocator ref) {
+        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
+        for (TransferCapability supportedTC : aeTCs) {
+            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0) {
+                return supportedTC
+                        .containsTransferSyntax(UID.ExplicitVRLittleEndian) ? UID.ExplicitVRLittleEndian
+                        : UID.ImplicitVRLittleEndian;
+            }
+        }
+        return UID.ImplicitVRLittleEndian;
+    }
+
 }

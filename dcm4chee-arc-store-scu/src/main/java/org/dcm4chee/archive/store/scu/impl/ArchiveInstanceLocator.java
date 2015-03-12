@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.retrieve.impl;
+package org.dcm4chee.archive.store.scu.impl;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

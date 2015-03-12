@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,36 +36,62 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.retrieve;
+package org.dcm4chee.archive.store.scu;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 
 /**
- * Retrieve service. Used to get list of references to dicom instances.
- * 
- * @author Gunter Zeilinger <gunterze@gmail.com>
- * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ *
  */
-public interface RetrieveService {
+public interface CStoreSCUService {
 
-    RetrieveContext createRetrieveContext(RetrieveService service,
-            String sourceAET, ArchiveAEExtension arcAE);
+    void cstore(List<ArchiveInstanceLocator> insts, String localAET,
+            String remoteAET, int priority, int retries)
+            throws DicomServiceException;
 
-    IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys);
+    void scheduleStoreSCU(String localAET, String remoteAET,
+            List<ArchiveInstanceLocator> insts, int retries, int priority,
+            long delay);
 
-    List<ArchiveInstanceLocator> calculateMatches(IDWithIssuer[] pids,
-            Attributes keys, QueryParam queryParam, boolean withoutBulkData);
-    
-    List<ArchiveInstanceLocator> calculateMatches(String studyUID, String seriesUID,
-            String objectUID, QueryParam queryParam, boolean withoutBulkData);
+    /**
+     * Coerce each Object to be sent. CStoreSCUContext is used to share state
+     * among different coercions
+     */
+    void coerceAttributes(Attributes attrs, CStoreSCUContext context)
+            throws DicomServiceException;
+
+    /**
+     * This method is only used by the time zone support decorator The purpose
+     * is to be able to apply time zone conversion from the source time zone
+     * from the database to the archive time zone before applying the time zone
+     * conversion from the archive time zone to the destination time zone
+     */
+    void coerceFileBeforeMerge(ArchiveInstanceLocator inst, Attributes attrs,
+            CStoreSCUContext context) throws DicomServiceException;
+
+    /**
+     * Applies template filters on the retrieved instance to remove if undesired
+     * according to style sheet
+     */
+    ArchiveInstanceLocator applySuppressionCriteria(ArchiveInstanceLocator ref,
+            Attributes attrs, String supressionCriteriaTemplateURI,
+            CStoreSCUContext context);
+
+    /**
+     * Used to eliminate unsupported SOP classes or transfer syntaxes
+     */
+    ArchiveInstanceLocator eliminateUnSupportedSOPClasses(
+            ArchiveInstanceLocator ref, CStoreSCUContext context);
+
+    Path getFile(ArchiveInstanceLocator inst) throws IOException;
 }

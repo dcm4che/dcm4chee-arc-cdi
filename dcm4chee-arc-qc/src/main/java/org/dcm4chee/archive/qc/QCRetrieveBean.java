@@ -5,7 +5,7 @@ import java.util.Collection;
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.retrieve.RetrieveContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 
 public interface QCRetrieveBean {
 
@@ -47,6 +47,6 @@ public interface QCRetrieveBean {
      *            A collection of study instance uids
      * @return a collection of instance history
      */
-    public Collection<QCInstanceHistory> getReferencedHistory(RetrieveContext ctx,
+    public Collection<QCInstanceHistory> getReferencedHistory(CStoreSCUContext ctx,
             Collection<String> referencedStudyInstanceUIDs);
 }

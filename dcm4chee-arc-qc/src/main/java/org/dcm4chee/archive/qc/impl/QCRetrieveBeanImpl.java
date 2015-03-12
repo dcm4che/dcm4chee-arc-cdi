@@ -54,7 +54,7 @@ import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
-import org.dcm4chee.archive.retrieve.RetrieveContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,7 +122,7 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<QCInstanceHistory> getReferencedHistory(RetrieveContext ctx,
+    public Collection<QCInstanceHistory> getReferencedHistory(CStoreSCUContext ctx,
             Collection<String> referencedStudyInstanceUIDs) {
         boolean performQuery=true;
         //check if cache has UIDs and filter the referencedStudyInstanceUIDs list to remove the cached ones
@@ -152,7 +152,7 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
     }
 
     @SuppressWarnings("unchecked")
-    private Collection<QCInstanceHistory> complementCache(RetrieveContext ctx,
+    private Collection<QCInstanceHistory> complementCache(CStoreSCUContext ctx,
             Collection<QCInstanceHistory> resultList, Collection<String> diff) {
         Collection<String> cachedUIDs 
         = (Collection<String>) ctx.getProperty(CACHED_UIDS);

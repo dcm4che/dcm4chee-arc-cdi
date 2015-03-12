@@ -68,12 +68,12 @@ import org.dcm4chee.archive.event.ConnectionEvent;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.mima.impl.PixQueryEvent;
 import org.dcm4chee.archive.query.impl.QueryEvent;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

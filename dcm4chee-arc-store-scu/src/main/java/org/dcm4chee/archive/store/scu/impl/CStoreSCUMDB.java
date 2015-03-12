@@ -35,25 +35,52 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
-package org.dcm4chee.archive.store.scu;
+package org.dcm4chee.archive.store.scu.impl;
 
 import java.util.List;
 
-import org.dcm4che3.net.service.DicomServiceException;
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.MessageDriven;
+import javax.inject.Inject;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
+
 import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public interface CStoreSCU {
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/storescu"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
+public class CStoreSCUMDB implements MessageListener {
 
-    public abstract void cstore(String localAET, String remoteAET,
-            List<InstanceLocator> inst, int priority, int retries)
-            throws DicomServiceException;
+    private static final Logger LOG = LoggerFactory
+            .getLogger(CStoreSCUMDB.class);
 
-    public abstract void scheduleStoreSCU(String localAET, String remoteAET,
-            List<? extends InstanceLocator> insts, int retries, int priority,
-            long delay);
+    @Inject
+    private CStoreSCUService cstorescu;
+
+    @Override
+    public void onMessage(Message msg) {
+        try {
+            List<ArchiveInstanceLocator> insts = (List<ArchiveInstanceLocator>) ((ObjectMessage) msg)
+                    .getObject();
+            
+            cstorescu.cstore(insts, msg.getStringProperty("LocalAET"),
+                    msg.getStringProperty("RemoteAET"),
+                    msg.getIntProperty("Priority"),
+                    msg.getIntProperty("Retries"));
+            
+        } catch (Throwable th) {
+            LOG.warn("Failed to process " + msg, th);
+        }
+    }
+
 }
