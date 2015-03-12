@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.hsm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -154,4 +155,25 @@ public class HsmArchiveIT extends HsmITBase {
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 3),
                 true, TEST_ONLINE, TEST_NEARLINE_ZIP, TEST_NEARLINE_TAR);
     }
+    
+    @Test
+    public void testArchivingTimeUpdate() throws Exception {
+        ArchivingRule rule = new ArchivingRule();
+        rule.setAeTitles(new String[]{SOURCE_AET});
+        rule.setDelayAfterInstanceStored(2);
+        rule.setStorageSystemGroupIDs(TEST_NEARLINE_ZIP);
+        ArchiveAEExtension arcAEExt = getConfiguredAEExtension(rule);
+        store(RESOURCES_STUDY_2_1SERIES[0], arcAEExt);
+        List<ArchivingTask> tasks = getArchivingTasks(SERIES_INSTANCE_UID_2_1);
+        assertEquals("#ArchivingTasks for "+SERIES_INSTANCE_UID_2_1, 1, tasks.size());
+        long firstArchivingTime = tasks.get(0).getArchivingTime().getTime();
+        waitForFinishedTasks(0, 0, 0, 500);
+        store(RESOURCES_STUDY_2_1SERIES[1], arcAEExt);
+        waitForFinishedTasks(0, 0, 0, 500);
+        tasks = getArchivingTasks(SERIES_INSTANCE_UID_2_1);
+        assertEquals("#ArchivingTasks for "+SERIES_INSTANCE_UID_2_1, 1, tasks.size());
+        long secondArchivingTime = tasks.get(0).getArchivingTime().getTime();
+        assertTrue("New ArchivingTime ("+secondArchivingTime+") > first ArchivingTime ("+firstArchivingTime+")+500ms", secondArchivingTime > firstArchivingTime+500);
+    }
+
 }
