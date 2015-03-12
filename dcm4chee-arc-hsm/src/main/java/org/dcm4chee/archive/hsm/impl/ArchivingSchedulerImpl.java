@@ -187,4 +187,16 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
     public void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException {
         ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, true);
     }
+
+    @Override
+    public void copySeries(String seriesIUID, String sourceGroupID,
+            String targetGroupID) throws IOException {
+        ejb.scheduleSeries(seriesIUID, sourceGroupID, targetGroupID, false);
+    }
+
+    @Override
+    public void moveSeries(String seriesIUID, String sourceGroupID,
+            String targetGroupID) throws IOException {
+        ejb.scheduleSeries(seriesIUID, sourceGroupID, targetGroupID, true);
+    }
 }

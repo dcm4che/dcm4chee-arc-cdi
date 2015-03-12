@@ -244,4 +244,13 @@ public class HsmMoveIT extends HsmITBase {
         List<Location>onlineRefsAfter = getLocationsOnStorageGroup(TEST_ONLINE);
         assertEquals("ONLINE Refs after move (study 2 + 1 additional Location of first instance of Study 1)", RESOURCES_STUDY_1_2SERIES.length + 1, onlineRefsAfter.size());
     }
+
+    @Test
+    public void testMoveOneOfTwoSeries() throws Exception {
+        store(RESOURCES_STUDY_1_2SERIES, arcAEExt);
+        scheduler.moveSeries(SERIES_INSTANCE_UID_1_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
+        checkStorageSystemGroups(checkLocationsOfSeries(SERIES_INSTANCE_UID_1_1, 3, 1), true, TEST_NEARLINE_ZIP);
+        checkStorageSystemGroups(checkLocationsOfSeries(SERIES_INSTANCE_UID_1_2, 2, 1), true, TEST_ONLINE);
+    }
 }

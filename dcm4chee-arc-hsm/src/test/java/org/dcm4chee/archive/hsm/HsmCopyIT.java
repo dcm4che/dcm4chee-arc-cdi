@@ -107,4 +107,13 @@ public class HsmCopyIT extends HsmITBase {
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 2), true, TEST_ONLINE, TEST_NEARLINE_FLAT);
     }
+
+    @Test
+    public void testCopyOneOfTwoSeries() throws Exception {
+        store(RESOURCES_STUDY_1_2SERIES, arcAEExt);
+        scheduler.copySeries(SERIES_INSTANCE_UID_1_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
+        checkStorageSystemGroups(checkLocationsOfSeries(SERIES_INSTANCE_UID_1_1, 3, 2), true, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        checkStorageSystemGroups(checkLocationsOfSeries(SERIES_INSTANCE_UID_1_2, 2, 1), true, TEST_ONLINE);
+    }
 }
