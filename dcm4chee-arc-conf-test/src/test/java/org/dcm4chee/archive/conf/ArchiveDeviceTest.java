@@ -40,14 +40,19 @@ package org.dcm4chee.archive.conf;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
+import org.dcm4che.test.utils.TestUtils;
 import org.dcm4che3.conf.api.AttributeCoercions;
+import org.dcm4che3.conf.api.ConfigurationException;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.net.*;
 import org.dcm4che3.net.Connection.Protocol;
@@ -101,6 +106,24 @@ public class ArchiveDeviceTest extends DeviceMocker {
         cleanUp();
     }
 
+
+    public void testBreakMerge(Device arc) throws ConfigurationException, IOException, ClassNotFoundException {
+        ArchiveDeviceExtension arcExt = arc.getDeviceExtension(ArchiveDeviceExtension.class);
+        assertTrue(arcExt.getAttributeFilter(Entity.Instance).getCustomAttribute1() == null);
+        TestUtils.backupDevice(arc);
+        TestUtils.addDBCustomAttribute("dcm4chee-arc", Entity.Instance, config
+                , Tag.CodeMeaning, VR.LO,Tag.ConceptNameCodeSequence);
+        arc = config.findDevice("dcm4chee-arc");
+        arcExt = arc.getDeviceExtension(ArchiveDeviceExtension.class);
+        assertTrue(arcExt.getAttributeFilter(Entity.Instance).getCustomAttribute1() != null);
+        arc = TestUtils.readDevice(TestUtils.getBackedUpDevices().get(0));
+        config.merge(arc);
+        //now it should be restored
+        arc = config.findDevice("dcm4chee-arc");
+        arcExt = arc.getDeviceExtension(ArchiveDeviceExtension.class);
+        assertTrue(arcExt.getAttributeFilter(Entity.Instance).getCustomAttribute1() == null);
+    }
+    
     @Test
     public void test() throws Exception {
         for (int i = 0; i < OTHER_AES.length; i++) {
@@ -122,6 +145,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
 
         Device arc = createArchiveDevice("dcm4chee-arc", arrDevice);
 
+        
 //        StorageOptions storageOptions = new StorageOptions();
 //        storageOptions.setDigitalSignatureSupport(StorageOptions.DigitalSignatureSupport.LEVEL_3);
 //        TransferCapability dcm4CHEE = arc.getApplicationEntity("DCM4CHEE").getTransferCapabilities().iterator().next();
@@ -172,6 +196,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
 
         assertTrue("Reconfigure", res);
 
+        testBreakMerge(arc);
     }
 
     protected void cleanUp() throws Exception {

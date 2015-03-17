@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.conf;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
@@ -52,7 +53,9 @@ import org.dcm4che3.data.Code;
  */
 @LDAP(objectClasses = "dcmRejectionNote", distinguishingField = "dcmRejectionNoteTitle")
 @ConfigurableClass
-public class RejectionParam {
+public class RejectionParam implements Serializable{
+
+    private static final long serialVersionUID = -8357808456831886274L;
 
     @ConfigurableProperty(name="dcmRejectionNoteTitle")
     private Code rejectionNoteTitle;

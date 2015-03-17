@@ -45,6 +45,11 @@
             <artifactId>dcm4che-imageio</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.dcm4che</groupId>
+            <artifactId>dcm4che-test</artifactId>
+            <version>${dcm4che.version}</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
