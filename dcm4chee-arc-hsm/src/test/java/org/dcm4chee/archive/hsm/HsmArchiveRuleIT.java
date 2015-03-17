@@ -42,6 +42,7 @@ import static org.junit.Assert.fail;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
@@ -160,7 +161,61 @@ public class HsmArchiveRuleIT {
         checkMatchingRules("DUMMY InstitutionName and DepartmentName", matching, rules, rule3);
     }
 
-
+    @Test
+    public void testArchivingRulesCombinations() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        ArchivingRules rules = new ArchivingRules();
+        int lenMethods = 1 << METHODS.length;
+        List<ArchivingRule>[] expected = new ArrayList[lenMethods];
+        for (int iMethod = 3 ; iMethod < lenMethods ; iMethod++) {
+            expected[iMethod] = new ArrayList<ArchivingRule>();
+            int nrMethods = Integer.bitCount(iMethod);
+            if (nrMethods < 2)
+                continue;
+            ArchivingRule rule = getRule(toCommonName(iMethod), 60, GROUP_1);
+            int mask = 0x01;
+            int highBit = 0;
+            for (int j = 0 ; j < METHODS.length ; j++) {
+                if ( (iMethod & mask) > 0) {
+                    METHODS[j].invoke(rule, new Object[]{new String[]{VALUES[j][0]}});
+                    highBit = j;
+                }
+                mask = mask << 1;
+            }
+            rules.add(rule);
+            expected[iMethod].add(rule);
+            //add aditional matching rules
+            loop: for (int j = 3 ; j < iMethod ; j++) {
+                if ( Integer.bitCount(j) < 2 )
+                    continue;
+                mask = 0x01;
+                int countTrueBit = 0;
+                for (int k = 0 ; k < highBit ; k++) {
+                    if ((j & mask) > 0 && (iMethod & mask) == 0) {
+                        continue loop;
+                    } else if ((iMethod & mask) > 0) {
+                        countTrueBit++;
+                    }
+                    mask <<= 1;
+                }
+                if (countTrueBit > 1) {
+                    expected[iMethod].add(rules.findByCommonName(toCommonName(j)));
+                }
+            }
+        }
+        String[] queryValues = new String[METHODS.length];
+        for (int iMethod = 0 ; iMethod < lenMethods ; iMethod++) {
+             int mask = 0x01;
+             for (int j = 0 ; j < METHODS.length ; j++) {
+                 queryValues[j] = (iMethod & mask) > 0 ? VALUES[j][0] : DUMMY; 
+                 mask = mask << 1;
+             }
+             List<ArchivingRule> matching = rules.findArchivingRule(queryValues[DEVICE], queryValues[AET], 
+                     getAttributes(queryValues[INSTITUTION], queryValues[DEPARTMENT], queryValues[MODALITY]));
+             ArchivingRule[] exp = expected[iMethod] == null ? new ArchivingRule[0] : expected[iMethod].toArray(new ArchivingRule[0]);
+             checkMatchingRules(toCommonName(iMethod), matching, rules, exp);
+        }
+    }
+    
     private void checkMatching(int idx) throws Exception {
         ArchivingRules rules = new ArchivingRules();
         String[] values = VALUES[idx];
@@ -202,6 +257,18 @@ public class HsmArchiveRuleIT {
         return expected;
     }
 
+    private String toCommonName(int iMethod) {
+        StringBuilder sb = new StringBuilder("COMBINATION-");
+        int mask = 0x01;
+        for (int i = 0 ; i < METHODS.length ; i++) {
+            if ( (iMethod & mask) > 0) {
+                sb.append(METHODS[i].getName().substring(3)).append("_");
+            }
+            mask = mask << 1;
+        }
+        return sb.toString();
+    }
+
     private ArchivingRule getRule(String cn, int delay, String... groupIDs) {
         ArchivingRule rule = new ArchivingRule();
         rule.setCommonName(cn);
@@ -219,6 +286,8 @@ public class HsmArchiveRuleIT {
     }
     
     private void checkMatchingRules(String condition, List<ArchivingRule> matched, ArchivingRules rules, ArchivingRule... expected) {
+        if (expected.length == 1 && expected[0] == null)
+            expected = new ArchivingRule[0];
         if (matched.size() > expected.length) {
             String allMatching = promptRules("\nMatching rules:", matched, "\n   ").toString();
             for (ArchivingRule r : expected)
@@ -250,12 +319,16 @@ public class HsmArchiveRuleIT {
         return addRule(sb, rule).toString();
     }
     private StringBuilder addRule(StringBuilder sb, ArchivingRule rule) {
-        sb.append(rule.getCommonName()).append(" (");
-        addConditionPrompt(sb, "DeviceNames", rule.getDeviceNames());
-        addConditionPrompt(sb, "AeTitles", rule.getAeTitles());
-        addConditionPrompt(sb, "Modalities", rule.getModalities());
-        addConditionPrompt(sb, "InstitutionNames", rule.getInstitutionNames());
-        addConditionPrompt(sb, "InstitutionalDepartmentNames", rule.getInstitutionalDepartmentNames());
+        if (rule == null) {
+            sb.append("NULL(");   
+        } else {
+            sb.append(rule.getCommonName()).append(" (");
+            addConditionPrompt(sb, "DeviceNames", rule.getDeviceNames());
+            addConditionPrompt(sb, "AeTitles", rule.getAeTitles());
+            addConditionPrompt(sb, "Modalities", rule.getModalities());
+            addConditionPrompt(sb, "InstitutionNames", rule.getInstitutionNames());
+            addConditionPrompt(sb, "InstitutionalDepartmentNames", rule.getInstitutionalDepartmentNames());
+        }
         return sb.append(")");
     }
     
