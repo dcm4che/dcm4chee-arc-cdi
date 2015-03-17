@@ -173,7 +173,7 @@ public class HsmArchiveIT extends HsmITBase {
         tasks = getArchivingTasks(SERIES_INSTANCE_UID_2_1);
         assertEquals("#ArchivingTasks for "+SERIES_INSTANCE_UID_2_1, 1, tasks.size());
         long secondArchivingTime = tasks.get(0).getArchivingTime().getTime();
-        assertTrue("New ArchivingTime ("+secondArchivingTime+") > first ArchivingTime ("+firstArchivingTime+")+500ms", secondArchivingTime > firstArchivingTime+500);
+        assertTrue("New ArchivingTime ("+secondArchivingTime+") > first ArchivingTime ("+firstArchivingTime+")+400ms", secondArchivingTime > firstArchivingTime+400);
     }
 
 }
