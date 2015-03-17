@@ -776,7 +776,7 @@ public class WadoRS extends Wado {
             for (int frame : adjustedFrameList) {
                 addPart(output,
                         new BulkDataOutput(new BulkData(bulkData
-                                .uriWithoutOffsetAndLength(), bulkData.offset
+                                .uriWithoutQuery(), bulkData.offset()
                                 + (frame - 1) * frameLength, frameLength, ds
                                 .bigEndian())),
                         MediaType.APPLICATION_OCTET_STREAM_TYPE, bulkDataURI

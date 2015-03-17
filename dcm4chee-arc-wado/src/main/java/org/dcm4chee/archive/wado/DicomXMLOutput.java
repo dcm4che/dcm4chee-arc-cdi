@@ -104,7 +104,7 @@ public class DicomXMLOutput implements StreamingOutput {
                 Fragments frags = (Fragments) pixelData;
                 dataset.setValue(Tag.PixelData, VR.OB,
                         new BulkData(((BulkData) frags.get(1))
-                                .uriWithoutOffsetAndLength(), 0, -1,
+                                .uriWithoutQuery(), 0, -1,
                                 dataset.bigEndian()));
             }
             SAXTransformer.getSAXWriter(new StreamResult(out)).write(dataset);

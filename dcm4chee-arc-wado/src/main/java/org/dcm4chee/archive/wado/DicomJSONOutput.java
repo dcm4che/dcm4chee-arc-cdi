@@ -115,7 +115,7 @@ public class DicomJSONOutput implements StreamingOutput {
                             Tag.PixelData,
                             VR.OB,
                             new BulkData(((BulkData) frags.get(1))
-                                    .uriWithoutOffsetAndLength(), 0, -1,
+                                    .uriWithoutQuery(), 0, -1,
                                     dataset.bigEndian()));
                 }
                 try {

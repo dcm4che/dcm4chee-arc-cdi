@@ -70,12 +70,12 @@ public class CompressedPixelDataOutput implements StreamingOutput {
         BulkData fragment = (BulkData) iter.next();
         InputStream in = fragment.openStream();
         try {
-            StreamUtils.copy(in, out, fragment.length);
+            StreamUtils.copy(in, out, fragment.length());
             while (iter.hasNext()) {
-                long streamPosition = fragment.offset + fragment.length;
+                long streamPosition = fragment.offset() + fragment.length();
                 fragment = (BulkData) iter.next();
-                StreamUtils.skipFully(in, fragment.offset - streamPosition);
-                StreamUtils.copy(in, out, fragment.length);
+                StreamUtils.skipFully(in, fragment.offset() - streamPosition);
+                StreamUtils.copy(in, out, fragment.length());
             }
         } finally {
             SafeClose.close(in);
