@@ -109,9 +109,9 @@ public class QueryServiceIT {
     public void closeQuery()  throws SecurityException, IllegalStateException,
     RollbackException, HeuristicMixedException,
     HeuristicRollbackException, SystemException {
-        javax.persistence.Query q = em.createNativeQuery("DELETE study_query_attrs");
+        javax.persistence.Query q = em.createNativeQuery("DELETE FROM study_query_attrs");
         q.executeUpdate();
-        q = em.createNativeQuery("DELETE series_query_attrs");
+        q = em.createNativeQuery("DELETE FROM series_query_attrs");
         q.executeUpdate();
         if (query != null) {
             query.close();

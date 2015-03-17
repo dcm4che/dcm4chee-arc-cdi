@@ -54,7 +54,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>

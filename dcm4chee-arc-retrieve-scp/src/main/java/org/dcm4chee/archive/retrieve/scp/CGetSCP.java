@@ -57,20 +57,22 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.ExtendedNegotiation;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicCGetSCP;
+import org.dcm4che3.net.service.BasicRetrieveTask;
+import org.dcm4che3.net.service.CStoreSCU;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.net.service.RetrieveTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
-import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.scu.impl.CStoreSCUImpl;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -82,34 +84,36 @@ public class CGetSCP extends BasicCGetSCP {
     private final boolean withoutBulkData;
 
     @Inject
-    private QueryService queryService;
+    private RetrieveService retrieveService;
 
     @Inject
-    private RetrieveService retrieveService;
-   
+    private CStoreSCUService storescuService;
+
     @Inject
     private Event<RetrieveBeforeSendEvent> retrieveBeforeEvent;
-    
+
     @Inject
     private Event<RetrieveAfterSendEvent> retrieveAfterEvent;
-    
+
     @Inject
     private IApplicationEntityCache aeCache;
-    
+
     public CGetSCP(String sopClass, String... qrLevels) {
         super(sopClass);
         this.qrLevels = qrLevels;
         this.rootLevel = QueryRetrieveLevel.valueOf(qrLevels[0]);
-        this.withoutBulkData = sopClass.equals(
-                UID.CompositeInstanceRetrieveWithoutBulkDataGET);
+        this.withoutBulkData = sopClass
+                .equals(UID.CompositeInstanceRetrieveWithoutBulkDataGET);
     }
 
     @Override
-    protected RetrieveTask calculateMatches(Association as, PresentationContext pc,
-            Attributes rq, Attributes keys) throws DicomServiceException {
+    protected RetrieveTask calculateMatches(Association as,
+            PresentationContext pc, Attributes rq, Attributes keys)
+            throws DicomServiceException {
         QueryRetrieveLevel level = QueryRetrieveLevel.valueOf(keys, qrLevels);
         String cuid = rq.getString(Tag.AffectedSOPClassUID);
-        ExtendedNegotiation extNeg = as.getAAssociateAC().getExtNegotiationFor(cuid);
+        ExtendedNegotiation extNeg = as.getAAssociateAC().getExtNegotiationFor(
+                cuid);
         EnumSet<QueryOption> queryOpts = QueryOption.toOptions(extNeg);
         boolean relational = queryOpts.contains(QueryOption.RELATIONAL);
         level.validateRetrieveKeys(keys, rootLevel, relational);
@@ -119,43 +123,47 @@ public class CGetSCP extends BasicCGetSCP {
         try {
             QueryParam queryParam = aeExt.getQueryParam(queryOpts,
                     accessControlIDs());
-//            ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
-//            if (sourceAE != null)
-//                queryParam.setDefaultIssuer(sourceAE.getDevice());
-//            IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
-//            if (pid != null && pid.getIssuer() == null)
-//                pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
-//            IDWithIssuer[] pids = Archive.getInstance().pixQuery(ae, pid);
-//            IDWithIssuer[] pids = pid != null 
-//                    ? new IDWithIssuer[]{ pid }
-//                    : IDWithIssuer.EMPTY;
+            // ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
+            // if (sourceAE != null)
+            // queryParam.setDefaultIssuer(sourceAE.getDevice());
+            // IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
+            // if (pid != null && pid.getIssuer() == null)
+            // pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
+            // IDWithIssuer[] pids = Archive.getInstance().pixQuery(ae, pid);
+            // IDWithIssuer[] pids = pid != null
+            // ? new IDWithIssuer[]{ pid }
+            // : IDWithIssuer.EMPTY;
+            ApplicationEntity remoteAE = aeCache.get(as.getRemoteAET());
             RetrieveContext context = retrieveService.createRetrieveContext(
                     retrieveService, as.getRemoteAET(), aeExt);
-            context.setDestinationAE(aeCache.get(as.getRemoteAET()));
-            IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
-            List<ArchiveInstanceLocator> matches =
-                    retrieveService.calculateMatches(pids, keys, queryParam, withoutBulkData);
+            context.setDestinationAE(remoteAE);
+            IDWithIssuer[] pids = retrieveService
+                    .queryPatientIDs(context, keys);
+            List<ArchiveInstanceLocator> matches = retrieveService
+                    .calculateMatches(pids, keys, queryParam, withoutBulkData);
             if (matches.isEmpty())
                 return null;
 
-            RetrieveTaskImpl retrieveTask = new RetrieveTaskImpl(
-                    Dimse.C_GET_RQ, as, pc, rq, matches, as, context, withoutBulkData, retrieveAfterEvent);
-//            if (sourceAE != null)
-//                retrieveTask.setDestinationDevice(sourceAE.getDevice());
+            CStoreSCU<ArchiveInstanceLocator> cstorescu = new CStoreSCUImpl(ae,
+                    remoteAE, storescuService);
+            BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = new BasicRetrieveTask<ArchiveInstanceLocator>(
+                    Dimse.C_GET_RQ, as, pc, rq, matches, as, cstorescu);
+            // if (sourceAE != null)
+            // retrieveTask.setDestinationDevice(sourceAE.getDevice());
             retrieveTask.setSendPendingRSP(aeExt.isSendPendingCGet());
-//            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
-//            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
-            
+            // retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
+            // retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
+
             retrieveBeforeEvent.fire(new RetrieveBeforeSendEvent(
                     new RemoteAssociationParticipant(as),
-                    new LocalAssociationParticipant(as), 
-                    new RemoteAssociationParticipant(as),
-                    ae.getDevice(),
+                    new LocalAssociationParticipant(as),
+                    new RemoteAssociationParticipant(as), ae.getDevice(),
                     matches));
-            
+
             return retrieveTask;
         } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToCalculateNumberOfMatches, e);
+            throw new DicomServiceException(
+                    Status.UnableToCalculateNumberOfMatches, e);
         }
     }
 

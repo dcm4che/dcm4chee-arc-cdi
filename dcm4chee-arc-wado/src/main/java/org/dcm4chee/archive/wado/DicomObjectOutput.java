@@ -49,9 +49,9 @@ import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4chee.archive.retrieve.RetrieveContext;
-import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 
 /**
  * Callback object used by the RESTful runtime when ready
@@ -76,16 +76,16 @@ class DicomObjectOutput implements StreamingOutput {
     private final ArchiveInstanceLocator fileRef;
     private final Attributes attrs;
     private final String tsuid;
-    private RetrieveContext context;
-    private RetrieveService service;
+    private CStoreSCUContext context;
+    private CStoreSCUService service;
     
     DicomObjectOutput(ArchiveInstanceLocator fileRef, Attributes attrs, String tsuid,
-            RetrieveContext ctx) {
+            CStoreSCUContext ctx, CStoreSCUService srv) {
         this.fileRef = fileRef;
         this.attrs = attrs;
         this.tsuid = tsuid;
         this.context = ctx;
-        service = ctx.getRetrieveService();
+        this.service = srv;
     }
 
     public void write(OutputStream out) throws IOException {
@@ -95,13 +95,11 @@ class DicomObjectOutput implements StreamingOutput {
             dis.setIncludeBulkData(IncludeBulkData.URI);
             Attributes dataset = dis.readDataset(-1, -1);
             
-            if(context.getSourceAET()!=null){
+            if(context.getRemoteAE()!=null){
             service.coerceFileBeforeMerge(
-                    (ArchiveInstanceLocator) fileRef, context,
-                    context.getSourceAET(), dataset);
+                    (ArchiveInstanceLocator) fileRef, dataset, context);
 
-             service.coerceRetrievedObject(context,
-                        context.getSourceAET(), dataset);
+             service.coerceAttributes(dataset, context);
             }
             dataset.addAll(attrs);
             if (tsuid != fileRef.tsuid) {

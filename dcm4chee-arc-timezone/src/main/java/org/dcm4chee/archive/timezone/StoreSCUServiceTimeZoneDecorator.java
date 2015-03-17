@@ -44,17 +44,21 @@ import java.util.TimeZone;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,27 +68,28 @@ import org.slf4j.LoggerFactory;
  *
  */
 @Decorator
-public abstract class RetrieveServiceTimeZoneDecorator implements
-        RetrieveService {
+public abstract class StoreSCUServiceTimeZoneDecorator
+        implements CStoreSCUService {
 
     static Logger LOG = LoggerFactory
-            .getLogger(RetrieveServiceTimeZoneDecorator.class);
+            .getLogger(StoreSCUServiceTimeZoneDecorator.class);
 
     @Inject
     @Delegate
-    RetrieveService retrieveService;
+    CStoreSCUService storescuService;
 
     @Override
-    public void coerceFileBeforeMerge(ArchiveInstanceLocator inst, RetrieveContext context,
-                                      String remoteAET, Attributes attrs)
-            throws DicomServiceException {
-        retrieveService.coerceRetrievedObject(context, remoteAET, attrs);
+    public void coerceFileBeforeMerge(ArchiveInstanceLocator inst, Attributes attrs,
+            CStoreSCUContext context) throws DicomServiceException {
+        storescuService.coerceFileBeforeMerge(inst, attrs, context);
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
-        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
-        if (archiveTimeZone == null)    // no Timezone support configured
+        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                .getTimeZoneOfDevice();
+        if (archiveTimeZone == null) // no Timezone support configured
             return;
 
-        String fileTimeZoneID = inst.getFileTimeZoneID();
+        String fileTimeZoneID = ((ArchiveInstanceLocator) inst)
+                .getFileTimeZoneID();
         if (fileTimeZoneID == null) {
             LOG.debug("Missing Timezone information for persisted object");
             return;
@@ -93,7 +98,8 @@ public abstract class RetrieveServiceTimeZoneDecorator implements
         try {
             TimeZone timeZone = TimeZone.getTimeZone(fileTimeZoneID);
             if (!timeZone.hasSameRules(archiveTimeZone)) {
-                LOG.debug("Coerce persisted object attributes from Timezone {} to Archive Timezone {}",
+                LOG.debug(
+                        "Coerce persisted object attributes from Timezone {} to Archive Timezone {}",
                         timeZone.getID(), archiveTimeZone.getID());
                 attrs.setDefaultTimeZone(timeZone);
                 attrs.setTimezone(archiveTimeZone);
@@ -105,33 +111,40 @@ public abstract class RetrieveServiceTimeZoneDecorator implements
     }
 
     @Override
-    public void coerceRetrievedObject(RetrieveContext context,
-            String remoteAET, Attributes attrs) throws DicomServiceException {
-        retrieveService.coerceRetrievedObject(context, remoteAET, attrs);
+    public void coerceAttributes(Attributes attrs, CStoreSCUContext context)
+            throws DicomServiceException {
+        storescuService.coerceAttributes(attrs, context);
 
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
-        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
-        if (archiveTimeZone == null)    // no Timezone support configured
+        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                .getTimeZoneOfDevice();
+        if (archiveTimeZone == null) // no Timezone support configured
             return;
 
         try {
-            TimeZone timeZone = context.getDestinationTimeZone();
+            TimeZone timeZone = context.getRemoteAE().getDevice().getTimeZoneOfDevice();
             if (timeZone == null) {
-                LOG.debug("{}: No Timezone configured for destination - assume Archive Timezone: {}",
-                        remoteAET, archiveTimeZone.getID());
+                LOG.debug(
+                        "{}: No Timezone configured for destination - assume Archive Timezone: {}",
+                        context.getRemoteAE().getAETitle(),
+                        archiveTimeZone.getID());
                 timeZone = archiveTimeZone;
             }
             if (!timeZone.hasSameRules(archiveTimeZone)) {
-                LOG.debug("{}: Coerce attributes from Archive Timezone {} to destination Timezone {}",
-                        remoteAET, archiveTimeZone.getID(), timeZone.getID());
+                LOG.debug(
+                        "{}: Coerce attributes from Archive Timezone {} to destination Timezone {}",
+                        context.getRemoteAE().getAETitle(),
+                        archiveTimeZone.getID(), timeZone.getID());
                 attrs.setDefaultTimeZone(archiveTimeZone);
                 attrs.setTimezone(timeZone);
             }
             if (!attrs.containsValue(Tag.TimezoneOffsetFromUTC)) {
-                String offsetFromUTC = DateUtils.formatTimezoneOffsetFromUTC(timeZone, dateOf(attrs));
+                String offsetFromUTC = DateUtils.formatTimezoneOffsetFromUTC(
+                        timeZone, dateOf(attrs));
                 attrs.setString(Tag.TimezoneOffsetFromUTC, VR.SH, offsetFromUTC);
-                LOG.debug("{}: Supplement attributes with Timezone Offset From UTC {}",
-                        remoteAET, offsetFromUTC);
+                LOG.debug(
+                        "{}: Supplement attributes with Timezone Offset From UTC {}",
+                        context.getRemoteAE().getAETitle(), offsetFromUTC);
             }
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);

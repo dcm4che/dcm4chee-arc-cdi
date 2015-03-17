@@ -101,12 +101,11 @@ import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.GenericParticipant;
-import org.dcm4chee.archive.retrieve.RetrieveContext;
-import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -132,7 +131,7 @@ public class WadoURI extends Wado {
     @Inject
     private HostAECache aeCache;
 
-    private RetrieveContext context;
+    private CStoreSCUContext context;
 
     private static final int STATUS_NOT_IMPLEMENTED = 501;
 
@@ -272,9 +271,8 @@ public class WadoURI extends Wado {
             if (sourceAE == null) {
                 LOG.info("Unable to find the mapped AE for this host or even the fallback AE, coercion will not be applied");
             }
-                context = retrieveService.createRetrieveContext(
-                        retrieveService, sourceAE!=null?sourceAE.getAETitle():null, arcAE);
-                context.setDestinationAE(sourceAE);
+            
+            context = new CStoreSCUContext(sourceAE, sourceAE);
 
             checkRequest();
 
@@ -425,7 +423,7 @@ public class WadoURI extends Wado {
                 th.setResult(new StreamResult(bout));
                 w = new SAXWriter(th);
                 DicomInputStream dis = new DicomInputStream(
-                        retrieveService.getFile(ref).toFile());
+                        storescuService.getFile(ref).toFile());
                 Attributes data = dis.readDataset(-1, -1);
                 dis.close();
                 try {
@@ -449,7 +447,7 @@ public class WadoURI extends Wado {
                 DicomInputStream in = null;
                 try {
                     in = new DicomInputStream(
-                            retrieveService.getFile(ref).toFile());
+                            storescuService.getFile(ref).toFile());
                     Attributes atts = in.readDataset(-1, -1);
                     bOut = new BufferedOutputStream(out);
                     bOut.write(atts.getBytes(Tag.EncapsulatedDocument));
@@ -467,7 +465,7 @@ public class WadoURI extends Wado {
         String tsuid = selectTransferSyntax(ref.tsuid);
         MediaType mediaType = MediaType
                 .valueOf("application/dicom;transfer-syntax=" + tsuid);
-        return Response.ok(new DicomObjectOutput(ref, attrs, tsuid,context), mediaType)
+        return Response.ok(new DicomObjectOutput(ref, attrs, tsuid, context, storescuService), mediaType)
                 .build();
     }
 
@@ -524,9 +522,8 @@ public class WadoURI extends Wado {
 
     private BufferedImage getBufferedImage(final ArchiveInstanceLocator ref,
             final Attributes attrs) throws IOException {
-        RetrieveService retrieveService = context.getRetrieveService();
         ImageInputStream iis = ImageIO.createImageInputStream(
-                retrieveService.getFile(ref).toFile());
+                storescuService.getFile(ref).toFile());
         BufferedImage bi;
         try {
             bi = readImage(iis, attrs);
@@ -646,7 +643,7 @@ public class WadoURI extends Wado {
         ImageInputStream iis = null;
         try {
             iis = ImageIO.createImageInputStream(
-                    retrieveService.getFile(ref).toFile());
+                    storescuService.getFile(ref).toFile());
         } catch (IOException e) {
             LOG.error("Error creating image input stream  {}", e);
         }
@@ -765,7 +762,7 @@ public class WadoURI extends Wado {
                 throw new WebApplicationException(Status.BAD_REQUEST);
 
             DicomInputStream dis = new DicomInputStream(
-                    retrieveService.getFile(ref.get(0)).toFile());
+                    storescuService.getFile(ref.get(0)).toFile());
             try {
                 param.setPresentationState(dis.readDataset(-1, -1));
             } finally {

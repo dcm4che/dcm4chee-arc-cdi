@@ -86,10 +86,11 @@ import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 import org.jboss.resteasy.plugins.providers.multipart.ContentIDUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.jboss.resteasy.plugins.providers.multipart.OutputPart;
@@ -148,7 +149,7 @@ public class WadoRS extends Wado {
     @Context
     private HttpHeaders headers;
 
-    private RetrieveContext context;
+    private CStoreSCUContext context;
 
     private boolean acceptAll;
 
@@ -183,9 +184,8 @@ public class WadoRS extends Wado {
             if (sourceAE == null) {
                 LOG.info("Unable to find the mapped AE for this host or even the fallback AE, elimination/coercion will not be applied");
             }
-                context = retrieveService.createRetrieveContext(
-                        retrieveService, sourceAE!=null?sourceAE.getAETitle():null, arcAE);
-                context.setDestinationAE(sourceAE);
+            
+            context = new CStoreSCUContext(sourceAE, sourceAE);
 
         this.method = method;
         List<MediaType> acceptableMediaTypes = headers
@@ -236,7 +236,7 @@ public class WadoRS extends Wado {
 
     private String selectDicomTransferSyntaxes(InstanceLocator ref) {
         List<String> supportedTransferSyntaxes = acceptedTransferSyntaxes;
-        if(context.getDestinationAE()!=null)
+        if(context.getLocalAE()!=null)
         if (arcAE.getRetrieveSuppressionCriteria()
                 .isCheckTransferCapabilities()){
         if(confSupportsTransferSyntax(ref)!=null)
@@ -261,7 +261,7 @@ public class WadoRS extends Wado {
 
     private String confSupportsTransferSyntax(InstanceLocator ref) {
         ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                context.getDestinationAE().getTransferCapabilitiesWithRole(
+                context.getLocalAE().getTransferCapabilitiesWithRole(
                         Role.SCU));
             for (TransferCapability supportedTC : aeTCs){
                 if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0 && 
@@ -275,7 +275,7 @@ public class WadoRS extends Wado {
     private String getDefaultConfiguredTransferSyntax(InstanceLocator ref)
     {
         ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                context.getDestinationAE().getTransferCapabilitiesWithRole(
+                context.getLocalAE().getTransferCapabilitiesWithRole(
                         Role.SCU));
         for (TransferCapability supportedTC : aeTCs){
             if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0 ) {
@@ -462,7 +462,7 @@ public class WadoRS extends Wado {
             {
                 List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
                 for(ArchiveInstanceLocator ref: refs){
-                    if(retrieveService.eliminateUnSupportedSOPClasses(ref, context) == null)
+                    if(storescuService.eliminateUnSupportedSOPClasses(ref, context) == null)
                         instsfailed.add(ref);
                     else
                         adjustedRefs.add(ref);
@@ -472,15 +472,15 @@ public class WadoRS extends Wado {
             // check for suppression criteria
             Map<String, String> suppressionCriteriaMap = arcAE
                     .getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
-            if(context.getSourceAET()!=null)
-            if (suppressionCriteriaMap.containsKey(context.getSourceAET())) {
+            if(context.getRemoteAE() !=null)
+            if (suppressionCriteriaMap.containsKey(context.getRemoteAE().getAETitle())) {
                 String supressionCriteriaTemplateURI = suppressionCriteriaMap
-                        .get(context.getSourceAET());
+                        .get(context.getRemoteAE().getAETitle());
                 if (supressionCriteriaTemplateURI != null) {
                     List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
                     for(ArchiveInstanceLocator ref: refs){
                         Attributes attrs = getFileAttributes(ref);
-                    if(retrieveService.applySuppressionCriteria(ref, attrs,
+                    if(storescuService.applySuppressionCriteria(ref, attrs,
                             supressionCriteriaTemplateURI, context) == null)
                         instsfailed.add(ref);
                     else
@@ -525,7 +525,7 @@ public class WadoRS extends Wado {
             ZipOutput output = new ZipOutput();
             for (ArchiveInstanceLocator ref : refs) {
                 output.addEntry(new DicomObjectOutput(ref, (Attributes) ref
-                        .getObject(), ref.tsuid, context));
+                        .getObject(), ref.tsuid, context, storescuService));
             }
             return Response.ok().entity(output)
                     .type(MediaTypes.APPLICATION_ZIP_TYPE).build();
@@ -575,7 +575,7 @@ public class WadoRS extends Wado {
         if (acceptDicomJSON) {
             StreamingOutput output = null;
             ResponseBuilder JSONResponseBuilder = null;
-            output = new DicomJSONOutput(aetitle, uriInfo, refs, context);
+            output = new DicomJSONOutput(aetitle, uriInfo, refs, context, storescuService);
 
             if (output != null) {
                 JSONResponseBuilder = Response.ok(output);
@@ -603,7 +603,7 @@ public class WadoRS extends Wado {
         }
         Attributes attrs = (Attributes) ref.getObject();
         addPart(output,
-                new DicomObjectOutput(ref, attrs, tsuid, context),
+                new DicomObjectOutput(ref, attrs, tsuid, context, storescuService),
                 MediaType.valueOf("application/dicom;transfer-syntax=" + tsuid),
                 null, ref.iuid);
         return true;
@@ -789,7 +789,7 @@ public class WadoRS extends Wado {
             MultipartRelatedOutput output) {
         Attributes attrs = (Attributes) ref.getObject();
         addPart(output, new DicomXMLOutput(ref, toBulkDataURI(ref.uri), attrs,
-                context), MediaTypes.APPLICATION_DICOM_XML_TYPE, null, ref.iuid);
+                context, storescuService), MediaTypes.APPLICATION_DICOM_XML_TYPE, null, ref.iuid);
     }
 
     private boolean isMultiframeMediaType(MediaType mediaType) {
@@ -800,7 +800,7 @@ public class WadoRS extends Wado {
     private Attributes getFileAttributes(ArchiveInstanceLocator ref) {
         DicomInputStream dis = null;
         try {
-            dis = new DicomInputStream(retrieveService.getFile(ref).toFile());
+            dis = new DicomInputStream(storescuService.getFile(ref).toFile());
             dis.setIncludeBulkData(IncludeBulkData.URI);
             Attributes dataset = dis.readDataset(-1, -1);
             return dataset;

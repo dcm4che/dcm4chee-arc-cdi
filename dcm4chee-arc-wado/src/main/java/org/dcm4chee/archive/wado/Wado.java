@@ -51,6 +51,8 @@ import org.dcm4che3.net.QueryOption;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 
 /**
  * Common Superclass for WADO services
@@ -70,6 +72,9 @@ public class Wado {
 
     @Inject
     protected RetrieveService retrieveService;
+    
+    @Inject
+    protected CStoreSCUService storescuService;
     
     /**
      * Setter for the AETitle property, automatically invoked

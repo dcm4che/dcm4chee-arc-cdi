@@ -49,11 +49,8 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
-import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.qc.impl.QCPostProcessor;
-import org.dcm4chee.archive.retrieve.RetrieveContext;
 
 /**
  * Quality Control Bean

@@ -42,13 +42,15 @@ import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4chee.archive.retrieve.RetrieveContext;
-import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,56 +61,47 @@ import org.slf4j.LoggerFactory;
  *
  */
 @Decorator
-public abstract class RetrieveServiceMIMADecorator implements RetrieveService {
+public abstract class StoreSCUServiceMIMADecorator
+        implements CStoreSCUService {
 
-    private static Logger LOG =
-            LoggerFactory.getLogger(RetrieveServiceMIMADecorator.class);
-
-    @Inject @Delegate
-    private RetrieveService retrieveService;
+    private static Logger LOG = LoggerFactory
+            .getLogger(StoreSCUServiceMIMADecorator.class);
 
     @Inject
-    private IApplicationEntityCache aeCache;
+    @Delegate
+    private CStoreSCUService storescuService;
 
     @Inject
-    private PIXConsumer pixConsumer;
+    private MIMAAttributeCoercion coercion;
 
-    /*
-     * Extends default queryPatientIDs method associating an issuer to the 
-     * queried id (if any) and performing a PIX Query. The pids resulting
-     * from the PIX query are then used for the internal DICOM query along
-     * the original queried id.
-     */
     @Override
-    public IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys) {
-        IDWithIssuer pid = IDWithIssuer.pidOf(keys);
-        if (pid == null)
-            return IDWithIssuer.EMPTY;
-
-        if (pid.getIssuer() == null) {
-            ApplicationEntity sourceAE = findApplicationEntity(context.getSourceAET());
-            if (sourceAE != null) {
-                if (context.getDestinationAE() == null) { // C-GET
-                    context.setDestinationAE(sourceAE);
-                }
-                pid.setIssuer(sourceAE.getDevice().getIssuerOfPatientID());
-            }
-            if (pid.getIssuer() == null) {
-                LOG.info("No Issuer of Patient ID associated with AE {} - cannot query for Other Patient IDs",
-                        context.getSourceAET());
-                return new IDWithIssuer[]{ pid };
-            }
+    public void coerceAttributes(Attributes attrs, CStoreSCUContext context)
+            throws DicomServiceException {
+        MIMAInfo info = (MIMAInfo) context
+                .getProperty(MIMAInfo.class.getName());
+        if (info == null) {
+            info = new MIMAInfo();
+            init(context, info);
+            context.setProperty(MIMAInfo.class.getName(), info);
         }
-        return pixConsumer.pixQuery(context.getArchiveAEExtension(), pid);
+        coercion.coerce(context.getArchiveAEExtension(), info, attrs);
+        storescuService.coerceAttributes(attrs, context);
     }
 
-    private ApplicationEntity findApplicationEntity(String aet) {
-        try {
-            return aeCache.findApplicationEntity(aet);
-        } catch (ConfigurationException e) {
-            LOG.warn("Failed to access configuration for AE {}:", aet, e);
-            return null;
+    private void init(CStoreSCUContext context, MIMAInfo info) {
+        ArchiveAEExtension arcAE = context.getArchiveAEExtension();
+        info.setReturnOtherPatientIDs(arcAE.isReturnOtherPatientIDs());
+        info.setReturnOtherPatientNames(arcAE.isReturnOtherPatientNames());
+
+        ApplicationEntity destAE = context.getRemoteAE();
+        if (destAE == null) {
+            destAE = context.getLocalAE();
+        }
+        if (destAE != null) {
+            Device destDev = destAE.getDevice();
+            info.setRequestedIssuerOfPatientID(destDev.getIssuerOfPatientID());
+            info.setRequestedIssuerOfAccessionNumber(destDev
+                    .getIssuerOfAccessionNumber());
         }
     }
-
 }

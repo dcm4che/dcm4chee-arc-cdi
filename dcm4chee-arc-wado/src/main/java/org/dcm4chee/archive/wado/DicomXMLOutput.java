@@ -55,7 +55,9 @@ import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
-import org.dcm4chee.archive.retrieve.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -66,16 +68,17 @@ public class DicomXMLOutput implements StreamingOutput {
     private final ArchiveInstanceLocator fileRef;
     private final Attributes attrs;
     private final String bulkDataURI;
-    private RetrieveContext context;
-    private RetrieveService service;
+    private CStoreSCUContext context;
+    private CStoreSCUService service;
     
     public DicomXMLOutput(ArchiveInstanceLocator fileRef, String bulkDataURI,
-            Attributes attrs, RetrieveContext ctx) {
+            Attributes attrs, CStoreSCUContext ctx,
+            CStoreSCUService srv) {
         this.fileRef = fileRef;
         this.bulkDataURI = bulkDataURI;
         this.attrs = attrs;
         this.context = ctx;
-        service = ctx.getRetrieveService();
+        this.service = srv;
     }
 
     @Override
@@ -88,12 +91,11 @@ public class DicomXMLOutput implements StreamingOutput {
             dis.setIncludeBulkData(IncludeBulkData.URI);
             Attributes dataset = dis.readDataset(-1, -1);
             
-            if(context.getSourceAET()!=null){
-            service.coerceFileBeforeMerge(
-                    fileRef, context, context.getSourceAET(), dataset);
+            if (context.getRemoteAE() != null) {
+                service.coerceFileBeforeMerge((ArchiveInstanceLocator) fileRef,
+                        dataset, context);
 
-             service.coerceRetrievedObject(context,
-                        context.getSourceAET(), dataset);
+                service.coerceAttributes(dataset, context);
             }
             
             dataset.addAll(attrs);

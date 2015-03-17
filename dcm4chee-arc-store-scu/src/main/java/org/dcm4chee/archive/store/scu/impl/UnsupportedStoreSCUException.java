@@ -35,53 +35,57 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+
 package org.dcm4chee.archive.store.scu.impl;
-
-import java.util.List;
-
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
-
-import org.dcm4che3.net.service.InstanceLocator;
-import org.dcm4chee.archive.store.scu.CStoreSCU;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-@MessageDriven(activationConfig = {
-        @ActivationConfigProperty(propertyName = "destinationType",
-                                  propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination",
-                                  propertyValue = "queue/storescu"),
-        @ActivationConfigProperty(propertyName = "acknowledgeMode",
-                                  propertyValue = "Auto-acknowledge") })
-public class StoreSCUMDB implements MessageListener {
+public class UnsupportedStoreSCUException extends Exception {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StoreSCUMDB.class);
-
-    @Inject
-    private CStoreSCU cstorescu;
-
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            cstorescu.cstore(
-                msg.getStringProperty("LocalAET"),
-                msg.getStringProperty("RemoteAET"),                
-                (List<InstanceLocator>) ((ObjectMessage) msg).getObject(),
-                msg.getIntProperty("Priority"),
-                msg.getIntProperty("Retries"));
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
-        }
+    /**
+     * 
+     */
+    public UnsupportedStoreSCUException() {
+        // TODO Auto-generated constructor stub
     }
 
+    /**
+     * @param message
+     */
+    public UnsupportedStoreSCUException(String message) {
+        super(message);
+        // TODO Auto-generated constructor stub
+    }
+
+    /**
+     * @param cause
+     */
+    public UnsupportedStoreSCUException(Throwable cause) {
+        super(cause);
+        // TODO Auto-generated constructor stub
+    }
+
+    /**
+     * @param message
+     * @param cause
+     */
+    public UnsupportedStoreSCUException(String message, Throwable cause) {
+        super(message, cause);
+        // TODO Auto-generated constructor stub
+    }
+
+    /**
+     * @param message
+     * @param cause
+     * @param enableSuppression
+     * @param writableStackTrace
+     */
+    public UnsupportedStoreSCUException(String message, Throwable cause,
+            boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+        // TODO Auto-generated constructor stub
+    }
 
 }

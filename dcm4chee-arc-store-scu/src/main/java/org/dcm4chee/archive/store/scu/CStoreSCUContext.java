@@ -36,27 +36,63 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.retrieve;
+package org.dcm4chee.archive.store.scu;
 
-import org.dcm4che3.data.IDWithIssuer;
+import java.util.HashMap;
+
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 
-import java.util.TimeZone;
-
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public interface RetrieveContext {
+public class CStoreSCUContext {
 
-    RetrieveService getRetrieveService();
+    private final HashMap<String,Object> properties =
+            new HashMap<String,Object>();
+    
+    private ApplicationEntity localAE, remoteAE;
 
-    String getSourceAET();
+    public CStoreSCUContext(ApplicationEntity localAE, ApplicationEntity remoteAE) {
+        super();
+        this.localAE = localAE;
+        this.remoteAE = remoteAE;
+    }
 
-    ArchiveAEExtension getArchiveAEExtension();
+    public Object getProperty(String key) {
+        return properties.get(key);
+    }
 
-    ApplicationEntity getDestinationAE();
+    public Object removeProperty(String key) {
+        return properties.remove(key);
+    }
 
-    void setDestinationAE(ApplicationEntity destinationAE);
+    public void setProperty(String key, Object value) {
+        properties .put(key, value);
+    }
+
+    public ApplicationEntity getLocalAE() {
+        return localAE;
+    }
+    
+    public ArchiveAEExtension getArchiveAEExtension() {
+        return localAE.getAEExtension(ArchiveAEExtension.class);
+    }
+
+
+    public void setLocalAE(ApplicationEntity localAE) {
+        this.localAE = localAE;
+    }
+
+    public ApplicationEntity getRemoteAE() {
+        return remoteAE;
+    }
+
+    public void setRemoteAE(ApplicationEntity remoteAE) {
+        this.remoteAE = remoteAE;
+    }
+    
+    
+
 }

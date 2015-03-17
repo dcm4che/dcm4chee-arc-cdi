@@ -38,10 +38,6 @@
 
 package org.dcm4chee.archive.retrieve.impl;
 
-import java.util.HashMap;
-import java.util.TimeZone;
-
-import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
@@ -60,11 +56,6 @@ public class RetrieveContextImpl implements RetrieveContext {
     private final ArchiveAEExtension arcAE;
 
     private ApplicationEntity destinationAE;
-
-    private IDWithIssuer[] pids;
-
-    private final HashMap<String,Object> properties =
-            new HashMap<String,Object>();
 
     public RetrieveContextImpl(RetrieveService service,
             String sourceAET, ArchiveAEExtension aeExt) {
@@ -97,35 +88,4 @@ public class RetrieveContextImpl implements RetrieveContext {
     public void setDestinationAE(ApplicationEntity destinationAE) {
         this.destinationAE = destinationAE;
     }
-
-    @Override
-    public TimeZone getDestinationTimeZone() {
-        return destinationAE != null ? destinationAE.getDevice().getTimeZoneOfDevice() : null;
-    }
-
-    @Override
-    public IDWithIssuer[] getPatientIDs() {
-        return pids;
-    }
-
-    @Override
-    public void setPatientIDs(IDWithIssuer[] pids) {
-        this.pids = pids;
-    }
-
-    @Override
-    public Object getProperty(String key) {
-        return properties.get(key);
-    }
-
-    @Override
-    public Object removeProperty(String key) {
-        return properties.remove(key);
-    }
-
-    @Override
-    public void setProperty(String key, Object value) {
-        properties .put(key, value);
-    }
-
 }
