@@ -185,7 +185,7 @@ public class WadoRS extends Wado {
                 LOG.info("Unable to find the mapped AE for this host or even the fallback AE, elimination/coercion will not be applied");
             }
             
-            context = new CStoreSCUContext(sourceAE, sourceAE);
+            context = new CStoreSCUContext(arcAE.getApplicationEntity(), sourceAE);
 
         this.method = method;
         List<MediaType> acceptableMediaTypes = headers
