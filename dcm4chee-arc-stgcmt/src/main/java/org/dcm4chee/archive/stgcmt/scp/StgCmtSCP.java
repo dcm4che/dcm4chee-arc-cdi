@@ -55,6 +55,7 @@ import org.dcm4che3.net.Commands;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.IncompatibleConnectionException;
 import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.AbstractDicomService;
 import org.dcm4che3.net.service.DicomService;
@@ -99,6 +100,9 @@ public class StgCmtSCP extends AbstractDicomService {
             ae.findCompatibelConnection(remoteAE);
             Attributes eventInfo = stgCmtService.calculateResult(actionInfo);
             ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
+            //coerce for outbound results
+            stgCmtService.coerceAttributes(eventInfo, remoteAET, aeExt, Role.SCU);
+            //schedule sending results 
             stgCmtService.scheduleNEventReport(localAET, remoteAET, eventInfo, 0,
                     aeExt != null ? aeExt.getStorageCommitmentDelay() * 1000L : 0);
         } catch (IncompatibleConnectionException e) {

@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.stgcmt.scp.impl;
 
 import java.io.IOException;
+import java.util.Date;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
@@ -50,19 +51,28 @@ import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
 
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.DimseRSP;
+import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.pdu.AAssociateRQ;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.pdu.RoleSelection;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
 import org.slf4j.Logger;
@@ -178,6 +188,36 @@ public class StgCmtServiceImpl implements StgCmtService {
                 LOG.warn("Failed to return Storage Commitment Result to {}: {}",
                         remoteAET, e);
             }
+        }
+    }
+
+    @Override
+    public void coerceAttributes(Attributes attrs, final String remoteAET, final ArchiveAEExtension arcAE, Role role) throws DicomServiceException {
+        try {
+            Attributes modified = new Attributes();
+            Templates tpl = remoteAET != null ? arcAE
+                    .getAttributeCoercionTemplates(
+                            attrs.getString(Tag.SOPClassUID), Dimse.N_EVENT_REPORT_RQ,
+                            role, remoteAET)
+                    : null;
+            if (tpl != null) {
+                attrs.update(SAXTransformer.transform(attrs, tpl, false, false,
+                        new SetupTransformer() {
+
+                            @Override
+                            public void setup(Transformer transformer) {
+                                    Date date = new Date();
+                                    String currentDate = DateUtils.formatDA(null, date);
+                                    String currentTime = DateUtils.formatTM(null, date);
+                                    transformer.setParameter("date", currentDate);
+                                    transformer.setParameter("time", currentTime);
+                                    transformer.setParameter("calling", remoteAET);
+                                    transformer.setParameter("called", arcAE.getApplicationEntity().getAETitle());
+                            }
+                        }), modified);
+            }
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
 
