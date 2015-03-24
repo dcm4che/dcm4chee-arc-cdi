@@ -412,7 +412,7 @@
     <module>dcm4chee-arc-file-mgmt</module>
     <module>dcm4chee-arc-war</module>
     <module>dcm4chee-arc-compress</module>
-    <module>dcm4chee-arc-stgcmt-scp</module>
+    <module>dcm4chee-arc-stgcmt</module>
     <module>dcm4chee-arc-query-util</module>
     <module>dcm4chee-arc-query</module>
     <module>dcm4chee-arc-query-scp</module>
