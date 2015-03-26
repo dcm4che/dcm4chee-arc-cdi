@@ -76,7 +76,6 @@ import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Fragments;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.io.SAXTransformer;
@@ -92,6 +91,7 @@ import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
+import org.dcm4chee.archive.rs.MetaDataPathTSTuple;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -146,7 +146,7 @@ public class StowRS {
 
     private CreatorType creatorType;
 
-    private ArrayList<java.nio.file.Path> metadata;
+    private ArrayList<MetaDataPathTSTuple> metadata;
 
     private HashMap<String,BulkdataPath> bulkdata;
 
@@ -180,12 +180,12 @@ public class StowRS {
                     creatorType = CreatorType.BINARY;
                 else if (rootBodyMediaType.isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE)) {
                     creatorType = CreatorType.XML_BULKDATA;
-                    metadata = new ArrayList<java.nio.file.Path>();
+                    metadata = new ArrayList<MetaDataPathTSTuple>();
                     bulkdata = new HashMap<String,BulkdataPath>();
                 }
                 else if (rootBodyMediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
                     creatorType = CreatorType.JSON_BULKDATA;
-                    metadata = new ArrayList<java.nio.file.Path>();
+                    metadata = new ArrayList<MetaDataPathTSTuple>();
                     bulkdata = new HashMap<String,BulkdataPath>();
                 }else
                     throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
@@ -241,6 +241,7 @@ public class StowRS {
                 public void bodyPart(int partNumber, MultipartInputStream in)
                         throws IOException {
                     Map<String, List<String>> headerParams = in.readHeaderParams();
+                    String transferSyntax = null;
                     LOG.info("storeInstances: Extract Part #{}{}",
                             partNumber, headerParams);
                     String contentType = getHeaderParamValue(headerParams,
@@ -258,8 +259,14 @@ public class StowRS {
                         in.skipAll();
                         return;
                     }
+                    //check for metadata transfer syntax
+                    
+                    if(contentLocation == null) {
+                        transferSyntax = contentType.contains("transfer-syntax=")
+                                ?contentType.split("transfer-syntax=")[1]:null;
+                    }
                     if (!creatorType.readBodyPart(StowRS.this, session, in, 
-                            mediaType, contentLocation)) {
+                            mediaType, contentLocation, transferSyntax)) {
                         LOG.info("storeInstances: Ignore Part with Content-Type={}",
                                 mediaType);
                         in.skipAll();
@@ -300,7 +307,7 @@ public class StowRS {
             @Override
             boolean readBodyPart(StowRS stowRS, StoreSession session,
                     MultipartInputStream in, MediaType mediaType,
-                    String contentLocation) throws IOException {
+                    String contentLocation, String transferSyntax) throws IOException {
                 if (!mediaType.getType().equalsIgnoreCase("application"))
                     return false;
 
@@ -321,9 +328,9 @@ public class StowRS {
             @Override
             boolean readBodyPart(StowRS stowRS, StoreSession session,
                     MultipartInputStream in, MediaType mediaType,
-                    String contentLocation) throws IOException {
-                if (mediaType.isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE)) {
-                    stowRS.spoolMetaData(session, in,false);
+                    String contentLocation, String transferSyntax) throws IOException {
+                if (mediaType.isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE) && transferSyntax != null) {
+                    stowRS.spoolMetaData(session, in, false, transferSyntax);
                     return true;
                 }
                 if (contentLocation != null) {
@@ -342,9 +349,9 @@ public class StowRS {
             @Override
             boolean readBodyPart(StowRS stowRS, StoreSession session,
                     MultipartInputStream in, MediaType mediaType,
-                    String contentLocation) throws IOException {
+                    String contentLocation, String transferSyntax) throws IOException {
                 if (mediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
-                    stowRS.spoolMetaData(session, in, true);
+                    stowRS.spoolMetaData(session, in, true, transferSyntax);
                     return true;
                 }
                 if (contentLocation != null) {
@@ -361,7 +368,7 @@ public class StowRS {
         };
 
         abstract boolean readBodyPart(StowRS stowRS, StoreSession session,
-                MultipartInputStream in, MediaType mediaType, String contentLocation)
+                MultipartInputStream in, MediaType mediaType, String contentLocation, String transferSyntax)
                         throws IOException;
 
         void storeMetadataAndBulkdata(StowRS stowRS, StoreSession session) {}
@@ -413,11 +420,11 @@ public class StowRS {
         }
     }
 
-    private void spoolMetaData(StoreSession session, InputStream in, boolean json) throws IOException {
+    private void spoolMetaData(StoreSession session, InputStream in, boolean json, String transferSyntax) throws IOException {
         if(json)
-            metadata.add(storeService.spool(session, in, ".json"));    
+            metadata.add(new MetaDataPathTSTuple(transferSyntax,storeService.spool(session, in, ".json")));    
         else
-        metadata.add(storeService.spool(session, in, ".xml"));
+        metadata.add(new MetaDataPathTSTuple(transferSyntax,storeService.spool(session, in, ".xml")));
     }
 
     private void spoolBulkdata(StoreSession session, InputStream in,
@@ -427,8 +434,8 @@ public class StowRS {
     }
 
     private void storeMetadataAndBulkdata(StoreSession session) {
-        for (java.nio.file.Path path : metadata) {
-            storeMetadataAndBulkdata(session, path);
+        for (MetaDataPathTSTuple part: metadata) {
+            storeMetadataAndBulkdata(session, part);
         }
     }
 
@@ -453,12 +460,12 @@ public class StowRS {
         }
     }
     private void storeMetadataAndBulkdata(StoreSession session,
-            java.nio.file.Path path) {
+            MetaDataPathTSTuple part) {
         Attributes ds = null;
         if(creatorType == CreatorType.JSON_BULKDATA)
         {
             try {
-                ds = parseJSON(path.toFile().getPath());
+                ds = parseJSON(part.getPath().toFile().getPath());
             } catch (Exception e) {
                 storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
                         METADATA_NOT_PARSEABLE);
@@ -468,7 +475,7 @@ public class StowRS {
         else
         {
             try {
-                ds = SAXReader.parse(path.toUri().toString());
+                ds = SAXReader.parse(part.getPath().toUri().toString());
             } catch (Exception e) {
                 storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
                         METADATA_NOT_PARSEABLE);
@@ -478,7 +485,7 @@ public class StowRS {
         
         String iuid = ds.getString(Tag.SOPInstanceUID);
         String cuid = ds.getString(Tag.SOPClassUID);
-        Attributes fmi = ds.createFileMetaInformation(UID.ExplicitVRLittleEndian);
+        Attributes fmi = ds.createFileMetaInformation(part.getTransferSyntax());
         if (!resolveBulkdata(session, fmi, ds)) {
             storageFailed(iuid, cuid, MISSING_BULKDATA);
             return;
