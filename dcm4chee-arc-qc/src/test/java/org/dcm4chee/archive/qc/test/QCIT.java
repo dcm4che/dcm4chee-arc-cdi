@@ -65,9 +65,13 @@ import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXReader;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.AttributesBlob;
@@ -94,8 +98,10 @@ import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -211,7 +217,12 @@ public class QCIT {
         }
         for (String resourceName : ALL_RESOURCES)
             war.addAsResource(resourceName);
-
+        
+        war.delete(ArchivePaths.create("META-INF/MANIFEST.MF"));
+        String manifest="Manifest-Version: 1.0\n" + "Dependencies: org.codehaus.jackson.jackson-jaxrs,org.codehaus.jackson.jackson-mapper-asl,org.dcm4che.net,"+
+                "org.dcm4che.soundex, org.dcm4che.conf.api,org.dcm4che.json\n";
+        war.setManifest(new StringAsset(manifest));
+        
         if (System.getProperty("exportWar") != null)
             war.as(ZipExporter.class).exportTo(new File("test.war"), true);
         
@@ -221,6 +232,23 @@ public class QCIT {
     @Before
     public void init() throws Exception {
         archDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        IOCMConfig iocmCfg = new IOCMConfig();
+        iocmCfg.setCallingAET("DCM4CHEE");
+        iocmCfg.setIocmDestinations(new String[]{"IOCM_DEST"});
+        iocmCfg.setIocmMaxRetries(2);
+        iocmCfg.setIocmRetryInterval(1000);
+        archDevExt.setIocmConfig(iocmCfg);
+        ApplicationEntity aeIOCM = new ApplicationEntity();
+        aeIOCM.setAETitle("IOCM_TEST");
+        aeIOCM.setAeInstalled(true);
+        ApplicationEntity ae = device.getApplicationEntity("DCM4CHEE");
+        aeIOCM.addConnection(ae.getConnections().get(0));
+        for (TransferCapability tc : ae.getTransferCapabilities()) {
+            TransferCapability tcNew = new TransferCapability(tc.getCommonName(), tc.getSopClass(), tc.getRole(),
+                    tc.getTransferSyntaxes());
+            aeIOCM.addTransferCapability(tcNew);
+        }
+        device.addApplicationEntity(aeIOCM);
         clearDB();
     }
 

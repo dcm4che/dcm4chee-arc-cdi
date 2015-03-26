@@ -128,7 +128,7 @@ public class ArchiveInstanceLocator extends InstanceLocator
         this.retrieveAETs = builder.retrieveAETs;
         this.externalRetrieveAET = builder.externalRetrieveAET;
         this.withoutBulkdata = builder.withoutBulkdata;
-   }
+    }
 
     private static String createRetrieveURI(Builder builder) {
     	Path basePath = Paths.get(builder.storageSystem.getStorageSystemPath());

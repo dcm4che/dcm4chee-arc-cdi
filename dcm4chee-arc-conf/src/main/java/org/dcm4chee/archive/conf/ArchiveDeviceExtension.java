@@ -249,6 +249,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.archivingSchedulerPollInterval = archivingPollInterval;
     }
 
+    @ConfigurableProperty(name = "dcmIocmConfig")
+    private IOCMConfig iocmConfig;
+
     public void clearTemplatesCache() {
         TemplatesCache cache = templatesCache;
         if (cache != null)
@@ -295,6 +298,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         return null;
     }
 
+
+    public IOCMConfig getIocmConfig() {
+        return iocmConfig;
+    }
+
+    public void setIocmConfig(IOCMConfig cfg) {
+        iocmConfig = cfg;
+    }
 
     @Override
     public void reconfigure(DeviceExtension from) {

@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJBException;
@@ -60,7 +61,12 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.media.RecordFactory;
+import org.dcm4che3.media.RecordType;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.TagUtils;
@@ -69,18 +75,13 @@ import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.patient.PatientService;
-import org.dcm4chee.archive.qc.QCEvent;
-import org.dcm4chee.archive.qc.QCEvent.QCOperation;
-import org.dcm4chee.archive.qc.QCNotification;
-import org.dcm4chee.archive.qc.PatientCommands;
-import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
-import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
 import org.dcm4chee.archive.entity.QCActionHistory;
@@ -95,7 +96,17 @@ import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.iocm.RejectionDeleteService;
 import org.dcm4chee.archive.iocm.RejectionService;
+import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
 import org.dcm4chee.archive.issuer.IssuerService;
+import org.dcm4chee.archive.patient.PatientService;
+import org.dcm4chee.archive.qc.PatientCommands;
+import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.QCEvent;
+import org.dcm4chee.archive.qc.QCEvent.QCOperation;
+import org.dcm4chee.archive.qc.QCNotification;
+import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreService;
+import org.dcm4chee.archive.store.StoreSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,6 +121,14 @@ import org.slf4j.LoggerFactory;
 
 @Stateless
 public class QCBeanImpl  implements QCBean{
+
+    private static final Code CODE_REJECTED_PATIENT_SAFETY = new Code("113037","DCM",null,"Rejected for Patient Safety Reasons");
+    
+    private static final int[] PATIENT_AND_STUDY_ATTRS = {Tag.SpecificCharacterSet, Tag.StudyDate, Tag.StudyTime, Tag.AccessionNumber,
+        Tag.IssuerOfAccessionNumberSequence, Tag.ReferringPhysicianName, Tag.PatientName, Tag.PatientID, Tag.IssuerOfPatientID,
+        Tag.PatientBirthDate, Tag.PatientSex, Tag.StudyInstanceUID, Tag.StudyID };
+    
+    private static RecordFactory recordFactory = new RecordFactory();
 
     private static Logger LOG = LoggerFactory.getLogger(QCBeanImpl.class);
 
@@ -141,6 +160,12 @@ public class QCBeanImpl  implements QCBean{
 
     @Inject 
     private RejectionDeleteService rejectionServiceDeleter;
+
+    @Inject
+    private ChangeRequesterService changeRequester;
+
+    @Inject
+    protected StoreService storeService; 
 
     @Inject
     @QCNotification
@@ -191,7 +216,6 @@ public class QCBeanImpl  implements QCBean{
             LOG.error("{}: QC info[Merge] - Failure, reason {}",e);
             throw new EJBException();
         }
-
         QCEvent mergeEvent = new QCEvent(QCOperation.MERGE, null,
                 null, sourceUIDs, targetUIDs);
         return mergeEvent;
@@ -210,6 +234,7 @@ public class QCBeanImpl  implements QCBean{
         QCActionHistory mergeAction = generateQCAction(QCOperation.MERGE);
         Collection<String> sourceUIDs = new ArrayList<String>();
         Collection<String> targetUIDs = new ArrayList<String>();
+        List<Instance> rejectedInstances = new ArrayList<Instance>();
 
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         Study source = findStudy(sourceStudyUid);
@@ -235,6 +260,7 @@ public class QCBeanImpl  implements QCBean{
             updateStudy(archiveDeviceExtension, targetStudyUID, targetStudyAttrs);
 
         for(Series series: source.getSeries()) {
+            rejectedInstances.addAll(series.getInstances());
             Series newSeries = createSeries(series, target, targetSeriesAttrs);
 
             QCSeriesHistory seriesHistory = createQCSeriesHistory(
@@ -265,8 +291,10 @@ public class QCBeanImpl  implements QCBean{
             }
         }
         recordHistoryEntry(instancesHistory);
+        Instance rejNote = createAndStoreRejectionNote(new Code(qcRejectionCode), rejectedInstances);
         QCEvent mergeEvent = new QCEvent(
                 QCOperation.MERGE, null,null,sourceUIDs,targetUIDs);
+        changeRequester.scheduleChangeRequest(targetUIDs, rejNote);
         return mergeEvent;
     }
 
@@ -339,7 +367,7 @@ public class QCBeanImpl  implements QCBean{
             instancesHistory.add(instanceHistory);
             targetUIDs.add(newInstance.getSopInstanceUID());
             sourceUIDs.add(instance.getSopInstanceUID());
-            }
+        }
 
         instancesHistory.addAll(handleKOPRSR(targetSeriesAttrs, qcRejectionCode, 
                 studyHistory, sourceUIDs,
@@ -347,8 +375,10 @@ public class QCBeanImpl  implements QCBean{
                 targetStudy, oldToNewSeries));
 
         recordHistoryEntry(instancesHistory);
+        Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, toMove);
         QCEvent splitEvent = new QCEvent(
                 QCOperation.SPLIT,null,null,sourceUIDs,targetUIDs);
+        changeRequester.scheduleChangeRequest(targetUIDs, rejNote);
         return splitEvent;
     }
 
@@ -416,7 +446,6 @@ public class QCBeanImpl  implements QCBean{
                         instance.getSeries().getSeriesInstanceUID()).getPK());
             }
             Instance newInstance = move(instance,newSeries,qcRejectionCode);
-
             QCInstanceHistory instanceHistory = new QCInstanceHistory(targetStudyUID,
                     newSeries.getSeriesInstanceUID(), instance.getSopInstanceUID(),
                     newInstance.getSopInstanceUID(), newInstance.getSopInstanceUID(), false);
@@ -428,6 +457,7 @@ public class QCBeanImpl  implements QCBean{
             movedSourceUIDs.add(instance.getSopInstanceUID());
             }
         
+        Instance rejNote = createAndStoreRejectionNote(new Code(qcRejectionCode), toMove);
         //clone
         for(Instance instance: toClone) {
             if(!oldToNewSeries.keySet().contains(
@@ -445,7 +475,6 @@ public class QCBeanImpl  implements QCBean{
                         instance.getSeries().getSeriesInstanceUID()).getPK());
             }
             Instance newInstance = clone(instance,newSeries);
-
             QCInstanceHistory instanceHistory = new QCInstanceHistory(targetStudyUID,
                     newSeries.getSeriesInstanceUID(), instance.getSopInstanceUID(),
                     newInstance.getSopInstanceUID(), newInstance.getSopInstanceUID(), true);
@@ -466,6 +495,7 @@ public class QCBeanImpl  implements QCBean{
         recordHistoryEntry(instancesHistory);
         QCEvent segmentEvent = new QCEvent(
                 QCOperation.SEGMENT,null,null,movedSourceUIDs,movedTargetUIDs);
+        changeRequester.scheduleChangeRequest(movedTargetUIDs, rejNote);
         return segmentEvent;
     }
 
@@ -489,8 +519,10 @@ public class QCBeanImpl  implements QCBean{
         Collection<Instance> src = locateInstances(sopInstanceUIDs);
         rejectionService.reject(qcSource, src, findOrCreateCode(qcRejectionCode), null);
         
-        QCEvent rejectEvent = new QCEvent(
-                QCOperation.REJECT, null, null, Arrays.asList(sopInstanceUIDs), null);
+        Collection<String> iuids = Arrays.asList(sopInstanceUIDs);
+        Instance rejNote =createAndStoreRejectionNote(qcRejectionCode, src);
+        QCEvent rejectEvent = new QCEvent(QCOperation.REJECT, null, null, iuids, null);
+        changeRequester.scheduleChangeRequest(null, rejNote);
         return rejectEvent;
     }
 
@@ -613,6 +645,7 @@ public class QCBeanImpl  implements QCBean{
     @Override
     public QCEvent deleteStudy(String studyInstanceUID) throws Exception {
         ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
+        ArrayList<Instance> rejectedInstances = new ArrayList<Instance>();
         TypedQuery<Study> query = em.createNamedQuery(
                 Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
                 studyInstanceUID);
@@ -621,14 +654,17 @@ public class QCBeanImpl  implements QCBean{
         Collection<Series> allSeries = study.getSeries();
         for(Series series: allSeries) {
             Collection<Instance> insts = series.getInstances();
-        for(Instance inst : insts) {
-            sopInstanceUIDs.add(inst.getSopInstanceUID());
-        }
+            for(Instance inst : insts) {
+                sopInstanceUIDs.add(inst.getSopInstanceUID());
+            }
             rejectAndScheduleForDeletion(insts);
+            rejectedInstances.addAll(insts);
         }
         LOG.info("{}:  QC info[Delete] info - Removed study entity {}",qcSource , studyInstanceUID);
+        Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, rejectedInstances);
         QCEvent deleteEvent = new QCEvent(
                 QCOperation.DELETE, null, null, sopInstanceUIDs, null);
+        changeRequester.scheduleChangeRequest(null, rejNote);
         return deleteEvent;
     }
 
@@ -647,13 +683,15 @@ public class QCBeanImpl  implements QCBean{
         for(Instance inst : insts) {
             sopInstanceUIDs.add(inst.getSopInstanceUID());
         }
-            rejectAndScheduleForDeletion(insts);
+        rejectAndScheduleForDeletion(insts);
 
         Study study = series.getStudy();
         study.clearQueryAttributes();
         LOG.info("{}:  QC info[Delete] info - Removed series entity {}",qcSource, seriesInstanceUID);
+        Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, insts);
         QCEvent deleteEvent = new QCEvent(
                 QCOperation.DELETE, null, null, sopInstanceUIDs,null);
+        changeRequester.scheduleChangeRequest(null, rejNote);
         return deleteEvent;
     }
 
@@ -676,8 +714,11 @@ public class QCBeanImpl  implements QCBean{
         LOG.info("{}:  QC info[Delete] info - Removed instance entity {}", qcSource, sopInstanceUID);
         series.clearQueryAttributes();
         study.clearQueryAttributes();
+        Collection<String> sopInstanceUIDs = Arrays.asList(new String [] {sopInstanceUID});
+        Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, tmpList);
         QCEvent deleteEvent = new QCEvent(
-                QCOperation.DELETE, null, null, Arrays.asList(new String [] {sopInstanceUID}),null);
+                QCOperation.DELETE, null, null, sopInstanceUIDs,null);
+        changeRequester.scheduleChangeRequest(null, rejNote);
         return deleteEvent;
     }
 
@@ -834,7 +875,7 @@ public class QCBeanImpl  implements QCBean{
 
     private void rejectAndScheduleForDeletion(Collection<Instance> insts) {
         rejectionService.reject(this, insts, codeService.findOrCreate(
-                new Code("113037","DCM",null,"Rejected for Patient Safety Reasons")), null); 
+                CODE_REJECTED_PATIENT_SAFETY), null); 
         rejectionServiceDeleter.deleteRejected(this, insts);
     }
 
@@ -903,7 +944,6 @@ public class QCBeanImpl  implements QCBean{
     private PatientAttrsPKTuple updatePatient(ArchiveDeviceExtension arcDevExt, Attributes attrs)
             throws EntityNotFoundException {
         Patient patient = findPatient(attrs);
-        long patientPK=patient.getPk();
         if (patient == null)
             throw new EntityNotFoundException(
                     "Unable to find patient or multiple patients found");
@@ -921,7 +961,7 @@ public class QCBeanImpl  implements QCBean{
                 arcDevExt.getAttributeFilter(Entity.Patient),
                 arcDevExt.getFuzzyStr());
 
-        return new PatientAttrsPKTuple(patientPK, unmodified);
+        return new PatientAttrsPKTuple(patient.getPk(), unmodified);
     }
     
     /**
@@ -2361,6 +2401,120 @@ public class QCBeanImpl  implements QCBean{
     }
 
     
+    public Instance createAndStoreRejectionNote(org.dcm4che3.data.Code rejectionCode, Collection<Instance> instances) {
+        if (instances != null && instances.size() > 0) {
+            Attributes rejNote = createRejectionNote(rejectionCode, instances);
+            ArchiveAEExtension arcAEExt = null;
+            for (ApplicationEntity ae : device.getApplicationEntities()) {
+                if (ae.isInstalled()) {
+                    arcAEExt = ae.getAEExtension(ArchiveAEExtension.class);
+                    if (arcAEExt != null && arcAEExt.getStorageSystemGroupID() != null)
+                        break;
+                    arcAEExt = null;
+                }
+            }
+            if (arcAEExt == null) {
+                LOG.error("No ApplicationEntity found for this service to store RejectionNote locally (must be installed and StorageSystemGroup)");
+                throw new EJBException("Can not store RejectionNote after QC operation! No Application Entity found in device "+device.getDeviceName());
+            }
+            try {
+                List<Connection> conns = arcAEExt.getApplicationEntity().getConnections();
+                String hostname = conns.isEmpty() ? "UNKNOWN" : conns.get(0).getHostname();
+                StoreSession session = storeService.createStoreSession(storeService); 
+                session.setSource(new GenericParticipant(hostname, "QCAction"));
+                session.setRemoteAET(arcAEExt.getApplicationEntity().getAETitle());
+                session.setArchiveAEExtension(arcAEExt);
+                storeService.initStorageSystem(session);
+                storeService.initSpoolDirectory(session);
+                StoreContext context = storeService.createStoreContext(session);
+                Attributes fmi = new Attributes();
+                fmi.setString(Tag.TransferSyntaxUID, VR.UI, UID.ImplicitVRLittleEndian);
+                storeService.writeSpoolFile(context, fmi, rejNote);
+                storeService.parseSpoolFile(context);
+                storeService.store(context);
+                LOG.debug("RejectionNote stored! instance:{}", context.getInstance());
+                return context.getInstance();
+            } catch (DicomServiceException x) {
+                LOG.error("Failed to store RejectionNote!", x);
+                throw new EJBException(x);
+            }
+        }
+        return null;
+    }
+
+    public Attributes createRejectionNote(org.dcm4che3.data.Code rejectionCode, Collection<Instance> instances) {
+        Attributes kos = createKOS(rejectionCode, instances.iterator().next());
+        Sequence evidenceSeq = kos.newSequence(Tag.CurrentRequestedProcedureEvidenceSequence, 1);
+        Sequence contentSeq = kos.newSequence(Tag.ContentSequence, 1);
+        HashMap<Long, Attributes> mapEvidenceItem = new HashMap<Long, Attributes>();
+        HashMap<Long, Attributes> mapRefSeriesItem = new HashMap<Long, Attributes>();
+        Attributes evidenceItem, refSeriesItem, contentItem;
+        Sequence refSeriesSeq;
+        for (Instance inst : instances) {
+            evidenceItem = mapEvidenceItem.get(inst.getSeries().getStudy().getPk());
+            if (evidenceItem == null) {
+                evidenceItem = new Attributes();
+                evidenceItem.setString(Tag.StudyInstanceUID, VR.UI, inst.getSeries().getStudy().getStudyInstanceUID());
+                evidenceItem.newSequence(Tag.ReferencedSeriesSequence, 1);
+                evidenceSeq.add(evidenceItem);
+                mapEvidenceItem.put(inst.getSeries().getStudy().getPk(), evidenceItem);
+            }
+            refSeriesSeq = evidenceItem.getSequence(Tag.ReferencedSeriesSequence);
+            refSeriesItem = mapRefSeriesItem.get(inst.getSeries().getPk());
+            if (refSeriesItem == null) {
+                refSeriesItem = new Attributes();
+                refSeriesItem.setString(Tag.SeriesInstanceUID, VR.UI, inst.getSeries().getSeriesInstanceUID());
+                refSeriesItem.newSequence(Tag.ReferencedSOPSequence, 1);
+                refSeriesSeq.add(refSeriesItem);
+                mapRefSeriesItem.put(inst.getSeries().getPk(), refSeriesItem);
+            }
+            addReferencedSopSeqItem(refSeriesItem, inst);
+            
+            contentItem = new Attributes();
+            contentItem.setString(Tag.ValueType, VR.CS, getValueType(inst.getSopClassUID()));
+            contentItem.setString(Tag.RelationshipType, VR.CS, "CONTAINS");
+            contentItem.newSequence(Tag.ReferencedSOPSequence, 1);
+            addReferencedSopSeqItem(contentItem, inst);
+            contentSeq.add(contentItem);
+        }
+        return kos;
+    }
+    
+    private void addReferencedSopSeqItem(Attributes attrs, Instance inst) {
+        Attributes refSopItem = new Attributes();
+        refSopItem.setString(Tag.ReferencedSOPInstanceUID, VR.UI, inst.getSopInstanceUID());
+        refSopItem.setString(Tag.ReferencedSOPClassUID, VR.UI, inst.getSopClassUID());
+        attrs.getSequence(Tag.ReferencedSOPSequence).add(refSopItem);
+    }
+        
+    private Attributes createKOS(org.dcm4che3.data.Code rejectionCode, Instance instance) {
+        Attributes attrs = instance.getSeries().getStudy().getPatient().getAttributes();
+        attrs.addAll(instance.getSeries().getStudy().getAttributes());
+        Attributes kos = new Attributes(attrs, PATIENT_AND_STUDY_ATTRS);
+        kos.setString(Tag.SOPClassUID, VR.UI, UID.KeyObjectSelectionDocumentStorage);
+        kos.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
+        kos.setDate(Tag.ContentDateAndTime, new Date());
+        kos.setString(Tag.Modality, VR.CS, "KO");
+        kos.setNull(Tag.ReferencedPerformedProcedureStepSequence, VR.SQ);
+        kos.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
+        kos.setString(Tag.SeriesNumber, VR.IS, "999");
+        kos.setString(Tag.SeriesDescription, VR.LO, "Rejection Note");
+        kos.setString(Tag.InstanceNumber, VR.IS, "1");
+        kos.setString(Tag.ValueType, VR.CS, "CONTAINER");
+        kos.setString(Tag.ContinuityOfContent, VR.CS, "SEPARATE");
+        kos.newSequence(Tag.ConceptNameCodeSequence, 1).add(rejectionCode.toItem());
+        Attributes tmplItem = new Attributes(2);
+        tmplItem.setString(Tag.MappingResource, VR.CS, "DCMR");
+        tmplItem.setString(Tag.TemplateIdentifier, VR.CS, "2010");
+        kos.newSequence(Tag.ContentTemplateSequence, 1).add(tmplItem);
+        return kos;
+    }
+ 
+    private static String getValueType(String sopClassUID) {
+        RecordType rt = recordFactory.getRecordType(sopClassUID);
+        return (rt == RecordType.IMAGE || rt == RecordType.WAVEFORM) ? rt.name() : "COMPOSITE";
+    }
+
     /**
      * A tuple that carries a series instance UID for a new series as well as a
      * QCSeriesHistory entry Used to associate one series only to one history
