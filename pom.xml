@@ -425,6 +425,7 @@
     <module>dcm4chee-arc-hl7</module>
     <module>dcm4chee-arc-qido</module>
     <module>dcm4chee-arc-iocm</module>
+    <module>dcm4chee-arc-iocm-client</module>
     <module>dcm4chee-arc-web</module>
     <module>dcm4chee-arc-mima</module>
     <module>dcm4chee-arc-audit</module>
