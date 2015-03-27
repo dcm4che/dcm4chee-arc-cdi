@@ -65,6 +65,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.Version;
 
 import org.dcm4che3.data.Attributes;
@@ -82,30 +83,28 @@ import org.dcm4chee.archive.entity.ext.PatientExtension;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
-@NamedQueries({
-@NamedQuery(
-    name="Patient.findByPatientFamilyName",
-    query="SELECT p FROM Patient p "
-            + "WHERE p.patientName.familyName = ?1")
-})
+@NamedQueries({ @NamedQuery(name = "Patient.findByPatientFamilyName", query = "SELECT p FROM Patient p "
+        + "WHERE p.patientName.familyName = ?1") })
 @Entity
 @Table(name = "patient")
 public class Patient implements Serializable {
 
     private static final long serialVersionUID = 6430339764844147679L;
 
-    public static final String FIND_BY_PATIENT_FAMILY_NAME =
-            "Patient.findByPatientFamilyName";
+    public static final String FIND_BY_PATIENT_FAMILY_NAME = "Patient.findByPatientFamilyName";
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "pk")
     private long pk;
 
+    @Transient
+    private Attributes patientAttributes = null;
+
     @Version
     @Column(name = "version")
-    private long version;    
-    
+    private long version;
+
     @Basic(optional = false)
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
@@ -120,36 +119,36 @@ public class Patient implements Serializable {
 
     @Basic(optional = false)
     @Column(name = "pat_birthdate")
-    private String patientBirthDate;
+    private String patientBirthDate = "*";
 
     @Basic(optional = false)
     @Column(name = "pat_sex")
-    private String patientSex;
+    private String patientSex = "*";
 
     @Basic(optional = false)
     @Column(name = "pat_custom1")
-    private String patientCustomAttribute1;
+    private String patientCustomAttribute1 = "*";
 
     @Basic(optional = false)
     @Column(name = "pat_custom2")
-    private String patientCustomAttribute2;
+    private String patientCustomAttribute2 = "*";
 
     @Basic(optional = false)
     @Column(name = "pat_custom3")
-    private String patientCustomAttribute3;
+    private String patientCustomAttribute3 = "*";
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
-    
+
     @Embedded
     private PatientExtension extension;
 
-    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "pat_name_fk")
     private PersonName patientName;
 
-    @ManyToOne(fetch=FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "merge_fk")
     private Patient mergedWith;
 
@@ -160,9 +159,7 @@ public class Patient implements Serializable {
     private Collection<PatientID> patientIDs;
 
     @ManyToMany
-    @JoinTable(name = "rel_linked_patient_id", 
-        joinColumns = @JoinColumn(name = "patient_fk", referencedColumnName = "pk"),
-        inverseJoinColumns = @JoinColumn(name = "patient_id_fk", referencedColumnName = "pk"))
+    @JoinTable(name = "rel_linked_patient_id", joinColumns = @JoinColumn(name = "patient_fk", referencedColumnName = "pk"), inverseJoinColumns = @JoinColumn(name = "patient_id_fk", referencedColumnName = "pk"))
     private Collection<PatientID> linkedPatientIDs;
 
     @OneToMany(mappedBy = "patient", orphanRemoval = true)
@@ -176,18 +173,14 @@ public class Patient implements Serializable {
 
     @Override
     public String toString() {
-        return "Patient[pk=" + pk
-                + ", name=" + patientName
-                + ", dob=" + patientBirthDate
-                + ", sex=" + patientSex
-                + "]";
+        return "Patient[pk=" + pk + ", name=" + patientName + ", dob="
+                + patientBirthDate + ", sex=" + patientSex + "]";
     }
-    
+
     public String toString(boolean deidentify) {
-        
+
         if (deidentify)
-            return "Patient[pk=" + pk
-                + ", name=XXX, dob=XXX, sex=XXX]";
+            return "Patient[pk=" + pk + ", name=XXX, dob=XXX, sex=XXX]";
         else
             return toString();
     }
@@ -197,11 +190,17 @@ public class Patient implements Serializable {
         Date now = new Date();
         createdTime = now;
         updatedTime = now;
+
+        if (patientAttributes != null)
+            attributesBlob = new AttributesBlob(patientAttributes);
     }
 
     @PreUpdate
     public void onPreUpdate() {
         updatedTime = new Date();
+
+        if (patientAttributes != null)
+            attributesBlob.setAttributes(patientAttributes);
     }
 
     public long getPk() {
@@ -228,8 +227,27 @@ public class Patient implements Serializable {
         return patientBirthDate;
     }
 
+    public void setPatientBirthDate(String patientBirthDate) {
+        this.patientBirthDate = patientBirthDate;
+
+        if (patientAttributes == null)
+            patientAttributes = new Attributes();
+
+        patientAttributes.setString(Tag.PatientBirthDate, VR.DA,
+                patientBirthDate);
+    }
+
     public String getPatientSex() {
         return patientSex;
+    }
+
+    public void setPatientSex(String patientSex) {
+        this.patientSex = patientSex;
+
+        if (patientAttributes == null)
+            patientAttributes = new Attributes();
+
+        patientAttributes.setString(Tag.PatientSex, VR.CS, patientSex);
     }
 
     public String getPatientCustomAttribute1() {
@@ -261,7 +279,21 @@ public class Patient implements Serializable {
     }
 
     public void setPatientName(PersonName patientName) {
+        this.setPatientName(patientName, new String[0]);
+    }
+    
+    public void setPatientName(PersonName patientName, String... charset) {
         this.patientName = patientName;
+
+        if (patientAttributes == null)
+            patientAttributes = new Attributes();
+
+        if (patientName != null)
+            patientAttributes.setString(Tag.PatientName, VR.PN,
+                    patientName.toString());
+        
+        if (charset.length > 0)
+            patientAttributes.setSpecificCharacterSet(charset);
     }
 
     public void setMergedWith(Patient mergedWith) {
@@ -303,7 +335,7 @@ public class Patient implements Serializable {
     public AttributesBlob getAttributesBlob() {
         return attributesBlob;
     }
-    
+
     public long getVersion() {
         return version;
     }
@@ -316,23 +348,21 @@ public class Patient implements Serializable {
         return attributesBlob.getAttributes();
     }
 
-    public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
-        patientName = PersonName.valueOf(
-                attrs.getString(Tag.PatientName), fuzzyStr, patientName);
+    public void setAttributes(Attributes attrs, AttributeFilter filter,
+            FuzzyStr fuzzyStr) {
+        patientName = PersonName.valueOf(attrs.getString(Tag.PatientName),
+                fuzzyStr, patientName);
         patientBirthDate = attrs.getString(Tag.PatientBirthDate, "*");
         patientSex = attrs.getString(Tag.PatientSex, "*").toUpperCase();
 
-        patientCustomAttribute1 = 
-            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
-        patientCustomAttribute2 =
-            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute2(), "*");
-        patientCustomAttribute3 =
-            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
+        patientCustomAttribute1 = AttributeFilter.selectStringValue(attrs,
+                filter.getCustomAttribute1(), "*");
+        patientCustomAttribute2 = AttributeFilter.selectStringValue(attrs,
+                filter.getCustomAttribute2(), "*");
+        patientCustomAttribute3 = AttributeFilter.selectStringValue(attrs,
+                filter.getCustomAttribute3(), "*");
 
-        if (attributesBlob == null)
-            attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
-        else
-            attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
+        patientAttributes = new Attributes(attrs, filter.getSelection());
     }
 
     public void updateOtherPatientIDs() {
@@ -349,7 +379,7 @@ public class Patient implements Serializable {
             int numopids = allPatientIDs.size() - 1;
             if (numopids == 0) {
                 allPatientIDs.iterator().next().toIDWithIssuer()
-                    .exportPatientIDWithIssuer(attrs);
+                        .exportPatientIDWithIssuer(attrs);
             } else {
                 Sequence opidsSeq = attrs.newSequence(
                         Tag.OtherPatientIDsSequence, numopids);
@@ -377,8 +407,8 @@ public class Patient implements Serializable {
         if (patientIDs == null || patientIDs.isEmpty())
             return linkedPatientIDs;
 
-        ArrayList<PatientID> all = new ArrayList<PatientID>(
-                patientIDs.size() + linkedPatientIDs.size());
+        ArrayList<PatientID> all = new ArrayList<PatientID>(patientIDs.size()
+                + linkedPatientIDs.size());
         all.addAll(patientIDs);
         all.addAll(linkedPatientIDs);
         return all;
@@ -399,7 +429,7 @@ public class Patient implements Serializable {
 
     private static boolean contains(Collection<Patient> pats, Patient other) {
         long pk = other.getPk();
-        for (Patient pat  : pats)
+        for (Patient pat : pats)
             if (pat.getPk() == pk)
                 return true;
         return false;
