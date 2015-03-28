@@ -40,17 +40,16 @@ package org.dcm4chee.archive.conf.producer;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Disposes;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 
-import org.dcm4che3.conf.api.ApplicationEntityCache;
-import org.dcm4che3.conf.api.ConfigurationException;
-import org.dcm4che3.conf.api.DicomConfiguration;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.api.*;
 import org.dcm4che3.conf.api.hl7.HL7ApplicationCache;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.conf.api.hl7.IHL7ApplicationCache;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
-import org.dcm4che3.conf.dicom.DicomConfigurationManager;
+import org.dcm4che3.conf.api.DicomConfigurationManager;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
@@ -60,19 +59,33 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.ArchiveHL7ApplicationExtension;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-public class DicomConfigurationProducer {
+@ApplicationScoped
+public class DicomConfigurationProducer  {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(DicomConfigurationProducer.class);
 
     @Produces
     @ApplicationScoped
-    public static DicomConfigurationManager getDicomConfiguration()
+    public static DicomConfigurationManager getDicomConfiguration(Instance<DicomConfigurationCustomizer> customizerInstance)
             throws ConfigurationException {
         DicomConfigurationBuilder builder = DicomConfigurationBuilder
                 .newConfigurationBuilder(System.getProperties());
+
+        // Allow configuration bootstrap extensibility through CDI
+        if (!customizerInstance.isUnsatisfied()) {
+            DicomConfigurationCustomizer dicomConfigurationCustomizer = customizerInstance.get();
+            LOG.info("Using customizer for configuration framework bootstrap (class {}", dicomConfigurationCustomizer.getClass().toString());
+            dicomConfigurationCustomizer.customize(builder);
+        }
+
         builder.registerDeviceExtension(ArchiveDeviceExtension.class);
         builder.registerDeviceExtension(StorageDeviceExtension.class);
         builder.registerDeviceExtension(HL7DeviceExtension.class);
@@ -84,6 +97,9 @@ public class DicomConfigurationProducer {
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
         return builder.build();
     }
+
+
+
 
     public static void dispose(@Disposes DicomConfiguration conf) {
         conf.close();

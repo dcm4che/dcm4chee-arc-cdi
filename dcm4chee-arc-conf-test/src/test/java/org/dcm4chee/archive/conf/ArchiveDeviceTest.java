@@ -47,7 +47,7 @@ import java.util.Properties;
 
 import org.dcm4che.test.utils.TestUtils;
 import org.dcm4che3.conf.api.AttributeCoercions;
-import org.dcm4che3.conf.api.ConfigurationException;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;

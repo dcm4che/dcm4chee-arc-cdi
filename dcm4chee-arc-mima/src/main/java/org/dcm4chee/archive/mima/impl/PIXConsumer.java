@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.mima.impl;
 
 import java.io.IOException;
-import java.lang.reflect.GenericSignatureFormatError;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 
@@ -47,7 +46,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.api.ConfigurationException;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.api.hl7.IHL7ApplicationCache;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.hl7.HL7Message;
@@ -61,8 +60,6 @@ import org.dcm4che3.net.hl7.HL7Application;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.GenericParticipant;
-import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.archive.store.StoreSessionClosed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
