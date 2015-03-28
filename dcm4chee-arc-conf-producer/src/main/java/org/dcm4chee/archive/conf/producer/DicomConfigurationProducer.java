@@ -44,6 +44,7 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 
 import org.dcm4che3.conf.api.*;
+import org.dcm4che3.conf.api.DicomConfigurationCustomizer;
 import org.dcm4che3.conf.api.hl7.HL7ApplicationCache;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.conf.api.hl7.IHL7ApplicationCache;
