@@ -102,19 +102,19 @@ public class DicomConfigurationProducer  {
 
 
 
-    public static void dispose(@Disposes DicomConfiguration conf) {
+    public static void dispose(@Disposes ExtendedDicomConfiguration conf) {
         conf.close();
     }
 
     @Produces
     @ApplicationScoped
-    public static IApplicationEntityCache getApplicationEntityCache(DicomConfiguration conf) {
+    public static IApplicationEntityCache getApplicationEntityCache(ExtendedDicomConfiguration conf) {
         return new ApplicationEntityCache(conf);
     }
 
     @Produces
     @ApplicationScoped
-    public static IHL7ApplicationCache getHL7ApplicationCache(DicomConfiguration conf) {
+    public static IHL7ApplicationCache getHL7ApplicationCache(ExtendedDicomConfiguration conf) {
         return new HL7ApplicationCache(
                 conf.getDicomConfigurationExtension(HL7Configuration.class));
     }
