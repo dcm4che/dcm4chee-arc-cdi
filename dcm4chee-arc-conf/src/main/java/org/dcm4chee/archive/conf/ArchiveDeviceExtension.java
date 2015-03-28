@@ -48,7 +48,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
-import org.dcm4che3.conf.core.util.ConfigIterators;
+import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.DeviceExtension;
@@ -299,7 +299,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @Override
     public void reconfigure(DeviceExtension from) {
         ArchiveDeviceExtension arcdev = (ArchiveDeviceExtension) from;
-        ConfigIterators.reconfigure(arcdev, this, ArchiveDeviceExtension.class);
+        ReconfiguringIterator.reconfigure(arcdev, this, ArchiveDeviceExtension.class);
     }
 
     public StoreParam getStoreParam() {

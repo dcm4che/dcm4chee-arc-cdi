@@ -238,7 +238,7 @@
       <artifactId>dcm4chee-conf-web</artifactId>
       <classifier>arc${conf-web-classifier}</classifier>
       <type>war</type>
-      <version>${dcm4chee-conf-web.version}</version>
+      <version>${dcm4chee-conf.version}</version>
     </dependency>
 
   </dependencies>

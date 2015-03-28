@@ -52,7 +52,7 @@ import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
-import org.dcm4che3.conf.core.util.ConfigIterators;
+import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.io.TemplatesCache;
@@ -562,7 +562,7 @@ public class ArchiveAEExtension extends AEExtension {
     public void reconfigure(AEExtension from) {
         ArchiveAEExtension arcae = (ArchiveAEExtension) from;
 
-        ConfigIterators.reconfigure(arcae, this, ArchiveAEExtension.class);
+        ReconfiguringIterator.reconfigure(arcae, this, ArchiveAEExtension.class);
 
         setAttributeCoercions(arcae.getAttributeCoercions());
         setCompressionRules(arcae.getCompressionRules());
