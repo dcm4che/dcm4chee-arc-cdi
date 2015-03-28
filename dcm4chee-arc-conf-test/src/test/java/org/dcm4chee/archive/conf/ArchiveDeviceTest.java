@@ -112,7 +112,6 @@ public class ArchiveDeviceTest extends DeviceMocker {
     public void test() throws Exception {
         for (int i = 0; i < OTHER_AES.length; i++) {
             String aet = OTHER_AES[i];
-            config.registerAETitle(aet);
             config.persist(createDevice(OTHER_DEVICES[i], OTHER_ISSUER[i], OTHER_INST_CODES[i],
                     aet, "localhost", OTHER_PORTS[i << 1], OTHER_PORTS[(i << 1) + 1]));
         }
@@ -123,9 +122,6 @@ public class ArchiveDeviceTest extends DeviceMocker {
                 "localhost", 2576, 12576));
         Device arrDevice = createARRDevice("syslog", Protocol.SYSLOG_UDP, 514);
         config.persist(arrDevice);
-        config.registerAETitle("DCM4CHEE");
-        config.registerAETitle("DCM4CHEE_ADMIN");
-        config.registerAETitle("DCM4CHEE_TRASH");
 
         Device arc = createArchiveDevice("dcm4chee-arc", arrDevice);
 
@@ -183,11 +179,6 @@ public class ArchiveDeviceTest extends DeviceMocker {
     }
 
     protected void cleanUp() throws Exception {
-        config.unregisterAETitle("DCM4CHEE");
-        config.unregisterAETitle("DCM4CHEE_ADMIN");
-        config.unregisterAETitle("DCM4CHEE_TRASH");
-        for (String aet : OTHER_AES)
-            config.unregisterAETitle(aet);
         hl7Config.unregisterHL7Application(PIX_MANAGER);
         try {
             config.removeDevice("dcm4chee-arc");
