@@ -45,7 +45,6 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
-import org.dcm4che.test.utils.TestUtils;
 import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
@@ -107,22 +106,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
     }
 
 
-    public void testBreakMerge(Device arc) throws ConfigurationException, IOException, ClassNotFoundException {
-        ArchiveDeviceExtension arcExt = arc.getDeviceExtension(ArchiveDeviceExtension.class);
-        assertTrue(arcExt.getAttributeFilter(Entity.Instance).getCustomAttribute1() == null);
-        TestUtils.backupDevice(arc);
-        TestUtils.addDBCustomAttribute("dcm4chee-arc", Entity.Instance, config
-                , Tag.CodeMeaning, VR.LO,Tag.ConceptNameCodeSequence);
-        arc = config.findDevice("dcm4chee-arc");
-        arcExt = arc.getDeviceExtension(ArchiveDeviceExtension.class);
-        assertTrue(arcExt.getAttributeFilter(Entity.Instance).getCustomAttribute1() != null);
-        arc = TestUtils.readDevice(TestUtils.getBackedUpDevices().get(0));
-        config.merge(arc);
-        //now it should be restored
-        arc = config.findDevice("dcm4chee-arc");
-        arcExt = arc.getDeviceExtension(ArchiveDeviceExtension.class);
-        assertTrue(arcExt.getAttributeFilter(Entity.Instance).getCustomAttribute1() == null);
-    }
+
     
     @Test
     public void test() throws Exception {
@@ -196,7 +180,6 @@ public class ArchiveDeviceTest extends DeviceMocker {
 
         assertTrue("Reconfigure", res);
 
-        testBreakMerge(arc);
     }
 
     protected void cleanUp() throws Exception {
