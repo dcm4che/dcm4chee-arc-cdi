@@ -230,6 +230,10 @@
       <artifactId>dcm4chee-storage-cloud</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-encrypt</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4chee</groupId>
       <artifactId>dcm4chee-conf-web</artifactId>
       <classifier>arc${conf-web-classifier}</classifier>
