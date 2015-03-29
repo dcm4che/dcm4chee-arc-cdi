@@ -47,7 +47,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <dcm4che.version>3.3.7-SNAPSHOT</dcm4che.version>
     <dcm4chee-storage.version>2.0.0-SNAPSHOT</dcm4chee-storage.version>
-    <dcm4chee-conf.version>1.0.0.beta.v20150328_1822</dcm4chee-conf.version>
+    <dcm4chee-conf.version>1.0.0.beta.v20150329_1404</dcm4chee-conf.version>
     <jboss-javaee-6.0.version>3.0.2.Final</jboss-javaee-6.0.version>
     <slf4j.version>1.7.5</slf4j.version>
     <hibernate.version>4.2.7.Final</hibernate.version>
@@ -59,6 +59,10 @@
     <db>mysql</db>
 -->
     <ds>java:/PacsDS</ds>
+
+    <!-- by default, the config browser is not protected -->
+    <conf-web-classifier>-unsecure</conf-web-classifier>
+
   </properties>
   <name>dcm4chee archive server</name>
   <description>dcm4chee archive server</description>
@@ -253,11 +257,26 @@
         <artifactId>dcm4chee-storage-cloud</artifactId>
         <version>${dcm4chee-storage.version}</version>
       </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-storage</groupId>
-      <artifactId>dcm4chee-storage-encrypt</artifactId>
-      <version>${dcm4chee-storage.version}</version>
-    </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-encrypt</artifactId>
+        <version>${dcm4chee-storage.version}</version>
+      </dependency>
+
+      <!-- Config EE dependencies -->
+      <dependency>
+          <groupId>org.dcm4che.dcm4chee-conf</groupId>
+          <artifactId>dcm4chee-conf-web</artifactId>
+          <classifier>arc${conf-web-classifier}</classifier>
+          <type>war</type>
+          <version>${dcm4chee-conf.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.dcm4che.dcm4chee-conf</groupId>
+          <artifactId>dcm4chee-conf-cdi</artifactId>
+          <version>${dcm4chee-conf.version}</version>
+      </dependency>
+
       <dependency>
         <groupId>org.dcm4che.dcm4chee-arc</groupId>
         <artifactId>dcm4chee-arc-junit</artifactId>
@@ -464,6 +483,20 @@
           <name>db</name>
         </property>
       </activation>
+    </profile>
+    <profile>
+      <id>secure</id>
+      <properties>
+          <!-- replaces default which is -unsecure -->
+          <conf-web-classifier></conf-web-classifier>
+      </properties>
+    </profile>
+    <profile>
+      <id>asb</id>
+        <!-- TODO: later in dev process switch to secure conf-web -->
+    </profile>
+    <profile>
+      <id>csp</id>
     </profile>
   </profiles>
 </project>
