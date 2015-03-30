@@ -139,7 +139,7 @@ public class StgCmtServiceImpl implements StgCmtService {
         StorageSystem storageSystem = devExt.getStorageSystem(storageGroupID, storageSystemID);
         RetrieveContext ctx = storageRetrieveService.createRetrieveContext(storageSystem);
         try {
-            if(!storageRetrieveService.CalculateDigestAndMatch(ctx, digest, filePath)) {
+            if(!storageRetrieveService.calculateDigestAndMatch(ctx, digest, filePath)) {
                 iter.remove();
             }
         } catch (IOException e) {
