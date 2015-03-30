@@ -492,11 +492,16 @@
       </properties>
     </profile>
     <profile>
-      <id>asb</id>
-        <!-- TODO: later in dev process switch to secure conf-web -->
-    </profile>
-    <profile>
-      <id>csp</id>
+        <id>csp</id>
+        <properties>
+            <hap-repository.url/>
+        </properties>
+        <distributionManagement>
+            <repository>
+                <id>hap-repository</id>
+                <url>${hap-repository.url}</url>
+            </repository>
+        </distributionManagement>
     </profile>
   </profiles>
 </project>
