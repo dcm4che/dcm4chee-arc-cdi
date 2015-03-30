@@ -492,6 +492,12 @@
       </properties>
     </profile>
     <profile>
+        <id>asb</id>
+        <properties>
+            <ds>java:jboss/datasources/OracleDS</ds>
+        </properties>
+    </profile>
+    <profile>
         <id>csp</id>
         <properties>
             <hap-repository.url/>
