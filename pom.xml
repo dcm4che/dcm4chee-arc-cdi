@@ -416,7 +416,14 @@
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
       </plugin>
-</plugins>
+    </plugins>
+    <extensions>
+        <extension>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-ssh</artifactId>
+            <version>2.2</version>
+        </extension>
+    </extensions>
   </build>
   <modules>
     <module>dcm4chee-arc-conf</module>
