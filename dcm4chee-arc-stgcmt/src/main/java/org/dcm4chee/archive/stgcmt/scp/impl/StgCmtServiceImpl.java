@@ -40,6 +40,9 @@ package org.dcm4chee.archive.stgcmt.scp.impl;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
+
+import javassist.bytecode.Descriptor.Iterator;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
@@ -75,12 +78,20 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
+import org.dcm4chee.storage.RetrieveContext;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mysema.query.Tuple;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
+
 @ApplicationScoped
 public class StgCmtServiceImpl implements StgCmtService {
 
@@ -95,6 +106,9 @@ public class StgCmtServiceImpl implements StgCmtService {
     @Inject
     private StgCmtEJB stgCmtEJB;
 
+    @Inject 
+    private RetrieveService storageRetrieveService;
+
     @Inject
     private IApplicationEntityCache aeCache;
 
@@ -107,7 +121,35 @@ public class StgCmtServiceImpl implements StgCmtService {
 
     @Override
     public Attributes calculateResult(Attributes actionInfo) {
-        return stgCmtEJB.calculateResult(actionInfo);
+        
+        List<Tuple> foundMatches = stgCmtEJB.lookupMatches(actionInfo);
+        return stgCmtEJB.calculateResult(checkForDigestAndAdjust(foundMatches), actionInfo);
+    }
+
+    private List<Tuple> checkForDigestAndAdjust(List<Tuple> foundMatches) {
+        
+        for(java.util.Iterator<Tuple> iter = foundMatches.iterator();iter.hasNext();) {
+            Tuple tuple = iter.next();
+        String digest = tuple.get(4, String.class);
+        String filePath = tuple.get(5,String.class);
+        String storageSystemID = tuple.get(6, String.class);
+        String storageGroupID = tuple.get(7,String.class);
+        StorageDeviceExtension devExt =
+                device.getDeviceExtension(StorageDeviceExtension.class);
+        StorageSystem storageSystem = devExt.getStorageSystem(storageGroupID, storageSystemID);
+        RetrieveContext ctx = storageRetrieveService.createRetrieveContext(storageSystem);
+        try {
+            if(!storageRetrieveService.CalculateDigestAndMatch(ctx, digest, filePath)) {
+                iter.remove();
+            }
+        } catch (IOException e) {
+            LOG.error("Failed to calculate digest on storage commitment request"
+                    + ", no digest check is performed, {}",e);
+            return foundMatches;
+        }
+        }
+        return foundMatches;
+        
     }
 
     public void scheduleNEventReport(String localAET, String remoteAET,
@@ -220,5 +262,4 @@ public class StgCmtServiceImpl implements StgCmtService {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
-
 }
