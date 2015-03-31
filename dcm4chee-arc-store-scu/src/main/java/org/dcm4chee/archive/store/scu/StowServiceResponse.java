@@ -47,13 +47,22 @@ public class StowServiceResponse {
 
     Collection<String> failedSopInstances;
     Collection<String> successfulSopInstances;
-
+    Collection<String> verifiedStoredInstances;
 
     public StowServiceResponse(Collection<String> failedSopInstances,
             Collection<String> successfulSopInstances) {
         super();
         this.failedSopInstances = failedSopInstances;
         this.successfulSopInstances = successfulSopInstances;
+    }
+
+    public StowServiceResponse(Collection<String> failedSopInstances,
+            Collection<String> successfulSopInstances
+            , Collection<String> verifiedStoredInstances) {
+        super();
+        this.failedSopInstances = failedSopInstances;
+        this.successfulSopInstances = successfulSopInstances;
+        this.verifiedStoredInstances = verifiedStoredInstances;
     }
 
     public Collection<String> getFailedSopInstances() {
@@ -70,6 +79,15 @@ public class StowServiceResponse {
 
     public void setSuccessfulSopInstances(Collection<String> successfulSopInstances) {
         this.successfulSopInstances = successfulSopInstances;
+    }
+
+    public Collection<String> getVerifiedStoredInstances() {
+        return verifiedStoredInstances;
+    }
+
+    public void setVerifiedStoredInstances(
+            Collection<String> verifiedStoredInstances) {
+        this.verifiedStoredInstances = verifiedStoredInstances;
     }
     
 }

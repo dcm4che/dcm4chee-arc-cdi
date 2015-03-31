@@ -93,6 +93,28 @@ public class StowRSClient {
 
     }
 
+    public StowServiceResponse storeOverWebServiceAndVerify(Collection<ArchiveInstanceLocator> instances) {
+
+        ArrayList<String> failedInstances = new ArrayList<String>();
+        ArrayList<String> successfulInstances = new ArrayList<String>();
+        
+        for(ArchiveInstanceLocator inst : instances) {
+            String aeTitle = context.getRemoteAE().getAETitle();
+            String url = adjustToStowURL(aeTitle, context.getRemoteBaseURL());
+            try{
+            storeOverWebService(aeTitle, url, inst);
+            successfulInstances.add(inst.iuid);
+            }
+            catch(IOException e) {
+                failedInstances.add(inst.iuid);
+            }
+        }
+        //verify with qido
+        //call qido client
+        return new StowServiceResponse(failedInstances, successfulInstances);
+
+    }
+
     private boolean storeOverWebService(String aeTitle, String url
             , ArchiveInstanceLocator inst)
             throws IOException {
