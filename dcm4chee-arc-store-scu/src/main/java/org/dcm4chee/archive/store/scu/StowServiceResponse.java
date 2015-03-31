@@ -35,72 +35,41 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
 package org.dcm4chee.archive.store.scu;
 
-import java.util.HashMap;
-
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import java.util.Collection;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * 
  */
-public class CStoreSCUContext {
+public class StowServiceResponse {
 
-    private final HashMap<String,Object> properties =
-            new HashMap<String,Object>();
-    
-    private ApplicationEntity localAE, remoteAE;
+    Collection<String> failedSopInstances;
+    Collection<String> successfulSopInstances;
 
-    private String remoteBaseURL;
 
-    public CStoreSCUContext(ApplicationEntity localAE, ApplicationEntity remoteAE) {
+    public StowServiceResponse(Collection<String> failedSopInstances,
+            Collection<String> successfulSopInstances) {
         super();
-        this.localAE = localAE;
-        this.remoteAE = remoteAE;
+        this.failedSopInstances = failedSopInstances;
+        this.successfulSopInstances = successfulSopInstances;
     }
 
-    public Object getProperty(String key) {
-        return properties.get(key);
+    public Collection<String> getFailedSopInstances() {
+        return failedSopInstances;
     }
 
-    public Object removeProperty(String key) {
-        return properties.remove(key);
+    public void setFailedSopInstances(Collection<String> failedSopInstances) {
+        this.failedSopInstances = failedSopInstances;
     }
 
-    public void setProperty(String key, Object value) {
-        properties .put(key, value);
+    public Collection<String> getSuccessfulSopInstances() {
+        return successfulSopInstances;
     }
 
-    public ApplicationEntity getLocalAE() {
-        return localAE;
+    public void setSuccessfulSopInstances(Collection<String> successfulSopInstances) {
+        this.successfulSopInstances = successfulSopInstances;
     }
     
-    public ArchiveAEExtension getArchiveAEExtension() {
-        return localAE.getAEExtension(ArchiveAEExtension.class);
-    }
-
-
-    public void setLocalAE(ApplicationEntity localAE) {
-        this.localAE = localAE;
-    }
-
-    public ApplicationEntity getRemoteAE() {
-        return remoteAE;
-    }
-
-    public void setRemoteAE(ApplicationEntity remoteAE) {
-        this.remoteAE = remoteAE;
-    }
-
-    public String getRemoteBaseURL() {
-        return remoteBaseURL;
-    }
-
-    public void setRemoteBaseURL(String remoteBaseURL) {
-        this.remoteBaseURL = remoteBaseURL;
-    }
-
 }

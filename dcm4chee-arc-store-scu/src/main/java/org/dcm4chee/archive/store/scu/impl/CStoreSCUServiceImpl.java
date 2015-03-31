@@ -189,6 +189,7 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                         .createProducer(storeSCUQueue);
                 ObjectMessage msg = session
                         .createObjectMessage((Serializable) insts);
+                msg.setBooleanProperty("Stow", false);
                 msg.setStringProperty("LocalAET", localAET);
                 msg.setStringProperty("RemoteAET", remoteAET);
                 msg.setIntProperty("Priority", priority);

@@ -46,15 +46,16 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
 
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.StowClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @MessageDriven(activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
@@ -68,16 +69,26 @@ public class CStoreSCUMDB implements MessageListener {
     @Inject
     private CStoreSCUService cstorescu;
 
+    @Inject
+    private StowClientService stowsClientService;
     @Override
     public void onMessage(Message msg) {
         try {
-            List<ArchiveInstanceLocator> insts = (List<ArchiveInstanceLocator>) ((ObjectMessage) msg)
+            @SuppressWarnings("unchecked")
+            List<ArchiveInstanceLocator> insts = 
+                    (List<ArchiveInstanceLocator>) ((ObjectMessage) msg)
                     .getObject();
             
-            cstorescu.cstore(insts, msg.getStringProperty("LocalAET"),
+            if(msg.getBooleanProperty("Stow"))
+                stowsClientService.createStowRSClient(stowsClientService
+                        , (CStoreSCUContext) msg.getObjectProperty("Context"))
+                        .storeOverWebService(insts);
+            else
+                cstorescu.cstore(insts, msg.getStringProperty("LocalAET"),
                     msg.getStringProperty("RemoteAET"),
                     msg.getIntProperty("Priority"),
                     msg.getIntProperty("Retries"));
+            
             
         } catch (Throwable th) {
             LOG.warn("Failed to process " + msg, th);
