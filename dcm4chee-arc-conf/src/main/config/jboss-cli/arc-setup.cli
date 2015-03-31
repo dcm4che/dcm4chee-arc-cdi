@@ -8,4 +8,3 @@ jms-queue add --queue-address=stgcmtscp --entries=queue/stgcmtscp
 jms-queue add --queue-address=delete --entries=queue/delete
 jms-queue add --queue-address=archiver --entries=queue/archiver
 jms-queue add --queue-address=storescu --entries=queue/storescu
-q
