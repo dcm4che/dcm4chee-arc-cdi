@@ -47,7 +47,7 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>

@@ -47,6 +47,7 @@ import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
 
 import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

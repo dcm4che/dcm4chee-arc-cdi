@@ -41,8 +41,8 @@ package org.dcm4chee.archive.retrieve.impl;
 import java.util.List;
 
 import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>

@@ -38,10 +38,13 @@
 
 package org.dcm4chee.archive.stgcmt.scp;
 
+import java.util.List;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -57,6 +60,9 @@ public interface StgCmtService {
     void sendNEventReport(String localAET, String remoteAET,
             Attributes eventInfo, int retries);
 
-    void coerceAttributes(Attributes attrs, String remoteAET
-            , ArchiveAEExtension arcAE, Role role) throws DicomServiceException;
+    void sendNActionRequest(String localAET, String remoteAET,
+            List<ArchiveInstanceLocator> insts, String TransactionUID, int retries);
+
+    void coerceAttributes(Attributes attrs, String remoteAET,
+            ArchiveAEExtension arcAE, Role role) throws DicomServiceException;
 }

@@ -38,11 +38,7 @@
       <artifactId>dcm4chee-arc-entity</artifactId>
       <classifier>${db}</classifier>      
       <version>${project.version}</version>
-    </dependency>       
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-storage</groupId>
-      <artifactId>dcm4chee-storage-service</artifactId>
-    </dependency>    
+    </dependency>         
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

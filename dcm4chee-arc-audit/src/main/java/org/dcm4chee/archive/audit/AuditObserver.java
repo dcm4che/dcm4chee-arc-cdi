@@ -64,6 +64,7 @@ import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.event.ConnectionEvent;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.mima.impl.PixQueryEvent;
@@ -73,7 +74,6 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
-import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
