@@ -48,7 +48,7 @@ import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 
 /**
  * Retrieve service. Used to get list of references to dicom instances.

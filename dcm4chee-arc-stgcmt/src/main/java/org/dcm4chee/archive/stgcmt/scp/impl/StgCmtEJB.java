@@ -51,6 +51,7 @@ import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Status;
+import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.entity.QInstance;
 import org.hibernate.Session;
@@ -68,7 +69,7 @@ public class StgCmtEJB  {
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
 
-    public Attributes calculateResult(Attributes actionInfo) {
+    public List<Tuple> lookupMatches(Attributes actionInfo) {
         Sequence requestSeq = actionInfo.getSequence(Tag.ReferencedSOPSequence);
         int size = requestSeq.size();
         String[] sopIUIDs = new String[size];
@@ -76,14 +77,26 @@ public class StgCmtEJB  {
             sopIUIDs[i] = requestSeq.get(i).getString(Tag.ReferencedSOPInstanceUID);
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(QInstance.instance.sopInstanceUID.in(sopIUIDs));
+        builder.and(QLocation.location.digest.isNotNull());
         List<Tuple> list = new HibernateQuery(em.unwrap(Session.class))
             .from(QInstance.instance)
+            .from(QLocation.location)
             .where(builder)
             .list(
                 QInstance.instance.sopClassUID,
                 QInstance.instance.sopInstanceUID,
                 QInstance.instance.retrieveAETs,
-                QInstance.instance.externalRetrieveAET);
+                QInstance.instance.externalRetrieveAET,
+                QLocation.location.digest,
+                QLocation.location.storagePath,
+                QLocation.location.storageSystemID,
+                QLocation.location.storageSystemGroupID);
+        return list;
+    }
+
+    public Attributes calculateResult(List<Tuple> list, Attributes actionInfo) {
+        Sequence requestSeq = actionInfo.getSequence(Tag.ReferencedSOPSequence);
+        int size = requestSeq.size();
         String[] commonRetrieveAETs = null;
         HashMap<String,Tuple> map = new HashMap<String,Tuple>(list.size() * 4 / 3);
         for (Tuple tuple : list) {

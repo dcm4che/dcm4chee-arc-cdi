@@ -46,7 +46,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.api.ConfigurationException;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;

@@ -40,6 +40,9 @@ package org.dcm4chee.archive.stgcmt.scp.impl;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
+
+import javassist.bytecode.Descriptor.Iterator;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
@@ -56,8 +59,10 @@ import javax.xml.transform.Transformer;
 
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.ApplicationEntity;
@@ -74,13 +79,22 @@ import org.dcm4che3.net.pdu.RoleSelection;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
+import org.dcm4chee.storage.RetrieveContext;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mysema.query.Tuple;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
+
 @ApplicationScoped
 public class StgCmtServiceImpl implements StgCmtService {
 
@@ -95,6 +109,9 @@ public class StgCmtServiceImpl implements StgCmtService {
     @Inject
     private StgCmtEJB stgCmtEJB;
 
+    @Inject 
+    private RetrieveService storageRetrieveService;
+
     @Inject
     private IApplicationEntityCache aeCache;
 
@@ -107,7 +124,35 @@ public class StgCmtServiceImpl implements StgCmtService {
 
     @Override
     public Attributes calculateResult(Attributes actionInfo) {
-        return stgCmtEJB.calculateResult(actionInfo);
+        
+        List<Tuple> foundMatches = stgCmtEJB.lookupMatches(actionInfo);
+        return stgCmtEJB.calculateResult(checkForDigestAndAdjust(foundMatches), actionInfo);
+    }
+
+    private List<Tuple> checkForDigestAndAdjust(List<Tuple> foundMatches) {
+        
+        for(java.util.Iterator<Tuple> iter = foundMatches.iterator();iter.hasNext();) {
+            Tuple tuple = iter.next();
+        String digest = tuple.get(4, String.class);
+        String filePath = tuple.get(5,String.class);
+        String storageSystemID = tuple.get(6, String.class);
+        String storageGroupID = tuple.get(7,String.class);
+        StorageDeviceExtension devExt =
+                device.getDeviceExtension(StorageDeviceExtension.class);
+        StorageSystem storageSystem = devExt.getStorageSystem(storageGroupID, storageSystemID);
+        RetrieveContext ctx = storageRetrieveService.createRetrieveContext(storageSystem);
+        try {
+            if(!storageRetrieveService.calculateDigestAndMatch(ctx, digest, filePath)) {
+                iter.remove();
+            }
+        } catch (IOException e) {
+            LOG.error("Failed to calculate digest on storage commitment request"
+                    + ", no digest check is performed, {}",e);
+            return foundMatches;
+        }
+        }
+        return foundMatches;
+        
     }
 
     public void scheduleNEventReport(String localAET, String remoteAET,
@@ -190,6 +235,81 @@ public class StgCmtServiceImpl implements StgCmtService {
             }
         }
     }
+    
+    public void sendNActionRequest(String localAET, String remoteAET,
+            List<ArchiveInstanceLocator> insts, String TransactionUID, int retries) {
+        
+        ApplicationEntity localAE = device
+                .getApplicationEntity(localAET);
+        
+        if (localAE == null) {
+            LOG.warn("Failed to send Storage Commitment Request to {} - no such local AE: {}",
+                    remoteAET, localAET);
+            return;
+        }
+        TransferCapability tc = localAE.getTransferCapabilityFor(
+                UID.StorageCommitmentPushModelSOPClass, TransferCapability.Role.SCU);
+        if (tc == null) {
+            LOG.warn("Failed to send Storage Commitment Request to {} - "
+                   + "local AE: {} does not support Storage Commitment Push Model in SCU Role",
+                    remoteAET, localAET);
+            return;
+        }
+        AAssociateRQ aarq = new AAssociateRQ();
+        aarq.addPresentationContext(
+                        new PresentationContext(
+                                1,
+                                UID.StorageCommitmentPushModelSOPClass,
+                                tc.getTransferSyntaxes()));
+        aarq.addRoleSelection(
+                new RoleSelection(UID.StorageCommitmentPushModelSOPClass, true, false));
+        
+        Attributes action = createAction(insts, TransactionUID);
+        
+        try {
+            ApplicationEntity remoteAE = aeCache
+                    .findApplicationEntity(remoteAET);
+            Association as = localAE.connect(remoteAE, aarq);
+            try {
+                DimseRSP rsp = as.naction(
+                        UID.StorageCommitmentPushModelSOPClass,
+                        UID.StorageCommitmentPushModelSOPInstance,
+                        1,
+                        action, null);
+                rsp.next();
+            } finally {
+                try {
+                    as.release();
+                } catch (IOException e) {
+                    LOG.info("{}: Failed to release association to {}", as, remoteAET);
+                }
+            }
+        } catch (Exception e) {
+            ArchiveAEExtension aeExt = localAE.getAEExtension(ArchiveAEExtension.class);
+            if (aeExt != null && retries < aeExt.getStorageCommitmentMaxRetries()) {
+                int delay = aeExt.getStorageCommitmentRetryInterval();
+                LOG.info("Failed to send Storage Commitment Request to {} - retry in {}s: {}",
+                        remoteAET, delay, e);
+                scheduleNEventReport(localAET, remoteAET, action, retries + 1, delay * 1000L);
+            } else {
+                LOG.warn("Failed to send Storage Commitment Request to {}: {}",
+                        remoteAET, e);
+            }
+        }
+    }
+    
+    private Attributes createAction (List<ArchiveInstanceLocator> insts, String TransactionUID) {
+        Attributes rsp = new Attributes();
+        rsp.setString(Tag.TransactionUID, VR.UI, TransactionUID);
+        Sequence isntSeq = rsp.getSequence(Tag.ReferencedSOPSequence);
+        for (ArchiveInstanceLocator inst : insts) {
+            Attributes instAtt = new Attributes();
+            instAtt.setString(Tag.SOPClassUID, VR.UI, inst.cuid);
+            instAtt.setString(Tag.SOPInstanceUID, VR.UI, inst.iuid);
+            isntSeq.add(instAtt);
+        }
+        return rsp;
+    }
 
     @Override
     public void coerceAttributes(Attributes attrs, final String remoteAET, final ArchiveAEExtension arcAE, Role role) throws DicomServiceException {
@@ -220,5 +340,4 @@ public class StgCmtServiceImpl implements StgCmtService {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
-
 }

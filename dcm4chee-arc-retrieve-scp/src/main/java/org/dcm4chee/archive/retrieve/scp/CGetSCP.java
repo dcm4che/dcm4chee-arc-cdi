@@ -64,6 +64,7 @@ import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.net.service.RetrieveTask;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
@@ -71,7 +72,6 @@ import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 import org.dcm4chee.archive.store.scu.impl.CStoreSCUImpl;
 
 /**

@@ -36,31 +36,31 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.retrieve.impl;
+package org.dcm4chee.archive.store.scu;
 
 import java.util.List;
 
-import org.dcm4che3.net.Device;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.service.DicomServiceException;
+
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.dto.Participant;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
-public class RetrieveBeforeSendEvent extends RetrieveEvent {
+public interface StowClientService {
+
+    void scheduleStow(CStoreSCUContext ctx, List<ArchiveInstanceLocator> insts
+            , int retries, int priority, long delay);
 
     /**
-     * @param requestor
-     * @param source
-     * @param destination
-     * @param device
-     * @param matches
+     * Coerce each Object to be sent. CStoreSCUContext is used to share state
+     * among different coercions
      */
-    public RetrieveBeforeSendEvent(Participant requestor, Participant source,
-            Participant destination, Device device,
-            List<ArchiveInstanceLocator> matches) {
-        super(requestor, source, destination, device, matches);
-        // TODO Auto-generated constructor stub
-    }    
+    void coerceAttributes(Attributes attrs, CStoreSCUContext context)
+            throws DicomServiceException;
+
+    StowRSClient createStowRSClient(StowClientService service, CStoreSCUContext ctx);
+
 }

@@ -54,11 +54,11 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

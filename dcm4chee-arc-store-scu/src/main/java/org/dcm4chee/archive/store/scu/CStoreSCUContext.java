@@ -54,6 +54,8 @@ public class CStoreSCUContext {
     
     private ApplicationEntity localAE, remoteAE;
 
+    private String remoteBaseURL;
+
     public CStoreSCUContext(ApplicationEntity localAE, ApplicationEntity remoteAE) {
         super();
         this.localAE = localAE;
@@ -92,7 +94,13 @@ public class CStoreSCUContext {
     public void setRemoteAE(ApplicationEntity remoteAE) {
         this.remoteAE = remoteAE;
     }
-    
-    
+
+    public String getRemoteBaseURL() {
+        return remoteBaseURL;
+    }
+
+    public void setRemoteBaseURL(String remoteBaseURL) {
+        this.remoteBaseURL = remoteBaseURL;
+    }
 
 }

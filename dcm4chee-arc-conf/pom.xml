@@ -10,14 +10,14 @@
   </parent>
   <artifactId>dcm4chee-arc-conf</artifactId>
   <dependencies>
-      <dependency>
-          <groupId>org.dcm4che</groupId>
-          <artifactId>dcm4che-conf-api</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.dcm4che</groupId>
-          <artifactId>dcm4che-conf-core</artifactId>
-      </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-core</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-imageio</artifactId>
@@ -34,6 +34,11 @@
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-soundex</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-service</artifactId>
+      <scope>provided</scope>
+    </dependency>      
   </dependencies>
   <build>
     <plugins>

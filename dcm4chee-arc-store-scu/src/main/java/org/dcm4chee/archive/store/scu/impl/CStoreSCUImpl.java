@@ -58,6 +58,7 @@ import org.dcm4che3.net.service.BasicCStoreSCU;
 import org.dcm4che3.net.service.CStoreSCU;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;

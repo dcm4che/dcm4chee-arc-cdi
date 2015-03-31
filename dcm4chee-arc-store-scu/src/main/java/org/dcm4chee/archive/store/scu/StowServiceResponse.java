@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,55 +35,59 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.store.scu;
 
-package org.dcm4chee.archive.retrieve.impl;
-
-import java.util.List;
-
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.service.InstanceLocator;
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.dto.Participant;
+import java.util.Collection;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * 
  */
-public class RetrieveAfterSendEvent extends RetrieveEvent {
+public class StowServiceResponse {
 
-    protected final List<ArchiveInstanceLocator> completed;
-    protected final List<ArchiveInstanceLocator> warning;
-    protected final List<ArchiveInstanceLocator> failed;
-    
-    /**
-     * @param requestor
-     * @param source
-     * @param destination
-     * @param device
-     * @param instances
-     */
-    public RetrieveAfterSendEvent(Participant requestor, Participant source,
-            Participant destination, Device device,
-            List<ArchiveInstanceLocator> instances, 
-            List<ArchiveInstanceLocator> completed,
-            List<ArchiveInstanceLocator> warning,
-            List<ArchiveInstanceLocator> failed) {
-        super(requestor, source, destination, device, instances);
-        this.completed = completed;
-        this.warning = warning;
-        this.failed = failed;
+    Collection<String> failedSopInstances;
+    Collection<String> successfulSopInstances;
+    Collection<String> verifiedStoredInstances;
+
+    public StowServiceResponse(Collection<String> failedSopInstances,
+            Collection<String> successfulSopInstances) {
+        super();
+        this.failedSopInstances = failedSopInstances;
+        this.successfulSopInstances = successfulSopInstances;
+    }
+
+    public StowServiceResponse(Collection<String> failedSopInstances,
+            Collection<String> successfulSopInstances
+            , Collection<String> verifiedStoredInstances) {
+        super();
+        this.failedSopInstances = failedSopInstances;
+        this.successfulSopInstances = successfulSopInstances;
+        this.verifiedStoredInstances = verifiedStoredInstances;
+    }
+
+    public Collection<String> getFailedSopInstances() {
+        return failedSopInstances;
+    }
+
+    public void setFailedSopInstances(Collection<String> failedSopInstances) {
+        this.failedSopInstances = failedSopInstances;
+    }
+
+    public Collection<String> getSuccessfulSopInstances() {
+        return successfulSopInstances;
+    }
+
+    public void setSuccessfulSopInstances(Collection<String> successfulSopInstances) {
+        this.successfulSopInstances = successfulSopInstances;
+    }
+
+    public Collection<String> getVerifiedStoredInstances() {
+        return verifiedStoredInstances;
+    }
+
+    public void setVerifiedStoredInstances(
+            Collection<String> verifiedStoredInstances) {
+        this.verifiedStoredInstances = verifiedStoredInstances;
     }
     
-    public List<ArchiveInstanceLocator> getCompleted() {
-        return completed;
-    }
-
-    public List<ArchiveInstanceLocator> getWarning() {
-        return warning;
-    }
-
-    public List<ArchiveInstanceLocator> getFailed() {
-        return failed;
-    }
-
 }

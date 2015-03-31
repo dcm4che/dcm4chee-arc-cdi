@@ -43,7 +43,7 @@ package org.dcm4chee.archive.rs;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 
-import org.dcm4che3.conf.api.ConfigurationException;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;

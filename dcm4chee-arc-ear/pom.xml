@@ -10,9 +10,6 @@
   </parent>
   <artifactId>dcm4chee-arc-ear</artifactId>
   <packaging>ear</packaging>
-  <properties>
-      <conf-web-classifier>-unsecure</conf-web-classifier>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -230,22 +227,22 @@
       <artifactId>dcm4chee-storage-cloud</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.dcm4chee</groupId>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-encrypt</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-conf</groupId>
       <artifactId>dcm4chee-conf-web</artifactId>
-      <classifier>arc${conf-web-classifier}</classifier>
       <type>war</type>
-      <version>${dcm4chee-conf-web.version}</version>
+      <classifier>arc${conf-web-classifier}</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-conf</groupId>
+      <artifactId>dcm4chee-conf-cdi</artifactId>
     </dependency>
 
   </dependencies>
   <profiles>
-      <profile>
-          <id>secure</id>
-          <properties>
-              <!-- replaces default which is -unsecure -->
-              <conf-web-classifier></conf-web-classifier>
-          </properties>
-      </profile>
     <profile>
       <id>monitoring</id>
       <activation>
@@ -278,7 +275,7 @@
               <contextRoot>dcm4chee-arc</contextRoot>
             </webModule>
             <webModule>
-              <groupId>org.dcm4chee</groupId>
+              <groupId>org.dcm4che.dcm4chee-conf</groupId>
               <artifactId>dcm4chee-conf-web</artifactId>
               <contextRoot>config</contextRoot>
             </webModule>
