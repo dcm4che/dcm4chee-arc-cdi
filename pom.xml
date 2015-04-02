@@ -480,7 +480,7 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
-        <db>mysql</db>
+        <db>oracle</db>
       </properties>
     </profile>
     <profile>
