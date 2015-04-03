@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,72 +38,33 @@
 
 package org.dcm4chee.archive.store.scu;
 
-import java.io.Serializable;
-import java.util.HashMap;
+import java.util.List;
 
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.service.DicomServiceException;
+
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
-public class CStoreSCUContext implements Serializable{
+public interface StoreAndRememberOTWService {
 
-    private static final long serialVersionUID = -2104597246635355682L;
+    void scheduleStow(CStoreSCUContext ctx, List<ArchiveInstanceLocator> insts
+            , int retries, int priority, long delay, boolean verifyStorage);
 
-    private final HashMap<String,Object> properties =
-            new HashMap<String,Object>();
-    
-    private ApplicationEntity localAE, remoteAE;
+    /**
+     * Coerce each Object to be sent. CStoreSCUContext is used to share state
+     * among different coercions
+     */
+    void coerceAttributes(Attributes attrs, CStoreSCUContext context)
+            throws DicomServiceException;
 
-    private String remoteBaseURL;
+    StoreAndRememberOTWClient createStowRSClient(
+            StoreAndRememberOTWService service, CStoreSCUContext ctx);
 
-    public CStoreSCUContext(ApplicationEntity localAE, ApplicationEntity remoteAE) {
-        super();
-        this.localAE = localAE;
-        this.remoteAE = remoteAE;
-    }
+    void notify(StoreAndRememberResponse rsp);
 
-    public Object getProperty(String key) {
-        return properties.get(key);
-    }
-
-    public Object removeProperty(String key) {
-        return properties.remove(key);
-    }
-
-    public void setProperty(String key, Object value) {
-        properties .put(key, value);
-    }
-
-    public ApplicationEntity getLocalAE() {
-        return localAE;
-    }
-    
-    public ArchiveAEExtension getArchiveAEExtension() {
-        return localAE.getAEExtension(ArchiveAEExtension.class);
-    }
-
-
-    public void setLocalAE(ApplicationEntity localAE) {
-        this.localAE = localAE;
-    }
-
-    public ApplicationEntity getRemoteAE() {
-        return remoteAE;
-    }
-
-    public void setRemoteAE(ApplicationEntity remoteAE) {
-        this.remoteAE = remoteAE;
-    }
-
-    public String getRemoteBaseURL() {
-        return remoteBaseURL;
-    }
-
-    public void setRemoteBaseURL(String remoteBaseURL) {
-        this.remoteBaseURL = remoteBaseURL;
-    }
-
+    StoreAndRememberResponse getLastResponse();
 }

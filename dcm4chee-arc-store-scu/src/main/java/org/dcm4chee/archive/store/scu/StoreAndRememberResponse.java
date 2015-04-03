@@ -35,75 +35,62 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
 package org.dcm4chee.archive.store.scu;
 
-import java.io.Serializable;
-import java.util.HashMap;
-
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * 
  */
-public class CStoreSCUContext implements Serializable{
+public class StoreAndRememberResponse {
 
-    private static final long serialVersionUID = -2104597246635355682L;
+    Collection<String> failedSopInstances;
+    Collection<String> successfulSopInstances;
+    Collection<String> verifiedStoredInstances;
 
-    private final HashMap<String,Object> properties =
-            new HashMap<String,Object>();
-    
-    private ApplicationEntity localAE, remoteAE;
-
-    private String remoteBaseURL;
-
-    public CStoreSCUContext(ApplicationEntity localAE, ApplicationEntity remoteAE) {
+    public StoreAndRememberResponse(Collection<String> failedSopInstances,
+            Collection<String> successfulSopInstances) {
         super();
-        this.localAE = localAE;
-        this.remoteAE = remoteAE;
+        this.failedSopInstances = failedSopInstances;
+        this.successfulSopInstances = successfulSopInstances;
+        this.verifiedStoredInstances = new ArrayList<String>();
     }
 
-    public Object getProperty(String key) {
-        return properties.get(key);
+    public StoreAndRememberResponse(Collection<String> failedSopInstances,
+            Collection<String> successfulSopInstances
+            , Collection<String> verifiedStoredInstances) {
+        super();
+        this.failedSopInstances = failedSopInstances;
+        this.successfulSopInstances = successfulSopInstances;
+        this.verifiedStoredInstances = verifiedStoredInstances;
     }
 
-    public Object removeProperty(String key) {
-        return properties.remove(key);
+    public Collection<String> getFailedSopInstances() {
+        return failedSopInstances;
     }
 
-    public void setProperty(String key, Object value) {
-        properties .put(key, value);
+    public void setFailedSopInstances(Collection<String> failedSopInstances) {
+        this.failedSopInstances = failedSopInstances;
     }
 
-    public ApplicationEntity getLocalAE() {
-        return localAE;
+    public Collection<String> getSuccessfulSopInstances() {
+        return successfulSopInstances;
+    }
+
+    public void setSuccessfulSopInstances(
+            Collection<String> successfulSopInstances) {
+        this.successfulSopInstances = successfulSopInstances;
+    }
+
+    public Collection<String> getVerifiedStoredInstances() {
+        return verifiedStoredInstances;
+    }
+
+    public void setVerifiedStoredInstances(
+            Collection<String> verifiedStoredInstances) {
+        this.verifiedStoredInstances = verifiedStoredInstances;
     }
     
-    public ArchiveAEExtension getArchiveAEExtension() {
-        return localAE.getAEExtension(ArchiveAEExtension.class);
-    }
-
-
-    public void setLocalAE(ApplicationEntity localAE) {
-        this.localAE = localAE;
-    }
-
-    public ApplicationEntity getRemoteAE() {
-        return remoteAE;
-    }
-
-    public void setRemoteAE(ApplicationEntity remoteAE) {
-        this.remoteAE = remoteAE;
-    }
-
-    public String getRemoteBaseURL() {
-        return remoteBaseURL;
-    }
-
-    public void setRemoteBaseURL(String remoteBaseURL) {
-        this.remoteBaseURL = remoteBaseURL;
-    }
-
 }

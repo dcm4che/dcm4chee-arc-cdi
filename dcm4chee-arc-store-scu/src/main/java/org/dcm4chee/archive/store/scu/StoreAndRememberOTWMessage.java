@@ -35,75 +35,42 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
 package org.dcm4chee.archive.store.scu;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.Collection;
 
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * 
  */
-public class CStoreSCUContext implements Serializable{
+public class StoreAndRememberOTWMessage implements Serializable {
 
-    private static final long serialVersionUID = -2104597246635355682L;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1667206603837867843L;
 
-    private final HashMap<String,Object> properties =
-            new HashMap<String,Object>();
-    
-    private ApplicationEntity localAE, remoteAE;
+    Collection<ArchiveInstanceLocator> instances;
 
-    private String remoteBaseURL;
+    CStoreSCUContext context;
 
-    public CStoreSCUContext(ApplicationEntity localAE, ApplicationEntity remoteAE) {
+    public StoreAndRememberOTWMessage(
+            Collection<ArchiveInstanceLocator> instances,
+            CStoreSCUContext context) {
         super();
-        this.localAE = localAE;
-        this.remoteAE = remoteAE;
+        this.instances = instances;
+        this.context = context;
     }
 
-    public Object getProperty(String key) {
-        return properties.get(key);
+    public Collection<ArchiveInstanceLocator> getInstances() {
+        return instances;
     }
 
-    public Object removeProperty(String key) {
-        return properties.remove(key);
-    }
-
-    public void setProperty(String key, Object value) {
-        properties .put(key, value);
-    }
-
-    public ApplicationEntity getLocalAE() {
-        return localAE;
-    }
-    
-    public ArchiveAEExtension getArchiveAEExtension() {
-        return localAE.getAEExtension(ArchiveAEExtension.class);
-    }
-
-
-    public void setLocalAE(ApplicationEntity localAE) {
-        this.localAE = localAE;
-    }
-
-    public ApplicationEntity getRemoteAE() {
-        return remoteAE;
-    }
-
-    public void setRemoteAE(ApplicationEntity remoteAE) {
-        this.remoteAE = remoteAE;
-    }
-
-    public String getRemoteBaseURL() {
-        return remoteBaseURL;
-    }
-
-    public void setRemoteBaseURL(String remoteBaseURL) {
-        this.remoteBaseURL = remoteBaseURL;
+    public CStoreSCUContext getContext() {
+        return context;
     }
 
 }

@@ -95,6 +95,15 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
     private String storageSystemGroupID;
 
+    @ConfigurableProperty(name= "dcmQidoClientAcceptMediaType", defaultValue="application/json")
+    private String qidoClientAcceptType = "application/json";
+
+    @ConfigurableProperty(name= "dcmQidoClientSupportFuzzyMatching", defaultValue="false")
+    private boolean qidoClientSupportFuzzyMatching;
+
+    @ConfigurableProperty(name= "dcmQidoClientSupportTimeZoneAdjustment", defaultValue="false")
+    private boolean qidoClientSupportTimeZoneAdjustment;
+
     @ConfigurableProperty(name = "dcmSpoolDirectoryPath")
     private String spoolDirectoryPath;
 
@@ -645,6 +654,32 @@ public class ArchiveAEExtension extends AEExtension {
     public void setQcUpdateReferencesOnRetrieve(
             ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve) {
         this.qcUpdateReferencesOnRetrieve = qcUpdateReferencesOnRetrieve;
+    }
+
+    public String getQidoClientAcceptType() {
+        return qidoClientAcceptType;
+    }
+
+    public boolean isQidoClientSupportFuzzyMatching() {
+        return qidoClientSupportFuzzyMatching;
+    }
+
+    public boolean isQidoClientSupportTimeZoneAdjustment() {
+        return qidoClientSupportTimeZoneAdjustment;
+    }
+
+    public void setQidoClientAcceptType(String qidoClientAcceptType) {
+        this.qidoClientAcceptType = qidoClientAcceptType;
+    }
+
+    public void setQidoClientSupportFuzzyMatching(
+            boolean qidoClientSupportFuzzyMatching) {
+        this.qidoClientSupportFuzzyMatching = qidoClientSupportFuzzyMatching;
+    }
+
+    public void setQidoClientSupportTimeZoneAdjustment(
+            boolean qidoClientSupportTimeZoneAdjustment) {
+        this.qidoClientSupportTimeZoneAdjustment = qidoClientSupportTimeZoneAdjustment;
     }
 
 }

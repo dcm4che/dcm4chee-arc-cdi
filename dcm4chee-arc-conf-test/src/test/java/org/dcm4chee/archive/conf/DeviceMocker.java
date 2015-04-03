@@ -856,7 +856,9 @@ public class DeviceMocker {
         aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
-
+        aeExt.setQidoClientAcceptType("application/json");
+        aeExt.setQidoClientSupportFuzzyMatching(false);
+        aeExt.setQidoClientSupportTimeZoneAdjustment(false);
         aeExt.addAttributeCoercion(new AttributeCoercion(
                 "Supplement missing PID",
                 null,
