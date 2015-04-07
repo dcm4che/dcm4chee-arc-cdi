@@ -50,8 +50,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
 
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
 import javax.json.Json;
 import javax.ws.rs.core.MediaType;
 
@@ -64,7 +62,6 @@ import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.json.JSONReader;
 import org.dcm4che3.json.JSONReader.Callback;
-import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
@@ -77,12 +74,14 @@ import org.slf4j.LoggerFactory;
  */
 public class StoreAndRememberOTWClient {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StoreAndRememberOTWClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(
+            StoreAndRememberOTWClient.class);
     
     private StoreAndRememberOTWService service;
     private CStoreSCUContext context;
     
-    public StoreAndRememberOTWClient(StoreAndRememberOTWService service, CStoreSCUContext context) {
+    public StoreAndRememberOTWClient(StoreAndRememberOTWService service
+            , CStoreSCUContext context) {
         this.service = service;
         this.context = context; 
     }
@@ -107,9 +106,9 @@ public class StoreAndRememberOTWClient {
         boolean fuzzyMatching = aeExt.isQidoClientSupportFuzzyMatching();
         boolean timeZoneAdjustment = aeExt
                 .isQidoClientSupportTimeZoneAdjustment();
-        MediaType type = MediaType.valueOf(aeExt.getQidoClientAcceptType() !=null 
-                ? aeExt.getQidoClientAcceptType()
-                        : "application/json");
+        MediaType type = MediaType.valueOf(aeExt.getQidoClientAcceptType() 
+                !=null ? aeExt.getQidoClientAcceptType(): "application/json");
+        
         for(String sopUID : storeOverWebServiceResult
                 .getSuccessfulSopInstances()) {
             

@@ -37,8 +37,6 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4che.archive.store.scu.test;
 
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +51,6 @@ import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
-import javax.validation.constraints.AssertTrue;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -61,7 +58,6 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
@@ -73,7 +69,6 @@ import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.StoreAndRememberOTWService;
-import org.dcm4chee.archive.store.scu.StoreAndRememberResponse;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.jboss.arquillian.container.test.api.Deployment;
