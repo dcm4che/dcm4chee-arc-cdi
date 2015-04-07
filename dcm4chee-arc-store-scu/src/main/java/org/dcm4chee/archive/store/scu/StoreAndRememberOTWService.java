@@ -65,6 +65,4 @@ public interface StoreAndRememberOTWService {
             StoreAndRememberOTWService service, CStoreSCUContext ctx);
 
     void notify(StoreAndRememberResponse rsp);
-
-    StoreAndRememberResponse getLastResponse();
 }

@@ -98,6 +98,8 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class StoreAndRememberOTWServiceIT {
 
+
+
     private static final String[] DELETE_QUERIES = {
         "DELETE FROM rel_instance_location", "DELETE FROM location",
         "DELETE FROM content_item", "DELETE FROM verify_observer",
@@ -114,6 +116,9 @@ public class StoreAndRememberOTWServiceIT {
 
         @Inject
         private StoreAndRememberOTWService storeAndRememberOTW;
+
+        @Inject
+        private StoreANdRememberOTWObserverTest observer;
 
         @Inject
         private StoreService storeService;
@@ -134,6 +139,7 @@ public class StoreAndRememberOTWServiceIT {
             WebArchive war = ShrinkWrap.create(WebArchive.class, "dcm4chee-arc.war");
             war.addClass(StoreAndRememberOTWServiceIT.class);
             war.addClass(ParamFactory.class);
+            war.addClass(StoreANdRememberOTWObserverTest.class);
             JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                     .importRuntimeAndTestDependencies().resolve()
                     .withoutTransitivity().as(JavaArchive.class);
@@ -142,6 +148,9 @@ public class StoreAndRememberOTWServiceIT {
                 war.addAsLibrary(a);
             }
                 war.addAsResource("instance.xml");
+                war.addAsWebInfResource("ejb-jar.xml");
+                war.addAsWebInfResource("jboss-web.xml");
+                war.addAsWebInfResource("web.xml");
 
             if (System.getProperty("exportWar") != null)
                 war.as(ZipExporter.class).exportTo(new File("test.war"), true);
@@ -170,12 +179,7 @@ public class StoreAndRememberOTWServiceIT {
                     new ArrayList<ArchiveInstanceLocator>();
             locators.add(locateInstance(sopUID));
             storeAndRememberOTW.scheduleStow(ctx, locators, 1, 1, 1l, false);
-            while(storeAndRememberOTW.getLastResponse() == null);
-            
-            StoreAndRememberResponse response = storeAndRememberOTW
-                    .getLastResponse();
-            assertTrue(response.getFailedSopInstances().isEmpty());
-            assertTrue(response.getSuccessfulSopInstances().contains("1.1.1.2"));
+            //test assertions in the observer
         }
 
 
@@ -192,13 +196,7 @@ public class StoreAndRememberOTWServiceIT {
                     new ArrayList<ArchiveInstanceLocator>();
             locators.add(locateInstance(sopUID));
             storeAndRememberOTW.scheduleStow(ctx, locators, 1, 1, 1l, true);
-            while(storeAndRememberOTW.getLastResponse() == null);
-            
-            StoreAndRememberResponse response = storeAndRememberOTW
-                    .getLastResponse();
-            assertTrue(response.getFailedSopInstances().isEmpty());
-            assertTrue(response.getSuccessfulSopInstances().contains("1.1.1.2"));
-            assertTrue(response.getVerifiedStoredInstances().contains("1.1.1.2"));
+            //test assertions in the observer
         }
 
         private ArchiveInstanceLocator locateInstance(String sopInstanceUID) {

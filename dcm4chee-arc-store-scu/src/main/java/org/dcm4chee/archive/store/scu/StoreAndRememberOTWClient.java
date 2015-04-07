@@ -63,6 +63,7 @@ import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.json.JSONReader;
+import org.dcm4che3.json.JSONReader.Callback;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -88,8 +89,8 @@ public class StoreAndRememberOTWClient {
 
     public StoreAndRememberResponse storeOverWebService(
             Collection<ArchiveInstanceLocator> instances, boolean verify) {
-
-        return verifyStorage(storeOverWebService(instances));
+        StoreAndRememberResponse response = storeOverWebService(instances);
+        return verify ? verifyStorage(response) : response;
 
     }
 
@@ -255,6 +256,7 @@ public class StoreAndRememberOTWClient {
     private boolean readJSON(InputStream in) {
         try {
             JSONReader reader = null;
+            
             try {
                 reader = new JSONReader(
                         Json.createParser(new InputStreamReader(in, "UTF-8")));
@@ -262,10 +264,18 @@ public class StoreAndRememberOTWClient {
                 LOG.error("Unsupported encoding exception"
                         + " while parsing json stream", e);
             }
-            Attributes attrs = new Attributes();
-            reader.readDataset(attrs);
-            if(attrs.getString(Tag.InstanceAvailability) != null
-                    && attrs.getString(Tag.InstanceAvailability)
+            
+            final ArrayList<Attributes> attrs = new ArrayList<Attributes>();
+            
+            reader.readDatasets(new Callback() {
+                
+                @Override
+                public void onDataset(Attributes fmi, Attributes dataset) {
+                    attrs.add(dataset);
+                }
+            });
+            if(attrs.get(0).getString(Tag.InstanceAvailability) != null
+                    && attrs.get(0).getString(Tag.InstanceAvailability)
                     .equalsIgnoreCase("ONLINE"))
                 return true;
         } finally {

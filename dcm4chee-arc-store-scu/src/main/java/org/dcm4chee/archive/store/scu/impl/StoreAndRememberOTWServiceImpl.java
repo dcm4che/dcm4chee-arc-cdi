@@ -77,8 +77,6 @@ import org.dcm4chee.archive.store.scu.StoreAndRememberResponse;
 public class StoreAndRememberOTWServiceImpl implements
         StoreAndRememberOTWService {
 
-    private StoreAndRememberResponse lastResponse;
-
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
@@ -168,13 +166,7 @@ public class StoreAndRememberOTWServiceImpl implements
 
     @Override
     public void notify(StoreAndRememberResponse rsp) {
-        lastResponse = rsp;
         storeandRememberOTWEvent.fire(rsp);
-    }
-
-    @Override
-    public StoreAndRememberResponse getLastResponse() {
-        return lastResponse;
     }
 
 }
