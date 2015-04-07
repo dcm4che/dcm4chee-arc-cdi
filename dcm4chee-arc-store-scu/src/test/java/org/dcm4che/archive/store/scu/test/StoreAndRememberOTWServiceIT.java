@@ -131,7 +131,7 @@ public class StoreAndRememberOTWServiceIT {
 
         @Deployment
         public static WebArchive createDeployment() {
-            WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
+            WebArchive war = ShrinkWrap.create(WebArchive.class, "dcm4chee-arc.war");
             war.addClass(StoreAndRememberOTWServiceIT.class);
             war.addClass(ParamFactory.class);
             JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
