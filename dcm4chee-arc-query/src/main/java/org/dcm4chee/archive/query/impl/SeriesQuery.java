@@ -72,11 +72,10 @@ class SeriesQuery extends AbstractQuery<Series> {
         QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy,           // (5)
         QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy,           // (6)
         QSeriesQueryAttributes.seriesQueryAttributes.retrieveAETs,              // (7)
-        QSeriesQueryAttributes.seriesQueryAttributes.externalRetrieveAET,       // (8)
-        QSeriesQueryAttributes.seriesQueryAttributes.availability,              // (9)
-        QueryBuilder.seriesAttributesBlob.encodedAttributes,                    // (10)
-        QueryBuilder.studyAttributesBlob.encodedAttributes,                     // (11)
-        QueryBuilder.patientAttributesBlob.encodedAttributes                    // (12)
+        QSeriesQueryAttributes.seriesQueryAttributes.availability,              // (8)
+        QueryBuilder.seriesAttributesBlob.encodedAttributes,                    // (9)
+        QueryBuilder.studyAttributesBlob.encodedAttributes,                     // (10)
+        QueryBuilder.patientAttributesBlob.encodedAttributes                    // (11)
     };
 
     private Long studyPk;
@@ -128,29 +127,24 @@ class SeriesQuery extends AbstractQuery<Series> {
         Integer numberOfInstancesI = results.getInteger(2);
         int numberOfSeriesRelatedInstances;
         String retrieveAETs;
-        String externalRetrieveAET;
         Availability availability;
         if (numberOfInstancesI != null) {
             numberOfSeriesRelatedInstances = numberOfInstancesI;
             if (numberOfSeriesRelatedInstances == 0)
                 return null;
-
             retrieveAETs = results.getString(7);
-            externalRetrieveAET = results.getString(8);
-            availability = (Availability) results.get(9);
+            availability = (Availability) results.get(8);
         } else {
             SeriesQueryAttributes seriesView = context.getQueryService()
                     .createSeriesView(seriesPk,  context.getQueryParam());
             numberOfSeriesRelatedInstances = seriesView.getNumberOfInstances();
             if (numberOfSeriesRelatedInstances == 0)
                 return null;
-
             retrieveAETs = seriesView.getRawRetrieveAETs();
-            externalRetrieveAET = seriesView.getExternalRetrieveAET();
             availability = seriesView.getAvailability();
         }
 
-        byte[] seriesAttributes = results.getBinary(10);
+        byte[] seriesAttributes = results.getBinary(9);
         if (!studyPk.equals(this.studyPk)) {
             this.studyAttrs = toStudyAttributes(studyPk, results);
             this.studyPk = studyPk;
@@ -159,7 +153,7 @@ class SeriesQuery extends AbstractQuery<Series> {
         Utils.decodeAttributes(seriesAttrs, seriesAttributes);
         Attributes attrs = Utils.mergeAndNormalize(studyAttrs, seriesAttrs);
         Utils.setSeriesQueryAttributes(attrs, numberOfSeriesRelatedInstances);
-        Utils.setRetrieveAET(attrs, retrieveAETs, externalRetrieveAET);
+        Utils.setRetrieveAET(attrs, retrieveAETs);
         Utils.setAvailability(attrs, availability);
 
         return attrs;
@@ -185,8 +179,8 @@ class SeriesQuery extends AbstractQuery<Series> {
             sopClassesInStudy = studyView.getRawSOPClassesInStudy();
         }
 
-        byte[] studyByteAttributes = results.getBinary(11);
-        byte[] patientByteAttributes = results.getBinary(12);
+        byte[] studyByteAttributes = results.getBinary(10);
+        byte[] patientByteAttributes = results.getBinary(11);
         Attributes patientAttrs = new Attributes();
         Attributes studyAttrs = new Attributes();
         Utils.decodeAttributes(patientAttrs, patientByteAttributes);

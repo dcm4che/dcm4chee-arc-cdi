@@ -706,6 +706,7 @@ public class DeviceMocker {
 
         StorageSystemGroup online = new StorageSystemGroup();
         online.setGroupID("DEFAULT");
+        online.setRetrieveAETs(new String[] {"DCM4CHEE"});
         online.setDigestAlgorithm("MD5");
         online.addStorageSystem(fs1);
         online.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
@@ -843,7 +844,6 @@ public class DeviceMocker {
         aeExt.setStorageSystemGroupID("DEFAULT");
         aeExt.setMetaDataStorageSystemGroupID("METADATA");
         aeExt.setSpoolDirectoryPath("spool");
-        aeExt.setRetrieveAETs(aet);
         aeExt.setPreserveSpoolFileOnFailure(true);
         aeExt.setSuppressWarningCoercionOfDataElements(false);
         aeExt.setCheckNonDBAttributesOnStorage(false);
@@ -1016,7 +1016,6 @@ public class DeviceMocker {
         ae.setAssociationInitiator(true);
         aeExt.setStorageSystemGroupID("notDEFAULT");
         aeExt.setSpoolDirectoryPath("archive/anotherspool");
-        aeExt.setRetrieveAETs(aet);
         aeExt.setPreserveSpoolFileOnFailure(true);
         aeExt.setSuppressWarningCoercionOfDataElements(false);
         aeExt.setMatchUnknown(true);

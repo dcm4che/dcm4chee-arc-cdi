@@ -42,8 +42,6 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import javassist.bytecode.Descriptor.Iterator;
-
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -133,10 +131,10 @@ public class StgCmtServiceImpl implements StgCmtService {
         
         for(java.util.Iterator<Tuple> iter = foundMatches.iterator();iter.hasNext();) {
             Tuple tuple = iter.next();
-        String digest = tuple.get(4, String.class);
-        String filePath = tuple.get(5,String.class);
-        String storageSystemID = tuple.get(6, String.class);
-        String storageGroupID = tuple.get(7,String.class);
+        String digest = tuple.get(3, String.class);
+        String filePath = tuple.get(4,String.class);
+        String storageSystemID = tuple.get(5, String.class);
+        String storageGroupID = tuple.get(6,String.class);
         StorageDeviceExtension devExt =
                 device.getDeviceExtension(StorageDeviceExtension.class);
         StorageSystem storageSystem = devExt.getStorageSystem(storageGroupID, storageSystemID);

@@ -171,7 +171,7 @@ public class IANSCUImpl implements IANSCU {
                         QInstance.instance.sopClassUID,
                         QInstance.instance.availability,
                         QInstance.instance.retrieveAETs,
-                        QInstance.instance.externalRetrieveAET);
+                        QInstance.instance.externalRetrieveLocations);
 
             for (Tuple tuple : list) {
                 builder.addReferencedInstance(
@@ -181,8 +181,7 @@ public class IANSCUImpl implements IANSCU {
                         tuple.get(QInstance.instance.sopClassUID),
                         tuple.get(QInstance.instance.availability),
                         Utils.decodeAETs(
-                            tuple.get(QInstance.instance.retrieveAETs),
-                            tuple.get(QInstance.instance.externalRetrieveAET)));
+                            tuple.get(QInstance.instance.retrieveAETs)));
             }
         }
         return builder;

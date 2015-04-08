@@ -89,10 +89,15 @@ public class StoreAndRememberOTWClient {
     public StoreAndRememberResponse storeOverWebService(
             Collection<ArchiveInstanceLocator> instances, boolean verify) {
         StoreAndRememberResponse response = storeOverWebService(instances);
+        markAsRetrieveable(response, instances);
         return verify ? verifyStorage(response) : response;
 
     }
 
+    private void markAsRetrieveable(StoreAndRememberResponse rsp
+            , Collection<ArchiveInstanceLocator> instances) {
+        //for(ArchiveInstanceLocator )
+    }
     private StoreAndRememberResponse verifyStorage(
             StoreAndRememberResponse storeOverWebServiceResult) {
         ArchiveAEExtension aeExt = context.getArchiveAEExtension();

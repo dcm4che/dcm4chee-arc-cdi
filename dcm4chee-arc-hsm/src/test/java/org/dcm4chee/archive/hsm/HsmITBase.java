@@ -395,7 +395,6 @@ public class HsmITBase {
         utx.begin();
         try {
             StoreParam storeParam = ParamFactory.createStoreParam();
-            storeParam.setRetrieveAETs(RETRIEVE_AETS);
             StoreSession session = storeService.createStoreSession(storeService); 
             session = storeService.createStoreSession(storeService);
             session.setSource(new GenericParticipant("", "hsmTest"));

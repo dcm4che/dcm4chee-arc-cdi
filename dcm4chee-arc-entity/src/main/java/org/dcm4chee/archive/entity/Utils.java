@@ -148,24 +148,19 @@ public class Utils {
                 numberOfSeriesRelatedInstances);
     }
 
-    public static String[] decodeAETs(String s1, String s2) {
-        return StringUtils.split(s1 == null ? s2 : s2 == null ? s1 : s1 + '\\'
-                + s2, '\\');
+    public static String[] decodeAETs(String aetsSeparated) {
+        return StringUtils.split(aetsSeparated, '\\');
     }
 
-    public static void setRetrieveAET(Attributes attrs, String retrieveAETs,
-            String externalRetrieveAET) {
+    public static void setRetrieveAET(Attributes attrs, String retrieveAETs) {
         if (retrieveAETs != null)
-            if (externalRetrieveAET != null) {
-                String[] ss = StringUtils.split(retrieveAETs, '\\');
-                String[] ss2 = new String[ss.length + 1];
-                ss2[ss.length] = externalRetrieveAET;
-                attrs.setString(Tag.RetrieveAETitle, VR.AE, ss2);
-            } else
                 attrs.setString(Tag.RetrieveAETitle, VR.AE,
                         StringUtils.split(retrieveAETs, '\\'));
-        else if (externalRetrieveAET != null)
-            attrs.setString(Tag.RetrieveAETitle, VR.AE, externalRetrieveAET);
+    }
+
+    public static void setRetrieveAET(Attributes attrs, String[] retrieveAETs) {
+        if (retrieveAETs != null)
+                attrs.setString(Tag.RetrieveAETitle, VR.AE, retrieveAETs);
     }
 
     public static void setAvailability(Attributes attrs,

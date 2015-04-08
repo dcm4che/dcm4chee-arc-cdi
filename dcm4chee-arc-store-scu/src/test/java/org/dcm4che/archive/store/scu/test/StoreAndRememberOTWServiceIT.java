@@ -237,7 +237,6 @@ public class StoreAndRememberOTWServiceIT {
                 utx.begin();
                 em.joinTransaction();
                 StoreParam storeParam = ParamFactory.createStoreParam();
-                storeParam.setRetrieveAETs(new String[]{"DCM4CHEE"});
                 StoreSession session = storeService
                         .createStoreSession(storeService);
                 session = storeService.createStoreSession(storeService);

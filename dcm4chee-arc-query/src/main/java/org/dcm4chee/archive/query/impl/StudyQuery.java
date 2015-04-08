@@ -61,16 +61,15 @@ import com.mysema.query.types.Predicate;
 class StudyQuery extends AbstractQuery<Study> {
 
     static final Expression<?>[] SELECT = {
-        QStudy.study.pk,                                                // (0)
-        QStudyQueryAttributes.studyQueryAttributes.numberOfInstances,   // (1)
-        QStudyQueryAttributes.studyQueryAttributes.numberOfSeries,      // (2)
-        QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy,   // (3)
-        QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy,   // (3)
-        QStudyQueryAttributes.studyQueryAttributes.retrieveAETs,        // (4)
-        QStudyQueryAttributes.studyQueryAttributes.externalRetrieveAET, // (5)
-        QStudyQueryAttributes.studyQueryAttributes.availability,        // (6)
-        QueryBuilder.studyAttributesBlob.encodedAttributes,             // (7)
-        QueryBuilder.patientAttributesBlob.encodedAttributes            // (8)
+        QStudy.study.pk,                                                 // (0)
+        QStudyQueryAttributes.studyQueryAttributes.numberOfInstances,    // (1)
+        QStudyQueryAttributes.studyQueryAttributes.numberOfSeries,       // (2)
+        QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy,    // (3)
+        QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy,    // (4)
+        QStudyQueryAttributes.studyQueryAttributes.retrieveAETs,         // (5)
+        QStudyQueryAttributes.studyQueryAttributes.availability,         // (6)
+        QueryBuilder.studyAttributesBlob.encodedAttributes,              // (7)
+        QueryBuilder.patientAttributesBlob.encodedAttributes             // (8)
     };
 
     public StudyQuery(QueryContext context, StatelessSession session) {
@@ -115,7 +114,6 @@ class StudyQuery extends AbstractQuery<Study> {
         String modalitiesInStudy;
         String sopClassesInStudy;
         String retrieveAETs;
-        String externalRetrieveAET;
         Availability availability;
         if (numberOfInstancesI != null) {
             numberOfStudyRelatedInstances = numberOfInstancesI;
@@ -126,8 +124,7 @@ class StudyQuery extends AbstractQuery<Study> {
             modalitiesInStudy = results.getString(3);
             sopClassesInStudy = results.getString(4);
             retrieveAETs = results.getString(5);
-            externalRetrieveAET = results.getString(6);
-            availability = (Availability) results.get(7);
+            availability = (Availability) results.get(6);
         } else {
             StudyQueryAttributes studyView = context.getQueryService()
                     .createStudyView(studyPk,  context.getQueryParam());
@@ -139,12 +136,11 @@ class StudyQuery extends AbstractQuery<Study> {
             modalitiesInStudy = studyView.getRawModalitiesInStudy();
             sopClassesInStudy = studyView.getRawSOPClassesInStudy();
             retrieveAETs = studyView.getRawRetrieveAETs();
-            externalRetrieveAET = studyView.getExternalRetrieveAET();
             availability = studyView.getAvailability();
         }
 
-        byte[] studyByteAttributes = results.getBinary(8);
-        byte[] patientByteAttributes = results.getBinary(9);
+        byte[] studyByteAttributes = results.getBinary(7);
+        byte[] patientByteAttributes = results.getBinary(8);
         Attributes patientAttrs = new Attributes();
         Attributes studyAttrs = new Attributes();
         Utils.decodeAttributes(patientAttrs, patientByteAttributes);
@@ -155,7 +151,7 @@ class StudyQuery extends AbstractQuery<Study> {
                 numberOfStudyRelatedInstances,
                 modalitiesInStudy,
                 sopClassesInStudy);
-        Utils.setRetrieveAET(attrs, retrieveAETs, externalRetrieveAET);
+        Utils.setRetrieveAET(attrs, retrieveAETs);
         Utils.setAvailability(attrs, availability);
         return attrs;
     }

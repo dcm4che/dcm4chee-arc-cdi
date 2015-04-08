@@ -51,6 +51,7 @@ import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Status;
+import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.entity.QInstance;
@@ -86,7 +87,6 @@ public class StgCmtEJB  {
                 QInstance.instance.sopClassUID,
                 QInstance.instance.sopInstanceUID,
                 QInstance.instance.retrieveAETs,
-                QInstance.instance.externalRetrieveAET,
                 QLocation.location.digest,
                 QLocation.location.storagePath,
                 QLocation.location.storageSystemID,
@@ -100,20 +100,17 @@ public class StgCmtEJB  {
         String[] commonRetrieveAETs = null;
         HashMap<String,Tuple> map = new HashMap<String,Tuple>(list.size() * 4 / 3);
         for (Tuple tuple : list) {
-            String[] retrieveAETs = { 
-                    tuple.get(2, String.class),
-                    tuple.get(3, String.class)
-            };
+            String retrieveAETs = tuple.get(2, String.class);
             if (map.isEmpty())
-                commonRetrieveAETs = retrieveAETs;
+                commonRetrieveAETs = Utils.decodeAETs(retrieveAETs);
             else if (commonRetrieveAETs != null)
-                if (!Arrays.equals(commonRetrieveAETs, retrieveAETs))
+                if (!Arrays.equals(commonRetrieveAETs, StringUtils.split(retrieveAETs,'\\')))
                     commonRetrieveAETs = null;
             map.put(tuple.get(1, String.class), tuple);
         }
         Attributes eventInfo = new Attributes(4);
         if (commonRetrieveAETs != null)
-            Utils.setRetrieveAET(eventInfo, commonRetrieveAETs[0], commonRetrieveAETs[1]);
+            Utils.setRetrieveAET(eventInfo, commonRetrieveAETs);
         eventInfo.setString(Tag.TransactionUID, VR.UI, actionInfo.getString(Tag.TransactionUID));
         Sequence successSeq = eventInfo.newSequence(Tag.ReferencedSOPSequence, size);
         Sequence failedSeq = eventInfo.newSequence(Tag.FailedSOPSequence, size);
@@ -126,8 +123,7 @@ public class StgCmtEJB  {
                 failedSeq.add(refSOP(refSOP, Status.ClassInstanceConflict));
             else
                 successSeq.add(refSOP(refSOP, commonRetrieveAETs,
-                        tuple.get(2, String.class),
-                        tuple.get(3, String.class)));
+                        tuple.get(2, String.class)));
         }
         if (failedSeq.isEmpty())
             eventInfo.remove(Tag.FailedSOPSequence);
@@ -135,10 +131,10 @@ public class StgCmtEJB  {
     }
 
     private static Attributes refSOP(Attributes refSOP,
-            String[] commonRetrieveAETs, String retrieveAETs, String externalRetrieveAET) {
+            String[] commonRetrieveAETs, String retrieveAETs) {
         Attributes attrs = new Attributes(3);
         if (commonRetrieveAETs == null)
-            Utils.setRetrieveAET(attrs, retrieveAETs, externalRetrieveAET);
+            Utils.setRetrieveAET(attrs, retrieveAETs);
         attrs.setString(Tag.ReferencedSOPClassUID, VR.UI,
                 refSOP.getString(Tag.ReferencedSOPClassUID));
         attrs.setString(Tag.ReferencedSOPInstanceUID, VR.UI,

@@ -1119,7 +1119,6 @@ public class QCIT {
             utx.begin();
             em.joinTransaction();
             StoreParam storeParam = ParamFactory.createStoreParam();
-            storeParam.setRetrieveAETs(RETRIEVE_AETS);
             StoreSession session = storeService
                     .createStoreSession(storeService);
             session = storeService.createStoreSession(storeService);

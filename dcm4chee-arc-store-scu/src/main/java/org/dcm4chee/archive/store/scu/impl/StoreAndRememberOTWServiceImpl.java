@@ -167,6 +167,7 @@ public class StoreAndRememberOTWServiceImpl implements
     @Override
     public void notify(StoreAndRememberResponse rsp) {
         storeandRememberOTWEvent.fire(rsp);
+        
     }
 
 }

@@ -25,6 +25,7 @@
   	<class>org.dcm4chee.archive.entity.ContentItem</class>
     <class>org.dcm4chee.archive.entity.StudyQueryAttributes</class>
     <class>org.dcm4chee.archive.entity.SeriesQueryAttributes</class>
+    <class>org.dcm4chee.archive.entity.ExternalRetrieveLocation</class>
   	
     <properties>
       <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect" />

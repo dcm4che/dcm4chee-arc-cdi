@@ -57,7 +57,6 @@ public class ArchiveInstanceLocator extends InstanceLocator
     private final String filePath;
     private final String entryName;
     private final String retrieveAETs;
-    private final String externalRetrieveAET;
     private final boolean withoutBulkdata;
     private ArchiveInstanceLocator fallbackLocator;
 
@@ -69,7 +68,6 @@ public class ArchiveInstanceLocator extends InstanceLocator
         private String storagePath;
         private String entryName;
         private String retrieveAETs;
-        private String externalRetrieveAET;
         private String fileTimeZoneID;
         private boolean withoutBulkdata;
 
@@ -99,11 +97,6 @@ public class ArchiveInstanceLocator extends InstanceLocator
             return this;
         }
 
-        public Builder externalRetrieveAET(String externalRetrieveAET) {
-            this.externalRetrieveAET = externalRetrieveAET;
-            return this;
-        }
-
         public Builder fileTimeZoneID(String fileTimeZoneID) {
             this.fileTimeZoneID = fileTimeZoneID;
             return this;
@@ -126,7 +119,6 @@ public class ArchiveInstanceLocator extends InstanceLocator
         this.filePath = builder.storagePath;
         this.entryName = builder.entryName;
         this.retrieveAETs = builder.retrieveAETs;
-        this.externalRetrieveAET = builder.externalRetrieveAET;
         this.withoutBulkdata = builder.withoutBulkdata;
    }
 
@@ -153,10 +145,6 @@ public class ArchiveInstanceLocator extends InstanceLocator
 
     public String getRetrieveAETs() {
         return retrieveAETs;
-    }
-
-    public String getExternalRetrieveAET() {
-        return externalRetrieveAET;
     }
 
     public boolean isWithoutBulkdata() {

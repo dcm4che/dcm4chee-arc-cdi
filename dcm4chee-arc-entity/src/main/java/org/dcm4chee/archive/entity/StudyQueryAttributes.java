@@ -81,9 +81,6 @@ public class StudyQueryAttributes {
     @Column(name = "retrieve_aets")
     private String retrieveAETs;
 
-    @Column(name = "ext_retr_aet")
-    private String externalRetrieveAET;
-
     @Column(name = "availability")
     private Availability availability;
 
@@ -153,14 +150,6 @@ public class StudyQueryAttributes {
 
     public void setRetrieveAETs(String... retrieveAETs) {
         this.retrieveAETs = StringUtils.concat(retrieveAETs, '\\');
-    }
-
-    public String getExternalRetrieveAET() {
-        return externalRetrieveAET;
-    }
-
-    public void setExternalRetrieveAET(String externalRetrieveAET) {
-        this.externalRetrieveAET = externalRetrieveAET;
     }
 
     public Availability getAvailability() {
