@@ -1650,7 +1650,6 @@ public class QCBeanImpl  implements QCBean{
         }
         
         inst.setRetrieveAETs(oldinstance.getRetrieveAETs());
-        inst.setExternalRetrieveAET(oldinstance.getExternalRetrieveAET());
         inst.setAvailability(oldinstance.getAvailability());
         inst.setAttributes(data,
                 archiveDeviceExtension.getAttributeFilter(Entity.Instance),

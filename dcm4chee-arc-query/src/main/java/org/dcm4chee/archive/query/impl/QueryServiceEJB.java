@@ -95,13 +95,11 @@ public class QueryServiceEJB {
         QSeries.series.modality,
         QInstance.instance.sopClassUID,
         QInstance.instance.retrieveAETs,
-        QInstance.instance.externalRetrieveAET,
         QInstance.instance.availability
     };
 
     static final Expression<?>[] CALC_SERIES_QUERY_ATTRS = {
         QInstance.instance.retrieveAETs,
-        QInstance.instance.externalRetrieveAET,
         QInstance.instance.availability
     };
 
@@ -240,7 +238,6 @@ public class QueryServiceEJB {
 
         protected int numberOfInstances;
         protected String[] retrieveAETs;
-        protected String externalRetrieveAET;
         protected Availability availability;
         protected String viewID;
 
@@ -252,20 +249,14 @@ public class QueryServiceEJB {
             String[] retrieveAETs1 = StringUtils.split(
                     result.get(QInstance.instance.retrieveAETs),
                     '\\');
-            String externalRetrieveAET1 =
-                    result.get(QInstance.instance.externalRetrieveAET);
             Availability availability1 =
                     result.get(QInstance.instance.availability);
             if (numberOfInstances++ == 0) {
                 retrieveAETs = retrieveAETs1;
-                externalRetrieveAET = externalRetrieveAET1;
                 availability = availability1;
             } else {
                 retrieveAETs = Utils.intersection(
                         retrieveAETs, retrieveAETs1);
-                if (externalRetrieveAET != null
-                        && !externalRetrieveAET.equals(externalRetrieveAET1))
-                    externalRetrieveAET = null;
                 if (availability.compareTo(availability1) < 0)
                     availability = availability1;
             }
@@ -288,7 +279,6 @@ public class QueryServiceEJB {
             queryAttrs.setNumberOfInstances(numberOfInstances);
             if (numberOfInstances > 0) {
                 queryAttrs.setRetrieveAETs(retrieveAETs);
-                queryAttrs.setExternalRetrieveAET(externalRetrieveAET);
                 queryAttrs.setAvailability(availability);
             }
             return queryAttrs;
@@ -328,7 +318,6 @@ public class QueryServiceEJB {
                 queryAttrs.setModalitiesInStudy(mods.toArray(new String[mods.size()]));
                 queryAttrs.setSOPClassesInStudy(cuids.toArray(new String[cuids.size()]));
                 queryAttrs.setRetrieveAETs(retrieveAETs);
-                queryAttrs.setExternalRetrieveAET(externalRetrieveAET);
                 queryAttrs.setAvailability(availability);
             }
             return queryAttrs;

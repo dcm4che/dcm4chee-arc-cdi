@@ -63,6 +63,7 @@ import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
+import org.dcm4chee.storage.conf.Availability;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -86,14 +87,17 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigurableProperty(name = "dcmWadoOverlayRendering", defaultValue = "true")
     private boolean wadoOverlayRendering;
 
-    @ConfigurableProperty(name = "dcmRetrieveAET")
-    private String[] retrieveAETs = {};
-
-    @ConfigurableProperty(name = "dcmExternalRetrieveAET")
-    private String externalRetrieveAET;
-
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
     private String storageSystemGroupID;
+
+    @ConfigurableProperty(name= "dcmQidoClientAcceptMediaType", defaultValue="application/json")
+    private String qidoClientAcceptType = "application/json";
+
+    @ConfigurableProperty(name= "dcmQidoClientSupportFuzzyMatching", defaultValue="false")
+    private boolean qidoClientSupportFuzzyMatching;
+
+    @ConfigurableProperty(name= "dcmQidoClientSupportTimeZoneAdjustment", defaultValue="false")
+    private boolean qidoClientSupportTimeZoneAdjustment;
 
     @ConfigurableProperty(name = "dcmSpoolDirectoryPath")
     private String spoolDirectoryPath;
@@ -184,6 +188,9 @@ public class ArchiveAEExtension extends AEExtension {
 
     @ConfigurableProperty(name = "dcmQueryRetrieveViewID")
     private String queryRetrieveViewID;
+
+    @ConfigurableProperty(name = "dcmDefaultExternalRetrieveAETAvailability")
+    private Availability defaultExternalRetrieveAETAvailability;
 
     @ConfigurableProperty(name = "dcmQCUpdateReferencesOnRetrieve", defaultValue="DEACTIVATE",
             label="QC Update Reference on Retrieve",
@@ -296,22 +303,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setModifyingSystem(String modifyingSystem) {
         this.modifyingSystem = modifyingSystem;
-    }
-
-    public String[] getRetrieveAETs() {
-        return retrieveAETs;
-    }
-
-    public void setRetrieveAETs(String... retrieveAETs) {
-        this.retrieveAETs = retrieveAETs;
-    }
-
-    public String getExternalRetrieveAET() {
-        return externalRetrieveAET;
-    }
-
-    public void setExternalRetrieveAET(String externalRetrieveAET) {
-        this.externalRetrieveAET = externalRetrieveAET;
     }
 
     public String getStorageSystemGroupID() {
@@ -574,8 +565,6 @@ public class ArchiveAEExtension extends AEExtension {
                 .getDeviceExtension(ArchiveDeviceExtension.class)
                 .getStoreParam();
         storeParam.setModifyingSystem(getEffectiveModifyingSystem());
-        storeParam.setRetrieveAETs(retrieveAETs);
-        storeParam.setExternalRetrieveAET(externalRetrieveAET);
         storeParam.setPatientSelectorConfig(getPatientSelectorConfig());
         return storeParam;
     }
@@ -645,6 +634,41 @@ public class ArchiveAEExtension extends AEExtension {
     public void setQcUpdateReferencesOnRetrieve(
             ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve) {
         this.qcUpdateReferencesOnRetrieve = qcUpdateReferencesOnRetrieve;
+    }
+
+    public String getQidoClientAcceptType() {
+        return qidoClientAcceptType;
+    }
+
+    public boolean isQidoClientSupportFuzzyMatching() {
+        return qidoClientSupportFuzzyMatching;
+    }
+
+    public boolean isQidoClientSupportTimeZoneAdjustment() {
+        return qidoClientSupportTimeZoneAdjustment;
+    }
+
+    public void setQidoClientAcceptType(String qidoClientAcceptType) {
+        this.qidoClientAcceptType = qidoClientAcceptType;
+    }
+
+    public void setQidoClientSupportFuzzyMatching(
+            boolean qidoClientSupportFuzzyMatching) {
+        this.qidoClientSupportFuzzyMatching = qidoClientSupportFuzzyMatching;
+    }
+
+    public void setQidoClientSupportTimeZoneAdjustment(
+            boolean qidoClientSupportTimeZoneAdjustment) {
+        this.qidoClientSupportTimeZoneAdjustment = qidoClientSupportTimeZoneAdjustment;
+    }
+
+    public Availability getDefaultExternalRetrieveAETAvailability() {
+        return defaultExternalRetrieveAETAvailability;
+    }
+
+    public void setDefaultExternalRetrieveAETAvailability(
+            Availability defaultExternalRetrieveAETAvailability) {
+        this.defaultExternalRetrieveAETAvailability = defaultExternalRetrieveAETAvailability;
     }
 
 }

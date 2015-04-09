@@ -254,6 +254,17 @@
     </attributes>
   </entity>
 
+  <entity class="ExternalRetrieveLocation">
+    <table name="ext_retrieve_location" />
+    <sequence-generator name="seq" sequence-name="ext_retrieve_location_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
   <entity class="VerifyingObserver">
     <table name="verify_observer" />
     <sequence-generator name="seq" sequence-name="verify_observer_pk_seq" allocation-size="1" />

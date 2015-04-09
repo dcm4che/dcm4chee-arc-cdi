@@ -37,57 +37,40 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.store.scu;
 
+import java.io.Serializable;
 import java.util.Collection;
+
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
-public class StowServiceResponse {
+public class StoreAndRememberOTWMessage implements Serializable {
 
-    Collection<String> failedSopInstances;
-    Collection<String> successfulSopInstances;
-    Collection<String> verifiedStoredInstances;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1667206603837867843L;
 
-    public StowServiceResponse(Collection<String> failedSopInstances,
-            Collection<String> successfulSopInstances) {
+    Collection<ArchiveInstanceLocator> instances;
+
+    CStoreSCUContext context;
+
+    public StoreAndRememberOTWMessage(
+            Collection<ArchiveInstanceLocator> instances,
+            CStoreSCUContext context) {
         super();
-        this.failedSopInstances = failedSopInstances;
-        this.successfulSopInstances = successfulSopInstances;
+        this.instances = instances;
+        this.context = context;
     }
 
-    public StowServiceResponse(Collection<String> failedSopInstances,
-            Collection<String> successfulSopInstances
-            , Collection<String> verifiedStoredInstances) {
-        super();
-        this.failedSopInstances = failedSopInstances;
-        this.successfulSopInstances = successfulSopInstances;
-        this.verifiedStoredInstances = verifiedStoredInstances;
+    public Collection<ArchiveInstanceLocator> getInstances() {
+        return instances;
     }
 
-    public Collection<String> getFailedSopInstances() {
-        return failedSopInstances;
+    public CStoreSCUContext getContext() {
+        return context;
     }
 
-    public void setFailedSopInstances(Collection<String> failedSopInstances) {
-        this.failedSopInstances = failedSopInstances;
-    }
-
-    public Collection<String> getSuccessfulSopInstances() {
-        return successfulSopInstances;
-    }
-
-    public void setSuccessfulSopInstances(Collection<String> successfulSopInstances) {
-        this.successfulSopInstances = successfulSopInstances;
-    }
-
-    public Collection<String> getVerifiedStoredInstances() {
-        return verifiedStoredInstances;
-    }
-
-    public void setVerifiedStoredInstances(
-            Collection<String> verifiedStoredInstances) {
-        this.verifiedStoredInstances = verifiedStoredInstances;
-    }
-    
 }

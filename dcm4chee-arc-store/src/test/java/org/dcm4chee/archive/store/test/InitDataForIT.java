@@ -151,7 +151,6 @@ public class InitDataForIT {
     public void testInitData() throws Exception {
         log.info("Started test");
         StoreParam storeParam = ParamFactory.createStoreParam();
-        storeParam.setRetrieveAETs(RETRIEVE_AETS);
         //store param ok
         //store session
         StoreSession session = storeService.createStoreSession(storeService); 

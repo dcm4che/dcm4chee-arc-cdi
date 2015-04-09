@@ -750,6 +750,7 @@
                   }
                 },
                 "dcmActiveStorageSystemID" : [ "nearline" ],
+                "dcmRetrieveAET" : [ ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}",
                 "dcmStorageSystemGroupID" : "ARCHIVE"
               },
@@ -764,6 +765,7 @@
                 },
                 "dcmActiveStorageSystemID" : [ "fs1" ],
                 "dcmDigestAlgorithm" : "MD5",
+                "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "DEFAULT"
               },
@@ -776,6 +778,7 @@
                   }
                 },
                 "dcmActiveStorageSystemID" : [ "metadata" ],
+                "dcmRetrieveAET" : [ ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "METADATA"
               }
@@ -961,7 +964,6 @@
                 "dcmPreserveSpoolFileOnFailure" : true,
                 "dcmQidoMaxNumberOfResults" : 1000,
                 "dcmQueryRetrieveViewID" : "hideRejected",
-                "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmRetrieveSuppressionCriteria" : {
                   "dcmRetrieveSuppressionCriteriaMap" : { }
                 },
@@ -2394,7 +2396,6 @@
                 "dcmMatchUnknown" : true,
                 "dcmQidoMaxNumberOfResults" : 1000,
                 "dcmQueryRetrieveViewID" : "regularUse",
-                "dcmRetrieveAET" : [ ],
                 "dcmRetrieveSuppressionCriteria" : {
                   "dcmRetrieveSuppressionCriteriaMap" : { }
                 },
@@ -3159,7 +3160,6 @@
                 "dcmMatchUnknown" : true,
                 "dcmQidoMaxNumberOfResults" : 1000,
                 "dcmQueryRetrieveViewID" : "trashView",
-                "dcmRetrieveAET" : [ ],
                 "dcmRetrieveSuppressionCriteria" : {
                   "dcmRetrieveSuppressionCriteriaMap" : { }
                 },

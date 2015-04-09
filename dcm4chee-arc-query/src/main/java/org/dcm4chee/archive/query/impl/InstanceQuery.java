@@ -62,7 +62,6 @@ class InstanceQuery extends AbstractQuery<Instance> {
     private static final Expression<?>[] SELECT = {
         QSeries.series.pk,
         QInstance.instance.retrieveAETs,
-        QInstance.instance.externalRetrieveAET,
         QInstance.instance.availability,
         QInstance.instance.attributesBlob.encodedAttributes
     };
@@ -119,9 +118,8 @@ class InstanceQuery extends AbstractQuery<Instance> {
     public Attributes toAttributes(ScrollableResults results) {
         Long seriesPk = results.getLong(0);
         String retrieveAETs = results.getString(1);
-        String externalRetrieveAET = results.getString(2);
-        Availability availability = (Availability) results.get(3);
-        byte[] instByteAttributes = results.getBinary(4);
+        Availability availability = (Availability) results.get(2);
+        byte[] instByteAttributes = results.getBinary(3);
         if (!seriesPk.equals(this.seriesPk)) {
             this.seriesAttrs = context.getQueryService()
                     .getSeriesAttributes(seriesPk, context.getQueryParam());
@@ -130,7 +128,7 @@ class InstanceQuery extends AbstractQuery<Instance> {
         Attributes instanceAttrs = new Attributes();
         Utils.decodeAttributes(instanceAttrs, instByteAttributes);
         Attributes attrs = Utils.mergeAndNormalize(seriesAttrs, instanceAttrs);
-        Utils.setRetrieveAET(attrs, retrieveAETs, externalRetrieveAET);
+        Utils.setRetrieveAET(attrs, retrieveAETs);
         Utils.setAvailability(attrs, availability);
         return attrs;
     }

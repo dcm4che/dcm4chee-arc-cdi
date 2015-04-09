@@ -38,11 +38,12 @@
 
 package org.dcm4chee.archive.store.scu.impl;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
 import javax.annotation.Resource;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -64,14 +65,17 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.store.scu.StowClientService;
-import org.dcm4chee.archive.store.scu.StowRSClient;
+import org.dcm4chee.archive.store.scu.StoreAndRememberOTWMessage;
+import org.dcm4chee.archive.store.scu.StoreAndRememberOTWService;
+import org.dcm4chee.archive.store.scu.StoreAndRememberOTWClient;
+import org.dcm4chee.archive.store.scu.StoreAndRememberResponse;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
-public class StowClientServiceImpl implements StowClientService {
+public class StoreAndRememberOTWServiceImpl implements
+        StoreAndRememberOTWService {
 
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
@@ -79,10 +83,13 @@ public class StowClientServiceImpl implements StowClientService {
     @Resource(mappedName = "java:/queue/storescu")
     private Queue storeSCUQueue;
 
+    @Inject
+    private Event<StoreAndRememberResponse> storeandRememberOTWEvent;
+
     @Override 
     public void scheduleStow(CStoreSCUContext ctx,
             List<ArchiveInstanceLocator> insts, int retries, int priority,
-            long delay) {
+            long delay, boolean verifyStorage) {
         String localAETitle = ctx.getLocalAE().getAETitle();
         String remoteAETitle = ctx.getRemoteAE().getAETitle();
         try {
@@ -93,13 +100,14 @@ public class StowClientServiceImpl implements StowClientService {
                 MessageProducer producer = session
                         .createProducer(storeSCUQueue);
                 ObjectMessage msg = session
-                        .createObjectMessage((Serializable) insts);
-                msg.setObjectProperty("Context", ctx);
+                        .createObjectMessage(new StoreAndRememberOTWMessage(
+                                insts, ctx));
                 msg.setStringProperty("LocalAET", localAETitle);
                 msg.setStringProperty("RemoteAET", remoteAETitle);
                 msg.setIntProperty("Priority", priority);
                 msg.setIntProperty("Retries", retries);
                 msg.setBooleanProperty("Stow", true);
+                msg.setBooleanProperty("VerifyStorage", verifyStorage);
                 if (delay > 0)
                     msg.setLongProperty("_HQ_SCHED_DELIVERY",
                             System.currentTimeMillis() + delay);
@@ -113,7 +121,8 @@ public class StowClientServiceImpl implements StowClientService {
     }
 
     @Override
-    public void coerceAttributes(Attributes attrs, final CStoreSCUContext context)
+    public void coerceAttributes(Attributes attrs
+            , final CStoreSCUContext context)
             throws DicomServiceException {
         try {
             Templates tpl = context.getArchiveAEExtension()
@@ -128,13 +137,17 @@ public class StowClientServiceImpl implements StowClientService {
                             @Override
                             public void setup(Transformer tr) {
                                 Date date = new Date();
-                                String currentDate = DateUtils.formatDA(null, date);
-                                String currentTime = DateUtils.formatTM(null, date);
+                                String currentDate = DateUtils.formatDA(
+                                        null, date);
+                                String currentTime = DateUtils.formatTM(
+                                        null, date);
                                 tr.setParameter("date", currentDate);
                                 tr.setParameter("time", currentTime);
-                                tr.setParameter("calling", context.getRemoteAE()
+                                tr.setParameter("calling"
+                                        , context.getRemoteAE()
                                         .getAETitle());
-                                tr.setParameter("called", context.getLocalAE()
+                                tr.setParameter("called"
+                                        , context.getLocalAE()
                                         .getAETitle());
                             }
                         }));
@@ -146,8 +159,15 @@ public class StowClientServiceImpl implements StowClientService {
     }
 
     @Override
-    public StowRSClient createStowRSClient(StowClientService service, CStoreSCUContext ctx) {
-        return new StowRSClient(service, ctx);
+    public StoreAndRememberOTWClient createStowRSClient(
+            StoreAndRememberOTWService service, CStoreSCUContext ctx) {
+        return new StoreAndRememberOTWClient(service, ctx);
+    }
+
+    @Override
+    public void notify(StoreAndRememberResponse rsp) {
+        storeandRememberOTWEvent.fire(rsp);
+        
     }
 
 }

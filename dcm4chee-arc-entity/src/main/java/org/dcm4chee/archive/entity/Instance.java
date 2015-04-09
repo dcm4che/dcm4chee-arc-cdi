@@ -185,8 +185,8 @@ public class Instance implements Serializable {
     @Column(name = "retrieve_aets")
     private String retrieveAETs;
 
-    @Column(name = "ext_retr_aet")
-    private String externalRetrieveAET;
+    @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Collection<ExternalRetrieveLocation> externalRetrieveLocations;
 
     @Basic(optional = false)
     @Column(name = "availability")
@@ -331,16 +331,8 @@ public class Instance implements Serializable {
         this.retrieveAETs = retrieveAETs;
     }
 
-    public String getExternalRetrieveAET() {
-        return externalRetrieveAET;
-    }
-
-    public void setExternalRetrieveAET(String externalRetrieveAET) {
-        this.externalRetrieveAET = externalRetrieveAET;
-    }
-
     public String[] getAllRetrieveAETs() {
-        return Utils.decodeAETs(retrieveAETs, externalRetrieveAET);
+        return Utils.decodeAETs(retrieveAETs);
     }
 
     public Availability getAvailability() {
@@ -430,6 +422,15 @@ public class Instance implements Serializable {
         this.version = version;
     }
 
+    public Collection<ExternalRetrieveLocation> getExternalRetrieveLocations() {
+        return externalRetrieveLocations;
+    }
+
+    public void setExternalRetrieveLocations(
+            Collection<ExternalRetrieveLocation> externalRetrieveLocations) {
+        this.externalRetrieveLocations = externalRetrieveLocations;
+    }
+
     public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
         sopInstanceUID = attrs.getString(Tag.SOPInstanceUID);
         sopClassUID = attrs.getString(Tag.SOPClassUID);
@@ -460,4 +461,5 @@ public class Instance implements Serializable {
         else
             attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
     }
+
 }

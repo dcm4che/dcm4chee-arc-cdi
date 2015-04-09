@@ -38,35 +38,16 @@
 
 package org.dcm4chee.archive.retrieve.impl;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.io.StringWriter;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.io.SAXTransformer.SetupTransformer;
-import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.TransferCapability;
-import org.dcm4che3.net.TransferCapability.Role;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.util.DateUtils;
-import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
@@ -108,7 +89,6 @@ public class DefaultRetrieveService implements RetrieveService {
         QInstance.instance.sopClassUID,
         QInstance.instance.sopInstanceUID,
         QInstance.instance.retrieveAETs,
-        QInstance.instance.externalRetrieveAET,
         QueryBuilder.instanceAttributesBlob.encodedAttributes
     };
 
@@ -118,9 +98,6 @@ public class DefaultRetrieveService implements RetrieveService {
     @Inject
     private RetrieveServiceEJB ejb;
 
-    @Inject
-    private org.dcm4chee.storage.service.RetrieveService storageRetrieveService;
-    
     public RetrieveContext createRetrieveContext(RetrieveService service,
             String sourceAET, ArchiveAEExtension arcAE) {
         return new RetrieveContextImpl(service, sourceAET, arcAE);
@@ -209,8 +186,6 @@ public class DefaultRetrieveService implements RetrieveService {
         String cuid = tuple.get(QInstance.instance.sopClassUID);
         String iuid = tuple.get(QInstance.instance.sopInstanceUID);
         String retrieveAETs = tuple.get(QInstance.instance.retrieveAETs);
-        String externalRetrieveAET =
-                tuple.get(QInstance.instance.externalRetrieveAET);
         String storageSystemGroupID = tuple.get(QLocation.location.storageSystemGroupID);
         String storageSystemID = tuple.get(QLocation.location.storageSystemID);
         String storagePath = tuple.get(QLocation.location.storagePath);
@@ -225,7 +200,6 @@ public class DefaultRetrieveService implements RetrieveService {
                 .entryName(entryName)
                 .fileTimeZoneID(timeZone)
                 .retrieveAETs(retrieveAETs)
-                .externalRetrieveAET(externalRetrieveAET)
                 .withoutBulkdata(withoutBulkData)
                 .build();
         if (locator == null) {

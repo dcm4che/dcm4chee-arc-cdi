@@ -504,18 +504,45 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
+        //RESTORE action BLOCK
         if (context.getStoreAction() != StoreAction.IGNORE
                 && context.getStoreAction() != StoreAction.UPDATEDB
                 && context.getStoragePath() != null) {
             Collection<Location> locations = instance.getLocations(2);
-            Location fileRef = createFileRef(em, context);
-            locations.add(fileRef);
+            Location location = createLocation(em, context);
+            locations.add(location);
+            
+            //update instance retrieveAET
+            updateRetrieveAETs(session, instance);
+            //availability update
+            updateAvailability(session, instance);
+            
             if (context.getMetaDataStoragePath() != null) {
                 Location metaDataRef = createMetaDataRef(em, context);
                 locations.add(metaDataRef);
             }
-            context.setFileRef(fileRef);
+            context.setFileRef(location);
         }
+    }
+
+    private void updateRetrieveAETs(
+            StoreSession session, Instance instance) {
+        ArrayList<String> retrieveAETs = new ArrayList<String>();
+        retrieveAETs.addAll(Arrays.asList(session.getStorageSystem()
+                .getStorageSystemGroup().getRetrieveAETs()));
+                
+        for(String aet : instance.getRetrieveAETs())
+            if(!retrieveAETs.contains(aet))
+                retrieveAETs.add(aet);
+        String[] retrieveAETsArray = new String[retrieveAETs.size()];
+        instance.setRetrieveAETs(retrieveAETs.toArray(retrieveAETsArray));
+    }
+
+    private void updateAvailability(StoreSession session, Instance instance) {
+        if(session.getStorageSystem().getAvailability().ordinal()
+                < instance.getAvailability().ordinal() )
+            instance.setAvailability(session.getStorageSystem()
+                    .getAvailability());
     }
 
     private void updateAttributes(StoreContext context) {
@@ -788,8 +815,8 @@ public class StoreServiceImpl implements StoreService {
                 storeParam.getFuzzyStr(), inst));
         inst.setContentItems(createContentItems(
                 data.getSequence(Tag.ContentSequence), inst));
-        inst.setRetrieveAETs(storeParam.getRetrieveAETs());
-        inst.setExternalRetrieveAET(storeParam.getExternalRetrieveAET());
+        inst.setRetrieveAETs(session.getStorageSystem().getStorageSystemGroup()
+                .getRetrieveAETs());
         inst.setAvailability(session.getStorageSystem().getAvailability());
         inst.setAttributes(data,
                 storeParam.getAttributeFilter(Entity.Instance),
@@ -799,7 +826,7 @@ public class StoreServiceImpl implements StoreService {
         return inst;
     }
 
-    private Location createFileRef(EntityManager em, StoreContext context) {
+    private Location createLocation(EntityManager em, StoreContext context) {
         StoreSession session = context.getStoreSession();
         StorageSystem storageSystem = session.getStorageSystem();
         Location fileRef = new Location.Builder()

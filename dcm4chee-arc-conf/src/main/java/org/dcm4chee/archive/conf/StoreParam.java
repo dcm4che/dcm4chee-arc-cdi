@@ -52,8 +52,6 @@ public class StoreParam {
     private Map<Entity, AttributeFilter> attributeFilters;
     private boolean storeOriginalAttributes;
     private String modifyingSystem;
-    private String[] retrieveAETs;
-    private String externalRetrieveAET;
     private PatientSelectorConfig patientSelectorConfig;
     private boolean deIdentifyLogs = false;
 
@@ -71,22 +69,6 @@ public class StoreParam {
 
     public final void setModifyingSystem(String modifyingSystem) {
         this.modifyingSystem = modifyingSystem;
-    }
-
-    public final String[] getRetrieveAETs() {
-        return retrieveAETs;
-    }
-
-    public final void setRetrieveAETs(String... retrieveAETs) {
-        this.retrieveAETs = retrieveAETs;
-    }
-
-    public final String getExternalRetrieveAET() {
-        return externalRetrieveAET;
-    }
-
-    public final void setExternalRetrieveAET(String externalRetrieveAET) {
-        this.externalRetrieveAET = externalRetrieveAET;
     }
 
     public final void setFuzzyStr(FuzzyStr fuzzyStr) {

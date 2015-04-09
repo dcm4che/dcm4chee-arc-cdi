@@ -49,10 +49,10 @@ import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
-public interface StowClientService {
+public interface StoreAndRememberOTWService {
 
     void scheduleStow(CStoreSCUContext ctx, List<ArchiveInstanceLocator> insts
-            , int retries, int priority, long delay);
+            , int retries, int priority, long delay, boolean verifyStorage);
 
     /**
      * Coerce each Object to be sent. CStoreSCUContext is used to share state
@@ -61,6 +61,8 @@ public interface StowClientService {
     void coerceAttributes(Attributes attrs, CStoreSCUContext context)
             throws DicomServiceException;
 
-    StowRSClient createStowRSClient(StowClientService service, CStoreSCUContext ctx);
+    StoreAndRememberOTWClient createStowRSClient(
+            StoreAndRememberOTWService service, CStoreSCUContext ctx);
 
+    void notify(StoreAndRememberResponse rsp);
 }

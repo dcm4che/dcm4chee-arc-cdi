@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,9 +35,11 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
 package org.dcm4chee.archive.entity;
 
+import java.io.Serializable;
+
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -47,83 +49,91 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.storage.conf.Availability;
 
+
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * 
  */
 @Entity
-@Table(name = "series_query_attrs")
-public class SeriesQueryAttributes {
+@Table(name="ext_retrieve_location")
+public class ExternalRetrieveLocation implements Serializable {
 
+    private static final long serialVersionUID = -8051311963967965531L;
+
+    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")
     private long pk;
 
-    @Column(name = "view_id")
-    private String viewID;
+    public ExternalRetrieveLocation() {
+    }
 
-    @Column(name = "num_instances")
-    private int numberOfInstances;
-
-    @Column(name = "retrieve_aets")
-    private String retrieveAETs;
-
-    @Column(name = "availability")
-    private Availability availability;
+    public ExternalRetrieveLocation(String retrieveAETitle,
+            String retrieveURL, String retrieveURI) {
+        super();
+        this.retrieveAETitle = retrieveAETitle;
+        this.retrieveURL = retrieveURL;
+        this.retrieveURI = retrieveURI;
+    }
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "series_fk")
-    private Series series;
+    @JoinColumn(name = "instance_fk")
+    private Instance instance;
+
+    @Column(name="retrieve_ae_title")
+    private String retrieveAETitle;
+
+    @Column(name="retrieve_url")
+    private String retrieveURL;
+
+    @Column(name="retrieve_uri")
+    private String retrieveURI;
+
+    @Basic(optional = false)
+    @Column(name = "availability")
+    private Availability availability;
 
     public long getPk() {
         return pk;
     }
 
-    public String getViewID() {
-        return viewID;
+    public Instance getInstance() {
+        return instance;
     }
 
-    public void setViewID(String viewID) {
-        this.viewID = viewID;
+    public String getRetrieveAETitle() {
+        return retrieveAETitle;
     }
 
-    public int getNumberOfInstances() {
-        return numberOfInstances;
+    public String getRetrieveURL() {
+        return retrieveURL;
     }
 
-    public void setNumberOfInstances(int numberOfInstances) {
-        this.numberOfInstances = numberOfInstances;
+    public String getRetrieveURI() {
+        return retrieveURI;
     }
 
-    public String getRawRetrieveAETs() {
-        return retrieveAETs;
+    public void setPk(long pk) {
+        this.pk = pk;
     }
 
-    public String[] getRetrieveAETs() {
-        return StringUtils.split(retrieveAETs, '\\');
+    public void setInstance(Instance instance) {
+        this.instance = instance;
     }
 
-    public void setRetrieveAETs(String... retrieveAETs) {
-        this.retrieveAETs = StringUtils.concat(retrieveAETs, '\\');
+    public void setRetrieveAETitle(String retrieveAETitle) {
+        this.retrieveAETitle = retrieveAETitle;
     }
 
-    public Availability getAvailability() {
-        return availability;
+    public void setRetrieveURL(String retrieveURL) {
+        this.retrieveURL = retrieveURL;
     }
 
-    public void setAvailability(Availability availability) {
-        this.availability = availability;
+    public void setRetrieveURI(String retrieveURI) {
+        this.retrieveURI = retrieveURI;
     }
-
-    public Series getSeries() {
-        return series;
-    }
-
-    public void setSeries(Series series) {
-        this.series = series;
-    }
+    
 }

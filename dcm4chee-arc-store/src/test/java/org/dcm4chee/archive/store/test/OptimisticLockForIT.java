@@ -196,7 +196,6 @@ public class OptimisticLockForIT extends BaseStoreIT {
     private StoreContext createStoreContext(String instance) throws Exception {
 
         StoreParam storeParam = ParamFactory.createStoreParam();
-        storeParam.setRetrieveAETs(RETRIEVE_AETS);
 
         StoreSession session = storeService.createStoreSession(storeService);
         session.setStoreParam(storeParam);
