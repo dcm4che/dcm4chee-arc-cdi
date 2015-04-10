@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,34 +35,39 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.stow.client;
 
-package org.dcm4chee.archive.store.scu;
-
-import java.util.List;
-
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.service.DicomServiceException;
+import java.io.Serializable;
+import java.util.Collection;
 
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- *
+ * 
  */
-public interface StoreAndRememberOTWService {
+public class StowJMSMessage implements Serializable {
 
-    void scheduleStow(CStoreSCUContext ctx, List<ArchiveInstanceLocator> insts
-            , int retries, int priority, long delay, boolean verifyStorage);
+    private static final long serialVersionUID = 1667206603837867843L;
 
-    /**
-     * Coerce each Object to be sent. CStoreSCUContext is used to share state
-     * among different coercions
-     */
-    void coerceAttributes(Attributes attrs, CStoreSCUContext context)
-            throws DicomServiceException;
+    Collection<ArchiveInstanceLocator> instances;
 
-    StoreAndRememberOTWClient createStowRSClient(
-            StoreAndRememberOTWService service, CStoreSCUContext ctx);
+    StowContext context;
 
-    void notify(StoreAndRememberResponse rsp);
+    public StowJMSMessage(
+            Collection<ArchiveInstanceLocator> instances,
+            StowContext context) {
+        super();
+        this.instances = instances;
+        this.context = context;
+    }
+
+    public Collection<ArchiveInstanceLocator> getInstances() {
+        return instances;
+    }
+
+    public StowContext getContext() {
+        return context;
+    }
+
 }

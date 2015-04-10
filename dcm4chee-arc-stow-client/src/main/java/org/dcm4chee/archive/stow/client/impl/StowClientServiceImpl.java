@@ -36,10 +36,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.scu.impl;
+package org.dcm4chee.archive.stow.client.impl;
 
+import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 
 import javax.annotation.Resource;
 import javax.enterprise.event.Event;
@@ -64,34 +64,31 @@ import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.store.scu.StoreAndRememberOTWMessage;
-import org.dcm4chee.archive.store.scu.StoreAndRememberOTWService;
-import org.dcm4chee.archive.store.scu.StoreAndRememberOTWClient;
-import org.dcm4chee.archive.store.scu.StoreAndRememberResponse;
+import org.dcm4chee.archive.stow.client.StowClient;
+import org.dcm4chee.archive.stow.client.StowClientService;
+import org.dcm4chee.archive.stow.client.StowContext;
+import org.dcm4chee.archive.stow.client.StowJMSMessage;
+import org.dcm4chee.archive.stow.client.StowResponse;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
-public class StoreAndRememberOTWServiceImpl implements
-        StoreAndRememberOTWService {
+public class StowClientServiceImpl implements StowClientService {
 
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
-    @Resource(mappedName = "java:/queue/storescu")
+    @Resource(mappedName = "java:/queue/stowclient")
     private Queue storeSCUQueue;
 
     @Inject
-    private Event<StoreAndRememberResponse> storeandRememberOTWEvent;
+    private Event<StowResponse> stowEvent;
 
     @Override 
-    public void scheduleStow(CStoreSCUContext ctx,
-            List<ArchiveInstanceLocator> insts, int retries, int priority,
-            long delay, boolean verifyStorage) {
-        String localAETitle = ctx.getLocalAE().getAETitle();
-        String remoteAETitle = ctx.getRemoteAE().getAETitle();
+    public void scheduleStow(StowContext ctx,
+            Collection<ArchiveInstanceLocator> insts, int retries, int priority,
+            long delay) {
         try {
             Connection conn = connFactory.createConnection();
             try {
@@ -100,14 +97,11 @@ public class StoreAndRememberOTWServiceImpl implements
                 MessageProducer producer = session
                         .createProducer(storeSCUQueue);
                 ObjectMessage msg = session
-                        .createObjectMessage(new StoreAndRememberOTWMessage(
+                        .createObjectMessage(new StowJMSMessage(
                                 insts, ctx));
-                msg.setStringProperty("LocalAET", localAETitle);
-                msg.setStringProperty("RemoteAET", remoteAETitle);
                 msg.setIntProperty("Priority", priority);
                 msg.setIntProperty("Retries", retries);
-                msg.setBooleanProperty("Stow", true);
-                msg.setBooleanProperty("VerifyStorage", verifyStorage);
+                
                 if (delay > 0)
                     msg.setLongProperty("_HQ_SCHED_DELIVERY",
                             System.currentTimeMillis() + delay);
@@ -122,7 +116,7 @@ public class StoreAndRememberOTWServiceImpl implements
 
     @Override
     public void coerceAttributes(Attributes attrs
-            , final CStoreSCUContext context)
+            , final StowContext context)
             throws DicomServiceException {
         try {
             Templates tpl = context.getArchiveAEExtension()
@@ -159,14 +153,14 @@ public class StoreAndRememberOTWServiceImpl implements
     }
 
     @Override
-    public StoreAndRememberOTWClient createStowRSClient(
-            StoreAndRememberOTWService service, CStoreSCUContext ctx) {
-        return new StoreAndRememberOTWClient(service, ctx);
+    public StowClient createStowRSClient(
+            StowClientService service, StowContext ctx) {
+        return new StowClient(service, ctx);
     }
 
     @Override
-    public void notify(StoreAndRememberResponse rsp) {
-        storeandRememberOTWEvent.fire(rsp);
+    public void notify(StowResponse rsp) {
+        stowEvent.fire(rsp);
         
     }
 

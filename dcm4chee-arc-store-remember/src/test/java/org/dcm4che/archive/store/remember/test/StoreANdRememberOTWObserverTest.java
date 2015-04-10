@@ -1,24 +1,22 @@
-package org.dcm4che.archive.store.scu.test;
+package org.dcm4che.archive.store.remember.test;
 
 import static org.junit.Assert.assertTrue;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 
-import org.dcm4chee.archive.store.scu.StoreAndRememberResponse;
+import org.dcm4chee.archive.stow.client.StowResponse;
+
 
 @ApplicationScoped
 public class StoreANdRememberOTWObserverTest {
 
-    StoreAndRememberResponse response;
+    StowResponse response;
 
-    public void observeSToreAndRememberOTW(@Observes StoreAndRememberResponse rsp) {
+    public void observeSToreAndRememberOTW(@Observes StowResponse rsp) {
         response = rsp;
         assertTrue(response.getFailedSopInstances().isEmpty());
         assertTrue(response.getSuccessfulSopInstances().contains("1.1.1.2"));
-
-        if(response.getVerifiedStoredInstances() != null)
-        assertTrue(response.getVerifiedStoredInstances().contains("1.1.1.2"));
     }
 
 }

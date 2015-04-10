@@ -435,9 +435,11 @@
     <module>dcm4chee-arc-code</module>
     <module>dcm4chee-arc-store</module>
     <module>dcm4chee-arc-store-scu</module>
+    <module>dcm4chee-arc-store-remember</module>
     <module>dcm4chee-arc-timezone</module>
     <module>dcm4chee-arc-store-scp</module>
     <module>dcm4chee-arc-stow</module>
+    <module>dcm4chee-arc-stow-client</module>
     <module>dcm4chee-arc-ctrl</module>
     <module>dcm4chee-arc-qc</module>
     <module>dcm4chee-arc-file-mgmt</module>
@@ -455,6 +457,7 @@
     <module>dcm4chee-arc-ian-scu</module>
     <module>dcm4chee-arc-hl7</module>
     <module>dcm4chee-arc-qido</module>
+    <module>dcm4chee-arc-qido-client</module>
     <module>dcm4chee-arc-iocm</module>
     <module>dcm4chee-arc-web</module>
     <module>dcm4chee-arc-mima</module>

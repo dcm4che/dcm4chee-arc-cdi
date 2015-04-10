@@ -35,53 +35,19 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.scu.impl;
 
-import java.util.List;
+package org.dcm4chee.archive.qido.client;
 
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
-
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Collection;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ *
  */
-@MessageDriven(activationConfig = {
-        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/storescu"),
-        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
-public class CStoreSCUMDB implements MessageListener {
+public interface QidoClientService {
+    
+    Collection<String> verifyStorage(QidoClient client
+            , Collection<String> sopInstanceUIDs);
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(CStoreSCUMDB.class);
-
-    @Inject
-    private CStoreSCUService cstorescu;
-
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            @SuppressWarnings("unchecked")
-            List<ArchiveInstanceLocator> insts = 
-                    (List<ArchiveInstanceLocator>) ((ObjectMessage) msg)
-                    .getObject();
-                cstorescu.cstore(insts, msg.getStringProperty("LocalAET"),
-                    msg.getStringProperty("RemoteAET"),
-                    msg.getIntProperty("Priority"),
-                    msg.getIntProperty("Retries"));
-
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
-        }
-    }
-
+    public QidoClient createQidoClient(QidoContext ctx);
 }

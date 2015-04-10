@@ -35,53 +35,33 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.scu.impl;
 
-import java.util.List;
+package org.dcm4chee.archive.stow.client;
 
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
+import java.util.Collection;
 
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ *
  */
-@MessageDriven(activationConfig = {
-        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/storescu"),
-        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
-public class CStoreSCUMDB implements MessageListener {
+public interface StowClientService {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(CStoreSCUMDB.class);
+    void scheduleStow(StowContext ctx, Collection<ArchiveInstanceLocator> insts
+            , int retries, int priority, long delay);
 
-    @Inject
-    private CStoreSCUService cstorescu;
+    /**
+     * Coerce each Object to be sent. CStoreSCUContext is used to share state
+     * among different coercions
+     */
+    void coerceAttributes(Attributes attrs, StowContext context)
+            throws DicomServiceException;
 
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            @SuppressWarnings("unchecked")
-            List<ArchiveInstanceLocator> insts = 
-                    (List<ArchiveInstanceLocator>) ((ObjectMessage) msg)
-                    .getObject();
-                cstorescu.cstore(insts, msg.getStringProperty("LocalAET"),
-                    msg.getStringProperty("RemoteAET"),
-                    msg.getIntProperty("Priority"),
-                    msg.getIntProperty("Retries"));
+    StowClient createStowRSClient(
+            StowClientService service, StowContext ctx);
 
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
-        }
-    }
-
+    void notify(StowResponse rsp);
 }

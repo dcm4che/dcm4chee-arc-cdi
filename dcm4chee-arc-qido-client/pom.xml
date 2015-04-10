@@ -9,8 +9,8 @@
     <artifactId>dcm4chee-arc-parent</artifactId>
     <version>4.4.0-SNAPSHOT</version>
   </parent>
-  <artifactId>dcm4chee-arc-store-scu</artifactId>
-  <name>dcm4chee-arc-store-scu</name>
+  <artifactId>dcm4chee-arc-qido-client</artifactId>
+  <name>dcm4chee-arc-qido-client</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,6 +29,14 @@
       <artifactId>dcm4che-net</artifactId>
     </dependency>  
     <dependency>
+    <groupId>org.dcm4che</groupId>
+    <artifactId>dcm4che-mime</artifactId>
+    </dependency>
+    <dependency>
+    <groupId>org.dcm4che</groupId>
+    <artifactId>dcm4che-json</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-imageio</artifactId>
     </dependency>      
@@ -38,15 +46,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.dcm4che.dcm4chee-storage</groupId>
-      <artifactId>dcm4chee-storage-service</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-entity</artifactId>
       <classifier>${db}</classifier>      
       <version>${project.version}</version>
-    </dependency>         
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

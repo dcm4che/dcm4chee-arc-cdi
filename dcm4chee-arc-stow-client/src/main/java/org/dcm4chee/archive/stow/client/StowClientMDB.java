@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,42 +35,58 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.scu;
+package org.dcm4chee.archive.stow.client;
 
-import java.io.Serializable;
-import java.util.Collection;
+import java.util.List;
+
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.MessageDriven;
+import javax.inject.Inject;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
 
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
-public class StoreAndRememberOTWMessage implements Serializable {
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/stowclient"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
+public class StowClientMDB implements MessageListener {
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1667206603837867843L;
+    private static final Logger LOG = LoggerFactory
+            .getLogger(StowClientMDB.class);
 
-    Collection<ArchiveInstanceLocator> instances;
 
-    CStoreSCUContext context;
+    @Inject
+    private StowClientService service;
 
-    public StoreAndRememberOTWMessage(
-            Collection<ArchiveInstanceLocator> instances,
-            CStoreSCUContext context) {
-        super();
-        this.instances = instances;
-        this.context = context;
-    }
+    @Override
+    public void onMessage(Message msg) {
+        try {
+            List<ArchiveInstanceLocator> insts = 
+                    (List<ArchiveInstanceLocator>) ((StowJMSMessage)
+                            ((ObjectMessage) msg)
+                    .getObject()).getInstances();
 
-    public Collection<ArchiveInstanceLocator> getInstances() {
-        return instances;
-    }
-
-    public CStoreSCUContext getContext() {
-        return context;
+                    service.notify(
+                            service
+                            .createStowRSClient(
+                                    service,
+                                    ((StowJMSMessage)
+                                            ((ObjectMessage) msg)
+                                            .getObject()).getContext())
+                            .storeOverWebService(insts));
+            
+        } catch (Throwable th) {
+            LOG.warn("Failed to process " + msg, th);
+        }
     }
 
 }

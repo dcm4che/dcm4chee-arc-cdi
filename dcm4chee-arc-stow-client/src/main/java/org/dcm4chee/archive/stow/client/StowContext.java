@@ -35,62 +35,58 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.scu;
+package org.dcm4chee.archive.stow.client;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.io.Serializable;
+
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 
 /**
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- * 
  */
-public class StoreAndRememberResponse {
+public class StowContext implements Serializable {
 
-    Collection<String> failedSopInstances;
-    Collection<String> successfulSopInstances;
-    Collection<String> verifiedStoredInstances;
+    private static final long serialVersionUID = -2104597246635355682L;
 
-    public StoreAndRememberResponse(Collection<String> failedSopInstances,
-            Collection<String> successfulSopInstances) {
+    private ApplicationEntity localAE, remoteAE;
+
+    private String remoteBaseURL;
+
+    public StowContext(ApplicationEntity localAE,
+            ApplicationEntity remoteAE) {
         super();
-        this.failedSopInstances = failedSopInstances;
-        this.successfulSopInstances = successfulSopInstances;
-        this.verifiedStoredInstances = new ArrayList<String>();
+        this.localAE = localAE;
+        this.remoteAE = remoteAE;
     }
 
-    public StoreAndRememberResponse(Collection<String> failedSopInstances,
-            Collection<String> successfulSopInstances
-            , Collection<String> verifiedStoredInstances) {
-        super();
-        this.failedSopInstances = failedSopInstances;
-        this.successfulSopInstances = successfulSopInstances;
-        this.verifiedStoredInstances = verifiedStoredInstances;
+    public ApplicationEntity getLocalAE() {
+        return localAE;
     }
 
-    public Collection<String> getFailedSopInstances() {
-        return failedSopInstances;
+    public ArchiveAEExtension getArchiveAEExtension() {
+        return localAE.getAEExtension(ArchiveAEExtension.class);
     }
 
-    public void setFailedSopInstances(Collection<String> failedSopInstances) {
-        this.failedSopInstances = failedSopInstances;
+    public void setLocalAE(ApplicationEntity localAE) {
+        this.localAE = localAE;
     }
 
-    public Collection<String> getSuccessfulSopInstances() {
-        return successfulSopInstances;
+    public ApplicationEntity getRemoteAE() {
+        return remoteAE;
     }
 
-    public void setSuccessfulSopInstances(
-            Collection<String> successfulSopInstances) {
-        this.successfulSopInstances = successfulSopInstances;
+    public void setRemoteAE(ApplicationEntity remoteAE) {
+        this.remoteAE = remoteAE;
     }
 
-    public Collection<String> getVerifiedStoredInstances() {
-        return verifiedStoredInstances;
+    public String getRemoteBaseURL() {
+        return remoteBaseURL;
     }
 
-    public void setVerifiedStoredInstances(
-            Collection<String> verifiedStoredInstances) {
-        this.verifiedStoredInstances = verifiedStoredInstances;
+    public void setRemoteBaseURL(String remoteBaseURL) {
+        this.remoteBaseURL = remoteBaseURL;
     }
-    
+
 }

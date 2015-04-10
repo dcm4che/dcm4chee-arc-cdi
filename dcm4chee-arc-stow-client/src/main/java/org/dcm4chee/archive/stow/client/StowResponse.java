@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,53 +35,51 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.scu.impl;
+package org.dcm4chee.archive.stow.client;
 
-import java.util.List;
-
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
-
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Collection;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * 
  */
-@MessageDriven(activationConfig = {
-        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/storescu"),
-        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
-public class CStoreSCUMDB implements MessageListener {
+public class StowResponse {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(CStoreSCUMDB.class);
+    Collection<String> failedSopInstances;
+    Collection<String> successfulSopInstances;
 
-    @Inject
-    private CStoreSCUService cstorescu;
+    private String remoteStowURL;
+    
+    public StowResponse(Collection<String> failedSopInstances,
+            Collection<String> successfulSopInstances) {
+        super();
+        this.failedSopInstances = failedSopInstances;
+        this.successfulSopInstances = successfulSopInstances;
+    }
 
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            @SuppressWarnings("unchecked")
-            List<ArchiveInstanceLocator> insts = 
-                    (List<ArchiveInstanceLocator>) ((ObjectMessage) msg)
-                    .getObject();
-                cstorescu.cstore(insts, msg.getStringProperty("LocalAET"),
-                    msg.getStringProperty("RemoteAET"),
-                    msg.getIntProperty("Priority"),
-                    msg.getIntProperty("Retries"));
+    public Collection<String> getFailedSopInstances() {
+        return failedSopInstances;
+    }
 
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
-        }
+    public void setFailedSopInstances(Collection<String> failedSopInstances) {
+        this.failedSopInstances = failedSopInstances;
+    }
+
+    public Collection<String> getSuccessfulSopInstances() {
+        return successfulSopInstances;
+    }
+
+    public void setSuccessfulSopInstances(
+            Collection<String> successfulSopInstances) {
+        this.successfulSopInstances = successfulSopInstances;
+    }
+
+    public String getRemoteStowURL() {
+        return remoteStowURL;
+    }
+
+    public void setRemoteStowURL(String remoteStowURL) {
+        this.remoteStowURL = remoteStowURL;
     }
 
 }
