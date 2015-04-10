@@ -713,6 +713,7 @@ public class DeviceMocker {
         online.setActiveStorageSystemIDs(fs1.getStorageSystemID());
 
         StorageSystemGroup nearline = new StorageSystemGroup();
+        nearline.setRetrieveAETs(new String[] {"DCM4CHEE"});
         nearline.setGroupID("ARCHIVE");
         nearline.addStorageSystem(arc);
         nearline.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}");
@@ -857,8 +858,7 @@ public class DeviceMocker {
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
         aeExt.setQidoClientAcceptType("application/json");
-        aeExt.setQidoClientSupportFuzzyMatching(false);
-        aeExt.setQidoClientSupportTimeZoneAdjustment(false);
+        aeExt.setDefaultExternalRetrieveAETAvailability(Availability.ONLINE);
         aeExt.addAttributeCoercion(new AttributeCoercion(
                 "Supplement missing PID",
                 null,
