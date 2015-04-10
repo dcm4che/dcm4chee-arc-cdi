@@ -750,7 +750,7 @@
                   }
                 },
                 "dcmActiveStorageSystemID" : [ "nearline" ],
-                "dcmRetrieveAET" : [ ],
+                "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}",
                 "dcmStorageSystemGroupID" : "ARCHIVE"
               },
@@ -944,6 +944,7 @@
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.50"
                   } ]
                 },
+                "dcmDefaultExternalRetrieveAETAvailability" : "ONLINE",
                 "dcmFwdMppsDestination" : [ ],
                 "dcmIanDestination" : [ ],
                 "dcmMPPSEmulationRules" : [ {

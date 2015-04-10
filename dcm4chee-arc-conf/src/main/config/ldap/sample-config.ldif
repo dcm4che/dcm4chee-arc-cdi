@@ -492,7 +492,6 @@ cn: audit-udp
 
 dn: dicomAETitle=DCM4CHEE,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dcmReturnOtherPatientNames: TRUE
-dcmRetrieveAET: DCM4CHEE
 dicomAETitle: DCM4CHEE
 dcmQidoMaxNumberOfResults: 1000
 dicomAssociationAcceptor: TRUE
@@ -509,6 +508,7 @@ hl7PIXManagerApplication: HL7RCV^DCM4CHEE
 dcmSpoolDirectoryPath: spool
 dcmWadoOverlayRendering: FALSE
 dcmSendPendingCGet: TRUE
+dcmDefaultExternalRetrieveAETAvailability: ONLINE
 dcmWadoSRTemplateURI: ${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl
 dcmStorageSystemGroupID: DEFAULT
 dcmQueryRetrieveViewID: hideRejected
@@ -7825,6 +7825,7 @@ cn: StorageDeviceExtension
 
 dn: dcmStorageSystemGroupID=ARCHIVE,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystemGroup
+dcmRetrieveAET: DCM4CHEE
 dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}
 dcmActiveStorageSystemID: nearline
 dcmStorageSystemGroupID: ARCHIVE
@@ -7854,6 +7855,7 @@ cn: Storage File Cache
 dn: dcmStorageSystemGroupID=DEFAULT,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystemGroup
 dcmDigestAlgorithm: MD5
+dcmRetrieveAET: DCM4CHEE
 dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
 dcmActiveStorageSystemID: fs1
 dcmStorageSystemGroupID: DEFAULT
