@@ -50,7 +50,8 @@ import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
  */
 public interface StowClientService {
 
-    void scheduleStow(StowContext ctx, Collection<ArchiveInstanceLocator> insts
+    void scheduleStow(String transactionID,StowContext ctx
+            , Collection<ArchiveInstanceLocator> insts
             , int retries, int priority, long delay);
 
     /**

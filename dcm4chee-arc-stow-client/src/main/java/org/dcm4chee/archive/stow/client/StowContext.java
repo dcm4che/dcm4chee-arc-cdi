@@ -52,7 +52,9 @@ public class StowContext implements Serializable {
 
     private ApplicationEntity localAE, remoteAE;
 
-    private String remoteBaseURL;
+    private String stowRemoteBaseURL;
+
+    private String qidoRemoteBaseURL;
 
     public StowContext(ApplicationEntity localAE,
             ApplicationEntity remoteAE) {
@@ -81,12 +83,20 @@ public class StowContext implements Serializable {
         this.remoteAE = remoteAE;
     }
 
-    public String getRemoteBaseURL() {
-        return remoteBaseURL;
+    public String getStowRemoteBaseURL() {
+        return stowRemoteBaseURL;
     }
 
-    public void setRemoteBaseURL(String remoteBaseURL) {
-        this.remoteBaseURL = remoteBaseURL;
+    public void setStowRemoteBaseURL(String remoteBaseURL) {
+        this.stowRemoteBaseURL = remoteBaseURL;
+    }
+
+    public String getQidoRemoteBaseURL() {
+        return qidoRemoteBaseURL;
+    }
+
+    public void setQidoRemoteBaseURL(String qidoRemoteBaseURL) {
+        this.qidoRemoteBaseURL = qidoRemoteBaseURL;
     }
 
 }

@@ -171,11 +171,11 @@ public class StoreAndRememberOTWServiceIT {
             String sopUID = "1.1.1.2";
             ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
             StowContext ctx = new StowContext(arcAE, arcAE);
-            ctx.setRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
+            ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
             ArrayList<ArchiveInstanceLocator> locators = 
                     new ArrayList<ArchiveInstanceLocator>();
             locators.add(locateInstance(sopUID));
-            stowClientService.scheduleStow(ctx, locators, 1, 1, 1l);
+            stowClientService.scheduleStow("web-1234", ctx, locators, 1, 1, 1l);
             //test assertions in the observer
         }
 
@@ -188,11 +188,11 @@ public class StoreAndRememberOTWServiceIT {
             String sopUID = "1.1.1.2";
             ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
             StowContext ctx = new StowContext(arcAE, arcAE);
-            ctx.setRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
+            ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
             ArrayList<ArchiveInstanceLocator> locators = 
                     new ArrayList<ArchiveInstanceLocator>();
             locators.add(locateInstance(sopUID));
-            stowClientService.scheduleStow(ctx, locators, 1, 1, 1l);
+            stowClientService.scheduleStow("web-1234", ctx, locators, 1, 1, 1l);
             //test assertions in the observer
         }
 

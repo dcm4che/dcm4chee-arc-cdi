@@ -80,28 +80,28 @@ public class StowClientServiceImpl implements StowClientService {
     private ConnectionFactory connFactory;
 
     @Resource(mappedName = "java:/queue/stowclient")
-    private Queue storeSCUQueue;
+    private Queue stowQueue;
 
     @Inject
     private Event<StowResponse> stowEvent;
 
     @Override 
-    public void scheduleStow(StowContext ctx,
-            Collection<ArchiveInstanceLocator> insts, int retries, int priority,
-            long delay) {
+    public void scheduleStow(String transactionID, StowContext ctx
+            ,Collection<ArchiveInstanceLocator> insts, int retries
+            , int priority, long delay) {
         try {
             Connection conn = connFactory.createConnection();
             try {
                 Session session = conn.createSession(false,
                         Session.AUTO_ACKNOWLEDGE);
                 MessageProducer producer = session
-                        .createProducer(storeSCUQueue);
+                        .createProducer(stowQueue);
                 ObjectMessage msg = session
                         .createObjectMessage(new StowJMSMessage(
                                 insts, ctx));
                 msg.setIntProperty("Priority", priority);
                 msg.setIntProperty("Retries", retries);
-                
+                msg.setStringProperty("TransactionID", transactionID);
                 if (delay > 0)
                     msg.setLongProperty("_HQ_SCHED_DELIVERY",
                             System.currentTimeMillis() + delay);

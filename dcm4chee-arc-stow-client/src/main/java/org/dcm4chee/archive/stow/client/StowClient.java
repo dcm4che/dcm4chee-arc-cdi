@@ -76,13 +76,13 @@ public class StowClient {
         this.context = context; 
     }
 
-    public StowResponse storeOverWebService(
-            Collection<ArchiveInstanceLocator> instances) {
+    public StowResponse storeOverWebService( String transactionID
+            , Collection<ArchiveInstanceLocator> instances) {
 
         ArrayList<String> failedInstances = new ArrayList<String>();
         ArrayList<String> successfulInstances = new ArrayList<String>();
         String aeTitle = context.getRemoteAE().getAETitle();
-        String url = adjustToStowURL(aeTitle, context.getRemoteBaseURL());
+        String url = adjustToStowURL(aeTitle, context.getStowRemoteBaseURL());
         for(ArchiveInstanceLocator inst : instances) {
             
             try{
@@ -93,8 +93,8 @@ public class StowClient {
                 failedInstances.add(inst.iuid);
             }
         }
-        StowResponse response = new StowResponse(failedInstances, successfulInstances);
-        response.setRemoteStowURL(url);
+        StowResponse response = new StowResponse(transactionID
+                ,failedInstances, successfulInstances);
         return response;
 
     }

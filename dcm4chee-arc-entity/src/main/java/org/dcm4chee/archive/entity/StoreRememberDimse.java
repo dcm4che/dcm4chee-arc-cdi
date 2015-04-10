@@ -5,12 +5,22 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+@NamedQueries({
+    @NamedQuery(
+            name=StoreRememberDimse.GET_STORE_REMEMBER_DIMSE_ENTRY,
+            query="select e from StoreRememberDimse e where "
+                    + "e.transactionID = ?1")
+})
 @Entity(name="store_remember_dimse")
 @Table(name="store_remember_dimse")
 public class StoreRememberDimse {
 
+    public static final String GET_STORE_REMEMBER_DIMSE_ENTRY 
+        = "StoreRememberDimse.getStoreRememberDimseEntry";
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")

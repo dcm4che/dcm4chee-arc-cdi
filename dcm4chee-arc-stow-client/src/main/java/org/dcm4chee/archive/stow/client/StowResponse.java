@@ -46,13 +46,15 @@ import java.util.Collection;
 public class StowResponse {
 
     Collection<String> failedSopInstances;
+
     Collection<String> successfulSopInstances;
 
-    private String remoteStowURL;
-    
-    public StowResponse(Collection<String> failedSopInstances,
+    String transactionID;
+
+    public StowResponse(String transactionID, Collection<String> failedSopInstances,
             Collection<String> successfulSopInstances) {
         super();
+        this.transactionID = transactionID;
         this.failedSopInstances = failedSopInstances;
         this.successfulSopInstances = successfulSopInstances;
     }
@@ -74,12 +76,12 @@ public class StowResponse {
         this.successfulSopInstances = successfulSopInstances;
     }
 
-    public String getRemoteStowURL() {
-        return remoteStowURL;
+    public String getTransactionID() {
+        return transactionID;
     }
 
-    public void setRemoteStowURL(String remoteStowURL) {
-        this.remoteStowURL = remoteStowURL;
+    public void setTransactionID(String transactionID) {
+        this.transactionID = transactionID;
     }
 
 }

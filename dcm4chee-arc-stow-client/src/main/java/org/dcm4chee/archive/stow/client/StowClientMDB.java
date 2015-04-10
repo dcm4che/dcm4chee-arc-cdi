@@ -75,6 +75,7 @@ public class StowClientMDB implements MessageListener {
                             ((ObjectMessage) msg)
                     .getObject()).getInstances();
 
+            String tsid = msg.getStringProperty("TransactionID");
                     service.notify(
                             service
                             .createStowRSClient(
@@ -82,7 +83,7 @@ public class StowClientMDB implements MessageListener {
                                     ((StowJMSMessage)
                                             ((ObjectMessage) msg)
                                             .getObject()).getContext())
-                            .storeOverWebService(insts));
+                            .storeOverWebService(tsid, insts));
             
         } catch (Throwable th) {
             LOG.warn("Failed to process " + msg, th);

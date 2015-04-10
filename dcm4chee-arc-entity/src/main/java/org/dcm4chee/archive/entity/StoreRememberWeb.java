@@ -5,12 +5,22 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+@NamedQueries({
+    @NamedQuery(
+            name=StoreRememberWeb.GET_STORE_REMEMBER_WEB_ENTRY,
+            query="select e from StoreRememberWeb e where "
+                    + "e.transactionID = ?1")
+})
 @Entity(name="store_remember_web")
 @Table(name="store_remember_web")
 public class StoreRememberWeb {
 
+    public static final String GET_STORE_REMEMBER_WEB_ENTRY
+        = "StoreRememberWeb.getStoreRememberWebEntry";
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")

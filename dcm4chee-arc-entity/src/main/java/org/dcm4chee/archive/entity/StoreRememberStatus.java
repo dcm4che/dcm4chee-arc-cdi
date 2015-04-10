@@ -4,6 +4,7 @@ public enum StoreRememberStatus {
 
     PENDING
     ,VERIFIED
+    ,INCOMPLETE
     ,FAILED
 
 }
