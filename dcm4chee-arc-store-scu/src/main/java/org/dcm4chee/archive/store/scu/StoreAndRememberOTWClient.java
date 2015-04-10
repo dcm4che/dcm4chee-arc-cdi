@@ -108,17 +108,14 @@ public class StoreAndRememberOTWClient {
                     + "not initialized in context");
         }
         ArrayList<String> verifiedSopUIDs = new ArrayList<String>();
-        boolean fuzzyMatching = aeExt.isQidoClientSupportFuzzyMatching();
-        boolean timeZoneAdjustment = aeExt
-                .isQidoClientSupportTimeZoneAdjustment();
-        MediaType type = MediaType.valueOf(aeExt.getQidoClientAcceptType() 
+        MediaType type = MediaType.valueOf(aeExt.getQidoClientAcceptType()
                 !=null ? aeExt.getQidoClientAcceptType(): "application/json");
         
         for(String sopUID : storeOverWebServiceResult
                 .getSuccessfulSopInstances()) {
             
-                    if(queryOverWebService(aeTitle, url, sopUID, fuzzyMatching
-                            , timeZoneAdjustment, type))
+                    if(queryOverWebService(aeTitle, url, sopUID, false
+                            , true, type))
                         verifiedSopUIDs.add(sopUID);
 
             

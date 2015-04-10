@@ -415,17 +415,7 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.81 NAME 'dcmQidoClientAcceptMediaType
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
-olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.82 NAME 'dcmQidoClientSupportFuzzyMatching'
-  DESC 'Apply fuzzy matching for Qido verification client in store and remember'
-  EQUALITY booleanMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
-  SINGLE-VALUE )
-olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.83 NAME 'dcmQidoClientSupportTimeZoneAdjustment'
-  DESC 'Apply timezone adjustment for Qido verification client in store and remember'
-  EQUALITY booleanMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
-  SINGLE-VALUE )
-olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.84 NAME 'dcmDefaultExternalRetrieveAETAvailability'
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.82 NAME 'dcmDefaultExternalRetrieveAETAvailability'
   DESC 'Default availability used to create external retrieve location availability when no verify possible'
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
@@ -451,8 +441,6 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   SUP top AUXILIARY
   MAY (
     dcmDefaultExternalRetrieveAETAvailability $
-    dcmQidoClientSupportTimeZoneAdjustment $
-    dcmQidoClientSupportFuzzyMatching $
     dcmQidoClientAcceptMediaType $
     dcmStorageSystemGroupID $
     dcmSpoolDirectoryPath $
