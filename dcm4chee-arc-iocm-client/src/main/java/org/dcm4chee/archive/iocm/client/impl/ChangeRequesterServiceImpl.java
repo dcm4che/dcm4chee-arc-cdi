@@ -38,7 +38,6 @@
 
 package org.dcm4chee.archive.iocm.client.impl;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -54,11 +53,11 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.dcm4chee.archive.store.scu.impl.ArchiveInstanceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,14 +81,14 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     private transient ArchiveDeviceExtension archDeviceExt;
     
     public void scheduleChangeRequest(Collection<String> updatedInstanceUIDs, Instance rejNote) {
-        LOG.info("############# scheduleChangeRequest called! rejNote:{}\nupdated:{}", rejNote, updatedInstanceUIDs);
+        LOG.debug("ChangeRequestor: scheduleChangeRequest called! rejNote:{}\nupdated:{}", rejNote, updatedInstanceUIDs);
         IOCMConfig cfg = getIOCMConfig();
         if (cfg == null) {
-            LOG.info("######### IOCMConfig not configured! Skipped!");
+            LOG.info("IOCMConfig not configured! Skipped!");
             return;
         }
         String[] targetAETs = cfg.getIocmDestinations();
-        LOG.info("######### targetAETs from IOCMConfig:"+Arrays.toString(targetAETs));
+        LOG.debug("targetAETs from IOCMConfig:{}", Arrays.toString(targetAETs));
         if (rejNote != null) {
             List<ArchiveInstanceLocator> locators = locate(rejNote.getSopInstanceUID());
             for (int i = 0 ; i < targetAETs.length ; i++) {
@@ -105,7 +104,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             }
 
             String[] noneIOCM = cfg.getNoneIocmDestinations();
-            LOG.info("######### NoneIocmDestinations from IOCMConfig:"+Arrays.toString(noneIOCM));
+            LOG.debug("NoneIocmDestinations from IOCMConfig:{}", Arrays.toString(noneIOCM));
             if (noneIOCM != null && noneIOCM.length > 0) {
                 for (int i = 0 ; i < noneIOCM.length ; i++) {
                     storescuService.scheduleStoreSCU(cfg.getCallingAET(), noneIOCM[i], 

@@ -42,7 +42,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -65,28 +64,24 @@ import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXReader;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.TransferCapability;
-import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCActionHistory;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.QCSeriesHistory;
 import org.dcm4chee.archive.entity.QCStudyHistory;
 import org.dcm4chee.archive.entity.QCUpdateHistory;
-import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
@@ -120,8 +115,6 @@ import org.junit.runners.MethodSorters;
 @RunWith(Arquillian.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class QCIT {
-
-    private static final String[] RETRIEVE_AETS = { "RETRIEVE_AET" };
 
     @Inject
     private StoreService storeService;
@@ -232,23 +225,6 @@ public class QCIT {
     @Before
     public void init() throws Exception {
         archDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
-        IOCMConfig iocmCfg = new IOCMConfig();
-        iocmCfg.setCallingAET("DCM4CHEE");
-        iocmCfg.setIocmDestinations(new String[]{"IOCM_DEST"});
-        iocmCfg.setIocmMaxRetries(2);
-        iocmCfg.setIocmRetryInterval(1000);
-        archDevExt.setIocmConfig(iocmCfg);
-        ApplicationEntity aeIOCM = new ApplicationEntity();
-        aeIOCM.setAETitle("IOCM_TEST");
-        aeIOCM.setAeInstalled(true);
-        ApplicationEntity ae = device.getApplicationEntity("DCM4CHEE");
-        aeIOCM.addConnection(ae.getConnections().get(0));
-        for (TransferCapability tc : ae.getTransferCapabilities()) {
-            TransferCapability tcNew = new TransferCapability(tc.getCommonName(), tc.getSopClass(), tc.getRole(),
-                    tc.getTransferSyntaxes());
-            aeIOCM.addTransferCapability(tcNew);
-        }
-        device.addApplicationEntity(aeIOCM);
         clearDB();
     }
 

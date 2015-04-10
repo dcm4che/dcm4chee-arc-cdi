@@ -48,5 +48,5 @@ import org.dcm4chee.archive.entity.Instance;
  */
 public interface ChangeRequesterService {
 
-    public void scheduleChangeRequest(Collection<String> updatedInstanceUIDs, Instance rejNoteUID);
+    public void scheduleChangeRequest(Collection<String> updatedInstanceUIDs, Instance rejNote);
 }
