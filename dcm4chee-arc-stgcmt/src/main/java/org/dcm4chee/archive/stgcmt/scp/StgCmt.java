@@ -39,8 +39,10 @@
 package org.dcm4chee.archive.stgcmt.scp;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 
@@ -58,37 +60,52 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.AbstractDicomService;
+import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
 @ApplicationScoped
 @Typed(DicomService.class)
-public class StgCmtSCP extends AbstractDicomService {
+public class StgCmt extends AbstractDicomService {
 
     @Inject
     private StgCmtService stgCmtService;
 
     @Inject
     private IApplicationEntityCache aeCache;
+    
+    @Inject
+    private Event<CommitEvent> commitEvent; 
 
-    public StgCmtSCP() {
+    public StgCmt() {
         super(UID.StorageCommitmentPushModelSOPClass);
     }
 
     @Override
     public void onDimseRQ(Association as, PresentationContext pc, Dimse dimse,
             Attributes rq, Attributes actionInfo) throws IOException {
-        if (dimse != Dimse.N_ACTION_RQ)
-            throw new DicomServiceException(Status.UnrecognizedOperation);
 
+        if (dimse == Dimse.N_ACTION_RQ)
+            processNActionRQ(as, pc, rq, actionInfo);
+
+        if (dimse == Dimse.N_EVENT_REPORT_RQ)
+            processNEventReportRQ(as, pc, rq, actionInfo);
+
+        if (dimse != Dimse.N_ACTION_RQ && dimse != Dimse.N_EVENT_REPORT_RQ)
+            throw new DicomServiceException(Status.UnrecognizedOperation);
+    }
+
+    private void processNActionRQ(Association as, PresentationContext pc,
+            Attributes rq, Attributes actionInfo) throws IOException {
         int actionTypeID = rq.getInt(Tag.ActionTypeID, 0);
         if (actionTypeID != 1)
             throw new DicomServiceException(Status.NoSuchActionType)
-                        .setActionTypeID(actionTypeID);
+                    .setActionTypeID(actionTypeID);
 
         Attributes rsp = Commands.mkNActionRSP(rq, Status.Success);
         String localAET = as.getLocalAET();
@@ -99,12 +116,16 @@ public class StgCmtSCP extends AbstractDicomService {
                     .findApplicationEntity(remoteAET);
             ae.findCompatibelConnection(remoteAE);
             Attributes eventInfo = stgCmtService.calculateResult(actionInfo);
-            ArchiveAEExtension aeExt = ae.getAEExtension(ArchiveAEExtension.class);
-            //coerce for outbound results
-            stgCmtService.coerceAttributes(eventInfo, remoteAET, aeExt, Role.SCU);
-            //schedule sending results 
-            stgCmtService.scheduleNEventReport(localAET, remoteAET, eventInfo, 0,
-                    aeExt != null ? aeExt.getStorageCommitmentDelay() * 1000L : 0);
+            ArchiveAEExtension aeExt = ae
+                    .getAEExtension(ArchiveAEExtension.class);
+            // coerce for outbound results
+            stgCmtService.coerceAttributes(eventInfo, remoteAET, aeExt,
+                    Role.SCU);
+            // schedule sending results
+            stgCmtService.scheduleNEventReport(localAET, remoteAET, eventInfo,
+                    0,
+                    aeExt != null ? aeExt.getStorageCommitmentDelay() * 1000L
+                            : 0);
         } catch (IncompatibleConnectionException e) {
             throw new DicomServiceException(Status.ProcessingFailure,
                     "No compatible connection to " + remoteAET);
@@ -117,6 +138,12 @@ public class StgCmtSCP extends AbstractDicomService {
         as.tryWriteDimseRSP(pc, rsp, null);
     }
 
-
+    private void processNEventReportRQ(Association as, PresentationContext pc,
+            Attributes rq, Attributes actionInfo) throws DicomServiceException {
+        
+        Attributes rsp = Commands.mkNEventReportRSP(rq, Status.Success);        
+        as.tryWriteDimseRSP(pc, rsp, null);
+        commitEvent.fire(new CommitEvent(as.getLocalAET(), as.getRemoteAET(), actionInfo)); 
+    }
 
 }

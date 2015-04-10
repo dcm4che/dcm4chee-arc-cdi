@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2013
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,32 +38,58 @@
 
 package org.dcm4chee.archive.stgcmt.scp;
 
-import java.util.List;
-
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.TransferCapability.Role;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4che3.data.Tag;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public interface StgCmtService {
+public class CommitEvent {
 
-    Attributes calculateResult(Attributes actionInfo);
+    String localAET;
+    String remoteAET;
+    Attributes eventInfo;
 
-    void scheduleNEventReport(String localAET, String remoteAET,
-            Attributes eventInfo, int retries, long delay);
+    /**
+     * @param localAET
+     * @param remoteAET
+     * @param eventInfo
+     */
+    public CommitEvent(String localAET, String remoteAET, Attributes eventInfo) {
+        super();
+        this.localAET = localAET;
+        this.remoteAET = remoteAET;
+        this.eventInfo = eventInfo;
+    }
 
-    void sendNEventReport(String localAET, String remoteAET,
-            Attributes eventInfo, int retries);
+    public String getLocalAET() {
+        return localAET;
+    }
 
-    void sendNActionRequest(String localAET, String remoteAET,
-            List<ArchiveInstanceLocator> insts, String TransactionUID,
-            int retries);
+    public void setLocalAET(String localAET) {
+        this.localAET = localAET;
+    }
 
-    void coerceAttributes(Attributes attrs, String remoteAET,
-            ArchiveAEExtension arcAE, Role role) throws DicomServiceException;
+    public String getRemoteAET() {
+        return remoteAET;
+    }
+
+    public void setRemoteAET(String remoteAET) {
+        this.remoteAET = remoteAET;
+    }
+
+    public Attributes getEventInfo() {
+        return eventInfo;
+    }
+
+    public void setEventInfo(Attributes eventInfo) {
+        this.eventInfo = eventInfo;
+    }
+
+    public String getTransactionUID() {
+        return eventInfo != null ? eventInfo.getString(Tag.TransactionUID)
+                : null;
+    }
+
 }
