@@ -15,7 +15,7 @@ import javax.persistence.Table;
             query="select e from StoreRememberWeb e where "
                     + "e.transactionID = ?1")
 })
-@Entity(name="store_remember_web")
+@Entity
 @Table(name="store_remember_web")
 public class StoreRememberWeb {
 
