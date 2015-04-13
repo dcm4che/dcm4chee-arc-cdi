@@ -126,7 +126,6 @@ class DicomObjectOutput implements StreamingOutput {
     private Attributes readFrom(ArchiveInstanceLocator inst) throws IOException {
         try (DicomInputStream din = new DicomInputStream(service.getFile(inst)
                 .toFile())) {
-            IncludeBulkData includeBulkData = IncludeBulkData.URI;
             din.setIncludeBulkData(IncludeBulkData.URI);
             return din.readDataset(-1, -1);
         }
