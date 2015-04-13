@@ -114,9 +114,13 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
             try {
                 attrs = readFrom(inst);
             } catch (IOException e) {
-                inst = ((ArchiveInstanceLocator) inst).getFallbackLocator();
-                if (inst == null)
+                LOG.info("Failed to read Data Set with iuid={} from {}@{}",
+                        inst.iuid, inst.getFilePath(), inst.getStorageSystem(), e);
+                inst = inst.getFallbackLocator();
+                if (inst == null) {
                     throw e;
+                }
+                LOG.info("Try to read Data Set from alternative location");
             }
         } while (attrs == null);
 

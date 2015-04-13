@@ -36,33 +36,60 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.scu;
-
-import java.util.List;
+package org.dcm4chee.archive.stgcmt.scp;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.service.DicomServiceException;
-
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4che3.data.Tag;
 
 /**
- * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-public interface StoreAndRememberOTWService {
+public class CommitEvent {
 
-    void scheduleStow(CStoreSCUContext ctx, List<ArchiveInstanceLocator> insts
-            , int retries, int priority, long delay, boolean verifyStorage);
+    String localAET;
+    String remoteAET;
+    Attributes eventInfo;
 
     /**
-     * Coerce each Object to be sent. CStoreSCUContext is used to share state
-     * among different coercions
+     * @param localAET
+     * @param remoteAET
+     * @param eventInfo
      */
-    void coerceAttributes(Attributes attrs, CStoreSCUContext context)
-            throws DicomServiceException;
+    public CommitEvent(String localAET, String remoteAET, Attributes eventInfo) {
+        super();
+        this.localAET = localAET;
+        this.remoteAET = remoteAET;
+        this.eventInfo = eventInfo;
+    }
 
-    StoreAndRememberOTWClient createStowRSClient(
-            StoreAndRememberOTWService service, CStoreSCUContext ctx);
+    public String getLocalAET() {
+        return localAET;
+    }
 
-    void notify(StoreAndRememberResponse rsp);
+    public void setLocalAET(String localAET) {
+        this.localAET = localAET;
+    }
+
+    public String getRemoteAET() {
+        return remoteAET;
+    }
+
+    public void setRemoteAET(String remoteAET) {
+        this.remoteAET = remoteAET;
+    }
+
+    public Attributes getEventInfo() {
+        return eventInfo;
+    }
+
+    public void setEventInfo(Attributes eventInfo) {
+        this.eventInfo = eventInfo;
+    }
+
+    public String getTransactionUID() {
+        return eventInfo != null ? eventInfo.getString(Tag.TransactionUID)
+                : null;
+    }
+
 }

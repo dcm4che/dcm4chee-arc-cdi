@@ -61,7 +61,8 @@ public interface StgCmtService {
             Attributes eventInfo, int retries);
 
     void sendNActionRequest(String localAET, String remoteAET,
-            List<ArchiveInstanceLocator> insts, String TransactionUID, int retries);
+            List<ArchiveInstanceLocator> insts, String TransactionUID,
+            int retries);
 
     void coerceAttributes(Attributes attrs, String remoteAET,
             ArchiveAEExtension arcAE, Role role) throws DicomServiceException;

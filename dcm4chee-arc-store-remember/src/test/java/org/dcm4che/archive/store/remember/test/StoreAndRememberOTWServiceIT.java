@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4che.archive.store.scu.test;
+package org.dcm4che.archive.store.remember.test;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -68,7 +68,8 @@ import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.store.scu.StoreAndRememberOTWService;
+import org.dcm4chee.archive.stow.client.StowClientService;
+import org.dcm4chee.archive.stow.client.StowContext;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -79,6 +80,7 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.dcm4che.archive.store.remember.test.ParamFactory;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -110,7 +112,7 @@ public class StoreAndRememberOTWServiceIT {
         "DELETE FROM code", "DELETE FROM dicomattrs" };
 
         @Inject
-        private StoreAndRememberOTWService storeAndRememberOTW;
+        private StowClientService stowClientService;
 
         @Inject
         private StoreANdRememberOTWObserverTest observer;
@@ -165,15 +167,15 @@ public class StoreAndRememberOTWServiceIT {
          * Store and remember test nopo verification via qido applied
          */
         @Test
-        public void testStoreAndRememberOTWNoVerify() {
+        public void testAStoreAndRememberOTWNoVerify() {
             String sopUID = "1.1.1.2";
             ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
-            CStoreSCUContext ctx = new CStoreSCUContext(arcAE, arcAE);
-            ctx.setRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
+            StowContext ctx = new StowContext(arcAE, arcAE);
+            ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
             ArrayList<ArchiveInstanceLocator> locators = 
                     new ArrayList<ArchiveInstanceLocator>();
             locators.add(locateInstance(sopUID));
-            storeAndRememberOTW.scheduleStow(ctx, locators, 1, 1, 1l, false);
+            stowClientService.scheduleStow("web-1234", ctx, locators, 1, 1, 1l);
             //test assertions in the observer
         }
 
@@ -182,15 +184,15 @@ public class StoreAndRememberOTWServiceIT {
          * Store and remember test nopo verification via qido applied
          */
         @Test
-        public void testStoreAndRememberOTWWithVerify() {
+        public void testBVerifyStorage() {
             String sopUID = "1.1.1.2";
             ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
-            CStoreSCUContext ctx = new CStoreSCUContext(arcAE, arcAE);
-            ctx.setRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
+            StowContext ctx = new StowContext(arcAE, arcAE);
+            ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
             ArrayList<ArchiveInstanceLocator> locators = 
                     new ArrayList<ArchiveInstanceLocator>();
             locators.add(locateInstance(sopUID));
-            storeAndRememberOTW.scheduleStow(ctx, locators, 1, 1, 1l, true);
+            stowClientService.scheduleStow("web-1234", ctx, locators, 1, 1, 1l);
             //test assertions in the observer
         }
 

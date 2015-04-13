@@ -47,10 +47,7 @@ import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
 
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.dcm4chee.archive.store.scu.StoreAndRememberOTWMessage;
-import org.dcm4chee.archive.store.scu.StoreAndRememberOTWService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,44 +67,18 @@ public class CStoreSCUMDB implements MessageListener {
     @Inject
     private CStoreSCUService cstorescu;
 
-    @Inject
-    private StoreAndRememberOTWService storeAndRememberOTWService;
-
     @Override
     public void onMessage(Message msg) {
         try {
+            @SuppressWarnings("unchecked")
             List<ArchiveInstanceLocator> insts = 
-                    (List<ArchiveInstanceLocator>) ((StoreAndRememberOTWMessage)
-                            ((ObjectMessage) msg)
-                    .getObject()).getInstances();
-            
-            if (msg.getBooleanProperty("Stow")) {
-                if (msg.getBooleanProperty("VerifyStorage"))
-                    storeAndRememberOTWService.notify(
-                            storeAndRememberOTWService
-                            .createStowRSClient(
-                                    storeAndRememberOTWService,
-                                    ((StoreAndRememberOTWMessage)
-                                            ((ObjectMessage) msg)
-                                            .getObject()).getContext())
-                            .storeOverWebService(insts, true));
-                else
-                    storeAndRememberOTWService.notify(
-                            storeAndRememberOTWService
-                            .createStowRSClient(
-                                    storeAndRememberOTWService,
-                                    ((StoreAndRememberOTWMessage)
-                                            ((ObjectMessage) msg)
-                                            .getObject()).getContext())
-                            .storeOverWebService(insts, false));
-            }
-            else {
+                    (List<ArchiveInstanceLocator>) ((ObjectMessage) msg)
+                    .getObject();
                 cstorescu.cstore(insts, msg.getStringProperty("LocalAET"),
                     msg.getStringProperty("RemoteAET"),
                     msg.getIntProperty("Priority"),
                     msg.getIntProperty("Retries"));
-            }
-            
+
         } catch (Throwable th) {
             LOG.warn("Failed to process " + msg, th);
         }

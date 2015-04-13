@@ -332,6 +332,40 @@
     </attributes>
   </entity>
 
+  <entity class="ExternalRetrieveLocation">
+    <table name="ext_retrieve_location" />
+    <sequence-generator name="seq" sequence-name="ext_retrieve_location_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
+  <entity class="StoreRememberDimse">
+    <table name="store_remember_dimse" />
+    <sequence-generator name="seq" sequence-name="store_remember_dimse_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
+  <entity class="StoreRememberWeb">
+    <table name="store_remember_web" />
+    <sequence-generator name="seq" sequence-name="store_remember_web_pk_seq" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
+
   <entity class="ArchivingTask">
     <table name="archiving_task"/>
     <sequence-generator name="seq" sequence-name="archiving_task_pk_seq" allocation-size="1" />

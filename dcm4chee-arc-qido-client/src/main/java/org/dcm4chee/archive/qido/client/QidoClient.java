@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,11 +35,10 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.scu;
+package org.dcm4chee.archive.qido.client;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -48,23 +47,17 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.UUID;
 
 import javax.json.Json;
 import javax.ws.rs.core.MediaType;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
-import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXReader;
-import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.json.JSONReader;
 import org.dcm4che3.json.JSONReader.Callback;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,34 +65,18 @@ import org.slf4j.LoggerFactory;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
-public class StoreAndRememberOTWClient {
+public class QidoClient {
 
-    private static final Logger LOG = LoggerFactory.getLogger(
-            StoreAndRememberOTWClient.class);
-    
-    private StoreAndRememberOTWService service;
-    private CStoreSCUContext context;
-    
-    public StoreAndRememberOTWClient(StoreAndRememberOTWService service
-            , CStoreSCUContext context) {
-        this.service = service;
-        this.context = context; 
+    private static final Logger LOG = LoggerFactory.getLogger(QidoClient.class);
+
+    private QidoContext context;
+
+    public QidoClient(QidoContext context) {
+        super();
+        this.context = context;
     }
 
-    public StoreAndRememberResponse storeOverWebService(
-            Collection<ArchiveInstanceLocator> instances, boolean verify) {
-        StoreAndRememberResponse response = storeOverWebService(instances);
-        markAsRetrieveable(response, instances);
-        return verify ? verifyStorage(response) : response;
-
-    }
-
-    private void markAsRetrieveable(StoreAndRememberResponse rsp
-            , Collection<ArchiveInstanceLocator> instances) {
-        //for(ArchiveInstanceLocator )
-    }
-    private StoreAndRememberResponse verifyStorage(
-            StoreAndRememberResponse storeOverWebServiceResult) {
+    public Collection<String> verifyStorage(Collection<String> sopInstanceUIDs) {
         ArchiveAEExtension aeExt = context.getArchiveAEExtension();
         String aeTitle = context.getRemoteAE().getAETitle();
         String url = adjustToQidoURL(aeTitle, context.getRemoteBaseURL());
@@ -108,76 +85,15 @@ public class StoreAndRememberOTWClient {
                     + "not initialized in context");
         }
         ArrayList<String> verifiedSopUIDs = new ArrayList<String>();
-        MediaType type = MediaType.valueOf(aeExt.getQidoClientAcceptType()
+        MediaType type = MediaType.valueOf(aeExt.getQidoClientAcceptType() 
                 !=null ? aeExt.getQidoClientAcceptType(): "application/json");
         
-        for(String sopUID : storeOverWebServiceResult
-                .getSuccessfulSopInstances()) {
-            
-                    if(queryOverWebService(aeTitle, url, sopUID, false
-                            , true, type))
-                        verifiedSopUIDs.add(sopUID);
-
-            
+        for (String sopiuid : sopInstanceUIDs) {
+            if (queryOverWebService(aeTitle, url, sopiuid, context.isFuzzyMatching()
+                    ,context.isTimeZoneAdjustment(), type))
+                verifiedSopUIDs.add(sopiuid);
         }
-        return new StoreAndRememberResponse(
-                storeOverWebServiceResult.getFailedSopInstances()
-                , storeOverWebServiceResult.getSuccessfulSopInstances()
-                , verifiedSopUIDs);
-    }
-
-    public StoreAndRememberResponse storeOverWebService(
-            Collection<ArchiveInstanceLocator> instances) {
-
-        ArrayList<String> failedInstances = new ArrayList<String>();
-        ArrayList<String> successfulInstances = new ArrayList<String>();
-        String aeTitle = context.getRemoteAE().getAETitle();
-        String url = adjustToStowURL(aeTitle, context.getRemoteBaseURL());
-        for(ArchiveInstanceLocator inst : instances) {
-            
-            try{
-            storeOverWebService(aeTitle, url, inst);
-            successfulInstances.add(inst.iuid);
-            }
-            catch(IOException e) {
-                failedInstances.add(inst.iuid);
-            }
-        }
-        
-        return new StoreAndRememberResponse(failedInstances, successfulInstances);
-
-    }
-
-    private boolean storeOverWebService(String aeTitle, String url
-            , ArchiveInstanceLocator inst)
-            throws IOException {
-
-        HttpURLConnection connection = null;;
-        int rspCode = 0;
-        
-        try {
-            URL stowURL = new URL(url);
-            
-            String boundary = generateBoundary();
-            
-            connection = setupStowConnection(boundary, stowURL);
-            
-            writeRequest(inst, boundary, getConnectionOutputStream(boundary
-                    , connection));
-            
-            rspCode = connection.getResponseCode();
-            
-            logResponse(aeTitle, connection);
-        } catch (IOException e) {
-            LOG.error("error writing to http data output stream"
-                    + e.getStackTrace().toString());
-            throw new IOException("Error while performing stow to " + aeTitle + e);
-        }
-        finally {
-            connection.disconnect();
-        }
-
-        return rspCode == 200 ? true : false;
+        return verifiedSopUIDs;
     }
 
     private boolean queryOverWebService(String aeTitle, String url, String sopUID,
@@ -240,6 +156,7 @@ public class StoreAndRememberOTWClient {
         }
         String[] parts = full.split(boundary);
         Attributes attrs = new Attributes();
+        
         for(int i=0;i<parts.length-1;i++) {
                 try {
                     attrs = SAXReader.parse(new ByteArrayInputStream(removeXMLHeader(parts[i]).getBytes()));
@@ -285,71 +202,7 @@ public class StoreAndRememberOTWClient {
         return false;
     }
 
-    private void logResponse(String aeTitle, HttpURLConnection connection) {
-        try {
-            if(LOG.isDebugEnabled())
-                LOG.debug("Stowrs response received from {} : \n {}"
-                        ,aeTitle, SAXReader.parse(
-                                connection.getInputStream()).toString());
-        } catch (Exception e) {
-            LOG.error("Error creating response attributes, {}",e);
-        }
-    }
 
-    private void writeRequest(ArchiveInstanceLocator inst
-            , String boundary, DataOutputStream wr)
-            throws IOException {
-        DicomInputStream dis = new DicomInputStream(
-                inst.getFile());
-        try {
-            dis.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes dataset = dis.readDataset(-1, -1);
-             service.coerceAttributes(dataset, context);
-            dataset.addAll((Attributes) inst.getObject());
-            Attributes fmi = dataset.createFileMetaInformation(inst.tsuid);
-            @SuppressWarnings("resource")
-            DicomOutputStream dos = new DicomOutputStream(wr,
-                    UID.ExplicitVRLittleEndian);
-            dos.writeDataset(fmi, dataset);
-            wr.writeBytes("\r\n--" + boundary + "--\r\n");
-            wr.flush();
-            wr.close();
-        } finally {
-            SafeClose.close(dis);
-        }
-    }
-
-    private DataOutputStream getConnectionOutputStream(String boundary,
-            HttpURLConnection connection) throws IOException {
-        DataOutputStream wr;
-        wr = new DataOutputStream(connection.getOutputStream());
-        wr.writeBytes("\r\n--" + boundary + "\r\n");
-        wr.writeBytes("Content-Type: application/dicom \r\n");
-        wr.writeBytes("\r\n");
-        return wr;
-    }
-
-    private String generateBoundary() {
-        return "--------"+UUID.randomUUID().toString()
-        .replaceAll("[^\\d.-]", "");
-    }
-
-    private HttpURLConnection setupStowConnection(String boundary, URL url)
-            throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url
-        .openConnection();
-        connection.setDoOutput(true);
-        connection.setDoInput(true);
-        connection.setInstanceFollowRedirects(false);
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type",
-                "multipart/related; type=application/dicom; boundary="
-                        + boundary);
-        connection.setRequestProperty("Accept", "application/dicom+xml");
-        connection.setRequestProperty("charset", "utf-8");
-        connection.setUseCaches(false);
-        return connection;
-    }
 
     private HttpURLConnection setUpQidoConnection(URL url , MediaType type) 
             throws IOException{
@@ -363,13 +216,6 @@ public class StoreAndRememberOTWClient {
             connection.setRequestProperty("charset", "utf-8");
             connection.setUseCaches(false);
             return connection;
-    }
-
-    private String adjustToStowURL(String aeTitle, String remoteBaseURL) {
-        String stowPath = "stow/"+aeTitle+"/studies";
-        return remoteBaseURL.endsWith("/") 
-                ? remoteBaseURL + stowPath 
-                        : remoteBaseURL + "/" + stowPath;
     }
 
 
@@ -392,5 +238,5 @@ public class StoreAndRememberOTWClient {
         }
         return buff;
     }
-}
 
+}

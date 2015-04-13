@@ -524,3 +524,18 @@ alter table archiving_task
     add constraint FKD72560C52DC908EB
     foreign key (delay_reason_code_fk)
     references code (pk);
+
+create table ext_retrieve_location (
+    pk bigint not null auto_increment,
+    availability integer not null,
+    retrieve_ae_title varchar(255),
+    retrieve_uri varchar(255),
+    retrieve_url varchar(255),
+    instance_fk bigint not null,
+    primary key (pk)
+) ENGINE=InnoDB;
+
+alter table ext_retrieve_location
+    add constraint FK3BDAA1BA37EDB1AA
+    foreign key (instance_fk)
+    references instance (pk);

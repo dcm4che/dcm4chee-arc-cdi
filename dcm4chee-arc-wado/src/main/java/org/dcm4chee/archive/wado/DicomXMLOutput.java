@@ -58,12 +58,16 @@ import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
 public class DicomXMLOutput implements StreamingOutput {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DicomObjectOutput.class);
 
     private final ArchiveInstanceLocator fileRef;
     private final Attributes attrs;
@@ -84,15 +88,24 @@ public class DicomXMLOutput implements StreamingOutput {
     @Override
     public void write(OutputStream out) throws IOException,
             WebApplicationException {
-        DicomInputStream dis = new DicomInputStream(
-                service.getFile(fileRef).toFile());
-        dis.setURI(bulkDataURI);
         try {
-            dis.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes dataset = dis.readDataset(-1, -1);
-            
+            ArchiveInstanceLocator ref = fileRef;
+            Attributes dataset = null;
+            do {
+                try {
+                    dataset = readFrom(ref);
+                } catch (IOException e) {
+                    LOG.info("Failed to read Data Set with iuid={} from {}@{}",
+                            ref.iuid, ref.getFilePath(), ref.getStorageSystem(), e);
+                    ref = ref.getFallbackLocator();
+                    if (ref == null)
+                        throw e;
+                    LOG.info("Try read Data Set from alternative location");
+                }
+            } while (dataset == null);
+
             if (context.getRemoteAE() != null) {
-                service.coerceFileBeforeMerge((ArchiveInstanceLocator) fileRef,
+                service.coerceFileBeforeMerge((ArchiveInstanceLocator) ref,
                         dataset, context);
 
                 service.coerceAttributes(dataset, context);
@@ -112,8 +125,15 @@ public class DicomXMLOutput implements StreamingOutput {
             throw e;
         } catch (Exception e) {
             throw new WebApplicationException(e);
-        } finally {
-            SafeClose.close(dis);
+        }
+    }
+
+    private Attributes readFrom(ArchiveInstanceLocator inst) throws IOException {
+        try (DicomInputStream din = new DicomInputStream(service.getFile(inst)
+                .toFile())) {
+            din.setURI(bulkDataURI);
+            din.setIncludeBulkData(IncludeBulkData.URI);
+            return din.readDataset(-1, -1);
         }
     }
 

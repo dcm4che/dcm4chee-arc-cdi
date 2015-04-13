@@ -35,42 +35,68 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.scu;
+package org.dcm4chee.archive.stow.client;
 
 import java.io.Serializable;
-import java.util.Collection;
 
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 
 /**
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- * 
  */
-public class StoreAndRememberOTWMessage implements Serializable {
+public class StowContext implements Serializable {
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1667206603837867843L;
+    private static final long serialVersionUID = -2104597246635355682L;
 
-    Collection<ArchiveInstanceLocator> instances;
+    private ApplicationEntity localAE, remoteAE;
 
-    CStoreSCUContext context;
+    private String stowRemoteBaseURL;
 
-    public StoreAndRememberOTWMessage(
-            Collection<ArchiveInstanceLocator> instances,
-            CStoreSCUContext context) {
+    private String qidoRemoteBaseURL;
+
+    public StowContext(ApplicationEntity localAE,
+            ApplicationEntity remoteAE) {
         super();
-        this.instances = instances;
-        this.context = context;
+        this.localAE = localAE;
+        this.remoteAE = remoteAE;
     }
 
-    public Collection<ArchiveInstanceLocator> getInstances() {
-        return instances;
+    public ApplicationEntity getLocalAE() {
+        return localAE;
     }
 
-    public CStoreSCUContext getContext() {
-        return context;
+    public ArchiveAEExtension getArchiveAEExtension() {
+        return localAE.getAEExtension(ArchiveAEExtension.class);
+    }
+
+    public void setLocalAE(ApplicationEntity localAE) {
+        this.localAE = localAE;
+    }
+
+    public ApplicationEntity getRemoteAE() {
+        return remoteAE;
+    }
+
+    public void setRemoteAE(ApplicationEntity remoteAE) {
+        this.remoteAE = remoteAE;
+    }
+
+    public String getStowRemoteBaseURL() {
+        return stowRemoteBaseURL;
+    }
+
+    public void setStowRemoteBaseURL(String remoteBaseURL) {
+        this.stowRemoteBaseURL = remoteBaseURL;
+    }
+
+    public String getQidoRemoteBaseURL() {
+        return qidoRemoteBaseURL;
+    }
+
+    public void setQidoRemoteBaseURL(String qidoRemoteBaseURL) {
+        this.qidoRemoteBaseURL = qidoRemoteBaseURL;
     }
 
 }

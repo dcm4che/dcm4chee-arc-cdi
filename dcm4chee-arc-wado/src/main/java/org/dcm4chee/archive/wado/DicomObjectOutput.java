@@ -52,6 +52,8 @@ import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Callback object used by the RESTful runtime when ready
@@ -73,7 +75,9 @@ import org.dcm4chee.archive.store.scu.CStoreSCUService;
  */
 class DicomObjectOutput implements StreamingOutput {
 
-    private final ArchiveInstanceLocator fileRef;
+    private static final Logger LOG = LoggerFactory.getLogger(DicomObjectOutput.class);
+
+    private ArchiveInstanceLocator fileRef;
     private final Attributes attrs;
     private final String tsuid;
     private CStoreSCUContext context;
@@ -89,30 +93,41 @@ class DicomObjectOutput implements StreamingOutput {
     }
 
     public void write(OutputStream out) throws IOException {
-        DicomInputStream dis = new DicomInputStream(
-                service.getFile(fileRef).toFile());
-        try {
-            dis.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes dataset = dis.readDataset(-1, -1);
-            
-            if(context.getRemoteAE()!=null){
-            service.coerceFileBeforeMerge(
-                    (ArchiveInstanceLocator) fileRef, dataset, context);
+        ArchiveInstanceLocator inst = fileRef;
+        Attributes attrs = null;
+        do {
+            try {
+                attrs = readFrom(inst);
+            } catch (IOException e) {
+                LOG.info("Failed to read Data Set with iuid={} from {}@{}",
+                        inst.iuid, inst.getFilePath(), inst.getStorageSystem(), e);
+                inst = inst.getFallbackLocator();
+                if (inst == null)
+                    throw e;
+                LOG.info("Try read Data Set from alternative location");
+            }
+        } while (attrs == null);
 
-             service.coerceAttributes(dataset, context);
-            }
-            dataset.addAll(attrs);
-            if (tsuid != fileRef.tsuid) {
-                Decompressor.decompress(dataset, fileRef.tsuid);
-            }
-            Attributes fmi = dataset.createFileMetaInformation(tsuid);
-            @SuppressWarnings("resource")
-            DicomOutputStream dos = new DicomOutputStream(out,
-                    UID.ExplicitVRLittleEndian);
-            dos.writeDataset(fmi, dataset);
-        } finally {
-            SafeClose.close(dis);
+        if(context.getRemoteAE()!=null){
+            service.coerceFileBeforeMerge(inst, attrs, context);
+            service.coerceAttributes(attrs, context);
         }
+        attrs.addAll(attrs);
+        if (tsuid != inst.tsuid) {
+            Decompressor.decompress(attrs, inst.tsuid);
+        }
+        Attributes fmi = attrs.createFileMetaInformation(tsuid);
+        @SuppressWarnings("resource")
+        DicomOutputStream dos = new DicomOutputStream(out,
+                UID.ExplicitVRLittleEndian);
+        dos.writeDataset(fmi, attrs);
     }
 
+    private Attributes readFrom(ArchiveInstanceLocator inst) throws IOException {
+        try (DicomInputStream din = new DicomInputStream(service.getFile(inst)
+                .toFile())) {
+            din.setIncludeBulkData(IncludeBulkData.URI);
+            return din.readDataset(-1, -1);
+        }
+    }
 }

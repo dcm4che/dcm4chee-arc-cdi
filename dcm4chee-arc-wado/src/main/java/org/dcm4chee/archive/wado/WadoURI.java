@@ -422,10 +422,7 @@ public class WadoURI extends Wado {
                 SAXWriter w = null;
                 th.setResult(new StreamResult(bout));
                 w = new SAXWriter(th);
-                DicomInputStream dis = new DicomInputStream(
-                        storescuService.getFile(ref).toFile());
-                Attributes data = dis.readDataset(-1, -1);
-                dis.close();
+                Attributes data = readAttributes(ref);
                 try {
                     w.write(data);
                 } catch (SAXException e) {
@@ -443,21 +440,28 @@ public class WadoURI extends Wado {
             @Override
             public void write(OutputStream out) throws IOException,
                     WebApplicationException {
-                BufferedOutputStream bOut = null;
-                DicomInputStream in = null;
-                try {
-                    in = new DicomInputStream(
-                            storescuService.getFile(ref).toFile());
-                    Attributes atts = in.readDataset(-1, -1);
-                    bOut = new BufferedOutputStream(out);
-                    bOut.write(atts.getBytes(Tag.EncapsulatedDocument));
-                } finally {
-                    bOut.flush();
-                    bOut.close();
-                    in.close();
+                Attributes attrs = readAttributes(ref);
+                try (BufferedOutputStream bOut = new BufferedOutputStream(out)) {
+                    bOut.write(attrs.getBytes(Tag.EncapsulatedDocument));
                 }
             }
         }, mediaType).build();
+    }
+
+    private Attributes readAttributes(ArchiveInstanceLocator ref) throws IOException {
+        for (;;)
+            try (DicomInputStream in = new DicomInputStream(
+                    storescuService.getFile(ref).toFile())) {
+                return  in.readDataset(-1, -1);
+            } catch (IOException e) {
+                LOG.info("Failed to read Data Set with iuid={} from {}@{}",
+                        ref.iuid, ref.getFilePath(), ref.getStorageSystem(), e);
+                ref = ref.getFallbackLocator();
+                if (ref == null) {
+                    throw e;
+                }
+                LOG.info("Try read Data Set from alternative location");
+            }
     }
 
     private Response retrieveNativeDicomObject(ArchiveInstanceLocator ref,
@@ -520,17 +524,20 @@ public class WadoURI extends Wado {
         }
     }
 
-    private BufferedImage getBufferedImage(final ArchiveInstanceLocator ref,
-            final Attributes attrs) throws IOException {
-        ImageInputStream iis = ImageIO.createImageInputStream(
-                storescuService.getFile(ref).toFile());
-        BufferedImage bi;
-        try {
-            bi = readImage(iis, attrs);
-        } finally {
-            SafeClose.close(iis);
-        }
-        return bi;
+    private BufferedImage getBufferedImage(ArchiveInstanceLocator ref,
+            Attributes attrs) throws IOException {
+        for (;;)
+            try (ImageInputStream iis = createImageInputStream(ref)) {
+                return readImage(iis, attrs);
+            } catch (IOException e) {
+                LOG.info("Failed to read image with iuid={} from {}@{}",
+                        ref.iuid, ref.getFilePath(), ref.getStorageSystem(), e);
+                ref = ref.getFallbackLocator();
+                if (ref == null) {
+                    throw e;
+                }
+                LOG.info("Try read image from alternative location");
+            }
     }
 
     private Response retrieveGIF(final ArchiveInstanceLocator ref,
@@ -542,7 +549,6 @@ public class WadoURI extends Wado {
             @Override
             public void write(OutputStream out) throws IOException,
                     WebApplicationException {
-                Collection<BufferedImage> bis;
                 if(attrs.getInt(Tag.NumberOfFrames,1) == 1)
                 {
                     BufferedImage bi = getBufferedImage(ref, attrs);
@@ -558,7 +564,7 @@ public class WadoURI extends Wado {
                     else
                     {
                         //return all frames as GIF sequence
-                        bis = readImages(ref, attrs);
+                        List<BufferedImage> bis = getBufferedImages(ref, attrs);
                         writeGIFs(ref.tsuid,bis, new OutputStreamAdapter(out));
                     }
                     
@@ -567,47 +573,48 @@ public class WadoURI extends Wado {
         }, mediaType).build();
     }
 
-    private void writeGIFs(String tsuid, Collection<BufferedImage> bis, ImageOutputStream ios) {
-        ArrayList<BufferedImage> bufferedImages = (ArrayList<BufferedImage>) bis;
-        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("GIF")
-                .next();
-        ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
-
-        imageWriter.setOutput(ios);
-        
-        try {
-            imageWriter.prepareWriteSequence(null);
-            for (int i = 0; i < bufferedImages.size(); i++) {
-
-                BufferedImage bi = bufferedImages.get(i);
-                ColorModel cm = bufferedImages.get(0).getColorModel();
-                if (cm instanceof PaletteColorModel) {
-                    bi = ((PaletteColorModel) cm)
-                            .convertToIntDiscrete(bufferedImages.get(i)
-                                    .getData());
+    private List<BufferedImage> getBufferedImages(ArchiveInstanceLocator ref, Attributes attrs) throws IOException {
+        for (;;)
+            try {
+                return readImages(ref, attrs);
+            } catch (IOException e) {
+                LOG.info("Failed to read images with iuid={} from {}@{}",
+                        ref.iuid, ref.getFilePath(), ref.getStorageSystem(), e);
+                ref = ref.getFallbackLocator();
+                if (ref == null) {
+                    throw e;
                 }
-
-                try {
-                    IIOMetadata metadata = ImageWriterFactory.getImageWriterParam(tsuid)!=null?
-                            getIIOMetadata(bi,imageWriter,imageWriteParam,ImageWriterFactory.getImageWriterParam(tsuid)):
-                            imageWriter.getDefaultImageMetadata(
-                            new ImageTypeSpecifier(bi), imageWriteParam);
-                    //setGIFMetadata(metadata);
-                    imageWriter.writeToSequence(new IIOImage(bi, null, metadata),imageWriteParam);
-                } catch (IOException e) {
-                    LOG.error("Error writing GIF sequence {}", e);
-                }
+                LOG.info("Try read from alternative location");
             }
-        }
-        catch(IOException e)
-        {
-            LOG.error("Error writing GIF sequence, error preparing sequence {} ", e);
-        }
-        finally {
+    }
+
+    private void writeGIFs(String tsuid, List<BufferedImage> bis, ImageOutputStream ios) throws IOException {
+        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("GIF").next();
+        try {
+            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
+            imageWriter.setOutput(ios);
+            imageWriter.prepareWriteSequence(null);
+            for (int i = 0; i < bis.size(); i++) {
+
+                BufferedImage bi = bis.get(i);
+                ColorModel cm = bi.getColorModel();
+                if (cm instanceof PaletteColorModel) {
+                    bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
+                }
+
+                IIOMetadata metadata = ImageWriterFactory.getImageWriterParam(tsuid) != null
+                        ? getIIOMetadata(bi,imageWriter,imageWriteParam,ImageWriterFactory.getImageWriterParam(tsuid))
+                        : imageWriter.getDefaultImageMetadata(new ImageTypeSpecifier(bi), imageWriteParam);
+                //setGIFMetadata(metadata);
+                imageWriter.writeToSequence(new IIOImage(bi, null, metadata),imageWriteParam);
+            }
+        } finally {
             imageWriter.dispose();
         }
     }
-    private IIOMetadata getIIOMetadata(BufferedImage bi, ImageWriter imageWriter, ImageWriteParam imageWriteParam, ImageWriterParam imageWriterParam) {
+
+    private IIOMetadata getIIOMetadata(BufferedImage bi, ImageWriter imageWriter, ImageWriteParam imageWriteParam,
+                                       ImageWriterParam imageWriterParam) {
         Property[] props = imageWriterParam.getIIOMetadata();
         IIOMetadata metadata = imageWriter.getDefaultImageMetadata(new ImageTypeSpecifier(bi), imageWriteParam);
         String metaFormatName = metadata.getNativeMetadataFormatName();
@@ -638,74 +645,41 @@ public class WadoURI extends Wado {
           return(node);
         }
 
-    private Collection<BufferedImage> readImages(
-            ArchiveInstanceLocator ref, Attributes attrs) {
-        ImageInputStream iis = null;
-        try {
-            iis = ImageIO.createImageInputStream(
-                    storescuService.getFile(ref).toFile());
-        } catch (IOException e) {
-            LOG.error("Error creating image input stream  {}", e);
-        }
+    private List<BufferedImage> readImages(
+            ArchiveInstanceLocator ref, Attributes attrs) throws IOException {
         List<BufferedImage> imageList = new ArrayList<BufferedImage>();
-        Iterator<ImageReader> readers = ImageIO
-                .getImageReadersByFormatName("DICOM");
-        if (!readers.hasNext()) {
-            ImageIO.scanForPlugins();
-            readers = ImageIO.getImageReadersByFormatName("DICOM");
-        }
-        ImageReader reader = readers.next();
-        try {
+        ImageReader reader = getDicomImageReader();
+        try ( ImageInputStream iis = createImageInputStream(ref)) {
             reader.setInput(iis);
-            DicomMetaData metaData = null;
-            try {
-                metaData = (DicomMetaData) reader.getStreamMetadata();
-            } catch (IOException e) {
-                LOG.error("Error reading Image metadata stream  {}", e);
-            }
+            DicomMetaData metaData = (DicomMetaData) reader.getStreamMetadata();
             metaData.getAttributes().addAll(attrs);
-            DicomImageReadParam param = (DicomImageReadParam) reader
-                    .getDefaultReadParam();
+            DicomImageReadParam param = (DicomImageReadParam) reader.getDefaultReadParam();
+            init(param);
             int numOfFrames = attrs.getInt(Tag.NumberOfFrames, 1);
-            try {
-                init(param);
-            } catch (WebApplicationException e) {
-                LOG.error("Error initializing presentation states for DicomImageReader {}", e);
-            } catch (IOException e) {
-                LOG.error("Error reading DICOM file {}", e);
-            }
-            for(int i=0;i<numOfFrames;i++)
-            {
-            try {
+            for(int i=0;i<numOfFrames;i++) {
                 imageList.add(rescale(
                         reader.read(i, param),
-                        metaData.getAttributes(), param.getPresentationState()));
-            } catch (IOException e) {
-                LOG.error("Error reading frame {}, {}", i, e);
-            }
+                        metaData.getAttributes(),
+                        param.getPresentationState()));
             }
         } finally {
             reader.dispose();
-            SafeClose.close(iis);
         }
         return imageList;
     }
 
+    private ImageInputStream createImageInputStream(ArchiveInstanceLocator ref) throws IOException {
+        return ImageIO.createImageInputStream(storescuService.getFile(ref).toFile());
+    }
+
     private BufferedImage readImage(ImageInputStream iis, Attributes attrs)
             throws IOException {
-        Iterator<ImageReader> readers = ImageIO
-                .getImageReadersByFormatName("DICOM");
-        if (!readers.hasNext()) {
-            ImageIO.scanForPlugins();
-            readers = ImageIO.getImageReadersByFormatName("DICOM");
-        }
-        ImageReader reader = readers.next();
+        ImageReader reader = getDicomImageReader();
         try {
             reader.setInput(iis);
             DicomMetaData metaData = (DicomMetaData) reader.getStreamMetadata();
             metaData.getAttributes().addAll(attrs);
-            DicomImageReadParam param = (DicomImageReadParam) reader
-                    .getDefaultReadParam();
+            DicomImageReadParam param = (DicomImageReadParam) reader.getDefaultReadParam();
             init(param);
             return rescale(
                     reader.read(frameNumber > 0 ? frameNumber - 1 : 0, param),
@@ -713,6 +687,15 @@ public class WadoURI extends Wado {
         } finally {
             reader.dispose();
         }
+    }
+
+    private static ImageReader getDicomImageReader() {
+        Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("DICOM");
+        if (!readers.hasNext()) {
+            ImageIO.scanForPlugins();
+            readers = ImageIO.getImageReadersByFormatName("DICOM");
+        }
+        return readers.next();
     }
 
     private BufferedImage rescale(BufferedImage src, Attributes imgAttrs,
@@ -761,13 +744,7 @@ public class WadoURI extends Wado {
             if (ref.size() != 1)
                 throw new WebApplicationException(Status.BAD_REQUEST);
 
-            DicomInputStream dis = new DicomInputStream(
-                    storescuService.getFile(ref.get(0)).toFile());
-            try {
-                param.setPresentationState(dis.readDataset(-1, -1));
-            } finally {
-                SafeClose.close(dis);
-            }
+            param.setPresentationState(readAttributes(ref.get(0)));
         }
     }
 

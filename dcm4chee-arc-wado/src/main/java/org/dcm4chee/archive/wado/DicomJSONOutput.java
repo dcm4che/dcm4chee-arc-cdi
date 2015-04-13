@@ -60,12 +60,16 @@ import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * 
  */
 public class DicomJSONOutput implements StreamingOutput {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DicomObjectOutput.class);
 
     private final List<ArchiveInstanceLocator> refs;
     private String bulkDataURI;
@@ -92,45 +96,39 @@ public class DicomJSONOutput implements StreamingOutput {
         gen.writeStartArray();
 
         for (ArchiveInstanceLocator ref : refs) {
-            bulkDataURI = toBulkDataURI(ref.uri);
-            DicomInputStream dis = new DicomInputStream(service.getFile(ref)
-                    .toFile());
-            try {
-                dis.setURI(bulkDataURI);
-                dis.setIncludeBulkData(IncludeBulkData.URI);
-                Attributes dataset = dis.readDataset(-1, -1);
-
-                if (context.getRemoteAE() != null) {
-                    service.coerceFileBeforeMerge((ArchiveInstanceLocator) ref,
-                            dataset, context);
-
-                    service.coerceAttributes(dataset, context);
-                }
-
-                dataset.addAll((Attributes) ref.getObject());
-                Object pixelData = dataset.getValue(Tag.PixelData);
-                if (pixelData instanceof Fragments) {
-                    Fragments frags = (Fragments) pixelData;
-                    dataset.setValue(
-                            Tag.PixelData,
-                            VR.OB,
-                            new BulkData(((BulkData) frags.get(1))
-                                    .uriWithoutQuery(), 0, -1,
-                                    dataset.bigEndian()));
-                }
+            Attributes dataset = null;
+            do {
                 try {
-                    writer.write(dataset);
-
-                } catch (Exception e) {
-                    throw new WebApplicationException(e);
+                    dataset = readFrom(ref);
+                } catch (IOException e) {
+                    LOG.info("Failed to read Data Set with iuid={} from {}@{}",
+                            ref.iuid, ref.getFilePath(), ref.getStorageSystem(), e);
+                    ref = ref.getFallbackLocator();
+                    if (ref == null)
+                        throw e;
+                    LOG.info("Try read Data Set from alternative location");
                 }
-            } catch (IOException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new WebApplicationException(e);
-            } finally {
-                SafeClose.close(dis);
+            } while (dataset == null);
+
+            if (context.getRemoteAE() != null) {
+                service.coerceFileBeforeMerge((ArchiveInstanceLocator) ref,
+                        dataset, context);
+
+                service.coerceAttributes(dataset, context);
             }
+
+            dataset.addAll((Attributes) ref.getObject());
+            Object pixelData = dataset.getValue(Tag.PixelData);
+            if (pixelData instanceof Fragments) {
+                Fragments frags = (Fragments) pixelData;
+                dataset.setValue(
+                        Tag.PixelData,
+                        VR.OB,
+                        new BulkData(((BulkData) frags.get(1))
+                                .uriWithoutQuery(), 0, -1,
+                                dataset.bigEndian()));
+            }
+            writer.write(dataset);
         }
         gen.writeEnd();
         gen.flush();
@@ -139,5 +137,15 @@ public class DicomJSONOutput implements StreamingOutput {
     private String toBulkDataURI(String uri) {
         return uriInfo.getBaseUri() + "wado/" + aeTitle + "/bulkdata/"
                 + URI.create(uri).getPath();
+    }
+
+    private Attributes readFrom(ArchiveInstanceLocator inst) throws IOException {
+        try (DicomInputStream din = new DicomInputStream(service.getFile(inst)
+                .toFile())) {
+            bulkDataURI = toBulkDataURI(inst.uri);
+            din.setURI(bulkDataURI);
+            din.setIncludeBulkData(IncludeBulkData.URI);
+            return din.readDataset(-1, -1);
+        }
     }
 }

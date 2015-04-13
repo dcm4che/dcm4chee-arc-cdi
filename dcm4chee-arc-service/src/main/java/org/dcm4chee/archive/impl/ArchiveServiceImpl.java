@@ -194,8 +194,8 @@ public class ArchiveServiceImpl implements ArchiveService {
 
     @Override
     public void stop(Participant source) {
+        device.unbindConnections();
         if (running) {
-            device.unbindConnections();
             archiveServiceStopped.fire(new StartStopReloadEvent(device, source));
             running = false;
         }

@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.archive.store.scu.test;
+package org.dcm4che.archive.store.remember.test;
 
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.ESoundex;
