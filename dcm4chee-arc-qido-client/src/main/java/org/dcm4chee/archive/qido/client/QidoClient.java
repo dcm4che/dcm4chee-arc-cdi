@@ -47,6 +47,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.json.Json;
 import javax.ws.rs.core.MediaType;
@@ -58,6 +60,7 @@ import org.dcm4che3.json.JSONReader;
 import org.dcm4che3.json.JSONReader.Callback;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.storage.conf.Availability;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +79,8 @@ public class QidoClient {
         this.context = context;
     }
 
-    public Collection<String> verifyStorage(Collection<String> sopInstanceUIDs) {
+    public Map<String, Availability> verifyStorage(Collection<String> sopInstanceUIDs) {
+        HashMap<String, Availability> result = new HashMap<String, Availability>();
         ArchiveAEExtension aeExt = context.getArchiveAEExtension();
         String aeTitle = context.getRemoteAE().getAETitle();
         String url = adjustToQidoURL(aeTitle, context.getRemoteBaseURL());
@@ -84,24 +88,25 @@ public class QidoClient {
             throw new IllegalArgumentException("ArchiveAEExtension "
                     + "not initialized in context");
         }
-        ArrayList<String> verifiedSopUIDs = new ArrayList<String>();
         MediaType type = MediaType.valueOf(aeExt.getQidoClientAcceptType() 
                 !=null ? aeExt.getQidoClientAcceptType(): "application/json");
         
         for (String sopiuid : sopInstanceUIDs) {
-            if (queryOverWebService(aeTitle, url, sopiuid, context.isFuzzyMatching()
-                    ,context.isTimeZoneAdjustment(), type))
-                verifiedSopUIDs.add(sopiuid);
+            Availability externalAvailability = queryOverWebService(aeTitle
+                    , url, sopiuid , context.isFuzzyMatching(),context
+                    .isTimeZoneAdjustment(), type); 
+            if (externalAvailability != Availability.UNAVAILABLE)
+                result.put(sopiuid, externalAvailability);
         }
-        return verifiedSopUIDs;
+        return result;
     }
 
-    private boolean queryOverWebService(String aeTitle, String url, String sopUID,
-            boolean fuzzyMatching, boolean timeZoneAdjustment
+    private Availability queryOverWebService(String aeTitle, String url
+            , String sopUID, boolean fuzzyMatching, boolean timeZoneAdjustment
             , MediaType type) {
-        HttpURLConnection connection = null;;
-        boolean verified = false;
-        
+        HttpURLConnection connection = null;
+        Availability externalAvaility = Availability.UNAVAILABLE;
+        Availability availability;
         try {
             url+="?SOPInstanceUID=" + sopUID;
             
@@ -117,23 +122,23 @@ public class QidoClient {
             InputStream in = connection.getInputStream();
             
                 if(type.isCompatible(MediaType.APPLICATION_JSON_TYPE))
-                    verified = readJSON(in);
+                    externalAvaility = readJSON(in);
                 else
-                    verified = readXML(in);
+                    externalAvaility = readXML(in);
             
         } catch (IOException e) {
             LOG.error("Error writing to http data output stream"
                     + e.getStackTrace().toString());
-            return false;
+            return Availability.UNAVAILABLE;
         }
         finally {
             connection.disconnect();
         }
         
-        return verified;
+        return externalAvaility;
     }
 
-    private boolean readXML(InputStream in) {
+    private Availability readXML(InputStream in) {
         String full="";
         String str;
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
@@ -163,15 +168,14 @@ public class QidoClient {
                 } catch (Exception e) {
                     LOG.error("Error while parsing XML stream", e);
                 }
-                if(attrs.getString(Tag.InstanceAvailability) != null
-                        && attrs.getString(Tag.InstanceAvailability)
-                        .equalsIgnoreCase("ONLINE"))
-                    return true;
+                if(attrs.getString(Tag.InstanceAvailability) != null)
+                    return Availability.valueOf(attrs.getString(
+                            Tag.InstanceAvailability));
         }
-        return false;
+        return Availability.UNAVAILABLE;
     }
 
-    private boolean readJSON(InputStream in) {
+    private Availability readJSON(InputStream in) {
         try {
             JSONReader reader = null;
             
@@ -192,14 +196,13 @@ public class QidoClient {
                     attrs.add(dataset);
                 }
             });
-            if(attrs.get(0).getString(Tag.InstanceAvailability) != null
-                    && attrs.get(0).getString(Tag.InstanceAvailability)
-                    .equalsIgnoreCase("ONLINE"))
-                return true;
+            if(attrs.get(0).getString(Tag.InstanceAvailability) != null)
+                return Availability.valueOf(attrs.get(0).getString(
+                        Tag.InstanceAvailability));
         } finally {
                 SafeClose.close(in);
         }
-        return false;
+        return Availability.UNAVAILABLE;
     }
 
 

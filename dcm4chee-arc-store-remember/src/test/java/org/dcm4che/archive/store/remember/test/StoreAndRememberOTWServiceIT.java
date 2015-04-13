@@ -67,7 +67,6 @@ import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.stow.client.StowClientService;
 import org.dcm4chee.archive.stow.client.StowContext;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
