@@ -106,7 +106,6 @@ public class QidoClient {
             , MediaType type) {
         HttpURLConnection connection = null;
         Availability externalAvaility = Availability.UNAVAILABLE;
-        Availability availability;
         try {
             url+="?SOPInstanceUID=" + sopUID;
             

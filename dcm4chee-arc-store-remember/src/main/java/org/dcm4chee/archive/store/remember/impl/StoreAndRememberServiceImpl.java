@@ -141,6 +141,8 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService{
         }
         HashMap<String, Availability> verifiedSopInstances = new HashMap<String
                 , Availability>();
+        //set the qido url
+        ctx.setRemoteBaseURL(webEntry.getQidoBaseURL());
         verifiedSopInstances = (HashMap<String, Availability>) qidoService.verifyStorage(
                 qidoService.createQidoClient(ctx), toVerify);
         String retrieveAET = webEntry.getRemoteAET();
@@ -177,6 +179,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService{
     }
 
     public void verifyStorage(@Observes BasicCStoreSCUResp storeResponse) {
+        // TODO 
         //call storage commitment
     }
 

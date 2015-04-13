@@ -37,6 +37,8 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4che.archive.store.remember.test;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,13 +64,17 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.archive.stow.client.StowClientService;
+import org.dcm4chee.archive.store.remember.StoreAndRememberEJB;
+import org.dcm4chee.archive.store.remember.StoreAndRememberService;
+import org.dcm4chee.archive.store.remember.impl.StoreAndRememberServiceImpl;
 import org.dcm4chee.archive.stow.client.StowContext;
+import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -111,10 +117,7 @@ public class StoreAndRememberOTWServiceIT {
         "DELETE FROM code", "DELETE FROM dicomattrs" };
 
         @Inject
-        private StowClientService stowClientService;
-
-        @Inject
-        private StoreANdRememberOTWObserverTest observer;
+        private StoreAndRememberService storeRememberService;
 
         @Inject
         private StoreService storeService;
@@ -127,7 +130,6 @@ public class StoreAndRememberOTWServiceIT {
 
         @Inject
         UserTransaction utx;
-
         private static StorageDeviceExtension archStorageDevExt;
 
         @Deployment
@@ -135,7 +137,10 @@ public class StoreAndRememberOTWServiceIT {
             WebArchive war = ShrinkWrap.create(WebArchive.class, "dcm4chee-arc.war");
             war.addClass(StoreAndRememberOTWServiceIT.class);
             war.addClass(ParamFactory.class);
-            war.addClass(StoreANdRememberOTWObserverTest.class);
+            war.addClass(StoreAndRememberService.class);
+            war.addClass(StoreAndRememberServiceImpl.class);
+            war.addClass(StoreAndRememberEJB.class);
+            war.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
             JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                     .importRuntimeAndTestDependencies().resolve()
                     .withoutTransitivity().as(JavaArchive.class);
@@ -171,27 +176,11 @@ public class StoreAndRememberOTWServiceIT {
             ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
             StowContext ctx = new StowContext(arcAE, arcAE);
             ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
+            ctx.setQidoRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
             ArrayList<ArchiveInstanceLocator> locators = 
                     new ArrayList<ArchiveInstanceLocator>();
             locators.add(locateInstance(sopUID));
-            stowClientService.scheduleStow("web-1234", ctx, locators, 1, 1, 1l);
-            //test assertions in the observer
-        }
-
-
-        /*
-         * Store and remember test nopo verification via qido applied
-         */
-        @Test
-        public void testBVerifyStorage() {
-            String sopUID = "1.1.1.2";
-            ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
-            StowContext ctx = new StowContext(arcAE, arcAE);
-            ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
-            ArrayList<ArchiveInstanceLocator> locators = 
-                    new ArrayList<ArchiveInstanceLocator>();
-            locators.add(locateInstance(sopUID));
-            stowClientService.scheduleStow("web-1234", ctx, locators, 1, 1, 1l);
+            storeRememberService.store(ctx, locators);
             //test assertions in the observer
         }
 
