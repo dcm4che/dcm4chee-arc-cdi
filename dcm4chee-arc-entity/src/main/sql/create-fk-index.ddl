@@ -1,6 +1,8 @@
+create index FKD72560C52DC908EB on archiving_task (delay_reason_code_fk);
 create index FK318FE31937EDB1AA on content_item (instance_fk);
 create index FK318FE31970C135AA on content_item (code_fk);
 create index FK318FE3199F40BC4C on content_item (name_fk);
+create index FK3BDAA1BA37EDB1AA on ext_retrieve_location (instance_fk);
 create index FK211694958151AFEA on instance (series_fk);
 create index FK2116949540F8410A on instance (reject_code_fk);
 create index FK211694954DC50E6B on instance (srcode_fk);

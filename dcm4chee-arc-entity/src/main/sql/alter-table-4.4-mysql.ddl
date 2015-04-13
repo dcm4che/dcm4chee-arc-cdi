@@ -539,3 +539,25 @@ alter table ext_retrieve_location
     add constraint FK3BDAA1BA37EDB1AA
     foreign key (instance_fk)
     references instance (pk);
+    
+create table store_remember_dimse (
+    pk number(19,0) not null,
+    local_aet varchar2(255 char),
+    remote_aet varchar2(255 char),
+    status number(10,0),
+    transaction_id varchar2(255 char),
+    primary key (pk)
+);
+
+create table store_remember_web (
+    pk number(19,0) not null,
+    local_aet varchar2(255 char),
+    qido_base_url varchar2(255 char),
+    remote_aet varchar2(255 char),
+    status number(10,0),
+    transaction_id varchar2(255 char),
+    primary key (pk)
+);
+    
+create index store_remember_web_tid_idx on store_remember_web (transaction_id);
+create index store_remember_dimse_tid_idx on store_remember_dimse (transaction_id);
