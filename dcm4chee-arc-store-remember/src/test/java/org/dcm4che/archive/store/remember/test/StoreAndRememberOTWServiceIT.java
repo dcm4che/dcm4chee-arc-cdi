@@ -37,8 +37,6 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4che.archive.store.remember.test;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,7 +62,6 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
-import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.store.StoreContext;

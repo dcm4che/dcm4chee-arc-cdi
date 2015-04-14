@@ -103,7 +103,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService{
                 , context.getRemoteAE().getAETitle()
                 , context.getLocalAE().getAETitle());
         
-        stowService.scheduleStow(transactionID, context, insts, 1, 1, 0);
+        stowService.scheduleStow(transactionID, context, insts, 0, 0, 0);
     }
 
     public void verifyStorage(@Observes StowResponse storeResponse) {

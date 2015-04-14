@@ -46,6 +46,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
+import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.StoreRememberDimse;
 import org.dcm4chee.archive.entity.StoreRememberStatus;
 import org.dcm4chee.archive.entity.StoreRememberWeb;
@@ -142,6 +143,12 @@ public class StoreAndRememberEJB {
     public void addExternalLocation(String iuid, String retrieveAET,
             Availability availability) {
         ExternalRetrieveLocation location = new ExternalRetrieveLocation(retrieveAET, availability);
+        
+        Query query = em.createQuery("select i from Instance i where"
+                + " i.sopInstanceUID = ?1");
+        query.setParameter(1, iuid);
+        Instance instance = (Instance) query.getSingleResult();
+        location.setInstance(instance);
         em.persist(location);
     }
 
