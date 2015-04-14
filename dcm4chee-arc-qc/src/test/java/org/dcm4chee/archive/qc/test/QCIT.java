@@ -64,9 +64,12 @@ import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXReader;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.TransferCapability;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.AttributesBlob;
@@ -95,7 +98,6 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -115,6 +117,9 @@ import org.junit.runners.MethodSorters;
 @RunWith(Arquillian.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class QCIT {
+
+    private static final String[] IOCM_DESTINATIONS = new String[]{"IOCM_DEST"};
+    private static final String[] NONE_IOCM_DESTINATIONS = new String[]{"NONE_IOCM_DEST"};
 
     @Inject
     private StoreService storeService;
@@ -201,11 +206,14 @@ public class QCIT {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
         war.addClass(QCIT.class);
         war.addClass(ParamFactory.class);
+        war.addClass(PerformedChangeRequest.class);
+        war.addClass(ChangeRequesterMockDecorator.class);
         JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies().resolve()
                 .withoutTransitivity().as(JavaArchive.class);
         for (JavaArchive a : archs) {
-            a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+            //a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+            a.addAsManifestResource(new File("src/test/resources/META-INF/beans.xml"), "beans.xml");
             war.addAsLibrary(a);
         }
         for (String resourceName : ALL_RESOURCES)
@@ -225,6 +233,25 @@ public class QCIT {
     @Before
     public void init() throws Exception {
         archDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        IOCMConfig iocmCfg = new IOCMConfig();
+        iocmCfg.setCallingAET("DCM4CHEE");
+        iocmCfg.setIocmDestinations(IOCM_DESTINATIONS);
+        iocmCfg.setNoneIocmDestinations(NONE_IOCM_DESTINATIONS);
+        iocmCfg.setIocmMaxRetries(2);
+        iocmCfg.setIocmRetryInterval(1000);
+        archDevExt.setIocmConfig(iocmCfg);
+        ApplicationEntity aeIOCM = new ApplicationEntity();
+        aeIOCM.setAETitle("IOCM_TEST");
+        aeIOCM.setAeInstalled(true);
+        ApplicationEntity ae = device.getApplicationEntity("DCM4CHEE");
+        aeIOCM.addConnection(ae.getConnections().get(0));
+        for (TransferCapability tc : ae.getTransferCapabilities()) {
+            TransferCapability tcNew = new TransferCapability(tc.getCommonName(), tc.getSopClass(), tc.getRole(),
+                    tc.getTransferSyntaxes());
+            aeIOCM.addTransferCapability(tcNew);
+        }
+        device.addApplicationEntity(aeIOCM);
+        /*_*/
         clearDB();
     }
 
@@ -248,11 +275,11 @@ public class QCIT {
         utx.commit();
         assertTrue(pat.getAttributes().getString(Tag.PatientBirthDate)
                 .equalsIgnoreCase(attrs.getString(Tag.PatientBirthDate)));
+        PerformedChangeRequest.checkNoNewChangeRequest();
     }
 
     @Test
     public void testBUpdateStudyAttrs() throws Exception {
-
         store(UPDATE_RESOURCES[1]);
         utx.begin();
         String[] instancesSOPUID = { "1.1.1.1" };
@@ -287,7 +314,7 @@ public class QCIT {
         assertTrue(issuer.getLocalNamespaceEntityID().equalsIgnoreCase(
                 issuerOfAccessionNumberItem
                         .getString(Tag.LocalNamespaceEntityID)));
-
+        PerformedChangeRequest.checkChangeRequest(-1, Arrays.asList(instancesSOPUID), null, NONE_IOCM_DESTINATIONS);
     }
 
     @Test
@@ -328,6 +355,7 @@ public class QCIT {
                 .equalsIgnoreCase(attrs.getString(Tag.StudyDescription)));
         assertTrue(prevHistoryNode.getObjectUID().equalsIgnoreCase(
                 nextHistoryNode.getObjectUID()));
+        PerformedChangeRequest.checkChangeRequest(-1, Arrays.asList(instancesSOPUID), null, NONE_IOCM_DESTINATIONS);
     }
 
     @Test
@@ -354,6 +382,7 @@ public class QCIT {
         assertTrue(series.getInstitutionCode() != null);
         assertTrue(!series.getAttributes()
                 .getSequence(Tag.RequestAttributesSequence).isEmpty());
+        PerformedChangeRequest.checkChangeRequest(-1, Arrays.asList(instanceSOPUID), null, NONE_IOCM_DESTINATIONS);
     }
 
     @Test
@@ -383,6 +412,7 @@ public class QCIT {
         assertTrue(!instanceAttributes.getSequence(
                 Tag.VerifyingObserverSequence).isEmpty());
 
+        PerformedChangeRequest.checkChangeRequest(-1, Arrays.asList(instanceSOPUID), null, NONE_IOCM_DESTINATIONS);
     }
 
     /*
@@ -393,7 +423,6 @@ public class QCIT {
     public void testFmergeStudiesUpdateAccessionNumberUpdateBodyPartExamined()
             throws Exception {
         utx.begin();
-
         QCActionHistory prevaction = new QCActionHistory();
         prevaction.setCreatedTime(new Date());
         prevaction.setAction("SPLIT");
@@ -481,6 +510,8 @@ public class QCIT {
         // identical document sequence updated
         checkTwoDocsReferenceEachOtherInIdenticalSeq(instances.get(0)
                 .getAttributes(), thirdParty.get(0).getAttributes());
+
+        PerformedChangeRequest.checkChangeRequests(-1, event.getTarget(), event.getRejectionNotes(), IOCM_DESTINATIONS);
     }
 
     @Test
@@ -595,6 +626,8 @@ public class QCIT {
         // identical document sequence updated
         checkTwoDocsReferenceEachOtherInIdenticalSeq(instances.get(2)
                 .getAttributes(), thirdParty.get(0).getAttributes());
+
+        PerformedChangeRequest.checkChangeRequest(-1, event.getTarget(), getRejectionNote(event), IOCM_DESTINATIONS);
     }
 
     @Test
@@ -709,6 +742,7 @@ public class QCIT {
         allReferencedInIdenticalDocumentSequence(matches.get(0),
                 instances.get(1), thirdParty.get(0));
 
+        PerformedChangeRequest.checkChangeRequest(-1, event.getTarget(), getRejectionNote(event), IOCM_DESTINATIONS);
     }
 
     @Test
@@ -821,6 +855,7 @@ public class QCIT {
         // identical document sequence updated
         checkTwoDocsReferenceEachOtherInIdenticalSeq(instances.get(2)
                 .getAttributes(), thirdParty.get(0).getAttributes());
+        PerformedChangeRequest.checkChangeRequest(-1, event.getTarget(), getRejectionNote(event), IOCM_DESTINATIONS);
     }
 
     @Test
@@ -891,6 +926,7 @@ public class QCIT {
         assertTrue(newIMG1.getOldUID().equalsIgnoreCase("IMG1"));
         assertTrue(newIMG2.getOldUID().equalsIgnoreCase("IMG2"));
 
+        PerformedChangeRequest.checkChangeRequest(-1, event.getTarget(), getRejectionNote(event), IOCM_DESTINATIONS);
     }
 
     @Test
@@ -1011,6 +1047,7 @@ public class QCIT {
         // test getQCed for STUDY1 (IMG2 was not QCed)
         assertTrue(qcRetrieveManager.requiresReferenceUpdate("STUDY1", null));
 
+        PerformedChangeRequest.checkChangeRequest(-1, event.getTarget(), getRejectionNote(event), IOCM_DESTINATIONS);
     }
 
     private boolean allReferencedInIdenticalDocumentSequence(Instance instance,
@@ -1149,5 +1186,10 @@ public class QCIT {
     private Attributes load(String name) throws Exception {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         return SAXReader.parse(cl.getResource(name).toString());
+    }
+    
+    private Instance getRejectionNote(QCEvent event) {
+        Collection<Instance> rejNotes = event.getRejectionNotes();
+        return (rejNotes == null || rejNotes.isEmpty()) ? null : rejNotes.iterator().next();
     }
 }

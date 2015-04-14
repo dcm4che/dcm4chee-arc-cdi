@@ -115,6 +115,27 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 
     }
     
+    public void scheduleUpdateOnlyChangeRequest(Collection<String> updatedInstanceUIDs) {
+        if (updatedInstanceUIDs == null || updatedInstanceUIDs.isEmpty()) {
+            LOG.info("No updated instance UIDs given! Skipped!");
+            return;
+        }
+        IOCMConfig cfg = getIOCMConfig();
+        if (cfg == null) {
+            LOG.info("IOCMConfig not configured! Skipped!");
+            return;
+        }
+        String[] noneIOCM = cfg.getNoneIocmDestinations();
+        LOG.debug("NoneIocmDestinations from IOCMConfig:{}", Arrays.toString(noneIOCM));
+        if (noneIOCM != null && noneIOCM.length > 0) {
+            List<ArchiveInstanceLocator> locators = locate(updatedInstanceUIDs.toArray(new String[updatedInstanceUIDs.size()]));
+            for (int i = 0 ; i < noneIOCM.length ; i++) {
+                storescuService.scheduleStoreSCU(cfg.getCallingAET(), noneIOCM[i], 
+                    locators, 5, cfg.getIocmMaxRetries(), cfg.getIocmRetryInterval());
+            }
+        }
+    }
+    
     private IOCMConfig getIOCMConfig() {
         if (archDeviceExt == null) {
             archDeviceExt = device.getDeviceExtension(ArchiveDeviceExtension.class);

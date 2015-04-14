@@ -198,6 +198,8 @@ public class QCBeanImpl  implements QCBean{
 
         Collection<String> sourceUIDs = new ArrayList<String>();
         Collection<String> targetUIDs = new ArrayList<String>();
+        QCEvent mergeEvent = new QCEvent(QCOperation.MERGE, null,
+                null, sourceUIDs, targetUIDs);
 
         try{
             
@@ -209,6 +211,7 @@ public class QCBeanImpl  implements QCBean{
                     samePatient, qcRejectionCode);
             sourceUIDs.addAll(singleMergeEvent.getSource());
             targetUIDs.addAll(singleMergeEvent.getTarget());
+            mergeEvent.addRejectionNote(singleMergeEvent.getRejectionNotes().iterator().next());
         }
         
         }
@@ -216,8 +219,6 @@ public class QCBeanImpl  implements QCBean{
             LOG.error("{}: QC info[Merge] - Failure, reason {}",e);
             throw new EJBException();
         }
-        QCEvent mergeEvent = new QCEvent(QCOperation.MERGE, null,
-                null, sourceUIDs, targetUIDs);
         return mergeEvent;
     }
 
@@ -292,8 +293,8 @@ public class QCBeanImpl  implements QCBean{
         }
         recordHistoryEntry(instancesHistory);
         Instance rejNote = createAndStoreRejectionNote(new Code(qcRejectionCode), rejectedInstances);
-        QCEvent mergeEvent = new QCEvent(
-                QCOperation.MERGE, null,null,sourceUIDs,targetUIDs);
+        QCEvent mergeEvent = new QCEvent(QCOperation.MERGE, null,null,sourceUIDs,targetUIDs);
+        mergeEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(targetUIDs, rejNote);
         return mergeEvent;
     }
@@ -376,8 +377,8 @@ public class QCBeanImpl  implements QCBean{
 
         recordHistoryEntry(instancesHistory);
         Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, toMove);
-        QCEvent splitEvent = new QCEvent(
-                QCOperation.SPLIT,null,null,sourceUIDs,targetUIDs);
+        QCEvent splitEvent = new QCEvent(QCOperation.SPLIT,null,null,sourceUIDs,targetUIDs);
+        splitEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(targetUIDs, rejNote);
         return splitEvent;
     }
@@ -493,8 +494,8 @@ public class QCBeanImpl  implements QCBean{
         movedSourceUIDs.addAll(clonedSourceUIDs);
         movedTargetUIDs.addAll(clonedTargetUIDs);
         recordHistoryEntry(instancesHistory);
-        QCEvent segmentEvent = new QCEvent(
-                QCOperation.SEGMENT,null,null,movedSourceUIDs,movedTargetUIDs);
+        QCEvent segmentEvent = new QCEvent(QCOperation.SEGMENT,null,null,movedSourceUIDs,movedTargetUIDs);
+        segmentEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(movedTargetUIDs, rejNote);
         return segmentEvent;
     }
@@ -522,6 +523,7 @@ public class QCBeanImpl  implements QCBean{
         Collection<String> iuids = Arrays.asList(sopInstanceUIDs);
         Instance rejNote =createAndStoreRejectionNote(qcRejectionCode, src);
         QCEvent rejectEvent = new QCEvent(QCOperation.REJECT, null, null, iuids, null);
+        rejectEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(null, rejNote);
         return rejectEvent;
     }
@@ -539,8 +541,7 @@ public class QCBeanImpl  implements QCBean{
             sopInstanceUIDsFiltered.add(inst.getSopInstanceUID());
         }
         
-        QCEvent restoreEvent = new QCEvent(
-                QCOperation.RESTORE, null,null, sopInstanceUIDsFiltered, null);
+        QCEvent restoreEvent = new QCEvent(QCOperation.RESTORE, null,null, sopInstanceUIDsFiltered, null);
         return restoreEvent;
     }
 
@@ -575,6 +576,7 @@ public class QCBeanImpl  implements QCBean{
         Attributes unmodified;
         PatientAttrsPKTuple unmodifiedAndPK;
         String patientPK=null;
+        String queryString = null, queryParam = null;
         switch(scope) {
         case PATIENT:
             unmodifiedAndPK=updatePatient(arcDevExt, attrs);
@@ -582,16 +584,19 @@ public class QCBeanImpl  implements QCBean{
             patientPK=Long.toString(unmodifiedAndPK.getPK());
             break;
         case STUDY: 
-            unmodified=updateStudy(arcDevExt,
-                    attrs.getString(Tag.StudyInstanceUID), attrs);
+            queryString = "SELECT i.sopInstanceUID from Instance i WHERE i.series.study.studyInstanceUID = ?1";
+            queryParam = attrs.getString(Tag.StudyInstanceUID);
+            unmodified=updateStudy(arcDevExt, queryParam, attrs);
             break;
         case SERIES: 
-            unmodified=updateSeries(arcDevExt,
-                    attrs.getString(Tag.SeriesInstanceUID), attrs);
+            queryString = "SELECT i.sopInstanceUID from Instance i WHERE i.series.seriesInstanceUID = ?1";
+            queryParam = attrs.getString(Tag.SeriesInstanceUID);
+            unmodified=updateSeries(arcDevExt, queryParam, attrs);
             break;
         case INSTANCE: 
-            unmodified=updateInstance(arcDevExt,
-                    attrs.getString(Tag.SOPInstanceUID), attrs);
+            queryString = "SELECT i.sopInstanceUID from Instance i WHERE i.sopInstanceUID = ?1";
+            queryParam = attrs.getString(Tag.SOPInstanceUID);
+            unmodified=updateInstance(arcDevExt, queryParam, attrs);
             break;
         default : 
             LOG.error("{} : QC info[Update] Failure - invalid update scope",qcSource);
@@ -601,6 +606,14 @@ public class QCBeanImpl  implements QCBean{
         addUpdateHistoryEntry(updateAction, scope, unmodified,scope.compareTo(QCUpdateScope.PATIENT)==0?patientPK:null);
         QCEvent updateEvent = new QCEvent(QCOperation.UPDATE,scope.toString(),
                 attrs, null, null);
+        if (queryString != null) {
+            Query query = em.createQuery(queryString);
+            query.setParameter(1, queryParam);
+            List<String> iuids = query.getResultList();
+            if (iuids.size() > 0) {
+                changeRequester.scheduleUpdateOnlyChangeRequest(iuids.subList(0, 1));
+            }
+        }
         return updateEvent;
     }
 
@@ -662,8 +675,8 @@ public class QCBeanImpl  implements QCBean{
         }
         LOG.info("{}:  QC info[Delete] info - Removed study entity {}",qcSource , studyInstanceUID);
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, rejectedInstances);
-        QCEvent deleteEvent = new QCEvent(
-                QCOperation.DELETE, null, null, sopInstanceUIDs, null);
+        QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, sopInstanceUIDs, null);
+        deleteEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(null, rejNote);
         return deleteEvent;
     }
@@ -689,8 +702,8 @@ public class QCBeanImpl  implements QCBean{
         study.clearQueryAttributes();
         LOG.info("{}:  QC info[Delete] info - Removed series entity {}",qcSource, seriesInstanceUID);
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, insts);
-        QCEvent deleteEvent = new QCEvent(
-                QCOperation.DELETE, null, null, sopInstanceUIDs,null);
+        QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, sopInstanceUIDs, null);
+        deleteEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(null, rejNote);
         return deleteEvent;
     }
@@ -716,8 +729,8 @@ public class QCBeanImpl  implements QCBean{
         study.clearQueryAttributes();
         Collection<String> sopInstanceUIDs = Arrays.asList(new String [] {sopInstanceUID});
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, tmpList);
-        QCEvent deleteEvent = new QCEvent(
-                QCOperation.DELETE, null, null, sopInstanceUIDs,null);
+        QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, sopInstanceUIDs, null);
+        deleteEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(null, rejNote);
         return deleteEvent;
     }
@@ -854,7 +867,7 @@ public class QCBeanImpl  implements QCBean{
      * @see org.dcm4chee.archive.qc.QCBean#reject(java.util.Collection, org.dcm4che3.data.Code)
      */
     
-    private QCEvent reject(Collection<Instance> instances, org.dcm4che3.data.Code qcRejectionCode) {
+    private void reject(Collection<Instance> instances, org.dcm4che3.data.Code qcRejectionCode) {
         //QCActionHistory rejectAction = generateQCAction(QCOperation.REJECT);
         ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
         try {
@@ -868,9 +881,6 @@ public class QCBeanImpl  implements QCBean{
             LOG.error("{} : QC info[reject] Failure - Reject Failure, reason {}", qcSource, e);
             throw new EJBException();
         }
-        QCEvent rejectEvent = new QCEvent(
-                QCOperation.REJECT, null, null, sopInstanceUIDs,null);
-        return rejectEvent;
     }
 
     private void rejectAndScheduleForDeletion(Collection<Instance> insts) {

@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,18 +36,54 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.iocm.client;
+package org.dcm4chee.archive.qc.test;
 
 import java.util.Collection;
 
+import javax.decorator.Decorator;
+import javax.decorator.Delegate;
+import javax.inject.Inject;
+
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Franz Willer <franz.willer@gmail.com>
- *
+ * 
  */
-public interface ChangeRequesterService {
+@Decorator
+public class ChangeRequesterMockDecorator implements ChangeRequesterService {
 
-    public void scheduleChangeRequest(Collection<String> updatedInstanceUIDs, Instance rejNote);
-    public void scheduleUpdateOnlyChangeRequest(Collection<String> updatedInstanceUIDs);
+    private static Logger LOG = LoggerFactory.getLogger(ChangeRequesterMockDecorator.class);
+
+    private int count = 0;
+    
+    @Inject
+    @Delegate
+    ChangeRequesterService service;
+  
+    @Inject
+    private Device device;
+
+    @Override
+    public void scheduleChangeRequest(Collection<String> updatedInstanceUIDs,
+            Instance rejNote) {
+        LOG.info("############## scheduleChangeRequest called!count:{}",++count);
+        IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
+        String[] aets = cfg != null ? cfg.getIocmDestinations() : null;
+        PerformedChangeRequest.addChangeRequest(updatedInstanceUIDs, rejNote, aets);
+    }
+    
+    @Override
+    public void scheduleUpdateOnlyChangeRequest(Collection<String> updatedInstanceUIDs) {
+        LOG.info("############## scheduleUpdateOnlyChangeRequest called!count:{}",++count);
+        IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
+        String[] aets = cfg != null ? cfg.getNoneIocmDestinations() : null;
+        PerformedChangeRequest.addChangeRequest(updatedInstanceUIDs, null, aets);
+    }
 }

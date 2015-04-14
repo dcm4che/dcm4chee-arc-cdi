@@ -37,11 +37,13 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.qc;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4chee.archive.entity.Instance;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -60,7 +62,11 @@ public class QCEvent {
 
     private String updateScope;
     private Attributes updateAttributes;
-    public QCEvent(QCOperation operation, String updateScope, Attributes updateAttributes, Collection<String> sourceUIDs, Collection<String> targetUIDs)
+    
+    private Collection<Instance> rejNotes;
+    
+    public QCEvent(QCOperation operation, String updateScope, Attributes updateAttributes, 
+            Collection<String> sourceUIDs, Collection<String> targetUIDs)
     {
         this.operation = operation;
         this.sourceUIDs = sourceUIDs;
@@ -116,6 +122,15 @@ public class QCEvent {
         this.updateAttributes = updateAttributes;
     }
 
+    public void addRejectionNote(Instance rejNote) {
+        if (rejNotes == null)
+            rejNotes = new ArrayList<Instance>();
+        rejNotes.add(rejNote);
+    }
+    public Collection<Instance> getRejectionNotes() {
+        return rejNotes;
+    }
+    
     @Override
     public String toString() {
         String str = "QCEvent[ operation: "+ (operation!=null?operation.name():"") 
