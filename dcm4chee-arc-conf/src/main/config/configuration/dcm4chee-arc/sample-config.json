@@ -855,6 +855,16 @@
                 },
                 "dcmAttributeCoercions" : {
                   "dcmAttributeCoercionList" : [ {
+                    "cn" : "Ensure Retrieve AETitle",
+                    "condition" : {
+                      "dcmAETitle" : [ "WITHOUT_PN" ],
+                      "dcmDIMSE" : "C_FIND_RSP",
+                      "dcmDeviceName" : [ ],
+                      "dcmSOPClass" : [ ],
+                      "dicomTransferRole" : "SCP"
+                    },
+                    "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/ensure-retrieve-ae-title.xsl"
+                  }, {
                     "cn" : "Remove person names",
                     "condition" : {
                       "dcmAETitle" : [ "WITHOUT_PN" ],

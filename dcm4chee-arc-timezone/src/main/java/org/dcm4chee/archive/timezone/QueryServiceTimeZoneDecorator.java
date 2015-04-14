@@ -111,7 +111,7 @@ public abstract class QueryServiceTimeZoneDecorator implements QueryService {
     @Override
     public void coerceResponseAttributes(QueryContext context, Attributes match)
             throws DicomServiceException {
-        queryService.coerceRequestAttributes(context);
+        queryService.coerceResponseAttributes(context, match);
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
         if (archiveTimeZone == null)    // no Timezone support configured
