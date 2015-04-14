@@ -443,6 +443,8 @@ public class DeviceMocker {
             "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl";
     private static final String ATTRIBUTE_COERCION_NULLIFY_PN_XSL =
             "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl";
+    private static final String  ATTRIBUTE_COERCION_ENMSURE_AET_XSL =
+            "${jboss.server.config.url}/dcm4chee-arc/ensure-retrieve-ae-title.xsl";
     private static final String WADO_SR_TEMPLATE_URI =
             "${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl";
     private static final String DCM4CHEE_ARC_KEY_JKS =
@@ -875,6 +877,14 @@ public class DeviceMocker {
                 new String[]{"WITHOUT_PN"},
                 null,                           // Source Device Names
                 ATTRIBUTE_COERCION_NULLIFY_PN_XSL));
+        aeExt.addAttributeCoercion(new AttributeCoercion(
+                "Ensure Retrieve AETitle",
+                null,
+                Dimse.C_FIND_RSP,
+                SCP,
+                new String[]{"WITHOUT_PN"},
+                null,                           // Source Device Names
+                ATTRIBUTE_COERCION_ENMSURE_AET_XSL));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG 8-bit Lossy",
                 new String[]{

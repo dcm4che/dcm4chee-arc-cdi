@@ -42,6 +42,7 @@ import java.util.Collection;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.stow.client.StowContext;
+import org.dcm4chee.storage.conf.Availability;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -56,4 +57,12 @@ public interface StoreAndRememberService {
            , Collection<ArchiveInstanceLocator> insts);
 
     String generateTransactionID(boolean dimse);
+
+    void addExternalLocation(String iuid, String retrieveAET
+            , Availability availability);
+
+    void removeExternalLocations(String iuid, String retrieveAET);
+
+    void removeExternalLocations(String iuid, Availability availability);
+
 }

@@ -203,7 +203,7 @@ public class DefaultQueryService implements QueryService {
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     context.getServiceSOPClassUID(),
                     Dimse.C_FIND_RSP,
-                    TransferCapability.Role.SCU,
+                    TransferCapability.Role.SCP,
                     context.getRemoteAET());
             if (tpl != null) {
                 attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false, new SetupTransformer() {

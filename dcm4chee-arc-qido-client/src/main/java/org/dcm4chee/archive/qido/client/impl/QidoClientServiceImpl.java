@@ -38,12 +38,14 @@
 package org.dcm4chee.archive.qido.client.impl;
 
 import java.util.Collection;
+import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import org.dcm4chee.archive.qido.client.QidoClient;
 import org.dcm4chee.archive.qido.client.QidoClientService;
 import org.dcm4chee.archive.qido.client.QidoContext;
+import org.dcm4chee.storage.conf.Availability;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -58,7 +60,7 @@ public class QidoClientServiceImpl implements QidoClientService{
     }
 
     @Override
-    public Collection<String> verifyStorage(QidoClient client
+    public Map<String, Availability> verifyStorage(QidoClient client
             , Collection<String> sopInstanceUIDs)
     {
         return client.verifyStorage(sopInstanceUIDs);

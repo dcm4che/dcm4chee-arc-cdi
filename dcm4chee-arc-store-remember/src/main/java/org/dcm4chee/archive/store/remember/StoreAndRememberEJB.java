@@ -37,15 +37,20 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.store.remember;
 
+import java.util.ArrayList;
+
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
+import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.StoreRememberDimse;
 import org.dcm4chee.archive.entity.StoreRememberStatus;
 import org.dcm4chee.archive.entity.StoreRememberWeb;
+import org.dcm4chee.storage.conf.Availability;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -131,4 +136,42 @@ public class StoreAndRememberEJB {
         }
     }
 
+    /*
+     * External Location Service methods
+     */
+
+    public void addExternalLocation(String iuid, String retrieveAET,
+            Availability availability) {
+        ExternalRetrieveLocation location = new ExternalRetrieveLocation(retrieveAET, availability);
+        
+        Query query = em.createQuery("select i from Instance i where"
+                + " i.sopInstanceUID = ?1");
+        query.setParameter(1, iuid);
+        Instance instance = (Instance) query.getSingleResult();
+        location.setInstance(instance);
+        em.persist(location);
+    }
+
+    public void removeExternalLocation(String iuid, String retrieveAET) {
+        
+        Query query = em.createNamedQuery(ExternalRetrieveLocation
+                .FIND_EXT_LOCATIONS_BY_IUID_RETRIEVE_AET);
+        query.setParameter(1, iuid); //sop UID
+        query.setParameter(2, retrieveAET); //retrieve AETitle
+        ArrayList<ExternalRetrieveLocation> list = 
+                (ArrayList<ExternalRetrieveLocation>) query.getResultList();
+        for(ExternalRetrieveLocation extLocation : list)
+            em.remove(extLocation);
+    }
+
+    public void removeExternalLocation(String iuid, Availability availability) {
+        Query query = em.createNamedQuery(ExternalRetrieveLocation
+                .FIND_EXT_LOCATIONS_BY_IUID_AVAILABILITY);
+        query.setParameter(1, iuid); //sop UID
+        query.setParameter(2, availability); //availability
+        ArrayList<ExternalRetrieveLocation> list = 
+                (ArrayList<ExternalRetrieveLocation>) query.getResultList();
+        for(ExternalRetrieveLocation extLocation : list)
+            em.remove(extLocation);
+    }
 }

@@ -47,6 +47,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import org.dcm4chee.storage.conf.Availability;
@@ -56,12 +58,25 @@ import org.dcm4chee.storage.conf.Availability;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
+@NamedQueries({
+    @NamedQuery(
+            name=ExternalRetrieveLocation.FIND_EXT_LOCATIONS_BY_IUID_RETRIEVE_AET,
+            query = "Select e from ExternalRetrieveLocation e "
+                    + " where e.instance.sopInstanceUID = ?1 and e.retrieveAETitle = ?2"), 
+    @NamedQuery(
+            name=ExternalRetrieveLocation.FIND_EXT_LOCATIONS_BY_IUID_AVAILABILITY,
+            query = "Select e from ExternalRetrieveLocation e"
+                    + " where e.instance.sopInstanceUID = ?1 and e.availability = ?2")
+})
 @Entity
 @Table(name="ext_retrieve_location")
 public class ExternalRetrieveLocation implements Serializable {
 
     private static final long serialVersionUID = -8051311963967965531L;
-
+    public static final String FIND_EXT_LOCATIONS_BY_IUID_RETRIEVE_AET
+     = "ExternalRetrieveLocation.findExtLocationsByIUIDRetrieveAET";
+    public static final String FIND_EXT_LOCATIONS_BY_IUID_AVAILABILITY
+     = "ExternalRetrieveLocation.findExtLocationsByIUIDAvailability";
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -71,12 +86,11 @@ public class ExternalRetrieveLocation implements Serializable {
     public ExternalRetrieveLocation() {
     }
 
-    public ExternalRetrieveLocation(String retrieveAETitle,
-            String retrieveURL, String retrieveURI) {
+    public ExternalRetrieveLocation(String retrieveAETitle
+            , Availability availability) {
         super();
         this.retrieveAETitle = retrieveAETitle;
-        this.retrieveURL = retrieveURL;
-        this.retrieveURI = retrieveURI;
+        this.availability = availability;
     }
 
     @ManyToOne(optional = false)
@@ -85,12 +99,6 @@ public class ExternalRetrieveLocation implements Serializable {
 
     @Column(name="retrieve_ae_title")
     private String retrieveAETitle;
-
-    @Column(name="retrieve_url")
-    private String retrieveURL;
-
-    @Column(name="retrieve_uri")
-    private String retrieveURI;
 
     @Basic(optional = false)
     @Column(name = "availability")
@@ -108,14 +116,6 @@ public class ExternalRetrieveLocation implements Serializable {
         return retrieveAETitle;
     }
 
-    public String getRetrieveURL() {
-        return retrieveURL;
-    }
-
-    public String getRetrieveURI() {
-        return retrieveURI;
-    }
-
     public void setPk(long pk) {
         this.pk = pk;
     }
@@ -128,12 +128,12 @@ public class ExternalRetrieveLocation implements Serializable {
         this.retrieveAETitle = retrieveAETitle;
     }
 
-    public void setRetrieveURL(String retrieveURL) {
-        this.retrieveURL = retrieveURL;
+    public Availability getAvailability() {
+        return availability;
     }
 
-    public void setRetrieveURI(String retrieveURI) {
-        this.retrieveURI = retrieveURI;
+    public void setAvailability(Availability availability) {
+        this.availability = availability;
     }
     
 }
