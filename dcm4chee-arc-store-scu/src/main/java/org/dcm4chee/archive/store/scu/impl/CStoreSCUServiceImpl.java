@@ -86,6 +86,7 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUResponse;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
@@ -114,7 +115,7 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     private IApplicationEntityCache aeCache;
 
     @Inject
-    private Event<BasicCStoreSCUResp> storeSCUEvent;
+    private Event<CStoreSCUResponse> storeSCUEvent;
 
     @Inject
     private RetrieveService storageRetrieveService;
@@ -125,7 +126,7 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
 
     @Override
     public void cstore(List<ArchiveInstanceLocator> insts, String localAET,
-            String remoteAET, int priority, int retries)
+            String remoteAET, String messageID, int priority)
             throws DicomServiceException {
 
         try {
@@ -147,7 +148,8 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
             BasicCStoreSCUResp storeRsp = cstorescu.cstore(insts, storeas,
                     priority);
 
-            storeSCUEvent.fire(storeRsp);
+            storeSCUEvent.fire(new CStoreSCUResponse(storeRsp, insts,
+                    messageID, localAET, remoteAET));
 
         } catch (ConfigurationException e) {
             throw new DicomServiceException(Status.MoveDestinationUnknown,
@@ -178,8 +180,8 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
 
     @Override
     public void scheduleStoreSCU(String localAET, String remoteAET,
-            List<ArchiveInstanceLocator> insts, int retries, int priority,
-            long delay) {
+            List<ArchiveInstanceLocator> insts, String messageID, int retries,
+            int priority, long delay) {
         try {
             Connection conn = connFactory.createConnection();
             try {
@@ -189,11 +191,11 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                         .createProducer(storeSCUQueue);
                 ObjectMessage msg = session
                         .createObjectMessage((Serializable) insts);
-                msg.setBooleanProperty("Stow", false);
                 msg.setStringProperty("LocalAET", localAET);
                 msg.setStringProperty("RemoteAET", remoteAET);
                 msg.setIntProperty("Priority", priority);
                 msg.setIntProperty("Retries", retries);
+                msg.setStringProperty("MessageID", messageID);
                 if (delay > 0)
                     msg.setLongProperty("_HQ_SCHED_DELIVERY",
                             System.currentTimeMillis() + delay);

@@ -35,53 +35,67 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.scu.impl;
+
+package org.dcm4chee.archive.store.scu;
 
 import java.util.List;
 
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
-
+import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- * @author Hesham Elbadawi <bsdreko@gmail.com>
+ *
  */
-@MessageDriven(activationConfig = {
-        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/storescu"),
-        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
-public class CStoreSCUMDB implements MessageListener {
+public class CStoreSCUResponse extends BasicCStoreSCUResp {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(CStoreSCUMDB.class);
+    private String messageID;
+    private List<ArchiveInstanceLocator> insts;
+    private String localAET, remoteAET;
 
-    @Inject
-    private CStoreSCUService cstorescu;
-
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            @SuppressWarnings("unchecked")
-            List<ArchiveInstanceLocator> insts = 
-                    (List<ArchiveInstanceLocator>) ((ObjectMessage) msg)
-                    .getObject();
-                cstorescu.cstore(insts, msg.getStringProperty("LocalAET"),
-                    msg.getStringProperty("RemoteAET"),
-                    msg.getStringProperty("MessageID"),
-                    msg.getIntProperty("Priority"));
-
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
-        }
+    public CStoreSCUResponse(BasicCStoreSCUResp basic,
+            List<ArchiveInstanceLocator> insts, String messageID,
+            String localAET, String remoteAET) {
+        this.setCompleted(basic.getCompleted());
+        this.setFailed(basic.getFailed());
+        this.setFailedUIDs(basic.getFailedUIDs());
+        this.setStatus(basic.getStatus());
+        this.setWarning(basic.getWarning());
+        this.setMessageID(messageID);
+        this.setInstances(insts);
+        this.setLocalAET(localAET);
+        this.setRemoteAET(remoteAET);
     }
 
+    public String getMessageID() {
+        return messageID;
+    }
+
+    public void setMessageID(String messageID) {
+        this.messageID = messageID;
+    }
+
+    public List<ArchiveInstanceLocator> getInstances() {
+        return insts;
+    }
+
+    public void setInstances(List<ArchiveInstanceLocator> insts) {
+        this.insts = insts;
+    }
+
+    public String getLocalAET() {
+        return localAET;
+    }
+
+    public void setLocalAET(String localAET) {
+        this.localAET = localAET;
+    }
+
+    public String getRemoteAET() {
+        return remoteAET;
+    }
+
+    public void setRemoteAET(String remoteAET) {
+        this.remoteAET = remoteAET;
+    }
 }

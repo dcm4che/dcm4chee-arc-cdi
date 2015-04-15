@@ -38,9 +38,10 @@
 package org.dcm4chee.archive.store.remember.impl;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.UUID;
 
@@ -50,17 +51,22 @@ import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.conf.core.api.ConfigurationException;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.entity.StoreRememberDimse;
 import org.dcm4chee.archive.entity.StoreRememberStatus;
 import org.dcm4chee.archive.entity.StoreRememberWeb;
 import org.dcm4chee.archive.qido.client.QidoClientService;
 import org.dcm4chee.archive.qido.client.QidoContext;
+import org.dcm4chee.archive.stgcmt.scp.CommitEvent;
+import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
 import org.dcm4chee.archive.store.remember.StoreAndRememberEJB;
 import org.dcm4chee.archive.store.remember.StoreAndRememberService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUResponse;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.dcm4chee.archive.stow.client.StowClientService;
 import org.dcm4chee.archive.stow.client.StowContext;
@@ -74,18 +80,21 @@ import org.slf4j.LoggerFactory;
  *
  */
 @ApplicationScoped
-public class StoreAndRememberServiceImpl implements StoreAndRememberService{
+public class StoreAndRememberServiceImpl implements StoreAndRememberService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(
-            StoreAndRememberServiceImpl.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(StoreAndRememberServiceImpl.class);
     @Inject
     private QidoClientService qidoService;
 
     @Inject
     private StowClientService stowService;
 
-    @Inject 
+    @Inject
     private CStoreSCUService storeSCUService;
+
+    @Inject
+    private StgCmtService stgCmtService;
 
     @Inject
     private StoreAndRememberEJB ejb;
@@ -94,9 +103,8 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService{
     private IApplicationEntityCache aeCache;
 
     @Override
-    public void store(StowContext context,
-            Collection<ArchiveInstanceLocator> insts) {
-        //create entity and set to pending
+    public void store(StowContext context, List<ArchiveInstanceLocator> insts) {
+        // create entity and set to pending
         String transactionID = generateTransactionID(false);
         ejb.addWebEntry(transactionID
                 , context.getQidoRemoteBaseURL()
@@ -108,11 +116,11 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService{
 
     public void verifyStorage(@Observes StowResponse storeResponse) {
 
-        if(LOG.isDebugEnabled()) {
+        if (LOG.isDebugEnabled()) {
             LOG.debug("Stow Successful for the following instances:");
-            for(String sopUID : storeResponse.getSuccessfulSopInstances())
+            for (String sopUID : storeResponse.getSuccessfulSopInstances())
                 LOG.debug(sopUID);
-            if(storeResponse.getFailedSopInstances().isEmpty())
+            if (storeResponse.getFailedSopInstances().isEmpty())
                 LOG.debug("No Instances Failed for Stow request to, {}");
         }
         String transactionID = storeResponse.getTransactionID();
@@ -122,21 +130,20 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService{
         QidoContext ctx = null;
         Availability defaultAvailability = null;
         try {
-            ApplicationEntity archiveAE  = aeCache.findApplicationEntity(
-                    webEntry.getLocalAET());
-            ArchiveAEExtension archAEExt = archiveAE.getAEExtension(
-                    ArchiveAEExtension.class);
+            ApplicationEntity archiveAE = aeCache
+                    .findApplicationEntity(webEntry.getLocalAET());
+            ArchiveAEExtension archAEExt = archiveAE
+                    .getAEExtension(ArchiveAEExtension.class);
             defaultAvailability = archAEExt
                     .getDefaultExternalRetrieveAETAvailability();
-            ctx = new QidoContext(archiveAE, aeCache.findApplicationEntity(
-                            webEntry.getRemoteAET()));
+            ctx = new QidoContext(archiveAE,
+                    aeCache.findApplicationEntity(webEntry.getRemoteAET()));
         } catch (ConfigurationException e) {
             LOG.error("Unable to find Application"
                     + " Entity for {} or {} verification failure for "
-                    + "store and remember trabnsaction {}"
-                    , webEntry.getLocalAET()
-                    , webEntry.getRemoteAET()
-                    , storeResponse.getTransactionID());
+                    + "store and remember trabnsaction {}",
+                    webEntry.getLocalAET(), webEntry.getRemoteAET(),
+                    storeResponse.getTransactionID());
             ejb.removeWebEntry(transactionID);
         }
         HashMap<String, Availability> verifiedSopInstances = new HashMap<String
@@ -146,26 +153,26 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService{
         verifiedSopInstances = (HashMap<String, Availability>) qidoService.verifyStorage(
                 qidoService.createQidoClient(ctx), toVerify);
         String retrieveAET = webEntry.getRemoteAET();
-        for(Iterator<Entry<String, Availability>> iter = verifiedSopInstances
+        for (Iterator<Entry<String, Availability>> iter = verifiedSopInstances
                 .entrySet().iterator(); iter.hasNext();) {
             Entry<String, Availability> instance = iter.next();
             Availability externalAvailability = instance.getValue();
             String sopUID = instance.getKey();
-            if(toVerify.contains(sopUID)) {
+            if (toVerify.contains(sopUID)) {
                 addExternalLocation(
                         sopUID,
                         retrieveAET,
-                        defaultAvailability == null 
-                        ? externalAvailability : (externalAvailability
-                                .compareTo(defaultAvailability) <= 0
-                        ? externalAvailability : defaultAvailability));
+                        defaultAvailability == null ? externalAvailability
+                                : (externalAvailability
+                                        .compareTo(defaultAvailability) <= 0 ? externalAvailability
+                                        : defaultAvailability));
                 iter.remove();
             }
         }
-        
-        if(verifiedSopInstances.isEmpty())
+
+        if (verifiedSopInstances.isEmpty())
             ejb.updateStatus(transactionID, StoreRememberStatus.VERIFIED);
-        else if(verifiedSopInstances.size() < toVerify.size())
+        else if (verifiedSopInstances.size() < toVerify.size())
             ejb.updateStatus(transactionID, StoreRememberStatus.INCOMPLETE);
         else
             ejb.updateStatus(transactionID, StoreRememberStatus.FAILED);
@@ -173,25 +180,96 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService{
 
     @Override
     public void store(CStoreSCUContext context,
-            Collection<ArchiveInstanceLocator> insts) {
-        // TODO Auto-generated method stub
-        
+            List<ArchiveInstanceLocator> insts) {
+
+        String localAET = context.getLocalAE().getAETitle();
+        String remoteAET = context.getRemoteAE().getAETitle();
+
+        String transactionID = generateTransactionID(false);
+        ejb.addDimseEntry(transactionID, remoteAET, localAET);
+
+        storeSCUService.scheduleStoreSCU(localAET, remoteAET, insts,
+                transactionID, 1, 1, 0);
     }
 
-    public void verifyStorage(@Observes BasicCStoreSCUResp storeResponse) {
-        // TODO 
-        //call storage commitment
+    public void verifyStorage(@Observes CStoreSCUResponse storeResponse) {
+
+        String transactionID = storeResponse.getMessageID();
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Observed StoreScu with ID:" + transactionID);
+        }
+
+        List<ArchiveInstanceLocator> insts = storeResponse.getInstances();
+
+        // remove failed instances
+        if (storeResponse.getFailed() > 0) {
+            for (Iterator iterator = insts.iterator(); iterator.hasNext();) {
+                ArchiveInstanceLocator inst = (ArchiveInstanceLocator) iterator
+                        .next();
+                if (Arrays.asList(storeResponse.getFailedUIDs()).contains(
+                        inst.iuid))
+                    iterator.remove();
+            }
+            ejb.updateStatus(transactionID, StoreRememberStatus.INCOMPLETE);
+        }
+
+        stgCmtService.sendNActionRequest(storeResponse.getLocalAET(),
+                storeResponse.getRemoteAET(), insts, transactionID, 1);
+    }
+    
+    public void verifyCommit(@Observes CommitEvent commitEvent) {
+        
+        String transactionUID = commitEvent.getTransactionUID();
+        Attributes eventInfo = commitEvent.getEventInfo();
+        StoreRememberDimse dimse = ejb.getDimseEntry(transactionUID);
+        
+        if (dimse == null) {
+            LOG.info("StoreAndRemember: commitment not recognized  :" + transactionUID);
+            return;
+        }
+        
+        StoreRememberStatus status = dimse.getStatus();
+        boolean statusChanged = false;
+        
+        if (eventInfo.getSequence(Tag.FailedSOPSequence) == null || 
+                eventInfo.getSequence(Tag.FailedSOPSequence).size() == 0) {
+            // no failures
+            if (status == StoreRememberStatus.PENDING)
+            {
+                status = StoreRememberStatus.VERIFIED;
+                statusChanged = true;
+            }
+        } else if (eventInfo.getSequence(Tag.ReferencedSOPSequence) == null || 
+                eventInfo.getSequence(Tag.ReferencedSOPSequence).size() == 0) {
+            //no success
+            if (status != StoreRememberStatus.FAILED)
+            {
+                status = StoreRememberStatus.FAILED;
+                statusChanged = true;
+            }
+        } else {
+            // some failures, some success
+            if (status == StoreRememberStatus.PENDING)
+            {
+                status = StoreRememberStatus.INCOMPLETE;
+                statusChanged = true;
+            }
+        }
+        
+        if (statusChanged)
+            ejb.updateStatus(transactionUID, status);
     }
 
     @Override
     public String generateTransactionID(boolean dimse) {
-        return dimse ? "dimse-" + UUID.randomUUID().toString()
-                : "web-" + UUID.randomUUID().toString();
+        return dimse ? "dimse-" + UUID.randomUUID().toString() : "web-"
+                + UUID.randomUUID().toString();
     }
-    
+
     @Override
-    public void addExternalLocation(String iuid, String retrieveAET
-            , Availability availability) {
+    public void addExternalLocation(String iuid, String retrieveAET,
+            Availability availability) {
         ejb.addExternalLocation(iuid, retrieveAET, availability);
     }
 

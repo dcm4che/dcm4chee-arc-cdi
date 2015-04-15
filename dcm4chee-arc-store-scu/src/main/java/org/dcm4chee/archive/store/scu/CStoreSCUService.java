@@ -56,12 +56,11 @@ import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 public interface CStoreSCUService {
 
     void cstore(List<ArchiveInstanceLocator> insts, String localAET,
-            String remoteAET, int priority, int retries)
-            throws DicomServiceException;
+            String remoteAET, String messageID, int priority) throws DicomServiceException;
 
     void scheduleStoreSCU(String localAET, String remoteAET,
-            List<ArchiveInstanceLocator> insts, int retries, int priority,
-            long delay);
+            List<ArchiveInstanceLocator> insts, String messageID, int retries,
+            int priority, long delay);
 
     /**
      * Coerce each Object to be sent. CStoreSCUContext is used to share state

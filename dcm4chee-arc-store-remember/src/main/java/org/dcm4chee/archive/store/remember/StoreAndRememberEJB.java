@@ -93,7 +93,7 @@ public class StoreAndRememberEJB {
     }
 
     public void addDimseEntry(String transactionID
-            , String remoteAET, String localAET, String status) {
+            , String remoteAET, String localAET) {
         StoreRememberDimse dimseEntry = new StoreRememberDimse();
         dimseEntry.setLocalAET(localAET);
         dimseEntry.setRemoteAET(remoteAET);
