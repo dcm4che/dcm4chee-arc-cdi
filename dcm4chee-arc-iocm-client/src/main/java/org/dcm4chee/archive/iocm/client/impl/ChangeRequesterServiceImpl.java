@@ -67,6 +67,8 @@ import org.slf4j.LoggerFactory;
 @ApplicationScoped
 public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 
+    private static final int DEFAULT_PRIORITY = 5;
+
     private static Logger LOG = LoggerFactory.getLogger(ChangeRequesterServiceImpl.class);
 
     @Inject
@@ -93,14 +95,14 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             List<ArchiveInstanceLocator> locators = locate(rejNote.getSopInstanceUID());
             for (int i = 0 ; i < targetAETs.length ; i++) {
                 storescuService.scheduleStoreSCU(cfg.getCallingAET(), targetAETs[i], 
-                    locators, 5, cfg.getIocmMaxRetries(), cfg.getIocmRetryInterval());
+                    locators, "msgID", cfg.getIocmMaxRetries(), 5, cfg.getIocmRetryInterval());
             }
         }
         if (updatedInstanceUIDs != null && updatedInstanceUIDs.size() > 0) {
             List<ArchiveInstanceLocator> locators = locate(updatedInstanceUIDs.toArray(new String[updatedInstanceUIDs.size()]));
             for (int i = 0 ; i < targetAETs.length ; i++) {
                 storescuService.scheduleStoreSCU(cfg.getCallingAET(), targetAETs[i], 
-                    locators, 5, cfg.getIocmMaxRetries(), cfg.getIocmRetryInterval());
+                    locators, "msgID", cfg.getIocmMaxRetries(), 5, cfg.getIocmRetryInterval());
             }
 
             String[] noneIOCM = cfg.getNoneIocmDestinations();
@@ -108,7 +110,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             if (noneIOCM != null && noneIOCM.length > 0) {
                 for (int i = 0 ; i < noneIOCM.length ; i++) {
                     storescuService.scheduleStoreSCU(cfg.getCallingAET(), noneIOCM[i], 
-                        locators, 5, cfg.getIocmMaxRetries(), cfg.getIocmRetryInterval());
+                        locators, "msgID", cfg.getIocmMaxRetries(), 5, cfg.getIocmRetryInterval());
                 }
             }
         }
@@ -131,7 +133,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             List<ArchiveInstanceLocator> locators = locate(updatedInstanceUIDs.toArray(new String[updatedInstanceUIDs.size()]));
             for (int i = 0 ; i < noneIOCM.length ; i++) {
                 storescuService.scheduleStoreSCU(cfg.getCallingAET(), noneIOCM[i], 
-                    locators, 5, cfg.getIocmMaxRetries(), cfg.getIocmRetryInterval());
+                    locators, "msgID", cfg.getIocmMaxRetries(), DEFAULT_PRIORITY, cfg.getIocmRetryInterval());
             }
         }
     }
