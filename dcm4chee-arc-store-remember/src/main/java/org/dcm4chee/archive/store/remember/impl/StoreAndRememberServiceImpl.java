@@ -52,6 +52,7 @@ import javax.inject.Inject;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -106,11 +107,9 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
     public void store(StowContext context, List<ArchiveInstanceLocator> insts) {
         // create entity and set to pending
         String transactionID = generateTransactionID(false);
-        ejb.addWebEntry(transactionID
-                , context.getQidoRemoteBaseURL()
-                , context.getRemoteAE().getAETitle()
-                , context.getLocalAE().getAETitle());
-        
+        ejb.addWebEntry(transactionID, context.getQidoRemoteBaseURL(), context
+                .getRemoteAE().getAETitle(), context.getLocalAE().getAETitle());
+
         stowService.scheduleStow(transactionID, context, insts, 0, 0, 0);
     }
 
@@ -145,13 +144,13 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
                     webEntry.getLocalAET(), webEntry.getRemoteAET(),
                     storeResponse.getTransactionID());
             ejb.removeWebEntry(transactionID);
+            return;
         }
-        HashMap<String, Availability> verifiedSopInstances = new HashMap<String
-                , Availability>();
-        //set the qido url
+        HashMap<String, Availability> verifiedSopInstances = new HashMap<String, Availability>();
+        // set the qido url
         ctx.setRemoteBaseURL(webEntry.getQidoBaseURL());
-        verifiedSopInstances = (HashMap<String, Availability>) qidoService.verifyStorage(
-                qidoService.createQidoClient(ctx), toVerify);
+        verifiedSopInstances = (HashMap<String, Availability>) qidoService
+                .verifyStorage(qidoService.createQidoClient(ctx), toVerify);
         String retrieveAET = webEntry.getRemoteAET();
         for (Iterator<Entry<String, Availability>> iter = verifiedSopInstances
                 .entrySet().iterator(); iter.hasNext();) {
@@ -217,46 +216,69 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         stgCmtService.sendNActionRequest(storeResponse.getLocalAET(),
                 storeResponse.getRemoteAET(), insts, transactionID, 1);
     }
-    
+
     public void verifyCommit(@Observes CommitEvent commitEvent) {
-        
+
         String transactionUID = commitEvent.getTransactionUID();
-        Attributes eventInfo = commitEvent.getEventInfo();
-        StoreRememberDimse dimse = ejb.getDimseEntry(transactionUID);
-        
-        if (dimse == null) {
-            LOG.info("StoreAndRemember: commitment not recognized  :" + transactionUID);
+        ApplicationEntity archiveAE = null;
+        try {
+            archiveAE = aeCache.findApplicationEntity(commitEvent
+                    .getLocalAET());
+        } catch (ConfigurationException e) {
+            LOG.error("Unable to find Application"
+                    + " Entity for {} or {} verification failure for "
+                    + "store and remember trabnsaction {}",
+                    commitEvent.getLocalAET(), commitEvent.getRemoteAET(),
+                    transactionUID);
+            ejb.removeDimseEntry(transactionUID);
             return;
         }
-        
+        ArchiveAEExtension archAEExt = archiveAE
+                .getAEExtension(ArchiveAEExtension.class);
+        Availability defaultAvailability = archAEExt
+                .getDefaultExternalRetrieveAETAvailability();
+
+        Attributes eventInfo = commitEvent.getEventInfo();
+        Sequence failSops = eventInfo.getSequence(Tag.FailedSOPSequence);
+        Sequence refSops = eventInfo.getSequence(Tag.ReferencedSOPSequence);
+        StoreRememberDimse dimse = ejb.getDimseEntry(transactionUID);
+
+        if (dimse == null) {
+            LOG.info("StoreAndRemember: commitment not recognized  :"
+                    + transactionUID);
+            return;
+        }
+
         StoreRememberStatus status = dimse.getStatus();
         boolean statusChanged = false;
-        
-        if (eventInfo.getSequence(Tag.FailedSOPSequence) == null || 
-                eventInfo.getSequence(Tag.FailedSOPSequence).size() == 0) {
+
+        if (failSops == null || failSops.size() == 0) {
             // no failures
-            if (status == StoreRememberStatus.PENDING)
-            {
+            if (status == StoreRememberStatus.PENDING) {
                 status = StoreRememberStatus.VERIFIED;
                 statusChanged = true;
             }
-        } else if (eventInfo.getSequence(Tag.ReferencedSOPSequence) == null || 
-                eventInfo.getSequence(Tag.ReferencedSOPSequence).size() == 0) {
-            //no success
-            if (status != StoreRememberStatus.FAILED)
-            {
+        } else if (refSops == null || refSops.size() == 0) {
+            // no success
+            if (status != StoreRememberStatus.FAILED) {
                 status = StoreRememberStatus.FAILED;
                 statusChanged = true;
             }
         } else {
             // some failures, some success
-            if (status == StoreRememberStatus.PENDING)
-            {
+            if (status == StoreRememberStatus.PENDING) {
                 status = StoreRememberStatus.INCOMPLETE;
                 statusChanged = true;
             }
         }
-        
+
+        if (refSops != null) {
+            for (int i = 0; i < refSops.size(); i++)
+                addExternalLocation(refSops.get(i)
+                        .getString(Tag.SOPInstanceUID),
+                        commitEvent.getRemoteAET(), defaultAvailability);
+        }
+
         if (statusChanged)
             ejb.updateStatus(transactionUID, status);
     }
