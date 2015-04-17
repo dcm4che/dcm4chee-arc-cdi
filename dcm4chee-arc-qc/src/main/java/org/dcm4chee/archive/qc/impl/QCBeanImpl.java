@@ -574,14 +574,12 @@ public class QCBeanImpl  implements QCBean{
         QCActionHistory updateAction = generateQCAction(QCOperation.UPDATE);
         LOG.info("{}:  QC info[Update] info - Performing QC update DICOM header on {} scope : ", qcSource, scope);
         Attributes unmodified;
-        PatientAttrsPKTuple unmodifiedAndPK;
-        String patientPK=null;
+        PatientAttrsPKTuple unmodifiedAndPK = null;
         String queryString = null, queryParam = null;
         switch(scope) {
         case PATIENT:
             unmodifiedAndPK=updatePatient(arcDevExt, attrs);
             unmodified = unmodifiedAndPK.getUnModifiedAttrs();
-            patientPK=Long.toString(unmodifiedAndPK.getPK());
             break;
         case STUDY: 
             queryString = "SELECT i.sopInstanceUID from Instance i WHERE i.series.study.studyInstanceUID = ?1";
@@ -603,7 +601,8 @@ public class QCBeanImpl  implements QCBean{
             throw new EJBException();
         }
         LOG.info("{} : QC info[Update] info - Update successful, adding update history entry",qcSource);
-        addUpdateHistoryEntry(updateAction, scope, unmodified,scope.compareTo(QCUpdateScope.PATIENT)==0?patientPK:null);
+        addUpdateHistoryEntry(updateAction, scope, unmodified,
+                scope == QCUpdateScope.PATIENT?Long.toString(unmodifiedAndPK.getPK()):null);
         QCEvent updateEvent = new QCEvent(QCOperation.UPDATE,scope.toString(),
                 attrs, null, null);
         if (queryString != null) {
@@ -1760,19 +1759,13 @@ public class QCBeanImpl  implements QCBean{
      */
     private Location getFirstFileRef(Collection<Location> refs, Instance inst)
             throws IllegalArgumentException{
-        Location reference = null;
         if(refs.isEmpty()){
             LOG.error("{} : QC info[getFirstFileRef] Failure - Invalid "
                     + "instance {}, must have a referenced file "
                     + "either via fileref or file alias",qcSource, inst);
             throw new IllegalArgumentException();
-        }
-        else{
-        for(Location ref : refs) {
-            reference = ref;
-            break;
-        }
-        return reference;
+        } else {
+            return refs.iterator().next();
         }
     }
 
