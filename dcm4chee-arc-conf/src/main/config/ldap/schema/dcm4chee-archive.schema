@@ -496,6 +496,36 @@ attributetype ( 1.2.40.0.13.1.15.10.3.82 NAME 'dcmDefaultExternalRetrieveAETAvai
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
 
+attributetype ( 1.2.40.0.13.1.15.10.3.83 NAME 'dcmSyncLocationStatusPollInterval'
+  DESC 'Specifies the poll interval that locations with the current status TO_ARCHIVE are checked for status change, time unit is seconds'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.10.3.84 NAME 'dcmSyncLocationStatusCheckDelay'
+  DESC 'Specifies the delay after storage locations are created before checking for status change, time unit is minutes. Default is 1440'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.10.3.85 NAME 'dcmSyncLocationStatusMaxNumberPerTask'
+  DESC 'Maximum number of locations to check for status change at one time, default is 1000'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.10.3.86 NAME 'dcmSyncLocationStatusVerifyArchived'
+  DESC 'Specifies whether checksum validation is performed upon detecting a location status change to ARCHIVED'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.10.3.87 NAME 'dcmSyncLocationStatusStorageSystemGroupID'
+  DESC 'ID of Storage System Group checked for location status changes'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
 objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -511,7 +541,12 @@ objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmRejectedObjectsCleanUpPollInterval $
     dcmRejectedObjectsCleanUpMaxNumberOfDeletes $
     dcmMPPSEmulationPollInterval $
-    dcmArchivingSchedulerPollInterval ) )
+    dcmArchivingSchedulerPollInterval $
+    dcmSyncLocationStatusPollInterval $
+    dcmSyncLocationStatusCheckDelay $
+    dcmSyncLocationStatusMaxNumberPerTask $
+    dcmSyncLocationStatusVerifyArchived $
+    dcmSyncLocationStatusStorageSystemGroupID ) )
 
 objectclass ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   DESC 'DICOM Archive Network AE related information'

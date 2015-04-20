@@ -119,6 +119,24 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmArchivingSchedulerPollInterval", defaultValue = "0")
     private int archivingSchedulerPollInterval;
 
+    @ConfigurableProperty(name = "dcmIocmConfig")
+    private IOCMConfig iocmConfig;
+
+    @ConfigurableProperty(name = "dcmSyncLocationStatusPollInterval", defaultValue = "0")
+    private int syncLocationStatusPollInterval;
+
+    @ConfigurableProperty(name = "dcmSyncLocationStatusCheckDelay", defaultValue = "1440")
+    private int syncLocationStatusCheckDelay = 1440;
+
+    @ConfigurableProperty(name = "dcmSyncLocationStatusMaxNumberPerTask", defaultValue = "1000")
+    private int syncLocationStatusMaxNumberPerTask = 1000;
+
+    @ConfigurableProperty(name = "dcmSyncLocationStatusStorageSystemGroupID")
+    private String[] syncLocationStatusStorageSystemGroupIDs;
+
+    @ConfigurableProperty(name = "dcmSyncLocationStatusVerifyArchived", defaultValue = "true")
+    private boolean syncLocationStatusVerifyArchived = true;
+
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
 
@@ -249,8 +267,48 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.archivingSchedulerPollInterval = archivingPollInterval;
     }
 
-    @ConfigurableProperty(name = "dcmIocmConfig")
-    private IOCMConfig iocmConfig;
+    public int getSyncLocationStatusPollInterval() {
+        return syncLocationStatusPollInterval;
+    }
+
+    public void setSyncLocationStatusPollInterval(int syncLocationStatusPollInterval) {
+        this.syncLocationStatusPollInterval = syncLocationStatusPollInterval;
+    }
+
+    public int getSyncLocationStatusCheckDelay() {
+        return syncLocationStatusCheckDelay;
+    }
+
+    public void setSyncLocationStatusCheckDelay(int syncLocationStatusCheckDelay) {
+        this.syncLocationStatusCheckDelay = syncLocationStatusCheckDelay;
+    }
+
+    public int getSyncLocationStatusMaxNumberPerTask() {
+        return syncLocationStatusMaxNumberPerTask;
+    }
+
+    public void setSyncLocationStatusMaxNumberPerTask(
+            int syncLocationStatusMaxNumberPerTask) {
+        this.syncLocationStatusMaxNumberPerTask = syncLocationStatusMaxNumberPerTask;
+    }
+
+    public String[] getSyncLocationStatusStorageSystemGroupIDs() {
+        return syncLocationStatusStorageSystemGroupIDs;
+    }
+
+    public void setSyncLocationStatusStorageSystemGroupIDs(
+            String... syncLocationStatusStorageSystemGroupIDs) {
+        this.syncLocationStatusStorageSystemGroupIDs = syncLocationStatusStorageSystemGroupIDs;
+    }
+
+    public boolean isSyncLocationStatusVerifyArchived() {
+        return syncLocationStatusVerifyArchived;
+    }
+
+    public void setSyncLocationStatusVerifyArchived(
+            boolean syncLocationStatusVerifyArchived) {
+        this.syncLocationStatusVerifyArchived = syncLocationStatusVerifyArchived;
+    }
 
     public void clearTemplatesCache() {
         TemplatesCache cache = templatesCache;
@@ -297,7 +355,6 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         }
         return null;
     }
-
 
     public IOCMConfig getIocmConfig() {
         return iocmConfig;

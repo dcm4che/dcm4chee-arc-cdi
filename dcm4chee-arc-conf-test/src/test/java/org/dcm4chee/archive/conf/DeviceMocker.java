@@ -70,6 +70,7 @@ import org.dcm4che3.net.hl7.HL7Application;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
+import org.dcm4chee.storage.conf.Archiver;
 import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.Container;
 import org.dcm4chee.storage.conf.FileCache;
@@ -496,6 +497,7 @@ public class DeviceMocker {
     };
     private static final int MPPS_EMULATOR_POLL_INTERVAL = 60;
     private static final int ARCHIVING_POLL_INTERVAL = 60;
+    private static final int SYNC_LOCATION_STATUS_POLL_INTERVAL = 3600;
 
     private static QueryRetrieveView[] QUERY_RETRIEVE_VIEWS = {
             HIDE_REJECTED_VIEW,
@@ -686,6 +688,9 @@ public class DeviceMocker {
         arc.setStorageSystemPath("/var/local/dcm4chee-arc/nearline");
         arc.setStorageAccessTime(2000);
         arc.setAvailability(Availability.NEARLINE);
+        Map<String,String> exts = new LinkedHashMap<String, String>();
+        exts.put(".archived", "ARCHIVED");
+        arc.setStatusFileExtensions(exts);
 
         StorageSystem metadata = new StorageSystem();
         metadata.setStorageSystemID("metadata");
@@ -729,7 +734,12 @@ public class DeviceMocker {
         metadataG.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         metadataG.setActiveStorageSystemIDs(metadata.getStorageSystemID());
 
+        Archiver archiver = new Archiver();
+        archiver.setVerifyContainer(true);
+        archiver.setObjectStatus("TO_ARCHIVE");
+
         StorageDeviceExtension ext = new StorageDeviceExtension();
+        ext.setArchiver(archiver);
         ext.addStorageSystemGroup(online);
         ext.addStorageSystemGroup(nearline);
         ext.addStorageSystemGroup(metadataG);
@@ -787,6 +797,8 @@ public class DeviceMocker {
         ext.setQueryRetrieveViews(QUERY_RETRIEVE_VIEWS);
         ext.setMppsEmulationPollInterval(MPPS_EMULATOR_POLL_INTERVAL);
         ext.setArchivingSchedulerPollInterval(ARCHIVING_POLL_INTERVAL);
+        ext.setSyncLocationStatusPollInterval(SYNC_LOCATION_STATUS_POLL_INTERVAL);
+        ext.setSyncLocationStatusStorageSystemGroupIDs("ARCHIVE");
         ext.setAttributeFilter(Entity.Patient,
                 new AttributeFilter(PATIENT_ATTRS));
         ext.setAttributeFilter(Entity.Study,

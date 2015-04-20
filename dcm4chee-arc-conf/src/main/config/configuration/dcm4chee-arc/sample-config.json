@@ -569,6 +569,8 @@
             "dcmMppsEmulationPollInterval" : 60,
             "dcmRejectedObjectsCleanUpMaxNumberOfDeletes" : 0,
             "dcmRejectedObjectsCleanUpPollInterval" : 0,
+            "dcmSyncLocationStatusPollInterval" : 3600,
+            "dcmSyncLocationStatusStorageSystemGroupID" : [ "ARCHIVE" ],
             "dcmWadoAttributesStaleTimeout" : 60,
             "queryRetrieveViews" : [ {
               "dcmHideNotRejectedInstances" : false,
@@ -728,6 +730,9 @@
             }
           },
           "StorageDeviceExtension" : {
+            "Storage Archiver" : {
+              "dcmStorageArchiverObjectStatus" : "TO_ARCHIVE"
+            },
             "Storage System Groups" : {
               "ARCHIVE" : {
                 "Storage Container" : {
@@ -742,6 +747,9 @@
                 },
                 "Storage Systems" : {
                   "nearline" : {
+                    "StatusFileExtensions" : {
+                      ".archived" : "ARCHIVED"
+                    },
                     "dcmInstanceAvailability" : "NEARLINE",
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
                     "dcmStorageAccessTime" : 2000,
@@ -757,6 +765,7 @@
               "DEFAULT" : {
                 "Storage Systems" : {
                   "fs1" : {
+                    "StatusFileExtensions" : { },
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
                     "dcmStorageAccessTime" : 1000,
                     "dcmStorageSystemID" : "fs1",
@@ -772,6 +781,7 @@
               "METADATA" : {
                 "Storage Systems" : {
                   "metadata" : {
+                    "StatusFileExtensions" : { },
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
                     "dcmStorageSystemID" : "metadata",
                     "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/metadata"

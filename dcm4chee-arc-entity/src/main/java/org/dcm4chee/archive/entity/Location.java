@@ -51,6 +51,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
@@ -59,13 +61,26 @@ import javax.persistence.Table;
  * @author Justin Falk <jfalkmu@gmail.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
+@NamedQueries({
+@NamedQuery(
+    name=Location.FIND_BY_STATUS_AND_STORAGE_GROUP_IDS,
+    query = "SELECT l FROM Location l "
+            + "WHERE l.status = ?1 "
+            + "AND l.createdTime < ?2 "
+            + "AND l.storageSystemGroupID IN (?3)")
+})
 @Entity
 @Table(name = "location")
 public class Location implements Serializable {
 
     private static final long serialVersionUID = -3832203362617593125L;
 
-    public enum Status { OK, DELETE_FAILED };
+    public static final String FIND_BY_STATUS_AND_STORAGE_GROUP_IDS =
+            "Location.findByStatusAndStorageGroupIDS";
+
+    public enum Status {
+        OK, DELETE_FAILED, TO_ARCHIVE, ARCHIVED, ARCHIVE_FAILED, QUERY_FAILED, VERIFY_FAILED
+    };
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

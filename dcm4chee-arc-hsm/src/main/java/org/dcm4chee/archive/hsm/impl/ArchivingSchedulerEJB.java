@@ -285,6 +285,7 @@ public class ArchivingSchedulerEJB {
             .size((Long) entry.getProperty(FILE_SIZE))
             .transferSyntaxUID((String) entry.getProperty(TRANSFER_SYNTAX))
             .timeZone((String) entry.getProperty(TIME_ZONE))
+            .status(Location.Status.valueOf(ctx.getObjectStatus()))
             .build();
             inst.getLocations().add(location);
             LOG.info("Create {}", location);
