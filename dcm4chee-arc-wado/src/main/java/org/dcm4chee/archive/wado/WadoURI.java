@@ -102,6 +102,7 @@ import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
@@ -269,10 +270,12 @@ public class WadoURI extends Wado {
             ApplicationEntity sourceAE = aeCache
                     .findAE(new HttpSource(request));
             if (sourceAE == null) {
-                LOG.info("Unable to find the mapped AE for this host or even the fallback AE, coercion will not be applied");
+                LOG.info("Unable to find the mapped AE for this host or even"
+                        + " the fallback AE, coercion will not be applied");
             }
             
-            context = new CStoreSCUContext(arcAE.getApplicationEntity(), sourceAE);
+            context = new CStoreSCUContext(arcAE.getApplicationEntity()
+                    , sourceAE, ServiceType.WADOSERVICE);
 
             checkRequest();
 

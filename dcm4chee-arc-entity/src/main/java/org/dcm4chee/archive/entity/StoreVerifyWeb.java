@@ -11,23 +11,26 @@ import javax.persistence.Table;
 
 @NamedQueries({
     @NamedQuery(
-            name=StoreRememberDimse.GET_STORE_REMEMBER_DIMSE_ENTRY,
-            query="select e from StoreRememberDimse e where "
+            name=StoreVerifyWeb.GET_STORE_VERIFY_WEB_ENTRY,
+            query="select e from StoreVerifyWeb e where "
                     + "e.transactionID = ?1")
 })
 @Entity
-@Table(name="store_remember_dimse")
-public class StoreRememberDimse {
+@Table(name="store_verify_web")
+public class StoreVerifyWeb {
 
-    public static final String GET_STORE_REMEMBER_DIMSE_ENTRY 
-        = "StoreRememberDimse.getStoreRememberDimseEntry";
+    public static final String GET_STORE_VERIFY_WEB_ENTRY
+        = "StoreVerifyWeb.getStoreVerifyWebEntry";
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")
     private long pk;
-    
+
     @Column(name="transaction_id")
     private String transactionID;
+
+    @Column(name="qido_base_url")
+    private String qidoBaseURL;
 
     @Column(name="remote_aet")
     private String remoteAET;
@@ -35,11 +38,18 @@ public class StoreRememberDimse {
     @Column(name="local_aet")
     private String localAET;
 
+    @Column(name="intended_service")
+    private String Service;
+
     @Column(name="status")
-    private StoreRememberStatus status;
+    private StoreVerifyStatus status;
 
     public String getTransactionID() {
         return transactionID;
+    }
+
+    public String getQidoBaseURL() {
+        return qidoBaseURL;
     }
 
     public String getRemoteAET() {
@@ -50,12 +60,16 @@ public class StoreRememberDimse {
         return localAET;
     }
 
-    public StoreRememberStatus getStatus() {
+    public StoreVerifyStatus getStatus() {
         return status;
     }
 
     public void setTransactionID(String transactionID) {
         this.transactionID = transactionID;
+    }
+
+    public void setQidoBaseURL(String qidoBaseURL) {
+        this.qidoBaseURL = qidoBaseURL;
     }
 
     public void setRemoteAET(String remoteAET) {
@@ -66,8 +80,16 @@ public class StoreRememberDimse {
         this.localAET = localAET;
     }
 
-    public void setStatus(StoreRememberStatus status) {
+    public void setStatus(StoreVerifyStatus status) {
         this.status = status;
+    }
+
+    public String getService() {
+        return Service;
+    }
+
+    public void setService(String service) {
+        Service = service;
     }
 
     

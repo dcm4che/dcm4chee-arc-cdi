@@ -47,6 +47,8 @@ import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
 
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUJMSMessage;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,14 +72,15 @@ public class CStoreSCUMDB implements MessageListener {
     @Override
     public void onMessage(Message msg) {
         try {
-            @SuppressWarnings("unchecked")
             List<ArchiveInstanceLocator> insts = 
-                    (List<ArchiveInstanceLocator>) ((ObjectMessage) msg)
-                    .getObject();
-                cstorescu.cstore(insts, msg.getStringProperty("LocalAET"),
-                    msg.getStringProperty("RemoteAET"),
-                    msg.getStringProperty("MessageID"),
-                    msg.getIntProperty("Priority"));
+                    (List<ArchiveInstanceLocator>) ((CStoreSCUJMSMessage)
+                            ((ObjectMessage) msg)
+                    .getObject()).getInstances();
+            CStoreSCUContext context = ((CStoreSCUJMSMessage)
+                    ((ObjectMessage) msg)
+                    .getObject()).getContext();
+            cstorescu.cstore(msg.getStringProperty("MessageID"), context,
+                    insts, msg.getIntProperty("Priority"));
 
         } catch (Throwable th) {
             LOG.warn("Failed to process " + msg, th);

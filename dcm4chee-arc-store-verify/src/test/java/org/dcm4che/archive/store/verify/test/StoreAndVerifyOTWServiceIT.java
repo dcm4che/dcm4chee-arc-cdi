@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4che.archive.store.remember.test;
+package org.dcm4che.archive.store.verify.test;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -62,14 +62,15 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.archive.store.remember.StoreAndRememberEJB;
-import org.dcm4chee.archive.store.remember.StoreAndRememberService;
-import org.dcm4chee.archive.store.remember.impl.StoreAndRememberServiceImpl;
+import org.dcm4chee.archive.store.verify.StoreVerifyEJB;
+import org.dcm4chee.archive.store.verify.StoreVerifyService;
+import org.dcm4chee.archive.store.verify.impl.StoreVerifyServiceImpl;
 import org.dcm4chee.archive.stow.client.StowContext;
 import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
@@ -82,7 +83,7 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.dcm4che.archive.store.remember.test.ParamFactory;
+import org.dcm4che.archive.store.verify.test.ParamFactory;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -95,7 +96,7 @@ import org.junit.runners.MethodSorters;
  */
 @RunWith(Arquillian.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class StoreAndRememberOTWServiceIT {
+public class StoreAndVerifyOTWServiceIT {
 
 
 
@@ -114,7 +115,7 @@ public class StoreAndRememberOTWServiceIT {
         "DELETE FROM code", "DELETE FROM dicomattrs" };
 
         @Inject
-        private StoreAndRememberService storeRememberService;
+        private StoreVerifyService storeRememberService;
 
         @Inject
         private StoreService storeService;
@@ -132,11 +133,11 @@ public class StoreAndRememberOTWServiceIT {
         @Deployment
         public static WebArchive createDeployment() {
             WebArchive war = ShrinkWrap.create(WebArchive.class, "dcm4chee-arc.war");
-            war.addClass(StoreAndRememberOTWServiceIT.class);
+            war.addClass(StoreAndVerifyOTWServiceIT.class);
             war.addClass(ParamFactory.class);
-            war.addClass(StoreAndRememberService.class);
-            war.addClass(StoreAndRememberServiceImpl.class);
-            war.addClass(StoreAndRememberEJB.class);
+            war.addClass(StoreVerifyService.class);
+            war.addClass(StoreVerifyServiceImpl.class);
+            war.addClass(StoreVerifyEJB.class);
             war.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
             JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                     .importRuntimeAndTestDependencies().resolve()
@@ -171,7 +172,7 @@ public class StoreAndRememberOTWServiceIT {
         public void testAStoreAndRememberOTWNoVerify() {
             String sopUID = "1.1.1.2";
             ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
-            StowContext ctx = new StowContext(arcAE, arcAE);
+            StowContext ctx = new StowContext(arcAE, arcAE, ServiceType.STOREVERIFY);
             ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
             ctx.setQidoRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
             ArrayList<ArchiveInstanceLocator> locators = 

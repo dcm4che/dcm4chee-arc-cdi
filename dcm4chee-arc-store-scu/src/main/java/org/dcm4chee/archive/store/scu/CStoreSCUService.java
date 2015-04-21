@@ -43,10 +43,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.InstanceLocator;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 
 /**
@@ -55,11 +52,12 @@ import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
  */
 public interface CStoreSCUService {
 
-    void cstore(List<ArchiveInstanceLocator> insts, String localAET,
-            String remoteAET, String messageID, int priority) throws DicomServiceException;
+    void cstore(String messageID, CStoreSCUContext context
+            , List<ArchiveInstanceLocator> insts
+            , int priority) throws DicomServiceException;
 
-    void scheduleStoreSCU(String localAET, String remoteAET,
-            List<ArchiveInstanceLocator> insts, String messageID, int retries,
+    void scheduleStoreSCU(String messageID, CStoreSCUContext context,
+            List<ArchiveInstanceLocator> insts, int retries,
             int priority, long delay);
 
     /**

@@ -45,6 +45,7 @@ import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.ServiceType;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -66,4 +67,6 @@ public interface StgCmtService {
 
     void coerceAttributes(Attributes attrs, String remoteAET,
             ArchiveAEExtension arcAE, Role role) throws DicomServiceException;
+
+    void notify(CommitEvent commitEvent);
 }

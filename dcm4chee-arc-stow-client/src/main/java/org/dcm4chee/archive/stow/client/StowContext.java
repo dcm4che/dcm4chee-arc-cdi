@@ -41,13 +41,14 @@ import java.io.Serializable;
 
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.dto.ServiceType;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 public class StowContext implements Serializable {
-
+ 
     private static final long serialVersionUID = -2104597246635355682L;
 
     private ApplicationEntity localAE, remoteAE;
@@ -56,11 +57,14 @@ public class StowContext implements Serializable {
 
     private String qidoRemoteBaseURL;
 
+    private ServiceType service;
+
     public StowContext(ApplicationEntity localAE,
-            ApplicationEntity remoteAE) {
+            ApplicationEntity remoteAE, ServiceType service) {
         super();
         this.localAE = localAE;
         this.remoteAE = remoteAE;
+        this.setService(service);
     }
 
     public ApplicationEntity getLocalAE() {
@@ -97,6 +101,14 @@ public class StowContext implements Serializable {
 
     public void setQidoRemoteBaseURL(String qidoRemoteBaseURL) {
         this.qidoRemoteBaseURL = qidoRemoteBaseURL;
+    }
+
+    public ServiceType getService() {
+        return service;
+    }
+
+    public void setService(ServiceType service) {
+        this.service = service;
     }
 
 }

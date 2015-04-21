@@ -143,7 +143,7 @@ public class StgCmt extends AbstractDicomService {
         
         Attributes rsp = Commands.mkNEventReportRSP(rq, Status.Success);        
         as.tryWriteDimseRSP(pc, rsp, null);
-        commitEvent.fire(new CommitEvent(as.getLocalAET(), as.getRemoteAET(), actionInfo)); 
+        stgCmtService.notify(new CommitEvent(as.getLocalAET(), as.getRemoteAET(), actionInfo));
     }
 
 }

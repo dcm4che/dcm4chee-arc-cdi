@@ -42,6 +42,7 @@ import java.util.List;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
+import javax.inject.Qualifier;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
@@ -74,15 +75,15 @@ public class StowClientMDB implements MessageListener {
                     (List<ArchiveInstanceLocator>) ((StowJMSMessage)
                             ((ObjectMessage) msg)
                     .getObject()).getInstances();
-
+            StowContext context = ((StowJMSMessage)
+                    ((ObjectMessage) msg)
+                    .getObject()).getContext();
             String tsid = msg.getStringProperty("TransactionID");
-                    service.notify(
+                    service.notify(context,
                             service
                             .createStowRSClient(
                                     service,
-                                    ((StowJMSMessage)
-                                            ((ObjectMessage) msg)
-                                            .getObject()).getContext())
+                                    context)
                             .storeOverWebService(tsid, insts));
             
         } catch (Throwable th) {

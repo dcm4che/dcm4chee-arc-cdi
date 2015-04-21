@@ -43,6 +43,7 @@ import java.util.HashMap;
 
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.dto.ServiceType;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -56,13 +57,14 @@ public class CStoreSCUContext implements Serializable{
             new HashMap<String,Object>();
     
     private ApplicationEntity localAE, remoteAE;
-
-    private String remoteBaseURL;
-
-    public CStoreSCUContext(ApplicationEntity localAE, ApplicationEntity remoteAE) {
+    
+    private ServiceType service;
+    
+    public CStoreSCUContext(ApplicationEntity localAE, ApplicationEntity remoteAE, ServiceType service) {
         super();
         this.localAE = localAE;
         this.remoteAE = remoteAE;
+        this.setService(service);
     }
 
     public Object getProperty(String key) {
@@ -98,12 +100,18 @@ public class CStoreSCUContext implements Serializable{
         this.remoteAE = remoteAE;
     }
 
-    public String getRemoteBaseURL() {
-        return remoteBaseURL;
+    /**
+     * @return the service
+     */
+    public ServiceType getService() {
+        return service;
     }
 
-    public void setRemoteBaseURL(String remoteBaseURL) {
-        this.remoteBaseURL = remoteBaseURL;
+    /**
+     * @param service the service to set
+     */
+    public void setService(ServiceType service) {
+        this.service = service;
     }
 
 }

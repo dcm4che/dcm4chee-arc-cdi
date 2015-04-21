@@ -40,7 +40,6 @@ package org.dcm4chee.archive.store.scu.impl;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -50,6 +49,7 @@ import java.util.List;
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -63,8 +63,6 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.dcm4che3.conf.core.api.ConfigurationException;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -73,7 +71,6 @@ import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
@@ -85,7 +82,9 @@ import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.ServiceQualifier;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUJMSMessage;
 import org.dcm4chee.archive.store.scu.CStoreSCUResponse;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.dcm4chee.storage.service.RetrieveService;
@@ -94,7 +93,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @ApplicationScoped
 public class CStoreSCUServiceImpl implements CStoreSCUService {
@@ -109,51 +108,37 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     private Queue storeSCUQueue;
 
     @Inject
-    private Device device;
-
-    @Inject
-    private IApplicationEntityCache aeCache;
-
-    @Inject
+    @Any
     private Event<CStoreSCUResponse> storeSCUEvent;
 
     @Inject
     private RetrieveService storageRetrieveService;
 
-    public CStoreSCUServiceImpl() {
-        // TODO Auto-generated constructor stub
-    }
-
     @Override
-    public void cstore(List<ArchiveInstanceLocator> insts, String localAET,
-            String remoteAET, String messageID, int priority)
+    public void cstore(String messageID, CStoreSCUContext context, 
+            List<ArchiveInstanceLocator> insts, int priority)
             throws DicomServiceException {
-
         try {
-
-            ApplicationEntity localAE = device.getApplicationEntity(localAET);
-            ApplicationEntity remoteAE = aeCache
-                    .findApplicationEntity(remoteAET);
+            ApplicationEntity localAE = context.getLocalAE();
+            ApplicationEntity remoteAE = context.getRemoteAE();
             if (localAE == null) {
-                LOG.warn("Failed to store to {} - no such local AE: {}",
-                        remoteAET, localAET);
+                LOG.warn("Failed to store to {} - no such local AE for "
+                        + "transaction {}", remoteAE.getAETitle(), messageID);
                 return;
             }
-
             AAssociateRQ aarq = makeAAssociateRQ(localAE.getAETitle(),
                     remoteAE.getAETitle(), insts);
             Association storeas = localAE.connect(remoteAE, aarq);
 
-            CStoreSCUImpl cstorescu = new CStoreSCUImpl(localAE, remoteAE, this);
-            BasicCStoreSCUResp storeRsp = cstorescu.cstore(insts, storeas,
-                    priority);
+            CStoreSCUImpl cstorescu = new CStoreSCUImpl(localAE, remoteAE
+                    , context.getService(), this);
+            BasicCStoreSCUResp storeRsp = cstorescu.cstore(insts, storeas
+                    ,priority);
 
-            storeSCUEvent.fire(new CStoreSCUResponse(storeRsp, insts,
-                    messageID, localAET, remoteAET));
+            storeSCUEvent.select(new ServiceQualifier(context.getService()))
+            .fire(new CStoreSCUResponse(storeRsp, insts,
+                    messageID, localAE.getAETitle(), remoteAE.getAETitle()));
 
-        } catch (ConfigurationException e) {
-            throw new DicomServiceException(Status.MoveDestinationUnknown,
-                    "Unknown Store/Move Destination: " + remoteAET);
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, "Error: "
                     + e.getMessage());
@@ -179,9 +164,9 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     }
 
     @Override
-    public void scheduleStoreSCU(String localAET, String remoteAET,
-            List<ArchiveInstanceLocator> insts, String messageID, int retries,
-            int priority, long delay) {
+    public void scheduleStoreSCU(String messageID, CStoreSCUContext context,
+            List<ArchiveInstanceLocator> insts, int retries, int priority,
+            long delay) {
         try {
             Connection conn = connFactory.createConnection();
             try {
@@ -190,9 +175,8 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                 MessageProducer producer = session
                         .createProducer(storeSCUQueue);
                 ObjectMessage msg = session
-                        .createObjectMessage((Serializable) insts);
-                msg.setStringProperty("LocalAET", localAET);
-                msg.setStringProperty("RemoteAET", remoteAET);
+                        .createObjectMessage(new CStoreSCUJMSMessage(
+                                insts, context));
                 msg.setIntProperty("Priority", priority);
                 msg.setIntProperty("Retries", retries);
                 msg.setStringProperty("MessageID", messageID);

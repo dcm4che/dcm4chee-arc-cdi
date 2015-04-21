@@ -55,9 +55,11 @@ import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
 import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,23 +97,41 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
         if (rejNote != null) {
             List<ArchiveInstanceLocator> locators = locate(rejNote.getSopInstanceUID());
             for (int i = 0 ; i < targetAETs.length ; i++) {
-                storescuService.scheduleStoreSCU(cfg.getCallingAET(), targetAETs[i], locators, 
-                        UUID.randomUUID().toString(), cfg.getIocmMaxRetries(), 5, cfg.getIocmRetryInterval());
+                storescuService.scheduleStoreSCU(
+                        UUID.randomUUID().toString(),
+                        new CStoreSCUContext(device.getApplicationEntity(cfg
+                                .getCallingAET()), device
+                                .getApplicationEntity(targetAETs[i]),
+                                ServiceType.IOCMSERVICE), locators, cfg
+                                .getIocmMaxRetries(), DEFAULT_PRIORITY, cfg
+                                .getIocmRetryInterval());
             }
         }
         if (updatedInstanceUIDs != null && updatedInstanceUIDs.size() > 0) {
             List<ArchiveInstanceLocator> locators = locate(updatedInstanceUIDs.toArray(new String[updatedInstanceUIDs.size()]));
             for (int i = 0 ; i < targetAETs.length ; i++) {
-                storescuService.scheduleStoreSCU(cfg.getCallingAET(), targetAETs[i], locators, 
-                        UUID.randomUUID().toString(), cfg.getIocmMaxRetries(), 5, cfg.getIocmRetryInterval());
+                storescuService.scheduleStoreSCU(
+                        UUID.randomUUID().toString(),
+                        new CStoreSCUContext(device.getApplicationEntity(cfg
+                                .getCallingAET()), device
+                                .getApplicationEntity(targetAETs[i]),
+                                ServiceType.IOCMSERVICE), locators, cfg
+                                .getIocmMaxRetries(), DEFAULT_PRIORITY, cfg
+                                .getIocmRetryInterval());
             }
 
             String[] noneIOCM = cfg.getNoneIocmDestinations();
             LOG.debug("NoneIocmDestinations from IOCMConfig:{}", Arrays.toString(noneIOCM));
             if (noneIOCM != null && noneIOCM.length > 0) {
                 for (int i = 0 ; i < noneIOCM.length ; i++) {
-                    storescuService.scheduleStoreSCU(cfg.getCallingAET(), noneIOCM[i], locators, 
-                            UUID.randomUUID().toString(), cfg.getIocmMaxRetries(), 5, cfg.getIocmRetryInterval());
+                    storescuService.scheduleStoreSCU(
+                            UUID.randomUUID().toString(),
+                            new CStoreSCUContext(device.getApplicationEntity(cfg
+                                    .getCallingAET()), device
+                                    .getApplicationEntity(noneIOCM[i]),
+                                    ServiceType.IOCMSERVICE), locators, cfg
+                                    .getIocmMaxRetries(), DEFAULT_PRIORITY, cfg
+                                    .getIocmRetryInterval());
                 }
             }
         }
@@ -133,8 +153,14 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
         if (noneIOCM != null && noneIOCM.length > 0) {
             List<ArchiveInstanceLocator> locators = locate(updatedInstanceUIDs.toArray(new String[updatedInstanceUIDs.size()]));
             for (int i = 0 ; i < noneIOCM.length ; i++) {
-                storescuService.scheduleStoreSCU(cfg.getCallingAET(), noneIOCM[i], locators, 
-                        UUID.randomUUID().toString(), cfg.getIocmMaxRetries(), DEFAULT_PRIORITY, cfg.getIocmRetryInterval());
+                storescuService.scheduleStoreSCU(
+                        UUID.randomUUID().toString(),
+                        new CStoreSCUContext(device.getApplicationEntity(cfg
+                                .getCallingAET()), device
+                                .getApplicationEntity(noneIOCM[i]),
+                                ServiceType.IOCMSERVICE), locators, cfg
+                                .getIocmMaxRetries(), DEFAULT_PRIORITY, cfg
+                                .getIocmRetryInterval());
             }
         }
     }

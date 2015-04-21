@@ -48,7 +48,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.json.Json;
 import javax.ws.rs.core.MediaType;
@@ -79,7 +78,7 @@ public class QidoClient {
         this.context = context;
     }
 
-    public Map<String, Availability> verifyStorage(Collection<String> sopInstanceUIDs) {
+    public QidoResponse verifyStorage(Collection<String> sopInstanceUIDs) {
         HashMap<String, Availability> result = new HashMap<String, Availability>();
         ArchiveAEExtension aeExt = context.getArchiveAEExtension();
         String aeTitle = context.getRemoteAE().getAETitle();
@@ -95,10 +94,11 @@ public class QidoClient {
             Availability externalAvailability = queryOverWebService(aeTitle
                     , url, sopiuid , context.isFuzzyMatching(),context
                     .isTimeZoneAdjustment(), type); 
-            if (externalAvailability != Availability.UNAVAILABLE)
                 result.put(sopiuid, externalAvailability);
         }
-        return result;
+        
+        return new QidoResponse(this.context.getTransactionID()
+                , result);
     }
 
     private Availability queryOverWebService(String aeTitle, String url

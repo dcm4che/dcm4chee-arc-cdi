@@ -59,6 +59,7 @@ import org.dcm4che3.net.service.CStoreSCU;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
@@ -77,7 +78,6 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
 
     private CStoreSCUContext context;
     private CStoreSCUService service;
-    private int retries;
     private boolean withoutBulkData;
 
     /**
@@ -85,15 +85,11 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
      * @param remoteAE
      * @param storeSCUService
      */
-    public CStoreSCUImpl(ApplicationEntity localAE, ApplicationEntity remoteAE,
+    public CStoreSCUImpl(ApplicationEntity localAE, ApplicationEntity remoteAE, ServiceType service,
             CStoreSCUService storeSCUService) {
         super();
-        this.context = new CStoreSCUContext(localAE, remoteAE);
+        this.context = new CStoreSCUContext(localAE, remoteAE, service);
         this.service = storeSCUService;
-    }
-
-    public void setRetries(int retries) {
-        this.retries = retries;
     }
 
     public void setWithoutBulkData(boolean withoutBulkData) {

@@ -72,6 +72,8 @@ import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.dto.RemoteAssociationParticipant;
+import org.dcm4chee.archive.dto.ServiceQualifier;
+import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
@@ -147,7 +149,7 @@ public class CMoveSCP extends BasicCMoveSCP {
             AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, matches);
             Association storeas = openStoreAssociation(as, destAE, aarq);
             CStoreSCU<ArchiveInstanceLocator> cstorescu = new CStoreSCUImpl (
-                    ae, destAE, storescuService);
+                    ae, destAE, ServiceType.MOVESERVICE, storescuService);
             BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = new BasicRetrieveTask<ArchiveInstanceLocator>(
                     Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, cstorescu);
 //            retrieveTask.setDestinationDevice(destAE.getDevice());
@@ -155,7 +157,8 @@ public class CMoveSCP extends BasicCMoveSCP {
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
 //            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
             
-            retrieveBeforeEvent.fire(new RetrieveBeforeSendEvent(
+            retrieveBeforeEvent.select(new ServiceQualifier(ServiceType.MOVESERVICE))
+            .fire(new RetrieveBeforeSendEvent(
                     new RemoteAssociationParticipant(as),
                     new LocalAssociationParticipant(as), 
                     new GenericParticipant(Participant.UNKNOWN,destAE.getAETitle()),

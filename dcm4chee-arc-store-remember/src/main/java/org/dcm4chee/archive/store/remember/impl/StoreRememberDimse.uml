@@ -1,0 +1,51 @@
+@startuml
+skin Rose
+hide footbox
+
+actor Client
+participant "StoreAndRememberService" as SRS
+participant "StoreAndRememberEJB" as SREJB
+participant "CStoreSCUService" as CSS
+participant "CStoreSCU" as CSMDB
+participant "StgCmtEJB" as SCEJB
+participant "SCEJB" as SCSEJB
+participant "SCService" as SCS
+
+
+Client -> SRS:store(CStoreSCUContext, insts)
+SRS -> SRS:generateTransactionID
+SRS -> SREJB:addWebEntry(TransactionID,...)
+SRS -> SCS:scheduleStow(TransactionID, StowContext, insts, ...)
+SCS -> JMS:<font color=blue><b> send(MessageObject+tsid)
+note right: queue:stowclient
+JMS ->SCMDB:<font color=blue><b> deliver(MessageObject+tsid)
+SCMDB -> SCS:createStowClient(service, StowContext)
+SCS -> SCMDB: return StowClient
+SCMDB -> SC: storeOverWebService(tsid, insts)
+loop n instances
+SC -> SC:Stow
+SC -> SC:updateresults
+end
+SC -> SRS:Notify(StowResponse) - over CDI
+SRS -> SRS:verifyStorage(StowResponse)
+SRS -> SREJB:getWebEntry(tsid,iuid)
+SREJB -> SRS:return WebEntry
+SRS -> SRS:init QidoCTX
+SRS -> QCS:verifyStorage(QidoCTX)
+QCS -> QC:Create Client(QidoCTX)
+QC -> QCS:return Client
+QCS -> QC:verify Storage
+QC -> QCS:result
+QCS -> SRS:Map(uid, availability)
+loop Map size times
+SRS -> SRS:create external location
+end
+alt all verified
+SRS -> SREJB:updateStatus(COMPLETED)
+else some verified
+SRS -> SREJB:updateStuatus(INCOMPLETE)
+else
+SRS -> SREJB:updateStuatus(FAILED)
+SRS -> SRS: delete WenEntry
+end
+@enduml

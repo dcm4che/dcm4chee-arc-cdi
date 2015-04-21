@@ -64,5 +64,5 @@ public interface StowClientService {
     StowClient createStowRSClient(
             StowClientService service, StowContext ctx);
 
-    void notify(StowResponse rsp);
+    void notify(StowContext ctx, StowResponse rsp);
 }

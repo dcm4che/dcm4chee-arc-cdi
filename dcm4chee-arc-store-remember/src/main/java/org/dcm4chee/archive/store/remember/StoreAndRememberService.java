@@ -37,11 +37,12 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.store.remember;
 
-import java.util.List;
+import javax.enterprise.event.Observes;
 
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.stow.client.StowContext;
+import org.dcm4chee.archive.dto.Service;
+import org.dcm4chee.archive.dto.ServiceType;
+import org.dcm4chee.archive.stgcmt.scp.CommitEvent;
+import org.dcm4chee.archive.qido.client.QidoResponse;
 import org.dcm4chee.storage.conf.Availability;
 
 /**
@@ -50,14 +51,6 @@ import org.dcm4chee.storage.conf.Availability;
  */
 public interface StoreAndRememberService {
 
-    void store(StowContext context
-            , List<ArchiveInstanceLocator> insts);
-
-    void store(CStoreSCUContext context
-           , List<ArchiveInstanceLocator> insts);
-
-    String generateTransactionID(boolean dimse);
-
     void addExternalLocation(String iuid, String retrieveAET
             , Availability availability);
 
@@ -65,4 +58,6 @@ public interface StoreAndRememberService {
 
     void removeExternalLocations(String iuid, Availability availability);
 
+    void verifyCommit(@Observes @Service(ServiceType.STOREREMEMBER) CommitEvent commitEvent);
+    void verifyQido(@Observes @Service(ServiceType.STOREREMEMBER) QidoResponse response);
 }

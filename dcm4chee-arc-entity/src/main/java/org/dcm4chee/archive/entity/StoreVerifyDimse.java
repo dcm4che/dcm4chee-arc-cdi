@@ -11,26 +11,29 @@ import javax.persistence.Table;
 
 @NamedQueries({
     @NamedQuery(
-            name=StoreRememberWeb.GET_STORE_REMEMBER_WEB_ENTRY,
-            query="select e from StoreRememberWeb e where "
-                    + "e.transactionID = ?1")
+            name=StoreVerifyDimse.GET_STORE_VERIFY_DIMSE_ENTRY,
+            query="select e from StoreVerifyDimse e where "
+                    + "e.transactionID = ?1"),
+    @NamedQuery(
+            name=StoreVerifyDimse.STORE_VERIFY_DIMSE_ENTRY_EXISTS,
+            query="select count(e) from StoreVerifyDimse e"
+                    + " where e.transactionID = ?1")
 })
 @Entity
-@Table(name="store_remember_web")
-public class StoreRememberWeb {
+@Table(name="store_verify_dimse")
+public class StoreVerifyDimse {
 
-    public static final String GET_STORE_REMEMBER_WEB_ENTRY
-        = "StoreRememberWeb.getStoreRememberWebEntry";
+    public static final String GET_STORE_VERIFY_DIMSE_ENTRY 
+        = "StoreVerifyDimse.getStoreVerifyDimseEntry";
+    public static final String STORE_VERIFY_DIMSE_ENTRY_EXISTS
+        = "StoreVerifyDimse.storeVerifyDimseEntryExists";
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")
     private long pk;
-
+    
     @Column(name="transaction_id")
     private String transactionID;
-
-    @Column(name="qido_base_url")
-    private String qidoBaseURL;
 
     @Column(name="remote_aet")
     private String remoteAET;
@@ -38,15 +41,14 @@ public class StoreRememberWeb {
     @Column(name="local_aet")
     private String localAET;
 
+    @Column(name="intended_service")
+    private String Service;
+    
     @Column(name="status")
-    private StoreRememberStatus status;
+    private StoreVerifyStatus status;
 
     public String getTransactionID() {
         return transactionID;
-    }
-
-    public String getQidoBaseURL() {
-        return qidoBaseURL;
     }
 
     public String getRemoteAET() {
@@ -57,16 +59,12 @@ public class StoreRememberWeb {
         return localAET;
     }
 
-    public StoreRememberStatus getStatus() {
+    public StoreVerifyStatus getStatus() {
         return status;
     }
 
     public void setTransactionID(String transactionID) {
         this.transactionID = transactionID;
-    }
-
-    public void setQidoBaseURL(String qidoBaseURL) {
-        this.qidoBaseURL = qidoBaseURL;
     }
 
     public void setRemoteAET(String remoteAET) {
@@ -77,8 +75,16 @@ public class StoreRememberWeb {
         this.localAET = localAET;
     }
 
-    public void setStatus(StoreRememberStatus status) {
+    public void setStatus(StoreVerifyStatus status) {
         this.status = status;
+    }
+
+    public String getService() {
+        return Service;
+    }
+
+    public void setService(String service) {
+        Service = service;
     }
 
     

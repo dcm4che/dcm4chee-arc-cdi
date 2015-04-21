@@ -53,6 +53,8 @@ public class QidoContext {
 
     private boolean timeZoneAdjustment;
 
+    private String transactionID;
+
     public QidoContext(ApplicationEntity localAE,
             ApplicationEntity remoteAE) {
         super();
@@ -102,6 +104,20 @@ public class QidoContext {
 
     public void setTimeZoneAdjustment(boolean timeZoneAdjustment) {
         this.timeZoneAdjustment = timeZoneAdjustment;
+    }
+
+    /**
+     * @return the transactionID
+     */
+    public String getTransactionID() {
+        return transactionID;
+    }
+
+    /**
+     * @param transactionID the transactionID to set
+     */
+    public void setTransactionID(String transactionID) {
+        this.transactionID = transactionID;
     }
 
 }

@@ -79,6 +79,8 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.ServiceType;
+import org.dcm4chee.archive.stgcmt.scp.CommitEvent;
 import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
 import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
@@ -102,7 +104,7 @@ public class StgCmtServiceImpl implements StgCmtService {
 
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
-
+ 
     @Resource(mappedName = "java:/queue/stgcmtscp")
     private Queue stgcmtSCPQueue;
 
@@ -251,6 +253,7 @@ public class StgCmtServiceImpl implements StgCmtService {
         }
     }
 
+    @Override
     public void sendNActionRequest(String localAET, String remoteAET,
             List<ArchiveInstanceLocator> insts, String clientID, int retries) {
 
@@ -365,5 +368,11 @@ public class StgCmtServiceImpl implements StgCmtService {
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
+    }
+
+    @Override
+    public void notify(CommitEvent commitEvent) {
+        
+        //notify
     }
 }

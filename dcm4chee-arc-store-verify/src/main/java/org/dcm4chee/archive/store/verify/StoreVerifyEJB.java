@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.remember;
+package org.dcm4chee.archive.store.verify;
 
 import java.util.ArrayList;
 
@@ -45,11 +45,12 @@ import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.StoreRememberDimse;
-import org.dcm4chee.archive.entity.StoreRememberStatus;
-import org.dcm4chee.archive.entity.StoreRememberWeb;
+import org.dcm4chee.archive.entity.StoreVerifyDimse;
+import org.dcm4chee.archive.entity.StoreVerifyStatus;
+import org.dcm4chee.archive.entity.StoreVerifyWeb;
 import org.dcm4chee.storage.conf.Availability;
 
 /**
@@ -57,19 +58,20 @@ import org.dcm4chee.storage.conf.Availability;
  *
  */
 @Stateless
-public class StoreAndRememberEJB {
+public class StoreVerifyEJB {
 
     @PersistenceContext(unitName = "dcm4chee-arc")
     EntityManager em;
 
     public void addWebEntry(String transactionID
-            , String qidoBaseURL ,String remoteAET, String localAET) {
-        StoreRememberWeb webEntry = new StoreRememberWeb();
+            , String qidoBaseURL ,String remoteAET, String localAET, ServiceType service) {
+        StoreVerifyWeb webEntry = new StoreVerifyWeb();
         webEntry.setLocalAET(localAET);
         webEntry.setRemoteAET(remoteAET);
         webEntry.setQidoBaseURL(qidoBaseURL);
-        webEntry.setStatus(StoreRememberStatus.PENDING);
+        webEntry.setStatus(StoreVerifyStatus.PENDING);
         webEntry.setTransactionID(transactionID);
+        webEntry.setService(service.toString());
         em.persist(webEntry);
     }
 
@@ -77,28 +79,29 @@ public class StoreAndRememberEJB {
         em.remove(getWebEntry(transactionID));
     }
 
-    public StoreRememberWeb getWebEntry(String transactionID) {
-        Query query  = em.createNamedQuery(StoreRememberWeb
-                .GET_STORE_REMEMBER_WEB_ENTRY);
+    public StoreVerifyWeb getWebEntry(String transactionID) {
+        Query query  = em.createNamedQuery(StoreVerifyWeb
+                .GET_STORE_VERIFY_WEB_ENTRY);
         query.setParameter(1, transactionID);
-        StoreRememberWeb webEntry = (StoreRememberWeb) 
+        StoreVerifyWeb webEntry = (StoreVerifyWeb) 
                 query.getSingleResult();
         
         if(webEntry == null) {
             throw new EntityNotFoundException("Unable to find "
-                    + "StoreRememberWebEntry for transaction "+transactionID);
+                    + "StoreVerifyWebEntry for transaction "+transactionID);
         }
         
         return webEntry;
     }
 
     public void addDimseEntry(String transactionID
-            , String remoteAET, String localAET) {
-        StoreRememberDimse dimseEntry = new StoreRememberDimse();
+            , String remoteAET, String localAET, ServiceType service) {
+        StoreVerifyDimse dimseEntry = new StoreVerifyDimse();
         dimseEntry.setLocalAET(localAET);
         dimseEntry.setRemoteAET(remoteAET);
-        dimseEntry.setStatus(StoreRememberStatus.PENDING);
+        dimseEntry.setStatus(StoreVerifyStatus.PENDING);
         dimseEntry.setTransactionID(transactionID);
+        dimseEntry.setService(service.toString());
         em.persist(dimseEntry);
     }
 
@@ -106,31 +109,31 @@ public class StoreAndRememberEJB {
         em.remove(getDimseEntry(transactionID));
     }
 
-    public StoreRememberDimse getDimseEntry(String transactionID) {
-        Query query  = em.createNamedQuery(StoreRememberDimse
-                .GET_STORE_REMEMBER_DIMSE_ENTRY);
+    public StoreVerifyDimse getDimseEntry(String transactionID) {
+        Query query  = em.createNamedQuery(StoreVerifyDimse
+                .GET_STORE_VERIFY_DIMSE_ENTRY);
         query.setParameter(1, transactionID);
-        StoreRememberDimse dimseEntry = (StoreRememberDimse) 
+        StoreVerifyDimse dimseEntry = (StoreVerifyDimse) 
                 query.getSingleResult();
         
         if(dimseEntry == null) {
             throw new EntityNotFoundException("Unable to find "
-                    + "StoreRememberDimseEntry for transaction "+transactionID);
+                    + "StoreVerifyDimseEntry for transaction "+transactionID);
         }
         
         return dimseEntry;
     }
 
     public void updateStatus(String transactionID
-            , StoreRememberStatus status) {
+            , StoreVerifyStatus status) {
 
         if (transactionID.startsWith("dimse")) {
-            StoreRememberDimse dimseEntry = getDimseEntry(transactionID);
+            StoreVerifyDimse dimseEntry = getDimseEntry(transactionID);
             dimseEntry.setStatus(status);
             em.merge(dimseEntry);
         }
         else {
-            StoreRememberWeb webEntry = getWebEntry(transactionID);
+            StoreVerifyWeb webEntry = getWebEntry(transactionID);
             webEntry.setStatus(status);
             em.merge(webEntry);
         }

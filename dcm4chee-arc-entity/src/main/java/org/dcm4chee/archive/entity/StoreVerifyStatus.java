@@ -1,6 +1,6 @@
 package org.dcm4chee.archive.entity;
 
-public enum StoreRememberStatus {
+public enum StoreVerifyStatus {
 
     PENDING
     ,VERIFIED

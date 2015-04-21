@@ -39,9 +39,6 @@
 package org.dcm4chee.archive.qido.client;
 
 import java.util.Collection;
-import java.util.Map;
-
-import org.dcm4chee.storage.conf.Availability;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -49,7 +46,7 @@ import org.dcm4chee.storage.conf.Availability;
  */
 public interface QidoClientService {
     
-    Map<String,Availability> verifyStorage(QidoClient client
+    QidoResponse verifyStorage(QidoClient client
             , Collection<String> sopInstanceUIDs);
 
     public QidoClient createQidoClient(QidoContext ctx);

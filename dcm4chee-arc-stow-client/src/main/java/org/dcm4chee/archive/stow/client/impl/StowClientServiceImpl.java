@@ -43,6 +43,7 @@ import java.util.Date;
 
 import javax.annotation.Resource;
 import javax.enterprise.event.Event;
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -64,11 +65,16 @@ import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.Service;
+import org.dcm4chee.archive.dto.ServiceQualifier;
+import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.stow.client.StowClient;
 import org.dcm4chee.archive.stow.client.StowClientService;
 import org.dcm4chee.archive.stow.client.StowContext;
 import org.dcm4chee.archive.stow.client.StowJMSMessage;
 import org.dcm4chee.archive.stow.client.StowResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -76,6 +82,8 @@ import org.dcm4chee.archive.stow.client.StowResponse;
  */
 public class StowClientServiceImpl implements StowClientService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(StowClientServiceImpl.class);
+    
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
@@ -83,7 +91,8 @@ public class StowClientServiceImpl implements StowClientService {
     private Queue stowQueue;
 
     @Inject
-    private Event<StowResponse> stowEvent;
+    @Any
+    private Event<StowResponse> storeRememberEvent;
 
     @Override 
     public void scheduleStow(String transactionID, StowContext ctx
@@ -159,9 +168,9 @@ public class StowClientServiceImpl implements StowClientService {
     }
 
     @Override
-    public void notify(StowResponse rsp) {
-        stowEvent.fire(rsp);
-        
+    public void notify(StowContext context, StowResponse rsp) {
+        storeRememberEvent.select(new ServiceQualifier(
+                context.getService())).fire(rsp);
     }
 
 }
