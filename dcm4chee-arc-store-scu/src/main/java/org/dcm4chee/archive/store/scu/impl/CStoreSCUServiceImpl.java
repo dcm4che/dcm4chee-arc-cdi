@@ -71,6 +71,7 @@ import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
@@ -108,6 +109,9 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     private Queue storeSCUQueue;
 
     @Inject
+    private Device device;
+
+    @Inject
     @Any
     private Event<CStoreSCUResponse> storeSCUEvent;
 
@@ -119,8 +123,8 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
             List<ArchiveInstanceLocator> insts, int priority)
             throws DicomServiceException {
         try {
-            ApplicationEntity localAE = context.getLocalAE();
-            ApplicationEntity remoteAE = context.getRemoteAE();
+            ApplicationEntity localAE = device.getApplicationEntity(context.getLocalAE().getAETitle());
+            ApplicationEntity remoteAE = device.getApplicationEntity(context.getRemoteAE().getAETitle());
             if (localAE == null) {
                 LOG.warn("Failed to store to {} - no such local AE for "
                         + "transaction {}", remoteAE.getAETitle(), messageID);

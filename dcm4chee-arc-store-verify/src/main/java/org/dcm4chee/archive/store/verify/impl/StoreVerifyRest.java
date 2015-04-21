@@ -116,6 +116,7 @@ public class StoreVerifyRest {
         ArrayList<ArchiveInstanceLocator> locators = 
                 new ArrayList<ArchiveInstanceLocator>();
         locators.add(locateInstance(sopUID));
+        service.store(ctx, locators);
     }
 
     @GET
