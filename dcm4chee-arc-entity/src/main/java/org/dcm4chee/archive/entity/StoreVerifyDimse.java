@@ -16,7 +16,7 @@ import javax.persistence.Table;
                     + "e.transactionID = ?1"),
     @NamedQuery(
             name=StoreVerifyDimse.STORE_VERIFY_DIMSE_ENTRY_EXISTS,
-            query="select count(e) from StoreVerifyDimse e"
+            query="select count(e.pk) from StoreVerifyDimse e"
                     + " where e.transactionID = ?1")
 })
 @Entity

@@ -44,6 +44,8 @@ import java.util.List;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -79,7 +81,9 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.ServiceQualifier;
 import org.dcm4chee.archive.dto.ServiceType;
+import org.dcm4chee.archive.entity.StoreVerifyDimse;
 import org.dcm4chee.archive.stgcmt.scp.CommitEvent;
 import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
 import org.dcm4chee.storage.RetrieveContext;
@@ -119,6 +123,10 @@ public class StgCmtServiceImpl implements StgCmtService {
 
     @Inject
     private Device device;
+
+    @Inject
+    @Any
+    private Event<CommitEvent> commitEvent; 
 
     private int eventTypeId(Attributes eventInfo) {
         return eventInfo.containsValue(Tag.FailedSOPSequence) ? 2 : 1;
@@ -371,8 +379,16 @@ public class StgCmtServiceImpl implements StgCmtService {
     }
 
     @Override
-    public void notify(CommitEvent commitEvent) {
-        
-        //notify
+    public void notify(CommitEvent commitEvt) {
+        if(stgCmtEJB.dimseEntryExists(commitEvt.getTransactionUID())) {
+            StoreVerifyDimse dimse = stgCmtEJB.getDimseEntry(commitEvt
+                    .getTransactionUID());
+            String service = dimse.getService();
+            commitEvent.select(new ServiceQualifier(ServiceType
+                    .valueOf(service))).fire(commitEvt);
+        }
+        else {
+            commitEvent.fire(commitEvt);
+        }
     }
 }

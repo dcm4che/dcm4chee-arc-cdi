@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.stgcmt.scp;
 
 import java.io.IOException;
-import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
@@ -60,7 +59,6 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.AbstractDicomService;
-import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -79,9 +77,6 @@ public class StgCmt extends AbstractDicomService {
     @Inject
     private IApplicationEntityCache aeCache;
     
-    @Inject
-    private Event<CommitEvent> commitEvent; 
-
     public StgCmt() {
         super(UID.StorageCommitmentPushModelSOPClass);
     }
