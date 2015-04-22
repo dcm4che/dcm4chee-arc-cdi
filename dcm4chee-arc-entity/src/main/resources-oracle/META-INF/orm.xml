@@ -265,9 +265,9 @@
     </attributes>
   </entity>
 
-  <entity class="StoreRememberDimse">
-    <table name="store_remember_dimse" />
-    <sequence-generator name="seq" sequence-name="store_remember_dimse_pk_seq" allocation-size="1" />
+ <entity class="StoreVerifyDimse">
+    <table name="store_verify_dimse" />
+    <sequence-generator name="seq" sequence-name="store_verify_dimse_pk_seq" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -276,9 +276,9 @@
     </attributes>
   </entity>
 
-  <entity class="StoreRememberWeb">
-    <table name="store_remember_web" />
-    <sequence-generator name="seq" sequence-name="store_remember_web_pk_seq" allocation-size="1" />
+  <entity class="StoreVerifyWeb">
+    <table name="store_vetrify_web" />
+    <sequence-generator name="seq" sequence-name="store_verify_web_pk_seq" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />

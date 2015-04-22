@@ -540,24 +540,26 @@ alter table ext_retrieve_location
     foreign key (instance_fk)
     references instance (pk);
     
-create table store_remember_dimse (
-    pk number(19,0) not null,
-    local_aet varchar2(255 char),
-    remote_aet varchar2(255 char),
-    status number(10,0),
-    transaction_id varchar2(255 char),
-    primary key (pk)
-);
+    create table store_verify_dimse (
+        pk bigint not null auto_increment,
+        intended_service varchar(255),
+        local_aet varchar(255),
+        remote_aet varchar(255),
+        status integer,
+        transaction_id varchar(255),
+        primary key (pk)
+    ) ENGINE=InnoDB;
 
-create table store_remember_web (
-    pk number(19,0) not null,
-    local_aet varchar2(255 char),
-    qido_base_url varchar2(255 char),
-    remote_aet varchar2(255 char),
-    status number(10,0),
-    transaction_id varchar2(255 char),
-    primary key (pk)
-);
+    create table store_verify_web (
+        pk bigint not null auto_increment,
+        intended_service varchar(255),
+        local_aet varchar(255),
+        qido_base_url varchar(255),
+        remote_aet varchar(255),
+        status integer,
+        transaction_id varchar(255),
+        primary key (pk)
+    ) ENGINE=InnoDB;
     
-create index store_remember_web_tid_idx on store_remember_web (transaction_id);
-create index store_remember_dimse_tid_idx on store_remember_dimse (transaction_id);
+create index store_verify_web_tid_idx on store_verify_web (transaction_id);
+create index store_verify_dimse_tid_idx on store_verify_dimse (transaction_id);
