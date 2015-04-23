@@ -193,6 +193,10 @@ public class Patient implements Serializable {
 
         if (patientAttributes != null)
             attributesBlob = new AttributesBlob(patientAttributes);
+
+        if (extension != null)
+            extension.onPrePersist();
+
     }
 
     @PreUpdate
@@ -201,6 +205,10 @@ public class Patient implements Serializable {
 
         if (patientAttributes != null)
             attributesBlob.setAttributes(patientAttributes);
+
+        if (extension != null)
+            extension.onPreUpdate();
+
     }
 
     public long getPk() {

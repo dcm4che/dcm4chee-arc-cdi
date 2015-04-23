@@ -42,6 +42,9 @@ import javax.persistence.Embeddable;
 
 /**
  * Placeholder for Patient entity extension
+ *
+ * The onPreUpdate and onPrePersist are called from the Patient entity, extensions must implement those and
+ * can put hook logic inside (since Hibernate does not allow hooks on @Embeddable)
  * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
@@ -49,4 +52,11 @@ import javax.persistence.Embeddable;
 @Embeddable
 public class PatientExtension {
 
+    public void onPreUpdate() {
+
+    }
+
+    public void onPrePersist() {
+
+    }
 }
