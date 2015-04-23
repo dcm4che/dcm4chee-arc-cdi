@@ -120,7 +120,7 @@ public class StoreVerifyServiceImpl implements StoreVerifyService {
         String localAET = context.getLocalAE().getAETitle();
         String remoteAET = context.getRemoteAE().getAETitle();
         ServiceType service = context.getService();
-        String transactionID = generateTransactionID(false);
+        String transactionID = generateTransactionID(true);
         ejb.addDimseEntry(transactionID, remoteAET, localAET, service);
         context.setService(ServiceType.STOREVERIFY);
         storeSCUService.scheduleStoreSCU(transactionID, context,

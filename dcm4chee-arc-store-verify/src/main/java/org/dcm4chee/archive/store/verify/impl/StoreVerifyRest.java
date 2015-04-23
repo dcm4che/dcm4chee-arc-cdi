@@ -50,6 +50,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
@@ -79,6 +80,10 @@ public class StoreVerifyRest {
     @Inject
     private Device device;
 
+
+    @Inject
+    private IApplicationEntityCache aeCache;
+    
     @Context
     private HttpServletRequest request;
 
@@ -91,7 +96,7 @@ public class StoreVerifyRest {
     public void emulateStoreRemember() throws Exception {
         archStorageDevExt = device.getDeviceExtension(
                 StorageDeviceExtension.class);
-        String sopUID = "1.1.1.2";
+        String sopUID = "1.2.3.4";
         ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
         StowContext ctx = new StowContext(arcAE, arcAE, ServiceType.STOREREMEMBER);
         ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
@@ -107,7 +112,7 @@ public class StoreVerifyRest {
     public void emulateStoreVerify() throws Exception {
         archStorageDevExt = device.getDeviceExtension(
                 StorageDeviceExtension.class);
-        String sopUID = "1.1.1.2";
+        String sopUID = "1.2.3.4";
         ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
         StowContext ctx = new StowContext(arcAE, arcAE, ServiceType.STOREVERIFY);
         ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");
@@ -124,9 +129,10 @@ public class StoreVerifyRest {
     public void emulateStoreRememberDimse() throws Exception {
         archStorageDevExt = device.getDeviceExtension(
                 StorageDeviceExtension.class);
-        String sopUID = "1.1.1.2";
+        String sopUID = "1.2.3.4";
         ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
-        CStoreSCUContext ctx = new CStoreSCUContext(arcAE, arcAE, ServiceType.STOREREMEMBER);
+        ApplicationEntity dcmqrSCP = aeCache.findApplicationEntity("DCMQRSCP");
+        CStoreSCUContext ctx = new CStoreSCUContext(arcAE, dcmqrSCP, ServiceType.STOREREMEMBER);
         ArrayList<ArchiveInstanceLocator> locators = 
                 new ArrayList<ArchiveInstanceLocator>();
         locators.add(locateInstance(sopUID));
@@ -138,7 +144,7 @@ public class StoreVerifyRest {
     public void emulateStoreVerifyDimse() throws Exception {
         archStorageDevExt = device.getDeviceExtension(
                 StorageDeviceExtension.class);
-        String sopUID = "1.1.1.2";
+        String sopUID = "1.2.3.4";
         ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
         CStoreSCUContext ctx = new CStoreSCUContext(arcAE, arcAE, ServiceType.STOREVERIFY);
         ArrayList<ArchiveInstanceLocator> locators = 

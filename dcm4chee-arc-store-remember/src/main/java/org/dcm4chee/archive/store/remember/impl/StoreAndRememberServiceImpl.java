@@ -155,7 +155,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         if (refSops != null) {
             for (int i = 0; i < refSops.size(); i++)
                 addExternalLocation(refSops.get(i)
-                        .getString(Tag.SOPInstanceUID),
+                        .getString(Tag.ReferencedSOPInstanceUID),
                         commitEvent.getRemoteAET(), defaultAvailability);
         }
 

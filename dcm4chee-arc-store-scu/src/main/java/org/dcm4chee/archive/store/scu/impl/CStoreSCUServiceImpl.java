@@ -124,7 +124,7 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
             throws DicomServiceException {
         try {
             ApplicationEntity localAE = device.getApplicationEntity(context.getLocalAE().getAETitle());
-            ApplicationEntity remoteAE = device.getApplicationEntity(context.getRemoteAE().getAETitle());
+            ApplicationEntity remoteAE = context.getRemoteAE();
             if (localAE == null) {
                 LOG.warn("Failed to store to {} - no such local AE for "
                         + "transaction {}", remoteAE.getAETitle(), messageID);

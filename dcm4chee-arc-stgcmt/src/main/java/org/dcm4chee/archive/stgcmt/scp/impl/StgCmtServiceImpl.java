@@ -290,7 +290,7 @@ public class StgCmtServiceImpl implements StgCmtService {
         aarq.addRoleSelection(new RoleSelection(
                 UID.StorageCommitmentPushModelSOPClass, true, false));
 
-        String transactionUID = UIDUtils.createUID();
+        String transactionUID = clientID;
 
         Attributes action = createAction(insts, transactionUID);
 
@@ -334,11 +334,11 @@ public class StgCmtServiceImpl implements StgCmtService {
             String transactionUID) {
         Attributes rsp = new Attributes();
         rsp.setString(Tag.TransactionUID, VR.UI, transactionUID);
-        Sequence isntSeq = rsp.getSequence(Tag.ReferencedSOPSequence);
+        Sequence isntSeq = rsp.newSequence(Tag.ReferencedSOPSequence, insts.size());
         for (ArchiveInstanceLocator inst : insts) {
             Attributes instAtt = new Attributes();
-            instAtt.setString(Tag.SOPClassUID, VR.UI, inst.cuid);
-            instAtt.setString(Tag.SOPInstanceUID, VR.UI, inst.iuid);
+            instAtt.setString(Tag.ReferencedSOPClassUID, VR.UI, inst.cuid);
+            instAtt.setString(Tag.ReferencedSOPInstanceUID, VR.UI, inst.iuid);
             isntSeq.add(instAtt);
         }
         return rsp;
