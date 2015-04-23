@@ -277,7 +277,7 @@
   </entity>
 
   <entity class="StoreVerifyWeb">
-    <table name="store_vetrify_web" />
+    <table name="store_verify_web" />
     <sequence-generator name="seq" sequence-name="store_verify_web_pk_seq" allocation-size="1" />
     <attributes>
       <id name="pk">
