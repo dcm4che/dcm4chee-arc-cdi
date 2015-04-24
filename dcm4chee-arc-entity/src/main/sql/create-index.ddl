@@ -1,4 +1,4 @@
-create index code_idx on code (code_value, code_designator, code_version);
+create unique index code_idx on code (code_value, code_designator, code_version);
 
 create index content_item_rel_type_idx on content_item (rel_type);
 create index content_item_text_value_idx on content_item (text_value);

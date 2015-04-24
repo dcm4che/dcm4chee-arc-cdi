@@ -292,7 +292,8 @@ public class QCBeanImpl  implements QCBean{
             }
         }
         recordHistoryEntry(instancesHistory);
-        Instance rejNote = createAndStoreRejectionNote(new Code(qcRejectionCode), rejectedInstances);
+        Instance rejNote = createAndStoreRejectionNote(
+                codeService.findOrCreate(new Code(qcRejectionCode)), rejectedInstances);
         QCEvent mergeEvent = new QCEvent(QCOperation.MERGE, null,null,sourceUIDs,targetUIDs);
         mergeEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(targetUIDs, rejNote);
@@ -458,7 +459,8 @@ public class QCBeanImpl  implements QCBean{
             movedSourceUIDs.add(instance.getSopInstanceUID());
             }
         
-        Instance rejNote = createAndStoreRejectionNote(new Code(qcRejectionCode), toMove);
+        Instance rejNote = createAndStoreRejectionNote(
+                codeService.findOrCreate(new Code(qcRejectionCode)), toMove);
         //clone
         for(Instance instance: toClone) {
             if(!oldToNewSeries.keySet().contains(
