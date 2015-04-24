@@ -206,7 +206,7 @@ attributetype ( 1.2.40.0.13.1.15.10.3.37 NAME 'dcmIncorrectWorklistEntrySelected
   SINGLE-VALUE )
 
 attributetype ( 1.2.40.0.13.1.15.10.3.38 NAME 'dcmRejectedForQualityReasonsCode'
-  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for quality reasons: (113001, DCM, “Rejected for Quality Reasons”)'
+  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for quality reasons: (113001, DCM, "Rejected for Quality Reasons")'
   OBSOLETE
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
@@ -214,7 +214,7 @@ attributetype ( 1.2.40.0.13.1.15.10.3.38 NAME 'dcmRejectedForQualityReasonsCode'
   SINGLE-VALUE )
 
 attributetype ( 1.2.40.0.13.1.15.10.3.39 NAME 'dcmRejectedForPatientSafetyReasonsCode'
-  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for patient safety reasons: (113037, DCM, “Rejected for Patient Safety Reasons”)'
+  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as rejected for patient safety reasons: (113037, DCM, "Rejected for Patient Safety Reasons")'
   OBSOLETE
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
@@ -222,7 +222,7 @@ attributetype ( 1.2.40.0.13.1.15.10.3.39 NAME 'dcmRejectedForPatientSafetyReason
   SINGLE-VALUE )
 
 attributetype ( 1.2.40.0.13.1.15.10.3.40 NAME 'dcmIncorrectModalityWorklistEntryCode'
-  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as associated with an incorrect modality worklist entry: (XXXXXX11, 99IHEIOCM, “Incorrect Modality Worklist Entry”)'
+  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as associated with an incorrect modality worklist entry: (XXXXXX11, 99IHEIOCM, "Incorrect Modality Worklist Entry")'
   OBSOLETE
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
@@ -230,7 +230,7 @@ attributetype ( 1.2.40.0.13.1.15.10.3.40 NAME 'dcmIncorrectModalityWorklistEntry
   SINGLE-VALUE )
 
 attributetype ( 1.2.40.0.13.1.15.10.3.41 NAME 'dcmDataRetentionPeriodExpiredCode'
-  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as expired for data retention policy: (XXXXXX22, 99IHEIOCM, “Data Retention Period Expired”)'
+  DESC 'Key Object Selection Document Title code used by the IHE Change Requester Actor to mark instances as expired for data retention policy: (XXXXXX22, 99IHEIOCM, "Data Retention Period Expired")'
   OBSOLETE
   EQUALITY caseExactMatch
   SUBSTR caseExactSubstringsMatch
