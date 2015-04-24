@@ -144,7 +144,7 @@ public class PersonName implements Serializable {
         phoneticMiddleName = pn.get(Group.Phonetic, Component.MiddleName);
         phoneticNamePrefix = pn.get(Group.Phonetic, Component.NamePrefix);
         phoneticNameSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
-        createOrUpdateSoundexCodes(familyName, givenName, ideographicMiddleName,
+        createOrUpdateSoundexCodes(familyName, givenName, middleName,
                     fuzzyStr);
     }
 
