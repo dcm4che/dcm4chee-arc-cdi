@@ -162,7 +162,7 @@ public class StoreAndVerifyOTWServiceIT {
             archStorageDevExt = device.getDeviceExtension(
                     StorageDeviceExtension.class);
             clearDB();
-            store("instance.xml");
+            store("test.dcm");
             }
 
         /*
@@ -170,7 +170,7 @@ public class StoreAndVerifyOTWServiceIT {
          */
         @Test
         public void testAStoreAndRememberOTWNoVerify() {
-            String sopUID = "1.1.1.2";
+            String sopUID = "1.2.3.4";
             ApplicationEntity arcAE = device.getApplicationEntity("DCM4CHEE");
             StowContext ctx = new StowContext(arcAE, arcAE, ServiceType.STOREVERIFY);
             ctx.setStowRemoteBaseURL("http://localhost:8080/dcm4chee-arc/");

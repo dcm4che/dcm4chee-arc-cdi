@@ -142,7 +142,7 @@ public class Patient implements Serializable {
     private AttributesBlob attributesBlob;
 
     @Embedded
-    private PatientExtension extension;
+    private PatientExtension extension = new PatientExtension();
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "pat_name_fk")
@@ -193,6 +193,10 @@ public class Patient implements Serializable {
 
         if (patientAttributes != null)
             attributesBlob = new AttributesBlob(patientAttributes);
+
+        if (extension != null)
+            extension.onPrePersist();
+
     }
 
     @PreUpdate
@@ -201,6 +205,10 @@ public class Patient implements Serializable {
 
         if (patientAttributes != null)
             attributesBlob.setAttributes(patientAttributes);
+
+        if (extension != null)
+            extension.onPreUpdate();
+
     }
 
     public long getPk() {
