@@ -43,6 +43,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.inject.Inject;
+
+import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -55,6 +59,7 @@ import org.dcm4che3.net.DataWriter;
 import org.dcm4che3.net.DataWriterAdapter;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
+import org.dcm4che3.net.pdu.AAssociateRQ;
 import org.dcm4che3.net.service.BasicCStoreSCU;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.CStoreSCU;
@@ -63,6 +68,7 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.retrieve.scu.CMoveSCU;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.slf4j.Logger;
@@ -82,6 +88,8 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     private CStoreSCUService service;
     private boolean withoutBulkData;
 
+    @Inject
+    private IApplicationEntityCache aeCache;
     /**
      * @param localAE
      * @param remoteAE
@@ -111,7 +119,25 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     	if(externallyAvailable.isEmpty())
 		return responseForLocalyAvailable;
     	else {
+    		//just forwarding now
     		//TODO - create fetch and retrieve task for externally available instances
+    		for(ArchiveInstanceLocator extLoc : externallyAvailable) {
+    		String[] retrieveAETs = Utils.decodeAETs(extLoc.getRetrieveAETs());
+    		//TODO - prioritize retrieve AETs by configuration
+    		ApplicationEntity remoteAE;
+			try {
+				remoteAE = aeCache.findApplicationEntity(retrieveAETs[0]);
+			} catch (ConfigurationException e) {
+				LOG.debug("External retrieveAET {} not found in configuration."
+						+ " Failure to retrieve {} ", retrieveAETs[0], extLoc.iuid);
+				//TODO - retry with different AE
+				continue;
+			}
+           CMoveSCU movescu = new CMoveSCU(storeas.getApplicationEntity()
+        		   , remoteAE, storeas.getCalledAET());
+           movescu.open();
+           movescu.cmove(keys, handler);
+    		}
     		return responseForLocalyAvailable;
     	}
     }
@@ -251,5 +277,4 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         }
         return UID.ImplicitVRLittleEndian;
     }
-
 }
