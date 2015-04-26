@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.retrieve.scp;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -145,11 +146,13 @@ public class CMoveSCP extends BasicCMoveSCP {
                      retrieveService.calculateMatches(pids, keys, queryParam, false);
             if (matches.isEmpty())
                 return null;
-            
-            AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, matches);
-            Association storeas = openStoreAssociation(as, destAE, aarq);
+            //here matches could all be associated with a storage system or some of them or none
+            //no storage system implies external retrieve location
             CStoreSCU<ArchiveInstanceLocator> cstorescu = new CStoreSCUImpl (
                     ae, destAE, ServiceType.MOVESERVICE, storescuService);
+            AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, filterLocalOrExternalMatches(matches, true));
+            Association storeas = openStoreAssociation(as, destAE, aarq);
+            
             BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = new BasicRetrieveTask<ArchiveInstanceLocator>(
                     Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, cstorescu);
 //            retrieveTask.setDestinationDevice(destAE.getDevice());
@@ -174,7 +177,9 @@ public class CMoveSCP extends BasicCMoveSCP {
         }
     }
 
-    private Association openStoreAssociation(Association as,
+
+
+	private Association openStoreAssociation(Association as,
             ApplicationEntity destAE, AAssociateRQ aarq) throws DicomServiceException {
         try {
             return as.getApplicationEntity().connect(destAE, aarq);
@@ -204,4 +209,22 @@ public class CMoveSCP extends BasicCMoveSCP {
         // TODO Auto-generated method stub
         return null;
     }
+
+    private List<ArchiveInstanceLocator> filterLocalOrExternalMatches(
+			List<ArchiveInstanceLocator> matches, boolean localMatches) {
+    	ArrayList<ArchiveInstanceLocator> filteredMatches = new ArrayList
+    			<ArchiveInstanceLocator>();
+
+		for (ArchiveInstanceLocator match : matches) {
+			if (localMatches) {
+				if (match.getStorageSystem() != null)
+					filteredMatches.add(match);
+			} else {
+				if (match.getStorageSystem() == null)
+					filteredMatches.add(match);
+			}
+
+		}
+		return filteredMatches;
+	}
 }

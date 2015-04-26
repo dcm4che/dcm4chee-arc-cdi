@@ -38,6 +38,7 @@
 package org.dcm4chee.archive.store.verify;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
@@ -147,13 +148,24 @@ public class StoreVerifyEJB {
             Availability availability) {
         ExternalRetrieveLocation location = new ExternalRetrieveLocation(retrieveAET, availability);
         
-        Query query = em.createQuery("select i from Instance i where"
-                + " i.sopInstanceUID = ?1");
-        query.setParameter(1, iuid);
-        Instance instance = (Instance) query.getSingleResult();
+        Instance instance = getInstance(iuid);
+        ArrayList<String> currentRetrieveAETs = 
+        		new ArrayList<String>(Arrays.asList(instance.getRetrieveAETs()));
+        currentRetrieveAETs.add(retrieveAET);
+        String[] updatedRetrieveAETs = new String[currentRetrieveAETs.size()];
+        instance.setRetrieveAETs(currentRetrieveAETs.toArray(
+        		updatedRetrieveAETs));
         location.setInstance(instance);
         em.persist(location);
     }
+
+	private Instance getInstance(String iuid) {
+		Query query = em.createQuery("select i from Instance i where"
+                + " i.sopInstanceUID = ?1");
+        query.setParameter(1, iuid);
+        Instance instance = (Instance) query.getSingleResult();
+		return instance;
+	}
 
     public void removeExternalLocation(String iuid, String retrieveAET) {
         
@@ -163,8 +175,16 @@ public class StoreVerifyEJB {
         query.setParameter(2, retrieveAET); //retrieve AETitle
         ArrayList<ExternalRetrieveLocation> list = 
                 (ArrayList<ExternalRetrieveLocation>) query.getResultList();
+        
         for(ExternalRetrieveLocation extLocation : list)
             em.remove(extLocation);
+        Instance instance = getInstance(iuid);
+        ArrayList<String> currentRetrieveAETs = (ArrayList<String>) 
+        		new ArrayList<String>(Arrays.asList(instance.getRetrieveAETs()));
+        currentRetrieveAETs.remove(retrieveAET);
+        String[] updatedRetrieveAETs = new String[currentRetrieveAETs.size()];
+        instance.setRetrieveAETs(currentRetrieveAETs.toArray(
+        		updatedRetrieveAETs));
     }
 
     public void removeExternalLocation(String iuid, Availability availability) {

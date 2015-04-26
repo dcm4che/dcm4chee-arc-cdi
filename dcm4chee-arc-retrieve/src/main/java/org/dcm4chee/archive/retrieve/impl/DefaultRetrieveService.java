@@ -154,9 +154,17 @@ public class DefaultRetrieveService implements RetrieveService {
 
         for (Tuple tuple : tuples) {
             Boolean b = tuple.get(QLocation.location.withoutBulkData);
-            if (b == null // no Location
-                    || b && !withoutBulkData)
-                continue;
+            String retrieveAETs = tuple.get(QInstance.instance.retrieveAETs);
+            if (b == null ) 
+            { //No Location
+            	if(retrieveAETs == null ) //No external location
+            		continue;
+            }
+            else if(b && !withoutBulkData) //metadata
+            {
+            	continue;
+            }
+                
 
             long nextSeriesPk = tuple.get(QSeries.series.pk);
             long nextInstPk = tuple.get(QInstance.instance.pk);
@@ -192,8 +200,10 @@ public class DefaultRetrieveService implements RetrieveService {
         String entryName = tuple.get(QLocation.location.entryName);
         String tsuid = tuple.get(QLocation.location.transferSyntaxUID);
         String timeZone = tuple.get(QLocation.location.timeZone);
-        boolean withoutBulkData = tuple.get(QLocation.location.withoutBulkData);
-        StorageSystem storageSystem = storageConf.getStorageSystem(storageSystemGroupID, storageSystemID);
+        boolean withoutBulkData = tuple.get(QLocation.location.withoutBulkData) == null ? false 
+        		: tuple.get(QLocation.location.withoutBulkData);
+        StorageSystem storageSystem = storageSystemGroupID != null
+        		? storageConf.getStorageSystem(storageSystemGroupID, storageSystemID) : null;
         ArchiveInstanceLocator newLocator = new ArchiveInstanceLocator.Builder(cuid, iuid, tsuid)
                 .storageSystem(storageSystem)
                 .storagePath(storagePath)

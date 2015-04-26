@@ -123,6 +123,8 @@ public class ArchiveInstanceLocator extends InstanceLocator
     }
 
     private static String createRetrieveURI(Builder builder) {
+    	if(builder.storageSystem == null) 
+    		return null;
     	Path basePath = Paths.get(builder.storageSystem.getStorageSystemPath());
     	return basePath.resolve(builder.storagePath).toUri().toString();
 	}
