@@ -54,6 +54,7 @@ import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QSeries;
+import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
@@ -89,7 +90,9 @@ public class DefaultRetrieveService implements RetrieveService {
         QInstance.instance.sopClassUID,
         QInstance.instance.sopInstanceUID,
         QInstance.instance.retrieveAETs,
-        QueryBuilder.instanceAttributesBlob.encodedAttributes
+        QueryBuilder.instanceAttributesBlob.encodedAttributes,
+        QSeries.series.seriesInstanceUID,
+        QStudy.study.studyInstanceUID
     };
 
     @Inject
@@ -200,6 +203,8 @@ public class DefaultRetrieveService implements RetrieveService {
         String entryName = tuple.get(QLocation.location.entryName);
         String tsuid = tuple.get(QLocation.location.transferSyntaxUID);
         String timeZone = tuple.get(QLocation.location.timeZone);
+        String seriesInstanceUID = tuple.get(QSeries.series.seriesInstanceUID);
+        String studyInstanceUID = tuple.get(QStudy.study.studyInstanceUID);
         boolean withoutBulkData = tuple.get(QLocation.location.withoutBulkData) == null ? false 
         		: tuple.get(QLocation.location.withoutBulkData);
         StorageSystem storageSystem = storageSystemGroupID != null
@@ -211,6 +216,8 @@ public class DefaultRetrieveService implements RetrieveService {
                 .fileTimeZoneID(timeZone)
                 .retrieveAETs(retrieveAETs)
                 .withoutBulkdata(withoutBulkData)
+                .seriesInstanceUID(seriesInstanceUID)
+                .studyInstanceUID(studyInstanceUID)
                 .build();
         if (locator == null) {
             byte[] encodedInstanceAttrs =
