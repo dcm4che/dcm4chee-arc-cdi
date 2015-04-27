@@ -434,6 +434,7 @@
     <module>dcm4chee-arc-patient-impl</module>
     <module>dcm4chee-arc-code</module>
     <module>dcm4chee-arc-store</module>
+    <module>dcm4chee-arc-retrieve-scu</module>
     <module>dcm4chee-arc-store-scu</module>
     <module>dcm4chee-arc-store-verify</module>
     <module>dcm4chee-arc-store-remember</module>
@@ -452,7 +453,6 @@
     <module>dcm4chee-arc-query-scp</module>
     <module>dcm4chee-arc-retrieve</module>
     <module>dcm4chee-arc-retrieve-scp</module>
-	<module>dcm4chee-arc-retrieve-scu</module>
     <module>dcm4chee-arc-mpps-scp</module>
     <module>dcm4chee-arc-mpps-scu</module>
     <module>dcm4chee-arc-wado</module>

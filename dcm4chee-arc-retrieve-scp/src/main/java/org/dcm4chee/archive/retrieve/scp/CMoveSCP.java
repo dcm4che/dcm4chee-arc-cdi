@@ -47,6 +47,7 @@ import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
@@ -56,6 +57,8 @@ import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.pdu.AAssociateRQ;
 import org.dcm4che3.net.pdu.ExtendedNegotiation;
 import org.dcm4che3.net.pdu.PresentationContext;
@@ -81,12 +84,15 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.dcm4chee.archive.store.scu.impl.CStoreSCUImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
 public class CMoveSCP extends BasicCMoveSCP {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CMoveSCP.class);
     private final String[] qrLevels;
     private final QueryRetrieveLevel rootLevel;
 
@@ -114,9 +120,11 @@ public class CMoveSCP extends BasicCMoveSCP {
     @Override
     protected RetrieveTask calculateMatches(Association as, PresentationContext pc,
             final Attributes rq, Attributes keys) throws DicomServiceException {
+        
         QueryRetrieveLevel level = QueryRetrieveLevel.valueOf(keys, qrLevels);
         String cuid = rq.getString(Tag.AffectedSOPClassUID);
-        ExtendedNegotiation extNeg = as.getAAssociateAC().getExtNegotiationFor(cuid);
+        ExtendedNegotiation extNeg = as.getAAssociateAC()
+                .getExtNegotiationFor(cuid);
         EnumSet<QueryOption> queryOpts = QueryOption.toOptions(extNeg);
         boolean relational = queryOpts.contains(QueryOption.RELATIONAL);
         level.validateRetrieveKeys(keys, rootLevel, relational);
@@ -125,7 +133,8 @@ public class CMoveSCP extends BasicCMoveSCP {
             final ApplicationEntity destAE =
                     aeCache.findApplicationEntity(dest);
             ApplicationEntity ae = as.getApplicationEntity();
-            ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
+            ArchiveAEExtension arcAE = ae.getAEExtension(
+                    ArchiveAEExtension.class);
             QueryParam queryParam = arcAE.getQueryParam(queryOpts,
                     accessControlIDs());
 //            ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
@@ -143,28 +152,36 @@ public class CMoveSCP extends BasicCMoveSCP {
             context.setDestinationAE(destAE);
             IDWithIssuer[] pids = retrieveService.queryPatientIDs(context, keys);
             List<ArchiveInstanceLocator> matches =
-                     retrieveService.calculateMatches(pids, keys, queryParam, false);
+                     retrieveService.calculateMatches(pids, keys, queryParam
+                             , false);
             if (matches.isEmpty())
                 return null;
             //here matches could all be associated with a storage system or some of them or none
             //no storage system implies external retrieve location
             CStoreSCU<ArchiveInstanceLocator> cstorescu = new CStoreSCUImpl (
                     ae, destAE, ServiceType.MOVESERVICE, storescuService);
-            AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, filterLocalOrExternalMatches(matches, true));
+            AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest,
+                    filterLocalOrExternalMatches(matches, true));
             Association storeas = openStoreAssociation(as, destAE, aarq);
             
-            BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = new BasicRetrieveTask<ArchiveInstanceLocator>(
+            //now extract complete series refs and use for either forwarding or fetch and retrieve 
+            
+            //now do the normal retrieves
+            BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = 
+                    new BasicRetrieveTask<ArchiveInstanceLocator>(
                     Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, cstorescu);
 //            retrieveTask.setDestinationDevice(destAE.getDevice());
             retrieveTask.setSendPendingRSPInterval(arcAE.getSendPendingCMoveInterval());
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
 //            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
             
-            retrieveBeforeEvent.select(new ServiceQualifier(ServiceType.MOVESERVICE))
+            retrieveBeforeEvent.select(new ServiceQualifier(ServiceType
+                    .MOVESERVICE))
             .fire(new RetrieveBeforeSendEvent(
                     new RemoteAssociationParticipant(as),
                     new LocalAssociationParticipant(as), 
-                    new GenericParticipant(Participant.UNKNOWN,destAE.getAETitle()),
+                    new GenericParticipant(Participant.UNKNOWN
+                            ,destAE.getAETitle()),
                     ae.getDevice(),
                     matches));
             
@@ -173,33 +190,55 @@ public class CMoveSCP extends BasicCMoveSCP {
             throw new DicomServiceException(Status.MoveDestinationUnknown,
                     "Unknown Move Destination: " + dest);
         } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToCalculateNumberOfMatches, e);
+            throw new DicomServiceException(Status
+                    .UnableToCalculateNumberOfMatches, e);
         }
     }
 
 
 
 	private Association openStoreAssociation(Association as,
-            ApplicationEntity destAE, AAssociateRQ aarq) throws DicomServiceException {
+            ApplicationEntity destAE, AAssociateRQ aarq) 
+                    throws DicomServiceException {
         try {
             return as.getApplicationEntity().connect(destAE, aarq);
         } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToPerformSubOperations, e);
+            throw new DicomServiceException(Status
+                    .UnableToPerformSubOperations, e);
         }
 
     }
 
     private AAssociateRQ makeAAssociateRQ(String callingAET, String calledAET,
-            List<ArchiveInstanceLocator> matches) {
+            List<ArchiveInstanceLocator> matches) 
+                    throws ConfigurationNotFoundException {
         AAssociateRQ aarq = new AAssociateRQ();
         aarq.setCalledAET(calledAET);
         aarq.setCallingAET(callingAET);
+        ApplicationEntity callingAE;
+        try {
+            callingAE = aeCache.findApplicationEntity(callingAET);
+        } catch (ConfigurationException e) {
+           throw new ConfigurationNotFoundException("Error finding"
+                   + " archive AE in configuration " + callingAET);
+        }
+        
         for (InstanceLocator match : matches) {
-            if (aarq.addPresentationContextFor(match.cuid, match.tsuid)) {
+            if(match.tsuid == null) {
+                //using the full list of archive transfer capabilities
+                //for this SOP class role SCU
+                TransferCapability tc = callingAE.getTransferCapabilityFor(
+                        match.cuid, Role.SCU);
+                for(String ts : tc.getTransferSyntaxes())
+                    aarq.addPresentationContextFor(match.cuid, ts);
+            }
+            else if (aarq.addPresentationContextFor(match.cuid, match.tsuid)) {
                 if (!UID.ExplicitVRLittleEndian.equals(match.tsuid))
-                    aarq.addPresentationContextFor(match.cuid, UID.ExplicitVRLittleEndian);
+                    aarq.addPresentationContextFor(match.cuid, UID
+                            .ExplicitVRLittleEndian);
                 if (!UID.ImplicitVRLittleEndian.equals(match.tsuid))
-                    aarq.addPresentationContextFor(match.cuid, UID.ImplicitVRLittleEndian);
+                    aarq.addPresentationContextFor(match.cuid, UID
+                            .ImplicitVRLittleEndian);
             }
         }
         return aarq;
@@ -211,20 +250,20 @@ public class CMoveSCP extends BasicCMoveSCP {
     }
 
     private List<ArchiveInstanceLocator> filterLocalOrExternalMatches(
-			List<ArchiveInstanceLocator> matches, boolean localMatches) {
-    	ArrayList<ArchiveInstanceLocator> filteredMatches = new ArrayList
-    			<ArchiveInstanceLocator>();
+            List<ArchiveInstanceLocator> matches, boolean localMatches) {
+        ArrayList<ArchiveInstanceLocator> filteredMatches = 
+                new ArrayList<ArchiveInstanceLocator>();
 
-		for (ArchiveInstanceLocator match : matches) {
-			if (localMatches) {
-				if (match.getStorageSystem() != null)
-					filteredMatches.add(match);
-			} else {
-				if (match.getStorageSystem() == null)
-					filteredMatches.add(match);
-			}
+        for (ArchiveInstanceLocator match : matches) {
+            if (localMatches) {
+                if (match.getStorageSystem() != null)
+                    filteredMatches.add(match);
+            } else {
+                if (match.getStorageSystem() == null)
+                    filteredMatches.add(match);
+            }
 
-		}
-		return filteredMatches;
-	}
+        }
+        return filteredMatches;
+    }
 }

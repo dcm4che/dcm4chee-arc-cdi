@@ -40,6 +40,8 @@ package org.dcm4chee.archive.store.scu.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -107,59 +109,41 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     }
 
     @Override
-    public org.dcm4che3.net.service.BasicCStoreSCUResp cstore(java.util.List<ArchiveInstanceLocator> instances, Association storeas, int priority) {
-    	
-    	ArrayList<ArchiveInstanceLocator> localyAvailable = (ArrayList<ArchiveInstanceLocator>)
-    			filterLocalOrExternalMatches(instances, true);
-    	ArrayList<ArchiveInstanceLocator> externallyAvailable = (ArrayList<ArchiveInstanceLocator>)
-    			filterLocalOrExternalMatches(instances, false);
-    	
-    	BasicCStoreSCUResp responseForLocalyAvailable = super.cstore(localyAvailable, storeas, priority);
-    	
-    	if(externallyAvailable.isEmpty())
-		return responseForLocalyAvailable;
-    	else {
-    		//just forwarding now
-    		//TODO - create fetch and retrieve task for externally available instances
-    		for(ArchiveInstanceLocator extLoc : externallyAvailable) {
-    		String[] retrieveAETs = Utils.decodeAETs(extLoc.getRetrieveAETs());
-    		//TODO - prioritize retrieve AETs by configuration
-    		ApplicationEntity remoteAE;
-			try {
-				remoteAE = aeCache.findApplicationEntity(retrieveAETs[0]);
-			} catch (ConfigurationException e) {
-				LOG.debug("External retrieveAET {} not found in configuration."
-						+ " Failure to retrieve {} ", retrieveAETs[0], extLoc.iuid);
-				//TODO - retry with different AE
-				continue;
-			}
-           CMoveSCU movescu = new CMoveSCU(storeas.getApplicationEntity()
-        		   , remoteAE, storeas.getCalledAET());
-           movescu.open();
-           movescu.cmove(keys, handler);
-    		}
-    		return responseForLocalyAvailable;
-    	}
+    public org.dcm4che3.net.service.BasicCStoreSCUResp cstore(
+            java.util.List<ArchiveInstanceLocator> instances,
+            Association storeas, int priority) {
+
+        ArrayList<ArchiveInstanceLocator> localyAvailable = (ArrayList<ArchiveInstanceLocator>) filterLocalOrExternalMatches(
+                instances, true);
+        ArrayList<ArchiveInstanceLocator> externallyAvailable = (ArrayList<ArchiveInstanceLocator>) filterLocalOrExternalMatches(
+                instances, false);
+
+        BasicCStoreSCUResp responseForLocalyAvailable = super.cstore(
+                localyAvailable, storeas, priority);
+
+        if (externallyAvailable.isEmpty())
+            return responseForLocalyAvailable;
+
+            return responseForLocalyAvailable;
+
     }
 
-
     private List<ArchiveInstanceLocator> filterLocalOrExternalMatches(
-			List<ArchiveInstanceLocator> matches, boolean localMatches) {
-    	ArrayList<ArchiveInstanceLocator> filteredMatches = new ArrayList
-    			<ArchiveInstanceLocator>();
+            List<ArchiveInstanceLocator> matches, boolean localMatches) {
+        ArrayList<ArchiveInstanceLocator> filteredMatches = new ArrayList<ArchiveInstanceLocator>();
 
-		for (ArchiveInstanceLocator match : matches) {
-			if (localMatches) {
-				if (match.getStorageSystem() != null)
-					filteredMatches.add(match);
-			} else {
-				if (match.getStorageSystem() == null)
-					filteredMatches.add(match);
-			}
+        for (ArchiveInstanceLocator match : matches) {
+            if (localMatches) {
+                if (match.getStorageSystem() != null)
+                    filteredMatches.add(match);
+            } else {
+                if (match.getStorageSystem() == null)
+                    filteredMatches.add(match);
+            }
 
-		}
-		return filteredMatches;
-	}
+        }
+        return filteredMatches;
+    }
     @Override
     protected DataWriter createDataWriter(ArchiveInstanceLocator inst,
             String tsuid) throws IOException, UnsupportedStoreSCUException {
