@@ -99,15 +99,13 @@ public interface QCBean {
      *            the target study attributes
      * @param targetSeriesattributes
      *            the target series attributes
-     * @param samePatient
-     *            the same patient
      * @param qcRejectionCode
      *            the QC rejection code
      * @return the QC event
      */
     public QCEvent merge(String sourceStudyUid, String targetStudyUid,
             Attributes targetStudyattributes, Attributes targetSeriesattributes,
-            boolean samePatient, Code qcRejectionCode);
+            Code qcRejectionCode);
 
     /**
      * Split.

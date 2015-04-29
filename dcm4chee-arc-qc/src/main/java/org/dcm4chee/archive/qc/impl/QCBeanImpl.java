@@ -204,11 +204,8 @@ public class QCBeanImpl  implements QCBean{
         try{
             
         for(String sourceStudyUID : sourceStudyUids) {
-            boolean samePatient = sourceStudyUID.equalsIgnoreCase(targetStudyUId)?
-                    true:false;
             QCEvent singleMergeEvent = merge(sourceStudyUID, targetStudyUId,
-                    targetStudyAttrs, targetSeriesAttrs,
-                    samePatient, qcRejectionCode);
+                    targetStudyAttrs, targetSeriesAttrs,qcRejectionCode);
             sourceUIDs.addAll(singleMergeEvent.getSource());
             targetUIDs.addAll(singleMergeEvent.getTarget());
             mergeEvent.addRejectionNote(singleMergeEvent.getRejectionNotes().iterator().next());
@@ -230,7 +227,7 @@ public class QCBeanImpl  implements QCBean{
     @Override
     public QCEvent merge(String sourceStudyUid, String targetStudyUID, 
             Attributes targetStudyAttrs, Attributes targetSeriesAttrs,
-            boolean samePatient, org.dcm4che3.data.Code qcRejectionCode) {
+            org.dcm4che3.data.Code qcRejectionCode) {
         
         QCActionHistory mergeAction = generateQCAction(QCOperation.MERGE);
         Collection<String> sourceUIDs = new ArrayList<String>();
@@ -240,14 +237,15 @@ public class QCBeanImpl  implements QCBean{
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         Study source = findStudy(sourceStudyUid);
         Study target = findStudy(targetStudyUID);
-        
+        boolean samePatient = source.getPatient().getPk()!=target.getPatient().getPk()?
+                true:false;
         if(source==null || target==null) {
             LOG.error("{} : QC info[Merge] - Failure, Source Study {} or Target Study {}"
                     + " not Found",qcSource,sourceStudyUid, targetStudyUID);
             throw new EJBException();
         }
 
-        if(!samePatient && source.getPatient().getPk()!=target.getPatient().getPk()) {
+        if(!samePatient) {
             LOG.error("{} : QC info[Merge] - Failure, Source Study {} or Target Study {}"
                     + " do not belong to the same patient",qcSource,sourceStudyUid,
                     targetStudyUID);
