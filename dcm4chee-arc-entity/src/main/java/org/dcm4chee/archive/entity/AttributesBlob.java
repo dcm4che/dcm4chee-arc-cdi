@@ -40,6 +40,8 @@ package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -65,19 +67,17 @@ public class AttributesBlob implements Serializable {
     @Column(name = "pk")
     private long pk;
     
-    @Basic(optional = false)
-    @Column(name = "attrs")
-    private byte[] encodedAttributes;
-    
     @Transient
-    private Attributes cachedAttributes;
+    private Attributes cachedAttributes; 
 
     public AttributesBlob(Attributes attrs) {
         setAttributes(attrs);
     }
     
-    AttributesBlob() {}
-
+    public AttributesBlob() {
+        setAttributes(new Attributes());
+    }
+    
     public boolean equals(AttributesBlob other) {
         return other != null && other.pk == pk;
     }
@@ -88,17 +88,22 @@ public class AttributesBlob implements Serializable {
     }
     
     public Attributes getAttributes() throws BlobCorruptedException {
-        if (cachedAttributes == null)
-            cachedAttributes = Utils.decodeAttributes(encodedAttributes);
         return cachedAttributes;
     }
 
     public void setAttributes(Attributes attrs) {
-        encodedAttributes = Utils.encodeAttributes(cachedAttributes = attrs);
+        cachedAttributes = attrs;
     }
 
+    @Basic(optional = false)
+    @Column(name = "attrs")
+    @Access(AccessType.PROPERTY)
     public byte[] getEncodedAttributes() {
-        return encodedAttributes;
+        return Utils.encodeAttributes(cachedAttributes);
+    }
+    
+    public void setEncodedAttributes(byte[] atts) {
+        cachedAttributes = Utils.decodeAttributes(atts);
     }
     
 }

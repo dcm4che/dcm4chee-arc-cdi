@@ -98,9 +98,6 @@ public class Patient implements Serializable {
     @Column(name = "pk")
     private long pk;
 
-    @Transient
-    private Attributes patientAttributes = null;
-
     @Version
     @Column(name = "version")
     private long version;
@@ -191,24 +188,16 @@ public class Patient implements Serializable {
         createdTime = now;
         updatedTime = now;
 
-        if (patientAttributes != null)
-            attributesBlob = new AttributesBlob(patientAttributes);
-
         if (extension != null)
             extension.onPrePersist();
-
     }
 
     @PreUpdate
     public void onPreUpdate() {
         updatedTime = new Date();
 
-        if (patientAttributes != null)
-            attributesBlob.setAttributes(patientAttributes);
-
         if (extension != null)
             extension.onPreUpdate();
-
     }
 
     public long getPk() {
@@ -238,10 +227,7 @@ public class Patient implements Serializable {
     public void setPatientBirthDate(String patientBirthDate) {
         this.patientBirthDate = patientBirthDate;
 
-        if (patientAttributes == null)
-            patientAttributes = new Attributes();
-
-        patientAttributes.setString(Tag.PatientBirthDate, VR.DA,
+        getAttributesBlob().getAttributes().setString(Tag.PatientBirthDate, VR.DA,
                 patientBirthDate);
     }
 
@@ -252,10 +238,7 @@ public class Patient implements Serializable {
     public void setPatientSex(String patientSex) {
         this.patientSex = patientSex;
 
-        if (patientAttributes == null)
-            patientAttributes = new Attributes();
-
-        patientAttributes.setString(Tag.PatientSex, VR.CS, patientSex);
+        getAttributesBlob().getAttributes().setString(Tag.PatientSex, VR.CS, patientSex);
     }
 
     public String getPatientCustomAttribute1() {
@@ -293,15 +276,12 @@ public class Patient implements Serializable {
     public void setPatientName(PersonName patientName, String... charset) {
         this.patientName = patientName;
 
-        if (patientAttributes == null)
-            patientAttributes = new Attributes();
-
         if (patientName != null)
-            patientAttributes.setString(Tag.PatientName, VR.PN,
+            attributesBlob.getAttributes().setString(Tag.PatientName, VR.PN,
                     patientName.toString());
         
         if (charset.length > 0)
-            patientAttributes.setSpecificCharacterSet(charset);
+            getAttributesBlob().getAttributes().setSpecificCharacterSet(charset);
     }
 
     public void setMergedWith(Patient mergedWith) {
@@ -341,6 +321,9 @@ public class Patient implements Serializable {
     }
 
     public AttributesBlob getAttributesBlob() {
+        if (attributesBlob == null)
+            attributesBlob = new AttributesBlob();
+            
         return attributesBlob;
     }
 
@@ -353,7 +336,7 @@ public class Patient implements Serializable {
     }
 
     public Attributes getAttributes() throws BlobCorruptedException {
-        return attributesBlob.getAttributes();
+        return getAttributesBlob().getAttributes();
     }
 
     public void setAttributes(Attributes attrs, AttributeFilter filter,
@@ -370,7 +353,7 @@ public class Patient implements Serializable {
         patientCustomAttribute3 = AttributeFilter.selectStringValue(attrs,
                 filter.getCustomAttribute3(), "*");
 
-        patientAttributes = new Attributes(attrs, filter.getSelection());
+        getAttributesBlob().setAttributes(new Attributes(attrs, filter.getSelection()));
     }
 
     public void updateOtherPatientIDs() {
