@@ -46,6 +46,10 @@ public class StoreVerifyDimse {
     
     @Column(name="status")
     private StoreVerifyStatus status;
+    
+    public long getPk() {
+        return pk;
+    }
 
     public String getTransactionID() {
         return transactionID;

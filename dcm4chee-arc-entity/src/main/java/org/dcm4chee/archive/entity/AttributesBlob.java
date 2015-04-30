@@ -69,6 +69,10 @@ public class AttributesBlob implements Serializable {
     
     @Transient
     private Attributes cachedAttributes; 
+    
+    public long getPk() {
+        return pk;
+    }
 
     public AttributesBlob(Attributes attrs) {
         setAttributes(attrs);
