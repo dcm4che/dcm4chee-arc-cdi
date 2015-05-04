@@ -131,7 +131,7 @@ public class QCRestful {
         
         QCEvent event = null;
         Code code = (object.getQcRejectionCode().getCodeValue()!=null?initializeCode(object):null);
-        IDWithIssuer pid = (object.getPid().getId()!=null?initializeIDWithIssuer(object):null);
+        IDWithIssuer pid = (object.getPid() !=null?initializeIDWithIssuer(object):null);
         
         try{
         switch (object.getOperation().toLowerCase()) {
@@ -154,13 +154,13 @@ public class QCRestful {
         case "merge":
             
             event = qcManager.mergeStudies(
-                    object.getMoveSOPUIDS(), object.getTargetStudyUID(), 
+                    object.getMoveSOPUIDs(), object.getTargetStudyUID(), 
                     object.getTargetStudyData(), object.getTargetSeriesData(), 
                     code);
             break;
             
         case "split":
-            event = qcManager.split(Arrays.asList(object.getMoveSOPUIDS()), pid,
+            event = qcManager.split(Arrays.asList(object.getMoveSOPUIDs()), pid,
                     object.getTargetStudyUID(), object.getTargetStudyData(), 
                     object.getTargetSeriesData(),  code);
             break;
@@ -168,7 +168,7 @@ public class QCRestful {
         case "segment":
             
             event = qcManager.segment(
-                    Arrays.asList(object.getMoveSOPUIDS()),
+                    Arrays.asList(object.getMoveSOPUIDs()),
                     Arrays.asList(object.getCloneSOPUIDs()), pid,
                     object.getTargetStudyUID(), object.getTargetStudyData(), 
                     object.getTargetSeriesData(),  code);

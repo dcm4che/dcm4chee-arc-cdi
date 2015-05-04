@@ -63,7 +63,7 @@ public class QCObject {
 
     private String operation;
     private QCUpdateScope updateScope;
-    private String[] moveSOPUIDS;
+    private String[] moveSOPUIDs;
     private String[] cloneSOPUIDs;
     private String[] restoreOrRejectUIDs;
     private String targetStudyUID;
@@ -88,12 +88,12 @@ public class QCObject {
         this.operation = operation;
     }
 
-    public String[] getMoveSOPUIDS() {
-        return moveSOPUIDS;
+    public String[] getMoveSOPUIDs() {
+        return moveSOPUIDs;
     }
 
-    public void setMoveSOPUIDS(String[] moveSOPUIDS) {
-        this.moveSOPUIDS = moveSOPUIDS;
+    public void setMoveSOPUIDs(String[] moveSOPUIDS) {
+        this.moveSOPUIDs = moveSOPUIDS;
     }
 
     public String[] getCloneSOPUIDs() {

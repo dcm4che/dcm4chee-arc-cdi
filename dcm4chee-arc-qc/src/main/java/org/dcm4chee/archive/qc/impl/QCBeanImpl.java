@@ -122,7 +122,7 @@ import org.slf4j.LoggerFactory;
 @Stateless
 public class QCBeanImpl  implements QCBean{
 
-    private static final Code CODE_REJECTED_PATIENT_SAFETY = new Code("113037","DCM",null,"Rejected for Patient Safety Reasons");
+    private static final org.dcm4che3.data.Code CODE_REJECTED_PATIENT_SAFETY = new org.dcm4che3.data.Code("113037","DCM",null,"Rejected for Patient Safety Reasons");
     
     private static final int[] PATIENT_AND_STUDY_ATTRS = {Tag.SpecificCharacterSet, Tag.StudyDate, Tag.StudyTime, Tag.AccessionNumber,
         Tag.IssuerOfAccessionNumberSequence, Tag.ReferringPhysicianName, Tag.PatientName, Tag.PatientID, Tag.IssuerOfPatientID,
@@ -237,7 +237,7 @@ public class QCBeanImpl  implements QCBean{
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         Study source = findStudy(sourceStudyUid);
         Study target = findStudy(targetStudyUID);
-        boolean samePatient = source.getPatient().getPk()!=target.getPatient().getPk()?
+        boolean samePatient = source.getPatient().getPk()==target.getPatient().getPk()?
                 true:false;
         if(source==null || target==null) {
             LOG.error("{} : QC info[Merge] - Failure, Source Study {} or Target Study {}"
@@ -669,11 +669,11 @@ public class QCBeanImpl  implements QCBean{
             for(Instance inst : insts) {
                 sopInstanceUIDs.add(inst.getSopInstanceUID());
             }
-            rejectAndScheduleForDeletion(insts);
             rejectedInstances.addAll(insts);
         }
         LOG.info("{}:  QC info[Delete] info - Removed study entity {}",qcSource , studyInstanceUID);
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, rejectedInstances);
+        rejectAndScheduleForDeletion(rejectedInstances);
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, sopInstanceUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(null, rejNote);
@@ -695,12 +695,12 @@ public class QCBeanImpl  implements QCBean{
         for(Instance inst : insts) {
             sopInstanceUIDs.add(inst.getSopInstanceUID());
         }
-        rejectAndScheduleForDeletion(insts);
 
         Study study = series.getStudy();
         study.clearQueryAttributes();
         LOG.info("{}:  QC info[Delete] info - Removed series entity {}",qcSource, seriesInstanceUID);
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, insts);
+        rejectAndScheduleForDeletion(insts);
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, sopInstanceUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(null, rejNote);
@@ -719,7 +719,6 @@ public class QCBeanImpl  implements QCBean{
                     + "instance to delete with SOPInstanceUID={}",qcSource,sopInstanceUID);
             throw new EJBException();
         }
-        rejectAndScheduleForDeletion(tmpList);
         
         Series series = tmpList.iterator().next().getSeries();
         Study study = series.getStudy();
@@ -728,6 +727,7 @@ public class QCBeanImpl  implements QCBean{
         study.clearQueryAttributes();
         Collection<String> sopInstanceUIDs = Arrays.asList(new String [] {sopInstanceUID});
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, tmpList);
+        rejectAndScheduleForDeletion(tmpList);
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, sopInstanceUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(null, rejNote);
