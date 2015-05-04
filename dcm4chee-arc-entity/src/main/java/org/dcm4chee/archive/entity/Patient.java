@@ -277,7 +277,7 @@ public class Patient implements Serializable {
         this.patientName = patientName;
 
         if (patientName != null)
-            attributesBlob.getAttributes().setString(Tag.PatientName, VR.PN,
+            getAttributesBlob().getAttributes().setString(Tag.PatientName, VR.PN,
                     patientName.toString());
         
         if (charset.length > 0)
