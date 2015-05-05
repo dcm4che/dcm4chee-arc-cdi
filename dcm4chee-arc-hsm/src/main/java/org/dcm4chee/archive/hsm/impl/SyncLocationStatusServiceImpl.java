@@ -115,7 +115,7 @@ public class SyncLocationStatusServiceImpl implements SyncLocationStatusService 
             }, pollInterval, pollInterval, TimeUnit.SECONDS);
             currentPollInterval = pollInterval;
             LOG.info(
-                    "Sync Location Status Service: start polling for locations to check with interval {}s",
+                    "Sync Location Status Service: start polling for location status changes with interval {}s",
                     pollInterval);
         }
     }
@@ -124,7 +124,7 @@ public class SyncLocationStatusServiceImpl implements SyncLocationStatusService 
         if (polling != null) {
             polling.cancel(false);
             polling = null;
-            LOG.info("Sync Location Status Service: stop polling for locations to check");
+            LOG.info("Sync Location Status Service: stop polling for location status changes");
         }
     }
 

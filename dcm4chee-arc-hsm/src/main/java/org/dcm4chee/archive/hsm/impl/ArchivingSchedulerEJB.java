@@ -59,6 +59,7 @@ import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Location.Status;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.store.StoreContext;
@@ -285,7 +286,7 @@ public class ArchivingSchedulerEJB {
             .size((Long) entry.getProperty(FILE_SIZE))
             .transferSyntaxUID((String) entry.getProperty(TRANSFER_SYNTAX))
             .timeZone((String) entry.getProperty(TIME_ZONE))
-            .status(Location.Status.valueOf(ctx.getObjectStatus()))
+            .status(ctx.getObjectStatus() != null ? Status.valueOf(ctx.getObjectStatus()) : Status.ARCHIVED)
             .build();
             inst.getLocations().add(location);
             LOG.info("Create {}", location);

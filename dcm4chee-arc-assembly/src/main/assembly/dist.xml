@@ -98,6 +98,8 @@
         <include>org.dcm4che:jclouds-jboss-modules</include>
         <include>org.dcm4che:jxpath-jboss-module</include>
         <include>org.dcm4che:compress-jboss-module</include>
+        <include>org.dcm4che:jsch-jboss-modules</include>
+        <include>org.dcm4che:jcifs-jboss-modules</include>
       </includes>
       <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>

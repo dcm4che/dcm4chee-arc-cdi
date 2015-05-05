@@ -262,6 +262,16 @@
         <artifactId>dcm4chee-storage-encrypt</artifactId>
         <version>${dcm4chee-storage.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-cifs</artifactId>
+        <version>${dcm4chee-storage.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-storage</groupId>
+        <artifactId>dcm4chee-storage-sftp</artifactId>
+        <version>${dcm4chee-storage.version}</version>
+      </dependency>
 
       <!-- Config EE dependencies -->
       <dependency>
