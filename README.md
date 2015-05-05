@@ -38,8 +38,6 @@ There are still major gaps compared to the functionality of DCM4CHEE Archive 2.x
 
 - no Web-interface for administration
 - no auto-routing
-- no auto-switch of storage filesystems
-- no HSM support
 - no import of HL7 ORM messages in DICOM Modality Worklist
 
 In long term, 4.x will provide the functionality of 2.x, and there will
