@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,36 +38,13 @@
 
 package org.dcm4chee.archive.wado.client;
 
-import java.io.InputStream;
-
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
-public interface WadoClientService {
+public interface InstanceAvailableCallback {
 
-    WadoClientResponse fetchStudy(ApplicationEntity localAE,
-            ApplicationEntity remoteAE, String studyInstanceUID,
-            String wadobaseURL, InstanceAvailableCallback callback);
-
-    WadoClientResponse fetchSeries(ApplicationEntity localAE,
-            ApplicationEntity remoteAE, String studyInstanceUID,
-            String seriesInstanceUID, String wadobaseURL,
-            InstanceAvailableCallback callback);
-
-    WadoClientResponse fetchInstance(ApplicationEntity localAE,
-            ApplicationEntity remoteAE, String studyInstanceUID,
-            String seriesInstanceUID, String sopInstanceUID,
-            String wadobaseURL, InstanceAvailableCallback callback);
-
-    StoreContext spool(String localAETitle, String remoteAETitle,
-            InputStream in, InstanceAvailableCallback callback)
-            throws Exception;
-
-    boolean store(StoreContext context);
-
-    InstanceAvailableCallback getCallBack();
+	void onInstanceAvailable(ArchiveInstanceLocator inst);
 }
