@@ -38,6 +38,25 @@
 
 package org.dcm4chee.archive.wado.client.impl;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.inject.Inject;
+
+import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.web.WebServiceAEExtension;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreService;
+import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.wado.client.InstanceAvailableCallback;
+import org.dcm4chee.archive.wado.client.WadoClient;
+import org.dcm4chee.archive.wado.client.WadoClientResponse;
 import org.dcm4chee.archive.wado.client.WadoClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,10 +67,134 @@ import org.slf4j.LoggerFactory;
  */
 public class WadoClientServiceImpl implements WadoClientService {
 
-    
     private static final Logger LOG = LoggerFactory.getLogger(
             WadoClientServiceImpl.class);
-    
 
+    @Inject
+    private StoreService storeService;
+
+    private InstanceAvailableCallback callBack;
+
+    @Inject
+    private IApplicationEntityCache aeCache;
+
+    @Override
+    public WadoClientResponse fetchStudy(ApplicationEntity localAE,
+            ApplicationEntity remoteAE, String studyInstanceUID,
+            String wadobaseURL, InstanceAvailableCallback callBack) {
+        return fetch(localAE, remoteAE, studyInstanceUID, null, null,
+                wadobaseURL, callBack);
+    }
+
+    @Override
+    public WadoClientResponse fetchSeries(ApplicationEntity localAE,
+            ApplicationEntity remoteAE, String studyInstanceUID,
+            String seriesInstanceUID, String wadobaseURL,
+            InstanceAvailableCallback callback) {
+        return fetch(localAE, remoteAE, studyInstanceUID, seriesInstanceUID,
+                null, wadobaseURL, callback);
+    }
+
+    @Override
+    public WadoClientResponse fetchInstance(ApplicationEntity localAE,
+            ApplicationEntity remoteAE, String studyInstanceUID,
+            String seriesInstanceUID, String sopInstanceUID,
+            String wadobaseURL, InstanceAvailableCallback callback) {
+        return fetch(localAE, remoteAE, studyInstanceUID, seriesInstanceUID,
+                sopInstanceUID, wadobaseURL, callback);
+    }
+
+    @Override
+    public boolean store(StoreContext context) {
+        try {
+            storeService.parseSpoolFile(context);
+            storeService.store(context);
+            LOG.debug("Fetched and Stored instance from remote AE {}"
+                    , context.getStoreSession().getRemoteAET());
+            getCallBack().onInstanceAvailable(createArchiveInstanceLocator(context));
+            return true;
+        } catch (Exception x) {
+            LOG.error("Failed to store RejectionNote!", x);
+            return false;
+        }
+}
+    @Override
+    public StoreContext spool(String localAETitle, String remoteAETitle,
+            InputStream in, InstanceAvailableCallback callback) throws Exception {
+        StoreContext context;
+        
+            StoreSession session = storeService.createStoreSession(storeService); 
+            session.setRemoteAET(remoteAETitle);
+            ArchiveAEExtension arcAEExt = aeCache.get(localAETitle)
+                    .getAEExtension(ArchiveAEExtension.class); 
+            session.setArchiveAEExtension(arcAEExt);
+            storeService.initStorageSystem(session);
+            storeService.initSpoolDirectory(session);
+            context = storeService.createStoreContext(session);
+            try {
+            DicomInputStream din = new DicomInputStream(in);
+            Attributes fmi = din.getFileMetaInformation();
+            storeService.writeSpoolFile(context, fmi, din);
+        }
+        catch (Exception e) {
+            throw new Exception("Failed to spool WadoRS response from AE "+
+                    remoteAETitle);
+        }
+        return context;
+}
+
+    @Override
+    public InstanceAvailableCallback getCallBack() {
+        return callBack;
+    }
+
+    protected void setCallBack(InstanceAvailableCallback callBack) {
+        this.callBack = callBack;
+    }
+
+    private WadoClient createClient() {
+        return new WadoClient(this);
+    }
+
+
+    private ArchiveInstanceLocator createArchiveInstanceLocator(
+            StoreContext context) {
+        ArchiveInstanceLocator newLocator = new ArchiveInstanceLocator.Builder(
+                context.getInstance().getSopClassUID(), 
+                context.getInstance().getSopInstanceUID(),
+                context.getFileRef().getTransferSyntaxUID())
+        .storageSystem(context.getStoreSession().getStorageSystem())
+        .storagePath(context.getStoragePath())
+        .entryName(context.getFileRef().getEntryName())
+        .fileTimeZoneID(context.getFileRef().getTimeZone())
+        .retrieveAETs(context.getInstance().getRawRetrieveAETs())
+        .withoutBulkdata(context.getFileRef().isWithoutBulkData())
+        .seriesInstanceUID(context.getAttributes()
+                .getString(Tag.SeriesInstanceUID))
+        .studyInstanceUID(context.getAttributes()
+                .getString(Tag.StudyInstanceUID))
+        .build();
+        return newLocator;
+    }
+
+    private WadoClientResponse fetch(ApplicationEntity localAE,
+            ApplicationEntity remoteAE, String studyInstanceUID,
+            String seriesInstanceUID, String sopInstanceUID,
+            String wadobaseURL, InstanceAvailableCallback callback) {
+        setCallBack(callBack);
+        WadoClient client = createClient();
+        WebServiceAEExtension wsAEExt = remoteAE
+                .getAEExtension(WebServiceAEExtension.class);
+        try {
+            return client.fetch(localAE.getAETitle(), remoteAE.getAETitle(),
+                    studyInstanceUID, seriesInstanceUID, sopInstanceUID,
+                    wsAEExt.getWadoRSBaseURL());
+        } catch (IOException e) {
+            LOG.error("Error fetching Study {}, from AE {}"
+                    + " check baseurl configuration for WadoRS",
+                    studyInstanceUID, remoteAE.getAETitle());
+        }
+        return null;
+    }
 
 }

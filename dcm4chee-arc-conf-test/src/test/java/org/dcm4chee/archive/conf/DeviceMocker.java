@@ -70,6 +70,7 @@ import org.dcm4che3.net.hl7.HL7Application;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.storage.conf.Archiver;
 import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.Container;
@@ -1025,6 +1026,12 @@ public class DeviceMocker {
         aeExt.addMppsEmulationRule(
                 createMPPSEmulationRule("MPPS Emulation Rule 1", 120,
                         "DCM4CHEE", "EMULATE_MPPS"));
+//        WebServiceAEExtension wsAEExt = new WebServiceAEExtension();
+//        ae.addAEExtension(wsAEExt);
+//        wsAEExt.setQidoRSBaseURL("http://localhost:8080/dcm4chee-arc/"+aet);
+//        wsAEExt.setWadoRSBaseURL("http://localhost:8080/dcm4chee-arc/"+aet);
+//        wsAEExt.setStowRSBaseURL("http://localhost:8080/dcm4chee-arc/"+aet);
+//        wsAEExt.setWadoURIBaseURL("http://localhost:8080/dcm4chee-arc/"+aet);
         return ae;
     }
 

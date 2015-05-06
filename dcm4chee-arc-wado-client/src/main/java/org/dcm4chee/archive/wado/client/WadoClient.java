@@ -38,6 +38,16 @@
 
 package org.dcm4chee.archive.wado.client;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.mime.MultipartInputStream;
+import org.dcm4che3.mime.MultipartParser;
+import org.dcm4chee.archive.store.StoreContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,10 +57,102 @@ import org.slf4j.LoggerFactory;
  */
 public class WadoClient {
 
-    private static final Logger LOG = LoggerFactory.getLogger(
-            WadoClient.class);
-    
-    public WadoClient() {
+    private static final Logger LOG = LoggerFactory.getLogger(WadoClient.class);
+
+    private WadoClientService service;
+
+    public WadoClient(WadoClientService service) {
+        this.service = service;
+    }
+
+    public WadoClientResponse fetch(final String localAET,
+            final String remoteAET, String studyUID, String seriesUID,
+            String iuid, String baseURL) throws IOException {
+        URL newUrl = new URL(toWadoRSURL(baseURL, studyUID, seriesUID, iuid));
+
+        HttpURLConnection connection = (HttpURLConnection) newUrl
+                .openConnection();
+
+        connection.setDoOutput(true);
+
+        connection.setDoInput(true);
+
+        connection.setInstanceFollowRedirects(false);
+
+        connection.setRequestMethod("GET");
+
+        connection.setRequestProperty("charset", "utf-8");
+
+        connection.addRequestProperty("Accept", "application/dicom");
+
+        // connection.setConnectTimeout();
+        connection.setUseCaches(false);
+
+        int responseCode = connection.getResponseCode();
+        String reponseMessage = connection.getResponseMessage();
+        String boundary = getBoundaryFromContentType(connection
+                .getHeaderField("Content-Type"));
+        InputStream in = null;
+        in = connection.getInputStream();
+        if (in == null)
+            return new WadoClientResponse(new ArrayList<String>(),
+                    new ArrayList<String>(), new ArrayList<String>());
+        ArrayList<String> requested = new ArrayList<String>();
+        final ArrayList<String> failed = new ArrayList<String>();
+        final ArrayList<String> completed = new ArrayList<String>();
+        try {
+            new MultipartParser(boundary).parse(in,
+                    new MultipartParser.Handler() {
+
+                        @Override
+                        public void bodyPart(int partNumber,
+                                MultipartInputStream in) throws IOException {
+                            StoreContext ctx = null;
+                            String receivedIUID = null;
+                            try {
+                                ctx = service.spool(localAET, remoteAET, in,
+                                        service.getCallBack());
+                                receivedIUID = ctx.getAttributes().getString(
+                                        Tag.SOPInstanceUID);
+                                if (service.store(ctx)) {
+                                    LOG.debug("Successfully fetched instance "
+                                            + "{} from {}", receivedIUID,
+                                            remoteAET);
+                                    completed.add(receivedIUID);
+                                } else {
+                                    LOG.debug(
+                                            "Failed to fetch instance {} from {}",
+                                            receivedIUID, remoteAET);
+                                    failed.add(receivedIUID);
+                                }
+                            } catch (Exception e) {
+                                LOG.debug(
+                                        "Failed to fetch instance {} from {}",
+                                        receivedIUID, remoteAET);
+                                failed.add(receivedIUID);
+                            }
+                        }
+                    });
+            connection.disconnect();
+            requested.addAll(failed);
+            requested.addAll(completed);
+        } catch (Exception e) {
+            System.out.println("Error parsing Server response - " + e);
+        }
+        return new WadoClientResponse(completed, requested, failed);
+    }
+
+    private String getBoundaryFromContentType(String headerField) {
+        return headerField.split(";")[2].split("=")[1];
+    }
+
+    private String toWadoRSURL(String baseURL, String studyUID,
+            String seriesUID, String iuid) {
+        if (studyUID == null || studyUID.isEmpty())
+            throw new IllegalArgumentException("Study UID can not be empty");
+        return baseURL + (studyUID != null ? "/studies/" + studyUID : "")
+                + (seriesUID != null ? "/series/" + seriesUID : "")
+                + (iuid != null ? "/instances/" + iuid : "");
     }
 
 }
