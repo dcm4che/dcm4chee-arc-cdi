@@ -35,46 +35,27 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.qc;
+package org.dcm4chee.archive.qc.rest;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 
-public class CodeObject {
-    private String codeValue,codingSchemeDesignator,codeMeaning,codingSchemeVersion;
+public class IDWithIssuerObject {
 
-    public void setCodeValue(String codeValue) {
-        this.codeValue = codeValue;
+    private String id;
+    private IssuerObject issuer;
+    public IssuerObject getIssuer() {
+        return issuer;
     }
-
-    public void setCodingSchemeDesignator(String codingSchemeDesignator) {
-        this.codingSchemeDesignator = codingSchemeDesignator;
+    public void setIssuer(IssuerObject issuer) {
+        this.issuer = issuer;
     }
-
-    public void setCodeMeaning(String codeMeaning) {
-        this.codeMeaning = codeMeaning;
+    public String getId() {
+        return id;
     }
-    public void setCodingSchemeVersion(String codingSchemeVersion) {
-        this.codingSchemeVersion = codingSchemeVersion;
+    public void setId(String id) {
+        this.id = id;
     }
-
-    public String getCodeValue() {
-        return codeValue;
-    }
-
-    public String getCodingSchemeDesignator() {
-        return codingSchemeDesignator;
-    }
-
-    public String getCodeMeaning() {
-        return codeMeaning;
-    }
-
-    public String getCodingSchemeVersion() {
-        return codingSchemeVersion;
-    }
-
-    public CodeObject(){}
-    
+    public IDWithIssuerObject(){}
 }
