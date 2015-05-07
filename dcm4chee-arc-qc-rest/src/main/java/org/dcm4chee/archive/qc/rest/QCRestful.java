@@ -131,7 +131,7 @@ public class QCRestful {
         
         QCEvent event = null;
         Code code = (object.getQcRejectionCode().getCodeValue()!=null?initializeCode(object):null);
-        IDWithIssuer pid = (object.getPid().getId()!=null?initializeIDWithIssuer(object):null);
+        IDWithIssuer pid = (object.getPid()!=null?initializeIDWithIssuer(object):null);
         
         try{
         switch (object.getOperation().toLowerCase()) {
