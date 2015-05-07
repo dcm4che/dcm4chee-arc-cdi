@@ -61,6 +61,7 @@ import javax.persistence.Version;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.util.DateUtils;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -259,8 +260,18 @@ public class MPPS implements Serializable {
     }
 
     public void setAttributes(Attributes attrs) {
-        this.startDate = attrs.getString(Tag.PerformedProcedureStepStartDate);
-        this.startTime = attrs.getString(Tag.PerformedProcedureStepStartTime);
+        
+        Date dt = attrs.getDate(Tag.PerformedProcedureStepStartDateAndTime);
+        if (dt != null) {
+            startDate = DateUtils.formatDA(null, dt);
+            startTime = 
+                attrs.containsValue(Tag.PerformedProcedureStepStartDate)
+                    ? DateUtils.formatTM(null, dt)
+                    : "*";
+        } else {
+            startDate = "*";
+            startTime = "*";
+        }
         this.performedStationAET = attrs.getString(Tag.PerformedStationAETitle);
         this.modality = attrs.getString(Tag.Modality);
         Attributes ssa = attrs.getNestedDataset(
