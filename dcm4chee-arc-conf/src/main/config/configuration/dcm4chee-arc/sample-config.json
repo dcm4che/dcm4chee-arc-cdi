@@ -998,6 +998,12 @@
                 "dcmWadoSRTemplateURI" : "${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl",
                 "dcmWadoSupportedSRClasses" : [ "1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33", "1.2.840.10008.5.1.4.1.1.88.34", "1.2.840.10008.5.1.4.1.1.88.40", "1.2.840.10008.5.1.4.1.1.88.50", "1.2.840.10008.5.1.4.1.1.88.59", "1.2.840.10008.5.1.4.1.1.88.65", "1.2.840.10008.5.1.4.1.1.88.67", "1.2.840.10008.5.1.4.1.1.88.68", "1.2.840.10008.5.1.4.1.1.88.69", "1.2.840.10008.5.1.4.1.1.88.70" ],
                 "hl7PIXManagerApplication" : "HL7RCV^DCM4CHEE"
+              },
+              "WebServiceAEExtension" : {
+                "dcmStowRSBaseURL" : "http://localhost:8080/dcm4chee-arc/stow/DCM4CHEE",
+                "dcmWadoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE",
+                "dcmWadoURIBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE",
+                "dcmqidoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/qido/DCM4CHEE"
               }
             },
             "dcmAcceptedCallingAETitle" : [ ],

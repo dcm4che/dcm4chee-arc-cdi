@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.qc;
+package org.dcm4chee.archive.qc.rest;
 
 import java.io.IOException;
 import java.io.StringReader;

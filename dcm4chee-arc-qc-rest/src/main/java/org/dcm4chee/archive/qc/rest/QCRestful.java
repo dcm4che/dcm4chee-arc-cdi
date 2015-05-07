@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.qc.impl;
+package org.dcm4chee.archive.qc.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,11 +70,11 @@ import org.dcm4che3.net.Device;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.qc.IssuerObject;
+import org.dcm4chee.archive.qc.rest.IssuerObject;
 import org.dcm4chee.archive.qc.PatientCommands;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
-import org.dcm4chee.archive.qc.QCObject;
+import org.dcm4chee.archive.qc.rest.QCObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +131,7 @@ public class QCRestful {
         
         QCEvent event = null;
         Code code = (object.getQcRejectionCode().getCodeValue()!=null?initializeCode(object):null);
-        IDWithIssuer pid = (object.getPid() !=null?initializeIDWithIssuer(object):null);
+        IDWithIssuer pid = (object.getPid()!=null?initializeIDWithIssuer(object):null);
         
         try{
         switch (object.getOperation().toLowerCase()) {

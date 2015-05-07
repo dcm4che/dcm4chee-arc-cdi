@@ -58,6 +58,8 @@ public class ArchiveInstanceLocator extends InstanceLocator
     private final String entryName;
     private final String retrieveAETs;
     private final boolean withoutBulkdata;
+    private final String seriesInstanceUID;
+    private final String studyInstanceUID;
     private ArchiveInstanceLocator fallbackLocator;
 
     public static final class Builder {
@@ -70,6 +72,8 @@ public class ArchiveInstanceLocator extends InstanceLocator
         private String retrieveAETs;
         private String fileTimeZoneID;
         private boolean withoutBulkdata;
+        private String seriesInstanceUID;
+        private String studyInstanceUID;
 
         public Builder(String cuid, String iuid, String tsuid) {
             this.cuid = cuid;
@@ -107,6 +111,16 @@ public class ArchiveInstanceLocator extends InstanceLocator
             return this;
         }
 
+        public Builder seriesInstanceUID(String seriesInstanceUID) {
+        	this.seriesInstanceUID = seriesInstanceUID;
+        	return this;
+        }
+
+        public Builder studyInstanceUID(String studyInstanceUID) {
+        	this.studyInstanceUID = studyInstanceUID;
+        	return this;
+        }
+
         public ArchiveInstanceLocator build() {
             return new ArchiveInstanceLocator(this);
         }
@@ -120,6 +134,8 @@ public class ArchiveInstanceLocator extends InstanceLocator
         this.entryName = builder.entryName;
         this.retrieveAETs = builder.retrieveAETs;
         this.withoutBulkdata = builder.withoutBulkdata;
+        this.seriesInstanceUID = builder.seriesInstanceUID;
+        this.studyInstanceUID = builder.studyInstanceUID;
     }
 
     private static String createRetrieveURI(Builder builder) {
@@ -157,7 +173,15 @@ public class ArchiveInstanceLocator extends InstanceLocator
         return fallbackLocator;
     }
 
-    public void setFallbackLocator(ArchiveInstanceLocator fallbackLocator) {
+    public String getSeriesInstanceUID() {
+		return seriesInstanceUID;
+	}
+
+	public String getStudyInstanceUID() {
+		return studyInstanceUID;
+	}
+
+	public void setFallbackLocator(ArchiveInstanceLocator fallbackLocator) {
         this.fallbackLocator = fallbackLocator;
     }
 

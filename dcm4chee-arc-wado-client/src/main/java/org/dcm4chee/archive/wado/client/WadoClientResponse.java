@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2013
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,27 +35,42 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.qc;
+
+package org.dcm4chee.archive.wado.client;
+
+import java.util.ArrayList;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ *
  */
+public class WadoClientResponse {
 
-public class IDWithIssuerObject {
+    private ArrayList<String> completedInstances;
 
-    private String id;
-    private IssuerObject issuer;
-    public IssuerObject getIssuer() {
-        return issuer;
+    private ArrayList<String> requestedInstances;
+
+    private ArrayList<String> failedInstances;
+
+    public WadoClientResponse(ArrayList<String> completedInstances,
+            ArrayList<String> requestedInstances, 
+            ArrayList<String> failedInstances) {
+        super();
+        this.completedInstances = completedInstances;
+        this.requestedInstances = requestedInstances;
+        this.failedInstances = failedInstances;
     }
-    public void setIssuer(IssuerObject issuer) {
-        this.issuer = issuer;
+
+    public ArrayList<String> getCompletedInstances() {
+        return completedInstances;
     }
-    public String getId() {
-        return id;
+
+    public ArrayList<String> getRequestedInstances() {
+        return requestedInstances;
     }
-    public void setId(String id) {
-        this.id = id;
+
+    public ArrayList<String> getFailedInstances() {
+        return failedInstances;
     }
-    public IDWithIssuerObject(){}
+
 }

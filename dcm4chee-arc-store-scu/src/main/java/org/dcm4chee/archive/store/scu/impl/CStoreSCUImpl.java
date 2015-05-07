@@ -40,9 +40,15 @@ package org.dcm4chee.archive.store.scu.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import javax.inject.Inject;
+
+import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -55,6 +61,7 @@ import org.dcm4che3.net.DataWriter;
 import org.dcm4che3.net.DataWriterAdapter;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
+import org.dcm4che3.net.pdu.AAssociateRQ;
 import org.dcm4che3.net.service.BasicCStoreSCU;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.CStoreSCU;
@@ -63,6 +70,7 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.retrieve.scu.CMoveSCU;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.slf4j.Logger;
@@ -82,6 +90,8 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     private CStoreSCUService service;
     private boolean withoutBulkData;
 
+    @Inject
+    private IApplicationEntityCache aeCache;
     /**
      * @param localAE
      * @param remoteAE
@@ -99,41 +109,41 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     }
 
     @Override
-    public org.dcm4che3.net.service.BasicCStoreSCUResp cstore(java.util.List<ArchiveInstanceLocator> instances, Association storeas, int priority) {
-    	
-    	ArrayList<ArchiveInstanceLocator> localyAvailable = (ArrayList<ArchiveInstanceLocator>)
-    			filterLocalOrExternalMatches(instances, true);
-    	ArrayList<ArchiveInstanceLocator> externallyAvailable = (ArrayList<ArchiveInstanceLocator>)
-    			filterLocalOrExternalMatches(instances, false);
-    	
-    	BasicCStoreSCUResp responseForLocalyAvailable = super.cstore(localyAvailable, storeas, priority);
-    	
-    	if(externallyAvailable.isEmpty())
-		return responseForLocalyAvailable;
-    	else {
-    		//TODO - create fetch and retrieve task for externally available instances
-    		return responseForLocalyAvailable;
-    	}
+    public org.dcm4che3.net.service.BasicCStoreSCUResp cstore(
+            java.util.List<ArchiveInstanceLocator> instances,
+            Association storeas, int priority) {
+
+        ArrayList<ArchiveInstanceLocator> localyAvailable = (ArrayList<ArchiveInstanceLocator>) filterLocalOrExternalMatches(
+                instances, true);
+        ArrayList<ArchiveInstanceLocator> externallyAvailable = (ArrayList<ArchiveInstanceLocator>) filterLocalOrExternalMatches(
+                instances, false);
+
+        BasicCStoreSCUResp responseForLocalyAvailable = super.cstore(
+                localyAvailable, storeas, priority);
+
+        if (externallyAvailable.isEmpty())
+            return responseForLocalyAvailable;
+
+            return responseForLocalyAvailable;
+
     }
 
-
     private List<ArchiveInstanceLocator> filterLocalOrExternalMatches(
-			List<ArchiveInstanceLocator> matches, boolean localMatches) {
-    	ArrayList<ArchiveInstanceLocator> filteredMatches = new ArrayList
-    			<ArchiveInstanceLocator>();
+            List<ArchiveInstanceLocator> matches, boolean localMatches) {
+        ArrayList<ArchiveInstanceLocator> filteredMatches = new ArrayList<ArchiveInstanceLocator>();
 
-		for (ArchiveInstanceLocator match : matches) {
-			if (localMatches) {
-				if (match.getStorageSystem() != null)
-					filteredMatches.add(match);
-			} else {
-				if (match.getStorageSystem() == null)
-					filteredMatches.add(match);
-			}
+        for (ArchiveInstanceLocator match : matches) {
+            if (localMatches) {
+                if (match.getStorageSystem() != null)
+                    filteredMatches.add(match);
+            } else {
+                if (match.getStorageSystem() == null)
+                    filteredMatches.add(match);
+            }
 
-		}
-		return filteredMatches;
-	}
+        }
+        return filteredMatches;
+    }
     @Override
     protected DataWriter createDataWriter(ArchiveInstanceLocator inst,
             String tsuid) throws IOException, UnsupportedStoreSCUException {
@@ -251,5 +261,4 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         }
         return UID.ImplicitVRLittleEndian;
     }
-
 }
