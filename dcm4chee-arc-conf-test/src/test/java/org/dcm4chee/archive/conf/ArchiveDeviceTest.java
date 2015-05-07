@@ -40,18 +40,14 @@ package org.dcm4chee.archive.conf;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
 import org.dcm4che3.conf.api.AttributeCoercions;
-import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.net.*;
 import org.dcm4che3.net.Connection.Protocol;
@@ -60,6 +56,7 @@ import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4che3.util.ResourceLocator;
 import org.dcm4chee.archive.conf.DeepEquals.CustomDeepEquals;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
@@ -93,6 +90,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
         builder.registerDeviceExtension(AuditRecordRepository.class);
         builder.registerDeviceExtension(AuditLogger.class);
         builder.registerAEExtension(ArchiveAEExtension.class);
+        builder.registerAEExtension(WebServiceAEExtension.class);
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
 
         CommonDicomConfigurationWithHL7 configWithHL7 = builder

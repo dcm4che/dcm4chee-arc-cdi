@@ -502,7 +502,12 @@ dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=De
 objectClass: dcmNetworkAE
 objectClass: dicomNetworkAE
 objectClass: dcmArchiveNetworkAE
+objectClass: dcmArchiveAEWebServices
 dcmSendPendingCMoveInterval: 5000
+dcmStowRSBaseURL: http://localhost:8080/dcm4chee-arc/stow/DCM4CHEE
+dcmWadoRSBaseURL: http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE
+dcmWadoURIBaseURL: http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE
+dcmQidoRSBaseURL: http://localhost:8080/dcm4chee-arc/qido/DCM4CHEE
 dcmMetaDataStorageSystemGroupID: METADATA
 hl7PIXManagerApplication: HL7RCV^DCM4CHEE
 dcmSpoolDirectoryPath: spool
