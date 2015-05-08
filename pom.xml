@@ -35,9 +35,7 @@
    - the provisions above, a recipient may use your version of this file under
    - the terms of any one of the MPL, the GPL or the LGPL.
    -
-   - ***** END LICENSE BLOCK *****  -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   - ***** END LICENSE BLOCK *****  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.dcm4che.dcm4chee-arc</groupId>
   <artifactId>dcm4chee-arc-parent</artifactId>
@@ -490,6 +488,7 @@
     <module>dcm4chee-arc-mpps-emulate</module>
     <module>dcm4chee-arc-conf-producer</module>
     <module>dcm4chee-arc-hsm</module>
+    <module>dcm4chee-arc-file-access</module>
   </modules>
   <profiles>
     <profile>
@@ -513,7 +512,7 @@
       <id>secure</id>
       <properties>
           <!-- replaces default which is -unsecure -->
-          <conf-web-classifier></conf-web-classifier>
+          <conf-web-classifier/>
       </properties>
     </profile>
     <profile>
