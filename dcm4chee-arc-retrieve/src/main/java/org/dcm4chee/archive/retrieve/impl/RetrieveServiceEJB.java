@@ -47,6 +47,7 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.PatientStudySeriesAttributes;
 import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.QInstance;
@@ -110,4 +111,11 @@ public class RetrieveServiceEJB {
         return result.getAttributes();
     }
 
+    public List<ExternalRetrieveLocation> getExternalLocations(String iuid) {
+        @SuppressWarnings("unchecked")
+        List<ExternalRetrieveLocation> result = em.createNamedQuery(
+                ExternalRetrieveLocation.FIND_EXT_LOCATIONS_BY_IUID)
+                .setParameter(1,iuid).getResultList();
+        return result;
+    }
 }

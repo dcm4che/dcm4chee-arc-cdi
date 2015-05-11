@@ -578,15 +578,15 @@ public class StoreServiceImpl implements StoreService {
             Instance instance) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
 
-        if (context.getStoreSession().getArchiveAEExtension()
-                .isIgnoreDuplicatesOnStorage())
-            return StoreAction.IGNORE;
-
         Collection<Location> fileRefs = instance.getLocations();
 
         if (fileRefs.isEmpty())
             return StoreAction.RESTORE;
-
+        
+        if (context.getStoreSession().getArchiveAEExtension()
+                .isIgnoreDuplicatesOnStorage())
+            return StoreAction.IGNORE;
+        
         if (!hasSameSourceAET(instance, session.getRemoteAET()))
             return StoreAction.IGNORE;
 

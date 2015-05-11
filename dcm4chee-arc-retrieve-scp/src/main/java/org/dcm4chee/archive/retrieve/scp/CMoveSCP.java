@@ -160,8 +160,7 @@ public class CMoveSCP extends BasicCMoveSCP {
             //no storage system implies external retrieve location
             CStoreSCU<ArchiveInstanceLocator> cstorescu = new CStoreSCUImpl (
                     ae, destAE, ServiceType.MOVESERVICE, storescuService);
-            AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest,
-                    filterLocalOrExternalMatches(matches, true));
+            AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, matches);
             Association storeas = openStoreAssociation(as, destAE, aarq);
             
             //now extract complete series refs and use for either forwarding or fetch and retrieve 

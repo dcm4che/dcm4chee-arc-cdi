@@ -51,6 +51,8 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -81,27 +83,25 @@ public class WadoClientServiceImpl implements WadoClientService {
     @Override
     public WadoClientResponse fetchStudy(ApplicationEntity localAE,
             ApplicationEntity remoteAE, String studyInstanceUID,
-            String wadobaseURL, InstanceAvailableCallback callBack) {
-        return fetch(localAE, remoteAE, studyInstanceUID, null, null,
-                wadobaseURL, callBack);
+            InstanceAvailableCallback callBack) {
+        return fetch(localAE, remoteAE, studyInstanceUID, null, null, callBack);
     }
 
     @Override
     public WadoClientResponse fetchSeries(ApplicationEntity localAE,
             ApplicationEntity remoteAE, String studyInstanceUID,
-            String seriesInstanceUID, String wadobaseURL,
+            String seriesInstanceUID,
             InstanceAvailableCallback callback) {
         return fetch(localAE, remoteAE, studyInstanceUID, seriesInstanceUID,
-                null, wadobaseURL, callback);
+                null, callback);
     }
 
     @Override
     public WadoClientResponse fetchInstance(ApplicationEntity localAE,
             ApplicationEntity remoteAE, String studyInstanceUID,
-            String seriesInstanceUID, String sopInstanceUID,
-            String wadobaseURL, InstanceAvailableCallback callback) {
+            String seriesInstanceUID, String sopInstanceUID, InstanceAvailableCallback callback) {
         return fetch(localAE, remoteAE, studyInstanceUID, seriesInstanceUID,
-                sopInstanceUID, wadobaseURL, callback);
+                sopInstanceUID,  callback);
     }
 
     @Override
@@ -122,8 +122,10 @@ public class WadoClientServiceImpl implements WadoClientService {
     public StoreContext spool(String localAETitle, String remoteAETitle,
             InputStream in, InstanceAvailableCallback callback) throws Exception {
         StoreContext context;
-        
+        ApplicationEntity localAE = aeCache.findApplicationEntity(localAETitle);
             StoreSession session = storeService.createStoreSession(storeService); 
+        session.setSource(new GenericParticipant(localAE.getConnections()
+                .get(0).getHostname(), "WadoRS Fetch"));
             session.setRemoteAET(remoteAETitle);
             ArchiveAEExtension arcAEExt = aeCache.get(localAETitle)
                     .getAEExtension(ArchiveAEExtension.class); 
@@ -169,6 +171,7 @@ public class WadoClientServiceImpl implements WadoClientService {
         .fileTimeZoneID(context.getFileRef().getTimeZone())
         .retrieveAETs(context.getInstance().getRawRetrieveAETs())
         .withoutBulkdata(context.getFileRef().isWithoutBulkData())
+        .fetchedInstance(true)
         .seriesInstanceUID(context.getAttributes()
                 .getString(Tag.SeriesInstanceUID))
         .studyInstanceUID(context.getAttributes()
@@ -179,9 +182,8 @@ public class WadoClientServiceImpl implements WadoClientService {
 
     private WadoClientResponse fetch(ApplicationEntity localAE,
             ApplicationEntity remoteAE, String studyInstanceUID,
-            String seriesInstanceUID, String sopInstanceUID,
-            String wadobaseURL, InstanceAvailableCallback callback) {
-        setCallBack(callBack);
+            String seriesInstanceUID, String sopInstanceUID, InstanceAvailableCallback callback) {
+        setCallBack(callback);
         WadoClient client = createClient();
         WebServiceAEExtension wsAEExt = remoteAE
                 .getAEExtension(WebServiceAEExtension.class);

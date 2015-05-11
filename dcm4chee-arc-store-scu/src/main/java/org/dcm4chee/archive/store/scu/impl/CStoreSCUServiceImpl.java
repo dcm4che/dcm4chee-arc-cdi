@@ -63,6 +63,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -88,6 +89,7 @@ import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUJMSMessage;
 import org.dcm4chee.archive.store.scu.CStoreSCUResponse;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.wado.client.WadoClientService;
 import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,6 +103,12 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(CStoreSCUServiceImpl.class);
+
+    @Inject
+    private IApplicationEntityCache aeCache;
+
+    @Inject
+    private WadoClientService wadoClientService;
 
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
@@ -328,6 +336,17 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
             transformer.setParameter("calling", localAET);
             transformer.setParameter("called", remoteAET);
         }
+    }
+
+    @Override
+    public WadoClientService getWadoFetchService() {
+        return wadoClientService;
+    }
+
+    @Override
+    public IApplicationEntityCache getAECache() {
+        // TODO Auto-generated method stub
+        return aeCache;
     }
 
 }

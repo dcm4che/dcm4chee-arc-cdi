@@ -67,4 +67,19 @@
       <version>${project.version}</version>
     </dependency>
 </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Dependencies>org.dcm4che.mime, org.dcm4che.net,
+                org.dcm4che.ws-rs</Dependencies>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

@@ -62,7 +62,11 @@ import org.dcm4chee.storage.conf.Availability;
     @NamedQuery(
             name=ExternalRetrieveLocation.FIND_EXT_LOCATIONS_BY_IUID_RETRIEVE_AET,
             query = "Select e from ExternalRetrieveLocation e "
-                    + " where e.instance.sopInstanceUID = ?1 and e.retrieveAETitle = ?2"), 
+                    + " where e.instance.sopInstanceUID = ?1 and e.retrieveAETitle = ?2"),
+    @NamedQuery(
+            name=ExternalRetrieveLocation.FIND_EXT_LOCATIONS_BY_IUID,
+            query = "Select e from ExternalRetrieveLocation e "
+                    + " where e.instance.sopInstanceUID = ?1"),
     @NamedQuery(
             name=ExternalRetrieveLocation.FIND_EXT_LOCATIONS_BY_IUID_AVAILABILITY,
             query = "Select e from ExternalRetrieveLocation e"
@@ -75,6 +79,8 @@ public class ExternalRetrieveLocation implements Serializable {
     private static final long serialVersionUID = -8051311963967965531L;
     public static final String FIND_EXT_LOCATIONS_BY_IUID_RETRIEVE_AET
      = "ExternalRetrieveLocation.findExtLocationsByIUIDRetrieveAET";
+    public static final String FIND_EXT_LOCATIONS_BY_IUID
+    = "ExternalRetrieveLocation.findExtLocationsByIUID";
     public static final String FIND_EXT_LOCATIONS_BY_IUID_AVAILABILITY
      = "ExternalRetrieveLocation.findExtLocationsByIUIDAvailability";
     

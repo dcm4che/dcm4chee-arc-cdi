@@ -42,9 +42,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.wado.client.WadoClientService;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -91,4 +93,8 @@ public interface CStoreSCUService {
             ArchiveInstanceLocator ref, CStoreSCUContext context);
 
     Path getFile(ArchiveInstanceLocator inst) throws IOException;
+
+    WadoClientService getWadoFetchService();
+
+    IApplicationEntityCache getAECache();
 }

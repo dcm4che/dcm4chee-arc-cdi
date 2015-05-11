@@ -51,6 +51,8 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.ExternalLocationTuple;
+import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QSeries;
@@ -158,16 +160,13 @@ public class DefaultRetrieveService implements RetrieveService {
         for (Tuple tuple : tuples) {
             Boolean b = tuple.get(QLocation.location.withoutBulkData);
             String retrieveAETs = tuple.get(QInstance.instance.retrieveAETs);
-            if (b == null ) 
-            { //No Location
-            	if(retrieveAETs == null ) //No external location
-            		continue;
-            }
-            else if(b && !withoutBulkData) //metadata
+            if (b == null) { // No Location
+                if (retrieveAETs == null) // No external location
+                    continue;
+            } else if (b && !withoutBulkData) // metadata
             {
-            	continue;
+                continue;
             }
-                
 
             long nextSeriesPk = tuple.get(QSeries.series.pk);
             long nextInstPk = tuple.get(QInstance.instance.pk);
@@ -182,11 +181,27 @@ public class DefaultRetrieveService implements RetrieveService {
                 locator = null;
             }
             instPk = nextInstPk;
-            locator = updateLocator(storageConf, locator, seriesAttrs, tuple);
+            if(tuple.get(QLocation.location.storageSystemGroupID) == null)
+                locator = augmentExternalLopcations(updateLocator(storageConf, 
+                        locator, seriesAttrs, tuple));
+            else
+                locator = updateLocator(storageConf, locator, seriesAttrs, tuple);
         }
         if (locator != null)
             locators.add(locator);
         return locators;
+    }
+
+    private ArchiveInstanceLocator augmentExternalLopcations(
+            ArchiveInstanceLocator updateLocator) {
+        ArrayList<ExternalRetrieveLocation> externalLocations =
+                (ArrayList<ExternalRetrieveLocation>) 
+                ejb.getExternalLocations(updateLocator.iuid);
+        for(ExternalRetrieveLocation loc : externalLocations)
+        updateLocator.getExternalLocators().add(new ExternalLocationTuple(
+                loc.getRetrieveAETitle(), loc.getAvailability()));
+            //update external retrieveLocation 
+            return updateLocator;
     }
 
     private static ArchiveInstanceLocator updateLocator(
@@ -205,10 +220,10 @@ public class DefaultRetrieveService implements RetrieveService {
         String timeZone = tuple.get(QLocation.location.timeZone);
         String seriesInstanceUID = tuple.get(QSeries.series.seriesInstanceUID);
         String studyInstanceUID = tuple.get(QStudy.study.studyInstanceUID);
-        boolean withoutBulkData = tuple.get(QLocation.location.withoutBulkData) == null ? false 
-        		: tuple.get(QLocation.location.withoutBulkData);
-        StorageSystem storageSystem = storageSystemGroupID != null
-        		? storageConf.getStorageSystem(storageSystemGroupID, storageSystemID) : null;
+        boolean withoutBulkData = tuple.get(QLocation.location.withoutBulkData) == null ? false
+                : tuple.get(QLocation.location.withoutBulkData);
+        StorageSystem storageSystem = storageSystemGroupID != null ? storageConf
+                .getStorageSystem(storageSystemGroupID, storageSystemID) : null;
         ArchiveInstanceLocator newLocator = new ArchiveInstanceLocator.Builder(cuid, iuid, tsuid)
                 .storageSystem(storageSystem)
                 .storagePath(storagePath)
@@ -218,6 +233,7 @@ public class DefaultRetrieveService implements RetrieveService {
                 .withoutBulkdata(withoutBulkData)
                 .seriesInstanceUID(seriesInstanceUID)
                 .studyInstanceUID(studyInstanceUID)
+                .externalLocators(new ArrayList<ExternalLocationTuple>())
                 .build();
         if (locator == null) {
             byte[] encodedInstanceAttrs =

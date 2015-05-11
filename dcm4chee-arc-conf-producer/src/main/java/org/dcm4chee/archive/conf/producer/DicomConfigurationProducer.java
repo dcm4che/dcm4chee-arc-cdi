@@ -44,7 +44,6 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 
 import org.dcm4che3.conf.api.*;
-import org.dcm4che3.conf.api.DicomConfigurationCustomizer;
 import org.dcm4che3.conf.api.hl7.HL7ApplicationCache;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.conf.api.hl7.IHL7ApplicationCache;
@@ -57,6 +56,7 @@ import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.ArchiveHL7ApplicationExtension;
@@ -96,6 +96,7 @@ public class DicomConfigurationProducer  {
         builder.registerDeviceExtension(AuditRecordRepository.class);
         builder.registerDeviceExtension(AuditLogger.class);
         builder.registerAEExtension(ArchiveAEExtension.class);
+        builder.registerAEExtension(WebServiceAEExtension.class);
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
         return builder.build();
     }

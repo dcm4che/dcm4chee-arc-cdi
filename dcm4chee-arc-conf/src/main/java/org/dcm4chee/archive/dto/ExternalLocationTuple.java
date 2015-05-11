@@ -36,37 +36,29 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.wado.client;
+package org.dcm4chee.archive.dto;
 
-import java.io.InputStream;
-
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.storage.conf.Availability;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- *
+ * 
  */
-public interface WadoClientService {
+public class ExternalLocationTuple {
+    private String retrieveAET;
 
-    WadoClientResponse fetchStudy(ApplicationEntity localAE,
-            ApplicationEntity remoteAE, String studyInstanceUID,
-            InstanceAvailableCallback callback);
+    private Availability availability;
 
-    WadoClientResponse fetchSeries(ApplicationEntity localAE,
-            ApplicationEntity remoteAE, String studyInstanceUID,
-            String seriesInstanceUID, InstanceAvailableCallback callback);
-
-    WadoClientResponse fetchInstance(ApplicationEntity localAE,
-            ApplicationEntity remoteAE, String studyInstanceUID,
-            String seriesInstanceUID, String sopInstanceUID,
-            InstanceAvailableCallback callback);
-
-    StoreContext spool(String localAETitle, String remoteAETitle,
-            InputStream in, InstanceAvailableCallback callback)
-            throws Exception;
-
-    boolean store(StoreContext context);
-
-    InstanceAvailableCallback getCallBack();
+    public ExternalLocationTuple(String retrieveAET, Availability availability) {
+        super();
+        this.retrieveAET = retrieveAET;
+        this.availability = availability;
+    }
+    public Availability getAvailability() {
+        return availability;
+    }
+    public String getRetrieveAET() {
+        return retrieveAET;
+    }
+    
 }

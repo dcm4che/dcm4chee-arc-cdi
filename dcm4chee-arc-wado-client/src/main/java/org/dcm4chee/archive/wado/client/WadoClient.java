@@ -43,8 +43,11 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
-import org.dcm4che3.data.Tag;
 import org.dcm4che3.mime.MultipartInputStream;
 import org.dcm4che3.mime.MultipartParser;
 import org.dcm4chee.archive.store.StoreContext;
@@ -67,7 +70,7 @@ public class WadoClient {
 
     public WadoClientResponse fetch(final String localAET,
             final String remoteAET, String studyUID, String seriesUID,
-            String iuid, String baseURL) throws IOException {
+            final String iuid, String baseURL) throws IOException {
         URL newUrl = new URL(toWadoRSURL(baseURL, studyUID, seriesUID, iuid));
 
         HttpURLConnection connection = (HttpURLConnection) newUrl
@@ -83,7 +86,7 @@ public class WadoClient {
 
         connection.setRequestProperty("charset", "utf-8");
 
-        connection.addRequestProperty("Accept", "application/dicom");
+        connection.addRequestProperty("Accept", "multipart/related; type=application/dicom;");
 
         // connection.setConnectTimeout();
         connection.setUseCaches(false);
@@ -106,31 +109,25 @@ public class WadoClient {
 
                         @Override
                         public void bodyPart(int partNumber,
-                                MultipartInputStream in) throws IOException {
+                                MultipartInputStream min) throws IOException {
                             StoreContext ctx = null;
-                            String receivedIUID = null;
-                            try {
-                                ctx = service.spool(localAET, remoteAET, in,
-                                        service.getCallBack());
-                                receivedIUID = ctx.getAttributes().getString(
-                                        Tag.SOPInstanceUID);
-                                if (service.store(ctx)) {
-                                    LOG.debug("Successfully fetched instance "
-                                            + "{} from {}", receivedIUID,
-                                            remoteAET);
-                                    completed.add(receivedIUID);
-                                } else {
-                                    LOG.debug(
-                                            "Failed to fetch instance {} from {}",
-                                            receivedIUID, remoteAET);
-                                    failed.add(receivedIUID);
+                            String receivedIUID = iuid;
+                            if (min.isZIP()) {
+                                ZipInputStream zip = new ZipInputStream(min);
+                                ZipEntry zipEntry;
+                                while ((zipEntry = zip.getNextEntry()) != null) {
+                                    if (!zipEntry.isDirectory())
+                                        storeDicom(localAET, remoteAET, zip,
+                                                ctx, receivedIUID, completed,
+                                                failed);
                                 }
-                            } catch (Exception e) {
-                                LOG.debug(
-                                        "Failed to fetch instance {} from {}",
-                                        receivedIUID, remoteAET);
-                                failed.add(receivedIUID);
+                            } else {
+                                Map<String, List<String>> headerParams = min
+                                        .readHeaderParams();
+                                storeDicom(localAET, remoteAET, min, ctx,
+                                        receivedIUID, completed, failed);
                             }
+
                         }
                     });
             connection.disconnect();
@@ -143,7 +140,7 @@ public class WadoClient {
     }
 
     private String getBoundaryFromContentType(String headerField) {
-        return headerField.split(";")[2].split("=")[1];
+        return headerField.split("boundary=")[1];
     }
 
     private String toWadoRSURL(String baseURL, String studyUID,
@@ -155,4 +152,31 @@ public class WadoClient {
                 + (iuid != null ? "/instances/" + iuid : "");
     }
 
+    private boolean storeDicom(String localAET, String remoteAET,
+            InputStream min, StoreContext ctx, String receivedIUID, 
+            ArrayList<String> completed, ArrayList<String> failed) {
+        try {
+            ctx = service.spool(localAET, remoteAET, min,
+                    service.getCallBack());
+            if (service.store(ctx)) {
+                LOG.debug("Successfully fetched instance "
+                        + "{} from {}", receivedIUID,
+                        remoteAET);
+                completed.add(receivedIUID);
+                return true;
+            } else {
+                LOG.debug(
+                        "Failed to fetch instance {} from {}",
+                        receivedIUID, remoteAET);
+                failed.add(receivedIUID);
+                return false;
+            }
+        } catch (Exception e) {
+            LOG.debug(
+                    "Failed to fetch instance {} from {}",
+                    receivedIUID, remoteAET);
+            failed.add(receivedIUID);
+            return false;
+        }
+    }
 }

@@ -39,6 +39,7 @@ package org.dcm4chee.archive.dto;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.storage.conf.StorageSystem;
@@ -54,12 +55,14 @@ public class ArchiveInstanceLocator extends InstanceLocator
 
     private final String fileTimeZoneID;
     private final StorageSystem storageSystem;
+    private final List<ExternalLocationTuple> externalLocators;
     private final String filePath;
     private final String entryName;
     private final String retrieveAETs;
     private final boolean withoutBulkdata;
     private final String seriesInstanceUID;
     private final String studyInstanceUID;
+    private final boolean fetchedInstance;
     private ArchiveInstanceLocator fallbackLocator;
 
     public static final class Builder {
@@ -67,11 +70,13 @@ public class ArchiveInstanceLocator extends InstanceLocator
         private final String iuid;
         private final String tsuid;
         private StorageSystem storageSystem;
+        private List<ExternalLocationTuple> externalLocators;
         private String storagePath;
         private String entryName;
         private String retrieveAETs;
         private String fileTimeZoneID;
         private boolean withoutBulkdata;
+        private boolean fetchedInstance;
         private String seriesInstanceUID;
         private String studyInstanceUID;
 
@@ -83,6 +88,12 @@ public class ArchiveInstanceLocator extends InstanceLocator
 
         public Builder storageSystem(StorageSystem storageSystem) {
             this.storageSystem = storageSystem;
+            return this;
+        }
+
+        public Builder externalLocators(
+                List<ExternalLocationTuple> externalLocations) {
+            this.externalLocators = externalLocations;
             return this;
         }
 
@@ -111,6 +122,11 @@ public class ArchiveInstanceLocator extends InstanceLocator
             return this;
         }
 
+        public Builder fetchedInstance(boolean fetchedInstance) {
+            this.fetchedInstance = fetchedInstance;
+            return this;
+        }
+
         public Builder seriesInstanceUID(String seriesInstanceUID) {
         	this.seriesInstanceUID = seriesInstanceUID;
         	return this;
@@ -134,8 +150,10 @@ public class ArchiveInstanceLocator extends InstanceLocator
         this.entryName = builder.entryName;
         this.retrieveAETs = builder.retrieveAETs;
         this.withoutBulkdata = builder.withoutBulkdata;
+        this.fetchedInstance = builder.fetchedInstance;
         this.seriesInstanceUID = builder.seriesInstanceUID;
         this.studyInstanceUID = builder.studyInstanceUID;
+        this.externalLocators = builder.externalLocators;
     }
 
     private static String createRetrieveURI(Builder builder) {
@@ -153,6 +171,10 @@ public class ArchiveInstanceLocator extends InstanceLocator
         return storageSystem;
     }
 
+    public List<ExternalLocationTuple> getExternalLocators() {
+        return externalLocators;
+    }
+
     public String getFilePath() {
         return filePath;
     }
@@ -167,6 +189,10 @@ public class ArchiveInstanceLocator extends InstanceLocator
 
     public boolean isWithoutBulkdata() {
         return withoutBulkdata;
+    }
+
+    public boolean isFetchedInstance() {
+        return fetchedInstance;
     }
 
     public ArchiveInstanceLocator getFallbackLocator() {
@@ -189,5 +215,5 @@ public class ArchiveInstanceLocator extends InstanceLocator
     public int compareTo(ArchiveInstanceLocator o) {
         return storageSystem.getStorageAccessTime() - o.storageSystem.getStorageAccessTime();
     }
-
 }
+
