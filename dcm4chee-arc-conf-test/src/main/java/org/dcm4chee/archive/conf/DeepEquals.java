@@ -47,7 +47,7 @@ import org.apache.commons.lang.ClassUtils;
  */
 public class DeepEquals
 {
-    private static final Map<Class, Boolean> _customEquals = new ConcurrentHashMap<Class, Boolean>();
+    public static final Map<Class, Boolean> _customEquals = new ConcurrentHashMap<Class, Boolean>();
     private static final Map<Class, Boolean> _customHash = new ConcurrentHashMap<Class, Boolean>();
     private static final Map<Class, Collection<Field>> _reflectedFields = new ConcurrentHashMap<Class, Collection<Field>>();
     
@@ -121,7 +121,7 @@ public class DeepEquals
     	public boolean deepEquals(Object first, Object second);
     }
     
-    public static Map<Class<?>, CustomDeepEquals> customDeepEquals;
+    public static Map<Class<?>, CustomDeepEquals> customDeepEquals = new HashMap<>();
     public static DualKey lastDualKey;
     public static String lastClass;
     
