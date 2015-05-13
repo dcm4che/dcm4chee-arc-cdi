@@ -39,8 +39,13 @@
 package org.dcm4chee.archive.conf;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
+import org.dcm4che3.conf.api.extensions.CommonDeviceExtension;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
@@ -59,6 +64,14 @@ public class AttributeFilter implements Serializable {
     @ConfigurableProperty(name = "dcmTag")
     private int[] selection;
 
+    @LDAP(
+            distinguishingField ="dcmAttributeFilterPrivateTag",
+            mapEntryObjectClass = "dcmAttributeFilterPrivateEntry",
+            mapValueAttribute = "dcmAttributeFilterPrivateCreator"
+    )
+    @ConfigurableProperty(name = "dcmPrivateTag")
+    private Map<Integer, String> privateSelection = new TreeMap<>();
+
     @ConfigurableProperty(name = "dcmCustomAttribute1")
     private ValueSelector customAttribute1;
 
@@ -75,12 +88,47 @@ public class AttributeFilter implements Serializable {
         Arrays.sort(this.selection = selection);
     }
 
+    public AttributeFilter(int[] selection, Map<Integer, String> privateSelection) {
+        Arrays.sort(this.selection = selection);
+        this.privateSelection = privateSelection;
+    }
+    
+    /**
+     * merges non private tags with private tags matching the configured private
+     * selector to the private creator found in the passed Attributes object
+     */
+    public int[] getCompleteSelection(Attributes attrs) {
+
+        if (privateSelection == null || privateSelection.size() == 0)
+            return selection;
+
+        ArrayList<Integer> privateTags = new ArrayList<>();
+
+        // filter out private tags not belonging to the configured private
+        // creator
+        for (int privateTag : privateSelection.keySet()) {
+            String configuredCreator = privateSelection.get(privateTag);
+            if (configuredCreator.equalsIgnoreCase(attrs
+                    .getPrivateCreator(privateTag)))
+                privateTags.add(privateTag);
+        }
+
+        // merge non-private and private tags
+        int[] res = new int[selection.length + privateTags.size()];
+        System.arraycopy(selection, 0, res, 0, selection.length);
+        System.arraycopy(privateTags.toArray(), 0, res, selection.length,
+                privateTags.size());
+        return res;
+    }
+
     public int[] getSelection() {
         return selection;
     }
 
-    public static String selectStringValue(Attributes attrs, ValueSelector selector, String defVal) {
-        return selector != null ? selector.selectStringValue(attrs, defVal) : defVal;
+    public static String selectStringValue(Attributes attrs,
+            ValueSelector selector, String defVal) {
+        return selector != null ? selector.selectStringValue(attrs, defVal)
+                : defVal;
     }
 
     public void setCustomAttribute1(ValueSelector customAttribute1) {
@@ -110,4 +158,19 @@ public class AttributeFilter implements Serializable {
     public void setSelection(int[] selection) {
         this.selection = selection;
     }
+
+    public Map<Integer, String> getPrivateSelection() {
+        return privateSelection;
+    }
+
+    public void setPrivateSelection(Map<Integer, String> privateSelection) {
+        this.privateSelection = privateSelection;
+    }
+    
+    public Map<Integer, String> addPrivate(Integer tag, String creator) {
+        this.privateSelection.put(tag, creator);
+        return this.privateSelection;
+    }
+    
+
 }

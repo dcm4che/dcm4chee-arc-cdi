@@ -125,7 +125,7 @@ public class MPPSServiceImpl implements MPPSService {
         }
         Attributes mppsAttrs = new Attributes(attrs.size());
         mppsAttrs.addNotSelected(attrs,
-                storeParam.getAttributeFilter(Entity.Patient).getSelection());
+                storeParam.getAttributeFilter(Entity.Patient).getCompleteSelection(attrs));
         MPPS mpps = new MPPS();
         mpps.setSopInstanceUID(iuid);
         mpps.setAttributes(mppsAttrs);

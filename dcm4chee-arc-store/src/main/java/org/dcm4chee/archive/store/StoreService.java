@@ -135,8 +135,6 @@ public interface StoreService {
     void cleanup(StoreContext context);
 
     void fireStoreEvent(StoreContext context);
-    
-    int[] getStoreFilters();
 
     void storeMetaData(StoreContext context) throws DicomServiceException;
 }

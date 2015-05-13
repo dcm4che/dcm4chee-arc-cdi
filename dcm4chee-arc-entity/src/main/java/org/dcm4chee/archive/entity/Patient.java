@@ -353,7 +353,7 @@ public class Patient implements Serializable {
         patientCustomAttribute3 = AttributeFilter.selectStringValue(attrs,
                 filter.getCustomAttribute3(), "*");
 
-        getAttributesBlob().setAttributes(new Attributes(attrs, filter.getSelection()));
+        getAttributesBlob().setAttributes(new Attributes(attrs, filter.getCompleteSelection(attrs)));
     }
 
     public void updateOtherPatientIDs() {

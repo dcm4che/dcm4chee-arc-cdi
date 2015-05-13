@@ -525,6 +525,19 @@ attributetype ( 1.2.40.0.13.1.15.10.3.87 NAME 'dcmSyncLocationStatusStorageSyste
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+  
+attributetype ( 1.2.40.0.13.1.15.10.3.88 NAME 'dcmAttributeFilterPrivateTag'
+  DESC 'Private Tag in the Attribute Filter'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+
+attributetype ( 1.2.40.0.13.1.15.10.3.89 NAME 'dcmAttributeFilterPrivateCreator'
+  DESC 'Private Creator of a Private Tag in the Attribute Filter'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )  
 
 objectclass ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
@@ -712,4 +725,13 @@ objectclass ( 1.2.40.0.13.1.15.10.4.22 NAME 'dcmArchivingRule'
     dicomInstitutionName $
     dicomInstitutionDepartmentName $
     dcmModality
+  ) )
+
+objectclass ( 1.2.40.0.13.1.15.10.4.23 NAME 'dcmAttributeFilterPrivateEntry'
+  DESC 'Entry of a private tag/creator in the Attribute Filter'
+  SUP top
+  STRUCTURAL
+  MUST (
+    dcmAttributeFilterPrivateCreator $
+    dcmAttributeFilterPrivateTag
   ) )

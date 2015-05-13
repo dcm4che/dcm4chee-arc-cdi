@@ -457,9 +457,9 @@ public class Instance implements Serializable {
                 AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
 
         if (attributesBlob == null)
-                attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getSelection()));
+                attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getCompleteSelection(attrs)));
         else
-            attributesBlob.setAttributes(new Attributes(attrs, filter.getSelection()));
+            attributesBlob.setAttributes(new Attributes(attrs, filter.getCompleteSelection(attrs)));
     }
 
 }

@@ -264,6 +264,12 @@ public class DeviceMocker {
         Tag.StudyInstanceUID,
         Tag.StudyID
     };
+    private static final Map<Integer, String> STUDY_PRIVATE_ATTRS = new TreeMap<>();
+    static {
+        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyLastUpdateDateTime, "EXTENDED STUDY");
+        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyStatus, "EXTENDED STUDY");
+    }
+    
     private static final int[] SERIES_ATTRS = {
         Tag.SpecificCharacterSet,
         Tag.Modality,
@@ -802,8 +808,7 @@ public class DeviceMocker {
         ext.setSyncLocationStatusStorageSystemGroupIDs("ARCHIVE");
         ext.setAttributeFilter(Entity.Patient,
                 new AttributeFilter(PATIENT_ATTRS));
-        ext.setAttributeFilter(Entity.Study,
-                new AttributeFilter(STUDY_ATTRS));
+        ext.setAttributeFilter(Entity.Study,new AttributeFilter(STUDY_ATTRS, STUDY_PRIVATE_ATTRS));
         ext.setAttributeFilter(Entity.Series,
                 new AttributeFilter(SERIES_ATTRS));
         ext.setAttributeFilter(Entity.Instance,

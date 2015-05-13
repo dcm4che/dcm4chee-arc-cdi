@@ -40,6 +40,7 @@ package org.dcm4chee.archive.conf;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
@@ -66,7 +67,7 @@ public class PatientSelectorConfig implements Serializable {
             mapValueAttribute = "dcmPatientSelectorValue"
     )
     @ConfigurableProperty(name = "dcmPatientSelectorProperties")
-    private Map<String, String> patientSelectorProperties;
+    private Map<String, String> patientSelectorProperties = new TreeMap<>();
 
     public String getPatientSelectorClassName() {
         return patientSelectorClassName;

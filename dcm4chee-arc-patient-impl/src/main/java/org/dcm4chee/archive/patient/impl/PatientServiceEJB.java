@@ -311,7 +311,7 @@ public class PatientServiceEJB implements PatientService {
         }
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (patientAttrs.mergeSelected(attrs, filter.getSelection())) {
+        if (patientAttrs.mergeSelected(attrs, filter.getCompleteSelection(attrs))) {
             patient.setAttributes(patientAttrs, filter,
                     storeParam.getFuzzyStr());
         }
@@ -376,7 +376,7 @@ public class PatientServiceEJB implements PatientService {
         }
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (patientAttrs.updateSelected(attrs, null, filter.getSelection())) {
+        if (patientAttrs.updateSelected(attrs, null, filter.getCompleteSelection(attrs))) {
             patient.setAttributes(patientAttrs, filter,
                     storeParam.getFuzzyStr());
         }
@@ -672,7 +672,7 @@ public class PatientServiceEJB implements PatientService {
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
         if (patientAttrs.updateSelected(otherPatientAttrs, null,
-                filter.getSelection())) {
+                filter.getCompleteSelection(otherPatientAttrs))) {
             patient.setAttributes(patientAttrs, filter,
                     storeParam.getFuzzyStr());
             em.flush();

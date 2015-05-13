@@ -880,7 +880,7 @@ public class StoreServiceImpl implements StoreService {
                     storeParam.getFuzzyStr());
         } else {
             if (studyAttrs.updateSelected(data, modified,
-                    studyFilter.getSelection())) {
+                    studyFilter.getCompleteSelection(data))) {
                 study.setAttributes(studyAttrs, studyFilter,
                         storeParam.getFuzzyStr());
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
@@ -917,7 +917,7 @@ public class StoreServiceImpl implements StoreService {
                     storeParam.getFuzzyStr());
         } else {
             if (seriesAttrs.updateSelected(data, modified,
-                    seriesFilter.getSelection())) {
+                    seriesFilter.getCompleteSelection(data))) {
                 series.setAttributes(seriesAttrs, seriesFilter,
                         storeParam.getFuzzyStr());
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
@@ -938,7 +938,7 @@ public class StoreServiceImpl implements StoreService {
         AttributeFilter instFilter = storeParam
                 .getAttributeFilter(Entity.Instance);
         Attributes modified = new Attributes();
-        if (instAttrs.updateSelected(data, modified, instFilter.getSelection())) {
+        if (instAttrs.updateSelected(data, modified, instFilter.getCompleteSelection(data))) {
             inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
             LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
                     modified);
@@ -946,17 +946,20 @@ public class StoreServiceImpl implements StoreService {
         service.updateSeries(em, context, inst.getSeries());
     }
 
-    public int[] getStoreFilters() {
+    private int[] getStoreFilters(Attributes attrs) {
 
         if (storeFilters == null) {
 
             ArchiveDeviceExtension dExt = device
                     .getDeviceExtension(ArchiveDeviceExtension.class);
-            storeFilters = merge(dExt.getAttributeFilter(Entity.Patient)
-                    .getSelection(), dExt.getAttributeFilter(Entity.Study)
-                    .getSelection(), dExt.getAttributeFilter(Entity.Series)
-                    .getSelection(), dExt.getAttributeFilter(Entity.Instance)
-                    .getSelection());
+            storeFilters = merge(
+                    dExt.getAttributeFilter(Entity.Patient)
+                            .getCompleteSelection(attrs),
+                    dExt.getAttributeFilter(Entity.Study).getCompleteSelection(
+                            attrs), dExt.getAttributeFilter(Entity.Series)
+                            .getCompleteSelection(attrs), dExt
+                            .getAttributeFilter(Entity.Instance)
+                            .getCompleteSelection(attrs));
             Arrays.sort(storeFilters);
         }
 
@@ -1148,7 +1151,7 @@ public class StoreServiceImpl implements StoreService {
 
             // selects attributes non stored in the db
             Attributes noDBAtts = new Attributes();
-            noDBAtts.addNotSelected(attrs, getStoreFilters());
+            noDBAtts.addNotSelected(attrs, getStoreFilters(attrs));
 
             return Utils.digestAttributes(noDBAtts, session.getMessageDigest());
         } else
