@@ -132,4 +132,8 @@ public interface StoreContext {
     String getMetaDataStoragePath();
 
     void setMetaDataStoragePath(String storagePath);
+
+    boolean isFetch();
+
+    void setFetch(boolean fetch);
 }

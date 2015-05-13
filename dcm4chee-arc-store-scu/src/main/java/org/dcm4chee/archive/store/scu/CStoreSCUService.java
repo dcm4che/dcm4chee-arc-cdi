@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
@@ -97,4 +98,6 @@ public interface CStoreSCUService {
     WadoClientService getWadoFetchService();
 
     IApplicationEntityCache getAECache();
+
+    DicomConfiguration getConfig();
 }

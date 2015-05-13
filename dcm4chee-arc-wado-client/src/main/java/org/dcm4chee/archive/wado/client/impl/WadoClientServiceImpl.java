@@ -48,8 +48,10 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
@@ -106,9 +108,20 @@ public class WadoClientServiceImpl implements WadoClientService {
 
     @Override
     public boolean store(StoreContext context) {
+        context.setFetch(true);
         try {
             storeService.parseSpoolFile(context);
-            storeService.store(context);
+            try {
+                storeService.storeMetaData(context);
+                storeService.processFile(context);
+                storeService.updateDB(context);
+            } catch (DicomServiceException e) {
+                context.setStoreAction(StoreAction.FAIL);
+                context.setThrowable(e);
+                throw e;
+            } finally {
+                storeService.cleanup(context);
+            }
             LOG.debug("Fetched and Stored instance from remote AE {}"
                     , context.getStoreSession().getRemoteAET());
             getCallBack().onInstanceAvailable(createArchiveInstanceLocator(context));
@@ -171,7 +184,6 @@ public class WadoClientServiceImpl implements WadoClientService {
         .fileTimeZoneID(context.getFileRef().getTimeZone())
         .retrieveAETs(context.getInstance().getRawRetrieveAETs())
         .withoutBulkdata(context.getFileRef().isWithoutBulkData())
-        .fetchedInstance(true)
         .seriesInstanceUID(context.getAttributes()
                 .getString(Tag.SeriesInstanceUID))
         .studyInstanceUID(context.getAttributes()

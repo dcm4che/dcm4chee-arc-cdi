@@ -51,6 +51,7 @@ import org.dcm4che3.conf.api.internal.ExtendedDicomConfiguration;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
 import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
+import org.dcm4che3.net.ExternalArchiveAEExtension;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
@@ -97,6 +98,7 @@ public class DicomConfigurationProducer  {
         builder.registerDeviceExtension(AuditLogger.class);
         builder.registerAEExtension(ArchiveAEExtension.class);
         builder.registerAEExtension(WebServiceAEExtension.class);
+        builder.registerAEExtension(ExternalArchiveAEExtension.class);
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
         return builder.build();
     }

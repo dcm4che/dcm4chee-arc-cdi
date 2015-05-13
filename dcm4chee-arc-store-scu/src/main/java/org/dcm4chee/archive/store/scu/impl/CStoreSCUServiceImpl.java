@@ -63,6 +63,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -125,6 +126,9 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
 
     @Inject
     private RetrieveService storageRetrieveService;
+
+    @Inject
+    private DicomConfiguration config;
 
     @Override
     public void cstore(String messageID, CStoreSCUContext context, 
@@ -345,8 +349,13 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
 
     @Override
     public IApplicationEntityCache getAECache() {
-        // TODO Auto-generated method stub
         return aeCache;
     }
+
+    @Override
+    public DicomConfiguration getConfig() {
+        return config;
+    }
+
 
 }

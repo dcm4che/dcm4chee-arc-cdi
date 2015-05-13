@@ -253,8 +253,11 @@ public class StoreServiceImpl implements StoreService {
         String storagePath = context.getMetaDataStoragePath();
         if (storagePath != null) {
             try {
-                StorageSystem storageSystem = context.getStoreSession().getMetaDataStorageSystem();
-                storageService.deleteObject(storageService.createStorageContext(storageSystem), storagePath);
+                StorageSystem storageSystem = context.getStoreSession()
+                        .getMetaDataStorageSystem();
+                storageService.deleteObject(
+                        storageService.createStorageContext(storageSystem),
+                        storagePath);
             } catch (IOException e) {
                 LOG.warn("{}: Failed to delete meta data - {}",
                         context.getStoreSession(), storagePath, e);
@@ -504,19 +507,19 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
-        //RESTORE action BLOCK
+        // RESTORE action BLOCK
         if (context.getStoreAction() != StoreAction.IGNORE
                 && context.getStoreAction() != StoreAction.UPDATEDB
                 && context.getStoragePath() != null) {
             Collection<Location> locations = instance.getLocations(2);
             Location location = createLocation(em, context);
             locations.add(location);
-            
-            //update instance retrieveAET
+
+            // update instance retrieveAET
             updateRetrieveAETs(session, instance);
-            //availability update
+            // availability update
             updateAvailability(session, instance);
-            
+
             if (context.getMetaDataStoragePath() != null) {
                 Location metaDataRef = createMetaDataRef(em, context);
                 locations.add(metaDataRef);
@@ -525,22 +528,21 @@ public class StoreServiceImpl implements StoreService {
         }
     }
 
-    private void updateRetrieveAETs(
-            StoreSession session, Instance instance) {
+    private void updateRetrieveAETs(StoreSession session, Instance instance) {
         ArrayList<String> retrieveAETs = new ArrayList<String>();
         retrieveAETs.addAll(Arrays.asList(session.getStorageSystem()
                 .getStorageSystemGroup().getRetrieveAETs()));
-                
-        for(String aet : instance.getRetrieveAETs())
-            if(!retrieveAETs.contains(aet))
+
+        for (String aet : instance.getRetrieveAETs())
+            if (!retrieveAETs.contains(aet))
                 retrieveAETs.add(aet);
         String[] retrieveAETsArray = new String[retrieveAETs.size()];
         instance.setRetrieveAETs(retrieveAETs.toArray(retrieveAETsArray));
     }
 
     private void updateAvailability(StoreSession session, Instance instance) {
-        if(session.getStorageSystem().getAvailability().ordinal()
-                < instance.getAvailability().ordinal() )
+        if (session.getStorageSystem().getAvailability().ordinal() < instance
+                .getAvailability().ordinal())
             instance.setAvailability(session.getStorageSystem()
                     .getAvailability());
     }
@@ -582,11 +584,11 @@ public class StoreServiceImpl implements StoreService {
 
         if (fileRefs.isEmpty())
             return StoreAction.RESTORE;
-        
+
         if (context.getStoreSession().getArchiveAEExtension()
                 .isIgnoreDuplicatesOnStorage())
             return StoreAction.IGNORE;
-        
+
         if (!hasSameSourceAET(instance, session.getRemoteAET()))
             return StoreAction.IGNORE;
 
@@ -838,8 +840,7 @@ public class StoreServiceImpl implements StoreService {
                 .otherAttsDigest(context.getNoDBAttsDigest())
                 .size(context.getFinalFileSize())
                 .transferSyntaxUID(context.getTransferSyntax())
-                .timeZone(context.getSourceTimeZoneID())
-                .build();
+                .timeZone(context.getSourceTimeZoneID()).build();
         em.persist(fileRef);
         LOG.info("{}: Create {}", session, fileRef);
         return fileRef;
@@ -854,8 +855,7 @@ public class StoreServiceImpl implements StoreService {
                 .storageSystemID(storageSystem.getStorageSystemID())
                 .storagePath(context.getStoragePath())
                 .transferSyntaxUID(UID.ExplicitVRLittleEndian)
-                .timeZone(context.getSourceTimeZoneID())
-                .withoutBulkdata(true)
+                .timeZone(context.getSourceTimeZoneID()).withoutBulkdata(true)
                 .build();
         em.persist(fileRef);
         LOG.info("{}: Create {}", session, fileRef);
@@ -916,8 +916,9 @@ public class StoreServiceImpl implements StoreService {
             series.setAttributes(new Attributes(data), seriesFilter,
                     storeParam.getFuzzyStr());
         } else {
-            if (seriesAttrs.updateSelected(data, modified,
-                    seriesFilter.getCompleteSelection(data))) {
+            if (!context.isFetch()
+                    && seriesAttrs.updateSelected(data, modified,
+                            seriesFilter.getCompleteSelection(data))) {
                 series.setAttributes(seriesAttrs, seriesFilter,
                         storeParam.getFuzzyStr());
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
@@ -938,7 +939,9 @@ public class StoreServiceImpl implements StoreService {
         AttributeFilter instFilter = storeParam
                 .getAttributeFilter(Entity.Instance);
         Attributes modified = new Attributes();
-        if (instAttrs.updateSelected(data, modified, instFilter.getCompleteSelection(data))) {
+        if (!context.isFetch()
+                && instAttrs.updateSelected(data, modified,
+                        instFilter.getCompleteSelection(data))) {
             inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
             LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
                     modified);
@@ -967,22 +970,24 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void storeMetaData(StoreContext context) throws DicomServiceException {
+    public void storeMetaData(StoreContext context)
+            throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StorageSystem storageSystem = session.getMetaDataStorageSystem();
         if (storageSystem == null)
             return;
 
         try {
-            StorageContext storageContext = storageService.createStorageContext(storageSystem);
+            StorageContext storageContext = storageService
+                    .createStorageContext(storageSystem);
             String origStoragePath = context.calcMetaDataStoragePath();
             String storagePath = origStoragePath;
             int copies = 1;
             for (;;) {
                 try {
                     try (DicomOutputStream out = new DicomOutputStream(
-                            storageService.openOutputStream(storageContext, storagePath),
-                            UID.ExplicitVRLittleEndian)) {
+                            storageService.openOutputStream(storageContext,
+                                    storagePath), UID.ExplicitVRLittleEndian)) {
                         storeMetaDataTo(context.getAttributes(), out);
                     }
                     context.setMetaDataStoragePath(storagePath);
@@ -996,10 +1001,13 @@ public class StoreServiceImpl implements StoreService {
         }
     }
 
-    private void storeMetaDataTo(Attributes attrs, DicomOutputStream out) throws IOException {
+    private void storeMetaDataTo(Attributes attrs, DicomOutputStream out)
+            throws IOException {
         Attributes metaData = new Attributes(attrs.bigEndian(), attrs.size());
         metaData.addWithoutBulkData(attrs, BulkDataDescriptor.DEFAULT);
-        out.writeDataset(metaData.createFileMetaInformation(UID.ExplicitVRLittleEndian), metaData);
+        out.writeDataset(
+                metaData.createFileMetaInformation(UID.ExplicitVRLittleEndian),
+                metaData);
     }
 
     public int[] merge(final int[]... arrays) {

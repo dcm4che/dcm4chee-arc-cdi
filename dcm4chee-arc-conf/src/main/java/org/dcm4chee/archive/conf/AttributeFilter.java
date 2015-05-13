@@ -90,7 +90,7 @@ public class AttributeFilter implements Serializable {
 
     public AttributeFilter(int[] selection, Map<Integer, String> privateSelection) {
         Arrays.sort(this.selection = selection);
-        this.privateSelection = privateSelection;
+        setPrivateSelection(privateSelection);
     }
     
     /**
@@ -116,8 +116,8 @@ public class AttributeFilter implements Serializable {
         // merge non-private and private tags
         int[] res = new int[selection.length + privateTags.size()];
         System.arraycopy(selection, 0, res, 0, selection.length);
-        System.arraycopy(privateTags.toArray(), 0, res, selection.length,
-                privateTags.size());
+        for (int i = 0; i < privateTags.size(); i++)
+            res[selection.length+i] = privateTags.get(i);
         return res;
     }
 

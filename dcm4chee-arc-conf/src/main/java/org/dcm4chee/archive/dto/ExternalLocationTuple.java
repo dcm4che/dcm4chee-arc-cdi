@@ -45,20 +45,20 @@ import org.dcm4chee.storage.conf.Availability;
  * 
  */
 public class ExternalLocationTuple {
-    private String retrieveAET;
+    private String retrieveDeviceName;
 
     private Availability availability;
 
-    public ExternalLocationTuple(String retrieveAET, Availability availability) {
+    public ExternalLocationTuple(String retrieveDeviceName, Availability availability) {
         super();
-        this.retrieveAET = retrieveAET;
+        this.retrieveDeviceName = retrieveDeviceName;
         this.availability = availability;
     }
     public Availability getAvailability() {
         return availability;
     }
-    public String getRetrieveAET() {
-        return retrieveAET;
+    public String getRetrieveDeviceName() {
+        return retrieveDeviceName;
     }
     
 }

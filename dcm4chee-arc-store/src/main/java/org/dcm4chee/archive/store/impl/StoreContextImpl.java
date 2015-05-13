@@ -76,6 +76,7 @@ public class StoreContextImpl implements StoreContext {
     private Throwable throwable;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
     private TimeZone sourceTimeZone;
+    private boolean fetch;
     
     public StoreContextImpl(StoreSession session) {
         this.session = session;
@@ -286,6 +287,17 @@ public class StoreContextImpl implements StoreContext {
     @Override
     public String getSourceTimeZoneID() {
         return sourceTimeZone != null ? sourceTimeZone.getID() : null;
+    }
+
+    @Override
+    public boolean isFetch() {
+        return fetch;
+    }
+
+    @Override
+    public void setFetch(boolean fetch) {
+        this.fetch = fetch;
+        
     }
 
 }

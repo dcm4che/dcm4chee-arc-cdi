@@ -40,6 +40,7 @@ package org.dcm4chee.archive.store.scu.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -56,6 +57,8 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.DataWriter;
 import org.dcm4che3.net.DataWriterAdapter;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.ExternalArchiveAEExtension;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
@@ -64,6 +67,7 @@ import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.CStoreSCU;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.ExternalLocationTuple;
 import org.dcm4chee.archive.dto.ServiceType;
@@ -171,13 +175,18 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     private BasicCStoreSCUResp getExternalCStoreResponse(
             final ArrayList<ArchiveInstanceLocator> externallyAvailable,
             final Association storeas, final int priority) {
+        final BasicCStoreSCUResp response = new BasicCStoreSCUResp();
         for(int current = 0; current < externallyAvailable.size(); current++) {
-            final ArchiveInstanceLocator externalLoc = externallyAvailable.get(current);
-            ArrayList<ApplicationEntity> remoteArchiveAETitles = listBestExternalLocation(externalLoc);
+            if(storeas.isReadyForDataTransfer()) {
+            final ArchiveInstanceLocator externalLoc = externallyAvailable
+                    .get(current);
+            ArrayList<ApplicationEntity> remoteArchiveAETitles = 
+                    listBestExternalLocation(storeas, externalLoc, context.getLocalAE());
+            if(remoteArchiveAETitles.isEmpty())
+                return null;
             for (int i = 0; i < remoteArchiveAETitles.size(); i++) {
-                final BasicCStoreSCUResp resp = 
-                        new BasicCStoreSCUResp();
-                if (service.getWadoFetchService().fetchInstance(this.context.getLocalAE(),
+                if (service.getWadoFetchService().fetchInstance(
+                        this.context.getLocalAE(),
                         remoteArchiveAETitles.get(i),
                         externalLoc.getStudyInstanceUID(),
                         externalLoc.getSeriesInstanceUID(), 
@@ -190,40 +199,51 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
                                 ArrayList<ArchiveInstanceLocator> matches
                                 = new ArrayList<ArchiveInstanceLocator>();
                                 matches.add(inst);
-                                push(externallyAvailable.size(), matches, storeas, priority, resp);
+                                push(externallyAvailable.size(), matches,
+                                        storeas, priority, response);
                             }
                         }) != null)
                     break;
             }
-
-//            if(current < externallyAvailable.size()-1)
-//                super.outstandingRSP++;
         }
-        return null;
+        }
+        return response;
     }
 
-    private ArrayList<ApplicationEntity> listBestExternalLocation(ArchiveInstanceLocator externalLoc) {
-        ArrayList<ApplicationEntity> externalAETs = new ArrayList<ApplicationEntity>();
+    private ArrayList<ApplicationEntity> listBestExternalLocation(
+            Association storeas, ArchiveInstanceLocator externalLoc, ApplicationEntity localAE) {
+        ArrayList<Device> externalDevices = new ArrayList<Device>();
+        ArrayList<ApplicationEntity> externalAEs = new ArrayList<ApplicationEntity>();
       //for ordering based on availability
         ArrayList<ExternalLocationTuple> extLocTuples = (ArrayList<ExternalLocationTuple>) externalLoc
                 .getExternalLocators();
         if(extLocTuples.size() > 1)
         Collections.sort(extLocTuples, fetchAvailabilityComparator());
                         //for ordering based on priority
-        for(ExternalLocationTuple aet : extLocTuples) {
-            try{
-            ApplicationEntity ae = service.getAECache()
-                    .findApplicationEntity(aet.getRetrieveAET());
-            externalAETs.add(ae);
-            }
-            catch(ConfigurationException e) {
-                LOG.error("Unable to find external retrieve AE {}", aet);
-            }
+        for(ExternalLocationTuple externalTuple : extLocTuples) {
+                try {
+                    externalDevices.add(service.getConfig()
+                            .findDevice(externalTuple.getRetrieveDeviceName()));
+                } catch (ConfigurationException e) {
+                    LOG.error("Unable to find external archive {} in configuration",
+                            externalTuple.getRetrieveDeviceName());
+                }
         }
-        if(externalAETs.size() > 1)
-        Collections.sort(externalAETs, fetchPriorityComparator() );
-        return externalAETs;
+        if(externalDevices.size() > 1)
+        Collections.sort(externalDevices, fetchDevicePriorityComparator(localAE) );
+        for(Device dev : externalDevices) {
+            TransferCapability tc = new TransferCapability("",
+                    externalLoc.cuid, Role.SCP, new String[]{});
+            ArrayList<ApplicationEntity> deviceAEs = (ArrayList<ApplicationEntity>) 
+                    dev.getAEsSupportingTransferCapability(tc, true); 
+                    Collections.sort(deviceAEs,fetchAEPriorityComparator());
+            externalAEs.addAll(deviceAEs);
+        }
+            
+        return externalAEs;
     }
+
+
 
     private Comparator<? super ExternalLocationTuple> fetchAvailabilityComparator() {
         return new Comparator<ExternalLocationTuple>() {
@@ -234,19 +254,28 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         };
     }
 
-    private Comparator<? super ApplicationEntity> fetchPriorityComparator() {
-        return new Comparator<ApplicationEntity>() {
+    private Comparator<? super Device> fetchDevicePriorityComparator(final ApplicationEntity localAE) {
+        return new Comparator<Device>() {
             @Override
-            public int compare(ApplicationEntity ae1, ApplicationEntity ae2) {
-                return getFetchPriority(ae1) < getFetchPriority(ae2) ? -1
-                        : getFetchPriority(ae1) == getFetchPriority(ae2) ? 0 : 1;
+            public int compare(Device dev1, Device dev2) {
+                ArchiveDeviceExtension archDevExt = localAE.getDevice()
+                        .getDeviceExtension(ArchiveDeviceExtension.class);
+                int priority1 = Integer.parseInt(archDevExt.getExternalArchivesMap().get(dev1.getDeviceName()));
+                int priority2 = Integer.parseInt(archDevExt.getExternalArchivesMap().get(dev2.getDeviceName()));
+                return priority1 < priority2 ? -1:priority1 == priority2 ? 0 : 1;
             }
         };
     }
 
-    protected int getFetchPriority(ApplicationEntity ae) {
-        // TODO Auto-generated method stub
-        return 0;
+    private Comparator<ApplicationEntity> fetchAEPriorityComparator() {
+        return new Comparator<ApplicationEntity>() {
+            @Override
+            public int compare(ApplicationEntity ae1, ApplicationEntity ae2) {
+                int priority1 = ae1.getAEExtension(ExternalArchiveAEExtension.class).getAeFetchPriority();
+                int priority2 = ae2.getAEExtension(ExternalArchiveAEExtension.class).getAeFetchPriority();
+                return priority1 < priority2 ? -1:priority1 == priority2 ? 0 : 1;
+            }
+        };
     }
 
     private List<ArchiveInstanceLocator> filterLocalOrExternalMatches(
@@ -289,9 +318,6 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
             }
         } while (attrs == null);
 
-        //apply workflow for non externally retrievable instances
-        
-        if(!inst.isFetchedInstance()){
         // check for suppression criteria
         String templateURI = arcAEExt.getRetrieveSuppressionCriteria()
                 .getSuppressionCriteriaMap().get(context.getRemoteAE().getAETitle());
@@ -305,7 +331,6 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
 
 
         service.coerceAttributes(attrs, context);
-    }
         if (!tsuid.equals(inst.tsuid))
             Decompressor.decompress(attrs, inst.tsuid);
         return new DataWriterAdapter(attrs);
@@ -390,16 +415,28 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
             java.util.List<ArchiveInstanceLocator> instances,
             Association storeas, int priority, BasicCStoreSCUResp resp) {
         BasicCStoreSCUResp storeResp = super.cstore(instances, storeas, priority);
-        resp.setCompleted(storeResp.getCompleted());
-        resp.setFailed(storeResp.getFailed());
+        resp.setCompleted(resp.getCompleted() + storeResp.getCompleted());
+        resp.setFailed(resp.getFailed() + storeResp.getFailed());
+        
+        if(resp.getFailedUIDs() !=null)
+            resp.setFailedUIDs(updateFailed(resp.getFailedUIDs(),
+                    storeResp.getFailedUIDs()));
+        else
         resp.setFailedUIDs(storeResp.getFailedUIDs());
+        
+        resp.setWarning(resp.getWarning() + storeResp.getWarning());
         resp.setStatus(storeResp.getStatus());
-        resp.setWarning(storeResp.getWarning());
         super.nr_instances = instanceCount;
         if(resp.getCompleted() == instanceCount)
             super.status = Status.Success;
         else
         super.status = Status.Pending;
         super.setChanged();
+    }
+
+    private String[] updateFailed(String[] failedUIDs, String[] failedUIDs2) {
+        String[] result = Arrays.copyOf(failedUIDs, failedUIDs.length + failedUIDs2.length);
+        System.arraycopy(failedUIDs2, 0, result, failedUIDs.length, failedUIDs2.length);
+        return result;
     }
 }

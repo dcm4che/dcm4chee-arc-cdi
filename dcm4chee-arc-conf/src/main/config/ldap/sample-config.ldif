@@ -4,7 +4,10 @@ dn: dicomDeviceName=dcmqrscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomInstalled: TRUE
 objectClass: dcmDevice
 objectClass: dicomDevice
+objectClass: dcmExternalArchiveAEExtension
+dcmAEFetchPriority: 0
 dicomInstitutionName: Site B
+dicomPrimaryDeviceType: ARCHIVE
 dicomInstitutionCode: (222.2222, 99DCM4CHEE, "Site B")
 dicomIssuerOfAccessionNumber: Site B&1.2.40.0.13.1.1.999.222.2222&ISO
 dcmLimitOpenAssociations: 0
@@ -34,6 +37,8 @@ cn: dicom-tls
 dn: dicomAETitle=DCMQRSCP,dicomDeviceName=dcmqrscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmNetworkAE
 objectClass: dicomNetworkAE
+objectClass: dcmExternalArchiveAEExtension
+dcmAEFetchPriority: 0
 dicomAssociationAcceptor: TRUE
 dicomNetworkConnectionReference: cn=dicom,dicomDeviceName=dcmqrscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcmqrscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
@@ -420,6 +425,7 @@ dicomSoftwareVersion: 4.2.0.Alpha3
 objectClass: dcmDevice
 objectClass: dicomDevice
 objectClass: dcmArchiveDevice
+dicomPrimaryDeviceType: ARCHIVE
 dcmRejectedObjectsCleanUpPollInterval: 0
 dcmKeyStoreURL: ${jboss.server.config.url}/dcm4chee-arc/key.jks
 dcmFuzzyAlgorithmClass: org.dcm4che3.soundex.ESoundex
@@ -502,8 +508,10 @@ dicomNetworkConnectionReference: cn=dicom-tls,dicomDeviceName=dcm4chee-arc,cn=De
 objectClass: dcmNetworkAE
 objectClass: dicomNetworkAE
 objectClass: dcmArchiveNetworkAE
+objectClass: dcmExternalArchiveAEExtension
 objectClass: dcmArchiveAEWebServices
 dcmSendPendingCMoveInterval: 5000
+dcmAEFetchPriority: 0
 dcmStowRSBaseURL: http://localhost:8080/dcm4chee-arc/stow/DCM4CHEE
 dcmWadoRSBaseURL: http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE
 dcmWadoURIBaseURL: http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE

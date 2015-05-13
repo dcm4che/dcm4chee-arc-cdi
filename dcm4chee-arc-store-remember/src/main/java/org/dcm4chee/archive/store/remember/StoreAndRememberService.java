@@ -52,7 +52,7 @@ import org.dcm4chee.storage.conf.Availability;
 public interface StoreAndRememberService {
 
     void addExternalLocation(String iuid, String retrieveAET
-            , Availability availability);
+            , String remoteDeviceName, Availability availability);
 
     void removeExternalLocations(String iuid, String retrieveAET);
 

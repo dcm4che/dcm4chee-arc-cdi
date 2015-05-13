@@ -60,9 +60,9 @@ import org.dcm4chee.storage.conf.Availability;
  */
 @NamedQueries({
     @NamedQuery(
-            name=ExternalRetrieveLocation.FIND_EXT_LOCATIONS_BY_IUID_RETRIEVE_AET,
+            name=ExternalRetrieveLocation.FIND_EXT_LOCATIONS_BY_IUID_DEVICE_NAME,
             query = "Select e from ExternalRetrieveLocation e "
-                    + " where e.instance.sopInstanceUID = ?1 and e.retrieveAETitle = ?2"),
+                    + " where e.instance.sopInstanceUID = ?1 and e.retrieveDeviceName = ?2"),
     @NamedQuery(
             name=ExternalRetrieveLocation.FIND_EXT_LOCATIONS_BY_IUID,
             query = "Select e from ExternalRetrieveLocation e "
@@ -77,8 +77,8 @@ import org.dcm4chee.storage.conf.Availability;
 public class ExternalRetrieveLocation implements Serializable {
 
     private static final long serialVersionUID = -8051311963967965531L;
-    public static final String FIND_EXT_LOCATIONS_BY_IUID_RETRIEVE_AET
-     = "ExternalRetrieveLocation.findExtLocationsByIUIDRetrieveAET";
+    public static final String FIND_EXT_LOCATIONS_BY_IUID_DEVICE_NAME
+     = "ExternalRetrieveLocation.findExtLocationsByIUIDDeviceName";
     public static final String FIND_EXT_LOCATIONS_BY_IUID
     = "ExternalRetrieveLocation.findExtLocationsByIUID";
     public static final String FIND_EXT_LOCATIONS_BY_IUID_AVAILABILITY
@@ -92,10 +92,10 @@ public class ExternalRetrieveLocation implements Serializable {
     public ExternalRetrieveLocation() {
     }
 
-    public ExternalRetrieveLocation(String retrieveAETitle
+    public ExternalRetrieveLocation(String retrieveDeviceName
             , Availability availability) {
         super();
-        this.retrieveAETitle = retrieveAETitle;
+        this.retrieveDeviceName = retrieveDeviceName;
         this.availability = availability;
     }
 
@@ -103,8 +103,8 @@ public class ExternalRetrieveLocation implements Serializable {
     @JoinColumn(name = "instance_fk")
     private Instance instance;
 
-    @Column(name="retrieve_ae_title")
-    private String retrieveAETitle;
+    @Column(name="retrieve_device_name")
+    private String retrieveDeviceName;
 
     @Basic(optional = false)
     @Column(name = "availability")
@@ -118,8 +118,8 @@ public class ExternalRetrieveLocation implements Serializable {
         return instance;
     }
 
-    public String getRetrieveAETitle() {
-        return retrieveAETitle;
+    public String getRetrieveDeviceName() {
+        return retrieveDeviceName;
     }
 
     public void setPk(long pk) {
@@ -130,8 +130,8 @@ public class ExternalRetrieveLocation implements Serializable {
         this.instance = instance;
     }
 
-    public void setRetrieveAETitle(String retrieveAETitle) {
-        this.retrieveAETitle = retrieveAETitle;
+    public void setRetrieveDeviceName(String retrieveDeviceName) {
+        this.retrieveDeviceName = retrieveDeviceName;
     }
 
     public Availability getAvailability() {
