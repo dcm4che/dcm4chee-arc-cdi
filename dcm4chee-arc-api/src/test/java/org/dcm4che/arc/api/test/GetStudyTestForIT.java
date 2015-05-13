@@ -36,19 +36,18 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.arc.file.access;
+package org.dcm4che.arc.api.test;
 
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.dcm4che.arc.api.FileAccess;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OverProtocol;
 import org.jboss.arquillian.junit.Arquillian;
@@ -73,7 +72,7 @@ public class GetStudyTestForIT {
     private static String destBase =  "/tmp/";
     
     @Inject
-    private FileAccessService service;
+    private FileAccess service;
     
     @Deployment @OverProtocol("Servlet 3.0")
     public static WebArchive createDeployment() {

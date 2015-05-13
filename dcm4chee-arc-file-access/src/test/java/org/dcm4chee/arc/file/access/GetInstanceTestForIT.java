@@ -47,6 +47,7 @@ import java.nio.file.StandardCopyOption;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.dcm4che.arc.api.FileAccessService;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OverProtocol;
 import org.jboss.arquillian.junit.Arquillian;

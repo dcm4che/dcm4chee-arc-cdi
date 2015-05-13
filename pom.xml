@@ -489,6 +489,7 @@
     <module>dcm4chee-arc-conf-producer</module>
     <module>dcm4chee-arc-hsm</module>
     <module>dcm4chee-arc-file-access</module>
+    <module>dcm4chee-arc-api</module>
   </modules>
   <profiles>
     <profile>

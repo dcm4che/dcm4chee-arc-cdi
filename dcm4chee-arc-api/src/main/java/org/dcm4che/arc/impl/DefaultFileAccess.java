@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.arc.file.access;
+package org.dcm4che.arc.impl;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -48,6 +48,7 @@ import java.util.List;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import org.dcm4che.arc.api.FileAccess;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
@@ -59,7 +60,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 @ApplicationScoped
-public class DefaultFileAccess implements FileAccessService {
+public class DefaultFileAccess implements FileAccess {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(DefaultFileAccess.class);

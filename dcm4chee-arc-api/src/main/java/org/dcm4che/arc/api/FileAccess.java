@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.arc.file.access;
+package org.dcm4che.arc.api;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -48,7 +48,7 @@ import java.util.List;
  * Service to retrieve files from storage at Study, Series or Instance level.
  *
  */
-public interface FileAccessService {
+public interface FileAccess {
     
     public List<Path> getStudy (String uid) throws IOException;
     
