@@ -90,6 +90,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
         builder.registerDeviceExtension(AuditRecordRepository.class);
         builder.registerDeviceExtension(AuditLogger.class);
         builder.registerAEExtension(ArchiveAEExtension.class);
+        builder.registerAEExtension(ExternalArchiveAEExtension.class);
         builder.registerAEExtension(WebServiceAEExtension.class);
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
 

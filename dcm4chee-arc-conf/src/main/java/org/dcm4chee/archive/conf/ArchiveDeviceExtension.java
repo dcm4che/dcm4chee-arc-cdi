@@ -99,6 +99,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "HostNameAETitleMap")
     private final Map<String, String> hostNameToAETitleMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 
+    @LDAP(
+            distinguishingField = "dcmDeviceName",
+            mapValueAttribute = "dcmFetchPriority",
+            mapEntryObjectClass= "dcmExternalArchiveEntry"
+    )
+    @ConfigurableProperty(name = "ExternalArchivesMap")
+    private final Map<String, String> externalArchivesMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+
     @LDAP(noContainerNode = true)
     @ConfigurableProperty(name = "rejectionParams")
     private RejectionParam[] rejectionParams = {};
@@ -152,10 +160,20 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         return hostNameToAETitleMap;
     }
 
+    public Map<String, String> getExternalArchivesMap() {
+        return externalArchivesMap;
+    }
+
     public void setHostNameToAETitleMap(Map<String, String> hostNameToAETitleMap) {
         this.hostNameToAETitleMap.clear();
         if (hostNameToAETitleMap!=null)
             this.hostNameToAETitleMap.putAll(hostNameToAETitleMap);
+    }
+
+    public void setExternalArchivesMap(Map<String, String> externalArchivesMap) {
+        this.externalArchivesMap.clear();
+        if (externalArchivesMap!=null)
+            this.externalArchivesMap.putAll(externalArchivesMap);
     }
 
     public Code getIncorrectWorklistEntrySelectedCode() {

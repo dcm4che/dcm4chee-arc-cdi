@@ -199,7 +199,7 @@ public class DefaultRetrieveService implements RetrieveService {
                 ejb.getExternalLocations(updateLocator.iuid);
         for(ExternalRetrieveLocation loc : externalLocations)
         updateLocator.getExternalLocators().add(new ExternalLocationTuple(
-                loc.getRetrieveAETitle(), loc.getAvailability()));
+                loc.getRetrieveDeviceName(), loc.getAvailability()));
             //update external retrieveLocation 
             return updateLocator;
     }

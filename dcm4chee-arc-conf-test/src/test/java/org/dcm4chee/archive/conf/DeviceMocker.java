@@ -61,7 +61,9 @@ import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.DeviceType;
 import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.ExternalArchiveAEExtension;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.audit.AuditLogger;
@@ -582,7 +584,15 @@ public class DeviceMocker {
                                   Issuer issuer, Code institutionCode, String aet,
                                   String host, int port, int tlsPort) throws Exception {
          Device device = init(new Device(name), issuer, institutionCode);
+         if(name.equalsIgnoreCase(OTHER_DEVICES[0])
+                 || name.equalsIgnoreCase("dcm4chee-arc"))
+             device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
          ApplicationEntity ae = new ApplicationEntity(aet);
+         ExternalArchiveAEExtension externalArchiveExt = 
+                 new ExternalArchiveAEExtension();
+         if(containsArchiveType(device.getPrimaryDeviceTypes()))
+         ae.addAEExtension(externalArchiveExt);
+         externalArchiveExt.setAeFetchPriority(0);
          ae.setAssociationAcceptor(true);
          device.addApplicationEntity(ae);
          Connection dicom = new Connection("dicom", host, port);
@@ -595,6 +605,13 @@ public class DeviceMocker {
          device.addConnection(dicomTLS);
          ae.addConnection(dicomTLS);
          return device;
+    }
+
+    private boolean containsArchiveType(String[] primaryDeviceTypes) {
+        for(String str : primaryDeviceTypes)
+            if(str == DeviceType.ARCHIVE.toString())
+                return true;
+        return false;
     }
 
     protected Device createHL7Device(String name,
@@ -623,7 +640,7 @@ public class DeviceMocker {
     protected Device createArchiveDevice(String name, Device arrDevice)
             throws Exception {
         Device device = new Device(name);
-
+        device.setPrimaryDeviceTypes(new String[] { DeviceType.ARCHIVE.toString()});
         Connection dicom = new Connection("dicom", "localhost", 11112);
         dicom.setBindAddress("0.0.0.0");
         dicom.setMaxOpsInvoked(0);
@@ -1026,6 +1043,9 @@ public class DeviceMocker {
         aeExt.addMppsEmulationRule(
                 createMPPSEmulationRule("MPPS Emulation Rule 1", 120,
                         "DCM4CHEE", "EMULATE_MPPS"));
+        ExternalArchiveAEExtension extArcAEExt = new ExternalArchiveAEExtension();
+        ae.addAEExtension(extArcAEExt);
+        extArcAEExt.setAeFetchPriority(0);
         WebServiceAEExtension wsAEExt = new WebServiceAEExtension();
         ae.addAEExtension(wsAEExt);
         wsAEExt.setQidoRSBaseURL("http://localhost:8080/dcm4chee-arc/qido/"+aet);

@@ -39,13 +39,18 @@ package org.dcm4chee.archive.store.verify;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 
 import javax.ejb.Stateless;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.core.api.ConfigurationException;
+import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.Instance;
@@ -53,6 +58,8 @@ import org.dcm4chee.archive.entity.StoreVerifyDimse;
 import org.dcm4chee.archive.entity.StoreVerifyStatus;
 import org.dcm4chee.archive.entity.StoreVerifyWeb;
 import org.dcm4chee.storage.conf.Availability;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -61,8 +68,12 @@ import org.dcm4chee.storage.conf.Availability;
 @Stateless
 public class StoreVerifyEJB {
 
+    private static final Logger LOG = LoggerFactory.getLogger(StoreVerifyEJB.class);
     @PersistenceContext(unitName = "dcm4chee-arc")
     EntityManager em;
+
+    @Inject
+    private DicomConfiguration conf;
 
     public void addWebEntry(String transactionID
             , String qidoBaseURL ,String remoteAET, String localAET, ServiceType service) {
@@ -145,16 +156,17 @@ public class StoreVerifyEJB {
      */
 
     public void addExternalLocation(String iuid, String retrieveAET,
-            Availability availability) {
-        ExternalRetrieveLocation location = new ExternalRetrieveLocation(retrieveAET, availability);
-        
+            String retrieveDeviceName, Availability availability) {
+        ExternalRetrieveLocation location = new ExternalRetrieveLocation(
+                retrieveDeviceName, availability);
+
         Instance instance = getInstance(iuid);
-        ArrayList<String> currentRetrieveAETs = 
-        		new ArrayList<String>(Arrays.asList(instance.getRetrieveAETs()));
+        ArrayList<String> currentRetrieveAETs = new ArrayList<String>(
+                Arrays.asList(instance.getRetrieveAETs()));
         currentRetrieveAETs.add(retrieveAET);
         String[] updatedRetrieveAETs = new String[currentRetrieveAETs.size()];
-        instance.setRetrieveAETs(currentRetrieveAETs.toArray(
-        		updatedRetrieveAETs));
+        instance.setRetrieveAETs(currentRetrieveAETs
+                .toArray(updatedRetrieveAETs));
         location.setInstance(instance);
         em.persist(location);
     }
@@ -167,24 +179,41 @@ public class StoreVerifyEJB {
 		return instance;
 	}
 
-    public void removeExternalLocation(String iuid, String retrieveAET) {
+    public void removeExternalLocation(String iuid, String retrieveDeviceName) {
         
         Query query = em.createNamedQuery(ExternalRetrieveLocation
-                .FIND_EXT_LOCATIONS_BY_IUID_RETRIEVE_AET);
+                .FIND_EXT_LOCATIONS_BY_IUID_DEVICE_NAME);
         query.setParameter(1, iuid); //sop UID
-        query.setParameter(2, retrieveAET); //retrieve AETitle
+        query.setParameter(2, retrieveDeviceName); //retrieve Device Name
         ArrayList<ExternalRetrieveLocation> list = 
                 (ArrayList<ExternalRetrieveLocation>) query.getResultList();
-        
-        for(ExternalRetrieveLocation extLocation : list)
+
+        for (ExternalRetrieveLocation extLocation : list)
             em.remove(extLocation);
         Instance instance = getInstance(iuid);
-        ArrayList<String> currentRetrieveAETs = (ArrayList<String>) 
-        		new ArrayList<String>(Arrays.asList(instance.getRetrieveAETs()));
-        currentRetrieveAETs.remove(retrieveAET);
+        ArrayList<String> currentRetrieveAETs = (ArrayList<String>) new ArrayList<String>(
+                Arrays.asList(instance.getRetrieveAETs()));
+
+        ArrayList<String> remoteAETsOfDevice = (ArrayList<String>)
+                getRemoteAETsOfDevice(retrieveDeviceName);
+
+        for (String aet : remoteAETsOfDevice)
+            if (currentRetrieveAETs.contains(aet))
+                currentRetrieveAETs.remove(aet);
+
         String[] updatedRetrieveAETs = new String[currentRetrieveAETs.size()];
-        instance.setRetrieveAETs(currentRetrieveAETs.toArray(
-        		updatedRetrieveAETs));
+        instance.setRetrieveAETs(currentRetrieveAETs
+                .toArray(updatedRetrieveAETs));
+    }
+
+    private Collection<String> getRemoteAETsOfDevice(String retrieveDeviceName) {
+        try {
+            Device device = conf.findDevice(retrieveDeviceName);
+            return device.getApplicationAETitles();
+        } catch (ConfigurationException e) {
+            LOG.error("Unable to find device {}", retrieveDeviceName);
+        }
+        return new ArrayList<String>();
     }
 
     public void removeExternalLocation(String iuid, Availability availability) {

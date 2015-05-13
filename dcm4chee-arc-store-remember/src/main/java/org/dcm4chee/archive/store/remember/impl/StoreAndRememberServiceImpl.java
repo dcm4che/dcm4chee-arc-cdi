@@ -83,8 +83,8 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
 
     @Override
     public void addExternalLocation(String iuid, String retrieveAET,
-            Availability availability) {
-        ejb.addExternalLocation(iuid, retrieveAET, availability);
+            String remoteDeviceName, Availability availability) {
+        ejb.addExternalLocation(iuid, retrieveAET, remoteDeviceName, availability);
     }
 
     @Override
@@ -101,9 +101,13 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
 
         String transactionUID = commitEvent.getTransactionUID();
         ApplicationEntity archiveAE = null;
+        String remoteDeviceName = null;
         try {
             archiveAE = aeCache.findApplicationEntity(commitEvent
                     .getLocalAET());
+            ApplicationEntity remoteAE = aeCache
+                    .findApplicationEntity(commitEvent.getRemoteAET());
+            remoteDeviceName = remoteAE.getDevice().getDeviceName();
         } catch (ConfigurationException e) {
             LOG.error("Unable to find Application"
                     + " Entity for {} or {} verification failure for "
@@ -156,7 +160,8 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             for (int i = 0; i < refSops.size(); i++)
                 addExternalLocation(refSops.get(i)
                         .getString(Tag.ReferencedSOPInstanceUID),
-                        commitEvent.getRemoteAET(), defaultAvailability);
+                        commitEvent.getRemoteAET(),
+                        remoteDeviceName, defaultAvailability);
         }
 
         if (statusChanged)
@@ -164,16 +169,21 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
     }
 
     @Override
-    public void verifyQido(@Observes @Service(ServiceType.STOREREMEMBER) QidoResponse response) {
+    public void verifyQido(@Observes @Service(ServiceType.STOREREMEMBER) 
+    QidoResponse response) {
         StoreVerifyWeb webEntry = ejb.getWebEntry(response.getTransactionID());
         //failed attempt
         if(webEntry == null)
             return;
         String transactionID = response.getTransactionID();
         Availability defaultAvailability = null;
+        String remoteDeviceName = null;
         try {
             ApplicationEntity archiveAE = aeCache
                     .findApplicationEntity(webEntry.getLocalAET());
+            ApplicationEntity remoteAE = aeCache
+                    .findApplicationEntity(webEntry.getRemoteAET());
+            remoteDeviceName= remoteAE.getDevice().getDeviceName();
             ArchiveAEExtension archAEExt = archiveAE
                     .getAEExtension(ArchiveAEExtension.class);
             defaultAvailability = archAEExt
@@ -197,9 +207,11 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             Availability externalAvailability = instance.getValue();
             String sopUID = instance.getKey();
             if (externalAvailability.ordinal() < 2) {
-                ejb.addExternalLocation(
+                addExternalLocation(
                         sopUID,
                         retrieveAET,
+                        remoteDeviceName
+                        ,
                         defaultAvailability == null ? externalAvailability
                                 : (externalAvailability
                                         .compareTo(defaultAvailability) <= 0 ? externalAvailability

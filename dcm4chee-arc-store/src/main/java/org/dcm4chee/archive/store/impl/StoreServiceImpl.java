@@ -879,7 +879,7 @@ public class StoreServiceImpl implements StoreService {
             study.setAttributes(new Attributes(data), studyFilter,
                     storeParam.getFuzzyStr());
         } else {
-            if (studyAttrs.updateSelected(data, modified,
+            if (!context.isFetch() && studyAttrs.updateSelected(data, modified,
                     studyFilter.getSelection())) {
                 study.setAttributes(studyAttrs, studyFilter,
                         storeParam.getFuzzyStr());
@@ -894,6 +894,7 @@ public class StoreServiceImpl implements StoreService {
     public void updatePatient(EntityManager em, StoreContext context,
             Patient patient) {
         StoreSession session = context.getStoreSession();
+        if(!context.isFetch())
         patientService.updatePatientByCStore(patient, context.getAttributes(),
                 session.getStoreParam());
     }
@@ -916,8 +917,8 @@ public class StoreServiceImpl implements StoreService {
             series.setAttributes(new Attributes(data), seriesFilter,
                     storeParam.getFuzzyStr());
         } else {
-            if (seriesAttrs.updateSelected(data, modified,
-                    seriesFilter.getSelection())) {
+            if (!context.isFetch() && seriesAttrs.updateSelected(data, modified
+                    ,seriesFilter.getSelection())) {
                 series.setAttributes(seriesAttrs, seriesFilter,
                         storeParam.getFuzzyStr());
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
@@ -938,7 +939,7 @@ public class StoreServiceImpl implements StoreService {
         AttributeFilter instFilter = storeParam
                 .getAttributeFilter(Entity.Instance);
         Attributes modified = new Attributes();
-        if (instAttrs.updateSelected(data, modified, instFilter.getSelection())) {
+        if (!context.isFetch() && instAttrs.updateSelected(data, modified, instFilter.getSelection())) {
             inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
             LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
                     modified);

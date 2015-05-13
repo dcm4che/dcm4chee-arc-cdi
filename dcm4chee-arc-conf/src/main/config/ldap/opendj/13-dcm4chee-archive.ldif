@@ -446,6 +446,11 @@ attributeTypes: ( 1.2.40.0.13.1.15.10.3.87 NAME 'dcmSyncLocationStatusStorageSys
   EQUALITY caseIgnoreMatch
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.88 NAME 'dcmFetchPriority'
+  DESC 'Fetch priority of the external dicom archive'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
 objectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -619,3 +624,16 @@ objectClasses: ( 1.2.40.0.13.1.15.10.4.22 NAME 'dcmArchivingRule'
     dicomInstitutionDepartmentName $
     dcmModality
   ) )
+objectClasses: ( 1.2.40.0.13.1.15.10.4.23 NAME 'dcmExternalArchives'
+  DESC 'Specifies a list of entries device name to options for external dicom archives'
+  SUP top
+  STRUCTURAL
+  MUST (
+    cn ) )
+objectClasses: ( 1.2.40.0.13.1.15.10.4.24 NAME 'dcmExternalArchiveEntry'
+  DESC 'Specifies one association of dicom device name to options of an external dicom archive'
+  SUP top
+  STRUCTURAL
+  MUST (
+    dcmDeviceName $
+    dcmFetchPriority ) )
