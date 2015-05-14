@@ -765,12 +765,13 @@
                     },
                     "dcmInstanceAvailability" : "NEARLINE",
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
-                    "dcmStorageAccessTime" : 2000,
                     "dcmStorageSystemID" : "nearline",
                     "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/nearline"
                   }
                 },
+                "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "nearline" ],
+                "dcmBaseStorageAccessTime" : 2000,
                 "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}",
                 "dcmStorageSystemGroupID" : "ARCHIVE"
@@ -780,12 +781,13 @@
                   "fs1" : {
                     "StatusFileExtensions" : { },
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
-                    "dcmStorageAccessTime" : 1000,
                     "dcmStorageSystemID" : "fs1",
                     "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/fs1"
                   }
                 },
+                "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "fs1" ],
+                "dcmBaseStorageAccessTime" : 1000,
                 "dcmDigestAlgorithm" : "MD5",
                 "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
@@ -800,6 +802,7 @@
                     "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/metadata"
                   }
                 },
+                "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "metadata" ],
                 "dcmRetrieveAET" : [ ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",

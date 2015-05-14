@@ -703,14 +703,12 @@ public class DeviceMocker {
         fs1.setStorageSystemID("fs1");
         fs1.setProviderName("org.dcm4chee.storage.filesystem");
         fs1.setStorageSystemPath("/var/local/dcm4chee-arc/fs1");
-        fs1.setStorageAccessTime(1000);
         fs1.setAvailability(Availability.ONLINE);
 
         StorageSystem arc = new StorageSystem();
         arc.setStorageSystemID("nearline");
         arc.setProviderName("org.dcm4chee.storage.filesystem");
         arc.setStorageSystemPath("/var/local/dcm4chee-arc/nearline");
-        arc.setStorageAccessTime(2000);
         arc.setAvailability(Availability.NEARLINE);
         Map<String,String> exts = new LinkedHashMap<String, String>();
         exts.put(".archived", "ARCHIVED");
@@ -720,7 +718,6 @@ public class DeviceMocker {
         metadata.setStorageSystemID("metadata");
         metadata.setProviderName("org.dcm4chee.storage.filesystem");
         metadata.setStorageSystemPath("/var/local/dcm4chee-arc/metadata");
-        metadata.setStorageAccessTime(0);
         metadata.setAvailability(Availability.ONLINE);
 
         Container container = new Container();
@@ -740,6 +737,7 @@ public class DeviceMocker {
         online.setRetrieveAETs(new String[] {"DCM4CHEE"});
         online.setDigestAlgorithm("MD5");
         online.addStorageSystem(fs1);
+        online.setBaseStorageAccessTime(1000);
         online.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         online.setActiveStorageSystemIDs(fs1.getStorageSystemID());
 
@@ -747,6 +745,7 @@ public class DeviceMocker {
         nearline.setRetrieveAETs(new String[] {"DCM4CHEE"});
         nearline.setGroupID("ARCHIVE");
         nearline.addStorageSystem(arc);
+        nearline.setBaseStorageAccessTime(2000);
         nearline.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}");
         nearline.setActiveStorageSystemIDs(arc.getStorageSystemID());
         nearline.setContainer(container);
@@ -755,6 +754,7 @@ public class DeviceMocker {
         StorageSystemGroup metadataG = new StorageSystemGroup();
         metadataG.setGroupID("METADATA");
         metadataG.addStorageSystem(metadata);
+        metadataG.setBaseStorageAccessTime(0);
         metadataG.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         metadataG.setActiveStorageSystemIDs(metadata.getStorageSystemID());
 

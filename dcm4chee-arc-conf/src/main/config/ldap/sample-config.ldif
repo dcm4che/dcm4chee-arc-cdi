@@ -7839,6 +7839,7 @@ cn: StorageDeviceExtension
 dn: dcmStorageSystemGroupID=ARCHIVE,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystemGroup
 dcmRetrieveAET: DCM4CHEE
+dcmBaseStorageAccessTime: 2000
 dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}
 dcmActiveStorageSystemID: nearline
 dcmStorageSystemGroupID: ARCHIVE
@@ -7846,7 +7847,6 @@ dcmStorageSystemGroupID: ARCHIVE
 dn: dcmStorageSystemID=nearline,dcmStorageSystemGroupID=ARCHIVE,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystem
 dcmProviderName: org.dcm4chee.storage.filesystem
-dcmStorageAccessTime: 2000
 dcmStorageSystemPath: /var/local/dcm4chee-arc/nearline
 dcmInstanceAvailability: NEARLINE
 dcmStorageSystemID: nearline
@@ -7869,6 +7869,7 @@ dn: dcmStorageSystemGroupID=DEFAULT,cn=StorageDeviceExtension,dicomDeviceName=dc
 objectClass: dcmStorageSystemGroup
 dcmDigestAlgorithm: MD5
 dcmRetrieveAET: DCM4CHEE
+dcmBaseStorageAccessTime: 1000
 dcmStorageFilePathFormat: {now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}
 dcmActiveStorageSystemID: fs1
 dcmStorageSystemGroupID: DEFAULT
@@ -7876,7 +7877,6 @@ dcmStorageSystemGroupID: DEFAULT
 dn: dcmStorageSystemID=fs1,dcmStorageSystemGroupID=DEFAULT,cn=StorageDeviceExtension,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 objectClass: dcmStorageSystem
 dcmProviderName: org.dcm4chee.storage.filesystem
-dcmStorageAccessTime: 1000
 dcmStorageSystemPath: /var/local/dcm4chee-arc/fs1
 dcmStorageSystemID: fs1
 
