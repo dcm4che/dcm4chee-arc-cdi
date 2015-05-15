@@ -643,4 +643,16 @@ objectClasses: ( 1.2.40.0.13.1.15.10.4.23 NAME 'dcmAttributeFilterPrivateEntry'
     dcmAttributeFilterPrivateCreator $
     dcmAttributeFilterPrivateTag
   ) )
-  
+objectClasses: ( 1.2.40.0.13.1.15.10.4.24 NAME 'dcmExternalArchives'
+  DESC 'Specifies a list of entries device name to options for external dicom archives'
+  SUP top
+  STRUCTURAL
+  MUST (
+    cn ) )
+objectClasses: ( 1.2.40.0.13.1.15.10.4.25 NAME 'dcmExternalArchiveEntry'
+  DESC 'Specifies one association of dicom device name to options of an external dicom archive'
+  SUP top
+  STRUCTURAL
+  MUST (
+    dcmDeviceName $
+    dcmFetchPriority ) )

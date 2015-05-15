@@ -54,7 +54,7 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
-import org.dcm4chee.archive.dto.LocalAssociationParticipant;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -189,6 +189,10 @@ public class WadoClientServiceImpl implements WadoClientService {
         .studyInstanceUID(context.getAttributes()
                 .getString(Tag.StudyInstanceUID))
         .build();
+        byte[] encodedInstanceAttrs = context.getInstance().getAttributesBlob()
+                .getEncodedAttributes();
+        Attributes instanceAttrs = Utils.decodeAttributes(encodedInstanceAttrs);
+        newLocator.setObject(instanceAttrs);
         return newLocator;
     }
 

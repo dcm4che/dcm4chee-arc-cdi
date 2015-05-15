@@ -1120,6 +1120,30 @@ objectclass: metaAttributeType
 objectclass: metaTop
 objectclass: top
 m-oid: 1.2.40.0.13.1.15.10.3.88
+m-name: dcmAttributeFilterPrivateTag
+m-description: Private Tag in the Attribute Filter
+m-equality: integerMatch
+m-syntax: 1.3.6.1.4.1.1466.115.121.1.27
+m-singleValue: TRUE
+
+dn: m-oid=1.2.40.0.13.1.15.10.3.89, ou=attributetypes, cn=dcm4chee-archive, ou=s
+ chema
+objectclass: metaAttributeType
+objectclass: metaTop
+objectclass: top
+m-oid: 1.2.40.0.13.1.15.10.3.89
+m-name: dcmAttributeFilterPrivateCreator
+m-description: Private Creator of a Private Tag in the Attribute Filter
+m-equality: caseIgnoreMatch
+m-substr: caseIgnoreSubstringsMatch
+m-syntax: 1.3.6.1.4.1.1466.115.121.1.15
+
+dn: m-oid=1.2.40.0.13.1.15.10.3.90, ou=attributetypes, cn=dcm4chee-archive, ou=s
+ chema
+objectclass: metaAttributeType
+objectclass: metaTop
+objectclass: top
+m-oid: 1.2.40.0.13.1.15.10.3.90
 m-name: dcmFetchPriority
 m-description: Fetch priority of the external dicom archive
 m-equality: integerMatch
@@ -1423,6 +1447,18 @@ objectclass: metaObjectClass
 objectclass: metaTop
 objectclass: top
 m-oid: 1.2.40.0.13.1.15.10.4.23
+m-name: dcmAttributeFilterPrivateEntry
+m-description: Entry of a private tag/creator in the Attribute Filter
+m-supObjectClass: top
+m-must: dcmAttributeFilterPrivateCreator
+m-must: dcmAttributeFilterPrivateTag
+
+dn: m-oid=1.2.40.0.13.1.15.10.4.23, ou=objectclasses, cn=dcm4chee-archive, ou=sc
+ hema
+objectclass: metaObjectClass
+objectclass: metaTop
+objectclass: top
+m-oid: 1.2.40.0.13.1.15.10.4.23
 m-name: dcmExternalArchives
 m-description: Specifies a list of entries device name to options for external dicom archives
 m-supObjectClass: top
@@ -1449,4 +1485,3 @@ dn: ou=syntaxes, cn=dcm4chee-archive, ou=schema
 objectclass: organizationalUnit
 objectclass: top
 ou: syntaxes
-

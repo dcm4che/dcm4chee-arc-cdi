@@ -124,42 +124,28 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         if(!localyAvailable.isEmpty())
         responseForLocalyAvailable = super.cstore(
                 localyAvailable, storeas, priority);
-
+        //initialize remaining response
+        BasicCStoreSCUResp externalResponse = extendResponse(responseForLocalyAvailable);
+        
         if (!externallyAvailable.isEmpty())
-            responseForExternallyAvailable = getExternalCStoreResponse(externallyAvailable, storeas, priority);
+            externalResponse = getExternalCStoreResponse(instances.size(), externalResponse, externallyAvailable, storeas, priority);
 
-        return mergeResponses(responseForExternallyAvailable, responseForLocalyAvailable);
+        return externalResponse;
 
     }
 
-    private BasicCStoreSCUResp mergeResponses(
-            BasicCStoreSCUResp responseForExternallyAvailable,
+    private BasicCStoreSCUResp extendResponse(
             BasicCStoreSCUResp responseForLocalyAvailable) {
-        if(responseForExternallyAvailable == null)
-            return responseForLocalyAvailable;
-        else if(responseForLocalyAvailable == null)
-            return responseForExternallyAvailable;
-            else{
-                BasicCStoreSCUResp aggregatedResponse = 
-                        new BasicCStoreSCUResp();
-                aggregatedResponse.setStatus(Math.max(
-                        responseForExternallyAvailable.getStatus(),
-                        responseForLocalyAvailable.getStatus()));
-                aggregatedResponse.setCompleted(
-                        responseForExternallyAvailable.getCompleted()
-                        +responseForLocalyAvailable.getCompleted());
-                aggregatedResponse.setFailed(
-                        responseForExternallyAvailable.getFailed()
-                        +responseForLocalyAvailable.getFailed());
-                aggregatedResponse.setWarning(
-                        responseForExternallyAvailable.getWarning()
-                        +responseForLocalyAvailable.getWarning());
-                aggregatedResponse.setFailedUIDs(aggregateArray(
-                        responseForExternallyAvailable.getFailedUIDs(),
-                        responseForLocalyAvailable.getFailedUIDs()));
-                return aggregatedResponse;
-            }
-                
+        BasicCStoreSCUResp externalResponse = new BasicCStoreSCUResp();
+        externalResponse.setCompleted(responseForLocalyAvailable != null? 
+                responseForLocalyAvailable.getCompleted() : 0);
+        externalResponse.setFailed(responseForLocalyAvailable != null?
+                responseForLocalyAvailable.getFailed() : 0);
+        externalResponse.setFailedUIDs(responseForLocalyAvailable != null? responseForLocalyAvailable.getFailedUIDs() == null
+                ? new String[]{} : responseForLocalyAvailable.getFailedUIDs() : new String[] {});
+        externalResponse.setWarning(responseForLocalyAvailable != null?
+                responseForLocalyAvailable.getWarning() : 0);
+        return externalResponse;
     }
 
     private String[] aggregateArray(String[] arr1, String[] arr2) {
@@ -173,9 +159,9 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     }
 
     private BasicCStoreSCUResp getExternalCStoreResponse(
-            final ArrayList<ArchiveInstanceLocator> externallyAvailable,
+            final int allInstances, final BasicCStoreSCUResp response, final ArrayList<ArchiveInstanceLocator> externallyAvailable,
             final Association storeas, final int priority) {
-        final BasicCStoreSCUResp response = new BasicCStoreSCUResp();
+
         for(int current = 0; current < externallyAvailable.size(); current++) {
             if(storeas.isReadyForDataTransfer()) {
             final ArchiveInstanceLocator externalLoc = externallyAvailable
@@ -199,7 +185,7 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
                                 ArrayList<ArchiveInstanceLocator> matches
                                 = new ArrayList<ArchiveInstanceLocator>();
                                 matches.add(inst);
-                                push(externallyAvailable.size(), matches,
+                                push(allInstances, matches,
                                         storeas, priority, response);
                             }
                         }) != null)
@@ -207,6 +193,16 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
             }
         }
         }
+        if (failed.size() > 0) {
+            if (failed.size() == nr_instances)
+                status = Status.UnableToPerformSubOperations;
+            else
+                status = Status.OneOrMoreFailures;
+        } else {
+            status = Status.Success;
+        }
+        setChanged();
+        notifyObservers();
         return response;
     }
 
@@ -233,7 +229,8 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         Collections.sort(externalDevices, fetchDevicePriorityComparator(localAE) );
         for(Device dev : externalDevices) {
             TransferCapability tc = new TransferCapability("",
-                    externalLoc.cuid, Role.SCP, new String[]{});
+                    externalLoc.cuid, Role.SCP, new String[]{
+                    UID.ImplicitVRLittleEndian, UID.ExplicitVRLittleEndian});
             ArrayList<ApplicationEntity> deviceAEs = (ArrayList<ApplicationEntity>) 
                     dev.getAEsSupportingTransferCapability(tc, true); 
                     Collections.sort(deviceAEs,fetchAEPriorityComparator());
@@ -413,25 +410,24 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     }
     private void push(int instanceCount,
             java.util.List<ArchiveInstanceLocator> instances,
-            Association storeas, int priority, BasicCStoreSCUResp resp) {
+            Association storeas, int priority, final BasicCStoreSCUResp resp) {
         BasicCStoreSCUResp storeResp = super.cstore(instances, storeas, priority);
-        resp.setCompleted(resp.getCompleted() + storeResp.getCompleted());
+        resp.setCompleted(resp.getCompleted()+1);
         resp.setFailed(resp.getFailed() + storeResp.getFailed());
         
-        if(resp.getFailedUIDs() !=null)
+        if(resp.getFailedUIDs() !=null && storeResp.getFailedUIDs() != null)
             resp.setFailedUIDs(updateFailed(resp.getFailedUIDs(),
                     storeResp.getFailedUIDs()));
         else
-        resp.setFailedUIDs(storeResp.getFailedUIDs());
+        resp.setFailedUIDs(storeResp.getFailedUIDs() == null ? 
+                new String[] {} : storeResp.getFailedUIDs());
         
         resp.setWarning(resp.getWarning() + storeResp.getWarning());
         resp.setStatus(storeResp.getStatus());
         super.nr_instances = instanceCount;
-        if(resp.getCompleted() == instanceCount)
-            super.status = Status.Success;
-        else
         super.status = Status.Pending;
         super.setChanged();
+        super.notifyObservers();
     }
 
     private String[] updateFailed(String[] failedUIDs, String[] failedUIDs2) {

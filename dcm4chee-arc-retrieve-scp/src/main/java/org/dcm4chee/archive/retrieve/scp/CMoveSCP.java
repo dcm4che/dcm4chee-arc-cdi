@@ -156,21 +156,16 @@ public class CMoveSCP extends BasicCMoveSCP {
                              , false);
             if (matches.isEmpty())
                 return null;
-            //here matches could all be associated with a storage system or some of them or none
-            //no storage system implies external retrieve location
+            
             CStoreSCU<ArchiveInstanceLocator> cstorescu = new CStoreSCUImpl (
                     ae, destAE, ServiceType.MOVESERVICE, storescuService);
             AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, matches);
             Association storeas = openStoreAssociation(as, destAE, aarq);
-            
-            //now extract complete series refs and use for either forwarding or fetch and retrieve 
-            
-            //now do the normal retrieves
             BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = 
                     new BasicRetrieveTask<ArchiveInstanceLocator>(
                     Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas, cstorescu);
-//            retrieveTask.setDestinationDevice(destAE.getDevice());
             retrieveTask.setSendPendingRSPInterval(arcAE.getSendPendingCMoveInterval());
+            retrieveTask.setSendPendingRSP(arcAE.getSendPendingCMoveInterval() > 0);
 //            retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
 //            retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
             
