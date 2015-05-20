@@ -879,7 +879,12 @@ public class StoreServiceImpl implements StoreService {
             study.setAttributes(new Attributes(data), studyFilter,
                     storeParam.getFuzzyStr());
         } else {
-            if (studyAttrs.updateSelected(data, modified,
+            if (!context.isFetch()
+                    && !session.getLocalAET().equalsIgnoreCase(
+                            device.getDeviceExtension(
+                                    ArchiveDeviceExtension.class)
+                                    .getFetchAETitle())
+                                    && studyAttrs.updateSelected(data, modified,
                     studyFilter.getCompleteSelection(data))) {
                 study.setAttributes(studyAttrs, studyFilter,
                         storeParam.getFuzzyStr());
@@ -887,6 +892,11 @@ public class StoreServiceImpl implements StoreService {
                         studyAttrs, modified);
             }
         }
+        if (!context.isFetch()
+                && !session.getLocalAET().equalsIgnoreCase(
+                        device.getDeviceExtension(
+                                ArchiveDeviceExtension.class)
+                                .getFetchAETitle()))
         service.updatePatient(em, context, study.getPatient());
     }
 
@@ -917,6 +927,10 @@ public class StoreServiceImpl implements StoreService {
                     storeParam.getFuzzyStr());
         } else {
             if (!context.isFetch()
+                    && !session.getLocalAET().equalsIgnoreCase(
+                            device.getDeviceExtension(
+                                    ArchiveDeviceExtension.class)
+                                    .getFetchAETitle())
                     && seriesAttrs.updateSelected(data, modified,
                             seriesFilter.getCompleteSelection(data))) {
                 series.setAttributes(seriesAttrs, seriesFilter,
@@ -940,6 +954,10 @@ public class StoreServiceImpl implements StoreService {
                 .getAttributeFilter(Entity.Instance);
         Attributes modified = new Attributes();
         if (!context.isFetch()
+                && !session.getLocalAET().equalsIgnoreCase(
+                        device.getDeviceExtension(
+                                ArchiveDeviceExtension.class)
+                                .getFetchAETitle())
                 && instAttrs.updateSelected(data, modified,
                         instFilter.getCompleteSelection(data))) {
             inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());

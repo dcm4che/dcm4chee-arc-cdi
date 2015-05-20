@@ -120,6 +120,7 @@ public class WadoClientServiceImpl implements WadoClientService {
                 context.setThrowable(e);
                 throw e;
             } finally {
+                storeService.fireStoreEvent(context);
                 storeService.cleanup(context);
             }
             LOG.debug("Fetched and Stored instance from remote AE {}"

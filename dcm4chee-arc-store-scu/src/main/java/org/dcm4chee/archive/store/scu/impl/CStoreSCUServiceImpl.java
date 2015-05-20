@@ -86,7 +86,9 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.ServiceQualifier;
+import org.dcm4chee.archive.retrieve.scu.CMoveSCUService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.CStoreSCUEJB;
 import org.dcm4chee.archive.store.scu.CStoreSCUJMSMessage;
 import org.dcm4chee.archive.store.scu.CStoreSCUResponse;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
@@ -98,6 +100,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * 
  */
 @ApplicationScoped
 public class CStoreSCUServiceImpl implements CStoreSCUService {
@@ -128,8 +131,14 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     private RetrieveService storageRetrieveService;
 
     @Inject
-    private DicomConfiguration config;
+    private CMoveSCUService cmoveSCUService;
 
+    @Inject
+    private CStoreSCUEJB ejb;
+
+    @Inject
+    private DicomConfiguration config;
+    
     @Override
     public void cstore(String messageID, CStoreSCUContext context, 
             List<ArchiveInstanceLocator> insts, int priority)
@@ -357,5 +366,14 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
         return config;
     }
 
+    @Override
+    public CMoveSCUService getCmoveSCUService() {
+        return cmoveSCUService;
+    }
+
+    @Override
+    public CStoreSCUEJB getEjb() {
+        return ejb;
+    }
 
 }

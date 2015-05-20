@@ -577,6 +577,7 @@
               }
             },
             "dcmConfigurationStaleTimeout" : 60,
+            "dcmFetchAETitle" : "DCM4CHEE_FETCH",
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
             "dcmMppsEmulationPollInterval" : 60,
@@ -3178,6 +3179,1563 @@
               "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
             } ],
             "dicomAETitle" : "DCM4CHEE_ADMIN",
+            "dicomApplicationCluster" : [ ],
+            "dicomAssociationAcceptor" : true,
+            "dicomAssociationInitiator" : true,
+            "dicomNetworkConnectionReference" : [ "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='dcm4chee-arc']/dicomConnection[cn='dicom']", "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='dcm4chee-arc']/dicomConnection[cn='dicom-tls']" ],
+            "dicomPreferredCalledAETitle" : [ ],
+            "dicomPreferredCallingAETitle" : [ ],
+            "dicomSupportedCharacterSet" : [ ],
+            "dicomVendorData" : [ ]
+          },
+          "DCM4CHEE_FETCH" : {
+            "aeExtensions" : {
+              "ArchiveAEExtension" : {
+                "dcmArchivingRules" : {
+                  "list" : [ {
+                    "cn" : "Archiving Rule",
+                    "condition" : {
+                      "dcmAETitle" : [ "ARCHIVE" ]
+                    },
+                    "dcmDelayAfterInstanceStored" : 60,
+                    "dcmStorageSystemGroupID" : [ "ARCHIVE" ]
+                  } ]
+                },
+                "dcmAttributeCoercions" : {
+                  "dcmAttributeCoercionList" : [ {
+                    "cn" : "Ensure Retrieve AETitle",
+                    "condition" : {
+                      "dcmAETitle" : [ "WITHOUT_PN" ],
+                      "dcmDIMSE" : "C_FIND_RSP",
+                      "dcmDeviceName" : [ ],
+                      "dcmSOPClass" : [ ],
+                      "dicomTransferRole" : "SCP"
+                    },
+                    "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/ensure-retrieve-ae-title.xsl"
+                  }, {
+                    "cn" : "Remove person names",
+                    "condition" : {
+                      "dcmAETitle" : [ "WITHOUT_PN" ],
+                      "dcmDIMSE" : "C_STORE_RQ",
+                      "dcmDeviceName" : [ ],
+                      "dcmSOPClass" : [ ],
+                      "dicomTransferRole" : "SCU"
+                    },
+                    "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl"
+                  }, {
+                    "cn" : "Supplement missing PID",
+                    "condition" : {
+                      "dcmAETitle" : [ "ENSURE_PID" ],
+                      "dcmDIMSE" : "C_STORE_RQ",
+                      "dcmDeviceName" : [ ],
+                      "dcmSOPClass" : [ ],
+                      "dicomTransferRole" : "SCP"
+                    },
+                    "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl"
+                  } ]
+                },
+                "dcmCompressionRules" : {
+                  "list" : [ {
+                    "cn" : "JPEG Lossless",
+                    "condition" : {
+                      "dcmAETitle" : [ "JPEG_LOSSLESS" ],
+                      "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
+                      "dcmBodyPartExamined" : [ ],
+                      "dcmDeviceName" : [ ],
+                      "dcmImageType" : [ ],
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ],
+                      "dcmSOPClass" : [ ]
+                    },
+                    "dcmImageWriteParam" : [ "maxPixelValueError=0.0" ],
+                    "dicomTransferSyntax" : "1.2.840.10008.1.2.4.70"
+                  }, {
+                    "cn" : "JPEG 2000 Lossless",
+                    "condition" : {
+                      "dcmAETitle" : [ "JPEG_2000" ],
+                      "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
+                      "dcmBodyPartExamined" : [ ],
+                      "dcmDeviceName" : [ ],
+                      "dcmImageType" : [ ],
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ],
+                      "dcmSOPClass" : [ ]
+                    },
+                    "dcmImageWriteParam" : [ "maxPixelValueError=0.0" ],
+                    "dicomTransferSyntax" : "1.2.840.10008.1.2.4.90"
+                  }, {
+                    "cn" : "JPEG LS Lossless",
+                    "condition" : {
+                      "dcmAETitle" : [ "JPEG_LS" ],
+                      "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
+                      "dcmBodyPartExamined" : [ ],
+                      "dcmDeviceName" : [ ],
+                      "dcmImageType" : [ ],
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ],
+                      "dcmSOPClass" : [ ]
+                    },
+                    "dcmImageWriteParam" : [ "maxPixelValueError=0.0" ],
+                    "dicomTransferSyntax" : "1.2.840.10008.1.2.4.80"
+                  }, {
+                    "cn" : "JPEG 12-bit Lossy",
+                    "condition" : {
+                      "dcmAETitle" : [ "JPEG_LOSSY" ],
+                      "dcmBitsStored" : [ 9, 10, 11, 12 ],
+                      "dcmBodyPartExamined" : [ ],
+                      "dcmDeviceName" : [ ],
+                      "dcmImageType" : [ ],
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2" ],
+                      "dcmSOPClass" : [ ]
+                    },
+                    "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=20.0", "avgPixelValueBlockSize=8.0" ],
+                    "dicomTransferSyntax" : "1.2.840.10008.1.2.4.51"
+                  }, {
+                    "cn" : "JPEG 8-bit Lossy",
+                    "condition" : {
+                      "dcmAETitle" : [ "JPEG_LOSSY" ],
+                      "dcmBitsStored" : [ 8 ],
+                      "dcmBodyPartExamined" : [ ],
+                      "dcmDeviceName" : [ ],
+                      "dcmImageType" : [ ],
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "RGB" ],
+                      "dcmSOPClass" : [ ]
+                    },
+                    "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=10.0", "avgPixelValueBlockSize=8.0" ],
+                    "dicomTransferSyntax" : "1.2.840.10008.1.2.4.50"
+                  } ]
+                },
+                "dcmDefaultExternalRetrieveAETAvailability" : "ONLINE",
+                "dcmFwdMppsDestination" : [ ],
+                "dcmIanDestination" : [ ],
+                "dcmMPPSEmulationRules" : [ {
+                  "cn" : "MPPS Emulation Rule 1",
+                  "dcmAETitle" : [ "EMULATE_MPPS" ],
+                  "dcmMPPSEmulationDelay" : 120,
+                  "dicomAETitle" : "DCM4CHEE"
+                } ],
+                "dcmMatchUnknown" : true,
+                "dcmMetaDataStorageSystemGroupID" : "METADATA",
+                "dcmPatientSelector" : {
+                  "dcmPatientSelectorClassName" : "org.dcm4chee.archive.patient.DemographicsPatientSelector",
+                  "dcmPatientSelectorProperties" : {
+                    "familyName" : "BROAD",
+                    "givenName" : "BROAD"
+                  }
+                },
+                "dcmPreserveSpoolFileOnFailure" : true,
+                "dcmQidoMaxNumberOfResults" : 1000,
+                "dcmQueryRetrieveViewID" : "hideRejected",
+                "dcmRetrieveSuppressionCriteria" : {
+                  "dcmRetrieveSuppressionCriteriaMap" : { }
+                },
+                "dcmReturnOtherPatientIDs" : true,
+                "dcmReturnOtherPatientNames" : true,
+                "dcmSendPendingCGet" : true,
+                "dcmSendPendingCMoveInterval" : 5000,
+                "dcmSpoolDirectoryPath" : "spool",
+                "dcmStorageSystemGroupID" : "DEFAULT",
+                "dcmWadoOverlayRendering" : false,
+                "dcmWadoSRTemplateURI" : "${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl",
+                "dcmWadoSupportedSRClasses" : [ "1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33", "1.2.840.10008.5.1.4.1.1.88.34", "1.2.840.10008.5.1.4.1.1.88.40", "1.2.840.10008.5.1.4.1.1.88.50", "1.2.840.10008.5.1.4.1.1.88.59", "1.2.840.10008.5.1.4.1.1.88.65", "1.2.840.10008.5.1.4.1.1.88.67", "1.2.840.10008.5.1.4.1.1.88.68", "1.2.840.10008.5.1.4.1.1.88.69", "1.2.840.10008.5.1.4.1.1.88.70" ],
+                "hl7PIXManagerApplication" : "HL7RCV^DCM4CHEE"
+              },
+              "ExternalArchiveAEExtension" : {
+                "dcmAEFetchPriority" : 0
+              },
+              "WebServiceAEExtension" : {
+                "dcmStowRSBaseURL" : "http://localhost:8080/dcm4chee-arc/stow/DCM4CHEE_FETCH",
+                "dcmWadoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE_FETCH",
+                "dcmWadoURIBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE_FETCH",
+                "dcmqidoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/qido/DCM4CHEE_FETCH"
+              }
+            },
+            "dcmAcceptedCallingAETitle" : [ ],
+            "dcmTransferCapability" : [ {
+              "cn" : "Verification SOP Class SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Storage Commitment Push Model SOP Class SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.1.20.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Modality Performed Procedure Step SOP Class SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.3.1.2.3.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Computed Radiography Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital X-Ray Image Storage - For Presentation SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital X-Ray Image Storage - For Processing SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital Mammography X-Ray Image Storage - For Presentation SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital Mammography X-Ray Image Storage - For Processing SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.2.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital Intra-Oral X-Ray Image Storage - For Presentation SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital Intra-Oral X-Ray Image Storage - For Processing SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.3.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Standalone Modality LUT Storage (Retired) SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.10",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Encapsulated PDF Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.104.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Encapsulated CDA Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.104.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Standalone VOI LUT Storage (Retired) SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Grayscale Softcopy Presentation State Storage SOP Class SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Color Softcopy Presentation State Storage SOP Class SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Pseudo-Color Softcopy Presentation State Storage SOP Class SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Blending Softcopy Presentation State Storage SOP Class SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.4",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "XA XRF Grayscale Softcopy Presentation State Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.5",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "X-Ray Angiographic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced XA Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "X-Ray Radiofluoroscopic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced XRF Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.2.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "X-Ray Angiographic Bi-Plane Image Storage (Retired) SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Positron Emission Tomography Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.128",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Standalone PET Curve Storage (Retired) SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.129",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "X-Ray 3D Angiographic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.13.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "X-Ray 3D Craniofacial Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.13.1.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Breast Tomosynthesis Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.13.1.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced PET Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.130",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Basic Structured Display Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.131",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Intravascular Optical Coherence Tomography Image Storage - For Presentation SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.14.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Intravascular Optical Coherence Tomography Image Storage - For Processing SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.14.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "CT Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced CT Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.2.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Nuclear Medicine Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.20",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ultrasound Multi-frame Image Storage (Retired) SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ultrasound Multi-frame Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.3.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "MR Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.4",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced MR Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.4.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "MR Spectroscopy Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.4.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Enhanced MR Color Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.4.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "RT Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "RT Dose Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Structure Set Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Beams Treatment Record Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.4",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Plan Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.5",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Brachy Treatment Record Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.6",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Treatment Summary Record Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.7",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Ion Plan Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.8",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Ion Beams Treatment Record Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.9",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Nuclear Medicine Image Storage (Retired) SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.5",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ultrasound Image Storage (Retired) SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.6",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ultrasound Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.6.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced US Volume Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.6.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Raw Data Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Spatial Registration Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Spatial Fiducials Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Deformable Spatial Registration Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Segmentation Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.4",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Surface Segmentation Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.5",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Real World Value Mapping Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.67",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Secondary Capture Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Multi-frame Single Bit Secondary Capture Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Multi-frame Grayscale Byte Secondary Capture Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Multi-frame Grayscale Word Secondary Capture Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Multi-frame True Color Secondary Capture Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7.4",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "VL Endoscopic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Video Endoscopic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.100", "1.2.840.10008.1.2.4.101", "1.2.840.10008.1.2.4.103", "1.2.840.10008.1.2.4.102" ]
+            }, {
+              "cn" : "VL Microscopic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Video Microscopic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.2.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.100", "1.2.840.10008.1.2.4.101", "1.2.840.10008.1.2.4.103", "1.2.840.10008.1.2.4.102" ]
+            }, {
+              "cn" : "VL Slide-Coordinates Microscopic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "VL Photographic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.4",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Video Photographic Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.4.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.100", "1.2.840.10008.1.2.4.101", "1.2.840.10008.1.2.4.103", "1.2.840.10008.1.2.4.102" ]
+            }, {
+              "cn" : "Ophthalmic Photography 8 Bit Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.5.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ophthalmic Photography 16 Bit Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.5.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Stereometric Relationship Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.5.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Ophthalmic Tomography Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.5.4",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "VL Whole Slide Microscopy Image Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.6",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Lensometry Measurements Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Autorefraction Measurements Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Keratometry Measurements Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Subjective Refraction Measurements Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.4",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Visual Acuity Measurements Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.5",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Spectacle Prescription Report Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.6",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Ophthalmic Axial Measurements Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.7",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Intraocular Lens Calculations Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.8",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Macular Grid Thickness and Volume Report Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.79.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Standalone Overlay Storage (Retired) SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.8",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Ophthalmic Visual Field Static Perimetry Measurements Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.80.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Basic Text SR Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.11",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Enhanced SR Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.22",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Comprehensive SR Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.33",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Procedure Log Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.40",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Mammography CAD SR Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.50",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Key Object Selection Document Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.59",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Chest CAD SR Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.65",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "X-Ray Radiation Dose SR Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.67",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Colon CAD SR Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.69",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Implantation Plan SR Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.70",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Standalone Curve Storage (Retired) SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "12-lead ECG Waveform Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "General ECG Waveform Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.1.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Ambulatory ECG Waveform Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.1.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Hemodynamic Waveform Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.2.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Cardiac Electrophysiology Waveform Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.3.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Basic Voice Audio Waveform Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.4.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "General Audio Waveform Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.4.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Arterial Pulse Waveform Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.5.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Respiratory Waveform Storage SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.6.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Patient Root Query Retrieve Information Model - FIND SCP",
+              "dcmQueryOptions" : [ 0, 1, 2, 3 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.1.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Patient Root Query Retrieve Information Model - MOVE SCP",
+              "dcmQueryOptions" : [ 0 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.1.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Patient Root Query Retrieve Information Model - GET SCP",
+              "dcmQueryOptions" : [ 0 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.1.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Study Root Query Retrieve Information Model - FIND SCP",
+              "dcmQueryOptions" : [ 0, 1, 2, 3 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.2.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Study Root Query Retrieve Information Model - MOVE SCP",
+              "dcmQueryOptions" : [ 0 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.2.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Study Root Query Retrieve Information Model - GET SCP",
+              "dcmQueryOptions" : [ 0 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.2.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Patient Study Only Query Retrieve Information Model - FIND (Retired) SCP",
+              "dcmQueryOptions" : [ 0, 1, 2, 3 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.3.1",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Patient Study Only Query Retrieve Information Model - MOVE (Retired) SCP",
+              "dcmQueryOptions" : [ 0 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.3.2",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Patient Study Only Query Retrieve Information Model - GET (Retired) SCP",
+              "dcmQueryOptions" : [ 0 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.3.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Composite Instance Retrieve Without Bulk Data - GET SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.2.5.3",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Modality Worklist Information Model - FIND SCP",
+              "dcmQueryOptions" : [ 0, 1, 2, 3 ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.31",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Verification SOP Class SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.1.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Modality Performed Procedure Step SOP Class SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.3.1.2.3.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Computed Radiography Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital X-Ray Image Storage - For Presentation SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital X-Ray Image Storage - For Processing SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.1.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital Mammography X-Ray Image Storage - For Presentation SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital Mammography X-Ray Image Storage - For Processing SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.2.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital Intra-Oral X-Ray Image Storage - For Presentation SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Digital Intra-Oral X-Ray Image Storage - For Processing SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.1.3.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Standalone Modality LUT Storage (Retired) SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.10",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Encapsulated PDF Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.104.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Encapsulated CDA Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.104.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Standalone VOI LUT Storage (Retired) SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Grayscale Softcopy Presentation State Storage SOP Class SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Color Softcopy Presentation State Storage SOP Class SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Pseudo-Color Softcopy Presentation State Storage SOP Class SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Blending Softcopy Presentation State Storage SOP Class SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.4",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "XA XRF Grayscale Softcopy Presentation State Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.11.5",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "X-Ray Angiographic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced XA Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.1.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "X-Ray Radiofluoroscopic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced XRF Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.2.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "X-Ray Angiographic Bi-Plane Image Storage (Retired) SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.12.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Positron Emission Tomography Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.128",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Standalone PET Curve Storage (Retired) SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.129",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "X-Ray 3D Angiographic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.13.1.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "X-Ray 3D Craniofacial Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.13.1.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Breast Tomosynthesis Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.13.1.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced PET Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.130",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Basic Structured Display Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.131",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Intravascular Optical Coherence Tomography Image Storage - For Presentation SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.14.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Intravascular Optical Coherence Tomography Image Storage - For Processing SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.14.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "CT Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced CT Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.2.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Nuclear Medicine Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.20",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ultrasound Multi-frame Image Storage (Retired) SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ultrasound Multi-frame Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.3.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "MR Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.4",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced MR Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.4.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "MR Spectroscopy Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.4.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Enhanced MR Color Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.4.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "RT Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "RT Dose Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Structure Set Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Beams Treatment Record Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.4",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Plan Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.5",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Brachy Treatment Record Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.6",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Treatment Summary Record Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.7",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Ion Plan Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.8",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "RT Ion Beams Treatment Record Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.481.9",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Nuclear Medicine Image Storage (Retired) SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.5",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ultrasound Image Storage (Retired) SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.6",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ultrasound Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.6.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Enhanced US Volume Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.6.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Raw Data Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Spatial Registration Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Spatial Fiducials Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Deformable Spatial Registration Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Segmentation Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.4",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Surface Segmentation Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.66.5",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Real World Value Mapping Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.67",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Secondary Capture Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Multi-frame Single Bit Secondary Capture Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Multi-frame Grayscale Byte Secondary Capture Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Multi-frame Grayscale Word Secondary Capture Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Multi-frame True Color Secondary Capture Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.7.4",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "VL Endoscopic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Video Endoscopic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.1.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.100", "1.2.840.10008.1.2.4.101", "1.2.840.10008.1.2.4.103", "1.2.840.10008.1.2.4.102" ]
+            }, {
+              "cn" : "VL Microscopic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Video Microscopic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.2.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.100", "1.2.840.10008.1.2.4.101", "1.2.840.10008.1.2.4.103", "1.2.840.10008.1.2.4.102" ]
+            }, {
+              "cn" : "VL Slide-Coordinates Microscopic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "VL Photographic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.4",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Video Photographic Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.4.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.100", "1.2.840.10008.1.2.4.101", "1.2.840.10008.1.2.4.103", "1.2.840.10008.1.2.4.102" ]
+            }, {
+              "cn" : "Ophthalmic Photography 8 Bit Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.5.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Ophthalmic Photography 16 Bit Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.5.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Stereometric Relationship Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.5.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Ophthalmic Tomography Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.5.4",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "VL Whole Slide Microscopy Image Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.77.1.6",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2", "1.2.840.10008.1.2.4.50", "1.2.840.10008.1.2.4.51", "1.2.840.10008.1.2.4.70", "1.2.840.10008.1.2.4.57", "1.2.840.10008.1.2.4.80", "1.2.840.10008.1.2.4.81", "1.2.840.10008.1.2.4.90", "1.2.840.10008.1.2.4.91", "1.2.840.10008.1.2.5" ]
+            }, {
+              "cn" : "Lensometry Measurements Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Autorefraction Measurements Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Keratometry Measurements Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Subjective Refraction Measurements Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.4",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Visual Acuity Measurements Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.5",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Spectacle Prescription Report Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.6",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Ophthalmic Axial Measurements Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.7",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Intraocular Lens Calculations Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.78.8",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Macular Grid Thickness and Volume Report Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.79.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Standalone Overlay Storage (Retired) SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.8",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Ophthalmic Visual Field Static Perimetry Measurements Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.80.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Basic Text SR Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.11",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Enhanced SR Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.22",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Comprehensive SR Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.33",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Procedure Log Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.40",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Mammography CAD SR Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.50",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Key Object Selection Document Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.59",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Chest CAD SR Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.65",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "X-Ray Radiation Dose SR Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.67",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Colon CAD SR Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.69",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Implantation Plan SR Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.88.70",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Standalone Curve Storage (Retired) SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "12-lead ECG Waveform Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.1.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "General ECG Waveform Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.1.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Ambulatory ECG Waveform Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.1.3",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Hemodynamic Waveform Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.2.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Cardiac Electrophysiology Waveform Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.3.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Basic Voice Audio Waveform Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.4.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "General Audio Waveform Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.4.2",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Arterial Pulse Waveform Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.5.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Respiratory Waveform Storage SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.6.1",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Instance Availability Notification SOP Class SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.33",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            } ],
+            "dicomAETitle" : "DCM4CHEE_FETCH",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
             "dicomAssociationInitiator" : true,

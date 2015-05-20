@@ -145,6 +145,10 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmSyncLocationStatusVerifyArchived", defaultValue = "true")
     private boolean syncLocationStatusVerifyArchived = true;
 
+
+    @ConfigurableProperty(name = "dcmFetchAETitle")
+    private String fetchAETitle = "DCM4CHEE_FETCH";
+
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
 
@@ -403,6 +407,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         queryParam.setAttributeFilters(attributeFilters);
         queryParam.setDeIdentifyLogs(isDeIdentifyLogs());
         return queryParam;
+    }
+
+    public String getFetchAETitle() {
+        return fetchAETitle;
+    }
+
+    public void setFetchAETitle(String fetchAETitle) {
+        this.fetchAETitle = fetchAETitle;
     }
 
 }

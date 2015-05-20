@@ -685,11 +685,13 @@ public class DeviceMocker {
         device.addApplicationEntity(createAE("DCM4CHEE", dicom, dicomTLS,
                     IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
                     HIDE_REJECTED_VIEW, null, PIX_MANAGER));
-
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_ADMIN", dicom, dicomTLS,
                     IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
                     REGULAR_USE_VIEW, null, PIX_MANAGER));
+        device.addApplicationEntity(createAE("DCM4CHEE_FETCH", dicom, dicomTLS,
+                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                HIDE_REJECTED_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_TRASH", dicom, dicomTLS,
                     IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
@@ -830,6 +832,7 @@ public class DeviceMocker {
                 new AttributeFilter(SERIES_ATTRS));
         ext.setAttributeFilter(Entity.Instance,
                 new AttributeFilter(INSTANCE_ATTRS));
+        ext.setFetchAETitle("DCM4CHEE_FETCH");
     }
 
     private RejectionParam[] createRejectionNotes() {

@@ -47,10 +47,12 @@ import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.retrieve.scu.CMoveSCUService;
 import org.dcm4chee.archive.wado.client.WadoClientService;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
 public interface CStoreSCUService {
@@ -100,4 +102,8 @@ public interface CStoreSCUService {
     IApplicationEntityCache getAECache();
 
     DicomConfiguration getConfig();
+
+     CMoveSCUService getCmoveSCUService();
+
+     CStoreSCUEJB getEjb();
 }

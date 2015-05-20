@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -66,6 +68,7 @@ import org.dcm4che3.net.service.BasicCStoreSCU;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.CStoreSCU;
 import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
@@ -119,46 +122,82 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         ArrayList<ArchiveInstanceLocator> externallyAvailable = (ArrayList<ArchiveInstanceLocator>) filterLocalOrExternalMatches(
                 instances, false);
         BasicCStoreSCUResp responseForLocalyAvailable = null;
-        BasicCStoreSCUResp responseForExternallyAvailable = null;
 
         if(!localyAvailable.isEmpty())
         responseForLocalyAvailable = super.cstore(
                 localyAvailable, storeas, priority);
         //initialize remaining response
-        BasicCStoreSCUResp externalResponse = extendResponse(responseForLocalyAvailable);
+        BasicCStoreSCUResp finalResponse = extendResponse(responseForLocalyAvailable);
         
-        if (!externallyAvailable.isEmpty())
-            externalResponse = getExternalCStoreResponse(instances.size(), externalResponse, externallyAvailable, storeas, priority);
-
-        return externalResponse;
+        if (!externallyAvailable.isEmpty()) {
+            WebServiceAEExtension wsAEExt = context.getLocalAE()
+                    .getAEExtension(WebServiceAEExtension.class);
+            if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null)
+            finalResponse = fetchForwardUsingWado(instances.size(), finalResponse, externallyAvailable, storeas, priority);
+            else
+                finalResponse = fetchForwardUsingCmove(instances.size(), finalResponse, externallyAvailable, storeas, priority);
+        }
+        return finalResponse;
 
     }
 
-    private BasicCStoreSCUResp extendResponse(
-            BasicCStoreSCUResp responseForLocalyAvailable) {
-        BasicCStoreSCUResp externalResponse = new BasicCStoreSCUResp();
-        externalResponse.setCompleted(responseForLocalyAvailable != null? 
-                responseForLocalyAvailable.getCompleted() : 0);
-        externalResponse.setFailed(responseForLocalyAvailable != null?
-                responseForLocalyAvailable.getFailed() : 0);
-        externalResponse.setFailedUIDs(responseForLocalyAvailable != null? responseForLocalyAvailable.getFailedUIDs() == null
-                ? new String[]{} : responseForLocalyAvailable.getFailedUIDs() : new String[] {});
-        externalResponse.setWarning(responseForLocalyAvailable != null?
-                responseForLocalyAvailable.getWarning() : 0);
-        return externalResponse;
+    private BasicCStoreSCUResp fetchForwardUsingCmove(final int allInstances,
+            final BasicCStoreSCUResp finalResponse,
+            ArrayList<ArchiveInstanceLocator> externallyAvailable,
+            final Association storeas, final int priority) {
+        super.status = Status.Pending;
+        final HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>> instanceRetrieveMap = new HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>>();
+        for (int current = 0; current < externallyAvailable.size(); current++) {
+            final ArchiveInstanceLocator externalLoc = externallyAvailable
+                    .get(current);
+            ArrayList<ApplicationEntity> remoteArchiveAETitles = listBestExternalLocation(
+                    storeas, externalLoc, context.getLocalAE());
+            if (remoteArchiveAETitles.isEmpty())
+                continue;
+            // collect retrieveMap
+            instanceRetrieveMap.put(externalLoc, remoteArchiveAETitles);
+        }
+        ApplicationEntity fetchAE;
+        try {
+            fetchAE = getFetchAE();
+        } catch (ConfigurationException e) {
+            LOG.error("Unable to get fetchAE from configuration for device {}",
+                    context.getLocalAE().getDevice());
+            return finalResponse;
+        }
+        HashMap<String, Integer> studyUIDs = toStudyUIDs(instanceRetrieveMap
+                .keySet());
+        for (String studyUID : studyUIDs.keySet()) {
+            service.getCmoveSCUService()
+                    .moveStudy(
+                            fetchAE,
+                            studyUID,
+                            studyUIDs.get(studyUID),
+                            null,
+                            getPreferedStudyLocationsList(instanceRetrieveMap,
+                                    studyUID), fetchAE.getAETitle());
+        }
+        ArrayList<ArchiveInstanceLocator> updatedLocators = new ArrayList<ArchiveInstanceLocator>(); 
+        for(Iterator<ArchiveInstanceLocator> iter = externallyAvailable.iterator(); iter.hasNext();) {
+            ArchiveInstanceLocator newLocator = service.getEjb().updateLocator(iter.next());
+            if(newLocator != null)
+                updatedLocators.add(newLocator);
+        }
+        //send fetched instances
+        super.cstore(updatedLocators, storeas, priority);
+        
+        if (failed.size() > 0) {
+            if (failed.size() == nr_instances)
+                status = Status.UnableToPerformSubOperations;
+            else
+                status = Status.OneOrMoreFailures;
+        } else {
+            status = Status.Success;
+        }
+        return finalResponse;
     }
 
-    private String[] aggregateArray(String[] arr1, String[] arr2) {
-        String[] aggregated = new String[arr1.length + arr2.length];
-        int i = 0;
-        for (String str : arr1)
-            aggregated[++i] = str;
-        for (String str : arr2)
-            aggregated[++i] = str;
-        return aggregated;
-    }
-
-    private BasicCStoreSCUResp getExternalCStoreResponse(
+    private BasicCStoreSCUResp fetchForwardUsingWado(
             final int allInstances, final BasicCStoreSCUResp response, final ArrayList<ArchiveInstanceLocator> externallyAvailable,
             final Association storeas, final int priority) {
 
@@ -169,7 +208,7 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
             ArrayList<ApplicationEntity> remoteArchiveAETitles = 
                     listBestExternalLocation(storeas, externalLoc, context.getLocalAE());
             if(remoteArchiveAETitles.isEmpty())
-                return null;
+                continue;
             for (int i = 0; i < remoteArchiveAETitles.size(); i++) {
                 if (service.getWadoFetchService().fetchInstance(
                         this.context.getLocalAE(),
@@ -206,6 +245,43 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         return response;
     }
 
+    private ApplicationEntity getFetchAE() throws ConfigurationException {
+        return context
+                .getLocalAE()
+                .getDevice()
+                .getApplicationEntity(
+                        context.getLocalAE()
+                                .getDevice()
+                                .getDeviceExtension(
+                                        ArchiveDeviceExtension.class)
+                                .getFetchAETitle());
+    }
+
+    private BasicCStoreSCUResp extendResponse(
+            BasicCStoreSCUResp responseForLocalyAvailable) {
+        BasicCStoreSCUResp externalResponse = new BasicCStoreSCUResp();
+        externalResponse.setCompleted(responseForLocalyAvailable != null? 
+                responseForLocalyAvailable.getCompleted() : 0);
+        externalResponse.setFailed(responseForLocalyAvailable != null?
+                responseForLocalyAvailable.getFailed() : 0);
+        externalResponse.setFailedUIDs(responseForLocalyAvailable != null? responseForLocalyAvailable.getFailedUIDs() == null
+                ? new String[]{} : responseForLocalyAvailable.getFailedUIDs() : new String[] {});
+        externalResponse.setWarning(responseForLocalyAvailable != null?
+                responseForLocalyAvailable.getWarning() : 0);
+        return externalResponse;
+    }
+
+    private HashMap<String, Integer> toStudyUIDs(Set<ArchiveInstanceLocator> set) {
+        HashMap<String, Integer> studyUIDs = new HashMap<String, Integer>(); 
+        for(ArchiveInstanceLocator loc : set) {
+            String studyUID = loc.getStudyInstanceUID();
+            if(!studyUIDs.containsKey(studyUID))
+                studyUIDs.put(studyUID, 1);
+            else
+                studyUIDs.put(studyUID, new Integer(studyUIDs.get(studyUID).intValue() + 1));
+        }
+        return studyUIDs;
+    }
     private ArrayList<ApplicationEntity> listBestExternalLocation(
             Association storeas, ArchiveInstanceLocator externalLoc, ApplicationEntity localAE) {
         ArrayList<Device> externalDevices = new ArrayList<Device>();
@@ -408,6 +484,27 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         }
         return UID.ImplicitVRLittleEndian;
     }
+
+    private List<ApplicationEntity> getPreferedStudyLocationsList(
+            HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>> instanceRetrieveMap,
+            String studyUID) {
+        ArrayList<ApplicationEntity> preferedStudyAEs = new ArrayList<ApplicationEntity>();
+        for(ArchiveInstanceLocator loc : instanceRetrieveMap.keySet()) {
+            if(loc.getStudyInstanceUID().equalsIgnoreCase(studyUID)) {
+                for(ApplicationEntity ae : instanceRetrieveMap.get(loc)) {
+                    boolean skip = false;
+                    for(ApplicationEntity currentAE : preferedStudyAEs) {
+                        if(currentAE.getAETitle().equalsIgnoreCase(ae.getAETitle()))
+                            skip = true;
+                    }
+                    if(!skip)
+                        preferedStudyAEs.add(ae);
+            }
+            }
+        }
+        return preferedStudyAEs ;
+    }
+
     private void push(int instanceCount,
             java.util.List<ArchiveInstanceLocator> instances,
             Association storeas, int priority, final BasicCStoreSCUResp resp) {
@@ -435,4 +532,5 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         System.arraycopy(failedUIDs2, 0, result, failedUIDs.length, failedUIDs2.length);
         return result;
     }
+
 }
