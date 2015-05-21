@@ -49,6 +49,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
 import javax.enterprise.event.Event;
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
@@ -77,6 +78,8 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.QCEventInstance;
+import org.dcm4chee.archive.dto.ServiceQualifier;
+import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.ContentItem;
@@ -104,7 +107,6 @@ import org.dcm4chee.archive.qc.PatientCommands;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCEvent.QCOperation;
-import org.dcm4chee.archive.qc.QCNotification;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -169,7 +171,7 @@ public class QCBeanImpl  implements QCBean{
     protected StoreService storeService; 
 
     @Inject
-    @QCNotification
+    @Any
     Event<QCEvent> internalNotification;
 
     @PersistenceContext(name="dcm4chee-arc")
@@ -217,6 +219,7 @@ public class QCBeanImpl  implements QCBean{
             LOG.error("{}: QC info[Merge] - Failure, reason {}",e);
             throw new EJBException();
         }
+        internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(mergeEvent);
         return mergeEvent;
     }
 
@@ -380,6 +383,7 @@ public class QCBeanImpl  implements QCBean{
         QCEvent splitEvent = new QCEvent(QCOperation.SPLIT,null,null,sourceUIDs,targetUIDs);
         splitEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(targetUIDs, rejNote);
+        internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(splitEvent);
         return splitEvent;
     }
 
@@ -498,6 +502,7 @@ public class QCBeanImpl  implements QCBean{
         QCEvent segmentEvent = new QCEvent(QCOperation.SEGMENT,null,null,movedSourceUIDs,movedTargetUIDs);
         segmentEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(movedTargetUIDs, rejNote);
+        internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(segmentEvent);
         return segmentEvent;
     }
 
@@ -563,7 +568,7 @@ public class QCBeanImpl  implements QCBean{
     public void notify(QCEvent event) {
         LOG.debug("{} :  QC info[Notify] - Operation successfull,"
                 + " notification triggered with event {}",qcSource,event.toString());
-        internalNotification.fire(event);
+        internalNotification.select(new ServiceQualifier(ServiceType.QCPOSTPROCESSING)).fire(event);
     }
 
     /* (non-Javadoc)
@@ -620,6 +625,7 @@ public class QCBeanImpl  implements QCBean{
                 changeRequester.scheduleUpdateOnlyChangeRequest(eventIUIDs);
             }
         }
+        internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(updateEvent);
         return updateEvent;
     }
 
@@ -680,9 +686,11 @@ public class QCBeanImpl  implements QCBean{
         }
         LOG.info("{}:  QC info[Delete] info - Removed study entity {}",qcSource , studyInstanceUID);
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, rejectedInstances);
-        rejectAndScheduleForDeletion(rejectedInstances);
+
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
+        internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
+        rejectAndScheduleForDeletion(rejectedInstances);
         changeRequester.scheduleChangeRequest(null, rejNote);
         return deleteEvent;
     }
@@ -705,9 +713,11 @@ public class QCBeanImpl  implements QCBean{
         study.clearQueryAttributes();
         LOG.info("{}:  QC info[Delete] info - Removed series entity {}",qcSource, seriesInstanceUID);
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, insts);
-        rejectAndScheduleForDeletion(insts);
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
+        internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
+        rejectAndScheduleForDeletion(insts);
+
         changeRequester.scheduleChangeRequest(null, rejNote);
         return deleteEvent;
     }
@@ -735,9 +745,10 @@ public class QCBeanImpl  implements QCBean{
             eventUIDs.add(new QCEventInstance(inst.getSopInstanceUID(),series.getSeriesInstanceUID(), study.getStudyInstanceUID()));
         }
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, tmpList);
-        rejectAndScheduleForDeletion(tmpList);
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
+        internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
+        rejectAndScheduleForDeletion(tmpList);
         changeRequester.scheduleChangeRequest(null, rejNote);
         return deleteEvent;
     }

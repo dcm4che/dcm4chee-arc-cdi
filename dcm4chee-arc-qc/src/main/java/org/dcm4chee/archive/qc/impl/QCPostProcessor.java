@@ -40,8 +40,9 @@ package org.dcm4chee.archive.qc.impl;
 import javax.enterprise.event.Observes;
 
 import org.slf4j.Logger;
+import org.dcm4chee.archive.dto.Service;
+import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.qc.QCEvent;
-import org.dcm4chee.archive.qc.QCNotification;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -51,7 +52,7 @@ import org.slf4j.LoggerFactory;
 public class QCPostProcessor {
 
     static final Logger LOG = LoggerFactory.getLogger(QCPostProcessor.class);
-    public void observeQC(@Observes @QCNotification QCEvent event) {
+    public void observeQC(@Observes @Service(ServiceType.QCPOSTPROCESSING) QCEvent event) {
         LOG.info("QC operation successfull, starting post processing");
     }
 }
