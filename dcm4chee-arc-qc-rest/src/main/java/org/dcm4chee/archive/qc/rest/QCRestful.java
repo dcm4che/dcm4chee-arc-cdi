@@ -54,7 +54,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.Status;
 
@@ -70,10 +69,10 @@ import org.dcm4che3.net.Device;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.rest.IssuerObject;
 import org.dcm4chee.archive.qc.PatientCommands;
 import org.dcm4chee.archive.qc.QCBean;
-import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.rest.QCObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2013
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,19 +36,43 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.iocm.client;
-
-import java.util.Collection;
-
-import org.dcm4chee.archive.dto.QCEventInstance;
-import org.dcm4chee.archive.entity.Instance;
+package org.dcm4chee.archive.dto;
 
 /**
- * @author Franz Willer <franz.willer@gmail.com>
- *
+ * The object used as StudyUID, SeriesUID, SOPUID triple by QCEvent
+ * 
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-public interface ChangeRequesterService {
+public class QCEventInstance {
 
-    public void scheduleChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs, Instance rejNote);
-    public void scheduleUpdateOnlyChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs);
+    private String sopInstanceUID;
+    private String seriesInstanceUID;
+    private String studyInstanceUID;
+
+    public QCEventInstance(String sopInstanceUID, String seriesInstanceUID,
+            String studyInstanceUID) {
+        super();
+        this.sopInstanceUID = sopInstanceUID;
+        this.seriesInstanceUID = seriesInstanceUID;
+        this.studyInstanceUID = studyInstanceUID;
+    }
+
+    public String getSopInstanceUID() {
+        return sopInstanceUID;
+    }
+
+    public String getSeriesInstanceUID() {
+        return seriesInstanceUID;
+    }
+
+    public String getStudyInstanceUID() {
+        return studyInstanceUID;
+    }
+
+    @Override
+    public String toString() {
+        return "(StudyInstanceUID: " + studyInstanceUID
+                + ", SeriesInstanceUID: " + seriesInstanceUID
+                + ", SopInstanceUID: " + sopInstanceUID + ")";
+    }
 }

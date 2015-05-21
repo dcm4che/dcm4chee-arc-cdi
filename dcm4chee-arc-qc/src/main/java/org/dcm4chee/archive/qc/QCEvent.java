@@ -38,11 +38,11 @@
 package org.dcm4chee.archive.qc;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Instance;
 
 /**
@@ -57,7 +57,8 @@ public class QCEvent {
     }
 
     private QCOperation operation;
-    private Collection<String> sourceUIDs, targetUIDs;
+    private Collection<QCEventInstance> sourceUIDs;
+    private Collection<QCEventInstance> targetUIDs;
     private long eventTime;
 
     private String updateScope;
@@ -66,7 +67,7 @@ public class QCEvent {
     private Collection<Instance> rejNotes;
     
     public QCEvent(QCOperation operation, String updateScope, Attributes updateAttributes, 
-            Collection<String> sourceUIDs, Collection<String> targetUIDs)
+            Collection<QCEventInstance> sourceUIDs, Collection<QCEventInstance> targetUIDs)
     {
         this.operation = operation;
         this.sourceUIDs = sourceUIDs;
@@ -90,19 +91,19 @@ public class QCEvent {
         this.eventTime = eventTime;
     }
 
-    public Collection<String> getSource() {
+    public Collection<QCEventInstance> getSource() {
         return sourceUIDs;
     }
 
-    public void setSource(Collection<String> sourceUIDs) {
+    public void setSource(Collection<QCEventInstance> sourceUIDs) {
         this.sourceUIDs = sourceUIDs;
     }
 
-    public Collection<String> getTarget() {
+    public Collection<QCEventInstance> getTarget() {
         return targetUIDs;
     }
 
-    public void setTarget(Collection<String> targetUIDs) {
+    public void setTarget(Collection<QCEventInstance> targetUIDs) {
         this.targetUIDs = targetUIDs;
     }
 
@@ -137,9 +138,18 @@ public class QCEvent {
                 + "\n eventTime: " + new Date(eventTime).toString() 
                 + "\n update :" + (updateScope==null? "No Info":updateScope)
                 + "\n updateAttributes : " + (updateAttributes==null? "No Info":updateAttributes.toString())
-                + "\n operation successfully applied on the following instances : \n" + (sourceUIDs!=null?Arrays.toString(sourceUIDs.toArray()):"[]")
-                + "\n resulting in the following instances : \n" + (targetUIDs!=null?Arrays.toString(targetUIDs.toArray()):"[]")
+                + "\n operation successfully applied on the following instances : \n" + (sourceUIDs!=null?printQCEventInstance(sourceUIDs):"[]")
+                + "\n resulting in the following instances : \n" + (targetUIDs!=null?printQCEventInstance(targetUIDs):"[]")
                 + "]";
                 return str;
+    }
+
+    private String printQCEventInstance(Collection<QCEventInstance> uids) {
+        String printedString = "["; 
+        for(QCEventInstance inst : uids) {
+            printedString += inst.toString() + "\n";
+        }
+        printedString += "]";
+        return printedString;
     }
 }

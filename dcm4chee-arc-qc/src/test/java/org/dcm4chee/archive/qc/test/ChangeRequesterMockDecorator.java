@@ -47,6 +47,7 @@ import javax.inject.Inject;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.IOCMConfig;
+import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
 import org.slf4j.Logger;
@@ -71,7 +72,7 @@ public class ChangeRequesterMockDecorator implements ChangeRequesterService {
     private Device device;
 
     @Override
-    public void scheduleChangeRequest(Collection<String> updatedInstanceUIDs,
+    public void scheduleChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs,
             Instance rejNote) {
         LOG.info("############## scheduleChangeRequest called!count:{}",++count);
         IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
@@ -80,7 +81,7 @@ public class ChangeRequesterMockDecorator implements ChangeRequesterService {
     }
     
     @Override
-    public void scheduleUpdateOnlyChangeRequest(Collection<String> updatedInstanceUIDs) {
+    public void scheduleUpdateOnlyChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs) {
         LOG.info("############## scheduleUpdateOnlyChangeRequest called!count:{}",++count);
         IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
         String[] aets = cfg != null ? cfg.getNoneIocmDestinations() : null;

@@ -72,6 +72,8 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.dto.QCEventInstance;
+import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
@@ -89,7 +91,6 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.qc.QCBean;
-import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
@@ -286,6 +287,8 @@ public class QCIT {
         ArrayList<Instance> instances = (ArrayList<Instance>) qcManager
                 .locateInstances(instancesSOPUID);
         Study study = instances.get(0).getSeries().getStudy();
+        ArrayList<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
+        eventUIDs.add(new QCEventInstance(instancesSOPUID[0], instances.get(0).getSeries().getSeriesInstanceUID(), study.getStudyInstanceUID()));
         Attributes attrs = load(UPDATE_ATTRS[1]);
         QCEvent event = qcManager.updateDicomObject(archDevExt,
                 QCUpdateScope.STUDY, attrs);
@@ -314,7 +317,7 @@ public class QCIT {
         assertTrue(issuer.getLocalNamespaceEntityID().equalsIgnoreCase(
                 issuerOfAccessionNumberItem
                         .getString(Tag.LocalNamespaceEntityID)));
-        PerformedChangeRequest.checkChangeRequest(-1, Arrays.asList(instancesSOPUID), null, NONE_IOCM_DESTINATIONS);
+        PerformedChangeRequest.checkChangeRequest(-1, eventUIDs, null, NONE_IOCM_DESTINATIONS);
     }
 
     @Test
@@ -355,7 +358,9 @@ public class QCIT {
                 .equalsIgnoreCase(attrs.getString(Tag.StudyDescription)));
         assertTrue(prevHistoryNode.getObjectUID().equalsIgnoreCase(
                 nextHistoryNode.getObjectUID()));
-        PerformedChangeRequest.checkChangeRequest(-1, Arrays.asList(instancesSOPUID), null, NONE_IOCM_DESTINATIONS);
+        ArrayList<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
+        eventUIDs.add(new QCEventInstance(instancesSOPUID[0], instances.get(0).getSeries().getSeriesInstanceUID(), study.getStudyInstanceUID()));
+        PerformedChangeRequest.checkChangeRequest(-1, eventUIDs, null, NONE_IOCM_DESTINATIONS);
     }
 
     @Test
@@ -382,7 +387,9 @@ public class QCIT {
         assertTrue(series.getInstitutionCode() != null);
         assertTrue(!series.getAttributes()
                 .getSequence(Tag.RequestAttributesSequence).isEmpty());
-        PerformedChangeRequest.checkChangeRequest(-1, Arrays.asList(instanceSOPUID), null, NONE_IOCM_DESTINATIONS);
+        ArrayList<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
+        eventUIDs.add(new QCEventInstance(instanceSOPUID[0], instances.get(0).getSeries().getSeriesInstanceUID(), series.getStudy().getStudyInstanceUID()));
+        PerformedChangeRequest.checkChangeRequest(-1, eventUIDs, null, NONE_IOCM_DESTINATIONS);
     }
 
     @Test
@@ -411,8 +418,9 @@ public class QCIT {
                 .getFamilyName().equalsIgnoreCase("VerifyingObserver1"));
         assertTrue(!instanceAttributes.getSequence(
                 Tag.VerifyingObserverSequence).isEmpty());
-
-        PerformedChangeRequest.checkChangeRequest(-1, Arrays.asList(instanceSOPUID), null, NONE_IOCM_DESTINATIONS);
+        ArrayList<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
+        eventUIDs.add(new QCEventInstance(instanceSOPUID[0], instances.get(0).getSeries().getSeriesInstanceUID(),  instances.get(0).getSeries().getStudy().getStudyInstanceUID()));
+        PerformedChangeRequest.checkChangeRequest(-1, eventUIDs, null, NONE_IOCM_DESTINATIONS);
     }
 
     /*

@@ -55,6 +55,7 @@ import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
@@ -85,7 +86,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 
     private transient ArchiveDeviceExtension archDeviceExt;
     
-    public void scheduleChangeRequest(Collection<String> updatedInstanceUIDs, Instance rejNote) {
+    public void scheduleChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs, Instance rejNote) {
         LOG.debug("ChangeRequestor: scheduleChangeRequest called! rejNote:{}\nupdated:{}", rejNote, updatedInstanceUIDs);
         IOCMConfig cfg = getIOCMConfig();
         if (cfg == null) {
@@ -108,7 +109,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             }
         }
         if (updatedInstanceUIDs != null && updatedInstanceUIDs.size() > 0) {
-            List<ArchiveInstanceLocator> locators = locate(updatedInstanceUIDs.toArray(new String[updatedInstanceUIDs.size()]));
+            List<ArchiveInstanceLocator> locators = locate(toIUIDArray(updatedInstanceUIDs));
             for (int i = 0 ; i < targetAETs.length ; i++) {
                 storescuService.scheduleStoreSCU(
                         UUID.randomUUID().toString(),
@@ -137,8 +138,8 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
         }
 
     }
-    
-    public void scheduleUpdateOnlyChangeRequest(Collection<String> updatedInstanceUIDs) {
+
+    public void scheduleUpdateOnlyChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs) {
         if (updatedInstanceUIDs == null || updatedInstanceUIDs.isEmpty()) {
             LOG.info("No updated instance UIDs given! Skipped!");
             return;
@@ -151,7 +152,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
         String[] noneIOCM = cfg.getNoneIocmDestinations();
         LOG.debug("NoneIocmDestinations from IOCMConfig:{}", Arrays.toString(noneIOCM));
         if (noneIOCM != null && noneIOCM.length > 0) {
-            List<ArchiveInstanceLocator> locators = locate(updatedInstanceUIDs.toArray(new String[updatedInstanceUIDs.size()]));
+            List<ArchiveInstanceLocator> locators = locate(toIUIDArray(updatedInstanceUIDs));
             for (int i = 0 ; i < noneIOCM.length ; i++) {
                 storescuService.scheduleStoreSCU(
                         UUID.randomUUID().toString(),
@@ -185,4 +186,13 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
         queryParam.setQueryRetrieveView(view);
         return retrieveService.calculateMatches(null, keys, queryParam, true);
     }
+
+    private String[] toIUIDArray(Collection<QCEventInstance> qcEventInstances) {
+        String[] arr = new String[qcEventInstances.size()];
+        int index = 0;
+        for(QCEventInstance inst : qcEventInstances)
+            arr[index++] = inst.getSopInstanceUID();
+        return arr;
+    }
+
 }
