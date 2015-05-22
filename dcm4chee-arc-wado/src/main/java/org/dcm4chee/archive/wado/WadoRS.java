@@ -87,7 +87,6 @@ import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.ServiceType;
-import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
@@ -104,6 +103,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @Path("/wado/{AETitle}")
 public class WadoRS extends Wado {

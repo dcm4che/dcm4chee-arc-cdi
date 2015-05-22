@@ -96,13 +96,16 @@ import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.service.BasicCStoreSCUResp;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4che3.util.Property;
-import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.ServiceType;
+import org.dcm4chee.archive.fetch.forward.FetchForwardCallBack;
+import org.dcm4chee.archive.fetch.forward.FetchForwardService;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
@@ -257,6 +260,9 @@ public class WadoURI extends Wado {
     @QueryParam("overlays")
     private boolean overlays;
 
+    @Inject
+    private FetchForwardService fetchForwardService;
+
     @GET
     public Response retrieve() throws WebApplicationException {
 
@@ -279,7 +285,7 @@ public class WadoURI extends Wado {
 
             checkRequest();
 
-            List<ArchiveInstanceLocator> ref = retrieveService
+            final List<ArchiveInstanceLocator> ref = retrieveService
                     .calculateMatches(studyUID, seriesUID, objectUID,
                             queryParam, false);
 
@@ -292,54 +298,43 @@ public class WadoURI extends Wado {
                 instsfailed.addAll(ref);
                 throw new WebApplicationException(Status.BAD_REQUEST);
             }
-            ArchiveInstanceLocator instance = ref.get(0);
-            Attributes attrs = (Attributes) instance.getObject();
-
-            MediaType mediaType = selectMediaType(instance.tsuid,
-                    instance.cuid, attrs);
-
-            if (!isAccepted(mediaType)) {
-                instsfailed.addAll(ref);
-                throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+            //internal
+            ArchiveInstanceLocator instance = null;
+            Attributes attrs = null;
+            Response resp = null;
+            if(ref.get(0).getStorageSystem() != null) {
+            instance = ref.get(0);
+            attrs = (Attributes) instance.getObject();
+            resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
             }
-
-            if (mediaType == MediaTypes.APPLICATION_DICOM_TYPE) {
-                instscompleted.addAll(ref);
-                return retrieveNativeDicomObject(instance, attrs);
+            //external
+            else {
+                //fetch
+                FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
+                    
+                    @Override
+                    public void onFetch(Collection<ArchiveInstanceLocator> instances,
+                            BasicCStoreSCUResp resp) {
+                        ref.clear();
+                        ref.addAll(instances);
+                    }
+                };
+                    WebServiceAEExtension wsAEExt = context.getLocalAE()
+                            .getAEExtension(WebServiceAEExtension.class);
+                    if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) {
+                        instsfailed = fetchForwardService.fetchForwardUsingWado(aetitle, ref, fetchCallBack);
+                    }
+                    else {
+                        instsfailed = fetchForwardService.fetchForwardUsingCmove(aetitle, ref, fetchCallBack);
+                    }
+                    instance = ref.get(0);
+                    attrs = (Attributes) instance.getObject();
+                resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
             }
-
-            if (mediaType == MediaTypes.IMAGE_JPEG_TYPE) {
-                instscompleted.addAll(ref);
-                return retrieveJPEG(instance, attrs);
-            }
-
-            if (mediaType == MediaTypes.IMAGE_GIF_TYPE) {
-                instscompleted.addAll(ref);
-                return retrieveGIF(instance, attrs);
-            }
-
-            if (mediaType == MediaTypes.IMAGE_PNG_TYPE) {
-                instscompleted.addAll(ref);
-                return retrievePNG(instance, attrs);
-            }
-            if (mediaType.isCompatible(MediaTypes.APPLICATION_PDF_TYPE)
-                    || mediaType.isCompatible(MediaType.TEXT_XML_TYPE)
-//                  || mediaType.isCompatible(MediaType.TEXT_PLAIN_TYPE)
-                    || mediaType.isCompatible(MediaTypes.TEXT_RTF_TYPE)) {
-                instscompleted.addAll(ref);
-                return retrievePDFXMLOrText(mediaType, instance);
-            }
-            if (mediaType == MediaType.TEXT_HTML_TYPE) {
-                try {
-                    instscompleted.addAll(ref);
-                    return retrieveSRHTML(instance);
-                } catch (TransformerConfigurationException e) {
-                    return retrieveNativeDicomObject(instance, attrs);
-                }
-            }
-
+            if(resp == null)
             throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
-            
+            else
+                return resp;
         } finally {
             // audit
             retrieveEvent.fire(new RetrieveAfterSendEvent(
@@ -349,6 +344,56 @@ public class WadoURI extends Wado {
                             request.getRemoteAddr(), request.getRemoteUser()),
                     device, insts, instscompleted, instswarning, instsfailed));
         }
+    }
+
+    private Response retrieve(List<ArchiveInstanceLocator> instscompleted,
+            List<ArchiveInstanceLocator> instsfailed,
+            List<ArchiveInstanceLocator> ref, ArchiveInstanceLocator instance,
+            Attributes attrs) {
+        if(!instsfailed.isEmpty())
+            throw new WebApplicationException(Status.CONFLICT);
+        MediaType mediaType = selectMediaType(instance.tsuid,
+                instance.cuid, attrs);
+        if (!isAccepted(mediaType)) {
+            instsfailed.addAll(ref);
+            throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+        }
+
+        if (mediaType == MediaTypes.APPLICATION_DICOM_TYPE) {
+            instscompleted.addAll(ref);
+            return retrieveNativeDicomObject(instance, attrs);
+        }
+
+        if (mediaType == MediaTypes.IMAGE_JPEG_TYPE) {
+            instscompleted.addAll(ref);
+            return retrieveJPEG(instance, attrs);
+        }
+
+        if (mediaType == MediaTypes.IMAGE_GIF_TYPE) {
+            instscompleted.addAll(ref);
+            return retrieveGIF(instance, attrs);
+        }
+
+        if (mediaType == MediaTypes.IMAGE_PNG_TYPE) {
+            instscompleted.addAll(ref);
+            return retrievePNG(instance, attrs);
+        }
+        if (mediaType.isCompatible(MediaTypes.APPLICATION_PDF_TYPE)
+                || mediaType.isCompatible(MediaType.TEXT_XML_TYPE)
+//                  || mediaType.isCompatible(MediaType.TEXT_PLAIN_TYPE)
+                || mediaType.isCompatible(MediaTypes.TEXT_RTF_TYPE)) {
+            instscompleted.addAll(ref);
+            return retrievePDFXMLOrText(mediaType, instance);
+        }
+        if (mediaType == MediaType.TEXT_HTML_TYPE) {
+            try {
+                instscompleted.addAll(ref);
+                return retrieveSRHTML(instance);
+            } catch (TransformerConfigurationException e) {
+                return retrieveNativeDicomObject(instance, attrs);
+            }
+        }
+        return null;
     }
 
     private boolean isSupportedSR(String cuid) {

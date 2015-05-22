@@ -41,14 +41,10 @@ package org.dcm4chee.archive.store.scu.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -59,8 +55,6 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.DataWriter;
 import org.dcm4che3.net.DataWriterAdapter;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.ExternalArchiveAEExtension;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
@@ -70,14 +64,12 @@ import org.dcm4che3.net.service.CStoreSCU;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.dto.ExternalLocationTuple;
 import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.fetch.forward.FetchForwardCallBack;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.dcm4chee.archive.wado.client.InstanceAvailableCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,8 +106,8 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
 
     @Override
     public org.dcm4che3.net.service.BasicCStoreSCUResp cstore(
-            java.util.List<ArchiveInstanceLocator> instances,
-            Association storeas, int priority) {
+            final java.util.List<ArchiveInstanceLocator> instances,
+            final Association storeas, final int priority) {
 
         ArrayList<ArchiveInstanceLocator> localyAvailable = (ArrayList<ArchiveInstanceLocator>) filterLocalOrExternalMatches(
                 instances, true);
@@ -132,241 +124,50 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         if (!externallyAvailable.isEmpty()) {
             WebServiceAEExtension wsAEExt = context.getLocalAE()
                     .getAEExtension(WebServiceAEExtension.class);
-            if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null)
-            finalResponse = fetchForwardUsingWado(instances.size(), finalResponse, externallyAvailable, storeas, priority);
-            else
-                finalResponse = fetchForwardUsingCmove(instances.size(), finalResponse, externallyAvailable, storeas, priority);
-        }
-        return finalResponse;
-
-    }
-
-    private BasicCStoreSCUResp fetchForwardUsingCmove(final int allInstances,
-            final BasicCStoreSCUResp finalResponse,
-            ArrayList<ArchiveInstanceLocator> externallyAvailable,
-            final Association storeas, final int priority) {
-        super.status = Status.Pending;
-        final HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>> instanceRetrieveMap = new HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>>();
-        for (int current = 0; current < externallyAvailable.size(); current++) {
-            final ArchiveInstanceLocator externalLoc = externallyAvailable
-                    .get(current);
-            ArrayList<ApplicationEntity> remoteArchiveAETitles = listBestExternalLocation(
-                    storeas, externalLoc, context.getLocalAE());
-            if (remoteArchiveAETitles.isEmpty())
-                continue;
-            // collect retrieveMap
-            instanceRetrieveMap.put(externalLoc, remoteArchiveAETitles);
-        }
-        ApplicationEntity fetchAE;
-        try {
-            fetchAE = getFetchAE();
-        } catch (ConfigurationException e) {
-            LOG.error("Unable to get fetchAE from configuration for device {}",
-                    context.getLocalAE().getDevice());
-            return finalResponse;
-        }
-        HashMap<String, Integer> studyUIDs = toStudyUIDs(instanceRetrieveMap
-                .keySet());
-        for (String studyUID : studyUIDs.keySet()) {
-            service.getCmoveSCUService()
-                    .moveStudy(
-                            fetchAE,
-                            studyUID,
-                            studyUIDs.get(studyUID),
-                            null,
-                            getPreferedStudyLocationsList(instanceRetrieveMap,
-                                    studyUID), fetchAE.getAETitle());
-        }
-        ArrayList<ArchiveInstanceLocator> updatedLocators = new ArrayList<ArchiveInstanceLocator>(); 
-        for(Iterator<ArchiveInstanceLocator> iter = externallyAvailable.iterator(); iter.hasNext();) {
-            ArchiveInstanceLocator newLocator = service.getEjb().updateLocator(iter.next());
-            if(newLocator != null)
-                updatedLocators.add(newLocator);
-        }
-        //send fetched instances
-        super.cstore(updatedLocators, storeas, priority);
-        
-        if (failed.size() > 0) {
-            if (failed.size() == nr_instances)
-                status = Status.UnableToPerformSubOperations;
-            else
-                status = Status.OneOrMoreFailures;
-        } else {
-            status = Status.Success;
-        }
-        return finalResponse;
-    }
-
-    private BasicCStoreSCUResp fetchForwardUsingWado(
-            final int allInstances, final BasicCStoreSCUResp response, final ArrayList<ArchiveInstanceLocator> externallyAvailable,
-            final Association storeas, final int priority) {
-
-        for(int current = 0; current < externallyAvailable.size(); current++) {
-            if(storeas.isReadyForDataTransfer()) {
-            final ArchiveInstanceLocator externalLoc = externallyAvailable
-                    .get(current);
-            ArrayList<ApplicationEntity> remoteArchiveAETitles = 
-                    listBestExternalLocation(storeas, externalLoc, context.getLocalAE());
-            if(remoteArchiveAETitles.isEmpty())
-                continue;
-            for (int i = 0; i < remoteArchiveAETitles.size(); i++) {
-                if (service.getWadoFetchService().fetchInstance(
-                        this.context.getLocalAE(),
-                        remoteArchiveAETitles.get(i),
-                        externalLoc.getStudyInstanceUID(),
-                        externalLoc.getSeriesInstanceUID(), 
-                        externalLoc.iuid,
-                        new InstanceAvailableCallback() {
-
-                            @Override
-                            public void onInstanceAvailable(
-                                    ArchiveInstanceLocator inst) {
-                                ArrayList<ArchiveInstanceLocator> matches
-                                = new ArrayList<ArchiveInstanceLocator>();
-                                matches.add(inst);
-                                push(allInstances, matches,
-                                        storeas, priority, response);
-                            }
-                        }) != null)
-                    break;
-            }
-        }
-        }
-        if (failed.size() > 0) {
-            if (failed.size() == nr_instances)
-                status = Status.UnableToPerformSubOperations;
-            else
-                status = Status.OneOrMoreFailures;
-        } else {
-            status = Status.Success;
-        }
-        setChanged();
-        notifyObservers();
-        return response;
-    }
-
-    private ApplicationEntity getFetchAE() throws ConfigurationException {
-        return context
-                .getLocalAE()
-                .getDevice()
-                .getApplicationEntity(
-                        context.getLocalAE()
-                                .getDevice()
-                                .getDeviceExtension(
-                                        ArchiveDeviceExtension.class)
-                                .getFetchAETitle());
-    }
-
-    private BasicCStoreSCUResp extendResponse(
-            BasicCStoreSCUResp responseForLocalyAvailable) {
-        BasicCStoreSCUResp externalResponse = new BasicCStoreSCUResp();
-        externalResponse.setCompleted(responseForLocalyAvailable != null? 
-                responseForLocalyAvailable.getCompleted() : 0);
-        externalResponse.setFailed(responseForLocalyAvailable != null?
-                responseForLocalyAvailable.getFailed() : 0);
-        externalResponse.setFailedUIDs(responseForLocalyAvailable != null? responseForLocalyAvailable.getFailedUIDs() == null
-                ? new String[]{} : responseForLocalyAvailable.getFailedUIDs() : new String[] {});
-        externalResponse.setWarning(responseForLocalyAvailable != null?
-                responseForLocalyAvailable.getWarning() : 0);
-        return externalResponse;
-    }
-
-    private HashMap<String, Integer> toStudyUIDs(Set<ArchiveInstanceLocator> set) {
-        HashMap<String, Integer> studyUIDs = new HashMap<String, Integer>(); 
-        for(ArchiveInstanceLocator loc : set) {
-            String studyUID = loc.getStudyInstanceUID();
-            if(!studyUIDs.containsKey(studyUID))
-                studyUIDs.put(studyUID, 1);
-            else
-                studyUIDs.put(studyUID, new Integer(studyUIDs.get(studyUID).intValue() + 1));
-        }
-        return studyUIDs;
-    }
-    private ArrayList<ApplicationEntity> listBestExternalLocation(
-            Association storeas, ArchiveInstanceLocator externalLoc, ApplicationEntity localAE) {
-        ArrayList<Device> externalDevices = new ArrayList<Device>();
-        ArrayList<ApplicationEntity> externalAEs = new ArrayList<ApplicationEntity>();
-      //for ordering based on availability
-        ArrayList<ExternalLocationTuple> extLocTuples = (ArrayList<ExternalLocationTuple>) externalLoc
-                .getExternalLocators();
-        if(extLocTuples.size() > 1)
-        Collections.sort(extLocTuples, fetchAvailabilityComparator());
-                        //for ordering based on priority
-        for(ExternalLocationTuple externalTuple : extLocTuples) {
-                try {
-                    externalDevices.add(service.getConfig()
-                            .findDevice(externalTuple.getRetrieveDeviceName()));
-                } catch (ConfigurationException e) {
-                    LOG.error("Unable to find external archive {} in configuration",
-                            externalTuple.getRetrieveDeviceName());
+            if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) {
+            finalResponse = service.getFetchForwardService().fetchForwardUsingWado(instances.size(), finalResponse, externallyAvailable, storeas, priority, new FetchForwardCallBack() {
+                
+                @Override
+                public void onFetch(Collection<ArchiveInstanceLocator> instances,
+                        BasicCStoreSCUResp resp) {
+                    push(instances.size(), (List<ArchiveInstanceLocator>) instances,
+                            storeas, priority, resp);
                 }
-        }
-        if(externalDevices.size() > 1)
-        Collections.sort(externalDevices, fetchDevicePriorityComparator(localAE) );
-        for(Device dev : externalDevices) {
-            TransferCapability tc = new TransferCapability("",
-                    externalLoc.cuid, Role.SCP, new String[]{
-                    UID.ImplicitVRLittleEndian, UID.ExplicitVRLittleEndian});
-            ArrayList<ApplicationEntity> deviceAEs = (ArrayList<ApplicationEntity>) 
-                    dev.getAEsSupportingTransferCapability(tc, true); 
-                    Collections.sort(deviceAEs,fetchAEPriorityComparator());
-            externalAEs.addAll(deviceAEs);
-        }
-            
-        return externalAEs;
-    }
-
-
-
-    private Comparator<? super ExternalLocationTuple> fetchAvailabilityComparator() {
-        return new Comparator<ExternalLocationTuple>() {
-            @Override
-            public int compare(ExternalLocationTuple loc1, ExternalLocationTuple loc2) {
-                return loc1.getAvailability().compareTo(loc2.getAvailability());
-            }
-        };
-    }
-
-    private Comparator<? super Device> fetchDevicePriorityComparator(final ApplicationEntity localAE) {
-        return new Comparator<Device>() {
-            @Override
-            public int compare(Device dev1, Device dev2) {
-                ArchiveDeviceExtension archDevExt = localAE.getDevice()
-                        .getDeviceExtension(ArchiveDeviceExtension.class);
-                int priority1 = Integer.parseInt(archDevExt.getExternalArchivesMap().get(dev1.getDeviceName()));
-                int priority2 = Integer.parseInt(archDevExt.getExternalArchivesMap().get(dev2.getDeviceName()));
-                return priority1 < priority2 ? -1:priority1 == priority2 ? 0 : 1;
-            }
-        };
-    }
-
-    private Comparator<ApplicationEntity> fetchAEPriorityComparator() {
-        return new Comparator<ApplicationEntity>() {
-            @Override
-            public int compare(ApplicationEntity ae1, ApplicationEntity ae2) {
-                int priority1 = ae1.getAEExtension(ExternalArchiveAEExtension.class).getAeFetchPriority();
-                int priority2 = ae2.getAEExtension(ExternalArchiveAEExtension.class).getAeFetchPriority();
-                return priority1 < priority2 ? -1:priority1 == priority2 ? 0 : 1;
-            }
-        };
-    }
-
-    private List<ArchiveInstanceLocator> filterLocalOrExternalMatches(
-            List<ArchiveInstanceLocator> matches, boolean localMatches) {
-        ArrayList<ArchiveInstanceLocator> filteredMatches = new ArrayList<ArchiveInstanceLocator>();
-
-        for (ArchiveInstanceLocator match : matches) {
-            if (localMatches) {
-                if (match.getStorageSystem() != null)
-                    filteredMatches.add(match);
+            });
+            if (failed.size() > 0) {
+                if (failed.size() == nr_instances)
+                    status = Status.UnableToPerformSubOperations;
+                else
+                    status = Status.OneOrMoreFailures;
             } else {
-                if (match.getStorageSystem() == null)
-                    filteredMatches.add(match);
+                status = Status.Success;
             }
-
+            setChanged();
+            notifyObservers();
+            }
+            else {
+                finalResponse = service.getFetchForwardService().fetchForwardUsingCmove(instances.size(), finalResponse, externallyAvailable, storeas, priority, new FetchForwardCallBack() {
+                    
+                    @Override
+                    public void onFetch(Collection<ArchiveInstanceLocator> instances,
+                            BasicCStoreSCUResp resp) {
+                       pushInstances((ArrayList<ArchiveInstanceLocator>) instances, storeas, priority);
+                    }
+                });
+                if (failed.size() > 0) {
+                    if (failed.size() == nr_instances)
+                        status = Status.UnableToPerformSubOperations;
+                    else
+                        status = Status.OneOrMoreFailures;
+                } else {
+                    status = Status.Success;
+                }
+            }
         }
-        return filteredMatches;
+        return finalResponse;
+
     }
+
     @Override
     protected DataWriter createDataWriter(ArchiveInstanceLocator inst,
             String tsuid) throws IOException, UnsupportedStoreSCUException {
@@ -428,6 +229,62 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         }
     }
 
+    private BasicCStoreSCUResp extendResponse(
+            BasicCStoreSCUResp responseForLocalyAvailable) {
+        BasicCStoreSCUResp externalResponse = new BasicCStoreSCUResp();
+        externalResponse.setCompleted(responseForLocalyAvailable != null? 
+                responseForLocalyAvailable.getCompleted() : 0);
+        externalResponse.setFailed(responseForLocalyAvailable != null?
+                responseForLocalyAvailable.getFailed() : 0);
+        externalResponse.setFailedUIDs(responseForLocalyAvailable != null? responseForLocalyAvailable.getFailedUIDs() == null
+                ? new String[]{} : responseForLocalyAvailable.getFailedUIDs() : new String[] {});
+        externalResponse.setWarning(responseForLocalyAvailable != null?
+                responseForLocalyAvailable.getWarning() : 0);
+        return externalResponse;
+    }
+    private List<ArchiveInstanceLocator> filterLocalOrExternalMatches(
+            List<ArchiveInstanceLocator> matches, boolean localMatches) {
+        ArrayList<ArchiveInstanceLocator> filteredMatches = new ArrayList<ArchiveInstanceLocator>();
+
+        for (ArchiveInstanceLocator match : matches) {
+            if (localMatches) {
+                if (match.getStorageSystem() != null)
+                    filteredMatches.add(match);
+            } else {
+                if (match.getStorageSystem() == null)
+                    filteredMatches.add(match);
+            }
+
+        }
+        return filteredMatches;
+    }
+    private boolean isConfiguredAndAccepted(InstanceLocator ref,
+            Set<String> negotiated) {
+        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
+        for (TransferCapability supportedTC : aeTCs) {
+            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0
+                    && supportedTC.containsTransferSyntax(ref.tsuid)
+                    && negotiated.contains(ref.tsuid)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String getDefaultConfiguredTransferSyntax(InstanceLocator ref) {
+        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
+        for (TransferCapability supportedTC : aeTCs) {
+            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0) {
+                return supportedTC
+                        .containsTransferSyntax(UID.ExplicitVRLittleEndian) ? UID.ExplicitVRLittleEndian
+                        : UID.ImplicitVRLittleEndian;
+            }
+        }
+        return UID.ImplicitVRLittleEndian;
+    }
+
     @Override
     protected String selectTransferSyntaxFor(Association storeas,
             ArchiveInstanceLocator inst) throws UnsupportedStoreSCUException {
@@ -458,51 +315,8 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
                 : UID.ImplicitVRLittleEndian;
     }
 
-    private boolean isConfiguredAndAccepted(InstanceLocator ref,
-            Set<String> negotiated) {
-        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
-        for (TransferCapability supportedTC : aeTCs) {
-            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0
-                    && supportedTC.containsTransferSyntax(ref.tsuid)
-                    && negotiated.contains(ref.tsuid)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String getDefaultConfiguredTransferSyntax(InstanceLocator ref) {
-        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
-        for (TransferCapability supportedTC : aeTCs) {
-            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0) {
-                return supportedTC
-                        .containsTransferSyntax(UID.ExplicitVRLittleEndian) ? UID.ExplicitVRLittleEndian
-                        : UID.ImplicitVRLittleEndian;
-            }
-        }
-        return UID.ImplicitVRLittleEndian;
-    }
-
-    private List<ApplicationEntity> getPreferedStudyLocationsList(
-            HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>> instanceRetrieveMap,
-            String studyUID) {
-        ArrayList<ApplicationEntity> preferedStudyAEs = new ArrayList<ApplicationEntity>();
-        for(ArchiveInstanceLocator loc : instanceRetrieveMap.keySet()) {
-            if(loc.getStudyInstanceUID().equalsIgnoreCase(studyUID)) {
-                for(ApplicationEntity ae : instanceRetrieveMap.get(loc)) {
-                    boolean skip = false;
-                    for(ApplicationEntity currentAE : preferedStudyAEs) {
-                        if(currentAE.getAETitle().equalsIgnoreCase(ae.getAETitle()))
-                            skip = true;
-                    }
-                    if(!skip)
-                        preferedStudyAEs.add(ae);
-            }
-            }
-        }
-        return preferedStudyAEs ;
+    private void pushInstances(ArrayList<ArchiveInstanceLocator> instances, Association storeas, int priority) {
+        super.cstore(instances, storeas, priority);
     }
 
     private void push(int instanceCount,
