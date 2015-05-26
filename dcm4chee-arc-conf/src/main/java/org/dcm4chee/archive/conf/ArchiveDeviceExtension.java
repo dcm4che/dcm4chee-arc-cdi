@@ -65,6 +65,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     private static final long serialVersionUID = -3611223780276386740L;
 
+    @ConfigurableProperty(name = "dcmDisabledDecorators")
+    private String[] disabledDecorators = {};
+    
     @ConfigurableProperty(name = "dcmIncorrectWorklistEntrySelectedCode")
     private Code incorrectWorklistEntrySelectedCode;
 
@@ -321,6 +324,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     public void setSyncLocationStatusStorageSystemGroupIDs(
             String... syncLocationStatusStorageSystemGroupIDs) {
         this.syncLocationStatusStorageSystemGroupIDs = syncLocationStatusStorageSystemGroupIDs;
+    }
+    
+    public String[] getDisabledDecorators() {
+        return disabledDecorators;
+    }
+    
+    public void setDisabledDecorators(String ... disabledDecorators) {
+        this.disabledDecorators = disabledDecorators;
     }
 
     public boolean isSyncLocationStatusVerifyArchived() {
