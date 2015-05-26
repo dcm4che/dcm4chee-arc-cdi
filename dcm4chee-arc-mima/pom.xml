@@ -63,6 +63,10 @@
       <groupId>com.mysema.querydsl</groupId>
       <artifactId>querydsl-jpa</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-conf</groupId>
+      <artifactId>dcm4chee-conf-decorators</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

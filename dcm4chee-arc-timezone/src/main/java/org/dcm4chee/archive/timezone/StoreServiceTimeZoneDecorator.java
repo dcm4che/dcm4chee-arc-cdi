@@ -40,17 +40,14 @@ package org.dcm4chee.archive.timezone;
 
 import java.util.TimeZone;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
-import javax.inject.Inject;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.store.DelegatingStoreService;
 import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,19 +56,15 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * 
  */
-@Decorator
-public abstract class StoreServiceTimeZoneDecorator implements StoreService {
+@DynamicDecorator
+public class StoreServiceTimeZoneDecorator extends DelegatingStoreService {
 
     static Logger LOG = LoggerFactory
             .getLogger(StoreServiceTimeZoneDecorator.class);
 
-    @Inject
-    @Delegate
-    StoreService storeService;
-
     @Override
     public void coerceAttributes(StoreContext context) throws DicomServiceException {
-        storeService.coerceAttributes(context);
+        getNextDecorator().coerceAttributes(context);
         StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();

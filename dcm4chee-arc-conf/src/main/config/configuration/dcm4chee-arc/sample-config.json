@@ -577,6 +577,7 @@
               }
             },
             "dcmConfigurationStaleTimeout" : 60,
+            "dcmDisabledDecorators" : [ ],
             "dcmFetchAETitle" : "DCM4CHEE_FETCH",
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
