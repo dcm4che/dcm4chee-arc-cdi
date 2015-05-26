@@ -63,8 +63,6 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.dcm4che3.conf.api.DicomConfiguration;
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -86,13 +84,11 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.ServiceQualifier;
-import org.dcm4chee.archive.retrieve.scu.CMoveSCUService;
+import org.dcm4chee.archive.fetch.forward.FetchForwardService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.store.scu.CStoreSCUEJB;
 import org.dcm4chee.archive.store.scu.CStoreSCUJMSMessage;
 import org.dcm4chee.archive.store.scu.CStoreSCUResponse;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.dcm4chee.archive.wado.client.WadoClientService;
 import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,12 +103,9 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(CStoreSCUServiceImpl.class);
-
+    
     @Inject
-    private IApplicationEntityCache aeCache;
-
-    @Inject
-    private WadoClientService wadoClientService;
+    private FetchForwardService fetchForwardService;
 
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
@@ -129,15 +122,6 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
 
     @Inject
     private RetrieveService storageRetrieveService;
-
-    @Inject
-    private CMoveSCUService cmoveSCUService;
-
-    @Inject
-    private CStoreSCUEJB ejb;
-
-    @Inject
-    private DicomConfiguration config;
     
     @Override
     public void cstore(String messageID, CStoreSCUContext context, 
@@ -330,6 +314,11 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
         }
     }
 
+    @Override
+    public FetchForwardService getFetchForwardService() {
+        return fetchForwardService;
+    }
+
     private class CStoreSCUSetupTransformer implements SetupTransformer {
 
         private String localAET, remoteAET;
@@ -349,31 +338,6 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
             transformer.setParameter("calling", localAET);
             transformer.setParameter("called", remoteAET);
         }
-    }
-
-    @Override
-    public WadoClientService getWadoFetchService() {
-        return wadoClientService;
-    }
-
-    @Override
-    public IApplicationEntityCache getAECache() {
-        return aeCache;
-    }
-
-    @Override
-    public DicomConfiguration getConfig() {
-        return config;
-    }
-
-    @Override
-    public CMoveSCUService getCmoveSCUService() {
-        return cmoveSCUService;
-    }
-
-    @Override
-    public CStoreSCUEJB getEjb() {
-        return ejb;
     }
 
 }

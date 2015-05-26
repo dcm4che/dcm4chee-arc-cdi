@@ -182,7 +182,7 @@ public class DefaultRetrieveService implements RetrieveService {
             }
             instPk = nextInstPk;
             if(tuple.get(QLocation.location.storageSystemGroupID) == null)
-                locator = augmentExternalLopcations(updateLocator(storageConf, 
+                locator = augmentExternalLocations(updateLocator(storageConf, 
                         locator, seriesAttrs, tuple));
             else
                 locator = updateLocator(storageConf, locator, seriesAttrs, tuple);
@@ -192,7 +192,7 @@ public class DefaultRetrieveService implements RetrieveService {
         return locators;
     }
 
-    private ArchiveInstanceLocator augmentExternalLopcations(
+    private ArchiveInstanceLocator augmentExternalLocations(
             ArchiveInstanceLocator updateLocator) {
         ArrayList<ExternalRetrieveLocation> externalLocations =
                 (ArrayList<ExternalRetrieveLocation>) 

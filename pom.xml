@@ -444,6 +444,7 @@
     <module>dcm4chee-arc-store</module>
     <module>dcm4chee-arc-retrieve-scu</module>
     <module>dcm4chee-arc-store-scu</module>
+	<module>dcm4chee-arc-fetch-forward</module>
     <module>dcm4chee-arc-store-verify</module>
     <module>dcm4chee-arc-store-remember</module>
     <module>dcm4chee-arc-timezone</module>

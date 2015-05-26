@@ -42,10 +42,10 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.ejb.Local;
+import javax.ejb.Stateless;
 import javax.inject.Inject;
 
 import org.dcm4che.arc.api.FileAccess;
@@ -59,7 +59,8 @@ import org.slf4j.LoggerFactory;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  *
  */
-@ApplicationScoped
+@Stateless
+@Local(FileAccess.class)
 public class DefaultFileAccess implements FileAccess {
 
     private static final Logger LOG = LoggerFactory
@@ -71,6 +72,7 @@ public class DefaultFileAccess implements FileAccess {
     @Inject
     private org.dcm4chee.storage.service.RetrieveService storageRetrieveService;
 
+    @Override
     public List<Path> getStudy (String uid) throws IOException {
 
         List<ArchiveInstanceLocator> ails = 
@@ -87,7 +89,7 @@ public class DefaultFileAccess implements FileAccess {
         return res;
     }
 
-    
+    @Override
     public List<Path> getSeries (String uid) throws IOException {
 
         List<ArchiveInstanceLocator> ails = 
@@ -104,7 +106,7 @@ public class DefaultFileAccess implements FileAccess {
         return res;
     }
 
-    
+    @Override
     public Path getInstance (String uid) throws IOException {
 
         List<ArchiveInstanceLocator> ails = 
