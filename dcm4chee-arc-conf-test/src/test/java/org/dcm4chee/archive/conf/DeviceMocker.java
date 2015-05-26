@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
+import org.dcm4che3.net.DefaultTransferCapabilities;
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
@@ -65,7 +66,6 @@ import org.dcm4che3.net.DeviceType;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.ExternalArchiveAEExtension;
 import org.dcm4che3.net.QueryOption;
-import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7Application;
@@ -87,34 +87,6 @@ public class DeviceMocker {
 
 
     protected static final String PIX_MANAGER = "HL7RCV^DCM4CHEE";
-    protected static final String[] IMAGE_TSUIDS = {
-        UID.ImplicitVRLittleEndian,
-        UID.ExplicitVRLittleEndian,
-        UID.DeflatedExplicitVRLittleEndian,
-        UID.ExplicitVRBigEndianRetired,
-        UID.JPEGBaseline1,
-        UID.JPEGExtended24,
-        UID.JPEGLossless,
-        UID.JPEGLosslessNonHierarchical14,
-        UID.JPEGLSLossless,
-        UID.JPEGLSLossyNearLossless,
-        UID.JPEG2000LosslessOnly,
-        UID.JPEG2000,
-        UID.RLELossless
-    };
-    protected static final String[] VIDEO_TSUIDS = {
-        UID.JPEGBaseline1,
-        UID.MPEG2,
-        UID.MPEG2MainProfileHighLevel,
-        UID.MPEG4AVCH264BDCompatibleHighProfileLevel41,
-        UID.MPEG4AVCH264HighProfileLevel41
-    };
-    protected static final String[] OTHER_TSUIDS = {
-        UID.ImplicitVRLittleEndian,
-        UID.ExplicitVRLittleEndian,
-        UID.DeflatedExplicitVRLittleEndian,
-        UID.ExplicitVRBigEndianRetired,
-    };
     protected static final String[] OTHER_DEVICES = {
         "dcmqrscp",
         "stgcmtscu",
@@ -321,133 +293,6 @@ public class DeviceMocker {
         Tag.OriginalAttributesSequence,
         Tag.IdenticalDocumentsSequence,
         Tag.CurrentRequestedProcedureEvidenceSequence
-    };
-    private static final String[] IMAGE_CUIDS = {
-        UID.ComputedRadiographyImageStorage,
-        UID.DigitalXRayImageStorageForPresentation,
-        UID.DigitalXRayImageStorageForProcessing,
-        UID.DigitalMammographyXRayImageStorageForPresentation,
-        UID.DigitalMammographyXRayImageStorageForProcessing,
-        UID.DigitalIntraOralXRayImageStorageForPresentation,
-        UID.DigitalIntraOralXRayImageStorageForProcessing,
-        UID.CTImageStorage,
-        UID.EnhancedCTImageStorage,
-        UID.UltrasoundMultiFrameImageStorageRetired,
-        UID.UltrasoundMultiFrameImageStorage,
-        UID.MRImageStorage,
-        UID.EnhancedMRImageStorage,
-        UID.EnhancedMRColorImageStorage,
-        UID.NuclearMedicineImageStorageRetired,
-        UID.UltrasoundImageStorageRetired,
-        UID.UltrasoundImageStorage,
-        UID.EnhancedUSVolumeStorage,
-        UID.SecondaryCaptureImageStorage,
-        UID.MultiFrameGrayscaleByteSecondaryCaptureImageStorage,
-        UID.MultiFrameGrayscaleWordSecondaryCaptureImageStorage,
-        UID.MultiFrameTrueColorSecondaryCaptureImageStorage,
-        UID.XRayAngiographicImageStorage,
-        UID.EnhancedXAImageStorage,
-        UID.XRayRadiofluoroscopicImageStorage,
-        UID.EnhancedXRFImageStorage,
-        UID.XRayAngiographicBiPlaneImageStorageRetired,
-        UID.XRay3DAngiographicImageStorage,
-        UID.XRay3DCraniofacialImageStorage,
-        UID.BreastTomosynthesisImageStorage,
-        UID.IntravascularOpticalCoherenceTomographyImageStorageForPresentation,
-        UID.IntravascularOpticalCoherenceTomographyImageStorageForProcessing,
-        UID.NuclearMedicineImageStorage,
-        UID.VLEndoscopicImageStorage,
-        UID.VLMicroscopicImageStorage,
-        UID.VLSlideCoordinatesMicroscopicImageStorage,
-        UID.VLPhotographicImageStorage,
-        UID.OphthalmicPhotography8BitImageStorage,
-        UID.OphthalmicPhotography16BitImageStorage,
-        UID.OphthalmicTomographyImageStorage,
-        UID.VLWholeSlideMicroscopyImageStorage,
-        UID.PositronEmissionTomographyImageStorage,
-        UID.EnhancedPETImageStorage,
-        UID.RTImageStorage,
-    };
-    private static final String[] VIDEO_CUIDS = {
-        UID.VideoEndoscopicImageStorage,
-        UID.VideoMicroscopicImageStorage,
-        UID.VideoPhotographicImageStorage,
-    };
-    private static final String[] OTHER_CUIDS = {
-        UID.MRSpectroscopyStorage,
-        UID.MultiFrameSingleBitSecondaryCaptureImageStorage,
-        UID.StandaloneOverlayStorageRetired,
-        UID.StandaloneCurveStorageRetired,
-        UID.TwelveLeadECGWaveformStorage,
-        UID.GeneralECGWaveformStorage,
-        UID.AmbulatoryECGWaveformStorage,
-        UID.HemodynamicWaveformStorage,
-        UID.CardiacElectrophysiologyWaveformStorage,
-        UID.BasicVoiceAudioWaveformStorage,
-        UID.GeneralAudioWaveformStorage,
-        UID.ArterialPulseWaveformStorage,
-        UID.RespiratoryWaveformStorage,
-        UID.StandaloneModalityLUTStorageRetired,
-        UID.StandaloneVOILUTStorageRetired,
-        UID.GrayscaleSoftcopyPresentationStateStorageSOPClass,
-        UID.ColorSoftcopyPresentationStateStorageSOPClass,
-        UID.PseudoColorSoftcopyPresentationStateStorageSOPClass,
-        UID.BlendingSoftcopyPresentationStateStorageSOPClass,
-        UID.XAXRFGrayscaleSoftcopyPresentationStateStorage,
-        UID.RawDataStorage,
-        UID.SpatialRegistrationStorage,
-        UID.SpatialFiducialsStorage,
-        UID.DeformableSpatialRegistrationStorage,
-        UID.SegmentationStorage,
-        UID.SurfaceSegmentationStorage,
-        UID.RealWorldValueMappingStorage,
-        UID.StereometricRelationshipStorage,
-        UID.LensometryMeasurementsStorage,
-        UID.AutorefractionMeasurementsStorage,
-        UID.KeratometryMeasurementsStorage,
-        UID.SubjectiveRefractionMeasurementsStorage,
-        UID.VisualAcuityMeasurementsStorage,
-        UID.SpectaclePrescriptionReportStorage,
-        UID.OphthalmicAxialMeasurementsStorage,
-        UID.IntraocularLensCalculationsStorage,
-        UID.MacularGridThicknessAndVolumeReportStorage,
-        UID.OphthalmicVisualFieldStaticPerimetryMeasurementsStorage,
-        UID.BasicStructuredDisplayStorage,
-        UID.BasicTextSRStorage,
-        UID.EnhancedSRStorage,
-        UID.ComprehensiveSRStorage,
-        UID.ProcedureLogStorage,
-        UID.MammographyCADSRStorage,
-        UID.KeyObjectSelectionDocumentStorage,
-        UID.ChestCADSRStorage,
-        UID.XRayRadiationDoseSRStorage,
-        UID.ColonCADSRStorage,
-        UID.ImplantationPlanSRStorage,
-        UID.EncapsulatedPDFStorage,
-        UID.EncapsulatedCDAStorage,
-        UID.StandalonePETCurveStorageRetired,
-        UID.RTDoseStorage,
-        UID.RTStructureSetStorage,
-        UID.RTBeamsTreatmentRecordStorage,
-        UID.RTPlanStorage,
-        UID.RTBrachyTreatmentRecordStorage,
-        UID.RTTreatmentSummaryRecordStorage,
-        UID.RTIonPlanStorage,
-        UID.RTIonBeamsTreatmentRecordStorage,
-    };
-    private static final String[] QUERY_CUIDS = {
-        UID.PatientRootQueryRetrieveInformationModelFIND,
-        UID.StudyRootQueryRetrieveInformationModelFIND,
-        UID.PatientStudyOnlyQueryRetrieveInformationModelFINDRetired,
-        UID.ModalityWorklistInformationModelFIND
-    };
-    private static final String[] RETRIEVE_CUIDS = {
-        UID.PatientRootQueryRetrieveInformationModelGET,
-        UID.PatientRootQueryRetrieveInformationModelMOVE,
-        UID.StudyRootQueryRetrieveInformationModelGET,
-        UID.StudyRootQueryRetrieveInformationModelMOVE,
-        UID.PatientStudyOnlyQueryRetrieveInformationModelGETRetired,
-        UID.PatientStudyOnlyQueryRetrieveInformationModelMOVERetired
     };
     private static final String ATTRIBUTE_COERCION_ENSURE_PID_XSL =
             "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl";
@@ -683,18 +528,18 @@ public class DeviceMocker {
 //                    (X509Certificate) keystore.getCertificate(other));
 
         device.addApplicationEntity(createAE("DCM4CHEE", dicom, dicomTLS,
-                    IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                    DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
                     HIDE_REJECTED_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_ADMIN", dicom, dicomTLS,
-                    IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                    DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
                     REGULAR_USE_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(createAE("DCM4CHEE_FETCH", dicom, dicomTLS,
-                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
                 HIDE_REJECTED_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_TRASH", dicom, dicomTLS,
-                    IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                    DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
                     TRASH_VIEW, null, PIX_MANAGER));
 
         return device ;
@@ -1020,21 +865,22 @@ public class DeviceMocker {
         archivingRule.setAeTitles(new String[] { "ARCHIVE" });
         aeExt.addArchivingRule(archivingRule);
                 
-        addTCs(ae, null, SCP, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCP, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCP, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCU, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+
         aeExt.setReturnOtherPatientIDs(true);
         aeExt.setReturnOtherPatientNames(true);
         aeExt.setLocalPIXConsumerApplication(pixConsumer);
@@ -1149,21 +995,22 @@ public class DeviceMocker {
                 UID.JPEG2000LosslessOnly,
                 "maxPixelValueError=0"
                 ));
-        addTCs(ae, null, SCP, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCP, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCP, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCU, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+
         aeExt.setReturnOtherPatientIDs(false);
         aeExt.setReturnOtherPatientNames(true);
         aeExt.setLocalPIXConsumerApplication(pixConsumer);
@@ -1193,33 +1040,20 @@ public class DeviceMocker {
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
 
-        addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCU, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+
         aeExt.setReturnOtherPatientIDs(true);
         aeExt.setReturnOtherPatientNames(true);
         aeExt.setLocalPIXConsumerApplication(pixConsumer);
         aeExt.setRemotePIXManagerApplication(pixManager);
         return ae;
-    }
-
-    private void addTCs(ApplicationEntity ae, EnumSet<QueryOption> queryOpts,
-            TransferCapability.Role role, String[] cuids, String... tss) {
-        for (String cuid : cuids)
-            addTC(ae, queryOpts, role, cuid, tss);
-    }
-
-    private void addTC(ApplicationEntity ae, EnumSet<QueryOption> queryOpts,
-            TransferCapability.Role role, String cuid, String... tss) {
-        String name = UID.nameOf(cuid).replace('/', ' ');
-        TransferCapability tc = new TransferCapability(name + ' ' + role, cuid, role, tss);
-        tc.setQueryOptions(queryOpts);
-        ae.addTransferCapability(tc);
     }
 
 }

@@ -44,6 +44,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
+import org.dcm4che3.net.DefaultTransferCapabilities;
 import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
@@ -164,7 +165,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
         anotherArc.removeApplicationEntity("DCM4CHEE");
 
         ApplicationEntity anotherAe = createAnotherAE("DCM4CHEE",
-                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS, null, PIX_MANAGER);
+                DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS, null, PIX_MANAGER);
         anotherArc.addApplicationEntity(anotherAe);
 
         //anotherAe.getAEExtension(ArchiveAEExtension.class).reconfigure(from);
