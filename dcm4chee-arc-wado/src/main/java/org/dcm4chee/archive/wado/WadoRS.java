@@ -44,6 +44,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -79,14 +81,18 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
+import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.ServiceType;
+import org.dcm4chee.archive.fetch.forward.FetchForwardCallBack;
+import org.dcm4chee.archive.fetch.forward.FetchForwardService;
 import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
@@ -113,6 +119,9 @@ public class WadoRS extends Wado {
 
     @Inject
     private HostAECache aeCache;
+
+    @Inject
+    private FetchForwardService fetchForwardService;
 
     private static final int STATUS_OK = 200;
     private static final int STATUS_PARTIAL_CONTENT = 206;
@@ -377,7 +386,7 @@ public class WadoRS extends Wado {
         if (instances == null || instances.size() == 0)
             throw new WebApplicationException(Status.NOT_FOUND);
 
-        return retrievePixelData(instances.get(0).uri, frameList.frames);
+        return retrievePixelData(instances.get(0), frameList.frames);
     }
 
     /**
@@ -395,7 +404,7 @@ public class WadoRS extends Wado {
 
         String bulkDataURI = "file://" + bulkDataPath;
 
-        return (length <= 0) ? retrievePixelData(bulkDataURI)
+        return (length <= 0) ? retrievePixelDataFromFile(bulkDataURI)
                 : retrieveBulkData(new BulkData(bulkDataURI, offset, length,
                         false));
 
@@ -452,8 +461,8 @@ public class WadoRS extends Wado {
 
         List<ArchiveInstanceLocator> insts = new ArrayList<ArchiveInstanceLocator>();
         List<ArchiveInstanceLocator> instswarning = new ArrayList<ArchiveInstanceLocator>();
-        List<ArchiveInstanceLocator> instscompleted = new ArrayList<ArchiveInstanceLocator>();
-        List<ArchiveInstanceLocator> instsfailed = new ArrayList<ArchiveInstanceLocator>();
+        final List<ArchiveInstanceLocator> instscompleted = new ArrayList<ArchiveInstanceLocator>();
+        final List<ArchiveInstanceLocator> instsfailed = new ArrayList<ArchiveInstanceLocator>();
 
         try {
             if (refs.isEmpty())
@@ -493,46 +502,42 @@ public class WadoRS extends Wado {
                     refs = adjustedRefs;
                 }
             }
-
-            if (acceptDicom || acceptBulkdata) {
-                MultipartRelatedOutput output = new MultipartRelatedOutput();
-                int failed = 0;
-                if (acceptedBulkdataMediaTypes.isEmpty()) {
-
-                    for (ArchiveInstanceLocator ref : refs)
-                        if (!addDicomObjectTo(ref, output)) {
-                            instsfailed.add((ArchiveInstanceLocator) ref);
-                            failed++;
-                        } else
-                            instscompleted.add((ArchiveInstanceLocator) ref);
-                } else {
-                    for (InstanceLocator ref : refs)
-                        if (addPixelDataTo(ref.uri, output) != STATUS_OK) {
-                            instsfailed.add((ArchiveInstanceLocator) ref);
-                            failed++;
-                        } else
-                            instscompleted.add((ArchiveInstanceLocator) ref);
-                }
-
-                if (output.getParts().isEmpty())
-                    throw new WebApplicationException(Status.NOT_ACCEPTABLE);
-
-                int status = failed > 0 ? STATUS_PARTIAL_CONTENT : STATUS_OK;
-                return Response.status(status).entity(output).build();
-            } else {
-                instscompleted.addAll(refs);
+            ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(refs);
+            final MultipartRelatedOutput multiPartOutput = new MultipartRelatedOutput();
+            final ZipOutput zipOutput = new ZipOutput();
+            if(!refs.isEmpty()) {
+            addDicomOrBulkDataOrZip(refs, instscompleted, instsfailed,
+                    multiPartOutput, zipOutput);
             }
-
-            if (!acceptZip && !acceptAll)
-                throw new WebApplicationException(Status.NOT_ACCEPTABLE);
-
-            ZipOutput output = new ZipOutput();
-            for (ArchiveInstanceLocator ref : refs) {
-                output.addEntry(new DicomObjectOutput(ref, (Attributes) ref
-                        .getObject(), ref.tsuid, context, storescuService));
+            if(!external.isEmpty()) {
+                FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
+                    @Override
+                    public void onFetch(Collection<ArchiveInstanceLocator> instances,
+                            BasicCStoreSCUResp resp) {
+                        addDicomOrBulkDataOrZip((List<ArchiveInstanceLocator>) instances, instscompleted, instsfailed,
+                                multiPartOutput, zipOutput);
+                    }
+                };
+                    WebServiceAEExtension wsAEExt = context.getLocalAE()
+                            .getAEExtension(WebServiceAEExtension.class);
+                    ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
+                    if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) { 
+                        failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingWado(aetitle, external, fetchCallBack);
+                        instsfailed.addAll(failedToFetchForward);
+                    }
+                    else {
+                        failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingCmove(aetitle, external, fetchCallBack);
+                        instsfailed.addAll(failedToFetchForward);
+                    }
             }
-            return Response.ok().entity(output)
+            if(!acceptDicom && !acceptBulkdata && (acceptAll || acceptZip))
+            return Response.ok().entity(zipOutput)
                     .type(MediaTypes.APPLICATION_ZIP_TYPE).build();
+            else
+            {
+                int status = instsfailed.size() > 0 ? STATUS_PARTIAL_CONTENT : STATUS_OK;
+                return Response.status(status).entity(multiPartOutput).build();
+            }
         } finally {
             // audit
             retrieveEvent.fire(new RetrieveAfterSendEvent(
@@ -544,11 +549,121 @@ public class WadoRS extends Wado {
         }
     }
 
-    private Response retrievePixelData(String fileURI, int... frames) {
+    private void addDicomOrBulkDataOrZip(List<ArchiveInstanceLocator> refs,
+            List<ArchiveInstanceLocator> instscompleted,
+            List<ArchiveInstanceLocator> instsfailed,
+            MultipartRelatedOutput multiPartOutput, ZipOutput zipOutput) {
+        if (acceptDicom || acceptBulkdata) {
+            retrieveDicomOrBulkData(refs, instscompleted,
+                    instsfailed, multiPartOutput);
+        }
+        else { 
+            if (!acceptZip && !acceptAll)
+            throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+        retrieveZIP(refs, instsfailed, instscompleted, zipOutput);
+        }
+    }
+
+    private void retrieveDicomOrBulkData(List<ArchiveInstanceLocator> refs,
+            List<ArchiveInstanceLocator> instscompleted,
+            List<ArchiveInstanceLocator> instsfailed,
+            MultipartRelatedOutput output) {
+        if (acceptedBulkdataMediaTypes.isEmpty()) {
+
+            for (ArchiveInstanceLocator ref : refs)
+                if (!addDicomObjectTo(ref, output)) {
+                    instsfailed.add((ArchiveInstanceLocator) ref);
+                } else
+                    instscompleted.add((ArchiveInstanceLocator) ref);
+        } else {
+            for (InstanceLocator ref : refs)
+                if (addPixelDataTo(ref.uri, output) != STATUS_OK) {
+                    instsfailed.add((ArchiveInstanceLocator) ref);
+                } else
+                    instscompleted.add((ArchiveInstanceLocator) ref);
+        }
+
+        if (output.getParts().isEmpty())
+            throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+    }
+
+    private void retrieveZIP(List<ArchiveInstanceLocator> refs,
+            List<ArchiveInstanceLocator> instsfailed,
+            List<ArchiveInstanceLocator> instscompleted, ZipOutput output) {
+        for (ArchiveInstanceLocator ref : refs) {
+            try{
+            output.addEntry(new DicomObjectOutput(ref, (Attributes) ref
+                    .getObject(), ref.tsuid, context, storescuService));
+            instscompleted.add(ref);
+            }
+            catch(Exception e) {
+                instsfailed.add(ref);
+                LOG.error(
+                        "Failed to add zip Entry for instance {} - Exception {}",
+                        ref.iuid, e.getMessage());
+            }
+        }
+    }
+
+    private ArrayList<ArchiveInstanceLocator> extractExternalLocators(
+            List<ArchiveInstanceLocator> refs) {
+        ArrayList<ArchiveInstanceLocator> externalLocators = new ArrayList<ArchiveInstanceLocator>();
+        for (Iterator<ArchiveInstanceLocator> iter = refs.iterator(); iter.hasNext();)
+        {
+            ArchiveInstanceLocator loc = iter.next();
+            if (loc.getStorageSystem() == null) {
+                externalLocators.add(loc);
+                iter.remove();
+            }
+        }
+        return externalLocators;
+    }
+
+
+    private Response retrievePixelData(ArchiveInstanceLocator inst,
+            final int... frames) {
+        final String fileURI = inst.uri;
+        final ArrayList<Integer> status =  new ArrayList<Integer>();
+        final MultipartRelatedOutput output = new MultipartRelatedOutput();
+        ArrayList<ArchiveInstanceLocator> locations = new ArrayList<ArchiveInstanceLocator>();
+        locations.add(inst);
+        ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(locations);
+
+        ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
+        if(!locations.isEmpty()) {
+            status.add(addPixelDataTo(fileURI, output, frames));
+        }
+        if(!external.isEmpty()) {
+            FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
+                @Override
+                public void onFetch(Collection<ArchiveInstanceLocator> instances,
+                        BasicCStoreSCUResp resp) {
+                    status.add(addPixelDataTo(fileURI, output, frames));
+                }
+            };
+                WebServiceAEExtension wsAEExt = context.getLocalAE()
+                        .getAEExtension(WebServiceAEExtension.class);
+                if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) { 
+                    failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingWado(aetitle, external, fetchCallBack);
+                }
+                else {
+                    failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingCmove(aetitle, external, fetchCallBack);
+                }
+        }
+
+        if(!failedToFetchForward.isEmpty())
+            throw new WebApplicationException(Status.NOT_FOUND);
+        
+        if (output.getParts().isEmpty())
+            throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+
+        return Response.status( status.get(0).intValue()).entity(output).build();
+    }
+    private Response retrievePixelDataFromFile(String fileURI) {
+
         MultipartRelatedOutput output = new MultipartRelatedOutput();
-
-        int status = addPixelDataTo(fileURI, output, frames);
-
+            int status = addPixelDataTo(fileURI, output, new int[]{});
+        
         if (output.getParts().isEmpty())
             throw new WebApplicationException(Status.NOT_ACCEPTABLE);
 
@@ -569,7 +684,9 @@ public class WadoRS extends Wado {
 
     private Response retrieveMetadata(final List<ArchiveInstanceLocator> refs)
             throws DicomServiceException {
-
+        StreamingOutput streamingOutput = null;
+        final MultipartRelatedOutput multiPartOutput = new MultipartRelatedOutput();
+        ResponseBuilder JSONResponseBuilder = null;
         if (refs.isEmpty())
             throw new WebApplicationException(Status.NOT_FOUND);
 
@@ -577,24 +694,68 @@ public class WadoRS extends Wado {
             throw new WebApplicationException(Status.NOT_ACCEPTABLE);
 
         if (acceptDicomJSON) {
-            StreamingOutput output = null;
-            ResponseBuilder JSONResponseBuilder = null;
-            output = new DicomJSONOutput(aetitle, uriInfo, refs, context, storescuService);
+            ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(refs);
 
-            if (output != null) {
-                JSONResponseBuilder = Response.ok(output);
-
-                JSONResponseBuilder.header(CONTENT_TYPE,
-                        MediaType.APPLICATION_JSON_TYPE);
-                JSONResponseBuilder.header(CONTENT_ID,
-                        ContentIDUtils.generateContentID());
+            if(!external.isEmpty()) {
+                    WebServiceAEExtension wsAEExt = context.getLocalAE()
+                            .getAEExtension(WebServiceAEExtension.class);
+                    ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
+                    if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) { 
+                        failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingWado(aetitle, external, null);
+                    }
+                    else {
+                        failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingCmove(aetitle, external, null);
+                    }
+                    if(!failedToFetchForward.isEmpty()) {
+                        for(Iterator<ArchiveInstanceLocator> iter = external.iterator(); iter.hasNext();) {
+                            if(failedToFetchForward.contains(iter.next())) {
+                                iter.remove();
+                            }
+                        }
+                    }
+                    refs.addAll(external);
             }
-            return JSONResponseBuilder.build();
+                streamingOutput = new DicomJSONOutput(aetitle, uriInfo, refs,
+                        context, storescuService);
         } else {
-            MultipartRelatedOutput output = new MultipartRelatedOutput();
-            for (ArchiveInstanceLocator ref : refs)
-                addMetadataTo(ref, output);
-            return Response.ok(output).build();
+            ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(refs);
+
+            if(!refs.isEmpty()) {
+                for (ArchiveInstanceLocator ref : refs)
+                    addMetadataTo(ref, multiPartOutput);
+            }
+            if(!external.isEmpty()) {
+                FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
+                    @Override
+                    public void onFetch(Collection<ArchiveInstanceLocator> instances,
+                            BasicCStoreSCUResp resp) {
+                        for (ArchiveInstanceLocator loc : instances)
+                            addMetadataTo(loc, multiPartOutput);
+                    }
+                };
+                    WebServiceAEExtension wsAEExt = context.getLocalAE()
+                            .getAEExtension(WebServiceAEExtension.class);
+
+                    if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) { 
+                        fetchForwardService.fetchForwardUsingWado(aetitle, external, fetchCallBack);
+                    }
+                    else {
+                        fetchForwardService.fetchForwardUsingCmove(aetitle, external, fetchCallBack);
+                    }
+            }
+        }
+
+        if (streamingOutput != null && acceptDicomJSON) {
+            JSONResponseBuilder = Response.ok(streamingOutput);
+
+            JSONResponseBuilder.header(CONTENT_TYPE,
+                    MediaType.APPLICATION_JSON_TYPE);
+            JSONResponseBuilder.header(CONTENT_ID,
+                    ContentIDUtils.generateContentID());
+            return JSONResponseBuilder.build();
+        }
+        else {
+            return Response.ok(multiPartOutput).build();
         }
 
     }
