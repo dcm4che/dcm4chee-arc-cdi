@@ -38,8 +38,6 @@
 
 package org.dcm4chee.archive.mpps.impl;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -51,9 +49,10 @@ import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.store.DelegatingStoreService;
 import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,20 +60,18 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Decorator
-public abstract class StoreServiceMPPSDecorator implements StoreService {
+@DynamicDecorator
+public class StoreServiceMPPSDecorator extends DelegatingStoreService {
 
     private static final Logger LOG =
             LoggerFactory.getLogger(StoreServiceMPPSDecorator.class);
-
-    @Inject @Delegate StoreService storeService;
 
     @Inject MPPSService mppsService;
 
     @Override
     public Instance findOrCreateInstance(EntityManager em, StoreContext context)
             throws DicomServiceException {
-        Instance inst = storeService.findOrCreateInstance(em, context);
+        Instance inst = getNextDecorator().findOrCreateInstance(em, context);
         if (context.getStoreAction() != StoreAction.IGNORE) {
             StoreSession session = context.getStoreSession();
             MPPS mpps = findMPPS(em, session, inst);
