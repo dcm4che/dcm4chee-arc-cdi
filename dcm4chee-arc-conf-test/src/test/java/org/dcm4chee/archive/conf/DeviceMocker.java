@@ -444,6 +444,7 @@ public class DeviceMocker {
          if(containsArchiveType(device.getPrimaryDeviceTypes()))
          ae.addAEExtension(externalArchiveExt);
          externalArchiveExt.setAeFetchPriority(0);
+         externalArchiveExt.setPrefersForwarding(false);
          ae.setAssociationAcceptor(true);
          device.addApplicationEntity(ae);
          Connection dicom = new Connection("dicom", host, port);

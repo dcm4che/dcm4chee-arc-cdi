@@ -38,8 +38,12 @@
 
 package org.dcm4chee.archive.fetch.forward;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.ws.rs.core.Response;
+
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
@@ -49,6 +53,17 @@ import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
  *
  */
 public interface FetchForwardService {
+
+    ArrayList<ArchiveInstanceLocator> fetchForward(String localAETitle,
+            List<ArchiveInstanceLocator> externallyAvailable, 
+            final FetchForwardCallBack wadoFetchCallBack, 
+            final FetchForwardCallBack moveFetchCallBack);
+
+    BasicCStoreSCUResp fetchForward(
+            final int allInstances, final BasicCStoreSCUResp finalResponse, final List<ArchiveInstanceLocator> externallyAvailable,
+            final Association storeas, final int priority, final FetchForwardCallBack wadoFetchCallBack, 
+            final FetchForwardCallBack moveFetchCallBack);
+
     BasicCStoreSCUResp fetchForwardUsingWado(
             int allInstances, BasicCStoreSCUResp response, List<ArchiveInstanceLocator> externallyAvailable,
             Association storeas, int priority, FetchForwardCallBack callBack);
@@ -63,5 +78,9 @@ public interface FetchForwardService {
 
     List<ArchiveInstanceLocator> fetchForwardUsingCmove(String localAETitle, List<ArchiveInstanceLocator> externallyAvailable, 
             FetchForwardCallBack callBack);
+
+    Response redirectRequest(ApplicationEntity redirectAE, List<ArchiveInstanceLocator> ref, String queryString);
+
+    ApplicationEntity getprefersForwardingAE(String localAET, List<ArchiveInstanceLocator> ref);
 
 }

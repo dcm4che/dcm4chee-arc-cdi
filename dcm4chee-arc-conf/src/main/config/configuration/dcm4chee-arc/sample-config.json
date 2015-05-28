@@ -73,7 +73,8 @@
           "DCMQRSCP" : {
             "aeExtensions" : {
               "ExternalArchiveAEExtension" : {
-                "dcmAEFetchPriority" : 0
+                "dcmAEFetchPriority" : 0,
+                "dcmAEPrefersForwarding" : false
               }
             },
             "dcmAcceptedCallingAETitle" : [ ],

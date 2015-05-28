@@ -84,7 +84,6 @@ import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
-import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
@@ -518,17 +517,10 @@ public class WadoRS extends Wado {
                                 multiPartOutput, zipOutput);
                     }
                 };
-                    WebServiceAEExtension wsAEExt = context.getLocalAE()
-                            .getAEExtension(WebServiceAEExtension.class);
+                
                     ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
-                    if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) { 
-                        failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingWado(aetitle, external, fetchCallBack);
-                        instsfailed.addAll(failedToFetchForward);
-                    }
-                    else {
-                        failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingCmove(aetitle, external, fetchCallBack);
-                        instsfailed.addAll(failedToFetchForward);
-                    }
+                    failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, fetchCallBack, fetchCallBack);
+                    instsfailed.addAll(failedToFetchForward);
             }
             if(!acceptDicom && !acceptBulkdata && (acceptAll || acceptZip))
             return Response.ok().entity(zipOutput)
@@ -641,14 +633,7 @@ public class WadoRS extends Wado {
                     status.add(addPixelDataTo(fileURI, output, frames));
                 }
             };
-                WebServiceAEExtension wsAEExt = context.getLocalAE()
-                        .getAEExtension(WebServiceAEExtension.class);
-                if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) { 
-                    failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingWado(aetitle, external, fetchCallBack);
-                }
-                else {
-                    failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingCmove(aetitle, external, fetchCallBack);
-                }
+            failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, fetchCallBack, fetchCallBack);
         }
 
         if(!failedToFetchForward.isEmpty())
@@ -697,15 +682,9 @@ public class WadoRS extends Wado {
             ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(refs);
 
             if(!external.isEmpty()) {
-                    WebServiceAEExtension wsAEExt = context.getLocalAE()
-                            .getAEExtension(WebServiceAEExtension.class);
                     ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
-                    if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) { 
-                        failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingWado(aetitle, external, null);
-                    }
-                    else {
-                        failedToFetchForward = (ArrayList<ArchiveInstanceLocator>) fetchForwardService.fetchForwardUsingCmove(aetitle, external, null);
-                    }
+                    failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, null,null);
+                    
                     if(!failedToFetchForward.isEmpty()) {
                         for(Iterator<ArchiveInstanceLocator> iter = external.iterator(); iter.hasNext();) {
                             if(failedToFetchForward.contains(iter.next())) {
@@ -733,15 +712,8 @@ public class WadoRS extends Wado {
                             addMetadataTo(loc, multiPartOutput);
                     }
                 };
-                    WebServiceAEExtension wsAEExt = context.getLocalAE()
-                            .getAEExtension(WebServiceAEExtension.class);
-
-                    if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) { 
-                        fetchForwardService.fetchForwardUsingWado(aetitle, external, fetchCallBack);
-                    }
-                    else {
-                        fetchForwardService.fetchForwardUsingCmove(aetitle, external, fetchCallBack);
-                    }
+                
+                fetchForwardService.fetchForward(aetitle, external, fetchCallBack, fetchCallBack);
             }
         }
 
