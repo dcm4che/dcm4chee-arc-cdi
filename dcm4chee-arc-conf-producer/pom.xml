@@ -9,7 +9,11 @@
   <dependencies>
     <dependency>
       <groupId>org.dcm4che</groupId>
-      <artifactId>dcm4che-conf-core</artifactId>
+      <artifactId>dcm4che-conf-dicom</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-dicom</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
@@ -40,7 +44,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.conf.core, org.dcm4che.net-audit, org.dcm4che.net-imageio</Dependencies>
+              <Dependencies>org.dcm4che.conf.dicom, org.dcm4che.net-audit, org.dcm4che.net-imageio</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>
