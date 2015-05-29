@@ -55,9 +55,13 @@ public class StoreServiceEJB {
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
 
-    public void updateDB(StoreContext context)
-            throws DicomServiceException {
-        context.getStoreSession().getStoreService().updateDB(em, context);
-     }
+    public void updateDB(StoreContext context) {
+        try {
+            context.getStoreSession().getStoreService().updateDB(em, context);
+        } catch (DicomServiceException e) {
+            // Wrap it in RuntimeException to trigger transaction rollback
+            throw new RuntimeException(e);
+        }
+    }
 
 }
