@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.conf;
+package org.dcm4chee.archive.conf.defaults;
 
 import org.dcm4che3.data.ElementDictionary;
 import org.dcm4che3.data.VR;
