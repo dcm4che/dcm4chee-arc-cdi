@@ -93,6 +93,8 @@ public class CEchoSCUServiceImpl implements CEchoSCUService {
         aarq.setCalledAET(remoteAE.getAETitle());
 
         aarq.addPresentationContextFor(UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        aarq.addPresentationContextFor(UID.VerificationSOPClass, UID.ExplicitVRLittleEndian);
+        aarq.addPresentationContextFor(UID.VerificationSOPClass, UID.ExplicitVRBigEndianRetired);
 
         int status;
         try {
