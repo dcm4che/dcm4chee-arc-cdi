@@ -3,7 +3,6 @@ package org.dcm4chee.archive.conf.defaults.migration;
 import org.dcm4che3.conf.api.migration.MigrationScript;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.conf.core.api.ConfigurationException;
-import org.dcm4che3.conf.migration.MigrationRunner;
 import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
 
 /**
@@ -16,7 +15,7 @@ public class DefaultArchiveConfigInitScript implements MigrationScript {
     public void migrate(MigrationContext migrationContext) throws ConfigurationException {
 
         // run only if no version is specified
-        if (migrationContext.getFromVersion().equals(MigrationRunner.NO_VERSION)) {
+        if (migrationContext.getFromVersion().equals(NO_VERSION)) {
 
             try {
                 new DefaultDicomConfigInitializer()
