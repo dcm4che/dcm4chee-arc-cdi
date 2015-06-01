@@ -477,8 +477,7 @@ public class DefaultDeviceFactory {
     protected static Device createArchiveDevice(String name, Device arrDevice)
             throws Exception {
 
-        KeyStore keyStore = SSLManagerFactory.loadKeyStore("JKS",
-                ResourceLocator.resourceURL("cacerts.jks"), "secret");
+        //KeyStore keyStore = SSLManagerFactory.loadKeyStore("JKS", ResourceLocator.resourceURL("cacerts.jks"), "secret");
 
         // TODO: configure keystore
 

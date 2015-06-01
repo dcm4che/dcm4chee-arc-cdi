@@ -24,7 +24,7 @@ public class DefaultArchiveConfigInitScript implements MigrationScript {
                                 migrationContext.getDicomConfiguration().getDicomConfigurationExtension(HL7Configuration.class)
                         );
             } catch (Exception e) {
-                throw new ConfigurationException("Cannot initialize default config");
+                throw new ConfigurationException("Cannot initialize default config",e);
             }
 
         };
