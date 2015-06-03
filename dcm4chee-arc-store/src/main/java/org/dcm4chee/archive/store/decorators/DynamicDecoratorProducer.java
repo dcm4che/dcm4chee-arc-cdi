@@ -1,5 +1,6 @@
 package org.dcm4chee.archive.store.decorators;
 
+import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.conf.decorators.ConfiguredDynamicDecorators;
 import org.dcm4chee.conf.decorators.DelegatingServiceImpl;
@@ -12,6 +13,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
+
 import java.util.Collection;
 
 @ApplicationScoped
@@ -22,28 +24,26 @@ public class DynamicDecoratorProducer {
 	@DynamicDecorator
 	Instance<DelegatingServiceImpl<StoreService>> dynamicStoreDecorators;
 	
-//	@Inject
-//	@DynamicDecorator
-//	Instance<DelegatingServiceImpl<QueryService>> dynamicQueryDecorators;
+	@Inject
+	@DynamicDecorator
+	Instance<DelegatingServiceImpl<MPPSService>> dynamicMPPSDecorators;
 	
 	@Inject
 	private ServiceDecorator<StoreService> storeDecorators;
 	
-//	@Inject
-//	private ServiceDecorator<QueryService> queryDecorators;
+	@Inject
+	private ServiceDecorator<MPPSService> mppsDecorators;
 	
-	//TODO: change synchronization from method level
-	// each object can only have one synchronized method invoked at a time, so getConfiguredStoreServiceDynamicDecorators will block getConfiguredQueryServiceDynamicDecorator
 	@Produces
 	@ConfiguredDynamicDecorators
 	public Collection<DelegatingServiceImpl<StoreService>> getConfiguredStoreServiceDynamicDecorators() {
 		return storeDecorators.getOrderedDecorators(dynamicStoreDecorators, StoreService.class.getName());
 	}
 	
-//	@Produces
-//	@ConfiguredDynamicDecorators
-//	public synchronized Collection<DelegatingServiceImpl<QueryService>> getConfiguredQueryServiceDynamicDecorators() {
-//		return queryDecorators.getOrderedDecorators(dynamicQueryDecorators, QueryService.class.getName());
-//	}
+	@Produces
+	@ConfiguredDynamicDecorators
+	public Collection<DelegatingServiceImpl<MPPSService>> getConfiguredMPPSServiceDynamicDecorators() {
+		return mppsDecorators.getOrderedDecorators(dynamicMPPSDecorators, MPPSService.class.getName());
+	}
 	
 }

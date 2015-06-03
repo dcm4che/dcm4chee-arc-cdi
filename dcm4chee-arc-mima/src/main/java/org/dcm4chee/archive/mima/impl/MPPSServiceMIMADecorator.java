@@ -38,8 +38,6 @@
 
 package org.dcm4chee.archive.mima.impl;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
 import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.IApplicationEntityCache;
@@ -49,7 +47,8 @@ import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.mpps.decorators.DelegatingMPPSService;
+import org.dcm4chee.conf.decorators.DynamicDecorator;
 
 /**
  * Decorator to apply MIMA specifications to the MPPS Service.
@@ -60,11 +59,8 @@ import org.dcm4chee.archive.mpps.MPPSService;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Decorator
-public abstract class MPPSServiceMIMADecorator implements MPPSService {
-
-    @Inject @Delegate
-    private MPPSService mppsService;
+@DynamicDecorator
+public class MPPSServiceMIMADecorator extends DelegatingMPPSService {
 
     @Inject
     private IApplicationEntityCache aeCache;
@@ -72,7 +68,7 @@ public abstract class MPPSServiceMIMADecorator implements MPPSService {
     @Override
     public void coerceAttributes(Association as, Dimse dimse, Attributes attrs)
             throws DicomServiceException {
-        mppsService.coerceAttributes(as, dimse, attrs);
+        getNextDecorator().coerceAttributes(as, dimse, attrs);
         if (dimse == Dimse.N_CREATE_RQ)
         try {
             ApplicationEntity remoteAE = aeCache.get(as.getRemoteAET());

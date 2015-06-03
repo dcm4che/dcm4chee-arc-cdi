@@ -14,5 +14,8 @@
   }, {
       "decoratorClassName" : "org.dcm4chee.archive.mpps.impl.StoreServiceMPPSDecorator",
       "priority" : 1.0 
+  }, {
+      "decoratorClassName" : "org.dcm4chee.archive.mima.impl.MPPSServiceMIMADecorator",
+      "priority" : 1.0 
   }  ]
 }
