@@ -1,4 +1,4 @@
-package org.dcm4chee.archive.store.decorators;
+package org.dcm4chee.conf.decorators;
 
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.StoreService;
