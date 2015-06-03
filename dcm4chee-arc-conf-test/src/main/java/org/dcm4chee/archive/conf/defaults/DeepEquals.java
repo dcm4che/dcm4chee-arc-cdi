@@ -16,7 +16,7 @@
  *   Multiple changes for customizing the comparison behavior by Roman K.
  *
  */
-package org.dcm4chee.archive.conf;
+package org.dcm4chee.archive.conf.defaults;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;

@@ -36,10 +36,27 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
- package org.dcm4chee.archive.conf;
+package org.dcm4chee.archive.conf.defaults;
 
-import static org.dcm4che3.net.TransferCapability.Role.SCP;
-import static org.dcm4che3.net.TransferCapability.Role.SCU;
+import org.dcm4che3.conf.api.AttributeCoercion;
+import org.dcm4che3.data.Code;
+import org.dcm4che3.data.Issuer;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.imageio.codec.CompressionRule;
+import org.dcm4che3.imageio.codec.ImageReaderFactory;
+import org.dcm4che3.imageio.codec.ImageWriterFactory;
+import org.dcm4che3.net.*;
+import org.dcm4che3.net.audit.AuditLogger;
+import org.dcm4che3.net.audit.AuditRecordRepository;
+import org.dcm4che3.net.hl7.HL7Application;
+import org.dcm4che3.net.hl7.HL7DeviceExtension;
+import org.dcm4che3.net.imageio.ImageReaderExtension;
+import org.dcm4che3.net.imageio.ImageWriterExtension;
+import org.dcm4che3.net.web.WebServiceAEExtension;
+import org.dcm4che3.util.ResourceLocator;
+import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.storage.conf.*;
 
 import java.security.KeyStore;
 import java.util.EnumSet;
@@ -48,96 +65,35 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
-import org.dcm4che3.conf.api.AttributeCoercion;
-import org.dcm4che3.conf.api.DicomConfiguration;
-import org.dcm4che3.conf.api.hl7.HL7Configuration;
-import org.dcm4che3.data.Code;
-import org.dcm4che3.data.Issuer;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
-import org.dcm4che3.imageio.codec.CompressionRule;
-import org.dcm4che3.imageio.codec.ImageReaderFactory;
-import org.dcm4che3.imageio.codec.ImageWriterFactory;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Connection;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.DeviceType;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.ExternalArchiveAEExtension;
-import org.dcm4che3.net.QueryOption;
-import org.dcm4che3.net.TransferCapability;
-import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4che3.net.audit.AuditRecordRepository;
-import org.dcm4che3.net.hl7.HL7Application;
-import org.dcm4che3.net.hl7.HL7DeviceExtension;
-import org.dcm4che3.net.imageio.ImageReaderExtension;
-import org.dcm4che3.net.imageio.ImageWriterExtension;
-import org.dcm4che3.net.web.WebServiceAEExtension;
-import org.dcm4chee.storage.conf.Archiver;
-import org.dcm4chee.storage.conf.Availability;
-import org.dcm4chee.storage.conf.Container;
-import org.dcm4chee.storage.conf.FileCache;
-import org.dcm4chee.storage.conf.StorageDeviceExtension;
-import org.dcm4chee.storage.conf.StorageSystem;
-import org.dcm4chee.storage.conf.StorageSystemGroup;
+import static org.dcm4che3.net.TransferCapability.Role.SCP;
+import static org.dcm4che3.net.TransferCapability.Role.SCU;
 
-public class DeviceMocker {
-
-    protected KeyStore keystore;
-
+public class DefaultDeviceFactory {
 
     protected static final String PIX_MANAGER = "HL7RCV^DCM4CHEE";
-    protected static final String[] IMAGE_TSUIDS = {
-        UID.ImplicitVRLittleEndian,
-        UID.ExplicitVRLittleEndian,
-        UID.DeflatedExplicitVRLittleEndian,
-        UID.ExplicitVRBigEndianRetired,
-        UID.JPEGBaseline1,
-        UID.JPEGExtended24,
-        UID.JPEGLossless,
-        UID.JPEGLosslessNonHierarchical14,
-        UID.JPEGLSLossless,
-        UID.JPEGLSLossyNearLossless,
-        UID.JPEG2000LosslessOnly,
-        UID.JPEG2000,
-        UID.RLELossless
-    };
-    protected static final String[] VIDEO_TSUIDS = {
-        UID.JPEGBaseline1,
-        UID.MPEG2,
-        UID.MPEG2MainProfileHighLevel,
-        UID.MPEG4AVCH264BDCompatibleHighProfileLevel41,
-        UID.MPEG4AVCH264HighProfileLevel41
-    };
-    protected static final String[] OTHER_TSUIDS = {
-        UID.ImplicitVRLittleEndian,
-        UID.ExplicitVRLittleEndian,
-        UID.DeflatedExplicitVRLittleEndian,
-        UID.ExplicitVRBigEndianRetired,
-    };
     protected static final String[] OTHER_DEVICES = {
-        "dcmqrscp",
-        "stgcmtscu",
-        "storescp",
-        "mppsscp",
-        "ianscp",
-        "storescu",
-        "mppsscu",
-        "findscu",
-        "getscu",
-        "movescu",
-        "hl7snd"
+            "dcmqrscp",
+            "stgcmtscu",
+            "storescp",
+            "mppsscp",
+            "ianscp",
+            "storescu",
+            "mppsscu",
+            "findscu",
+            "getscu",
+            "movescu",
+            "hl7snd"
     };
     protected static final String[] OTHER_AES = {
-        "DCMQRSCP",
-        "STGCMTSCU",
-        "STORESCP",
-        "MPPSSCP",
-        "IANSCP",
-        "STORESCU",
-        "MPPSSCU",
-        "FINDSCU",
-        "GETSCU"
+            "DCMQRSCP",
+            "STGCMTSCU",
+            "STORESCP",
+            "MPPSSCP",
+            "IANSCP",
+            "STORESCU",
+            "MPPSSCU",
+            "FINDSCU",
+            "GETSCU"
     };
     protected static final Issuer SITE_A =
             new Issuer("Site A", "1.2.40.0.13.1.1.999.111.1111", "ISO");
@@ -147,10 +103,10 @@ public class DeviceMocker {
             new Code("222.2222", "99DCM4CHEE", null, "Site B");
     protected static final Issuer[] OTHER_ISSUER = {
             SITE_B, // DCMQRSCP
-        null, // STGCMTSCU
+            null, // STGCMTSCU
             SITE_A, // STORESCP
             SITE_A, // MPPSSCP
-        null, // IANSCP
+            null, // IANSCP
             SITE_A, // STORESCU
             SITE_A, // MPPSSCU
             SITE_A, // FINDSCU
@@ -160,300 +116,174 @@ public class DeviceMocker {
             new Code("111.1111", "99DCM4CHEE", null, "Site A");
     protected static final Code[] OTHER_INST_CODES = {
             INST_B, // DCMQRSCP
-        null, // STGCMTSCU
-        null, // STORESCP
-        null, // MPPSSCP
-        null, // IANSCP
+            null, // STGCMTSCU
+            null, // STORESCP
+            null, // MPPSSCP
+            null, // IANSCP
             INST_A, // STORESCU
-        null, // MPPSSCU
-        null, // FINDSCU
-        null, // GETSCU
+            null, // MPPSSCU
+            null, // FINDSCU
+            null, // GETSCU
     };
     protected static final int[] OTHER_PORTS = {
-        11113, 2763, // DCMQRSCP
-        11114, 2765, // STGCMTSCU
-        11115, 2766, // STORESCP
-        11116, 2767, // MPPSSCP
-        11117, 2768, // IANSCP
-        Connection.NOT_LISTENING, Connection.NOT_LISTENING, // STORESCU
-        Connection.NOT_LISTENING, Connection.NOT_LISTENING, // MPPSSCU
-        Connection.NOT_LISTENING, Connection.NOT_LISTENING, // FINDSCU
-        Connection.NOT_LISTENING, Connection.NOT_LISTENING, // GETSCU
+            11113, 2763, // DCMQRSCP
+            11114, 2765, // STGCMTSCU
+            11115, 2766, // STORESCP
+            11116, 2767, // MPPSSCP
+            11117, 2768, // IANSCP
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // STORESCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // MPPSSCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // FINDSCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // GETSCU
     };
     private static final int PENDING_CMOVE_INTERVAL = 5000;
     private static final int CONFIGURATION_STALE_TIMEOUT = 60;
     private static final int WADO_ATTRIBUTES_STALE_TIMEOUT = 60;
     private static final int QIDO_MAX_NUMBER_OF_RESULTS = 1000;
     private static final int[] PATIENT_ATTRS = {
-        Tag.SpecificCharacterSet,
-        Tag.PatientName,
-        Tag.PatientID,
-        Tag.IssuerOfPatientID,
-        Tag.IssuerOfPatientIDQualifiersSequence,
-        Tag.PatientBirthDate,
-        Tag.PatientBirthTime,
-        Tag.PatientSex,
-        Tag.PatientInsurancePlanCodeSequence,
-        Tag.PatientPrimaryLanguageCodeSequence,
-        Tag.OtherPatientNames,
-        Tag.OtherPatientIDsSequence,
-        Tag.PatientBirthName,
-        Tag.PatientAge,
-        Tag.PatientSize,
-        Tag.PatientSizeCodeSequence,
-        Tag.PatientWeight,
-        Tag.PatientAddress,
-        Tag.PatientMotherBirthName,
-        Tag.MilitaryRank,
-        Tag.BranchOfService,
-        Tag.MedicalRecordLocator,
-        Tag.MedicalAlerts,
-        Tag.Allergies,
-        Tag.CountryOfResidence,
-        Tag.RegionOfResidence,
-        Tag.PatientTelephoneNumbers,
-        Tag.EthnicGroup,
-        Tag.Occupation,
-        Tag.SmokingStatus,
-        Tag.AdditionalPatientHistory,
-        Tag.PregnancyStatus,
-        Tag.LastMenstrualDate,
-        Tag.PatientReligiousPreference,
-        Tag.PatientSpeciesDescription,
-        Tag.PatientSpeciesCodeSequence,
-        Tag.PatientSexNeutered,
-        Tag.PatientBreedDescription,
-        Tag.PatientBreedCodeSequence,
-        Tag.BreedRegistrationSequence,
-        Tag.ResponsiblePerson,
-        Tag.ResponsiblePersonRole,
-        Tag.ResponsibleOrganization,
-        Tag.PatientComments,
-        Tag.ClinicalTrialSponsorName,
-        Tag.ClinicalTrialProtocolID,
-        Tag.ClinicalTrialProtocolName,
-        Tag.ClinicalTrialSiteID,
-        Tag.ClinicalTrialSiteName,
-        Tag.ClinicalTrialSubjectID,
-        Tag.ClinicalTrialSubjectReadingID,
-        Tag.PatientIdentityRemoved,
-        Tag.DeidentificationMethod,
-        Tag.DeidentificationMethodCodeSequence,
-        Tag.ClinicalTrialProtocolEthicsCommitteeName,
-        Tag.ClinicalTrialProtocolEthicsCommitteeApprovalNumber,
-        Tag.SpecialNeeds,
-        Tag.PertinentDocumentsSequence,
-        Tag.PatientState,
-        Tag.PatientClinicalTrialParticipationSequence,
-        Tag.ConfidentialityConstraintOnPatientDataDescription
+            Tag.SpecificCharacterSet,
+            Tag.PatientName,
+            Tag.PatientID,
+            Tag.IssuerOfPatientID,
+            Tag.IssuerOfPatientIDQualifiersSequence,
+            Tag.PatientBirthDate,
+            Tag.PatientBirthTime,
+            Tag.PatientSex,
+            Tag.PatientInsurancePlanCodeSequence,
+            Tag.PatientPrimaryLanguageCodeSequence,
+            Tag.OtherPatientNames,
+            Tag.OtherPatientIDsSequence,
+            Tag.PatientBirthName,
+            Tag.PatientAge,
+            Tag.PatientSize,
+            Tag.PatientSizeCodeSequence,
+            Tag.PatientWeight,
+            Tag.PatientAddress,
+            Tag.PatientMotherBirthName,
+            Tag.MilitaryRank,
+            Tag.BranchOfService,
+            Tag.MedicalRecordLocator,
+            Tag.MedicalAlerts,
+            Tag.Allergies,
+            Tag.CountryOfResidence,
+            Tag.RegionOfResidence,
+            Tag.PatientTelephoneNumbers,
+            Tag.EthnicGroup,
+            Tag.Occupation,
+            Tag.SmokingStatus,
+            Tag.AdditionalPatientHistory,
+            Tag.PregnancyStatus,
+            Tag.LastMenstrualDate,
+            Tag.PatientReligiousPreference,
+            Tag.PatientSpeciesDescription,
+            Tag.PatientSpeciesCodeSequence,
+            Tag.PatientSexNeutered,
+            Tag.PatientBreedDescription,
+            Tag.PatientBreedCodeSequence,
+            Tag.BreedRegistrationSequence,
+            Tag.ResponsiblePerson,
+            Tag.ResponsiblePersonRole,
+            Tag.ResponsibleOrganization,
+            Tag.PatientComments,
+            Tag.ClinicalTrialSponsorName,
+            Tag.ClinicalTrialProtocolID,
+            Tag.ClinicalTrialProtocolName,
+            Tag.ClinicalTrialSiteID,
+            Tag.ClinicalTrialSiteName,
+            Tag.ClinicalTrialSubjectID,
+            Tag.ClinicalTrialSubjectReadingID,
+            Tag.PatientIdentityRemoved,
+            Tag.DeidentificationMethod,
+            Tag.DeidentificationMethodCodeSequence,
+            Tag.ClinicalTrialProtocolEthicsCommitteeName,
+            Tag.ClinicalTrialProtocolEthicsCommitteeApprovalNumber,
+            Tag.SpecialNeeds,
+            Tag.PertinentDocumentsSequence,
+            Tag.PatientState,
+            Tag.PatientClinicalTrialParticipationSequence,
+            Tag.ConfidentialityConstraintOnPatientDataDescription
     };
     private static final int[] STUDY_ATTRS = {
-        Tag.SpecificCharacterSet,
-        Tag.StudyDate,
-        Tag.StudyTime,
-        Tag.AccessionNumber,
-        Tag.IssuerOfAccessionNumberSequence,
-        Tag.ReferringPhysicianName,
-        Tag.StudyDescription,
-        Tag.ProcedureCodeSequence,
-        Tag.PatientAge,
-        Tag.PatientSize,
-        Tag.PatientSizeCodeSequence,
-        Tag.PatientWeight,
-        Tag.Occupation,
-        Tag.AdditionalPatientHistory,
-        Tag.PatientSexNeutered,
-        Tag.StudyInstanceUID,
-        Tag.StudyID
+            Tag.SpecificCharacterSet,
+            Tag.StudyDate,
+            Tag.StudyTime,
+            Tag.AccessionNumber,
+            Tag.IssuerOfAccessionNumberSequence,
+            Tag.ReferringPhysicianName,
+            Tag.StudyDescription,
+            Tag.ProcedureCodeSequence,
+            Tag.PatientAge,
+            Tag.PatientSize,
+            Tag.PatientSizeCodeSequence,
+            Tag.PatientWeight,
+            Tag.Occupation,
+            Tag.AdditionalPatientHistory,
+            Tag.PatientSexNeutered,
+            Tag.StudyInstanceUID,
+            Tag.StudyID
     };
     private static final Map<Integer, String> STUDY_PRIVATE_ATTRS = new TreeMap<>();
+
     static {
         STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyLastUpdateDateTime, "EXTENDED STUDY");
         STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyStatus, "EXTENDED STUDY");
     }
-    
+
     private static final int[] SERIES_ATTRS = {
-        Tag.SpecificCharacterSet,
-        Tag.Modality,
-        Tag.Manufacturer,
-        Tag.InstitutionName,
-        Tag.InstitutionCodeSequence,
-        Tag.StationName,
-        Tag.SeriesDescription,
-        Tag.InstitutionalDepartmentName,
-        Tag.PerformingPhysicianName,
-        Tag.ManufacturerModelName,
-        Tag.ReferencedPerformedProcedureStepSequence,
-        Tag.BodyPartExamined,
-        Tag.SeriesInstanceUID,
-        Tag.SeriesNumber,
-        Tag.Laterality,
-        Tag.PerformedProcedureStepStartDate,
-        Tag.PerformedProcedureStepStartTime,
-        Tag.RequestAttributesSequence
+            Tag.SpecificCharacterSet,
+            Tag.Modality,
+            Tag.Manufacturer,
+            Tag.InstitutionName,
+            Tag.InstitutionCodeSequence,
+            Tag.StationName,
+            Tag.SeriesDescription,
+            Tag.InstitutionalDepartmentName,
+            Tag.PerformingPhysicianName,
+            Tag.ManufacturerModelName,
+            Tag.ReferencedPerformedProcedureStepSequence,
+            Tag.BodyPartExamined,
+            Tag.SeriesInstanceUID,
+            Tag.SeriesNumber,
+            Tag.Laterality,
+            Tag.PerformedProcedureStepStartDate,
+            Tag.PerformedProcedureStepStartTime,
+            Tag.RequestAttributesSequence
     };
     private static final int[] INSTANCE_ATTRS = {
-        Tag.SpecificCharacterSet,
-        Tag.ImageType,
-        Tag.SOPClassUID,
-        Tag.SOPInstanceUID,
-        Tag.ContentDate,
-        Tag.ContentTime,
-        Tag.ReferencedSeriesSequence,
-        Tag.InstanceNumber,
-        Tag.NumberOfFrames,
-        Tag.Rows,
-        Tag.Columns,
-        Tag.BitsAllocated,
-        Tag.ObservationDateTime,
-        Tag.ConceptNameCodeSequence,
-        Tag.VerifyingObserverSequence,
-        Tag.ReferencedRequestSequence,
-        Tag.CompletionFlag,
-        Tag.VerificationFlag,
-        Tag.DocumentTitle,
-        Tag.MIMETypeOfEncapsulatedDocument,
-        Tag.ContentLabel,
-        Tag.ContentDescription,
-        Tag.PresentationCreationDate,
-        Tag.PresentationCreationTime,
-        Tag.ContentCreatorName,
-        Tag.OriginalAttributesSequence,
-        Tag.IdenticalDocumentsSequence,
-        Tag.CurrentRequestedProcedureEvidenceSequence
-    };
-    private static final String[] IMAGE_CUIDS = {
-        UID.ComputedRadiographyImageStorage,
-        UID.DigitalXRayImageStorageForPresentation,
-        UID.DigitalXRayImageStorageForProcessing,
-        UID.DigitalMammographyXRayImageStorageForPresentation,
-        UID.DigitalMammographyXRayImageStorageForProcessing,
-        UID.DigitalIntraOralXRayImageStorageForPresentation,
-        UID.DigitalIntraOralXRayImageStorageForProcessing,
-        UID.CTImageStorage,
-        UID.EnhancedCTImageStorage,
-        UID.UltrasoundMultiFrameImageStorageRetired,
-        UID.UltrasoundMultiFrameImageStorage,
-        UID.MRImageStorage,
-        UID.EnhancedMRImageStorage,
-        UID.EnhancedMRColorImageStorage,
-        UID.NuclearMedicineImageStorageRetired,
-        UID.UltrasoundImageStorageRetired,
-        UID.UltrasoundImageStorage,
-        UID.EnhancedUSVolumeStorage,
-        UID.SecondaryCaptureImageStorage,
-        UID.MultiFrameGrayscaleByteSecondaryCaptureImageStorage,
-        UID.MultiFrameGrayscaleWordSecondaryCaptureImageStorage,
-        UID.MultiFrameTrueColorSecondaryCaptureImageStorage,
-        UID.XRayAngiographicImageStorage,
-        UID.EnhancedXAImageStorage,
-        UID.XRayRadiofluoroscopicImageStorage,
-        UID.EnhancedXRFImageStorage,
-        UID.XRayAngiographicBiPlaneImageStorageRetired,
-        UID.XRay3DAngiographicImageStorage,
-        UID.XRay3DCraniofacialImageStorage,
-        UID.BreastTomosynthesisImageStorage,
-        UID.IntravascularOpticalCoherenceTomographyImageStorageForPresentation,
-        UID.IntravascularOpticalCoherenceTomographyImageStorageForProcessing,
-        UID.NuclearMedicineImageStorage,
-        UID.VLEndoscopicImageStorage,
-        UID.VLMicroscopicImageStorage,
-        UID.VLSlideCoordinatesMicroscopicImageStorage,
-        UID.VLPhotographicImageStorage,
-        UID.OphthalmicPhotography8BitImageStorage,
-        UID.OphthalmicPhotography16BitImageStorage,
-        UID.OphthalmicTomographyImageStorage,
-        UID.VLWholeSlideMicroscopyImageStorage,
-        UID.PositronEmissionTomographyImageStorage,
-        UID.EnhancedPETImageStorage,
-        UID.RTImageStorage,
-    };
-    private static final String[] VIDEO_CUIDS = {
-        UID.VideoEndoscopicImageStorage,
-        UID.VideoMicroscopicImageStorage,
-        UID.VideoPhotographicImageStorage,
-    };
-    private static final String[] OTHER_CUIDS = {
-        UID.MRSpectroscopyStorage,
-        UID.MultiFrameSingleBitSecondaryCaptureImageStorage,
-        UID.StandaloneOverlayStorageRetired,
-        UID.StandaloneCurveStorageRetired,
-        UID.TwelveLeadECGWaveformStorage,
-        UID.GeneralECGWaveformStorage,
-        UID.AmbulatoryECGWaveformStorage,
-        UID.HemodynamicWaveformStorage,
-        UID.CardiacElectrophysiologyWaveformStorage,
-        UID.BasicVoiceAudioWaveformStorage,
-        UID.GeneralAudioWaveformStorage,
-        UID.ArterialPulseWaveformStorage,
-        UID.RespiratoryWaveformStorage,
-        UID.StandaloneModalityLUTStorageRetired,
-        UID.StandaloneVOILUTStorageRetired,
-        UID.GrayscaleSoftcopyPresentationStateStorageSOPClass,
-        UID.ColorSoftcopyPresentationStateStorageSOPClass,
-        UID.PseudoColorSoftcopyPresentationStateStorageSOPClass,
-        UID.BlendingSoftcopyPresentationStateStorageSOPClass,
-        UID.XAXRFGrayscaleSoftcopyPresentationStateStorage,
-        UID.RawDataStorage,
-        UID.SpatialRegistrationStorage,
-        UID.SpatialFiducialsStorage,
-        UID.DeformableSpatialRegistrationStorage,
-        UID.SegmentationStorage,
-        UID.SurfaceSegmentationStorage,
-        UID.RealWorldValueMappingStorage,
-        UID.StereometricRelationshipStorage,
-        UID.LensometryMeasurementsStorage,
-        UID.AutorefractionMeasurementsStorage,
-        UID.KeratometryMeasurementsStorage,
-        UID.SubjectiveRefractionMeasurementsStorage,
-        UID.VisualAcuityMeasurementsStorage,
-        UID.SpectaclePrescriptionReportStorage,
-        UID.OphthalmicAxialMeasurementsStorage,
-        UID.IntraocularLensCalculationsStorage,
-        UID.MacularGridThicknessAndVolumeReportStorage,
-        UID.OphthalmicVisualFieldStaticPerimetryMeasurementsStorage,
-        UID.BasicStructuredDisplayStorage,
-        UID.BasicTextSRStorage,
-        UID.EnhancedSRStorage,
-        UID.ComprehensiveSRStorage,
-        UID.ProcedureLogStorage,
-        UID.MammographyCADSRStorage,
-        UID.KeyObjectSelectionDocumentStorage,
-        UID.ChestCADSRStorage,
-        UID.XRayRadiationDoseSRStorage,
-        UID.ColonCADSRStorage,
-        UID.ImplantationPlanSRStorage,
-        UID.EncapsulatedPDFStorage,
-        UID.EncapsulatedCDAStorage,
-        UID.StandalonePETCurveStorageRetired,
-        UID.RTDoseStorage,
-        UID.RTStructureSetStorage,
-        UID.RTBeamsTreatmentRecordStorage,
-        UID.RTPlanStorage,
-        UID.RTBrachyTreatmentRecordStorage,
-        UID.RTTreatmentSummaryRecordStorage,
-        UID.RTIonPlanStorage,
-        UID.RTIonBeamsTreatmentRecordStorage,
-    };
-    private static final String[] QUERY_CUIDS = {
-        UID.PatientRootQueryRetrieveInformationModelFIND,
-        UID.StudyRootQueryRetrieveInformationModelFIND,
-        UID.PatientStudyOnlyQueryRetrieveInformationModelFINDRetired,
-        UID.ModalityWorklistInformationModelFIND
-    };
-    private static final String[] RETRIEVE_CUIDS = {
-        UID.PatientRootQueryRetrieveInformationModelGET,
-        UID.PatientRootQueryRetrieveInformationModelMOVE,
-        UID.StudyRootQueryRetrieveInformationModelGET,
-        UID.StudyRootQueryRetrieveInformationModelMOVE,
-        UID.PatientStudyOnlyQueryRetrieveInformationModelGETRetired,
-        UID.PatientStudyOnlyQueryRetrieveInformationModelMOVERetired
+            Tag.SpecificCharacterSet,
+            Tag.ImageType,
+            Tag.SOPClassUID,
+            Tag.SOPInstanceUID,
+            Tag.ContentDate,
+            Tag.ContentTime,
+            Tag.ReferencedSeriesSequence,
+            Tag.InstanceNumber,
+            Tag.NumberOfFrames,
+            Tag.Rows,
+            Tag.Columns,
+            Tag.BitsAllocated,
+            Tag.ObservationDateTime,
+            Tag.ConceptNameCodeSequence,
+            Tag.VerifyingObserverSequence,
+            Tag.ReferencedRequestSequence,
+            Tag.CompletionFlag,
+            Tag.VerificationFlag,
+            Tag.DocumentTitle,
+            Tag.MIMETypeOfEncapsulatedDocument,
+            Tag.ContentLabel,
+            Tag.ContentDescription,
+            Tag.PresentationCreationDate,
+            Tag.PresentationCreationTime,
+            Tag.ContentCreatorName,
+            Tag.OriginalAttributesSequence,
+            Tag.IdenticalDocumentsSequence,
+            Tag.CurrentRequestedProcedureEvidenceSequence
     };
     private static final String ATTRIBUTE_COERCION_ENSURE_PID_XSL =
             "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl";
     private static final String ATTRIBUTE_COERCION_NULLIFY_PN_XSL =
             "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl";
-    private static final String  ATTRIBUTE_COERCION_ENMSURE_AET_XSL =
+    private static final String ATTRIBUTE_COERCION_ENMSURE_AET_XSL =
             "${jboss.server.config.url}/dcm4chee-arc/ensure-retrieve-ae-title.xsl";
     private static final String WADO_SR_TEMPLATE_URI =
             "${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl";
@@ -496,13 +326,13 @@ public class DeviceMocker {
                     new Code[0],
                     true);
     private static final String[] HL7_MESSAGE_TYPES = {
-        "ADT^A02",
-        "ADT^A03",
-        "ADT^A06",
-        "ADT^A07",
-        "ADT^A08",
-        "ADT^A40",
-        "ORM^O01"
+            "ADT^A02",
+            "ADT^A03",
+            "ADT^A06",
+            "ADT^A07",
+            "ADT^A08",
+            "ADT^A40",
+            "ORM^O01"
     };
     private static final int MPPS_EMULATOR_POLL_INTERVAL = 60;
     private static final int ARCHIVING_POLL_INTERVAL = 60;
@@ -512,26 +342,25 @@ public class DeviceMocker {
             HIDE_REJECTED_VIEW,
             REGULAR_USE_VIEW,
             TRASH_VIEW};
-    private final String[] WADO_SUPPORTED_SR_SOP_CLASSES = {
-        UID.BasicTextSRStorage,
-        UID.EnhancedSRStorage,
-        UID.ComprehensiveSRStorage,
-        UID.Comprehensive3DSRStorage,
-        UID.ProcedureLogStorage,
-        UID.MammographyCADSRStorage,
-        UID.KeyObjectSelectionDocumentStorage,
-        UID.ChestCADSRStorage,
-        UID.XRayRadiationDoseSRStorage,
-        UID.RadiopharmaceuticalRadiationDoseSRStorage,
-        UID.ColonCADSRStorage,
-        UID.ImplantationPlanSRStorage
+    private static final String[] WADO_SUPPORTED_SR_SOP_CLASSES = {
+            UID.BasicTextSRStorage,
+            UID.EnhancedSRStorage,
+            UID.ComprehensiveSRStorage,
+            UID.Comprehensive3DSRStorage,
+            UID.ProcedureLogStorage,
+            UID.MammographyCADSRStorage,
+            UID.KeyObjectSelectionDocumentStorage,
+            UID.ChestCADSRStorage,
+            UID.XRayRadiationDoseSRStorage,
+            UID.RadiopharmaceuticalRadiationDoseSRStorage,
+            UID.ColonCADSRStorage,
+            UID.ImplantationPlanSRStorage
     };
-    protected DicomConfiguration config;
-    protected HL7Configuration hl7Config;
+
 
     private static QueryRetrieveView createQueryRetrieveView(String viewID,
-            Code[] showInstancesRejectedByCodes, Code[] hideRejectionNoteCodes,
-            boolean hideNotRejectedInstances) {
+                                                             Code[] showInstancesRejectedByCodes, Code[] hideRejectionNoteCodes,
+                                                             boolean hideNotRejectedInstances) {
         QueryRetrieveView view = new QueryRetrieveView();
         view.setViewID(viewID);
         view.setShowInstancesRejectedByCodes(showInstancesRejectedByCodes);
@@ -551,10 +380,10 @@ public class DeviceMocker {
         rule.setEmulatorAET(emulatorAET);
         rule.setSourceAETs(sourceAETs);
         rule.setCreationRule(MPPSCreationRule.ALWAYS);
-        return rule ;
+        return rule;
     }
 
-    protected Device createARRDevice(String name, Connection.Protocol protocol, int port) {
+    protected static Device createARRDevice(String name, Connection.Protocol protocol, int port) {
         Device arrDevice = new Device(name);
         AuditRecordRepository arr = new AuditRecordRepository();
         arrDevice.addDeviceExtension(arr);
@@ -562,14 +391,15 @@ public class DeviceMocker {
         auditUDP.setProtocol(protocol);
         arrDevice.addConnection(auditUDP);
         arr.addConnection(auditUDP);
-        return arrDevice ;
+        return arrDevice;
     }
 
-    protected Device createDevice(String name) throws Exception {
+
+    protected static Device createDevice(String name) throws Exception {
         return init(new Device(name), null, null);
     }
 
-    private Device init(Device device, Issuer issuer, Code institutionCode)
+    private static Device init(Device device, Issuer issuer, Code institutionCode)
             throws Exception {
         String name = device.getDeviceName();
 
@@ -586,67 +416,74 @@ public class DeviceMocker {
         return device;
     }
 
-    protected Device createDevice(String name,
-                                  Issuer issuer, Code institutionCode, String aet,
-                                  String host, int port, int tlsPort) throws Exception {
-         Device device = init(new Device(name), issuer, institutionCode);
-         if(name.equalsIgnoreCase(OTHER_DEVICES[0])
-                 || name.equalsIgnoreCase("dcm4chee-arc"))
-             device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
-         ApplicationEntity ae = new ApplicationEntity(aet);
-         ExternalArchiveAEExtension externalArchiveExt = 
-                 new ExternalArchiveAEExtension();
-         if(containsArchiveType(device.getPrimaryDeviceTypes()))
-         ae.addAEExtension(externalArchiveExt);
-         externalArchiveExt.setAeFetchPriority(0);
-         ae.setAssociationAcceptor(true);
-         device.addApplicationEntity(ae);
-         Connection dicom = new Connection("dicom", host, port);
-         device.addConnection(dicom);
-         ae.addConnection(dicom);
-         Connection dicomTLS = new Connection("dicom-tls", host, tlsPort);
-         dicomTLS.setTlsCipherSuites(
-                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
-                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
-         device.addConnection(dicomTLS);
-         ae.addConnection(dicomTLS);
-         return device;
+    protected static Device createDevice(String name,
+                                         Issuer issuer, Code institutionCode, String aet,
+                                         String host, int port, int tlsPort) throws Exception {
+        Device device = init(new Device(name), issuer, institutionCode);
+        if (name.equalsIgnoreCase(OTHER_DEVICES[0])
+                || name.equalsIgnoreCase("dcm4chee-arc"))
+            device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
+        ApplicationEntity ae = new ApplicationEntity(aet);
+        ExternalArchiveAEExtension externalArchiveExt =
+                new ExternalArchiveAEExtension();
+        if (containsArchiveType(device.getPrimaryDeviceTypes()))
+            ae.addAEExtension(externalArchiveExt);
+        externalArchiveExt.setAeFetchPriority(0);
+        externalArchiveExt.setPrefersForwarding(false);
+        ae.setAssociationAcceptor(true);
+        device.addApplicationEntity(ae);
+        Connection dicom = new Connection("dicom", host, port);
+        device.addConnection(dicom);
+        ae.addConnection(dicom);
+        Connection dicomTLS = new Connection("dicom-tls", host, tlsPort);
+        dicomTLS.setTlsCipherSuites(
+                Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
+                Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
+        device.addConnection(dicomTLS);
+        ae.addConnection(dicomTLS);
+        return device;
     }
 
-    private boolean containsArchiveType(String[] primaryDeviceTypes) {
-        for(String str : primaryDeviceTypes)
-            if(str == DeviceType.ARCHIVE.toString())
+    private static boolean containsArchiveType(String[] primaryDeviceTypes) {
+        for (String str : primaryDeviceTypes)
+            if (str == DeviceType.ARCHIVE.toString())
                 return true;
         return false;
     }
 
-    protected Device createHL7Device(String name,
-                                     Issuer issuer, Code institutionCode, String appName,
-                                     String host, int port, int tlsPort) throws Exception {
-         Device device = new Device(name);
-         HL7DeviceExtension hl7Device = new HL7DeviceExtension();
-         device.addDeviceExtension(hl7Device);
-         init(device, issuer, institutionCode);
-         HL7Application hl7app = new HL7Application(appName);
-         hl7Device.addHL7Application(hl7app);
-         Connection hl7 = new Connection("hl7", host, port);
-         hl7.setProtocol(Connection.Protocol.HL7);
-         device.addConnection(hl7);
-         hl7app.addConnection(hl7);
-         Connection hl7TLS = new Connection("hl7-tls", host, tlsPort);
-         hl7TLS.setProtocol(Connection.Protocol.HL7);
-         hl7TLS.setTlsCipherSuites(
-                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
-                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
-         device.addConnection(hl7TLS);
-         hl7app.addConnection(hl7TLS);
-         return device;
-     }
-
-    protected Device createArchiveDevice(String name, Device arrDevice)
-            throws Exception {
+    protected static Device createHL7Device(String name,
+                                            Issuer issuer, Code institutionCode, String appName,
+                                            String host, int port, int tlsPort) throws Exception {
         Device device = new Device(name);
-        device.setPrimaryDeviceTypes(new String[] { DeviceType.ARCHIVE.toString()});
+        HL7DeviceExtension hl7Device = new HL7DeviceExtension();
+        device.addDeviceExtension(hl7Device);
+        init(device, issuer, institutionCode);
+        HL7Application hl7app = new HL7Application(appName);
+        hl7Device.addHL7Application(hl7app);
+        Connection hl7 = new Connection("hl7", host, port);
+        hl7.setProtocol(Connection.Protocol.HL7);
+        device.addConnection(hl7);
+        hl7app.addConnection(hl7);
+        Connection hl7TLS = new Connection("hl7-tls", host, tlsPort);
+        hl7TLS.setProtocol(Connection.Protocol.HL7);
+        hl7TLS.setTlsCipherSuites(
+                Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
+                Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
+        device.addConnection(hl7TLS);
+        hl7app.addConnection(hl7TLS);
+        return device;
+    }
+
+    protected static Device createArchiveDevice(String name, Device arrDevice)
+            throws Exception {
+
+        //KeyStore keyStore = SSLManagerFactory.loadKeyStore("JKS", ResourceLocator.resourceURL("cacerts.jks"), "secret");
+
+        // TODO: configure keystore
+
+
+        Device device = new Device(name);
+        device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
         Connection dicom = new Connection("dicom", "localhost", 11112);
         dicom.setBindAddress("0.0.0.0");
         dicom.setMaxOpsInvoked(0);
@@ -683,24 +520,24 @@ public class DeviceMocker {
 //                    (X509Certificate) keystore.getCertificate(other));
 
         device.addApplicationEntity(createAE("DCM4CHEE", dicom, dicomTLS,
-                    IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                    HIDE_REJECTED_VIEW, null, PIX_MANAGER));
+                DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
+                HIDE_REJECTED_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_ADMIN", dicom, dicomTLS,
-                    IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                    REGULAR_USE_VIEW, null, PIX_MANAGER));
+                        DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
+                        REGULAR_USE_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(createAE("DCM4CHEE_FETCH", dicom, dicomTLS,
-                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
+                DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
                 HIDE_REJECTED_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_TRASH", dicom, dicomTLS,
-                    IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS,
-                    TRASH_VIEW, null, PIX_MANAGER));
+                        DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
+                        TRASH_VIEW, null, PIX_MANAGER));
 
-        return device ;
+        return device;
     }
 
-    private void addStorageDeviceExtension(Device device) {
+    private static void addStorageDeviceExtension(Device device) {
         StorageSystem fs1 = new StorageSystem();
         fs1.setStorageSystemID("fs1");
         fs1.setProviderName("org.dcm4chee.storage.filesystem");
@@ -712,7 +549,7 @@ public class DeviceMocker {
         arc.setProviderName("org.dcm4chee.storage.filesystem");
         arc.setStorageSystemPath("/var/local/dcm4chee-arc/nearline");
         arc.setAvailability(Availability.NEARLINE);
-        Map<String,String> exts = new LinkedHashMap<String, String>();
+        Map<String, String> exts = new LinkedHashMap<String, String>();
         exts.put(".archived", "ARCHIVED");
         arc.setStatusFileExtensions(exts);
 
@@ -736,7 +573,7 @@ public class DeviceMocker {
 
         StorageSystemGroup online = new StorageSystemGroup();
         online.setGroupID("DEFAULT");
-        online.setRetrieveAETs(new String[] {"DCM4CHEE"});
+        online.setRetrieveAETs(new String[]{"DCM4CHEE"});
         online.setDigestAlgorithm("MD5");
         online.addStorageSystem(fs1);
         online.setBaseStorageAccessTime(1000);
@@ -744,7 +581,7 @@ public class DeviceMocker {
         online.setActiveStorageSystemIDs(fs1.getStorageSystemID());
 
         StorageSystemGroup nearline = new StorageSystemGroup();
-        nearline.setRetrieveAETs(new String[] {"DCM4CHEE"});
+        nearline.setRetrieveAETs(new String[]{"DCM4CHEE"});
         nearline.setGroupID("ARCHIVE");
         nearline.addStorageSystem(arc);
         nearline.setBaseStorageAccessTime(2000);
@@ -772,7 +609,7 @@ public class DeviceMocker {
         device.addDeviceExtension(ext);
     }
 
-    private void addAuditLogger(Device device, Device arrDevice) {
+    private static void addAuditLogger(Device device, Device arrDevice) {
         Connection auditUDP = new Connection("audit-udp", "localhost");
         auditUDP.setProtocol(Connection.Protocol.SYSLOG_UDP);
         device.addConnection(auditUDP);
@@ -784,7 +621,7 @@ public class DeviceMocker {
         auditLogger.setAuditRecordRepositoryDevice(arrDevice);
     }
 
-    private void addHL7DeviceExtension(Device device) {
+    private static void addHL7DeviceExtension(Device device) {
         HL7DeviceExtension ext = new HL7DeviceExtension();
         device.addDeviceExtension(ext);
 
@@ -812,7 +649,7 @@ public class DeviceMocker {
         hl7App.addConnection(hl7TLS);
     }
 
-    private void addArchiveDeviceExtension(Device device) {
+    private static void addArchiveDeviceExtension(Device device) {
         ArchiveDeviceExtension ext = new ArchiveDeviceExtension();
         device.addDeviceExtension(ext);
         ext.setIncorrectWorklistEntrySelectedCode(INCORRECT_WORKLIST_ENTRY_SELECTED);
@@ -827,7 +664,7 @@ public class DeviceMocker {
         ext.setSyncLocationStatusStorageSystemGroupIDs("ARCHIVE");
         ext.setAttributeFilter(Entity.Patient,
                 new AttributeFilter(PATIENT_ATTRS));
-        ext.setAttributeFilter(Entity.Study,new AttributeFilter(STUDY_ATTRS, STUDY_PRIVATE_ATTRS));
+        ext.setAttributeFilter(Entity.Study, new AttributeFilter(STUDY_ATTRS, STUDY_PRIVATE_ATTRS));
         ext.setAttributeFilter(Entity.Series,
                 new AttributeFilter(SERIES_ATTRS));
         ext.setAttributeFilter(Entity.Instance,
@@ -835,30 +672,30 @@ public class DeviceMocker {
         ext.setFetchAETitle("DCM4CHEE_FETCH");
     }
 
-    private RejectionParam[] createRejectionNotes() {
-        return new RejectionParam[] {
-            createRejectionParam(REJECTED_FOR_QUALITY_REASONS, false,
-                    StoreAction.IGNORE),
-            createRejectionParam(REJECT_FOR_PATIENT_SAFETY_REASONS, false,
-                    null, REJECTED_FOR_QUALITY_REASONS),
-            createRejectionParam(INCORRECT_WORKLIST_ENTRY_SELECTED, false,
-                    null, REJECTED_FOR_QUALITY_REASONS),
-            createRejectionParam(INCORRECT_MODALITY_WORKLIST_ENTRY, false,
-                    null, REJECTED_FOR_QUALITY_REASONS),
-            createRejectionParam(DATA_RETENTION_POLICY_EXPIRED, false,
-                    StoreAction.REPLACE, REJECTED_FOR_QUALITY_REASONS),
-            createRejectionParam(REVOKE_REJECTION, true, null,
-                    REJECTED_FOR_QUALITY_REASONS,
-                    REJECT_FOR_PATIENT_SAFETY_REASONS,
-                    INCORRECT_WORKLIST_ENTRY_SELECTED,
-                    INCORRECT_MODALITY_WORKLIST_ENTRY,
-                    DATA_RETENTION_POLICY_EXPIRED)
+    private static RejectionParam[] createRejectionNotes() {
+        return new RejectionParam[]{
+                createRejectionParam(REJECTED_FOR_QUALITY_REASONS, false,
+                        StoreAction.IGNORE),
+                createRejectionParam(REJECT_FOR_PATIENT_SAFETY_REASONS, false,
+                        null, REJECTED_FOR_QUALITY_REASONS),
+                createRejectionParam(INCORRECT_WORKLIST_ENTRY_SELECTED, false,
+                        null, REJECTED_FOR_QUALITY_REASONS),
+                createRejectionParam(INCORRECT_MODALITY_WORKLIST_ENTRY, false,
+                        null, REJECTED_FOR_QUALITY_REASONS),
+                createRejectionParam(DATA_RETENTION_POLICY_EXPIRED, false,
+                        StoreAction.REPLACE, REJECTED_FOR_QUALITY_REASONS),
+                createRejectionParam(REVOKE_REJECTION, true, null,
+                        REJECTED_FOR_QUALITY_REASONS,
+                        REJECT_FOR_PATIENT_SAFETY_REASONS,
+                        INCORRECT_WORKLIST_ENTRY_SELECTED,
+                        INCORRECT_MODALITY_WORKLIST_ENTRY,
+                        DATA_RETENTION_POLICY_EXPIRED)
         };
     }
 
-    private RejectionParam createRejectionParam(Code title,
-            boolean revokeRejection, StoreAction storeAction,
-            Code... overwritePreviousRejection) {
+    private static RejectionParam createRejectionParam(Code title,
+                                                       boolean revokeRejection, StoreAction storeAction,
+                                                       Code... overwritePreviousRejection) {
         RejectionParam param = new RejectionParam();
         param.setRejectionNoteTitle(title);
         param.setRevokeRejection(revokeRejection);
@@ -869,11 +706,11 @@ public class DeviceMocker {
         return param;
     }
 
-    private ApplicationEntity createAE(String aet,
-            Connection dicom, Connection dicomTLS, 
-            String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
-            QueryRetrieveView queryRetrieveView,
-            String pixConsumer, String pixManager) {
+    private static ApplicationEntity createAE(String aet,
+                                              Connection dicom, Connection dicomTLS,
+                                              String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
+                                              QueryRetrieveView queryRetrieveView,
+                                              String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
@@ -943,12 +780,12 @@ public class DeviceMocker {
         ));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG 12-bit Lossy",
-                new String[] {
-                    "MONOCHROME1",
-                    "MONOCHROME2", },
-                new int[] { 9, 10, 11, 12 },    // Bits Stored
+                new String[]{
+                        "MONOCHROME1",
+                        "MONOCHROME2",},
+                new int[]{9, 10, 11, 12},    // Bits Stored
                 0,                              // Pixel Representation
-                new String[] { "JPEG_LOSSY" },  // Source AETs
+                new String[]{"JPEG_LOSSY"},  // Source AETs
                 null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
@@ -957,84 +794,85 @@ public class DeviceMocker {
                 "compressionQuality=0.8",
                 "maxPixelValueError=20",
                 "avgPixelValueBlockSize=8"
-                ));
+        ));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG Lossless",
-                new String[] {
-                    "MONOCHROME1",
-                    "MONOCHROME2",
-                    "PALETTE COLOR",
-                    "RGB",
-                    "YBR_FULL" },
-                new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
+                new String[]{
+                        "MONOCHROME1",
+                        "MONOCHROME2",
+                        "PALETTE COLOR",
+                        "RGB",
+                        "YBR_FULL"},
+                new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},    // Bits Stored
                 -1,                              // Pixel Representation
-                new String[] { "JPEG_LOSSLESS" },  // Source AETs
+                new String[]{"JPEG_LOSSLESS"},  // Source AETs
                 null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGLossless,
                 "maxPixelValueError=0"
-                ));
+        ));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG LS Lossless",
-                new String[] {
-                    "MONOCHROME1",
-                    "MONOCHROME2",
-                    "PALETTE COLOR",
-                    "RGB",
-                    "YBR_FULL" },
-                new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
+                new String[]{
+                        "MONOCHROME1",
+                        "MONOCHROME2",
+                        "PALETTE COLOR",
+                        "RGB",
+                        "YBR_FULL"},
+                new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},    // Bits Stored
                 -1,                             // Pixel Representation
-                new String[] { "JPEG_LS" },     // Source AETs
+                new String[]{"JPEG_LS"},     // Source AETs
                 null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGLSLossless,
                 "maxPixelValueError=0"
-                ));
+        ));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG 2000 Lossless",
-                new String[] {
-                    "MONOCHROME1",
-                    "MONOCHROME2",
-                    "PALETTE COLOR",
-                    "RGB",
-                    "YBR_FULL" },
-                new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },  // Bits Stored
+                new String[]{
+                        "MONOCHROME1",
+                        "MONOCHROME2",
+                        "PALETTE COLOR",
+                        "RGB",
+                        "YBR_FULL"},
+                new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},  // Bits Stored
                 -1,                             // Pixel Representation
-                new String[] { "JPEG_2000" },   // Source AETs
+                new String[]{"JPEG_2000"},   // Source AETs
                 null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEG2000LosslessOnly,
                 "maxPixelValueError=0"
-                ));
+        ));
 
         ArchivingRule archivingRule = new ArchivingRule();
         archivingRule.setCommonName("Archiving Rule");
         archivingRule.setStorageSystemGroupIDs("ARCHIVE");
         archivingRule.setDelayAfterInstanceStored(60);
-        archivingRule.setAeTitles(new String[] { "ARCHIVE" });
+        archivingRule.setAeTitles(new String[]{"ARCHIVE"});
         aeExt.addArchivingRule(archivingRule);
-                
-        addTCs(ae, null, SCP, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCP, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCP, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCU, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+
         aeExt.setReturnOtherPatientIDs(true);
         aeExt.setReturnOtherPatientNames(true);
         aeExt.setLocalPIXConsumerApplication(pixConsumer);
@@ -1043,7 +881,7 @@ public class DeviceMocker {
         // patient selector
         PatientSelectorConfig ps = new PatientSelectorConfig();
         ps.setPatientSelectorClassName("org.dcm4chee.archive.patient.DemographicsPatientSelector");
-        Map<String,String> sels = new TreeMap<>();
+        Map<String, String> sels = new TreeMap<>();
         sels.put("familyName", "BROAD");
         sels.put("givenName", "BROAD");
         ps.setPatientSelectorProperties(sels);
@@ -1056,10 +894,10 @@ public class DeviceMocker {
         extArcAEExt.setAeFetchPriority(0);
         WebServiceAEExtension wsAEExt = new WebServiceAEExtension();
         ae.addAEExtension(wsAEExt);
-        wsAEExt.setQidoRSBaseURL("http://localhost:8080/dcm4chee-arc/qido/"+aet);
-        wsAEExt.setWadoRSBaseURL("http://localhost:8080/dcm4chee-arc/wado/"+aet);
-        wsAEExt.setStowRSBaseURL("http://localhost:8080/dcm4chee-arc/stow/"+aet);
-        wsAEExt.setWadoURIBaseURL("http://localhost:8080/dcm4chee-arc/wado/"+aet);
+        wsAEExt.setQidoRSBaseURL("http://localhost:8080/dcm4chee-arc/qido/" + aet);
+        wsAEExt.setWadoRSBaseURL("http://localhost:8080/dcm4chee-arc/wado/" + aet);
+        wsAEExt.setStowRSBaseURL("http://localhost:8080/dcm4chee-arc/stow/" + aet);
+        wsAEExt.setWadoURIBaseURL("http://localhost:8080/dcm4chee-arc/wado/" + aet);
         return ae;
     }
 
@@ -1097,73 +935,74 @@ public class DeviceMocker {
                 ATTRIBUTE_COERCION_NULLIFY_PN_XSL));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG Lossless",
-                new String[] {
-                    "MONOCHROME1",
-                    "MONOCHROME2",
-                    "PALETTE COLOR",
-                    "RGB",
-                    "YBR_FULL" },
-                new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
+                new String[]{
+                        "MONOCHROME1",
+                        "MONOCHROME2",
+                        "PALETTE COLOR",
+                        "RGB",
+                        "YBR_FULL"},
+                new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},    // Bits Stored
                 -1,                              // Pixel Representation
-                new String[] { "JPEG_LOSSLESS" },  // Source AETs
+                new String[]{"JPEG_LOSSLESS"},  // Source AETs
                 null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGLossless,
                 "maxPixelValueError=0"
-                ));
+        ));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG LS Lossless",
-                new String[] {
-                    "MONOCHROME1",
-                    "MONOCHROME2",
-                    "PALETTE COLOR",
-                    "RGB",
-                    "YBR_FULL" },
-                new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },    // Bits Stored
+                new String[]{
+                        "MONOCHROME1",
+                        "MONOCHROME2",
+                        "PALETTE COLOR",
+                        "RGB",
+                        "YBR_FULL"},
+                new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},    // Bits Stored
                 -1,                             // Pixel Representation
-                new String[] { "JPEG_LS" },     // Source AETs
+                new String[]{"JPEG_LS"},     // Source AETs
                 null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEGLSLossless,
                 "maxPixelValueError=0"
-                ));
+        ));
         aeExt.addCompressionRule(new CompressionRule(
                 "JPEG 2000 Lossless",
-                new String[] {
-                    "MONOCHROME1",
-                    "MONOCHROME2",
-                    "PALETTE COLOR",
-                    "RGB",
-                    "YBR_FULL" },
-                new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 },  // Bits Stored
+                new String[]{
+                        "MONOCHROME1",
+                        "MONOCHROME2",
+                        "PALETTE COLOR",
+                        "RGB",
+                        "YBR_FULL"},
+                new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},  // Bits Stored
                 -1,                             // Pixel Representation
-                new String[] { "JPEG_2000" },   // Source AETs
+                new String[]{"JPEG_2000"},   // Source AETs
                 null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEG2000LosslessOnly,
                 "maxPixelValueError=0"
-                ));
-        addTCs(ae, null, SCP, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCP, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCP, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCU, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        ));
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+
         aeExt.setReturnOtherPatientIDs(false);
         aeExt.setReturnOtherPatientNames(true);
         aeExt.setLocalPIXConsumerApplication(pixConsumer);
@@ -1171,11 +1010,11 @@ public class DeviceMocker {
         return ae;
     }
 
-    private ApplicationEntity createQRAE(String aet,
-            Connection dicom, Connection dicomTLS,
-            String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
-            QueryRetrieveView queryRetrieveView,
-            String pixConsumer, String pixManager) {
+    private static ApplicationEntity createQRAE(String aet,
+                                                Connection dicom, Connection dicomTLS,
+                                                String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
+                                                QueryRetrieveView queryRetrieveView,
+                                                String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
@@ -1193,33 +1032,20 @@ public class DeviceMocker {
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
 
-        addTCs(ae, null, SCU, IMAGE_CUIDS, image_tsuids);
-        addTCs(ae, null, SCU, VIDEO_CUIDS, video_tsuids);
-        addTCs(ae, null, SCU, OTHER_CUIDS, other_tsuids);
-        addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+
         aeExt.setReturnOtherPatientIDs(true);
         aeExt.setReturnOtherPatientNames(true);
         aeExt.setLocalPIXConsumerApplication(pixConsumer);
         aeExt.setRemotePIXManagerApplication(pixManager);
         return ae;
-    }
-
-    private void addTCs(ApplicationEntity ae, EnumSet<QueryOption> queryOpts,
-            TransferCapability.Role role, String[] cuids, String... tss) {
-        for (String cuid : cuids)
-            addTC(ae, queryOpts, role, cuid, tss);
-    }
-
-    private void addTC(ApplicationEntity ae, EnumSet<QueryOption> queryOpts,
-            TransferCapability.Role role, String cuid, String... tss) {
-        String name = UID.nameOf(cuid).replace('/', ' ');
-        TransferCapability tc = new TransferCapability(name + ' ' + role, cuid, role, tss);
-        tc.setQueryOptions(queryOpts);
-        ae.addTransferCapability(tc);
     }
 
 }

@@ -38,15 +38,6 @@
 
 package org.dcm4chee.archive.iocm.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Tag;
@@ -61,11 +52,19 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.iocm.InstanceAlreadyRejectedException;
 import org.dcm4chee.archive.iocm.RejectionEvent;
 import org.dcm4chee.archive.iocm.RejectionService;
-import org.dcm4chee.archive.store.DelegatingStoreService;
 import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * Decorator to apply IOCM specifications to the Store Service.

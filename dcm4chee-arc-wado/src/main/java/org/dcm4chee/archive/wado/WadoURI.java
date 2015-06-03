@@ -97,7 +97,6 @@ import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
-import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4che3.util.Property;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
@@ -302,13 +301,23 @@ public class WadoURI extends Wado {
             ArchiveInstanceLocator instance = null;
             Attributes attrs = null;
             Response resp = null;
+            
             if(ref.get(0).getStorageSystem() != null) {
             instance = ref.get(0);
             attrs = (Attributes) instance.getObject();
             resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
             }
+            
             //external
             else {
+                //try to forwards
+                ApplicationEntity forwardingAE = null;
+                if ((forwardingAE = fetchForwardService.getprefersForwardingAE(
+                        aetitle, ref)) != null) {
+                    Response redirectResponse = fetchForwardService.redirectRequest(forwardingAE, ref, request.getQueryString());
+                    if(redirectResponse.getStatus() != Status.CONFLICT.getStatusCode())
+                        return redirectResponse;
+                }
                 //fetch
                 FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
                     
@@ -319,18 +328,15 @@ public class WadoURI extends Wado {
                         ref.addAll(instances);
                     }
                 };
-                    WebServiceAEExtension wsAEExt = context.getLocalAE()
-                            .getAEExtension(WebServiceAEExtension.class);
-                    if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) {
-                        instsfailed = fetchForwardService.fetchForwardUsingWado(aetitle, ref, fetchCallBack);
-                    }
-                    else {
-                        instsfailed = fetchForwardService.fetchForwardUsingCmove(aetitle, ref, fetchCallBack);
-                    }
+
+                    instsfailed = fetchForwardService.fetchForward(aetitle, ref, fetchCallBack, fetchCallBack);
                     instance = ref.get(0);
                     attrs = (Attributes) instance.getObject();
                 resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
+            
             }
+            
+
             if(resp == null)
             throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
             else

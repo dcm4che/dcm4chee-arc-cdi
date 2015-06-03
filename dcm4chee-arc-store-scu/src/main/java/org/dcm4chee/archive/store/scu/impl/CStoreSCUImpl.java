@@ -62,7 +62,6 @@ import org.dcm4che3.net.service.BasicCStoreSCU;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.CStoreSCU;
 import org.dcm4che3.net.service.InstanceLocator;
-import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.ServiceType;
@@ -122,50 +121,35 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         BasicCStoreSCUResp finalResponse = extendResponse(responseForLocalyAvailable);
         
         if (!externallyAvailable.isEmpty()) {
-            WebServiceAEExtension wsAEExt = context.getLocalAE()
-                    .getAEExtension(WebServiceAEExtension.class);
-            if(wsAEExt != null && wsAEExt.getWadoRSBaseURL() != null) {
-            finalResponse = service.getFetchForwardService().fetchForwardUsingWado(instances.size(), finalResponse, externallyAvailable, storeas, priority, new FetchForwardCallBack() {
-                
-                @Override
-                public void onFetch(Collection<ArchiveInstanceLocator> instances,
-                        BasicCStoreSCUResp resp) {
-                    push(instances.size(), (List<ArchiveInstanceLocator>) instances,
-                            storeas, priority, resp);
-                }
-            });
-            if (failed.size() > 0) {
-                if (failed.size() == nr_instances)
-                    status = Status.UnableToPerformSubOperations;
-                else
-                    status = Status.OneOrMoreFailures;
-            } else {
-                status = Status.Success;
+        FetchForwardCallBack moveCallBack = new FetchForwardCallBack() {
+            
+            @Override
+            public void onFetch(Collection<ArchiveInstanceLocator> instances,
+                    BasicCStoreSCUResp resp) {
+               pushInstances((ArrayList<ArchiveInstanceLocator>) instances, storeas, priority);
             }
-            setChanged();
-            notifyObservers();
+        };
+        FetchForwardCallBack wadoCallBack = new FetchForwardCallBack() {
+            
+            @Override
+            public void onFetch(Collection<ArchiveInstanceLocator> instances,
+                    BasicCStoreSCUResp resp) {
+               pushInstances((ArrayList<ArchiveInstanceLocator>) instances, storeas, priority);
             }
-            else {
-                finalResponse = service.getFetchForwardService().fetchForwardUsingCmove(instances.size(), finalResponse, externallyAvailable, storeas, priority, new FetchForwardCallBack() {
-                    
-                    @Override
-                    public void onFetch(Collection<ArchiveInstanceLocator> instances,
-                            BasicCStoreSCUResp resp) {
-                       pushInstances((ArrayList<ArchiveInstanceLocator>) instances, storeas, priority);
-                    }
-                });
-                if (failed.size() > 0) {
-                    if (failed.size() == nr_instances)
-                        status = Status.UnableToPerformSubOperations;
-                    else
-                        status = Status.OneOrMoreFailures;
-                } else {
-                    status = Status.Success;
-                }
-            }
+        };
+        finalResponse =  service.getFetchForwardService().fetchForward(instances.size(), finalResponse, externallyAvailable, storeas, priority, wadoCallBack, moveCallBack);
+        if (failed.size() > 0) {
+            if (failed.size() == nr_instances)
+                status = Status.UnableToPerformSubOperations;
+            else
+                status = Status.OneOrMoreFailures;
+        } else {
+            status = Status.Success;
+        }
+        setChanged();
+        notifyObservers();
         }
         return finalResponse;
-
     }
 
     @Override

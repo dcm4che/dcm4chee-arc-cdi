@@ -38,13 +38,6 @@
 
 package org.dcm4chee.archive.compress.impl;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Path;
-import java.security.MessageDigest;
-
-import javax.inject.Inject;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Tag;
@@ -55,15 +48,21 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.compress.CompressionService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.store.DelegatingStoreService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.dcm4chee.storage.ObjectAlreadyExistsException;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Path;
+import java.security.MessageDigest;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>

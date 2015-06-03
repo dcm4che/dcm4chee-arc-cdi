@@ -1466,7 +1466,7 @@ m-supObjectClass: top
 m-must: dcmAttributeFilterPrivateCreator
 m-must: dcmAttributeFilterPrivateTag
 
-dn: m-oid=1.2.40.0.13.1.15.10.4.23, ou=objectclasses, cn=dcm4chee-archive, ou=sc
+dn: m-oid=1.2.40.0.13.1.15.10.4.24, ou=objectclasses, cn=dcm4chee-archive, ou=sc
  hema
 objectclass: metaObjectClass
 objectclass: metaTop
@@ -1477,7 +1477,7 @@ m-description: Specifies a list of entries device name to options for external d
 m-supObjectClass: top
 m-must: cn
 
-dn: m-oid=1.2.40.0.13.1.15.10.4.24, ou=objectclasses, cn=dcm4chee-archive, ou=sc
+dn: m-oid=1.2.40.0.13.1.15.10.4.25, ou=objectclasses, cn=dcm4chee-archive, ou=sc
  hema
 objectclass: metaObjectClass
 objectclass: metaTop

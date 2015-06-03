@@ -97,6 +97,8 @@ public class DefaultQueryService implements QueryService {
 
     @Override
     public Query createQuery(QueryRetrieveLevel qrlevel, QueryContext ctx) {
+        
+        LOG.info("Query Keys: {}", ctx.getKeys());        
         switch (qrlevel) {
         case PATIENT:
             return ctx.getQueryService().createPatientQuery(ctx);

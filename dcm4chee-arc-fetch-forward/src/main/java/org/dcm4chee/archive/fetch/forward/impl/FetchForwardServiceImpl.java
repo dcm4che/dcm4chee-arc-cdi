@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.fetch.forward.impl;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -48,6 +50,8 @@ import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.core.api.ConfigurationException;
@@ -59,6 +63,7 @@ import org.dcm4che3.net.ExternalArchiveAEExtension;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.ExternalLocationTuple;
@@ -197,6 +202,101 @@ public class FetchForwardServiceImpl implements FetchForwardService {
     }
 
     @Override
+    public ArrayList<ArchiveInstanceLocator> fetchForward(String localAETitle,
+            List<ArchiveInstanceLocator> externallyAvailable, 
+            final FetchForwardCallBack wadoFetchCallBack, 
+            final FetchForwardCallBack moveFetchCallBack) {
+        ArrayList<String> sentInstances = new ArrayList<String>();
+        final ArrayList<ArchiveInstanceLocator> failedInstances = new ArrayList<ArchiveInstanceLocator>();
+        ApplicationEntity localAE = device.getApplicationEntity(localAETitle);
+        final HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>> instanceRetrieveMap = new HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>>();
+        final ArrayList<ArchiveInstanceLocator> updatedLocators = new ArrayList<ArchiveInstanceLocator>();
+        for (int current = 0; current < externallyAvailable.size(); current++) {
+            final ArchiveInstanceLocator externalLoc = externallyAvailable
+                    .get(current);
+            
+            if(sentInstances.contains(externalLoc.iuid))
+                continue;
+            
+            ArrayList<ApplicationEntity> remoteArchiveAEs = listBestExternalLocation(externalLoc, localAE);
+            if (remoteArchiveAEs.isEmpty())
+                continue;
+            // collect retrieveMap
+            instanceRetrieveMap.put(externalLoc, remoteArchiveAEs);
+            for (int i = 0; i < remoteArchiveAEs.size(); i++) {
+                //pick protocol
+                WebServiceAEExtension webAEExt = remoteArchiveAEs.get(i).getAEExtension(WebServiceAEExtension.class);
+                if(webAEExt != null && webAEExt.getWadoRSBaseURL()!=null) {
+                if (wadoClientService.fetchInstance(
+                        localAE,
+                        remoteArchiveAEs.get(i),
+                        externalLoc.getStudyInstanceUID(),
+                        externalLoc.getSeriesInstanceUID(), 
+                        externalLoc.iuid,
+                        new InstanceAvailableCallback() {
+
+                            @Override
+                            public void onInstanceAvailable(
+                                    ArchiveInstanceLocator inst) {
+                                ArrayList<ArchiveInstanceLocator> matches
+                                = new ArrayList<ArchiveInstanceLocator>();
+                                matches.add(inst);
+                                if(wadoFetchCallBack != null)
+                                wadoFetchCallBack.onFetch(matches, null);
+                                updatedLocators.add(inst);
+                            }
+                        }) != null)
+                    break;
+            }
+                else {
+                    ApplicationEntity fetchAE;
+                    try {
+                        fetchAE = getFetchAE(localAE);
+                    } catch (ConfigurationException e) {
+                        LOG.error("Unable to get fetchAE from configuration for device {}",
+                                device);
+                        
+                        for(ArchiveInstanceLocator loc : externallyAvailable)
+                        failedInstances.add(loc);
+                        
+                        return failedInstances;
+                    }
+                    HashMap<String, Integer> studyUIDs = toStudyUIDs(instanceRetrieveMap
+                            .keySet());
+                    for (String studyUID : studyUIDs.keySet()) {
+                        cmoveSCUService
+                                .moveStudy(
+                                        fetchAE,
+                                        studyUID,
+                                        studyUIDs.get(studyUID),
+                                        null,
+                                        getPreferedStudyLocationsList(instanceRetrieveMap,
+                                                studyUID), fetchAE.getAETitle());
+                    }
+                    for(Iterator<ArchiveInstanceLocator> iter = externallyAvailable.iterator(); iter.hasNext();) {
+                        ArchiveInstanceLocator currentLocation = iter.next();
+                        ArchiveInstanceLocator newLocator = ejb.updateLocator(currentLocation);
+                        if(newLocator != null)
+                            updatedLocators.add(newLocator);
+                        else 
+                            failedInstances.add(currentLocation);
+                    }
+                    //send fetched instances
+                    if(moveFetchCallBack != null)
+                    moveFetchCallBack.onFetch(updatedLocators, null);
+                    for(ArchiveInstanceLocator loc : updatedLocators)
+                    sentInstances.add(loc.iuid);
+                    break;
+                }
+            }
+        }
+        externallyAvailable.clear();
+         externallyAvailable.addAll(updatedLocators);
+        return failedInstances;
+        }
+
+
+    @Override
     public ArrayList<ArchiveInstanceLocator> fetchForwardUsingWado(
             String localAETitle,
             List<ArchiveInstanceLocator> externallyAvailable,
@@ -236,6 +336,8 @@ public class FetchForwardServiceImpl implements FetchForwardService {
     }
         return failedInstances;
     }
+
+
     @Override
     public BasicCStoreSCUResp fetchForwardUsingWado(
             final int allInstances, final BasicCStoreSCUResp finalResponse, final List<ArchiveInstanceLocator> externallyAvailable,
@@ -274,6 +376,93 @@ public class FetchForwardServiceImpl implements FetchForwardService {
 
         return finalResponse;
     }
+
+    @Override
+    public BasicCStoreSCUResp fetchForward(
+            final int allInstances, final BasicCStoreSCUResp finalResponse, final List<ArchiveInstanceLocator> externallyAvailable,
+            final Association storeas, final int priority, final FetchForwardCallBack wadoFetchCallBack, 
+            final FetchForwardCallBack moveFetchCallBack) {
+        final HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>> instanceRetrieveMap = new HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>>();
+        ArrayList<String> sentInstances = new ArrayList<String>();
+        ApplicationEntity localAE = device.getApplicationEntity(storeas.getLocalAET());
+        for(int current = 0; current < externallyAvailable.size(); current++) {
+            if(storeas.isReadyForDataTransfer()) {
+            final ArchiveInstanceLocator externalLoc = externallyAvailable
+                    .get(current);
+            
+            if(sentInstances.contains(externalLoc.iuid))
+                continue;
+            
+            ArrayList<ApplicationEntity> remoteArchiveAEs = 
+                    listBestExternalLocation(externalLoc, localAE);
+            if(remoteArchiveAEs.isEmpty())
+                continue;
+
+            instanceRetrieveMap.put(externalLoc, remoteArchiveAEs);
+            for (int i = 0; i < remoteArchiveAEs.size(); i++) {
+                //pick protocol
+                WebServiceAEExtension webAEExt = remoteArchiveAEs.get(i).getAEExtension(WebServiceAEExtension.class);
+                if(webAEExt != null && webAEExt.getWadoRSBaseURL()!=null) {
+                if (wadoClientService.fetchInstance(
+                        localAE,
+                        remoteArchiveAEs.get(i),
+                        externalLoc.getStudyInstanceUID(),
+                        externalLoc.getSeriesInstanceUID(), 
+                        externalLoc.iuid,
+                        new InstanceAvailableCallback() {
+
+                            @Override
+                            public void onInstanceAvailable(
+                                    ArchiveInstanceLocator inst) {
+                                ArrayList<ArchiveInstanceLocator> matches
+                                = new ArrayList<ArchiveInstanceLocator>();
+                                matches.add(inst);
+                                wadoFetchCallBack.onFetch(matches, finalResponse);
+                            }
+                        }) != null)
+                    break;
+            }
+                else {
+                    ApplicationEntity fetchAE;
+                    try {
+                        fetchAE = getFetchAE(localAE);
+                    } catch (ConfigurationException e) {
+                        LOG.error("Unable to get fetchAE from configuration for device {}",
+                                device);
+                        return finalResponse;
+                    }
+                    HashMap<String, Integer> studyUIDs = toStudyUIDs(instanceRetrieveMap
+                            .keySet());
+                    for (String studyUID : studyUIDs.keySet()) {
+                        cmoveSCUService
+                                .moveStudy(
+                                        fetchAE,
+                                        studyUID,
+                                        studyUIDs.get(studyUID),
+                                        null,
+                                        getPreferedStudyLocationsList(instanceRetrieveMap,
+                                                studyUID), fetchAE.getAETitle());
+                    }
+                    ArrayList<ArchiveInstanceLocator> updatedLocators = new ArrayList<ArchiveInstanceLocator>(); 
+                    for(Iterator<ArchiveInstanceLocator> iter = externallyAvailable.iterator(); iter.hasNext();) {
+                        ArchiveInstanceLocator newLocator = ejb.updateLocator(iter.next());
+                        if(newLocator != null)
+                            updatedLocators.add(newLocator);
+                    }
+                    //send fetched instances
+                    moveFetchCallBack.onFetch(updatedLocators, finalResponse);
+                    
+                    for(ArchiveInstanceLocator loc : updatedLocators)
+                    sentInstances.add(loc.iuid);
+                    break;
+                }
+            }
+        }
+        }
+
+        return finalResponse;
+    }
+
 
     private ApplicationEntity getFetchAE(ApplicationEntity localAE) throws ConfigurationException {
         return localAE
@@ -365,9 +554,6 @@ public class FetchForwardServiceImpl implements FetchForwardService {
         };
     }
 
-
-
-
     private List<ApplicationEntity> getPreferedStudyLocationsList(
             HashMap<ArchiveInstanceLocator, ArrayList<ApplicationEntity>> instanceRetrieveMap,
             String studyUID) {
@@ -386,6 +572,35 @@ public class FetchForwardServiceImpl implements FetchForwardService {
             }
         }
         return preferedStudyAEs ;
+    }
+
+    @Override
+    public Response redirectRequest(ApplicationEntity redirectAE, List<ArchiveInstanceLocator> ref, String queryString) {
+        String wadoUri = null;
+        try {
+            WebServiceAEExtension wsAEExt = redirectAE.getAEExtension(WebServiceAEExtension.class);
+            wadoUri = wsAEExt.getWadoURIBaseURL();
+            return Response.temporaryRedirect(new URI(wadoUri + "?" + queryString)).build();
+        } catch (URISyntaxException e) {
+            LOG.error("Unable to redirect request to {} - Exception {}", wadoUri, e.getMessage());
+            return Response.status(Status.CONFLICT).build();
+        }        
+    }
+
+    @Override
+    public ApplicationEntity getprefersForwardingAE(String localAETitle,
+            List<ArchiveInstanceLocator> externalLocations) {
+        ApplicationEntity localAE = device.getApplicationEntity(localAETitle);
+        for(ArchiveInstanceLocator loc : externalLocations) {
+            ArrayList<ApplicationEntity> externalRetrieveAes = listBestExternalLocation(loc, localAE);
+            for(ApplicationEntity ae : externalRetrieveAes) {
+                if(ae.getAEExtension(ExternalArchiveAEExtension.class).isPrefersForwarding()) {
+                    return ae;
+                }
+            }
+        }
+        
+        return null;
     }
 
 }

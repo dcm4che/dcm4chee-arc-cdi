@@ -44,31 +44,36 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
+import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.api.hl7.HL7Configuration;
+import org.dcm4che3.net.DefaultTransferCapabilities;
 import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.net.*;
-import org.dcm4che3.net.Connection.Protocol;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.net.web.WebServiceAEExtension;
-import org.dcm4che3.util.ResourceLocator;
-import org.dcm4chee.archive.conf.DeepEquals.CustomDeepEquals;
+import org.dcm4chee.archive.conf.defaults.DeepEquals;
+import org.dcm4chee.archive.conf.defaults.DeepEquals.CustomDeepEquals;
+import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
+import org.dcm4chee.archive.conf.defaults.DefaultDeviceFactory;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ArchiveDeviceTest extends DeviceMocker {
+public class ArchiveDeviceTest extends DefaultDeviceFactory {
+
+    protected DicomConfiguration config;
+    protected HL7Configuration hl7Config;
 
     @Before
     public void setUp() throws Exception {
-        keystore = SSLManagerFactory.loadKeyStore("JKS",
-                ResourceLocator.resourceURL("cacerts.jks"), "secret");
 
         DicomConfigurationBuilder builder;
         if (System.getProperty("ldap") != null) {
@@ -109,28 +114,10 @@ public class ArchiveDeviceTest extends DeviceMocker {
     
     @Test
     public void test() throws Exception {
-        for (int i = 0; i < OTHER_AES.length; i++) {
-            String aet = OTHER_AES[i];
-            config.persist(createDevice(OTHER_DEVICES[i], OTHER_ISSUER[i], OTHER_INST_CODES[i],
-                    aet, "localhost", OTHER_PORTS[i << 1], OTHER_PORTS[(i << 1) + 1]));
-        }
-        hl7Config.registerHL7Application(PIX_MANAGER);
-        for (int i = OTHER_AES.length; i < OTHER_DEVICES.length; i++)
-            config.persist(createDevice(OTHER_DEVICES[i]));
-        config.persist(createHL7Device("hl7rcv", SITE_A, INST_A, PIX_MANAGER,
-                "localhost", 2576, 12576));
-        Device arrDevice = createARRDevice("syslog", Protocol.SYSLOG_UDP, 514);
-        config.persist(arrDevice);
 
-        Device arc = createArchiveDevice("dcm4chee-arc", arrDevice);
-
-        
-//        StorageOptions storageOptions = new StorageOptions();
-//        storageOptions.setDigitalSignatureSupport(StorageOptions.DigitalSignatureSupport.LEVEL_3);
-//        TransferCapability dcm4CHEE = arc.getApplicationEntity("DCM4CHEE").getTransferCapabilities().iterator().next();
-//        dcm4CHEE.setStorageOptions(storageOptions);
-
-        config.persist(arc);
+        DefaultDicomConfigInitializer defaultDicomConfigInitializer = new DefaultDicomConfigInitializer().persistDefaultConfig(config, hl7Config);
+        Device arc = defaultDicomConfigInitializer.getArc();
+        Device arrDevice = defaultDicomConfigInitializer.getArrDevice();
 
         config.sync();
 
@@ -164,7 +151,7 @@ public class ArchiveDeviceTest extends DeviceMocker {
         anotherArc.removeApplicationEntity("DCM4CHEE");
 
         ApplicationEntity anotherAe = createAnotherAE("DCM4CHEE",
-                IMAGE_TSUIDS, VIDEO_TSUIDS, OTHER_TSUIDS, null, PIX_MANAGER);
+                DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS, null, PIX_MANAGER);
         anotherArc.addApplicationEntity(anotherAe);
 
         //anotherAe.getAEExtension(ArchiveAEExtension.class).reconfigure(from);

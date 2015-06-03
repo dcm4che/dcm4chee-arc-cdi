@@ -38,16 +38,16 @@
 
 package org.dcm4chee.archive.mima.impl;
 
-import javax.inject.Inject;
-
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.store.DelegatingStoreService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
+
+import javax.inject.Inject;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

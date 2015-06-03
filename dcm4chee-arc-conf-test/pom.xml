@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>org.dcm4che</groupId>
-            <artifactId>dcm4che-conf-core</artifactId>
+            <artifactId>dcm4che-conf-dicom</artifactId>
         </dependency>
         <dependency>
             <groupId>org.dcm4che</groupId>
@@ -150,4 +150,19 @@
             </build>
         </profile>
     </profiles>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Dependencies>org.dcm4che.conf.dicom, org.dcm4che.imageio, org.dcm4che.net-hl7, org.dcm4che.soundex
+                            </Dependencies>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

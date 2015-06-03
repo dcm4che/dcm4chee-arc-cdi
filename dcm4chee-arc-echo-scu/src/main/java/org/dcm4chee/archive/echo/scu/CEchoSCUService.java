@@ -36,48 +36,30 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.conf;
+package org.dcm4chee.archive.echo.scu;
 
-import org.dcm4che3.data.ElementDictionary;
-import org.dcm4che3.data.VR;
+import org.dcm4che3.net.service.DicomServiceException;
+
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * The Verification Service Class defines a service that verifies application
+ * level communication between peer DICOM AEs. This verification is accomplished
+ * using the C-ECHO DIMSE-C service.
+ * 
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public class ExtendedStudyDictionary extends ElementDictionary {
+public interface CEchoSCUService {
 
-    public static final String PrivateCreator = "EXTENDED STUDY";
-
-    /** (0011,xx01) VR=DT VM=1 Study Last Update Date Time */
-    public static final int StudyLastUpdateDateTime = 0x00110001;
-
-    /** (0011,xx02) VR=LO VM=1 Study Status */
-    public static final int StudyStatus = 0x00110002;
-    
-    public ExtendedStudyDictionary() {
-        super(PrivateCreator, ExtendedStudyDictionary.class);
-    }
-
-    @Override
-    public String keywordOf(int tag) {
-        switch (tag & 0xFFFF00FF) {
-        case StudyLastUpdateDateTime:
-            return "StudyLastUpdateDateTime";
-        case StudyStatus:
-            return "StudyStatus";
-        }
-        return null;
-    }
-
-    @Override
-    public VR vrOf(int tag) {
-        switch (tag & 0xFFFF00FF) {
-        case StudyLastUpdateDateTime:
-            return VR.DT;
-        case StudyStatus:
-            return VR.LO;
-        }
-        return VR.UN;
-    }
+    /**
+     * Verify the connection between local AE and remote AE.
+     * 
+     * @param localAETitle
+     * @param remoteAETitle
+     * @throws DicomServiceException
+     *             if the verification is unsuccessful. Check
+     *             {@link DicomServiceException#getStatus()} and
+     *             {@link DicomServiceException#getMessage()} for more details.
+     */
+    void cecho(String localAETitle, String remoteAETitle) throws DicomServiceException;
 
 }
