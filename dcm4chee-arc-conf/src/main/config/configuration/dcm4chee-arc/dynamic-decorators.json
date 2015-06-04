@@ -1,21 +1,27 @@
 {
   "dynamicDecorators" : [ {
-      "decoratorClassName" : "org.dcm4chee.archive.compress.impl.StoreServiceCompressDecorator",
-      "priority" : 5.0 
+      "decoratorClassName" : "org.dcm4chee.archive.compress.impl.StoreServiceCompressDecorator"
   }, {
-      "decoratorClassName" : "org.dcm4chee.archive.timezone.StoreServiceTimeZoneDecorator",
-      "priority" : 4.0 
+      "decoratorClassName" : "org.dcm4chee.archive.timezone.StoreServiceTimeZoneDecorator"
   }, {
-      "decoratorClassName" : "org.dcm4chee.archive.iocm.impl.StoreServiceIOCMDecorator",
-      "priority" : 3.0 
+      "decoratorClassName" : "org.dcm4chee.archive.iocm.impl.StoreServiceIOCMDecorator"
   }, {
-      "decoratorClassName" : "org.dcm4chee.archive.mima.impl.StoreServiceMIMADecorator",
-      "priority" : 2.0 
+      "decoratorClassName" : "org.dcm4chee.archive.mima.impl.StoreServiceMIMADecorator"
   }, {
-      "decoratorClassName" : "org.dcm4chee.archive.mpps.impl.StoreServiceMPPSDecorator",
-      "priority" : 1.0 
+      "decoratorClassName" : "org.dcm4chee.archive.mpps.impl.StoreServiceMPPSDecorator"
   }, {
-      "decoratorClassName" : "org.dcm4chee.archive.mima.impl.MPPSServiceMIMADecorator",
-      "priority" : 1.0 
+      "decoratorClassName" : "org.dcm4chee.archive.mima.impl.MPPSServiceMIMADecorator"
+  }, {
+      "decoratorClassName" : "org.dcm4chee.archive.mima.impl.RetrieveServiceMIMADecorator"
+  }, {
+      "decoratorClassName" : "org.dcm4chee.archive.timezone.StoreSCUServiceTimeZoneDecorator"
+  }, {
+      "decoratorClassName" : "org.dcm4chee.archive.qc.impl.StoreSCUServiceQCDecorator"
+  }, {
+      "decoratorClassName" : "org.dcm4chee.archive.mima.impl.StoreSCUServiceMIMADecorator"
+  }, {
+      "decoratorClassName" : "org.dcm4chee.archive.timezone.QueryServiceTimeZoneDecorator"
+  }, {
+      "decoratorClassName" : "org.dcm4chee.archive.mima.impl.QueryServiceMIMADecorator"
   }  ]
 }
