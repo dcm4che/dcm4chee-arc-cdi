@@ -584,6 +584,10 @@
             "dcmMppsEmulationPollInterval" : 60,
             "dcmRejectedObjectsCleanUpMaxNumberOfDeletes" : 0,
             "dcmRejectedObjectsCleanUpPollInterval" : 0,
+            "dcmStudyUpdateTime" : {
+              "dcmPrivateTagCreator" : "studyUpdate",
+              "dcmPrivateTagValue" : "0x7FD90060"
+            },
             "dcmSyncLocationStatusPollInterval" : 3600,
             "dcmSyncLocationStatusStorageSystemGroupID" : [ "ARCHIVE" ],
             "dcmWadoAttributesStaleTimeout" : 60,
@@ -774,6 +778,7 @@
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "nearline" ],
                 "dcmBaseStorageAccessTime" : 2000,
+                "dcmNextStorageSystemID" : "nearline",
                 "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}",
                 "dcmStorageSystemGroupID" : "ARCHIVE"
@@ -791,6 +796,7 @@
                 "dcmActiveStorageSystemID" : [ "fs1" ],
                 "dcmBaseStorageAccessTime" : 1000,
                 "dcmDigestAlgorithm" : "MD5",
+                "dcmNextStorageSystemID" : "fs1",
                 "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "DEFAULT"
@@ -806,6 +812,7 @@
                 },
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "metadata" ],
+                "dcmNextStorageSystemID" : "metadata",
                 "dcmRetrieveAET" : [ ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "METADATA"

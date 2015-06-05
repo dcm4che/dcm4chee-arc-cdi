@@ -670,6 +670,7 @@ public class DefaultDeviceFactory {
         ext.setAttributeFilter(Entity.Instance,
                 new AttributeFilter(INSTANCE_ATTRS));
         ext.setFetchAETitle("DCM4CHEE_FETCH");
+        ext.setStudyUpdateTime(new PrivateTag("0x7FD90060","studyUpdate"));
     }
 
     private static RejectionParam[] createRejectionNotes() {

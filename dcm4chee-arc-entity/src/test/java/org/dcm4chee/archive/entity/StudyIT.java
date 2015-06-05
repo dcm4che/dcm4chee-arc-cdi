@@ -41,6 +41,7 @@ package org.dcm4chee.archive.entity;
 import static org.dcm4chee.archive.entity.Study.FIND_BY_STUDY_INSTANCE_UID;
 import static org.dcm4chee.archive.entity.Study.FIND_BY_STUDY_INSTANCE_UID_EAGER;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 

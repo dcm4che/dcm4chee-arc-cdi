@@ -94,6 +94,10 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmUpdateDbRetries", defaultValue = "1")
     private int updateDbRetries = 1;
 
+    @LDAP(noContainerNode = true)
+    @ConfigurableProperty(name = "dcmStudyUpdateTime")
+    private PrivateTag studyUpdateTime = new PrivateTag();
+
     @LDAP(
             distinguishingField = "dicomHostName",
             mapValueAttribute = "dicomAETitle",
@@ -147,7 +151,6 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     @ConfigurableProperty(name = "dcmSyncLocationStatusVerifyArchived", defaultValue = "true")
     private boolean syncLocationStatusVerifyArchived = true;
-
 
     @ConfigurableProperty(name = "dcmFetchAETitle")
     private String fetchAETitle = "DCM4CHEE_FETCH";
@@ -325,7 +328,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
             String... syncLocationStatusStorageSystemGroupIDs) {
         this.syncLocationStatusStorageSystemGroupIDs = syncLocationStatusStorageSystemGroupIDs;
     }
-    
+
     public String[] getDisabledDecorators() {
         return disabledDecorators;
     }
@@ -428,4 +431,11 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.fetchAETitle = fetchAETitle;
     }
 
+    public PrivateTag getStudyUpdateTime() {
+        return studyUpdateTime;
+    }
+
+    public void setStudyUpdateTime(PrivateTag studyUpdateTime) {
+        this.studyUpdateTime = studyUpdateTime;
+    }
 }
