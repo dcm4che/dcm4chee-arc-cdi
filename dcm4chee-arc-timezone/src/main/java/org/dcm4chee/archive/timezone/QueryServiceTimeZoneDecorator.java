@@ -44,6 +44,7 @@ import java.util.TimeZone;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -54,6 +55,8 @@ import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.decorators.DelegatingQueryService;
+import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,21 +65,17 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Decorator
-public abstract class QueryServiceTimeZoneDecorator implements QueryService {
+@DynamicDecorator
+public class QueryServiceTimeZoneDecorator extends DelegatingQueryService {
 
     static Logger LOG = LoggerFactory
             .getLogger(QueryServiceTimeZoneDecorator.class);
-
-    @Inject
-    @Delegate
-    QueryService queryService;
 
     @Override
     public void coerceRequestAttributes(QueryContext context)
             throws DicomServiceException {
 
-        queryService.coerceRequestAttributes(context);
+        getNextDecorator().coerceRequestAttributes(context);
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
         if (archiveTimeZone == null)    // no Timezone support configured
@@ -111,7 +110,7 @@ public abstract class QueryServiceTimeZoneDecorator implements QueryService {
     @Override
     public void coerceResponseAttributes(QueryContext context, Attributes match)
             throws DicomServiceException {
-        queryService.coerceResponseAttributes(context, match);
+        getNextDecorator().coerceResponseAttributes(context, match);
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
         if (archiveTimeZone == null)    // no Timezone support configured
