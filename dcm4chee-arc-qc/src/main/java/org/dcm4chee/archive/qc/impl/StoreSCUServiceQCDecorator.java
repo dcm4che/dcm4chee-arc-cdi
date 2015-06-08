@@ -41,8 +41,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Stack;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
 import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
@@ -58,7 +56,8 @@ import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.decorators.DelegatingCStoreSCUService;
+import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,15 +67,11 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-@Decorator
-public abstract class StoreSCUServiceQCDecorator implements CStoreSCUService {
+@DynamicDecorator
+public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(StoreSCUServiceQCDecorator.class);
-
-    @Inject
-    @Delegate
-    CStoreSCUService cstorescuService;
 
     ArrayList<Attributes> modifications = new ArrayList<Attributes>();
 
@@ -97,7 +92,7 @@ public abstract class StoreSCUServiceQCDecorator implements CStoreSCUService {
     @Override
     public void coerceAttributes(Attributes attrs, CStoreSCUContext context)
             throws DicomServiceException {
-        cstorescuService.coerceAttributes(attrs, context);
+        getNextDecorator().coerceAttributes(attrs, context);
         final String studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
         ReferenceUpdateOnRetrieveScope qcUpdateReferencesOnRetrieve = context
                 .getArchiveAEExtension().getQcUpdateReferencesOnRetrieve();

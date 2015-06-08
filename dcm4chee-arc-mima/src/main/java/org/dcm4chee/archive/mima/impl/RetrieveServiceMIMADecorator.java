@@ -38,17 +38,16 @@
 
 package org.dcm4chee.archive.mima.impl;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
-import org.dcm4chee.archive.retrieve.RetrieveService;
+import org.dcm4chee.archive.retrieve.decorators.DelegatingRetrieveService;
+import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,14 +57,11 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Decorator
-public abstract class RetrieveServiceMIMADecorator implements RetrieveService {
+@DynamicDecorator
+public class RetrieveServiceMIMADecorator extends DelegatingRetrieveService {
 
     private static Logger LOG =
             LoggerFactory.getLogger(RetrieveServiceMIMADecorator.class);
-
-    @Inject @Delegate
-    private RetrieveService retrieveService;
 
     @Inject
     private IApplicationEntityCache aeCache;
