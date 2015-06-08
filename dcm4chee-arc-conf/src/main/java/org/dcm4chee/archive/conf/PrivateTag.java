@@ -8,23 +8,28 @@ import org.dcm4che3.conf.core.api.LDAP;
  * Created by Umberto Cappellini on 6/3/15.
  */
 
-@LDAP(objectClasses = "dcmPrivateTag")
+@LDAP(objectClasses = "dcmPrivateTagType", distinguishingField = "cn")
 @ConfigurableClass
 public class PrivateTag {
 
     public PrivateTag() {
     }
 
-    public PrivateTag(String tag, String creator) {
+    public PrivateTag(String commonName, String tag, String creator) {
+        this.commonName = commonName;
         this.tag = tag;
         this.creator = creator;
     }
 
-    public PrivateTag(String tag, String creator, String description) {
+    public PrivateTag(String commonName, String tag, String creator, String description) {
+        this.commonName = commonName;
         this.tag = tag;
         this.creator = creator;
         this.description = description;
     }
+
+    @ConfigurableProperty(name = "cn")
+    private String commonName;
 
     @ConfigurableProperty(name = "dcmPrivateTagValue")
     private String tag;
@@ -34,6 +39,14 @@ public class PrivateTag {
 
     @ConfigurableProperty(name = "dcmPrivateTagDescription")
     private String description;
+
+    public String getCommonName() {
+        return commonName;
+    }
+
+    public void setCommonName(String commonName) {
+        this.commonName = commonName;
+    }
 
     public String getTag() {
         return tag;

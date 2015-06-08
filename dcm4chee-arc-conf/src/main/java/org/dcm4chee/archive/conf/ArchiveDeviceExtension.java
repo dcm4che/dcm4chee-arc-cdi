@@ -95,8 +95,8 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private int updateDbRetries = 1;
 
     @LDAP(noContainerNode = true)
-    @ConfigurableProperty(name = "dcmStudyUpdateTime")
-    private PrivateTag studyUpdateTime = new PrivateTag();
+    @ConfigurableProperty(name = "dcmPrivateDerivedFields")
+    private PrivateDerivedFields privateDerivedFields = new PrivateDerivedFields();
 
     @LDAP(
             distinguishingField = "dicomHostName",
@@ -431,11 +431,21 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.fetchAETitle = fetchAETitle;
     }
 
-    public PrivateTag getStudyUpdateTime() {
-        return studyUpdateTime;
+    public PrivateDerivedFields getPrivateDerivedFields() {
+        return privateDerivedFields;
     }
 
-    public void setStudyUpdateTime(PrivateTag studyUpdateTime) {
-        this.studyUpdateTime = studyUpdateTime;
+    public void addPrivateDerivedField(PrivateTag tag) {
+        privateDerivedFields.add(tag);
+    }
+
+    public void setPrivateDerivedFields(PrivateDerivedFields tags) {
+        privateDerivedFields.clear();
+        if (tags != null)
+            privateDerivedFields.add(tags);
+    }
+
+    public boolean removePrivateDerivedField(PrivateTag tag) {
+        return privateDerivedFields.remove(tag);
     }
 }
