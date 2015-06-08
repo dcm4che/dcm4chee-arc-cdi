@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.query.impl;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -85,6 +86,7 @@ public class QueryServiceEJB {
         QStudyQueryAttributes.studyQueryAttributes.numberOfSeries,
         QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy,
         QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy,
+        QStudyQueryAttributes.studyQueryAttributes.lastUpdateTime,
         QueryBuilder.seriesAttributesBlob.encodedAttributes,
         QueryBuilder.studyAttributesBlob.encodedAttributes,
         QueryBuilder.patientAttributesBlob.encodedAttributes
@@ -95,7 +97,8 @@ public class QueryServiceEJB {
         QSeries.series.modality,
         QInstance.instance.sopClassUID,
         QInstance.instance.retrieveAETs,
-        QInstance.instance.availability
+        QInstance.instance.availability,
+        QInstance.instance.updatedTime
     };
 
     static final Expression<?>[] CALC_SERIES_QUERY_ATTRS = {
@@ -292,6 +295,7 @@ public class QueryServiceEJB {
         protected Set<String> mods = new HashSet<String>();
         protected Set<String> cuids = new HashSet<String>();
         protected Study study;
+        protected Date lastUpdateTime = null;
 
         public void setStudy(Study study) {
             this.study = study;
@@ -306,6 +310,10 @@ public class QueryServiceEJB {
                     mods.add(modality1);
             }
             cuids.add(result.get(QInstance.instance.sopClassUID));
+            Date instanceUpdateTime = result.get(QInstance.instance
+                    .updatedTime);
+            if (lastUpdateTime == null || instanceUpdateTime.after(lastUpdateTime))
+                lastUpdateTime = instanceUpdateTime;
         }
     
         public StudyQueryAttributes build() {
@@ -319,6 +327,7 @@ public class QueryServiceEJB {
                 queryAttrs.setSOPClassesInStudy(cuids.toArray(new String[cuids.size()]));
                 queryAttrs.setRetrieveAETs(retrieveAETs);
                 queryAttrs.setAvailability(availability);
+                queryAttrs.setLastUpdateTime(lastUpdateTime);
             }
             return queryAttrs;
         }
