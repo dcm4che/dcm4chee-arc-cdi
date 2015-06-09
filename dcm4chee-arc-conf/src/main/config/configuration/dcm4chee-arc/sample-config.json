@@ -582,12 +582,15 @@
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
             "dcmMppsEmulationPollInterval" : 60,
+            "dcmPrivateDerivedFields" : {
+              "list" : [ {
+                "cn" : "StudyUpdateTimeDerivedField",
+                "dcmPrivateTagCreator" : "studyUpdate",
+                "dcmPrivateTagValue" : "0x7FD90060"
+              } ]
+            },
             "dcmRejectedObjectsCleanUpMaxNumberOfDeletes" : 0,
             "dcmRejectedObjectsCleanUpPollInterval" : 0,
-            "dcmStudyUpdateTime" : {
-              "dcmPrivateTagCreator" : "studyUpdate",
-              "dcmPrivateTagValue" : "0x7FD90060"
-            },
             "dcmSyncLocationStatusPollInterval" : 3600,
             "dcmSyncLocationStatusStorageSystemGroupID" : [ "ARCHIVE" ],
             "dcmWadoAttributesStaleTimeout" : 60,

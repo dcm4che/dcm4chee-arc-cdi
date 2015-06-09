@@ -97,10 +97,21 @@ public class DefaultDeviceFactory {
     };
     protected static final Issuer SITE_A =
             new Issuer("Site A", "1.2.40.0.13.1.1.999.111.1111", "ISO");
+    protected static final Code INST_A =
+            new Code("111.1111", "99DCM4CHEE", null, "Site A");
+    protected static final int[] OTHER_PORTS = {
+            11113, 2763, // DCMQRSCP
+            11114, 2765, // STGCMTSCU
+            11115, 2766, // STORESCP
+            11116, 2767, // MPPSSCP
+            11117, 2768, // IANSCP
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // STORESCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // MPPSSCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // FINDSCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // GETSCU
+    };
     private static final Issuer SITE_B =
             new Issuer("Site B", "1.2.40.0.13.1.1.999.222.2222", "ISO");
-    private static final Code INST_B =
-            new Code("222.2222", "99DCM4CHEE", null, "Site B");
     protected static final Issuer[] OTHER_ISSUER = {
             SITE_B, // DCMQRSCP
             null, // STGCMTSCU
@@ -112,8 +123,8 @@ public class DefaultDeviceFactory {
             SITE_A, // FINDSCU
             SITE_A, // GETSCU
     };
-    protected static final Code INST_A =
-            new Code("111.1111", "99DCM4CHEE", null, "Site A");
+    private static final Code INST_B =
+            new Code("222.2222", "99DCM4CHEE", null, "Site B");
     protected static final Code[] OTHER_INST_CODES = {
             INST_B, // DCMQRSCP
             null, // STGCMTSCU
@@ -124,17 +135,6 @@ public class DefaultDeviceFactory {
             null, // MPPSSCU
             null, // FINDSCU
             null, // GETSCU
-    };
-    protected static final int[] OTHER_PORTS = {
-            11113, 2763, // DCMQRSCP
-            11114, 2765, // STGCMTSCU
-            11115, 2766, // STORESCP
-            11116, 2767, // MPPSSCP
-            11117, 2768, // IANSCP
-            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // STORESCU
-            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // MPPSSCU
-            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // FINDSCU
-            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // GETSCU
     };
     private static final int PENDING_CMOVE_INTERVAL = 5000;
     private static final int CONFIGURATION_STALE_TIMEOUT = 60;
@@ -223,12 +223,6 @@ public class DefaultDeviceFactory {
             Tag.StudyID
     };
     private static final Map<Integer, String> STUDY_PRIVATE_ATTRS = new TreeMap<>();
-
-    static {
-        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyLastUpdateDateTime, "EXTENDED STUDY");
-        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyStatus, "EXTENDED STUDY");
-    }
-
     private static final int[] SERIES_ATTRS = {
             Tag.SpecificCharacterSet,
             Tag.Modality,
@@ -337,11 +331,6 @@ public class DefaultDeviceFactory {
     private static final int MPPS_EMULATOR_POLL_INTERVAL = 60;
     private static final int ARCHIVING_POLL_INTERVAL = 60;
     private static final int SYNC_LOCATION_STATUS_POLL_INTERVAL = 3600;
-
-    private static QueryRetrieveView[] QUERY_RETRIEVE_VIEWS = {
-            HIDE_REJECTED_VIEW,
-            REGULAR_USE_VIEW,
-            TRASH_VIEW};
     private static final String[] WADO_SUPPORTED_SR_SOP_CLASSES = {
             UID.BasicTextSRStorage,
             UID.EnhancedSRStorage,
@@ -356,7 +345,15 @@ public class DefaultDeviceFactory {
             UID.ColonCADSRStorage,
             UID.ImplantationPlanSRStorage
     };
+    private static QueryRetrieveView[] QUERY_RETRIEVE_VIEWS = {
+            HIDE_REJECTED_VIEW,
+            REGULAR_USE_VIEW,
+            TRASH_VIEW};
 
+    static {
+        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyLastUpdateDateTime, "EXTENDED STUDY");
+        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyStatus, "EXTENDED STUDY");
+    }
 
     private static QueryRetrieveView createQueryRetrieveView(String viewID,
                                                              Code[] showInstancesRejectedByCodes, Code[] hideRejectionNoteCodes,
@@ -670,7 +667,8 @@ public class DefaultDeviceFactory {
         ext.setAttributeFilter(Entity.Instance,
                 new AttributeFilter(INSTANCE_ATTRS));
         ext.setFetchAETitle("DCM4CHEE_FETCH");
-        ext.setStudyUpdateTime(new PrivateTag("0x7FD90060","studyUpdate"));
+        ext.addPrivateDerivedField(new PrivateTag(PrivateDerivedFields.NAMES
+                .StudyUpdateTimeDerivedField.name(), "0x7FD90060", "studyUpdate"));
     }
 
     private static RejectionParam[] createRejectionNotes() {
@@ -902,6 +900,44 @@ public class DefaultDeviceFactory {
         return ae;
     }
 
+    private static ApplicationEntity createQRAE(String aet,
+                                                Connection dicom, Connection dicomTLS,
+                                                String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
+                                                QueryRetrieveView queryRetrieveView,
+                                                String pixConsumer, String pixManager) {
+        ApplicationEntity ae = new ApplicationEntity(aet);
+        ae.addConnection(dicom);
+        ae.addConnection(dicomTLS);
+
+        ArchiveAEExtension aeExt = new ArchiveAEExtension();
+        ae.addAEExtension(aeExt);
+        ae.setAssociationAcceptor(true);
+        ae.setAssociationInitiator(true);
+        aeExt.setMatchUnknown(true);
+        aeExt.setSendPendingCGet(true);
+        aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
+        aeExt.setQueryRetrieveViewID(queryRetrieveView.getViewID());
+
+        aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
+        aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
+        aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
+
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+
+        aeExt.setReturnOtherPatientIDs(true);
+        aeExt.setReturnOtherPatientNames(true);
+        aeExt.setLocalPIXConsumerApplication(pixConsumer);
+        aeExt.setRemotePIXManagerApplication(pixManager);
+        return ae;
+    }
+
     protected ApplicationEntity createAnotherAE(String aet,
                                                 String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
                                                 String pixConsumer, String pixManager) {
@@ -1005,44 +1041,6 @@ public class DefaultDeviceFactory {
         DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
 
         aeExt.setReturnOtherPatientIDs(false);
-        aeExt.setReturnOtherPatientNames(true);
-        aeExt.setLocalPIXConsumerApplication(pixConsumer);
-        aeExt.setRemotePIXManagerApplication(pixManager);
-        return ae;
-    }
-
-    private static ApplicationEntity createQRAE(String aet,
-                                                Connection dicom, Connection dicomTLS,
-                                                String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
-                                                QueryRetrieveView queryRetrieveView,
-                                                String pixConsumer, String pixManager) {
-        ApplicationEntity ae = new ApplicationEntity(aet);
-        ae.addConnection(dicom);
-        ae.addConnection(dicomTLS);
-
-        ArchiveAEExtension aeExt = new ArchiveAEExtension();
-        ae.addAEExtension(aeExt);
-        ae.setAssociationAcceptor(true);
-        ae.setAssociationInitiator(true);
-        aeExt.setMatchUnknown(true);
-        aeExt.setSendPendingCGet(true);
-        aeExt.setSendPendingCMoveInterval(PENDING_CMOVE_INTERVAL);
-        aeExt.setQueryRetrieveViewID(queryRetrieveView.getViewID());
-
-        aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
-        aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
-        aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
-
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-
-        aeExt.setReturnOtherPatientIDs(true);
         aeExt.setReturnOtherPatientNames(true);
         aeExt.setLocalPIXConsumerApplication(pixConsumer);
         aeExt.setRemotePIXManagerApplication(pixManager);

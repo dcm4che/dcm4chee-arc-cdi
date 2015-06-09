@@ -57,6 +57,8 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.decorators.DelegatingQueryService;
+import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,15 +69,11 @@ import org.slf4j.LoggerFactory;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * 
  */
-@Decorator
-public abstract class QueryServiceMIMADecorator implements QueryService {
+@DynamicDecorator
+public class QueryServiceMIMADecorator extends DelegatingQueryService {
 
     private static Logger LOG = LoggerFactory
             .getLogger(QueryServiceMIMADecorator.class);
-
-    @Inject
-    @Delegate
-    private QueryService queryService;
 
     @Inject
     private IApplicationEntityCache aeCache;
@@ -95,7 +93,7 @@ public abstract class QueryServiceMIMADecorator implements QueryService {
     public QueryParam getQueryParam(Object source, String sourceAET,
             ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,
             String[] accessControlIDs) {
-        QueryParam queryParam = queryService.getQueryParam(source, sourceAET,
+        QueryParam queryParam = getNextDecorator().getQueryParam(source, sourceAET,
                 aeExt, queryOpts, accessControlIDs);
         try {
             ApplicationEntity scrAE = aeCache.get(sourceAET);
@@ -126,7 +124,7 @@ public abstract class QueryServiceMIMADecorator implements QueryService {
      */
     @Override
     public void initPatientIDs(QueryContext ctx) {
-        queryService.initPatientIDs(ctx);
+        getNextDecorator().initPatientIDs(ctx);
         IDWithIssuer[] pids = ctx.getPatientIDs();
         if (pids.length > 0) {
             if (pids[0].getIssuer() == null)

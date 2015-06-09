@@ -41,24 +41,17 @@ package org.dcm4chee.archive.timezone;
 import java.util.Date;
 import java.util.TimeZone;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
-import javax.inject.Inject;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.retrieve.RetrieveContext;
-import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.decorators.DelegatingCStoreSCUService;
+import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,21 +60,16 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Decorator
-public abstract class StoreSCUServiceTimeZoneDecorator
-        implements CStoreSCUService {
+@DynamicDecorator
+public class StoreSCUServiceTimeZoneDecorator extends DelegatingCStoreSCUService {
 
     static Logger LOG = LoggerFactory
             .getLogger(StoreSCUServiceTimeZoneDecorator.class);
 
-    @Inject
-    @Delegate
-    CStoreSCUService storescuService;
-
     @Override
     public void coerceFileBeforeMerge(ArchiveInstanceLocator inst, Attributes attrs,
             CStoreSCUContext context) throws DicomServiceException {
-        storescuService.coerceFileBeforeMerge(inst, attrs, context);
+        getNextDecorator().coerceFileBeforeMerge(inst, attrs, context);
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                 .getTimeZoneOfDevice();
@@ -113,7 +101,7 @@ public abstract class StoreSCUServiceTimeZoneDecorator
     @Override
     public void coerceAttributes(Attributes attrs, CStoreSCUContext context)
             throws DicomServiceException {
-        storescuService.coerceAttributes(attrs, context);
+        getNextDecorator().coerceAttributes(attrs, context);
 
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
         TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()

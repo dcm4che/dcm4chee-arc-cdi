@@ -38,17 +38,12 @@
 
 package org.dcm4chee.archive.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.storage.conf.Availability;
+
+import java.util.Date;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -83,6 +78,9 @@ public class StudyQueryAttributes {
 
     @Column(name = "availability")
     private Availability availability;
+
+    @Column(name = "last_update_time")
+    private Date lastUpdateTime;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "study_fk")
@@ -158,6 +156,14 @@ public class StudyQueryAttributes {
 
     public void setAvailability(Availability availability) {
         this.availability = availability;
+    }
+
+    public Date getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    public void setLastUpdateTime(Date lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
     }
 
     public Study getStudy() {

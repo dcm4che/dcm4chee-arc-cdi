@@ -680,11 +680,12 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.25 NAME 'dcmExternalArchiveEntry'
   MUST (
     dcmDeviceName $
     dcmFetchPriority ) )
-olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.26 NAME 'dcmPrivateTag'
+olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.26 NAME 'dcmPrivateTagType'
   DESC 'Specifies A Private Tag and relative Creator'
   SUP top
-  AUXILIARY
+  STRUCTURAL
   MUST (
+    cn $
     dcmPrivateTagValue $
     dcmPrivateTagCreator )
   MAY (
