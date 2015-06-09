@@ -83,6 +83,7 @@ import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.QueryServiceUtils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.slf4j.Logger;
@@ -334,7 +335,7 @@ public class QidoRS {
         init(method, qrlevel, relational, studyInstanceUID, seriesInstanceUID,
                 includetags);
 
-        Query query = queryService.createQuery(qrlevel, queryContext);
+        Query query = QueryServiceUtils.createQuery(queryService, qrlevel, queryContext);
         try {
             query.initQuery();
             int status = STATUS_OK;

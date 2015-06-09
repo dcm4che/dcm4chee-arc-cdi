@@ -1,3 +1,4 @@
+//
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -16,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2013
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,55 +37,82 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.query;
+package org.dcm4chee.archive.query.impl;
 
-import java.util.EnumSet;
+import java.util.NoSuchElementException;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.QueryOption;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.SeriesQueryAttributes;
-import org.dcm4chee.archive.entity.StudyQueryAttributes;
+import org.dcm4chee.archive.query.Query;
+import org.dcm4chee.archive.query.QueryContext;
+
+import com.mysema.query.types.OrderSpecifier;
 
 /**
- * Query service for different information models (Patient, Study, Modality
- * Worklist, ...).
+ * Dummy {@link Query} that always returns 0 results.
  * 
- * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public interface QueryService {
+public class EmptyQuery implements Query {
 
-    QueryContext createQueryContext(QueryService queryService);
+    protected final QueryContext context;
 
-    Query createPatientQuery(QueryContext ctx);
+    public EmptyQuery(QueryContext context) {
+        this.context = context;
+    }
 
-    Query createStudyQuery(QueryContext ctx);
+    @Override
+    public void initQuery() {
+        // empty
+    }
 
-    Query createSeriesQuery(QueryContext ctx);
+    @Override
+    public void executeQuery() {
+        // empty
+    }
 
-    Query createInstanceQuery(QueryContext ctx);
+    @Override
+    public long count() {
+        return 0;
+    }
 
-    Query createMWLItemQuery(QueryContext ctx);
+    @Override
+    public void limit(long limit) {
+        // empty
+    }
 
-    Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
+    @Override
+    public void offset(long offset) {
+        // empty
+    }
 
-    QueryParam getQueryParam(Object source, String sourceAET,
-            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,
-            String[] accessControlIDs);
+    @Override
+    public void orderBy(OrderSpecifier<?>... orderSpecifiers) {
+        // empty
+    }
 
-    void initPatientIDs(QueryContext queryContext);
+    @Override
+    public boolean optionalKeysNotSupported() {
+        return false;
+    }
 
-    void coerceRequestAttributes(QueryContext context)
-            throws DicomServiceException;
+    @Override
+    public boolean hasMoreMatches() {
+        return false;
+    }
 
-    void coerceResponseAttributes(QueryContext context, Attributes match)
-            throws DicomServiceException;
+    @Override
+    public Attributes nextMatch() {
+        throw new NoSuchElementException();
+    }
 
-    StudyQueryAttributes createStudyView(Long studyPk, QueryParam queryParam);
+    @Override
+    public void close() {
+        // empty
+    }
 
-    SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam);
+    @Override
+    public QueryContext getQueryContext() {
+        return context;
+    }
 
 }

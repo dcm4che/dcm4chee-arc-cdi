@@ -1,3 +1,4 @@
+//
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -16,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2013
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,53 +39,33 @@
 
 package org.dcm4chee.archive.query;
 
-import java.util.EnumSet;
-
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.QueryOption;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.SeriesQueryAttributes;
-import org.dcm4chee.archive.entity.StudyQueryAttributes;
+import org.dcm4che3.net.service.QueryRetrieveLevel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Query service for different information models (Patient, Study, Modality
- * Worklist, ...).
+ * Static utility methods for {@link QueryService}.
  * 
- * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public interface QueryService {
+public class QueryServiceUtils {
 
-    QueryContext createQueryContext(QueryService queryService);
+    private static final Logger LOG = LoggerFactory.getLogger(QueryServiceUtils.class);
 
-    Query createPatientQuery(QueryContext ctx);
+    public static Query createQuery(QueryService queryService, QueryRetrieveLevel qrlevel, QueryContext ctx) {
+        LOG.info("Query Keys: {}", ctx.getKeys());
 
-    Query createStudyQuery(QueryContext ctx);
-
-    Query createSeriesQuery(QueryContext ctx);
-
-    Query createInstanceQuery(QueryContext ctx);
-
-    Query createMWLItemQuery(QueryContext ctx);
-
-    Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
-
-    QueryParam getQueryParam(Object source, String sourceAET,
-            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,
-            String[] accessControlIDs);
-
-    void initPatientIDs(QueryContext queryContext);
-
-    void coerceRequestAttributes(QueryContext context)
-            throws DicomServiceException;
-
-    void coerceResponseAttributes(QueryContext context, Attributes match)
-            throws DicomServiceException;
-
-    StudyQueryAttributes createStudyView(Long studyPk, QueryParam queryParam);
-
-    SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam);
-
+        switch (qrlevel) {
+        case PATIENT:
+            return queryService.createPatientQuery(ctx);
+        case STUDY:
+            return queryService.createStudyQuery(ctx);
+        case SERIES:
+            return queryService.createSeriesQuery(ctx);
+        case IMAGE:
+            return queryService.createInstanceQuery(ctx);
+        default:
+            throw new IllegalArgumentException("qrlevel: " + qrlevel);
+        }
+    }
 }

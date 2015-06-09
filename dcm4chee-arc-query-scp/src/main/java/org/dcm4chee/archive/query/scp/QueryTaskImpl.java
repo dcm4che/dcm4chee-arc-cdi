@@ -47,7 +47,6 @@ import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicQueryTask;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
-import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryService;
 
@@ -74,18 +73,13 @@ class QueryTaskImpl extends BasicQueryTask {
      }
 
     @Override
-    protected Attributes adjust(Attributes match) {
-        // timezone response adjustment
-        try {
-            queryService.coerceResponseAttributes(query.getQueryContext(),
-                    match);
-        } catch (DicomServiceException e) {
-            e.printStackTrace();
-        }
+    protected Attributes adjust(Attributes match) throws DicomServiceException {
         if (match == null)
             return null;
 
-        queryService.adjustMatch(query.getQueryContext(), match);
+        // response adjustment (e.g. timezone)
+        queryService.coerceResponseAttributes(query.getQueryContext(), match);
+
         if (modelRootLevel == QueryRetrieveLevel.PATIENT
                 && !match.containsValue(Tag.PatientID))
             return null;
@@ -120,7 +114,7 @@ class QueryTaskImpl extends BasicQueryTask {
     protected boolean hasMoreMatches() throws DicomServiceException {
         try {
             return query.hasMoreMatches();
-        }  catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
@@ -129,7 +123,7 @@ class QueryTaskImpl extends BasicQueryTask {
     protected Attributes nextMatch() throws DicomServiceException {
         try {
             return query.nextMatch();
-        }  catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }

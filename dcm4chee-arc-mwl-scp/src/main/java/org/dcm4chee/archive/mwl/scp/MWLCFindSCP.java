@@ -1,3 +1,4 @@
+//
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -16,7 +17,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2013
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,55 +37,34 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.query;
+package org.dcm4chee.archive.mwl.scp;
 
-import java.util.EnumSet;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Typed;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.QueryOption;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.SeriesQueryAttributes;
-import org.dcm4chee.archive.entity.StudyQueryAttributes;
+import org.dcm4chee.archive.query.Query;
+import org.dcm4chee.archive.query.QueryContext;
+import org.dcm4chee.archive.query.scp.QueryCFindSCP;
 
 /**
- * Query service for different information models (Patient, Study, Modality
- * Worklist, ...).
+ * C-FIND SCP for the Modality Worklist Information Model.
  * 
- * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public interface QueryService {
+@ApplicationScoped
+@Typed(DicomService.class)
+public class MWLCFindSCP extends QueryCFindSCP {
 
-    QueryContext createQueryContext(QueryService queryService);
+    public MWLCFindSCP() {
+        super(UID.ModalityWorklistInformationModelFIND, null);
+    }
 
-    Query createPatientQuery(QueryContext ctx);
-
-    Query createStudyQuery(QueryContext ctx);
-
-    Query createSeriesQuery(QueryContext ctx);
-
-    Query createInstanceQuery(QueryContext ctx);
-
-    Query createMWLItemQuery(QueryContext ctx);
-
-    Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
-
-    QueryParam getQueryParam(Object source, String sourceAET,
-            ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,
-            String[] accessControlIDs);
-
-    void initPatientIDs(QueryContext queryContext);
-
-    void coerceRequestAttributes(QueryContext context)
-            throws DicomServiceException;
-
-    void coerceResponseAttributes(QueryContext context, Attributes match)
-            throws DicomServiceException;
-
-    StudyQueryAttributes createStudyView(Long studyPk, QueryParam queryParam);
-
-    SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam);
+    @Override
+    protected Query createQuery(QueryContext ctx, boolean relational) throws DicomServiceException {
+        return queryService.createMWLItemQuery(ctx);
+    }
 
 }

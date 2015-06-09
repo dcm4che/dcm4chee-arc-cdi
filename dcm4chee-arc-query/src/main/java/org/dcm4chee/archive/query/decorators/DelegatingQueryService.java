@@ -5,7 +5,6 @@ import java.util.EnumSet;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.SeriesQueryAttributes;
@@ -22,11 +21,6 @@ public class DelegatingQueryService extends DelegatingServiceImpl<QueryService> 
 	@Override
 	public QueryContext createQueryContext(QueryService queryService) {
 		return getNextDecorator().createQueryContext(queryService);
-	}
-
-	@Override
-	public Query createQuery(QueryRetrieveLevel qrlevel, QueryContext ctx) {
-		return getNextDecorator().createQuery(qrlevel, ctx);
 	}
 
 	@Override
@@ -49,6 +43,11 @@ public class DelegatingQueryService extends DelegatingServiceImpl<QueryService> 
 		return getNextDecorator().createInstanceQuery(ctx);
 	}
 
+    @Override
+    public Query createMWLItemQuery(QueryContext ctx) {
+        return getNextDecorator().createMWLItemQuery(ctx);
+    }
+
 	@Override
 	public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
 		return getNextDecorator().getSeriesAttributes(seriesPk, queryParam);
@@ -63,11 +62,6 @@ public class DelegatingQueryService extends DelegatingServiceImpl<QueryService> 
 	@Override
 	public void initPatientIDs(QueryContext queryContext) {
 		getNextDecorator().initPatientIDs(queryContext);		
-	}
-
-	@Override
-	public void adjustMatch(QueryContext query, Attributes match) {
-		getNextDecorator().adjustMatch(query, match);		
 	}
 
 	@Override
