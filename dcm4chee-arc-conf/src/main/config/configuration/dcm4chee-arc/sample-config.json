@@ -586,7 +586,7 @@
               "list" : [ {
                 "cn" : "StudyUpdateTimeDerivedField",
                 "dcmPrivateTagCreator" : "studyUpdate",
-                "dcmPrivateTagValue" : "0x7FD90060"
+                "dcmPrivateTagValue" : "7FD90060"
               } ]
             },
             "dcmRejectedObjectsCleanUpMaxNumberOfDeletes" : 0,

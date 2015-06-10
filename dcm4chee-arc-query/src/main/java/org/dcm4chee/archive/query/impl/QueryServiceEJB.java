@@ -49,6 +49,8 @@ import javax.persistence.PersistenceContext;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.PrivateTag;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QPatient;
@@ -61,6 +63,7 @@ import org.dcm4chee.archive.entity.SeriesQueryAttributes;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyQueryAttributes;
 import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.mysema.query.jpa.hibernate.DetachedHibernateQueryFactory;
 import org.dcm4chee.storage.conf.Availability;
@@ -112,8 +115,8 @@ public class QueryServiceEJB {
     @Inject
     DetachedHibernateQueryFactory queryFactory;
 
-    public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
-        String viewID = queryParam.getQueryRetrieveView().getViewID();
+    public Attributes getSeriesAttributes(Long seriesPk, QueryContext context) {
+        String viewID = context.getQueryParam().getQueryRetrieveView().getViewID();
         Tuple result = queryFactory.query(em.unwrap(Session.class))
             .from(QSeries.series)
             .join(QSeries.series.attributesBlob, QueryBuilder.seriesAttributesBlob)
@@ -132,22 +135,24 @@ public class QueryServiceEJB {
                 result.get(QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances);
         if (numberOfSeriesRelatedInstances == null) {
             SeriesQueryAttributes seriesQueryAttributes =
-                    calculateSeriesQueryAttributes(seriesPk, queryParam);
+                    calculateSeriesQueryAttributes(seriesPk, context.getQueryParam());
             numberOfSeriesRelatedInstances = seriesQueryAttributes.getNumberOfInstances();
         }
 
         int numberOfStudyRelatedSeries;
         String modalitiesInStudy;
         String sopClassesInStudy;
+        Date studyLastUpdateTime;
         Integer numberOfStudyRelatedInstances =
                 result.get(QStudyQueryAttributes.studyQueryAttributes.numberOfInstances);
         if (numberOfStudyRelatedInstances == null) {
             StudyQueryAttributes studyQueryAttributes =
-                    calculateStudyQueryAttributes(result.get(QStudy.study.pk), queryParam);
+                    calculateStudyQueryAttributes(result.get(QStudy.study.pk), context.getQueryParam());
             numberOfStudyRelatedInstances = studyQueryAttributes.getNumberOfInstances();
             numberOfStudyRelatedSeries = studyQueryAttributes.getNumberOfSeries();
             modalitiesInStudy = studyQueryAttributes.getRawModalitiesInStudy();
             sopClassesInStudy = studyQueryAttributes.getRawSOPClassesInStudy();
+            studyLastUpdateTime = studyQueryAttributes.getLastUpdateTime();
         } else {
             numberOfStudyRelatedSeries =
                     result.get(QStudyQueryAttributes.studyQueryAttributes.numberOfSeries);
@@ -155,6 +160,7 @@ public class QueryServiceEJB {
                     result.get(QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy);
             sopClassesInStudy = 
                     result.get(QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy);
+            studyLastUpdateTime = result.get(QStudyQueryAttributes.studyQueryAttributes.lastUpdateTime);
         }
         byte[] seriesBytes =
                 result.get(QueryBuilder.seriesAttributesBlob.encodedAttributes);
@@ -170,9 +176,16 @@ public class QueryServiceEJB {
         Utils.decodeAttributes(studyAttrs, studyBytes);
         Utils.decodeAttributes(seriesAttrs, seriesBytes);
         Attributes attrs = Utils.mergeAndNormalize(patientAttrs, studyAttrs, seriesAttrs);
-        Utils.setStudyQueryAttributes(attrs, numberOfStudyRelatedSeries,
-                numberOfStudyRelatedInstances, modalitiesInStudy,
-                sopClassesInStudy);
+        ArchiveDeviceExtension ade = context.getArchiveAEExtension()
+                .getApplicationEntity().getDevice().getDeviceExtension
+                        (ArchiveDeviceExtension.class);
+        Utils.setStudyQueryAttributes(attrs,
+                numberOfStudyRelatedSeries,
+                numberOfStudyRelatedInstances,
+                modalitiesInStudy,
+                sopClassesInStudy,
+                studyLastUpdateTime,
+                ade.getPrivateDerivedFields().findStudyUpdateTimeTag());
         Utils.setSeriesQueryAttributes(attrs, numberOfSeriesRelatedInstances);
         return attrs;
     }

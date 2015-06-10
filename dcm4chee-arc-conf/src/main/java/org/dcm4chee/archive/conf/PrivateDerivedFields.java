@@ -58,7 +58,7 @@ public class PrivateDerivedFields implements Iterable<PrivateTag>, Serializable 
 
     public PrivateTag findByCommonName(NAMES commonName) {
         for (PrivateTag tag : list)
-            if (commonName.equals(tag.getCommonName()))
+            if (commonName.name().equals(tag.getCommonName()))
                 return tag;
         return null;
     }

@@ -39,6 +39,8 @@
 package org.dcm4chee.archive.query.impl;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.PrivateTag;
 import org.dcm4chee.archive.entity.QStudy;
 import org.dcm4chee.archive.entity.QStudyQueryAttributes;
 import org.dcm4chee.archive.entity.Study;
@@ -55,6 +57,8 @@ import com.mysema.query.jpa.hibernate.HibernateQuery;
 import com.mysema.query.types.Expression;
 import com.mysema.query.types.Predicate;
 
+import java.util.Date;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
@@ -68,8 +72,9 @@ class StudyQuery extends AbstractQuery<Study> {
         QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy,    // (4)
         QStudyQueryAttributes.studyQueryAttributes.retrieveAETs,         // (5)
         QStudyQueryAttributes.studyQueryAttributes.availability,         // (6)
-        QueryBuilder.studyAttributesBlob.encodedAttributes,              // (7)
-        QueryBuilder.patientAttributesBlob.encodedAttributes             // (8)
+        QStudyQueryAttributes.studyQueryAttributes.lastUpdateTime,       // (7)
+        QueryBuilder.studyAttributesBlob.encodedAttributes,              // (8)
+        QueryBuilder.patientAttributesBlob.encodedAttributes             // (9)
     };
 
     public StudyQuery(QueryContext context, StatelessSession session) {
@@ -106,7 +111,7 @@ class StudyQuery extends AbstractQuery<Study> {
     }
 
     @Override
-    public Attributes toAttributes(ScrollableResults results) {
+    public Attributes toAttributes(ScrollableResults results, QueryContext context) {
         Long studyPk = results.getLong(0);
         Integer numberOfInstancesI = results.getInteger(1);
         int numberOfStudyRelatedInstances;
@@ -115,6 +120,7 @@ class StudyQuery extends AbstractQuery<Study> {
         String sopClassesInStudy;
         String retrieveAETs;
         Availability availability;
+        Date studyLastUpdateTime;
         if (numberOfInstancesI != null) {
             numberOfStudyRelatedInstances = numberOfInstancesI;
             if (numberOfStudyRelatedInstances == 0)
@@ -125,6 +131,7 @@ class StudyQuery extends AbstractQuery<Study> {
             sopClassesInStudy = results.getString(4);
             retrieveAETs = results.getString(5);
             availability = (Availability) results.get(6);
+            studyLastUpdateTime = (Date) results.get(7);
         } else {
             StudyQueryAttributes studyView = context.getQueryService()
                     .createStudyView(studyPk,  context.getQueryParam());
@@ -137,20 +144,26 @@ class StudyQuery extends AbstractQuery<Study> {
             sopClassesInStudy = studyView.getRawSOPClassesInStudy();
             retrieveAETs = studyView.getRawRetrieveAETs();
             availability = studyView.getAvailability();
+            studyLastUpdateTime = studyView.getLastUpdateTime();
         }
 
-        byte[] studyByteAttributes = results.getBinary(7);
-        byte[] patientByteAttributes = results.getBinary(8);
+        byte[] studyByteAttributes = results.getBinary(8);
+        byte[] patientByteAttributes = results.getBinary(9);
         Attributes patientAttrs = new Attributes();
         Attributes studyAttrs = new Attributes();
         Utils.decodeAttributes(patientAttrs, patientByteAttributes);
         Utils.decodeAttributes(studyAttrs, studyByteAttributes);
         Attributes attrs = Utils.mergeAndNormalize(patientAttrs, studyAttrs);
+        ArchiveDeviceExtension ade = context.getArchiveAEExtension()
+                .getApplicationEntity().getDevice().getDeviceExtension
+                        (ArchiveDeviceExtension.class);
         Utils.setStudyQueryAttributes(attrs,
                 numberOfStudyRelatedSeries,
                 numberOfStudyRelatedInstances,
                 modalitiesInStudy,
-                sopClassesInStudy);
+                sopClassesInStudy,
+                studyLastUpdateTime,
+                ade.getPrivateDerivedFields().findStudyUpdateTimeTag());
         Utils.setRetrieveAET(attrs, retrieveAETs);
         Utils.setAvailability(attrs, availability);
         return attrs;

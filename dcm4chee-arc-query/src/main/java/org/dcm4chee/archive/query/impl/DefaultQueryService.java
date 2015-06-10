@@ -124,8 +124,8 @@ public class DefaultQueryService implements QueryService {
     }
 
     @Override
-    public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
-        return ejb.getSeriesAttributes(seriesPk, queryParam);
+    public Attributes getSeriesAttributes(Long seriesPk, QueryContext context) {
+        return ejb.getSeriesAttributes(seriesPk, context);
     }
 
     @Override

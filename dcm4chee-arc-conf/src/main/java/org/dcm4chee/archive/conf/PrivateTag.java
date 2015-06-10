@@ -53,7 +53,7 @@ public class PrivateTag {
     }
 
     public int getIntTag() {
-        return Integer.valueOf(tag);
+        return Integer.valueOf(tag,16);
     }
 
     public void setTag(String tag) {

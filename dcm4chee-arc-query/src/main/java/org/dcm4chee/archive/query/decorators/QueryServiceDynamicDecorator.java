@@ -55,8 +55,9 @@ public class QueryServiceDynamicDecorator extends DynamicDecoratorWrapper<QueryS
     }
 
 	@Override
-	public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
-		return wrapWithDynamicDecorators(delegate).getSeriesAttributes(seriesPk, queryParam);
+	public Attributes getSeriesAttributes(Long seriesPk, QueryContext context) {
+		return wrapWithDynamicDecorators(delegate).getSeriesAttributes
+				(seriesPk, context);
 	}
 
 	@Override

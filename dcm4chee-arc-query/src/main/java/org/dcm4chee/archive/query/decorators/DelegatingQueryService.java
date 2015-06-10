@@ -49,8 +49,8 @@ public class DelegatingQueryService extends DelegatingServiceImpl<QueryService> 
     }
 
 	@Override
-	public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
-		return getNextDecorator().getSeriesAttributes(seriesPk, queryParam);
+	public Attributes getSeriesAttributes(Long seriesPk, QueryContext context) {
+		return getNextDecorator().getSeriesAttributes(seriesPk, context);
 	}
 
 	@Override

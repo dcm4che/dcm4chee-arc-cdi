@@ -69,7 +69,7 @@ public interface QueryService {
 
     Query createMWLItemQuery(QueryContext ctx);
 
-    Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
+    Attributes getSeriesAttributes(Long seriesPk, QueryContext context);
 
     QueryParam getQueryParam(Object source, String sourceAET,
             ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,

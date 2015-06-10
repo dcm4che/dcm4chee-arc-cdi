@@ -668,7 +668,8 @@ public class DefaultDeviceFactory {
                 new AttributeFilter(INSTANCE_ATTRS));
         ext.setFetchAETitle("DCM4CHEE_FETCH");
         ext.addPrivateDerivedField(new PrivateTag(PrivateDerivedFields.NAMES
-                .StudyUpdateTimeDerivedField.name(), "0x7FD90060", "studyUpdate"));
+                .StudyUpdateTimeDerivedField.name(), "7FD91060",
+                "studyUpdate"));
     }
 
     private static RejectionParam[] createRejectionNotes() {

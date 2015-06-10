@@ -98,7 +98,7 @@ public abstract class AbstractQuery<E> implements Query {
 
     protected abstract Predicate predicate();
 
-    protected abstract Attributes toAttributes(ScrollableResults results);
+    protected abstract Attributes toAttributes(ScrollableResults results, QueryContext context);
 
     @Override
     public void executeQuery() {
@@ -144,7 +144,7 @@ public abstract class AbstractQuery<E> implements Query {
     public Attributes nextMatch() {
         if (!hasMoreMatches)
             throw new NoSuchElementException();
-        Attributes attrs = toAttributes(results);
+        Attributes attrs = toAttributes(results, context);
         hasMoreMatches = results.next();
         return attrs;
     }

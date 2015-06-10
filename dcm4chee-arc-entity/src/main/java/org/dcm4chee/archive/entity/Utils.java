@@ -45,6 +45,7 @@ import java.io.OutputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Date;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.SpecificCharacterSet;
@@ -55,6 +56,7 @@ import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.util.TagUtils;
+import org.dcm4chee.archive.conf.PrivateTag;
 import org.dcm4chee.storage.conf.Availability;
 
 /**
@@ -131,7 +133,9 @@ public class Utils {
 
     public static void setStudyQueryAttributes(Attributes attrs,
             int numberOfStudyRelatedSeries, int numberOfStudyRelatedInstances,
-            String modalitiesInStudy, String sopClassesInStudy) {
+            String modalitiesInStudy, String sopClassesInStudy,
+            Date studyLastUpdateTime, PrivateTag studyLastUpdateTimeTag) {
+
         attrs.setInt(Tag.NumberOfStudyRelatedSeries, VR.IS,
                 numberOfStudyRelatedSeries);
         attrs.setInt(Tag.NumberOfStudyRelatedInstances, VR.IS,
@@ -140,6 +144,9 @@ public class Utils {
                 StringUtils.split(modalitiesInStudy, '\\'));
         attrs.setString(Tag.SOPClassesInStudy, VR.CS,
                 StringUtils.split(sopClassesInStudy, '\\'));
+        if (studyLastUpdateTimeTag!=null && studyLastUpdateTime!=null)
+            attrs.setDate(studyLastUpdateTimeTag.getCreator(),
+            studyLastUpdateTimeTag.getIntTag(),VR.DT,studyLastUpdateTime);
     }
 
     public static void setSeriesQueryAttributes(Attributes attrs,
