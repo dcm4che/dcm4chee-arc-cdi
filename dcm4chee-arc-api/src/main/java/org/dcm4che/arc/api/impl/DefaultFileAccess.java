@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.arc.impl;
+package org.dcm4che.arc.api.impl;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;

@@ -419,6 +419,7 @@ dicomDeviceName: dcm4chee-arc
 dcmMPPSEmulationPollInterval: 60
 dcmKeyStoreType: JKS
 dcmArchivingSchedulerPollInterval: 60
+dcmDefaultAETitle: DCM4CHEE
 dicomSoftwareVersion: 4.2.0.Alpha3
 objectClass: dcmDevice
 objectClass: dicomDevice

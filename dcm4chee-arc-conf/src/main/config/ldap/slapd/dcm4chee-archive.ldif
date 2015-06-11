@@ -485,6 +485,12 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.94 NAME 'dcmPrivateTagDescription'
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.95 NAME 'dcmDefaultAETitle'
+  DESC 'Default AE title used for triggering communication with no specified local AE title'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -506,6 +512,7 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmSyncLocationStatusMaxNumberPerTask $
     dcmSyncLocationStatusVerifyArchived $
     dcmFetchAETitle $
+    dcmDefaultAETitle $
     dcmSyncLocationStatusStorageSystemGroupID ) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   DESC 'DICOM Archive Network AE related information'

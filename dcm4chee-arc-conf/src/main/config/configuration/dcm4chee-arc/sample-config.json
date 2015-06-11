@@ -577,6 +577,7 @@
               }
             },
             "dcmConfigurationStaleTimeout" : 60,
+            "dcmDefaultAETitle" : "DCM4CHEE",
             "dcmDisabledDecorators" : [ ],
             "dcmFetchAETitle" : "DCM4CHEE_FETCH",
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",

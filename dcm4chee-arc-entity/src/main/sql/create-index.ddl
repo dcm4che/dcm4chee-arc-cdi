@@ -99,5 +99,5 @@ create index qc_inst_hist_next_uid_idx on qc_instance_history (next_uid);
 create index qc_inst_hist_current_uid_idx on qc_instance_history (current_uid);
 create index qc_action_hist_cr_tm_idx on qc_action_history (created_time);
 
-create index store_remember_web_tid_idx on store_remember_web (transaction_id);
-create index store_remember_dimse_tid_idx on store_remember_dimse (transaction_id);
+create index store_verify_web_tid_idx on store_verify_web (transaction_id);
+create index store_verify_dimse_tid_idx on store_verify_dimse (transaction_id);

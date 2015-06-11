@@ -155,6 +155,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmFetchAETitle")
     private String fetchAETitle = "DCM4CHEE_FETCH";
 
+    @ConfigurableProperty(name = "dcmDefaultAETitle")
+    private String defaultAETitle = "DCM4CHEE";
+
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
 
@@ -447,5 +450,13 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     public boolean removePrivateDerivedField(PrivateTag tag) {
         return privateDerivedFields.remove(tag);
+    }
+
+    public String getDefaultAETitle() {
+        return defaultAETitle;
+    }
+
+    public void setDefaultAETitle(String defaultAETitle) {
+        this.defaultAETitle = defaultAETitle;
     }
 }
