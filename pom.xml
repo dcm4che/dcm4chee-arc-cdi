@@ -39,13 +39,13 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.dcm4che.dcm4chee-arc</groupId>
   <artifactId>dcm4chee-arc-parent</artifactId>
-  <version>4.4.0-SNAPSHOT</version>
+  <version>4.4.0.Beta1</version>
   <packaging>pom</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dcm4che.version>3.3.7-SNAPSHOT</dcm4che.version>
-    <dcm4chee-storage.version>2.0.0-SNAPSHOT</dcm4chee-storage.version>
-    <dcm4chee-conf.version>1.0.0-SNAPSHOT</dcm4chee-conf.version>
+    <dcm4che.version>3.3.7</dcm4che.version>
+    <dcm4chee-storage.version>2.0.0</dcm4chee-storage.version>
+    <dcm4chee-conf.version>1.0.0</dcm4chee-conf.version>
     <jboss-javaee-6.0.version>3.0.2.Final</jboss-javaee-6.0.version>
     <slf4j.version>1.7.5</slf4j.version>
     <hibernate.version>4.2.7.Final</hibernate.version>
@@ -85,6 +85,30 @@
       <email>gunterze@gmail.com</email>
       <organization>dcm4che.org</organization>
       <organizationUrl>http://dcm4che.org</organizationUrl>
+    </developer>
+    <developer>
+      <name>Hesham Elbadawi</name>
+      <email>bsdreko@gmail.com</email>
+    </developer>
+    <developer>
+      <name>Umberto Cappellini</name>
+      <email>umberto.cappellini@agfa.com</email>
+    </developer>
+    <developer>
+      <name>Franz Willer</name>
+      <email>franz.willer@agfa.com</email>
+    </developer>
+    <developer>
+      <name>Roman Khazankin</name>
+      <email>roman.khazankin@agfa.com</email>
+    </developer>
+    <developer>
+      <name>Alexander Hoermandinger</name>
+      <email>alexander.hoermandinger@agfa.com</email>
+    </developer>
+    <developer>
+      <name>Hermann Czedik-Eysenberg</name>
+      <email>hermann.czedik-eysenberg@agfa.com</email>
     </developer>
   </developers>
   <scm>

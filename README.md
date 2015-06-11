@@ -23,16 +23,27 @@ for IHE Actor Image Manager/Archive, including the new
 
 - [Multiple Identity Resolution Option][5]
 
+
 for these Profiles.
 
 Additionally it supports
 
-- compression/decompression of images
-- WADO URI Service
+- [compression/decompression of images with customizable rules]
+- [WADO URI Service]
 - [WADO by means of RESTful Services (WADO-RS)][6]
 - [Store Over the Web by RESTful Services (STOW-RS)][7]
 - [Query based on ID for DICOM Objects by RESTful Services (QIDO-RS)][8]
 - [Different time Zone Support]
+- [Long term archiving to different storage volumes]
+- [Long term archiving to external systems and storage verification]
+- [Dicom Export]
+- [Configuration Web-based User Interface]
+- [Quality Control Operations]
+- [Customizable Views for Q/R]
+- [Customizable Rejected instance Retention times based on code]
+- [Emulated MPPS service for late image arrival]
+- [Support for private filtered attributes for Q/R]
+
 
 There are still major gaps compared to the functionality of DCM4CHEE Archive 2.x:
 

@@ -33,7 +33,10 @@ Requirements
     *Note*: Because DCM4CHEE Archive 4.4.0.Beta1 Contains a web based configuration editor
     which is deployed with the ear deployment. For LDAP the Apache LDAP browser can be used.
 
-
+-   To access the archive configuration through the web interface point your browser to
+    `localhost:8080/dcm4chee-arc/config`.
+    The web user interface for managing configuration is in the ear deployment.
+    
 Download and extract binary distribution package
 ------------------------------------------------
 DCM4CHEE Archive 4.x binary distributions for different databases can be obtained
@@ -677,10 +680,9 @@ Control DCM4CHEE Archive 4.x by HTTP GET
 
 4.  `HTTP GET http://localhost:8080/dcm4chee-arc/ctrl/reload` 
     reloads the configuration from the configuration backend.
-
+    
 *Note*: `start`, `stop` and `reload` returns `HTTP status: 204 No Content` 
 on success,  which causes some HTTP clients (in particular `wget`) to hang.
-
 
 Testing DCM4CHEE Archive 4.x
 ----------------------------
