@@ -106,6 +106,7 @@ import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
+import org.dcm4chee.archive.store.NewStudyCreated;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -151,6 +152,10 @@ public class StoreServiceImpl implements StoreService {
 
     @Inject
     private Event<StoreContext> storeEvent;
+
+    @Inject
+    @NewStudyCreated
+    private Event<String> newStudyCreatedEvent;
 
     @Inject
     @StoreSessionClosed
@@ -772,6 +777,7 @@ public class StoreServiceImpl implements StoreService {
                 .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         em.persist(study);
         LOG.info("{}: Create {}", session, study);
+        newStudyCreatedEvent.fire(study.getStudyInstanceUID());
         return study;
     }
 
