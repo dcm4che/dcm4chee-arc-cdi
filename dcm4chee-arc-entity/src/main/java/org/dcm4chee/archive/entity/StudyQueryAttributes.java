@@ -79,6 +79,9 @@ public class StudyQueryAttributes {
     @Column(name = "availability")
     private Availability availability;
 
+    @Column(name = "num_visible_instances")
+    private int numberOfVisibleInstances;
+
     @Column(name = "last_update_time")
     private Date lastUpdateTime;
 
@@ -156,6 +159,14 @@ public class StudyQueryAttributes {
 
     public void setAvailability(Availability availability) {
         this.availability = availability;
+    }
+
+    public int getNumberOfVisibleInstances() {
+        return numberOfVisibleInstances;
+    }
+
+    public void setNumberOfVisibleInstances(int numberOfVisibleInstances) {
+        this.numberOfVisibleInstances = numberOfVisibleInstances;
     }
 
     public Date getLastUpdateTime() {

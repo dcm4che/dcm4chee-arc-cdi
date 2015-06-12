@@ -134,7 +134,8 @@ public class Utils {
     public static void setStudyQueryAttributes(Attributes attrs,
             int numberOfStudyRelatedSeries, int numberOfStudyRelatedInstances,
             String modalitiesInStudy, String sopClassesInStudy,
-            Date studyLastUpdateTime, PrivateTag studyLastUpdateTimeTag) {
+            int numberVisibleInstances, PrivateTag numberVisibleInstancesTag,
+            Date lastUpdateTime, PrivateTag lastUpdateTimeTag) {
 
         attrs.setInt(Tag.NumberOfStudyRelatedSeries, VR.IS,
                 numberOfStudyRelatedSeries);
@@ -144,15 +145,24 @@ public class Utils {
                 StringUtils.split(modalitiesInStudy, '\\'));
         attrs.setString(Tag.SOPClassesInStudy, VR.CS,
                 StringUtils.split(sopClassesInStudy, '\\'));
-        if (studyLastUpdateTimeTag!=null && studyLastUpdateTime!=null)
-            attrs.setDate(studyLastUpdateTimeTag.getCreator(),
-            studyLastUpdateTimeTag.getIntTag(),VR.DT,studyLastUpdateTime);
+        if (lastUpdateTimeTag!=null && lastUpdateTime!=null)
+            attrs.setDate(lastUpdateTimeTag.getCreator(),
+            lastUpdateTimeTag.getIntTag(),VR.DT,lastUpdateTime);
+        if (numberVisibleInstancesTag!=null)
+            attrs.setInt(numberVisibleInstancesTag.getCreator(),
+                    numberVisibleInstancesTag.getIntTag(), VR.IS,
+                    numberVisibleInstances);
     }
 
     public static void setSeriesQueryAttributes(Attributes attrs,
-            int numberOfSeriesRelatedInstances) {
+            int numberOfSeriesRelatedInstances, int numberVisibleInstances,
+            PrivateTag numberVisibleInstancesTag) {
         attrs.setInt(Tag.NumberOfSeriesRelatedInstances, VR.IS,
                 numberOfSeriesRelatedInstances);
+        if (numberVisibleInstancesTag!=null)
+            attrs.setInt(numberVisibleInstancesTag.getCreator(),
+                    numberVisibleInstancesTag.getIntTag(), VR.IS,
+                    numberVisibleInstances);
     }
 
     public static String[] decodeAETs(String aetsSeparated) {

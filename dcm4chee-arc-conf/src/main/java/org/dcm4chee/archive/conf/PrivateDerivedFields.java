@@ -23,7 +23,8 @@ public class PrivateDerivedFields implements Iterable<PrivateTag>, Serializable 
 
     public enum NAMES {
         StudyUpdateTimeDerivedField,
-        NumberVisibleImagesDerivedField;
+        StudyNumberVisibleImagesDerivedField,
+        SeriesNumberVisibleImagesDerivedField;
     }
 
     public void add(PrivateTag tag) {
@@ -65,6 +66,14 @@ public class PrivateDerivedFields implements Iterable<PrivateTag>, Serializable 
 
     public PrivateTag findStudyUpdateTimeTag() {
         return findByCommonName(NAMES.StudyUpdateTimeDerivedField);
+    }
+
+    public PrivateTag findStudyNumberOfVisibleInstancesTag() {
+        return findByCommonName(NAMES.StudyNumberVisibleImagesDerivedField);
+    }
+
+    public PrivateTag findSeriesNumberOfVisibleInstancesTag() {
+        return findByCommonName(NAMES.SeriesNumberVisibleImagesDerivedField);
     }
 
     @Override

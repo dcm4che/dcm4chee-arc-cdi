@@ -72,9 +72,10 @@ class StudyQuery extends AbstractQuery<Study> {
         QStudyQueryAttributes.studyQueryAttributes.sopClassesInStudy,    // (4)
         QStudyQueryAttributes.studyQueryAttributes.retrieveAETs,         // (5)
         QStudyQueryAttributes.studyQueryAttributes.availability,         // (6)
-        QStudyQueryAttributes.studyQueryAttributes.lastUpdateTime,       // (7)
-        QueryBuilder.studyAttributesBlob.encodedAttributes,              // (8)
-        QueryBuilder.patientAttributesBlob.encodedAttributes             // (9)
+        QStudyQueryAttributes.studyQueryAttributes.numberOfVisibleInstances,// (7)
+        QStudyQueryAttributes.studyQueryAttributes.lastUpdateTime,       // (8)
+        QueryBuilder.studyAttributesBlob.encodedAttributes,              // (9)
+        QueryBuilder.patientAttributesBlob.encodedAttributes             // (10)
     };
 
     public StudyQuery(QueryContext context, StatelessSession session) {
@@ -120,6 +121,7 @@ class StudyQuery extends AbstractQuery<Study> {
         String sopClassesInStudy;
         String retrieveAETs;
         Availability availability;
+        int numberOfStudyVisibleInstances;
         Date studyLastUpdateTime;
         if (numberOfInstancesI != null) {
             numberOfStudyRelatedInstances = numberOfInstancesI;
@@ -131,7 +133,8 @@ class StudyQuery extends AbstractQuery<Study> {
             sopClassesInStudy = results.getString(4);
             retrieveAETs = results.getString(5);
             availability = (Availability) results.get(6);
-            studyLastUpdateTime = (Date) results.get(7);
+            numberOfStudyVisibleInstances = results.getInteger(7);
+            studyLastUpdateTime = results.getDate(8);
         } else {
             StudyQueryAttributes studyView = context.getQueryService()
                     .createStudyView(studyPk,  context.getQueryParam());
@@ -144,11 +147,12 @@ class StudyQuery extends AbstractQuery<Study> {
             sopClassesInStudy = studyView.getRawSOPClassesInStudy();
             retrieveAETs = studyView.getRawRetrieveAETs();
             availability = studyView.getAvailability();
+            numberOfStudyVisibleInstances = studyView.getNumberOfVisibleInstances();
             studyLastUpdateTime = studyView.getLastUpdateTime();
         }
 
-        byte[] studyByteAttributes = results.getBinary(8);
-        byte[] patientByteAttributes = results.getBinary(9);
+        byte[] studyByteAttributes = results.getBinary(9);
+        byte[] patientByteAttributes = results.getBinary(10);
         Attributes patientAttrs = new Attributes();
         Attributes studyAttrs = new Attributes();
         Utils.decodeAttributes(patientAttrs, patientByteAttributes);
@@ -162,6 +166,8 @@ class StudyQuery extends AbstractQuery<Study> {
                 numberOfStudyRelatedInstances,
                 modalitiesInStudy,
                 sopClassesInStudy,
+                numberOfStudyVisibleInstances,
+                ade.getPrivateDerivedFields().findStudyNumberOfVisibleInstancesTag(),
                 studyLastUpdateTime,
                 ade.getPrivateDerivedFields().findStudyUpdateTimeTag());
         Utils.setRetrieveAET(attrs, retrieveAETs);

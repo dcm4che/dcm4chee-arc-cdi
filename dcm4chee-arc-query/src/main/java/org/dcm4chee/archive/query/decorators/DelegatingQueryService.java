@@ -1,7 +1,5 @@
 package org.dcm4chee.archive.query.decorators;
 
-import java.util.EnumSet;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
@@ -14,6 +12,8 @@ import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.conf.decorators.DelegatingService;
 import org.dcm4chee.conf.decorators.DelegatingServiceImpl;
+
+import java.util.EnumSet;
 
 @DelegatingService
 public class DelegatingQueryService extends DelegatingServiceImpl<QueryService> implements QueryService {

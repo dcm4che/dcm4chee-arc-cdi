@@ -1,11 +1,5 @@
 package org.dcm4chee.archive.query.decorators;
 
-import java.util.EnumSet;
-
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
-import javax.inject.Inject;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
@@ -17,6 +11,11 @@ import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.conf.decorators.DynamicDecoratorWrapper;
+
+import javax.decorator.Decorator;
+import javax.decorator.Delegate;
+import javax.inject.Inject;
+import java.util.EnumSet;
 
 @Decorator
 public class QueryServiceDynamicDecorator extends DynamicDecoratorWrapper<QueryService> implements QueryService {
