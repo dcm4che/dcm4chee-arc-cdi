@@ -158,6 +158,15 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmDefaultAETitle")
     private String defaultAETitle = "DCM4CHEE";
 
+    @ConfigurableProperty(name = "dcmPriorsCacheMaxResolvedPathEntries", defaultValue = "100")
+    private int priorsCacheMaxResolvedPathEntries = 100;
+
+    @ConfigurableProperty(name = "dcmPriorsCacheDeleteDuplicateLocationsDelay", defaultValue = "60")
+    private int priorsCacheDeleteDuplicateLocationsDelay = 60;
+
+    @ConfigurableProperty(name = "dcmPriorsCacheClearMaxLocationsPerDelete", defaultValue = "1000")
+    private int priorsCacheClearMaxLocationsPerDelete;
+
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
 
@@ -459,4 +468,32 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     public void setDefaultAETitle(String defaultAETitle) {
         this.defaultAETitle = defaultAETitle;
     }
+
+    public int getPriorsCacheMaxResolvedPathEntries() {
+        return priorsCacheMaxResolvedPathEntries;
+    }
+
+    public void setPriorsCacheMaxResolvedPathEntries(
+            int priorsCacheMaxResolvedPathEntries) {
+        this.priorsCacheMaxResolvedPathEntries = priorsCacheMaxResolvedPathEntries;
+    }
+
+    public int getPriorsCacheDeleteDuplicateLocationsDelay() {
+        return priorsCacheDeleteDuplicateLocationsDelay;
+    }
+
+    public void setPriorsCacheDeleteDuplicateLocationsDelay(
+            int priorsCacheDeleteDuplicateLocationsDelay) {
+        this.priorsCacheDeleteDuplicateLocationsDelay = priorsCacheDeleteDuplicateLocationsDelay;
+    }
+
+    public int getPriorsCacheClearMaxLocationsPerDelete() {
+        return priorsCacheClearMaxLocationsPerDelete;
+    }
+
+    public void setPriorsCacheClearMaxLocationsPerDelete(
+            int priorsCacheClearMaxLocationsPerDelete) {
+        this.priorsCacheClearMaxLocationsPerDelete = priorsCacheClearMaxLocationsPerDelete;
+    }
+
 }

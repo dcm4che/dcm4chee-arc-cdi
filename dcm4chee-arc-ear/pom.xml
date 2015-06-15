@@ -227,6 +227,11 @@
       <type>war</type>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-prefetch</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-conf</artifactId>
     </dependency>

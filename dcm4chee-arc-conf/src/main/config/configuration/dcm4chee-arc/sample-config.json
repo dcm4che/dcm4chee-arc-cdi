@@ -583,6 +583,7 @@
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
             "dcmMppsEmulationPollInterval" : 60,
+            "dcmPriorsCacheClearMaxLocationsPerDelete" : 0,
             "dcmPrivateDerivedFields" : {
               "list" : [ {
                 "cn" : "StudyUpdateTimeDerivedField",

@@ -491,6 +491,21 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.95 NAME 'dcmDefaultAETitle'
   SUBSTR caseIgnoreSubstringsMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.96 NAME 'dcmPriorsCacheMaxResolvedPathEntries'
+  DESC 'The maximum number of resolved path entries stored in-memory before removing the eldest entry. Default is 100'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.97 NAME 'dcmPriorsCacheDeleteDuplicateLocationsDelay'
+  DESC 'The delay before duplicate locations are deleted from cache when detected. Default is 60 seconds'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.98 NAME 'dcmPriorsCacheClearMaxLocationsPerDelete'
+  DESC 'The maximum number of locations to delete at once when clearing the cache. Default is 1000'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -513,7 +528,10 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmSyncLocationStatusVerifyArchived $
     dcmFetchAETitle $
     dcmDefaultAETitle $
-    dcmSyncLocationStatusStorageSystemGroupID ) )
+    dcmSyncLocationStatusStorageSystemGroupID $
+    dcmPriorsCacheMaxResolvedPathEntries $
+    dcmPriorsCacheDeleteDuplicateLocationsDelay $
+    dcmPriorsCacheClearMaxLocationsPerDelete ) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   DESC 'DICOM Archive Network AE related information'
   SUP top AUXILIARY
