@@ -161,7 +161,6 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
     private void processRejectionNote(EntityManager em, StoreContext context,
             Instance rejectionNote, RejectionParam rejectionParam,
             HashSet<String> affectedMPPS) throws DicomServiceException {
-        HashSet<String> mppsIUIDs = new HashSet<String>();
         org.dcm4chee.archive.entity.Code rejectionCode = rejectionNote.getConceptNameCode();
         LOG.info("{}: Process Rejection Note[pk={}, iuid={}, code={}]",
                 context.getStoreSession(),
@@ -177,7 +176,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             String ppsCUID = series.getPerformedProcedureStepClassUID();
             if (ppsIUID != null
                     && UID.ModalityPerformedProcedureStepSOPClass.equals(ppsCUID)) {
-                mppsIUIDs.add(ppsIUID);
+                affectedMPPS.add(ppsIUID);
             }
         }
         try {
