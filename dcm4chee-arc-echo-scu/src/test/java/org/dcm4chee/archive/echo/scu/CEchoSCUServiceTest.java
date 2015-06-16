@@ -144,16 +144,20 @@ public class CEchoSCUServiceTest {
     @Test
     public void testCEchoSuccess() throws Exception {
 
+        long time;
+
         // start up a remote ECHO-SCP that we can test against
         CEchoSCPTool scpTool = new CEchoSCPTool(REMOTE_AET, "localhost", portForRemoteEchoSCP);
         scpTool.start();
         try {
 
-            service.cecho(LOCAL_AET, REMOTE_AET);
+            time = service.cecho(LOCAL_AET, REMOTE_AET);
 
         } finally {
             scpTool.stop();
         }
+
+        Assert.assertTrue(time >= 0);
     }
 
     @Test
