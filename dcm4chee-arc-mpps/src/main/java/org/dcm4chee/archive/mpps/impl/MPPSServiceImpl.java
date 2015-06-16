@@ -38,23 +38,29 @@
 
 package org.dcm4chee.archive.mpps.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
-import javax.ejb.Stateless;
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.xml.transform.Templates;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
@@ -62,7 +68,10 @@ import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
@@ -71,29 +80,37 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.mpps.MPPSServiceEJB;
 import org.dcm4chee.archive.mpps.event.MPPSCreate;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.mpps.event.MPPSUpdate;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
+import org.dcm4chee.archive.query.QueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ *
  */
-@Stateless
+
+@ApplicationScoped
 public class MPPSServiceImpl implements MPPSService {
 
     private static Logger LOG = LoggerFactory
             .getLogger(MPPSServiceImpl.class);
 
-    @PersistenceContext(unitName="dcm4chee-arc")
-    private EntityManager em;
+    @Inject
+    private MPPSServiceEJB ejb;
 
     @Inject
     private PatientService patientService;
+
+    @Inject
+    private QueryService queryService;
 
     @Inject
     private CodeService codeService;
@@ -110,15 +127,18 @@ public class MPPSServiceImpl implements MPPSService {
     @MPPSFinal
     private Event<MPPSEvent> finalMPPSEvent;
 
+    @Inject
+    private Device device;
+
     @Override
     public MPPS createPerformedProcedureStep(ArchiveAEExtension arcAE,
             String iuid, Attributes attrs, Patient patient,
             MPPSService service) throws DicomServiceException {
-        try {
-            find(iuid);
+            MPPS pps = ejb.findPPS(iuid);
+            if(pps != null)
             throw new DicomServiceException(Status.DuplicateSOPinstance)
                 .setUID(Tag.AffectedSOPInstanceUID, iuid);
-        } catch (NoResultException e) {}
+            
         StoreParam storeParam = arcAE.getStoreParam();
         if (patient == null) {
             patient = service.findOrCreatePatient(attrs, storeParam);
@@ -130,7 +150,7 @@ public class MPPSServiceImpl implements MPPSService {
         mpps.setSopInstanceUID(iuid);
         mpps.setAttributes(mppsAttrs);
         mpps.setPatient(patient);
-        em.persist(mpps);
+        ejb.persistPPS(mpps);
         return mpps;
     }
 
@@ -140,7 +160,7 @@ public class MPPSServiceImpl implements MPPSService {
                     throws DicomServiceException {
         MPPS pps;
         try {
-            pps = find(iuid);
+            pps = ejb.findPPS(iuid);
         } catch (NoResultException e) {
             throw new DicomServiceException(Status.NoSuchObjectInstance)
                 .setUID(Tag.AffectedSOPInstanceUID, iuid);
@@ -184,11 +204,7 @@ public class MPPSServiceImpl implements MPPSService {
                     .getSequence(Tag.ReferencedNonImageCompositeSOPInstanceSequence)) {
                 map.put(ref.getString(Tag.ReferencedSOPInstanceUID), ref);
             }
-            List<Instance> insts = em
-                    .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID,
-                            Instance.class)
-                    .setParameter(1, seriesRef.getString(Tag.SeriesInstanceUID))
-                    .getResultList();
+            List<Instance> insts = ejb.findBySeriesInstanceUID(seriesRef);
             for (Instance inst : insts) {
                 String iuid = inst.getSopInstanceUID();
                 Attributes ref = map.get(iuid);
@@ -215,14 +231,6 @@ public class MPPSServiceImpl implements MPPSService {
             }
             map.clear();
         }
-    }
-
-    private MPPS find(String sopInstanceUID) {
-        return em.createNamedQuery(
-                MPPS.FIND_BY_SOP_INSTANCE_UID,
-                MPPS.class)
-             .setParameter(1, sopInstanceUID)
-             .getSingleResult();
     }
 
     @Override
@@ -275,6 +283,60 @@ public class MPPSServiceImpl implements MPPSService {
             MPPS mpps) {
         finalMPPSEvent.fire(
                 new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
+    }
+
+    public void onMPPSFinalEvent(@Observes @MPPSFinal MPPSEvent event) {
+        LOG.info("Received MPPS complete event , initiating derived fields calculation");
+        ArchiveDeviceExtension arcDevExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        String defaultAETitle = "";
+        try {
+         defaultAETitle =  arcDevExt.getDefaultAETitle();
+        }
+        catch(Exception e) {
+            LOG.error("Undefined defaultAETitle, "
+                    + "Can not calculate derived fields on MPPS COMPLETE");
+            return;
+        }
+        ApplicationEntity archiveAE = device
+                .getApplicationEntity(defaultAETitle);
+        ArchiveAEExtension arcAEExt = archiveAE
+                .getAEExtension(ArchiveAEExtension.class);
+        QueryRetrieveView view = arcDevExt
+                .getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
+        QueryParam param = new QueryParam();
+        param.setQueryRetrieveView(view);
+        ArrayList<String> studyInstanceUID = getStudyUIDFromMPPSAttrs(event.getPerformedProcedureStep()
+                .getAttributes());
+        //now for each study
+        try {
+        for(String studyUID : studyInstanceUID) {
+            Study study = ejb.findStudyByUID(studyUID);
+            //create study view
+            queryService.createStudyView(study.getPk(), param);
+            //create series view
+            for(Series series : study.getSeries()) {
+                queryService.createSeriesView(series.getPk(), param);
+            }
+        }
+        }
+        catch(Exception e) {
+            LOG.error("Study or Series lookup failed, "
+                    + "Can not calculate derived fields on MPPS COMPLETE");
+            return;
+        }
+    }
+
+    private ArrayList<String> getStudyUIDFromMPPSAttrs(Attributes attributes) {
+        ArrayList<String> suids = new ArrayList<>();
+        Sequence ssas = attributes.getSequence(Tag.ScheduledStepAttributesSequence);
+        for(Iterator<Attributes> iter = ssas.iterator(); iter.hasNext();) {
+            Attributes ssasItem = iter.next();
+           String studyIUID = ssasItem.getString(Tag.StudyInstanceUID);
+           if(studyIUID != null)
+               suids.add(studyIUID);
+        }
+        return suids;
     }
 
 }
