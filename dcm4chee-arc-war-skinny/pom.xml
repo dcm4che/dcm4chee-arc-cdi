@@ -77,7 +77,27 @@
           </plugin>
         </plugins>
       </build>
-    </profile>    
+    </profile>
+    <profile>
+      <id>perf-monitoring</id>
+      <activation>
+        <property>
+          <name>perf-monitoring</name>
+          <value>true</value>
+        </property>
+      </activation>      
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <configuration>
+              <webXml>src/perf-monitoring/web.xml</webXml>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>        
   </profiles>
   <build>
     <plugins>

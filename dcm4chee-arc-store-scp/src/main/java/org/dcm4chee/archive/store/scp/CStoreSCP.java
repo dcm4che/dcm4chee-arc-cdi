@@ -49,6 +49,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Association;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.PDVInputStream;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.PresentationContext;
@@ -57,6 +58,7 @@ import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.LocalAssociationParticipant;
+import org.dcm4chee.archive.monitoring.api.MonitoredService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -74,6 +76,13 @@ public class CStoreSCP extends BasicCStoreSCP {
 
     @Inject
     private IApplicationEntityCache aeCache;
+    
+    @Override
+    @MonitoredService(name = { "dicom", "service", "dimse", "CStoreSCP" })
+    public void onDimseRQ(Association as, PresentationContext pc, Dimse dimse,
+            Attributes rq, PDVInputStream data) throws IOException {
+    	super.onDimseRQ(as, pc, dimse, rq, data);
+    }
     
     @Override
     protected void store(Association as, PresentationContext pc, Attributes rq,

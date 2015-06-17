@@ -19,6 +19,10 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-monitoring</groupId>
+      <artifactId>dcm4chee-monitoring-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-store</artifactId>
       <version>${project.version}</version>

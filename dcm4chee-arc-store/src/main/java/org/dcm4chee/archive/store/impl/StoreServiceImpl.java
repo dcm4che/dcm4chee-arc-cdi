@@ -104,6 +104,7 @@ import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.issuer.IssuerService;
+import org.dcm4chee.archive.monitoring.api.Monitored;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.NewStudyCreated;
@@ -444,6 +445,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+    @Monitored(name="processFile")
     public void processFile(StoreContext context) throws DicomServiceException {
         try {
             StoreSession session = context.getStoreSession();

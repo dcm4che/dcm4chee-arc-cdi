@@ -46,6 +46,7 @@
     <dcm4che.version>3.3.8-SNAPSHOT</dcm4che.version>
     <dcm4chee-storage.version>2.1.0-SNAPSHOT</dcm4chee-storage.version>
     <dcm4chee-conf.version>1.1.0-SNAPSHOT</dcm4chee-conf.version>
+    <dcm4chee-monitoring.version>0.3.0-SNAPSHOT</dcm4chee-monitoring.version>
     <jboss-javaee-6.0.version>3.0.2.Final</jboss-javaee-6.0.version>
     <slf4j.version>1.7.5</slf4j.version>
     <hibernate.version>4.2.7.Final</hibernate.version>
@@ -60,7 +61,6 @@
 
     <!-- by default, the config browser is not protected -->
     <conf-web-classifier>-unsecure</conf-web-classifier>
-
   </properties>
   <name>dcm4chee archive server</name>
   <description>dcm4chee archive server</description>
@@ -318,6 +318,13 @@
           <groupId>org.dcm4che.dcm4chee-conf</groupId>
           <artifactId>dcm4chee-conf-decorators</artifactId>
           <version>${dcm4chee-conf.version}</version>
+      </dependency>
+
+      <!-- Monitoring dependencies -->
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-monitoring</groupId>
+        <artifactId>dcm4chee-monitoring-api</artifactId>
+        <version>${dcm4chee-monitoring.version}</version>
       </dependency>
 
       <dependency>
