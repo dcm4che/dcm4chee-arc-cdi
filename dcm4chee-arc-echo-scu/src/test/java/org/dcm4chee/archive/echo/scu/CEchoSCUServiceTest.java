@@ -75,6 +75,7 @@ public class CEchoSCUServiceTest {
 
     private static final String LOCAL_AET = "cecho_test_local";
     private static final String REMOTE_AET = "cecho_test_rmt";
+    private static final String REMOTE_AET2 = "cecho_test_rmt2";
 
     private static int portForRemoteEchoSCP;
     static {
@@ -120,7 +121,7 @@ public class CEchoSCUServiceTest {
 
     @Produces
     public static IApplicationEntityCache mockApplicationEntityCache() throws Exception {
-        // we setup mocked AE cache that contains the remote AE
+        // we setup a mocked AE cache that contains a remote AE
 
         Device remoteDevice = new Device("CECHO-TEST-REMOTE");
         Connection remoteConnection = new Connection();
@@ -142,7 +143,9 @@ public class CEchoSCUServiceTest {
     private CEchoSCUService service;
 
     @Test
-    public void testCEchoSuccess() throws Exception {
+    public void testCEchoSuccess_KnownRemoteAE() throws Exception {
+
+        // test cecho to a known (configured in application entity cache) remote AE
 
         long time;
 
@@ -152,6 +155,27 @@ public class CEchoSCUServiceTest {
         try {
 
             time = service.cecho(LOCAL_AET, REMOTE_AET);
+
+        } finally {
+            scpTool.stop();
+        }
+
+        Assert.assertTrue(time >= 0);
+    }
+
+    @Test
+    public void testCEchoSuccess_NewRemoteAE() throws Exception {
+
+        // test cecho to a new (not yet configured) remote AE
+
+        long time;
+
+        // start up a remote ECHO-SCP that we can test against
+        CEchoSCPTool scpTool = new CEchoSCPTool(REMOTE_AET2, "localhost", portForRemoteEchoSCP);
+        scpTool.start();
+        try {
+
+            time = service.cecho(LOCAL_AET, REMOTE_AET2, new Connection("remoteConnection", "localhost", portForRemoteEchoSCP));
 
         } finally {
             scpTool.stop();
