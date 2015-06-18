@@ -43,21 +43,21 @@ import java.util.EnumSet;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.SeriesQueryAttributes;
 import org.dcm4chee.archive.entity.StudyQueryAttributes;
 
 /**
+ * Query service for different information models (Patient, Study, Modality
+ * Worklist, ...).
+ * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
 public interface QueryService {
 
     QueryContext createQueryContext(QueryService queryService);
-
-    Query createQuery(QueryRetrieveLevel qrlevel, QueryContext ctx);
 
     Query createPatientQuery(QueryContext ctx);
 
@@ -67,15 +67,15 @@ public interface QueryService {
 
     Query createInstanceQuery(QueryContext ctx);
 
-    Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam);
+    Query createMWLItemQuery(QueryContext ctx);
+
+    Attributes getSeriesAttributes(Long seriesPk, QueryContext context);
 
     QueryParam getQueryParam(Object source, String sourceAET,
             ArchiveAEExtension aeExt, EnumSet<QueryOption> queryOpts,
             String[] accessControlIDs);
 
     void initPatientIDs(QueryContext queryContext);
-
-    void adjustMatch(QueryContext query, Attributes match);
 
     void coerceRequestAttributes(QueryContext context)
             throws DicomServiceException;
@@ -86,4 +86,5 @@ public interface QueryService {
     StudyQueryAttributes createStudyView(Long studyPk, QueryParam queryParam);
 
     SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam);
+
 }

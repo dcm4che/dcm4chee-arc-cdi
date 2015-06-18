@@ -92,7 +92,7 @@ public class StowClientServiceImpl implements StowClientService {
 
     @Inject
     @Any
-    private Event<StowResponse> storeRememberEvent;
+    private Event<StowResponse> stowClientEvent;
 
     @Override 
     public void scheduleStow(String transactionID, StowContext ctx
@@ -169,7 +169,7 @@ public class StowClientServiceImpl implements StowClientService {
 
     @Override
     public void notify(StowContext context, StowResponse rsp) {
-        storeRememberEvent.select(new ServiceQualifier(
+        stowClientEvent.select(new ServiceQualifier(
                 context.getService())).fire(rsp);
     }
 

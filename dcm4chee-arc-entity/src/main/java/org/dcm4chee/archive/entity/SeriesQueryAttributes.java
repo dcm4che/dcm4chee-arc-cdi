@@ -75,6 +75,9 @@ public class SeriesQueryAttributes {
     @Column(name = "availability")
     private Availability availability;
 
+    @Column(name = "num_visible_instances")
+    private int numberOfVisibleInstances;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "series_fk")
     private Series series;
@@ -117,6 +120,14 @@ public class SeriesQueryAttributes {
 
     public void setAvailability(Availability availability) {
         this.availability = availability;
+    }
+
+    public int getNumberOfVisibleInstances() {
+        return numberOfVisibleInstances;
+    }
+
+    public void setNumberOfVisibleInstances(int numberOfVisibleInstances) {
+        this.numberOfVisibleInstances = numberOfVisibleInstances;
     }
 
     public Series getSeries() {

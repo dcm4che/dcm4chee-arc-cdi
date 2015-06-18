@@ -75,6 +75,7 @@ import org.dcm4che3.net.Device;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
@@ -83,6 +84,7 @@ import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.QueryServiceUtils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.slf4j.Logger;
@@ -200,9 +202,11 @@ public class QidoRS {
     }
     
     /**
-     * Setter for the AETitle property, automatically invoked
-     * by the CDI container. Setter initializes ArchiveAEExtension and
-     * queryParam too.
+     * Setter for the AETitle property, automatically invoked by the CDI
+     * container. Setter initializes ArchiveAEExtension and queryParam too.
+     * 
+     * @param aet
+     *            AE title
      */
     @PathParam("AETitle")
     public void setAETitle(String aet) {
@@ -334,7 +338,7 @@ public class QidoRS {
         init(method, qrlevel, relational, studyInstanceUID, seriesInstanceUID,
                 includetags);
 
-        Query query = queryService.createQuery(qrlevel, queryContext);
+        Query query = QueryServiceUtils.createQuery(queryService, qrlevel, queryContext);
         try {
             query.initQuery();
             int status = STATUS_OK;
@@ -373,10 +377,12 @@ public class QidoRS {
 
     /**
      * Initializes query options and parameters
+     * 
+     * @throws DicomServiceException
      */
     private void init(String method, QueryRetrieveLevel qrlevel,
             boolean relational, String studyInstanceUID,
-            String seriesInstanceUID, int[] defIncludefields) {
+            String seriesInstanceUID, int[] defIncludefields) throws DicomServiceException {
         this.method = method;
 
         TransferCapability tc = ae.getTransferCapabilityFor(
@@ -436,6 +442,7 @@ public class QidoRS {
                 accessControlIDs());
         queryContext.setQueryParam(queryParam);
         queryContext.setKeys(keys);
+        queryService.coerceRequestAttributes(queryContext);
         queryService.initPatientIDs(queryContext);
 
     }
@@ -577,7 +584,7 @@ public class QidoRS {
             Attributes tmp = query.nextMatch();
             if (tmp == null)
                 continue;
-            final Attributes match = filter(addRetrieveURL(tmp, qrlevel));
+            final Attributes match = adjust(tmp, qrlevel, query);
             LOG.debug("{}: Match #{}:\n{}", new Object[]{method, ++count, match});
             output.addPart(new StreamingOutput() {
 
@@ -603,7 +610,7 @@ public class QidoRS {
             Attributes tmp = query.nextMatch();
             if (tmp == null)
                 continue;
-            Attributes match = filter(addRetrieveURL(tmp, qrlevel));
+            Attributes match = adjust(tmp, qrlevel, query);
             LOG.debug("{}: Match #{}:\n{}", new Object[]{method, ++count, match});
             matches.add(match);
         }
@@ -628,6 +635,18 @@ public class QidoRS {
             }
         };
         return output;
+    }
+
+    private Attributes adjust(Attributes match, QueryRetrieveLevel qrlevel, Query query) {
+
+        // response adjustment (e.g. timezone)
+        try {
+            queryService.coerceResponseAttributes(query.getQueryContext(), match);
+        } catch (DicomServiceException e) {
+            throw new WebApplicationException(e);
+        }
+
+        return filter(addRetrieveURL(match, qrlevel));
     }
     
     private Attributes addRetrieveURL(Attributes match, QueryRetrieveLevel qrlevel) {

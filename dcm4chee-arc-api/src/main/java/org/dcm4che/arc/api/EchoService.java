@@ -39,39 +39,104 @@
 
 package org.dcm4che.arc.api;
 
-import javax.ejb.LocalBean;
-import javax.ejb.Singleton;
-import javax.inject.Inject;
-
+import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.echo.scu.CEchoSCUService;
 
 /**
  * Service to verify the communication between two DICOM Application Entities.
  * 
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-@Singleton
-@LocalBean
-public class EchoService {
+public interface EchoService {
 
-    @Inject
-    private CEchoSCUService echoSCUService;
+    public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.api.EchoService";
 
     /**
-     * Verify the connection between local AE and remote AE.
+     * Verify the connection from the default local AE to an (already
+     * configured) remote AE.
      * 
-     * @param localAETitle
+     * If you need to verify the connection to a new (not yet configured) AE,
+     * then use one of the other methods in this interface.
+     * 
      * @param remoteAETitle
+     *            remote AE title (needs to be already configured)
+     * @return time needed for the verification in nanoseconds
      * @throws DicomServiceException
      *             if the verification is unsuccessful. Check
      *             {@link DicomServiceException#getStatus()} and
      *             {@link DicomServiceException#getMessage()} for more details.
      */
-    public void cecho(String localAETitle, String remoteAETitle) throws DicomServiceException {
+    public long cecho(String remoteAETitle) throws DicomServiceException;
 
-        echoSCUService.cecho(localAETitle, remoteAETitle);
+    /**
+     * Verify the connection from a local AE to an (already configured) remote
+     * AE.
+     * 
+     * If you need to verify the connection to a new (not yet configured) AE,
+     * then use one of the other methods in this interface.
+     * 
+     * @param localAETitle
+     *            local AE title
+     * @param remoteAETitle
+     *            remote AE title (needs to be already configured)
+     * @return time needed for the verification in nanoseconds
+     * @throws DicomServiceException
+     *             if the verification is unsuccessful. Check
+     *             {@link DicomServiceException#getStatus()} and
+     *             {@link DicomServiceException#getMessage()} for more details.
+     */
+    public long cecho(String localAETitle, String remoteAETitle) throws DicomServiceException;
 
-    }
+    /**
+     * Verify the connection from the default local AE to a new (not yet
+     * configured) remote AE.
+     * 
+     * @param remoteAETitle
+     *            remote AE title
+     * @param remoteConnection
+     *            connection to the remote AE
+     * @return time needed for the verification in nanoseconds
+     * @throws DicomServiceException
+     *             if the verification is unsuccessful. Check
+     *             {@link DicomServiceException#getStatus()} and
+     *             {@link DicomServiceException#getMessage()} for more details.
+     */
+    public long cecho(String remoteAETitle, Connection remoteConnection) throws DicomServiceException;
+
+    /**
+     * Verify the connection from a local AE to a new (not yet configured)
+     * remote AE.
+     * 
+     * @param localAETitle
+     *            local AE title
+     * @param remoteAETitle
+     *            remote AE title
+     * @param remoteConnection
+     *            connection to the remote AE
+     * @return time needed for the verification in nanoseconds
+     * @throws DicomServiceException
+     *             if the verification is unsuccessful. Check
+     *             {@link DicomServiceException#getStatus()} and
+     *             {@link DicomServiceException#getMessage()} for more details.
+     */
+    public long cecho(String localAETitle, String remoteAETitle, Connection remoteConnection) throws DicomServiceException;
+
+    /**
+     * Shortcut for {@link #cecho(String, Connection)} which will create a
+     * default configured remote connection for you.
+     * 
+     * @param remoteAETitle
+     *            remote AE title
+     * @param remoteHostname
+     *            remote host name
+     * @param remotePort
+     *            a DICOM port
+     * @return time needed for the verification in nanoseconds
+     * @throws DicomServiceException
+     *             if the verification is unsuccessful. Check
+     *             {@link DicomServiceException#getStatus()} and
+     *             {@link DicomServiceException#getMessage()} for more details.
+     */
+    public long cecho(String remoteAETitle, String remoteHostname, int remotePort) throws DicomServiceException;
 
 }

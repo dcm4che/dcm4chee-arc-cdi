@@ -39,13 +39,14 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.dcm4che.dcm4chee-arc</groupId>
   <artifactId>dcm4chee-arc-parent</artifactId>
-  <version>4.4.0-SNAPSHOT</version>
+  <version>4.5.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dcm4che.version>3.3.7-SNAPSHOT</dcm4che.version>
-    <dcm4chee-storage.version>2.0.0-SNAPSHOT</dcm4chee-storage.version>
-    <dcm4chee-conf.version>1.0.0-SNAPSHOT</dcm4chee-conf.version>
+    <dcm4che.version>3.3.8-SNAPSHOT</dcm4che.version>
+    <dcm4chee-storage.version>2.1.0-SNAPSHOT</dcm4chee-storage.version>
+    <dcm4chee-conf.version>1.1.0-SNAPSHOT</dcm4chee-conf.version>
+    <dcm4chee-monitoring.version>0.3.0-SNAPSHOT</dcm4chee-monitoring.version>
     <jboss-javaee-6.0.version>3.0.2.Final</jboss-javaee-6.0.version>
     <slf4j.version>1.7.5</slf4j.version>
     <hibernate.version>4.2.7.Final</hibernate.version>
@@ -60,7 +61,6 @@
 
     <!-- by default, the config browser is not protected -->
     <conf-web-classifier>-unsecure</conf-web-classifier>
-
   </properties>
   <name>dcm4chee archive server</name>
   <description>dcm4chee archive server</description>
@@ -85,6 +85,30 @@
       <email>gunterze@gmail.com</email>
       <organization>dcm4che.org</organization>
       <organizationUrl>http://dcm4che.org</organizationUrl>
+    </developer>
+    <developer>
+      <name>Hesham Elbadawi</name>
+      <email>bsdreko@gmail.com</email>
+    </developer>
+    <developer>
+      <name>Umberto Cappellini</name>
+      <email>umberto.cappellini@agfa.com</email>
+    </developer>
+    <developer>
+      <name>Franz Willer</name>
+      <email>franz.willer@agfa.com</email>
+    </developer>
+    <developer>
+      <name>Roman Khazankin</name>
+      <email>roman.khazankin@agfa.com</email>
+    </developer>
+    <developer>
+      <name>Alexander Hoermandinger</name>
+      <email>alexander.hoermandinger@agfa.com</email>
+    </developer>
+    <developer>
+      <name>Hermann Czedik-Eysenberg</name>
+      <email>hermann.czedik-eysenberg@agfa.com</email>
     </developer>
   </developers>
   <scm>
@@ -296,6 +320,13 @@
           <version>${dcm4chee-conf.version}</version>
       </dependency>
 
+      <!-- Monitoring dependencies -->
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-monitoring</groupId>
+        <artifactId>dcm4chee-monitoring-api</artifactId>
+        <version>${dcm4chee-monitoring.version}</version>
+      </dependency>
+
       <dependency>
         <groupId>org.dcm4che.dcm4chee-arc</groupId>
         <artifactId>dcm4chee-arc-junit</artifactId>
@@ -387,31 +418,31 @@
             <scope>import</scope>
             <type>pom</type>
         </dependency>
-		<dependency>
-		  <groupId>org.jboss.shrinkwrap.descriptors</groupId>
-		  <artifactId>shrinkwrap-descriptors-bom</artifactId>
-		  <version>2.0.0-alpha-7</version>
-		  <type>pom</type>
-		  <scope>import</scope>
-		</dependency>
-		<dependency>
-		    <groupId>org.jboss.arquillian.container</groupId>
-		    <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
-		    <version>1.0.0.CR3</version>
-		    <scope>test</scope>
-		</dependency>
-		<dependency>
-		    <groupId>org.jboss.weld</groupId>
-		    <artifactId>weld-core</artifactId>
-		    <version>1.1.5.Final</version>
-		    <scope>test</scope>
-		</dependency>
-		<dependency>
-		    <groupId>org.mockito</groupId>
-		    <artifactId>mockito-core</artifactId>
-		    <version>1.10.19</version>
-		    <scope>test</scope>
-		</dependency>
+        <dependency>
+          <groupId>org.jboss.shrinkwrap.descriptors</groupId>
+          <artifactId>shrinkwrap-descriptors-bom</artifactId>
+          <version>2.0.0-alpha-7</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+            <version>1.0.0.CR3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-core</artifactId>
+            <version>1.1.5.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>1.10.19</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
   </dependencyManagement>
   <dependencies>
@@ -461,10 +492,10 @@
             </execution>
           </executions>
         </plugin>
-		<plugin>
-		  <artifactId>maven-surefire-plugin</artifactId>
-		  <version>2.18.1</version>
-		</plugin>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.18.1</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -491,7 +522,7 @@
     <module>dcm4chee-arc-store</module>
     <module>dcm4chee-arc-retrieve-scu</module>
     <module>dcm4chee-arc-store-scu</module>
-	<module>dcm4chee-arc-fetch-forward</module>
+    <module>dcm4chee-arc-fetch-forward</module>
     <module>dcm4chee-arc-store-verify</module>
     <module>dcm4chee-arc-store-remember</module>
     <module>dcm4chee-arc-timezone</module>
@@ -500,7 +531,7 @@
     <module>dcm4chee-arc-stow-client</module>
     <module>dcm4chee-arc-ctrl</module>
     <module>dcm4chee-arc-qc</module>
-	<module>dcm4chee-arc-qc-rest</module>
+    <module>dcm4chee-arc-qc-rest</module>
     <module>dcm4chee-arc-file-mgmt</module>
     <module>dcm4chee-arc-war</module>
     <module>dcm4chee-arc-compress</module>
@@ -514,7 +545,7 @@
     <module>dcm4chee-arc-mpps-scp</module>
     <module>dcm4chee-arc-mpps-scu</module>
     <module>dcm4chee-arc-wado</module>
-	<module>dcm4chee-arc-wado-client</module>
+    <module>dcm4chee-arc-wado-client</module>
     <module>dcm4chee-arc-ian-scu</module>
     <module>dcm4chee-arc-hl7</module>
     <module>dcm4chee-arc-qido</module>
@@ -538,6 +569,8 @@
     <module>dcm4chee-arc-conf-producer</module>
     <module>dcm4chee-arc-hsm</module>
     <module>dcm4chee-arc-api</module>
+    <module>dcm4chee-arc-mwl-scp</module>
+    <module>dcm4chee-arc-prefetch</module>
   </modules>
   <profiles>
     <profile>

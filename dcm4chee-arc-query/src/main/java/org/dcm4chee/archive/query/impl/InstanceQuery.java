@@ -115,14 +115,14 @@ class InstanceQuery extends AbstractQuery<Instance> {
     }
 
    @Override
-    public Attributes toAttributes(ScrollableResults results) {
+    public Attributes toAttributes(ScrollableResults results, QueryContext context) {
         Long seriesPk = results.getLong(0);
         String retrieveAETs = results.getString(1);
         Availability availability = (Availability) results.get(2);
         byte[] instByteAttributes = results.getBinary(3);
         if (!seriesPk.equals(this.seriesPk)) {
             this.seriesAttrs = context.getQueryService()
-                    .getSeriesAttributes(seriesPk, context.getQueryParam());
+                    .getSeriesAttributes(seriesPk, context);
             this.seriesPk = seriesPk;
         }
         Attributes instanceAttrs = new Attributes();

@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.arc.impl;
+package org.dcm4che.arc.api.impl;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -44,6 +44,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -52,19 +53,16 @@ import org.dcm4che.arc.api.FileAccess;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
+ * Implementation of {@link FileAccess}.
+ * 
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
  */
+@EJB(name = FileAccess.JNDI_NAME, beanInterface = FileAccess.class)
 @Stateless
 @Local(FileAccess.class)
 public class DefaultFileAccess implements FileAccess {
-
-    private static final Logger LOG = LoggerFactory
-            .getLogger(DefaultFileAccess.class);
 
     @Inject
     private  org.dcm4chee.archive.retrieve.RetrieveService archiveRetrieveService;

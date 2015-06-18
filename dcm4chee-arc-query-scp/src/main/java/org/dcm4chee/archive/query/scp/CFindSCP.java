@@ -38,102 +38,38 @@
 
 package org.dcm4chee.archive.query.scp;
 
-import java.util.EnumSet;
-
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-
-import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Association;
-import org.dcm4che3.net.QueryOption;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.pdu.ExtendedNegotiation;
-import org.dcm4che3.net.pdu.PresentationContext;
-import org.dcm4che3.net.service.BasicCFindSCP;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.QueryRetrieveLevel;
-import org.dcm4che3.net.service.QueryTask;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.dto.LocalAssociationParticipant;
 import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
-import org.dcm4chee.archive.query.QueryService;
-import org.dcm4chee.archive.query.impl.QueryEvent;
+import org.dcm4chee.archive.query.QueryServiceUtils;
 
 /**
+ * C-FIND SCP for the Standard Query information models (Patient Root, Study
+ * Root, Patient/Study Only).
+ * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-public class CFindSCP extends BasicCFindSCP {
+public class CFindSCP extends QueryCFindSCP {
 
     private final String[] qrLevels;
-    private final QueryRetrieveLevel rootLevel;
-
-    @Inject
-    private QueryService queryService;
-    
-    @Inject
-    private Event<QueryEvent> queryEvent; 
-    
-    @Inject
-    private IApplicationEntityCache aeCache;
     
     public CFindSCP(String sopClass, String... qrLevels) {
-        super(sopClass);
+        super(sopClass, QueryRetrieveLevel.valueOf(qrLevels[0]));
         this.qrLevels = qrLevels;
-        this.rootLevel = QueryRetrieveLevel.valueOf(qrLevels[0]);
     }
 
     @Override
-    protected QueryTask calculateMatches(Association as, PresentationContext pc,
-            Attributes rq, Attributes keys) throws DicomServiceException {
+    protected Query createQuery(QueryContext ctx, boolean relational) throws DicomServiceException {
+
+        Attributes keys = ctx.getKeys();
+
         QueryRetrieveLevel qrlevel = QueryRetrieveLevel.valueOf(keys, qrLevels);
-        String cuid = rq.getString(Tag.AffectedSOPClassUID);
-        ExtendedNegotiation extNeg = as.getAAssociateAC().getExtNegotiationFor(cuid);
-        EnumSet<QueryOption> queryOpts = QueryOption.toOptions(extNeg);
-        boolean relational = queryOpts.contains(QueryOption.RELATIONAL);
         qrlevel.validateQueryKeys(keys, rootLevel, relational);
-        
-        ApplicationEntity ae = as.getApplicationEntity();
-        ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-        try {
-            QueryParam queryParam =  queryService.getQueryParam(
-                    as, as.getRemoteAET(), arcAE, queryOpts, null);
-            QueryContext ctx = queryService.createQueryContext(queryService);
-            ctx.setRemoteAET(as.getRemoteAET());
-            ctx.setRemoteApplicationEntity(aeCache.get(as.getRemoteAET()));
-            ctx.setServiceSOPClassUID(rq.getString(Tag.AffectedSOPClassUID));
-            ctx.setArchiveAEExtension(arcAE);
-            ctx.setKeys(keys);
-            ctx.setQueryParam(queryParam);
-            queryService.coerceRequestAttributes(ctx);
-            queryService.initPatientIDs(ctx);
-            Query query = queryService.createQuery(qrlevel, ctx);
-            try {
-                query.initQuery();
-                query.executeQuery();
-            } catch (Exception e) {
-                query.close();
-                throw e;
-            } finally {
-                queryEvent.fire(new QueryEvent(ctx.getKeysOriginal(),
-                        ctx.getPatientIDs(), 
-                        rq.getString(Tag.AffectedSOPClassUID),
-                        ae.getDevice(),
-                        new LocalAssociationParticipant(as)));
-            }
-            //return the cached keys
-            return new QueryTaskImpl(as, pc, rq, ctx.getKeysOriginal(),
-                    rootLevel, query, queryService);
-        } catch (DicomServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
+
+        return QueryServiceUtils.createQuery(queryService, qrlevel, ctx);
     }
 
 }

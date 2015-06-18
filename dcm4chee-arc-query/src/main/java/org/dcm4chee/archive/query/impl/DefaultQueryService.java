@@ -57,7 +57,6 @@ import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
@@ -91,26 +90,9 @@ public class DefaultQueryService implements QueryService {
                 .openStatelessSession();
     }
 
+    @Override
     public QueryContext createQueryContext(QueryService queryService) {
         return new QueryContextImpl(queryService);
-    }
-
-    @Override
-    public Query createQuery(QueryRetrieveLevel qrlevel, QueryContext ctx) {
-        
-        LOG.info("Query Keys: {}", ctx.getKeys());        
-        switch (qrlevel) {
-        case PATIENT:
-            return ctx.getQueryService().createPatientQuery(ctx);
-        case STUDY:
-            return ctx.getQueryService().createStudyQuery(ctx);
-        case SERIES:
-            return ctx.getQueryService().createSeriesQuery(ctx);
-        case IMAGE:
-            return ctx.getQueryService().createInstanceQuery(ctx);
-        default:
-            throw new IllegalArgumentException("qrlevel: " + qrlevel);
-        }
     }
 
     @Override
@@ -133,8 +115,17 @@ public class DefaultQueryService implements QueryService {
         return new InstanceQuery(ctx, openStatelessSession());
     }
 
-    public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
-        return ejb.getSeriesAttributes(seriesPk, queryParam);
+    @Override
+    public Query createMWLItemQuery(QueryContext ctx) {
+
+        // The MWL item query is currently not implemented and just always returns 0 results (DCMEEREQ-359)
+
+        return new EmptyQuery(ctx);
+    }
+
+    @Override
+    public Attributes getSeriesAttributes(Long seriesPk, QueryContext context) {
+        return ejb.getSeriesAttributes(seriesPk, context);
     }
 
     @Override
@@ -150,11 +141,6 @@ public class DefaultQueryService implements QueryService {
         ctx.setPatientIDs(pid == null 
                 ? IDWithIssuer.EMPTY
                 : new IDWithIssuer[] { pid });
-    }
-
-    @Override
-    public void adjustMatch(QueryContext query, Attributes match) {
-
     }
 
     /*

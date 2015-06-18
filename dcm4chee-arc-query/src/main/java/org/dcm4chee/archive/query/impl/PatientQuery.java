@@ -89,7 +89,7 @@ class PatientQuery extends AbstractQuery<Patient> {
     }
 
     @Override
-    public Attributes toAttributes(ScrollableResults results) {
+    public Attributes toAttributes(ScrollableResults results, QueryContext context) {
         Attributes attrs = new Attributes();
         Utils.decodeAttributes(attrs, results.getBinary(1));
         return attrs;

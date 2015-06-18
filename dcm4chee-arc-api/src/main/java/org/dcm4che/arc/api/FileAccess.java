@@ -43,13 +43,14 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- * 
  * Service to retrieve files from storage at Study, Series or Instance level.
  *
+ * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
 public interface FileAccess {
     
+    public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.api.FileAccess";
+
     public List<Path> getStudy (String uid) throws IOException;
     
     public List<Path> getSeries (String uid) throws IOException;

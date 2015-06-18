@@ -1,15 +1,8 @@
 package org.dcm4chee.archive.query.decorators;
 
-import java.util.EnumSet;
-
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
-import javax.inject.Inject;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.net.service.QueryRetrieveLevel;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.SeriesQueryAttributes;
@@ -18,6 +11,11 @@ import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.conf.decorators.DynamicDecoratorWrapper;
+
+import javax.decorator.Decorator;
+import javax.decorator.Delegate;
+import javax.inject.Inject;
+import java.util.EnumSet;
 
 @Decorator
 public class QueryServiceDynamicDecorator extends DynamicDecoratorWrapper<QueryService> implements QueryService {
@@ -28,11 +26,6 @@ public class QueryServiceDynamicDecorator extends DynamicDecoratorWrapper<QueryS
 	@Override
 	public QueryContext createQueryContext(QueryService queryService) {
 		return wrapWithDynamicDecorators(delegate).createQueryContext(queryService);
-	}
-
-	@Override
-	public Query createQuery(QueryRetrieveLevel qrlevel, QueryContext ctx) {
-		return wrapWithDynamicDecorators(delegate).createQuery(qrlevel, ctx);
 	}
 
 	@Override
@@ -55,9 +48,15 @@ public class QueryServiceDynamicDecorator extends DynamicDecoratorWrapper<QueryS
 		return wrapWithDynamicDecorators(delegate).createInstanceQuery(ctx);
 	}
 
+    @Override
+    public Query createMWLItemQuery(QueryContext ctx) {
+        return wrapWithDynamicDecorators(delegate).createMWLItemQuery(ctx);
+    }
+
 	@Override
-	public Attributes getSeriesAttributes(Long seriesPk, QueryParam queryParam) {
-		return wrapWithDynamicDecorators(delegate).getSeriesAttributes(seriesPk, queryParam);
+	public Attributes getSeriesAttributes(Long seriesPk, QueryContext context) {
+		return wrapWithDynamicDecorators(delegate).getSeriesAttributes
+				(seriesPk, context);
 	}
 
 	@Override
@@ -69,11 +68,6 @@ public class QueryServiceDynamicDecorator extends DynamicDecoratorWrapper<QueryS
 	@Override
 	public void initPatientIDs(QueryContext queryContext) {
 		wrapWithDynamicDecorators(delegate).initPatientIDs(queryContext);		
-	}
-
-	@Override
-	public void adjustMatch(QueryContext query, Attributes match) {
-		wrapWithDynamicDecorators(delegate).adjustMatch(query, match);		
 	}
 
 	@Override

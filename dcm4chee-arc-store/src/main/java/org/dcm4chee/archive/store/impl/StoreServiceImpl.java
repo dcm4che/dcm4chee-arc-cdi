@@ -104,8 +104,10 @@ import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.issuer.IssuerService;
+import org.dcm4chee.archive.monitoring.api.Monitored;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
+import org.dcm4chee.archive.store.NewStudyCreated;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -151,6 +153,10 @@ public class StoreServiceImpl implements StoreService {
 
     @Inject
     private Event<StoreContext> storeEvent;
+
+    @Inject
+    @NewStudyCreated
+    private Event<String> newStudyCreatedEvent;
 
     @Inject
     @StoreSessionClosed
@@ -439,6 +445,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+    @Monitored(name="processFile")
     public void processFile(StoreContext context) throws DicomServiceException {
         try {
             StoreSession session = context.getStoreSession();
@@ -772,6 +779,7 @@ public class StoreServiceImpl implements StoreService {
                 .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         em.persist(study);
         LOG.info("{}: Create {}", session, study);
+        newStudyCreatedEvent.fire(study.getStudyInstanceUID());
         return study;
     }
 
@@ -1139,6 +1147,8 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private boolean isRejected(Study study) {
+        
+        if(study.getSeries()!=null)
         for (Series series : study.getSeries()) {
             if (!isRejected(series))
                 return false;
@@ -1147,6 +1157,8 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private boolean isRejected(Series series) {
+        
+        if(series.getInstances() != null)
         for (Instance inst : series.getInstances()) {
             if (inst.getRejectionNoteCode() == null) {
                 return false;

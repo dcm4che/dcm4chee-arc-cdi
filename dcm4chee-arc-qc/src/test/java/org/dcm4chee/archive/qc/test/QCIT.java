@@ -99,6 +99,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -214,7 +215,7 @@ public class QCIT {
                 .withoutTransitivity().as(JavaArchive.class);
         for (JavaArchive a : archs) {
             //a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-            a.addAsManifestResource(new File("src/test/resources/META-INF/beans.xml"), "beans.xml");
+                a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
             war.addAsLibrary(a);
         }
         for (String resourceName : ALL_RESOURCES)
@@ -224,6 +225,7 @@ public class QCIT {
         String manifest="Manifest-Version: 1.0\n" + "Dependencies: org.codehaus.jackson.jackson-jaxrs,org.codehaus.jackson.jackson-mapper-asl,org.dcm4che.net,"+
                 "org.dcm4che.soundex, org.dcm4che.conf.api,org.dcm4che.json\n";
         war.setManifest(new StringAsset(manifest));
+        war.addAsManifestResource(new File("src/test/resources/META-INF/beans.xml"), "beans.xml");
         
         if (System.getProperty("exportWar") != null)
             war.as(ZipExporter.class).exportTo(new File("test.war"), true);

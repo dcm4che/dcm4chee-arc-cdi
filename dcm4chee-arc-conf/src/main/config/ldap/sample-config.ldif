@@ -4,8 +4,6 @@ dn: dicomDeviceName=dcmqrscp,cn=Devices,cn=DICOM Configuration,dc=example,dc=com
 dicomInstalled: TRUE
 objectClass: dcmDevice
 objectClass: dicomDevice
-objectClass: dcmExternalArchiveAEExtension
-dcmAEFetchPriority: 0
 dicomInstitutionName: Site B
 dicomPrimaryDeviceType: ARCHIVE
 dicomInstitutionCode: (222.2222, 99DCM4CHEE, "Site B")
@@ -421,6 +419,7 @@ dicomDeviceName: dcm4chee-arc
 dcmMPPSEmulationPollInterval: 60
 dcmKeyStoreType: JKS
 dcmArchivingSchedulerPollInterval: 60
+dcmDefaultAETitle: DCM4CHEE
 dicomSoftwareVersion: 4.2.0.Alpha3
 objectClass: dcmDevice
 objectClass: dicomDevice

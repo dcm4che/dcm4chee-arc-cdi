@@ -94,6 +94,10 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmUpdateDbRetries", defaultValue = "1")
     private int updateDbRetries = 1;
 
+    @LDAP(noContainerNode = true)
+    @ConfigurableProperty(name = "dcmPrivateDerivedFields")
+    private PrivateDerivedFields privateDerivedFields = new PrivateDerivedFields();
+
     @LDAP(
             distinguishingField = "dicomHostName",
             mapValueAttribute = "dicomAETitle",
@@ -148,9 +152,20 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmSyncLocationStatusVerifyArchived", defaultValue = "true")
     private boolean syncLocationStatusVerifyArchived = true;
 
-
     @ConfigurableProperty(name = "dcmFetchAETitle")
     private String fetchAETitle = "DCM4CHEE_FETCH";
+
+    @ConfigurableProperty(name = "dcmDefaultAETitle")
+    private String defaultAETitle = "DCM4CHEE";
+
+    @ConfigurableProperty(name = "dcmPriorsCacheMaxResolvedPathEntries", defaultValue = "100")
+    private int priorsCacheMaxResolvedPathEntries = 100;
+
+    @ConfigurableProperty(name = "dcmPriorsCacheDeleteDuplicateLocationsDelay", defaultValue = "60")
+    private int priorsCacheDeleteDuplicateLocationsDelay = 60;
+
+    @ConfigurableProperty(name = "dcmPriorsCacheClearMaxLocationsPerDelete", defaultValue = "1000")
+    private int priorsCacheClearMaxLocationsPerDelete;
 
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
@@ -325,7 +340,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
             String... syncLocationStatusStorageSystemGroupIDs) {
         this.syncLocationStatusStorageSystemGroupIDs = syncLocationStatusStorageSystemGroupIDs;
     }
-    
+
     public String[] getDisabledDecorators() {
         return disabledDecorators;
     }
@@ -426,6 +441,59 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     public void setFetchAETitle(String fetchAETitle) {
         this.fetchAETitle = fetchAETitle;
+    }
+
+    public PrivateDerivedFields getPrivateDerivedFields() {
+        return privateDerivedFields;
+    }
+
+    public void addPrivateDerivedField(PrivateTag tag) {
+        privateDerivedFields.add(tag);
+    }
+
+    public void setPrivateDerivedFields(PrivateDerivedFields tags) {
+        privateDerivedFields.clear();
+        if (tags != null)
+            privateDerivedFields.add(tags);
+    }
+
+    public boolean removePrivateDerivedField(PrivateTag tag) {
+        return privateDerivedFields.remove(tag);
+    }
+
+    public String getDefaultAETitle() {
+        return defaultAETitle;
+    }
+
+    public void setDefaultAETitle(String defaultAETitle) {
+        this.defaultAETitle = defaultAETitle;
+    }
+
+    public int getPriorsCacheMaxResolvedPathEntries() {
+        return priorsCacheMaxResolvedPathEntries;
+    }
+
+    public void setPriorsCacheMaxResolvedPathEntries(
+            int priorsCacheMaxResolvedPathEntries) {
+        this.priorsCacheMaxResolvedPathEntries = priorsCacheMaxResolvedPathEntries;
+    }
+
+    public int getPriorsCacheDeleteDuplicateLocationsDelay() {
+        return priorsCacheDeleteDuplicateLocationsDelay;
+    }
+
+    public void setPriorsCacheDeleteDuplicateLocationsDelay(
+            int priorsCacheDeleteDuplicateLocationsDelay) {
+        this.priorsCacheDeleteDuplicateLocationsDelay = priorsCacheDeleteDuplicateLocationsDelay;
+    }
+
+    public int getPriorsCacheClearMaxLocationsPerDelete() {
+        return priorsCacheClearMaxLocationsPerDelete;
+    }
+
+    public void setPriorsCacheClearMaxLocationsPerDelete(
+            int priorsCacheClearMaxLocationsPerDelete) {
+        this.priorsCacheClearMaxLocationsPerDelete = priorsCacheClearMaxLocationsPerDelete;
     }
 
 }

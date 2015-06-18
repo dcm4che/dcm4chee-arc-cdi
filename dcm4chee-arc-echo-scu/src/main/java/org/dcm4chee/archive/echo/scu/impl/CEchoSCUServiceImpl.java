@@ -52,12 +52,15 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
+import org.dcm4che3.net.CompatibleConnection;
+import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.DimseRSP;
 import org.dcm4che3.net.IncompatibleConnectionException;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.AAssociateRQ;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.echo.scu.CEchoSCUService;
 
 /**
@@ -75,30 +78,88 @@ public class CEchoSCUServiceImpl implements CEchoSCUService {
     private IApplicationEntityCache aeCache;
 
     @Override
-    public void cecho(String localAETitle, String remoteAETitle) throws DicomServiceException {
+    public long cecho(String remoteAETitle) throws DicomServiceException {
+        return cecho(getDefaultLocalAETitle(), remoteAETitle);
+    }
 
-        ApplicationEntity localAE = device.getApplicationEntity(localAETitle);
-        if (localAE == null)
-            throw new DicomServiceException(Status.ProcessingFailure, "Local AE " + localAETitle + " unknown.");
 
-        ApplicationEntity remoteAE;
+    @Override
+    public long cecho(String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
+        return cecho(getDefaultLocalAETitle(), remoteAETitle, remoteConnection);
+    }
+
+    private String getDefaultLocalAETitle() {
+        ArchiveDeviceExtension archiveDevice = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        return archiveDevice.getDefaultAETitle();
+    }
+
+    @Override
+    public long cecho(String localAETitle, String remoteAETitle) throws DicomServiceException {
+        ApplicationEntity localAE = lookupLocalAE(localAETitle);
+        ApplicationEntity remoteAE = lookupRemoteAE(remoteAETitle);
+
+        return cecho(localAE, remoteAE);
+    }
+
+    private long cecho(ApplicationEntity localAE, ApplicationEntity remoteAE) throws DicomServiceException {
+        CompatibleConnection compatibleConnection;
         try {
-            remoteAE = aeCache.findApplicationEntity(remoteAETitle);
-        } catch (ConfigurationException e) {
+            compatibleConnection = localAE.findCompatibelConnection(remoteAE);
+        } catch (IncompatibleConnectionException e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }
 
+        return cecho(localAE, remoteAE.getAETitle(), compatibleConnection);
+    }
+
+    @Override
+    public long cecho(String localAETitle, String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
+        ApplicationEntity localAE = lookupLocalAE(localAETitle);
+
+        return cecho(localAE, remoteAETitle, remoteConnection);
+    }
+
+    private long cecho(ApplicationEntity localAE, String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
+        Connection localConnection;
+        try {
+            localConnection = localAE.findCompatibelConnection(remoteConnection);
+        } catch (IncompatibleConnectionException e) {
+            throw new DicomServiceException(Status.ProcessingFailure, e);
+        }
+        CompatibleConnection compatibleConnection = new CompatibleConnection(localConnection, remoteConnection);
+
+        return cecho(localAE, remoteAETitle, compatibleConnection);
+    }
+
+    private ApplicationEntity lookupLocalAE(String localAETitle) throws DicomServiceException {
+        ApplicationEntity localAE = device.getApplicationEntity(localAETitle);
+        if (localAE == null)
+            throw new DicomServiceException(Status.ProcessingFailure, "Local AE " + localAETitle + " unknown.");
+        return localAE;
+    }
+
+    private ApplicationEntity lookupRemoteAE(String remoteAETitle) throws DicomServiceException {
+        try {
+            return aeCache.findApplicationEntity(remoteAETitle);
+        } catch (ConfigurationException e) {
+            throw new DicomServiceException(Status.ProcessingFailure, e);
+        }
+    }
+
+    private long cecho(ApplicationEntity localAE, String remoteAETitle, CompatibleConnection compatibleConnection) throws DicomServiceException {
         AAssociateRQ aarq = new AAssociateRQ();
         aarq.setCallingAET(localAE.getAETitle());
-        aarq.setCalledAET(remoteAE.getAETitle());
+        aarq.setCalledAET(remoteAETitle);
 
         aarq.addPresentationContextFor(UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
         aarq.addPresentationContextFor(UID.VerificationSOPClass, UID.ExplicitVRLittleEndian);
         aarq.addPresentationContextFor(UID.VerificationSOPClass, UID.ExplicitVRBigEndianRetired);
 
+        long time = System.nanoTime();
+
         int status;
         try {
-            Association association = localAE.connect(remoteAE, aarq);
+            Association association = localAE.connect(compatibleConnection.getLocalConnection(), compatibleConnection.getRemoteConnection(), aarq);
             try {
                 DimseRSP response = association.cecho();
                 response.next();
@@ -110,11 +171,14 @@ public class CEchoSCUServiceImpl implements CEchoSCUService {
         } catch (IOException | InterruptedException | IncompatibleConnectionException | GeneralSecurityException e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }
-        
+
+        time = System.nanoTime() - time;
+
         if (status == Status.Success)
-            return;
+            return time;
 
         throw new DicomServiceException(status);
     }
+
 
 }

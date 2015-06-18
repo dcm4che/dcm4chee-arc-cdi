@@ -40,12 +40,10 @@ package org.dcm4chee.archive.mima.impl;
 
 import java.util.EnumSet;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Issuer;
@@ -53,10 +51,10 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.QueryOption;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.QueryContext;
-import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.query.decorators.DelegatingQueryService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
@@ -136,11 +134,13 @@ public class QueryServiceMIMADecorator extends DelegatingQueryService {
     }
 
     /*
-     * Extends the default adjustMatch method, coercing (according to MIMA
-     * specs) attributes of the matched instances returned by the query.
+     * Extends the default coerceResponseAttributes method, coercing (according
+     * to MIMA specs) attributes of the matched instances returned by the query.
      */
     @Override
-    public void adjustMatch(QueryContext context, Attributes match) {
+    public void coerceResponseAttributes(QueryContext context, Attributes match) throws DicomServiceException {
+        getNextDecorator().coerceResponseAttributes(context, match);
+
         MIMAInfo info = (MIMAInfo) context
                 .getProperty(MIMAInfo.class.getName());
         if (info == null) {

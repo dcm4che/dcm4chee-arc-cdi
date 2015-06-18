@@ -39,21 +39,34 @@ package org.dcm4chee.archive.qc.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.print.attribute.HashAttributeSet;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.QueryParam;
+import org.dcm4chee.archive.conf.QueryRetrieveView;
+import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
+import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,6 +89,12 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
     @Inject
     QCBean qcManager;
     
+    @Inject
+    private Device device;
+
+    @Inject
+    private QueryService queryService;
+
     @PersistenceContext(name="dcm4chee-arc")
     EntityManager em;
 
@@ -197,5 +216,90 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
             }
         }
         return referencedStudyInstanceUIDs;
+    }
+
+    @Override
+    public void recalculateQueryAttributes(QCEvent event) {
+        LOG.info("Received QC post processing event , initiating derived fields calculation");
+        ArchiveDeviceExtension arcDevExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        String defaultAETitle = "";
+        try {
+         defaultAETitle =  arcDevExt.getDefaultAETitle();
+        }
+        catch(Exception e) {
+            LOG.error("Undefined defaultAETitle, "
+                    + "Can not calculate derived fields on MPPS COMPLETE");
+            return;
+        }
+        ApplicationEntity archiveAE = device
+                .getApplicationEntity(defaultAETitle);
+        ArchiveAEExtension arcAEExt = archiveAE
+                .getAEExtension(ArchiveAEExtension.class);
+        QueryRetrieveView view = arcDevExt
+                .getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
+        QueryParam param = new QueryParam();
+        param.setQueryRetrieveView(view);
+        HashMap<String, ArrayList<String>> studiesMap = findReferencedStudiesInQCEvent(event);
+        //now for each study
+        try {
+        for(String studyIUID : studiesMap.keySet()) {
+            Study study = findStudyByUID(studyIUID);
+            queryService.createStudyView(study.getPk(), param);
+            for(Series series : study.getSeries())
+                queryService.createSeriesView(series.getPk(), param);
+        }
+        }
+        catch(Exception e) {
+            LOG.error("Study or Series lookup failed, "
+                    + "Can not re-calculate derived fields on QC");
+            return;
+        }
+        
+    }
+
+    private HashMap<String, ArrayList<String>> findReferencedStudiesInQCEvent(QCEvent event) {
+        HashMap<String, ArrayList<String>> studyMap = new HashMap<String, ArrayList<String>>();
+        for(QCEventInstance inst : getAggregatedQCInstances(event)) {
+            if(!studyMap.containsKey(inst.getStudyInstanceUID())) {
+                ArrayList<String> seriesMap = new ArrayList<String>();
+                seriesMap.add(inst.getSeriesInstanceUID());
+                studyMap.put(inst.getStudyInstanceUID(), seriesMap);
+            }
+            else {
+                ArrayList<String> seriesMap = studyMap.get(inst.getStudyInstanceUID());
+                if(!seriesMap.contains(inst.getSeriesInstanceUID())) {
+                    seriesMap.add(inst.getSeriesInstanceUID());
+                    studyMap.put(inst.getStudyInstanceUID(), seriesMap);
+                }
+            }
+        }
+        return studyMap;
+    }
+
+    private ArrayList<QCEventInstance> getAggregatedQCInstances(QCEvent event) {
+        
+        ArrayList<QCEventInstance> aggregatedEventInstances = (ArrayList<QCEventInstance>) event
+                .getSource();
+        if (event.getTarget() != null)
+            aggregatedEventInstances.addAll(event.getTarget());
+        
+        return aggregatedEventInstances;
+    }
+
+    private Study findStudyByUID(String studyUID) {
+        String queryStr = "SELECT s FROM Study s JOIN FETCH s.series se WHERE s.studyInstanceUID = ?1";
+            Query query = em.createQuery(queryStr);
+            Study study = null;
+            try {
+                query.setParameter(1, studyUID);
+             study = (Study) query.getSingleResult();
+            }
+            catch(NoResultException e) {
+                LOG.error(
+                        "Unable to find study {}, related to"
+                        + " an already performed procedure",studyUID);
+            }
+            return study;
     }
 }

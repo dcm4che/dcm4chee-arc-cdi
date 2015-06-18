@@ -40,6 +40,7 @@ package org.dcm4chee.archive.query.test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -68,6 +69,7 @@ import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.query.QueryServiceUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -123,6 +125,7 @@ public class QueryServiceIT {
 
     @Inject
     QueryService queryService;
+
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive war= ShrinkWrap.create(WebArchive.class, "test.war"); 
@@ -200,7 +203,7 @@ public class QueryServiceIT {
         QueryContext ctx = queryService.createQueryContext(queryService);
         ctx.setKeys(new Attributes());
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.PATIENT, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.PATIENT, ctx);
         ctx.setPatientIDs(pids);
         query.initQuery();
         query.executeQuery();
@@ -214,7 +217,7 @@ public class QueryServiceIT {
         QueryContext ctx = queryService.createQueryContext(queryService);
         ctx.setKeys(new Attributes());
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.PATIENT, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.PATIENT, ctx);
         ctx.setPatientIDs(pids);
         query.initQuery();
         query.executeQuery();
@@ -240,7 +243,7 @@ public class QueryServiceIT {
         QueryContext ctx = queryService.createQueryContext(queryService);
         ctx.setKeys(attrs(Tag.PatientName, VR.PN, "OOMIYA^SHOUGO"));
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.PATIENT, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.PATIENT, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(new String[] { "OOMIYA_SHOUGO" },
@@ -268,7 +271,7 @@ public class QueryServiceIT {
         keys.setString(Tag.PatientName, VR.PN, name);
         ctx.setKeys(keys);
           ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.PATIENT, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.PATIENT, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_ids, matches(query, Tag.PatientID));
@@ -333,7 +336,7 @@ public class QueryServiceIT {
         ctx.setQueryParam(queryParam);
         IDWithIssuer[] pids = { new IDWithIssuer("FUZZY*") };
         ctx.setPatientIDs(pids);
-        query = queryService.createQuery(QueryRetrieveLevel.PATIENT, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.PATIENT, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_ids, matches(query, Tag.PatientID));
@@ -370,7 +373,7 @@ public class QueryServiceIT {
         ctx.setKeys(attrs(Tag.PatientBirthDate,VR.DA,date));
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.PATIENT, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.PATIENT, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_ids, matches(query, Tag.PatientID));
@@ -406,7 +409,7 @@ public class QueryServiceIT {
         ctx.setKeys(attrs(Tag.ModalitiesInStudy,VR.CS,modality));
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.STUDY, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.STUDY, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_ids, matches(query, Tag.StudyID));
@@ -503,7 +506,7 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.STUDY, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.STUDY, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_ids, matches(query, Tag.StudyID));
@@ -535,7 +538,7 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.STUDY, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.STUDY, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_ids, matches(query, Tag.StudyID));
@@ -567,7 +570,7 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.STUDY, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.STUDY, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_ids, matches(query, Tag.StudyID));
@@ -583,7 +586,7 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.SERIES, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.SERIES, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(new String[] { "1.2.40.0.13.1.1.99.16.2",
@@ -628,7 +631,7 @@ public class QueryServiceIT {
         ctx.setKeys(attrs(Tag.ModalitiesInStudy,VR.CS,modality));
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.SERIES, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.SERIES, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_ids,
@@ -653,7 +656,7 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.SERIES, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.SERIES, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(new String[] { "1.2.40.0.13.1.1.99.13.1" },
@@ -671,7 +674,7 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.IMAGE, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.IMAGE, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(new String[] { "1.2.40.0.13.1.1.99.23.1.2",
@@ -706,7 +709,7 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.IMAGE, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.IMAGE, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_uids,
@@ -748,7 +751,7 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.IMAGE, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.IMAGE, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(expected_uids,
@@ -769,7 +772,7 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.IMAGE, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.IMAGE, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(new String[] { "1.2.40.0.13.1.1.99.27.1.1" },
@@ -790,10 +793,28 @@ public class QueryServiceIT {
         ctx.setKeys(keys);
         ctx.setPatientIDs(pids);
         ctx.setQueryParam(queryParam);
-        query = queryService.createQuery(QueryRetrieveLevel.IMAGE, ctx);
+        query = QueryServiceUtils.createQuery(queryService, QueryRetrieveLevel.IMAGE, ctx);
         query.initQuery();
         query.executeQuery();
         assertArrayEquals(new String[] { "1.2.40.0.13.1.1.99.27.1.2" },
                 matches(query, Tag.SOPInstanceUID));
+    }
+
+    @Test
+    public void testFindMWLItemDummy()
+    {
+        // just checks that a MWL query returns 0 results for now (DCMEEREQ-359)
+
+        QueryParam queryParam = ParamFactory.createQueryParam();
+
+        Attributes keys = new Attributes(1);
+        QueryContext ctx = queryService.createQueryContext(queryService);
+        ctx.setKeys(keys);
+        ctx.setQueryParam(queryParam);
+        query = queryService.createMWLItemQuery(ctx);
+        query.initQuery();
+        query.executeQuery();
+
+        assertFalse(query.hasMoreMatches()); // zero results
     }
 }

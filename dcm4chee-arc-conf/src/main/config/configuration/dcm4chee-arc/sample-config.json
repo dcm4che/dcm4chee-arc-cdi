@@ -577,11 +577,20 @@
               }
             },
             "dcmConfigurationStaleTimeout" : 60,
+            "dcmDefaultAETitle" : "DCM4CHEE",
             "dcmDisabledDecorators" : [ ],
             "dcmFetchAETitle" : "DCM4CHEE_FETCH",
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
             "dcmMppsEmulationPollInterval" : 60,
+            "dcmPriorsCacheClearMaxLocationsPerDelete" : 0,
+            "dcmPrivateDerivedFields" : {
+              "list" : [ {
+                "cn" : "StudyUpdateTimeDerivedField",
+                "dcmPrivateTagCreator" : "studyUpdate",
+                "dcmPrivateTagValue" : "7FD91060"
+              } ]
+            },
             "dcmRejectedObjectsCleanUpMaxNumberOfDeletes" : 0,
             "dcmRejectedObjectsCleanUpPollInterval" : 0,
             "dcmSyncLocationStatusPollInterval" : 3600,
@@ -774,6 +783,7 @@
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "nearline" ],
                 "dcmBaseStorageAccessTime" : 2000,
+                "dcmNextStorageSystemID" : "nearline",
                 "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}",
                 "dcmStorageSystemGroupID" : "ARCHIVE"
@@ -791,6 +801,7 @@
                 "dcmActiveStorageSystemID" : [ "fs1" ],
                 "dcmBaseStorageAccessTime" : 1000,
                 "dcmDigestAlgorithm" : "MD5",
+                "dcmNextStorageSystemID" : "fs1",
                 "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "DEFAULT"
@@ -806,6 +817,7 @@
                 },
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "metadata" ],
+                "dcmNextStorageSystemID" : "metadata",
                 "dcmRetrieveAET" : [ ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "METADATA"
