@@ -60,14 +60,24 @@ import javax.persistence.Table;
  * @author Damien Evans <damien.daddy@gmail.com>
  * @author Justin Falk <jfalkmu@gmail.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
 @NamedQueries({
-@NamedQuery(
-    name=Location.FIND_BY_STATUS_AND_STORAGE_GROUP_IDS,
-    query = "SELECT l FROM Location l "
-            + "WHERE l.status = ?1 "
-            + "AND l.createdTime < ?2 "
-            + "AND l.storageSystemGroupID IN (?3)")
+        @NamedQuery(
+                name = Location.FIND_BY_STATUS_AND_STORAGE_GROUP_IDS,
+                query = "SELECT l FROM Location l "
+                        + "WHERE l.status = ?1 "
+                        + "AND l.createdTime < ?2 "
+                        + "AND l.storageSystemGroupID IN (?3)"),
+        @NamedQuery(
+                name = Location.COUNT_BY_STORAGE_GROUP,
+                query = "SELECT COUNT(l) FROM Location l "
+                        + "WHERE l.storageSystemGroupID = :storageSystemGroupID"),
+        @NamedQuery(
+                name = Location.COUNT_BY_STORAGE_GROUP_AND_STORAGE_SYSTEM,
+                query = "SELECT COUNT(l) FROM Location l "
+                        + "WHERE l.storageSystemGroupID = :storageSystemGroupID "
+                        + "AND l.storageSystemID = :storageSystemID")
 })
 @Entity
 @Table(name = "location")
@@ -75,12 +85,15 @@ public class Location implements Serializable {
 
     private static final long serialVersionUID = -3832203362617593125L;
 
-    public static final String FIND_BY_STATUS_AND_STORAGE_GROUP_IDS =
-            "Location.findByStatusAndStorageGroupIDS";
+    public static final String FIND_BY_STATUS_AND_STORAGE_GROUP_IDS = "Location.findByStatusAndStorageGroupIDS";
+
+    public static final String COUNT_BY_STORAGE_GROUP = "Location.countByStorageGroup";
+
+    public static final String COUNT_BY_STORAGE_GROUP_AND_STORAGE_SYSTEM = "Location.countByStorageGroupAndStorageSystem";
 
     public enum Status {
         OK, DELETE_FAILED, TO_ARCHIVE, ARCHIVED, ARCHIVE_FAILED, QUERY_FAILED, VERIFY_FAILED
-    };
+    }
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
