@@ -42,6 +42,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
@@ -53,6 +54,7 @@ import org.dcm4chee.archive.iocm.InstanceAlreadyRejectedException;
 import org.dcm4chee.archive.iocm.RejectionEvent;
 import org.dcm4chee.archive.iocm.RejectionService;
 import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
@@ -61,6 +63,7 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -217,6 +220,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             }
             for (Attributes refSeries
                     : refStudy.getSequence(Tag.ReferencedSeriesSequence)) {
+                String currentSeriesIUID = refSeries.getString(Tag.SeriesInstanceUID);
                 for (Attributes refSOP
                         : refSeries.getSequence(Tag.ReferencedSOPSequence)) {
                     refSOPs.put(refSOP.getString(Tag.ReferencedSOPInstanceUID), refSOP);
@@ -246,15 +250,40 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
                         result.add(inst);
                     }
                 }
+                //rejection note arrives early and some instances are
+                //not on the system yet
                 if (!refSOPs.isEmpty()) {
-                    LOG.info("{}: {} referenced Instance(s) not found - Rejection Note not applied",
-                            context.getStoreSession(), refSOPs.size());
-                    throw new DicomServiceException(NO_SUCH_OBJECT_INSTANCE,
-                            "referenced SOP instance does not exists");
+                    LOG.info("{}: referenced Instance(s) not found "
+                            + "- Rejection Note arrived early for instances {}",
+                            context.getStoreSession(), refSOPs.keySet());
+                    createDummyInstancesToBeReceivedLater(rejectionNote, context, em,
+                            context.getStoreSession(), refSOPs,
+                            currentSeriesIUID, studyIUID);
                 }
             }
         }
         return result;
+    }
+
+    private void createDummyInstancesToBeReceivedLater(Instance rejectionNote, StoreContext ctx, EntityManager em,
+            StoreSession storeSession, HashMap<String, Attributes> refSOPs,
+            String currentSeriesIUID, String studyIUID) {
+        for(String sopInstanceUID : refSOPs.keySet()) {
+            Attributes data = ctx.getAttributes();
+            data.setString(Tag.SeriesInstanceUID, VR.UI, currentSeriesIUID);
+            data.setString(Tag.SOPInstanceUID, VR.UI, sopInstanceUID);
+            data.setString(Tag.SOPClassUID, VR.UI, refSOPs.get(sopInstanceUID)
+                    .getString(Tag.ReferencedSOPClassUID));
+            ctx.setAttributes(new Attributes(data));
+            try {
+               Instance inst = createInstance(em, ctx);
+               inst.setRejectionNoteCode(rejectionNote.getConceptNameCode());
+            } catch (DicomServiceException e) {
+                LOG.error("Unable to create dummy instance {}, early arrived "
+                        + "rejection note {} will not be fully processed", 
+                        sopInstanceUID);
+            }
+        }
     }
 
 }

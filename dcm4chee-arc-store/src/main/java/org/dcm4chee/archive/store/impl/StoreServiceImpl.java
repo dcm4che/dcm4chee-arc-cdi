@@ -1147,6 +1147,8 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private boolean isRejected(Study study) {
+        
+        if(study.getSeries()!=null)
         for (Series series : study.getSeries()) {
             if (!isRejected(series))
                 return false;
@@ -1155,6 +1157,8 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private boolean isRejected(Series series) {
+        
+        if(series.getInstances() != null)
         for (Instance inst : series.getInstances()) {
             if (inst.getRejectionNoteCode() == null) {
                 return false;
