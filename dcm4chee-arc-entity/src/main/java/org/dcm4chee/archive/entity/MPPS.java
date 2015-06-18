@@ -56,7 +56,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import javax.persistence.Version;
 
 import org.dcm4che3.data.Attributes;
@@ -71,6 +70,9 @@ import org.dcm4che3.util.DateUtils;
  * @since Feb 29, 2008
  */
 @NamedQueries({
+    @NamedQuery(
+            name="MPPS.findBySOPInstanceUIDEager",
+            query="SELECT mpps FROM MPPS mpps JOIN FETCH mpps.attributesBlob  WHERE mpps.sopInstanceUID = ?1)"),
     @NamedQuery(
             name="MPPS.findBySOPInstanceUID",
             query="SELECT mpps FROM MPPS mpps WHERE mpps.sopInstanceUID = ?1)"),
@@ -91,6 +93,8 @@ public class MPPS implements Serializable {
 
     public static final String FIND_BY_SOP_INSTANCE_UID =
             "MPPS.findBySOPInstanceUID";
+    public static final String FIND_BY_SOP_INSTANCE_UID_EAGER =
+            "MPPS.findBySOPInstanceUIDEager";
     public static final String FIND_BY_SOP_INSTANCE_UIDs =
             "MPPS.findBySOPInstanceUIDs";
     public static final String DELETE_BY_SOP_INSTANCE_UIDs =

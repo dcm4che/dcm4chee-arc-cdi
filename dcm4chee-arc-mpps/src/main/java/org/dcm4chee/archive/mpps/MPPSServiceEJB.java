@@ -79,7 +79,7 @@ public class MPPSServiceEJB {
         MPPS pps = null;
         try {
             pps = em.createNamedQuery(
-            MPPS.FIND_BY_SOP_INSTANCE_UID, MPPS.class)
+            MPPS.FIND_BY_SOP_INSTANCE_UID_EAGER, MPPS.class)
                     .setParameter(1, sopInstanceUID).getSingleResult();
         } catch (Exception e) {
         }
