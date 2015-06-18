@@ -39,25 +39,17 @@
 
 package org.dcm4che.arc.api;
 
-import javax.ejb.LocalBean;
-import javax.ejb.Singleton;
-import javax.inject.Inject;
-
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.echo.scu.CEchoSCUService;
 
 /**
  * Service to verify the communication between two DICOM Application Entities.
  * 
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-@Singleton
-@LocalBean
-public class EchoService {
+public interface EchoService {
 
-    @Inject
-    private CEchoSCUService echoSCUService;
+    public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.api.EchoService";
 
     /**
      * Verify the connection from the default local AE to an (already
@@ -74,10 +66,7 @@ public class EchoService {
      *             {@link DicomServiceException#getStatus()} and
      *             {@link DicomServiceException#getMessage()} for more details.
      */
-    public long cecho(String remoteAETitle) throws DicomServiceException {
-
-        return echoSCUService.cecho(remoteAETitle);
-    }
+    public long cecho(String remoteAETitle) throws DicomServiceException;
 
     /**
      * Verify the connection from a local AE to an (already configured) remote
@@ -96,10 +85,7 @@ public class EchoService {
      *             {@link DicomServiceException#getStatus()} and
      *             {@link DicomServiceException#getMessage()} for more details.
      */
-    public long cecho(String localAETitle, String remoteAETitle) throws DicomServiceException {
-
-        return echoSCUService.cecho(localAETitle, remoteAETitle);
-    }
+    public long cecho(String localAETitle, String remoteAETitle) throws DicomServiceException;
 
     /**
      * Verify the connection from the default local AE to a new (not yet
@@ -115,10 +101,7 @@ public class EchoService {
      *             {@link DicomServiceException#getStatus()} and
      *             {@link DicomServiceException#getMessage()} for more details.
      */
-    public long cecho(String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
-
-        return echoSCUService.cecho(remoteAETitle, remoteConnection);
-    }
+    public long cecho(String remoteAETitle, Connection remoteConnection) throws DicomServiceException;
 
     /**
      * Verify the connection from a local AE to a new (not yet configured)
@@ -136,10 +119,7 @@ public class EchoService {
      *             {@link DicomServiceException#getStatus()} and
      *             {@link DicomServiceException#getMessage()} for more details.
      */
-    public long cecho(String localAETitle, String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
-
-        return echoSCUService.cecho(localAETitle, remoteAETitle, remoteConnection);
-    }
+    public long cecho(String localAETitle, String remoteAETitle, Connection remoteConnection) throws DicomServiceException;
 
     /**
      * Shortcut for {@link #cecho(String, Connection)} which will create a
@@ -157,13 +137,6 @@ public class EchoService {
      *             {@link DicomServiceException#getStatus()} and
      *             {@link DicomServiceException#getMessage()} for more details.
      */
-    public long cecho(String remoteAETitle, String remoteHostname, int remotePort) throws DicomServiceException {
-
-        Connection connection = new Connection();
-        connection.setHostname(remoteHostname);
-        connection.setPort(remotePort);
-
-        return cecho(remoteAETitle, connection);
-    }
+    public long cecho(String remoteAETitle, String remoteHostname, int remotePort) throws DicomServiceException;
 
 }

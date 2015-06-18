@@ -42,12 +42,13 @@ import java.util.List;
 
 
 /**
- * @author Michael Doris <mike.doris@agfa.com>
- * 
  * Service to send dicom file(s) to a given destination
  *
+ * @author Michael Doris <mike.doris@agfa.com>
  */
 public interface ExportDicom {
+
+    public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.api.ExportDicom";
 
 	/**
 	 * Sends all instances for each of the studies indicated to the destination AE

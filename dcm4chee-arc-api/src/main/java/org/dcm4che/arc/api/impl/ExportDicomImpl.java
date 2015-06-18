@@ -48,6 +48,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -73,11 +74,16 @@ import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Implementation of {@link ExportDicom}.
+ * 
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ */
+@EJB(name = ExportDicom.JNDI_NAME, beanInterface = ExportDicom.class)
 @Stateless
 public class ExportDicomImpl implements ExportDicom {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(ExportDicomImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ExportDicomImpl.class);
 
     @PersistenceContext(name = "dcm4chee-arc")
     EntityManager em;

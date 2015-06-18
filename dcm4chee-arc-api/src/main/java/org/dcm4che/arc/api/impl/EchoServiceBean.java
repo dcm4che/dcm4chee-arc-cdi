@@ -1,3 +1,4 @@
+//
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -36,25 +37,60 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.arc.api;
+package org.dcm4che.arc.api.impl;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
+import javax.ejb.EJB;
+import javax.ejb.Singleton;
+import javax.inject.Inject;
+
+import org.dcm4che.arc.api.EchoService;
+import org.dcm4che3.net.Connection;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.echo.scu.CEchoSCUService;
 
 /**
- * Service to retrieve files from storage at Study, Series or Instance level.
- *
- * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * Implementation of {@link EchoService}.
+ * 
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public interface FileAccess {
-    
-    public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.api.FileAccess";
+@EJB(name = EchoService.JNDI_NAME, beanInterface = EchoService.class)
+@Singleton
+public class EchoServiceBean implements EchoService {
 
-    public List<Path> getStudy (String uid) throws IOException;
-    
-    public List<Path> getSeries (String uid) throws IOException;
+    @Inject
+    private CEchoSCUService echoSCUService;
 
-    public Path getInstance (String uid) throws IOException;
-    
+    @Override
+    public long cecho(String remoteAETitle) throws DicomServiceException {
+
+        return echoSCUService.cecho(remoteAETitle);
+    }
+
+    @Override
+    public long cecho(String localAETitle, String remoteAETitle) throws DicomServiceException {
+
+        return echoSCUService.cecho(localAETitle, remoteAETitle);
+    }
+
+    @Override
+    public long cecho(String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
+
+        return echoSCUService.cecho(remoteAETitle, remoteConnection);
+    }
+
+    @Override
+    public long cecho(String localAETitle, String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
+
+        return echoSCUService.cecho(localAETitle, remoteAETitle, remoteConnection);
+    }
+
+    @Override
+    public long cecho(String remoteAETitle, String remoteHostname, int remotePort) throws DicomServiceException {
+
+        Connection connection = new Connection();
+        connection.setHostname(remoteHostname);
+        connection.setPort(remotePort);
+
+        return cecho(remoteAETitle, connection);
+    }
 }
