@@ -274,6 +274,12 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             data.setString(Tag.SOPInstanceUID, VR.UI, sopInstanceUID);
             data.setString(Tag.SOPClassUID, VR.UI, refSOPs.get(sopInstanceUID)
                     .getString(Tag.ReferencedSOPClassUID));
+            data.remove(Tag.ConceptNameCodeSequence);
+            data.remove(Tag.ContentSequence);
+            data.setString(Tag.Modality, VR.CS, "OT");
+            Attributes tempModsInStudy = new Attributes();
+            tempModsInStudy.setString(Tag.ModalitiesInStudy, VR.CS, "OT");
+            data.addAll(tempModsInStudy);
             ctx.setAttributes(new Attributes(data));
             try {
                Instance inst = createInstance(em, ctx);

@@ -187,6 +187,7 @@ public class QueryServiceEJB {
         BooleanBuilder builder = new BooleanBuilder(initial);
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNote(queryParam));
+        builder.and(QueryBuilder.hideDummyInstances());
         return builder;
     }
 
