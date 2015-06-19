@@ -1,4 +1,4 @@
-Getting Started with DCM4CHEE Archive 4.4.0.Beta1
+Getting Started with DCM4CHEE Archive 4.5.0-SNAPSHOT
 ==================================================
 
 Requirements
@@ -23,14 +23,14 @@ Requirements
     - [OpenLDAP 2.4.39](http://www.openldap.org/software/download/) and
     - [Apache DS 2.0.0-M16](http://directory.apache.org/apacheds/downloads.html).
 
-    *Note*: Since DCM4CHEE Archive 4.4.0.Beta1 also supports using JSON file 
+    *Note*: Since DCM4CHEE Archive 4.5.0-SNAPSHOT also supports using JSON file 
     as configuration back-end. Preferences configuration back-end was dropped.
     For DB backend, please check the dcm4chee-conf project for DB back-end.
     
 
 -   LDAP Browser - [Apache Directory Studio 2.0.0-M8](http://directory.apache.org/studio/)
 
-    *Note*: Because DCM4CHEE Archive 4.4.0.Beta1 Contains a web based configuration editor
+    *Note*: Because DCM4CHEE Archive 4.5.0-SNAPSHOT Contains a web based configuration editor
     which is deployed with the ear deployment. For LDAP the Apache LDAP browser can be used.
 
 -   To access the archive configuration through the web interface point your browser to
@@ -46,7 +46,7 @@ Extract (unzip) your chosen download to the directory of your choice.
 
 Initialize Database
 -------------------
-*Note*: DCM4CHEE Archive 4.4.0.Beta1 does not provide SQL scripts and utilities to
+*Note*: DCM4CHEE Archive 4.5.0-SNAPSHOT does not provide SQL scripts and utilities to
 migrate DCM4CHEE Archive 2.x data base schema to DCM4CHEE Archive 4.x. There will be
 provided by DCM4CHEE Archive 4.x final releases.
 
@@ -449,12 +449,17 @@ Setup JBoss
     Sample json configuration can be found in $DCM4CHEE_ARC/configuration/dcm4chee-arc/sample-config.json.
     Check the application log during startup to see which parameters are used to initialize the configuration backend.
 
-3.  Install DCM4CHE 3.3.7 libraries as Jboss module:
+3.  Some parts of DCM4CHEE Archive 4.5.0-SNAPSHOT need to be installed as Jboss modules:
 
         > cd  $JBOSS_HOME
-        > unzip $DCM4CHEE_ARC/jboss-module/dcm4che-jboss-modules-3.3.7.zip
+        > unzip $DCM4CHEE_ARC/jboss-module/dcm4chee-arc-jboss-modules-4.5.0-SNAPSHOT.zip
 
-4.  Install JAI Image IO 1.2 libraries as JBoss module
+4.  Install DCM4CHE 3.3.8-SNAPSHOT libraries as Jboss module:
+
+        > cd  $JBOSS_HOME
+        > unzip $DCM4CHEE_ARC/jboss-module/dcm4che-jboss-modules-3.3.8-SNAPSHOT.zip
+
+5.  Install JAI Image IO 1.2 libraries as JBoss module
     (needed for compression/decompression, does not work on Windows 64 bit
     and Mac OS X caused by missing native components for these platforms):
 
@@ -464,37 +469,37 @@ Setup JBoss
     Latest version of the native libraries can be downloaded from
     [jai-download](http://download.java.net/media/jai/builds/release/1_1_3/)
 
-5.  Install QueryDSL 3.2.3 libraries as JBoss module:
+6.  Install QueryDSL 3.2.3 libraries as JBoss module:
 
         > cd  $JBOSS_HOME
-        > unzip $DCM4CHEE_ARC/jboss-module/querydsl-jboss-modules-3.2.3.zip
+        > unzip $DCM4CHEE_ARC/jboss-module/querydsl-jboss-modules-3.2.3-noguava.zip
 
-6.  Install Jclouds 1.8.1 libraries as JBoss module:
+7.  Install Jclouds 1.8.1 libraries as JBoss module:
 
         > cd  $JBOSS_HOME
         > unzip $DCM4CHEE_ARC/jboss-module/jclouds-jboss-modules-1.8.1.zip
 
-7.  Install Commons JXPath 1.3 library as JBoss module:
+8.  Install Commons JXPath 1.3 library as JBoss module:
 
         > cd  $JBOSS_HOME
         > unzip $DCM4CHEE_ARC/jboss-module/jxpath-jboss-module-1.3.zip
 
-8.  Install Commons Compress 1.9 library as JBoss module:
+9.  Install Commons Compress 1.9 library as JBoss module:
 
         > cd  $JBOSS_HOME
         > unzip $DCM4CHEE_ARC/jboss-module/compress-jboss-module-1.9.zip
 
-9.  Install JSch 0.1.52 libraries as JBoss module:
+10.  Install JSch 0.1.52 libraries as JBoss module:
 
         > cd  $JBOSS_HOME
         > unzip $DCM4CHEE_ARC/jboss-module/jsch-jboss-modules-0.1.52.zip
 
-10.  Install JCIFS 1.3.17 libraries as JBoss module:
+11.  Install JCIFS 1.3.17 libraries as JBoss module:
 
         > cd  $JBOSS_HOME
         > unzip $DCM4CHEE_ARC/jboss-module/jcifs-jboss-modules-1.3.17.zip
 
-11.  Install JDBC Driver. DCM4CHEE Archive 4.x binary distributions do not include
+12.  Install JDBC Driver. DCM4CHEE Archive 4.x binary distributions do not include
     a JDBC driver for the database for license issues. You may download it from:
     -   [MySQL](http://www.mysql.com/products/connector/)
     -   [PostgreSQL]( http://jdbc.postgresql.org/)
@@ -535,7 +540,7 @@ Setup JBoss
          </module>
 
 
-12.  Start JBoss in standalone mode with the Java EE 6 Full Profile configuration.
+13.  Start JBoss in standalone mode with the Java EE 6 Full Profile configuration.
     To preserve the original JBoss configuration you may copy the original
     configuration file for JavaEE 6 Full Profile:
 
@@ -570,7 +575,7 @@ Setup JBoss
                 
     Running JBoss in domain mode should work, but was not yet tested.
 
-13.  Add JDBC Driver into the server configuration using JBoss CLI in a new console window:
+14.  Add JDBC Driver into the server configuration using JBoss CLI in a new console window:
 
         > $JBOSS_HOME/bin/jboss-cli.sh -c [UNIX]
         > %JBOSS_HOME%\bin\jboss-cli.bat -c [Windows]
@@ -585,7 +590,7 @@ Setup JBoss
 
         [standalone@localhost:9999 /] /subsystem=datasources/jdbc-driver=mysql:add(driver-name=mysql,driver-module-name=com.mysql,driver-class-name=com.mysql.jdbc.Driver)    
 
-14.  Create and enable a new Data Source bound to JNDI name `java:/PacsDS` using JBoss CLI:
+15.  Create and enable a new Data Source bound to JNDI name `java:/PacsDS` using JBoss CLI:
 
         [standalone@localhost:9999 /] data-source add --name=PacsDS \
         >     --driver-name=<driver-name> \
@@ -603,7 +608,7 @@ Setup JBoss
     -  Oracle: `jdbc:oracle:thin:@localhost:1521:<database-name>`
     -  Microsoft SQL Server: `jdbc:sqlserver://localhost:1433;databaseName=<database-name>`
 
-15. Create JMS Queues using JBoss CLI:
+16. Create JMS Queues using JBoss CLI:
 
         [standalone@localhost:9999 /] jms-queue add --queue-address=ianscu --entries=queue/ianscu
         [standalone@localhost:9999 /] jms-queue add --queue-address=mppsscu --entries=queue/mppsscu
@@ -613,19 +618,19 @@ Setup JBoss
         [standalone@localhost:9999 /] jms-queue add --queue-address=stowclient --entries=queue/stowclient
         [standalone@localhost:9999 /] jms-queue add --queue-address=storescu --entries=queue/storescu
 
-16. At default, DCM4CHEE Archive 4.x will assume `dcm4chee-arc` as its Device Name, used to find its
+17. At default, DCM4CHEE Archive 4.x will assume `dcm4chee-arc` as its Device Name, used to find its
     configuration in the configuration backend (LDAP Server or Java Preferences). You may specify a different
     Device Name by system property `org.dcm4chee.archive.deviceName` using JBoss CLI:
 
         [standalone@localhost:9999 /] /system-property=org.dcm4chee.archive.deviceName:add(value=<device-name>)
 
-17. Deploy DCM4CHEE Archive 4.x using JBoss CLI, e.g.:
+18. Deploy DCM4CHEE Archive 4.x using JBoss CLI, e.g.:
 
-        [standalone@localhost:9999 /] deploy $DCM4CHEE_ARC/deploy/dcm4chee-arc-war-4.4.0.Beta1-mysql.war
+        [standalone@localhost:9999 /] deploy $DCM4CHEE_ARC/deploy/dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war
 
     Verify that DCM4CHEE Archive was deployed and started successfully, e.g.:
 
-        13:52:29,110 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-4) JBAS015876: Starting deployment of "dcm4chee-arc-war-4.4.0.Beta1-mysql.war" (runtime-name: "dcm4chee-arc-war-4.4.0.Beta1-mysql.war")
+        13:52:29,110 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-4) JBAS015876: Starting deployment of "dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war" (runtime-name: "dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war")
         13:52:30,000 INFO  [org.jboss.as.jpa] (MSC service thread 1-2) JBAS011401: Read persistence.xml for dcm4chee-arc
         :
         13:52:34,284 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-1) Start TCP Listener on localhost/127.0.0.1:11112
@@ -633,38 +638,38 @@ Setup JBoss
         13:52:34,612 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-3) Start TCP Listener on localhost/127.0.0.1:2762
         13:52:34,613 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-4) Start TCP Listener on localhost/127.0.0.1:12575
         13:52:34,775 INFO  [org.JBoss.extension.undertow] (MSC service thread 1-11) JBAS017534: Registered web context: /dcm4chee-arc
-        13:52:34,814 INFO  [org.jboss.as.server] (ServerService Thread Pool -- 32) JBAS018559: Deployed "dcm4chee-arc-war-4.4.0.Beta1-mysql.war" (runtime-name : "dcm4chee-arc-war-4.4.0.Beta1-mysql.war")
+        13:52:34,814 INFO  [org.jboss.as.server] (ServerService Thread Pool -- 32) JBAS018559: Deployed "dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war" (runtime-name : "dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war")
 
 19. You may undeploy DCM4CHEE Archive at any time using JBoss CLI, e.g.:
 
-        [standalone@localhost:9999 /] undeploy dcm4chee-arc-war-4.4.0.Beta1-mysql.war
+        [standalone@localhost:9999 /] undeploy dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war
 
-        13:59:14,861 INFO  [org.jboss.weld.deployer] (MSC service thread 1-2) JBAS016009: Stopping weld service for deployment dcm4chee-arc-war-4.4.0.Beta1-mysql.war
+        13:59:14,861 INFO  [org.jboss.weld.deployer] (MSC service thread 1-2) JBAS016009: Stopping weld service for deployment dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war
         13:59:14,863 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-1) Stop TCP Listener on localhost/127.0.0.1:11112
         13:59:14,864 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-4) Stop TCP Listener on localhost/127.0.0.1:12575
         13:59:14,864 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-3) Stop TCP Listener on localhost/127.0.0.1:2762
         13:59:14,864 INFO  [org.dcm4che3.net.Connection] (EE-ManagedExecutorService-default-Thread-2) Stop TCP Listener on localhost/127.0.0.1:2575
         ..
-        13:59:14,895 INFO  [org.jboss.as.jpa] (ServerService Thread Pool -- 74) JBAS011410: Stopping Persistence Unit (phase 1 of 2) Service 'dcm4chee-arc-war-4.4.0.Beta1-mysql.war#dcm4chee-arc'
-        13:59:14,927 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-14) JBAS015877: Stopped deployment dcm4chee-arc-war-4.4.0.Beta1-mysql.war (runtime-name: dcm4chee-arc-war-4.4.0.Beta1-mysql.war) in 110ms
-        13:59:14,983 INFO  [org.jboss.as.server] (management-handler-thread - 2) JBAS018558: Undeployed "dcm4chee-arc-war-4.4.0.Beta1-mysql.war" (runtime-name: "dcm4chee-arc-war-4.4.0.Beta1-mysql.war")
+        13:59:14,895 INFO  [org.jboss.as.jpa] (ServerService Thread Pool -- 74) JBAS011410: Stopping Persistence Unit (phase 1 of 2) Service 'dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war#dcm4chee-arc'
+        13:59:14,927 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-14) JBAS015877: Stopped deployment dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war (runtime-name: dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war) in 110ms
+        13:59:14,983 INFO  [org.jboss.as.server] (management-handler-thread - 2) JBAS018558: Undeployed "dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war" (runtime-name: "dcm4chee-arc-war-4.5.0-SNAPSHOT-mysql.war")
 
-20. You may deploy the web interface using the provided dcm4chee-arc-web-4.4.0.Beta1.war using JBoss CLI, e.g.:
+20. You may deploy the web interface using the provided dcm4chee-arc-web-4.5.0-SNAPSHOT.war using JBoss CLI, e.g.:
 
-        [standalone@localhost:9999 /] deploy $DCM4CHEE_ARC/deploy/dcm4chee-arc-web-4.4.0.Beta1.war
+        [standalone@localhost:9999 /] deploy $DCM4CHEE_ARC/deploy/dcm4chee-arc-web-4.5.0-SNAPSHOT.war
         
-        14:04:46,081 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-16) JBAS015876: Starting deployment of "dcm4chee-arc-web-4.4.0.Beta1.war" (runtime-name: "dcm4chee-arc-web-4.4.0.Beta1.war")
+        14:04:46,081 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-16) JBAS015876: Starting deployment of "dcm4chee-arc-web-4.5.0-SNAPSHOT.war" (runtime-name: "dcm4chee-arc-web-4.5.0-SNAPSHOT.war")
         14:04:46,185 INFO  [org.JBoss.extension.undertow] (MSC service thread 1-15) JBAS017534: Registered web context: /dcm4chee-web
-        14:04:46,210 INFO  [org.jboss.as.server] (management-handler-thread - 12) JBAS018559: Deployed "dcm4chee-arc-web-4.4.0.Beta1.war" (runtime-name: "dcm4chee-arc-web-4.4.0.Beta1.war")
+        14:04:46,210 INFO  [org.jboss.as.server] (management-handler-thread - 12) JBAS018559: Deployed "dcm4chee-arc-web-4.5.0-SNAPSHOT.war" (runtime-name: "dcm4chee-arc-web-4.5.0-SNAPSHOT.war")
 
 21. You may undeploy the web interface at any time using the JBoss CLI, e.g.:
 
-        [standalone@localhost:9999 /] undeploy dcm4chee-arc-web-4.4.0.Beta1.war
+        [standalone@localhost:9999 /] undeploy dcm4chee-arc-web-4.5.0-SNAPSHOT.war
         
         14:08:19,399 INFO  [org.JBoss.extension.undertow] (MSC service thread 1-15) JBAS017535: Unregistered web context: /dcm4chee-web
-        14:08:19,416 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-14) JBAS015877: Stopped deployment dcm4chee-arc-web-4.4.0.Beta1.war (runtime-name: dcm4chee-arc-web-4.4.0.Beta1.war) in 18ms
+        14:08:19,416 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-14) JBAS015877: Stopped deployment dcm4chee-arc-web-4.5.0-SNAPSHOT.war (runtime-name: dcm4chee-arc-web-4.5.0-SNAPSHOT.war) in 18ms
         ..
-        14:08:19,449 INFO  [org.jboss.as.server] (management-handler-thread - 16) JBAS018558: Undeployed "dcm4chee-arc-web-4.4.0.Beta1.war" (runtime-name: "dcm4chee-arc-web-4.4.0.Beta1.war")
+        14:08:19,449 INFO  [org.jboss.as.server] (management-handler-thread - 16) JBAS018558: Undeployed "dcm4chee-arc-web-4.5.0-SNAPSHOT.war" (runtime-name: "dcm4chee-arc-web-4.5.0-SNAPSHOT.war")
 
 Control DCM4CHEE Archive 4.x by HTTP GET
 ----------------------------------------
