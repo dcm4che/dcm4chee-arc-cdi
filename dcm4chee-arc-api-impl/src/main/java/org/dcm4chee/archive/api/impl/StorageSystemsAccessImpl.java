@@ -37,60 +37,47 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.arc.api.impl;
+package org.dcm4chee.archive.api.impl;
 
 import javax.ejb.EJB;
-import javax.ejb.Singleton;
-import javax.inject.Inject;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
-import org.dcm4che.arc.api.EchoService;
-import org.dcm4che3.net.Connection;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.echo.scu.CEchoSCUService;
+import org.dcm4chee.archive.api.StorageSystemsAccess;
+import org.dcm4chee.archive.entity.Location;
 
 /**
- * Implementation of {@link EchoService}.
+ * Implementation of {@link StorageSystemsAccess}.
  * 
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-@EJB(name = EchoService.JNDI_NAME, beanInterface = EchoService.class)
-@Singleton
-public class EchoServiceBean implements EchoService {
+@EJB(name = StorageSystemsAccess.JNDI_NAME, beanInterface = StorageSystemsAccess.class)
+@Stateless
+public class StorageSystemsAccessImpl implements StorageSystemsAccess {
 
-    @Inject
-    private CEchoSCUService echoSCUService;
+    @PersistenceContext(name = "dcm4chee-arc")
+    private EntityManager em;
 
     @Override
-    public long cecho(String remoteAETitle) throws DicomServiceException {
+    public boolean isStorageSystemGroupEmpty(String storageSystemGroupID) {
 
-        return echoSCUService.cecho(remoteAETitle);
+        int count = ((Number) em.createNamedQuery(Location.COUNT_BY_STORAGE_GROUP)
+                .setParameter("storageSystemGroupID", storageSystemGroupID)
+                .getSingleResult()).intValue();
+        
+        return count == 0;
     }
 
     @Override
-    public long cecho(String localAETitle, String remoteAETitle) throws DicomServiceException {
+    public boolean isStorageSystemEmpty(String storageSystemGroupID, String storageSystemID) {
 
-        return echoSCUService.cecho(localAETitle, remoteAETitle);
+        int count = ((Number) em.createNamedQuery(Location.COUNT_BY_STORAGE_GROUP_AND_STORAGE_SYSTEM)
+                .setParameter("storageSystemGroupID", storageSystemGroupID)
+                .setParameter("storageSystemID", storageSystemID)
+                .getSingleResult()).intValue();
+
+        return count == 0;
     }
 
-    @Override
-    public long cecho(String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
-
-        return echoSCUService.cecho(remoteAETitle, remoteConnection);
-    }
-
-    @Override
-    public long cecho(String localAETitle, String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
-
-        return echoSCUService.cecho(localAETitle, remoteAETitle, remoteConnection);
-    }
-
-    @Override
-    public long cecho(String remoteAETitle, String remoteHostname, int remotePort) throws DicomServiceException {
-
-        Connection connection = new Connection();
-        connection.setHostname(remoteHostname);
-        connection.setPort(remotePort);
-
-        return cecho(remoteAETitle, connection);
-    }
 }

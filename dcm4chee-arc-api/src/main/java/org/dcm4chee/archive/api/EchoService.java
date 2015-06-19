@@ -37,7 +37,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.arc.api;
+package org.dcm4chee.archive.api;
 
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.service.DicomServiceException;

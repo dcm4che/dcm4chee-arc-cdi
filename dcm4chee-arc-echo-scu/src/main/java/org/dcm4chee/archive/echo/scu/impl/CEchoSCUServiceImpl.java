@@ -82,7 +82,6 @@ public class CEchoSCUServiceImpl implements CEchoSCUService {
         return cecho(getDefaultLocalAETitle(), remoteAETitle);
     }
 
-
     @Override
     public long cecho(String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
         return cecho(getDefaultLocalAETitle(), remoteAETitle, remoteConnection);
@@ -179,6 +178,5 @@ public class CEchoSCUServiceImpl implements CEchoSCUService {
 
         throw new DicomServiceException(status);
     }
-
 
 }

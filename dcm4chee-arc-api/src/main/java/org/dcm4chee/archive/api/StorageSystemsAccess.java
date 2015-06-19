@@ -37,47 +37,37 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.arc.api.impl;
-
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
-import org.dcm4che.arc.api.StorageSystemsAccess;
-import org.dcm4chee.archive.entity.Location;
+package org.dcm4chee.archive.api;
 
 /**
- * Implementation of {@link StorageSystemsAccess}.
+ * API for Storage Systems and Storage System Groups.
  * 
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-@EJB(name = StorageSystemsAccess.JNDI_NAME, beanInterface = StorageSystemsAccess.class)
-@Stateless
-public class StorageSystemsAccessImpl implements StorageSystemsAccess {
+public interface StorageSystemsAccess {
+    
+    public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.api.StorageSystemsAccess";
 
-    @PersistenceContext(name = "dcm4chee-arc")
-    private EntityManager em;
-
-    @Override
-    public boolean isStorageSystemGroupEmpty(String storageSystemGroupID) {
-
-        int count = ((Number) em.createNamedQuery(Location.COUNT_BY_STORAGE_GROUP)
-                .setParameter("storageSystemGroupID", storageSystemGroupID)
-                .getSingleResult()).intValue();
-        
-        return count == 0;
-    }
-
-    @Override
-    public boolean isStorageSystemEmpty(String storageSystemGroupID, String storageSystemID) {
-
-        int count = ((Number) em.createNamedQuery(Location.COUNT_BY_STORAGE_GROUP_AND_STORAGE_SYSTEM)
-                .setParameter("storageSystemGroupID", storageSystemGroupID)
-                .setParameter("storageSystemID", storageSystemID)
-                .getSingleResult()).intValue();
-
-        return count == 0;
-    }
+    /**
+     * Check whether the storage system group is empty, i.e. no storage system
+     * within the group contains objects.
+     * 
+     * @param storageSystemGroupID
+     *            id of storage system group
+     * @return true if the storage system group is empty, false otherwise
+     */
+    public boolean isStorageSystemGroupEmpty(String storageSystemGroupID);
+    
+    /**
+     * Check whether the storage system is empty, i.e. it does not contain any
+     * objects.
+     * 
+     * @param storageSystemGroupID
+     *            id of storage system group
+     * @param storageSystemID
+     *            id if storage system within the storage system group
+     * @return true if the storage system is empty, false otherwise
+     */
+    public boolean isStorageSystemEmpty(String storageSystemGroupID, String storageSystemID);
 
 }

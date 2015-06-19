@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.arc.api.impl;
+package org.dcm4chee.archive.api.impl;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -49,7 +49,7 @@ import javax.ejb.Local;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 
-import org.dcm4che.arc.api.FileAccess;
+import org.dcm4chee.archive.api.FileAccess;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
