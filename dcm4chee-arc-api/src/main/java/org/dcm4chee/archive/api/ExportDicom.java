@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.arc.api;
+package org.dcm4chee.archive.api;
 
 import java.util.List;
 

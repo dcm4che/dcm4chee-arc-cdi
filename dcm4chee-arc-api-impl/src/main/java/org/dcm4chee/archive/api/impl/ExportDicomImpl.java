@@ -40,7 +40,7 @@
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  *
  */
-package org.dcm4che.arc.api.impl;
+package org.dcm4chee.archive.api.impl;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -54,7 +54,6 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.arc.api.ExportDicom;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
@@ -63,6 +62,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.QueryOption;
+import org.dcm4chee.archive.api.ExportDicom;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;

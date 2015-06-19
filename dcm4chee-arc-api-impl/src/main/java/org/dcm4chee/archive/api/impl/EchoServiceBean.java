@@ -37,37 +37,63 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4che.arc.api;
+package org.dcm4chee.archive.api.impl;
+
+import javax.ejb.ConcurrencyManagement;
+import javax.ejb.ConcurrencyManagementType;
+import javax.ejb.EJB;
+import javax.ejb.Singleton;
+import javax.inject.Inject;
+
+import org.dcm4che3.net.Connection;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.api.EchoService;
+import org.dcm4chee.archive.echo.scu.CEchoSCUService;
 
 /**
- * API for Storage Systems and Storage System Groups.
+ * Implementation of {@link EchoService}.
  * 
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public interface StorageSystemsAccess {
-    
-    public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.api.StorageSystemsAccess";
+@EJB(name = EchoService.JNDI_NAME, beanInterface = EchoService.class)
+@Singleton
+@ConcurrencyManagement(ConcurrencyManagementType.BEAN)
+public class EchoServiceBean implements EchoService {
 
-    /**
-     * Check whether the storage system group is empty, i.e. no storage system
-     * within the group contains objects.
-     * 
-     * @param storageSystemGroupID
-     *            id of storage system group
-     * @return true if the storage system group is empty, false otherwise
-     */
-    public boolean isStorageSystemGroupEmpty(String storageSystemGroupID);
-    
-    /**
-     * Check whether the storage system is empty, i.e. it does not contain any
-     * objects.
-     * 
-     * @param storageSystemGroupID
-     *            id of storage system group
-     * @param storageSystemID
-     *            id if storage system within the storage system group
-     * @return true if the storage system is empty, false otherwise
-     */
-    public boolean isStorageSystemEmpty(String storageSystemGroupID, String storageSystemID);
+    @Inject
+    private CEchoSCUService echoSCUService;
 
+    @Override
+    public long cecho(String remoteAETitle) throws DicomServiceException {
+
+        return echoSCUService.cecho(remoteAETitle);
+    }
+
+    @Override
+    public long cecho(String localAETitle, String remoteAETitle) throws DicomServiceException {
+
+        return echoSCUService.cecho(localAETitle, remoteAETitle);
+    }
+
+    @Override
+    public long cecho(String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
+
+        return echoSCUService.cecho(remoteAETitle, remoteConnection);
+    }
+
+    @Override
+    public long cecho(String localAETitle, String remoteAETitle, Connection remoteConnection) throws DicomServiceException {
+
+        return echoSCUService.cecho(localAETitle, remoteAETitle, remoteConnection);
+    }
+
+    @Override
+    public long cecho(String remoteAETitle, String remoteHostname, int remotePort) throws DicomServiceException {
+
+        Connection connection = new Connection();
+        connection.setHostname(remoteHostname);
+        connection.setPort(remotePort);
+
+        return cecho(remoteAETitle, connection);
+    }
 }

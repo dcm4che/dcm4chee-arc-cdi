@@ -47,7 +47,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.dcm4che.arc.api.FileAccess;
+import org.dcm4chee.archive.api.FileAccess;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OverProtocol;
 import org.jboss.arquillian.junit.Arquillian;
