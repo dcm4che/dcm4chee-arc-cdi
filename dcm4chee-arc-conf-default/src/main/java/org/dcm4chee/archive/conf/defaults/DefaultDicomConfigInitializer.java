@@ -24,7 +24,7 @@ public class DefaultDicomConfigInitializer {
         return arc;
     }
 
-    public DefaultDicomConfigInitializer persistDefaultConfig(DicomConfiguration config, HL7Configuration hl7Config) throws Exception {
+    public DefaultDicomConfigInitializer persistDefaultConfig(DicomConfiguration config, HL7Configuration hl7Config, String baseStoragePath) throws Exception {
 
 
         for (int i = 0; i < DefaultDeviceFactory.OTHER_AES.length; i++) {
@@ -40,7 +40,7 @@ public class DefaultDicomConfigInitializer {
         arrDevice = DefaultDeviceFactory.createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
         config.persist(arrDevice);
 
-        arc = DefaultDeviceFactory.createArchiveDevice("dcm4chee-arc", arrDevice);
+        arc = DefaultDeviceFactory.createArchiveDevice("dcm4chee-arc", arrDevice, baseStoragePath);
         config.persist(arc);
 
         return this;

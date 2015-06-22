@@ -115,7 +115,8 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
     @Test
     public void test() throws Exception {
 
-        DefaultDicomConfigInitializer defaultDicomConfigInitializer = new DefaultDicomConfigInitializer().persistDefaultConfig(config, hl7Config);
+        String baseStoragePath = "/var/local/dcm4chee-arc/";
+        DefaultDicomConfigInitializer defaultDicomConfigInitializer = new DefaultDicomConfigInitializer().persistDefaultConfig(config, hl7Config, baseStoragePath);
         Device arc = defaultDicomConfigInitializer.getArc();
         Device arrDevice = defaultDicomConfigInitializer.getArrDevice();
 
@@ -147,7 +148,7 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
         assertTrue("Store/read failed for an attribute. See console output.", res);
 
         // Reconfiguration test
-        Device anotherArc = createArchiveDevice("dcm4chee-arc", arrDevice);
+        Device anotherArc = createArchiveDevice("dcm4chee-arc", arrDevice, baseStoragePath);
         anotherArc.removeApplicationEntity("DCM4CHEE");
 
         ApplicationEntity anotherAe = createAnotherAE("DCM4CHEE",

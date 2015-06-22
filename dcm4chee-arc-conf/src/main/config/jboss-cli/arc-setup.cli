@@ -1,5 +1,7 @@
 ${data-source-string}
 
+/system-property=org.dcm4che.conf.upgrade.settingsFile:add(value=${jboss.server.config.dir}/dcm4chee-arc/config-init.json)
+
 data-source --name=PacsDS --enabled=true
 
 jms-queue add --queue-address=ianscu --entries=queue/ianscu

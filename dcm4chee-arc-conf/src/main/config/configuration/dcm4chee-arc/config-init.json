@@ -1,0 +1,9 @@
+{
+ "upgradeToVersion": "${project.version}",
+ "upgradeScriptsToRun": [
+   "org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigInitScript"
+  ],
+  "properties":{  
+    "org.dcm4che.config.init.baseStorageDir":"../standalone/dcm4chee-arc-storage"
+  }
+}

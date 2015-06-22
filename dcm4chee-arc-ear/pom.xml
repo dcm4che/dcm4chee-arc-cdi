@@ -315,6 +315,16 @@
 	  </dependencies>      
     </profile>
     <profile>
+      <id>csp</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-arc</groupId>
+          <artifactId>dcm4chee-arc-conf-default</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>perf-monitoring</id>
       <activation>
         <property>

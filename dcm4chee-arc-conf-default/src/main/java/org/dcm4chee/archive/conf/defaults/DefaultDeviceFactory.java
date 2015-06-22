@@ -54,11 +54,9 @@ import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.net.web.WebServiceAEExtension;
-import org.dcm4che3.util.ResourceLocator;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.storage.conf.*;
 
-import java.security.KeyStore;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -471,7 +469,7 @@ public class DefaultDeviceFactory {
         return device;
     }
 
-    protected static Device createArchiveDevice(String name, Device arrDevice)
+    protected static Device createArchiveDevice(String name, Device arrDevice, String baseStoragePath)
             throws Exception {
 
         //KeyStore keyStore = SSLManagerFactory.loadKeyStore("JKS", ResourceLocator.resourceURL("cacerts.jks"), "secret");
@@ -499,7 +497,7 @@ public class DefaultDeviceFactory {
         addArchiveDeviceExtension(device);
         addHL7DeviceExtension(device);
         addAuditLogger(device, arrDevice);
-        addStorageDeviceExtension(device);
+        addStorageDeviceExtension(device, baseStoragePath);
         device.addDeviceExtension(new ImageReaderExtension(ImageReaderFactory.getDefault()));
         device.addDeviceExtension(new ImageWriterExtension(ImageWriterFactory.getDefault()));
 
@@ -534,17 +532,19 @@ public class DefaultDeviceFactory {
         return device;
     }
 
-    private static void addStorageDeviceExtension(Device device) {
+    private static void addStorageDeviceExtension(Device device, String baseStoragePath) {
         StorageSystem fs1 = new StorageSystem();
         fs1.setStorageSystemID("fs1");
         fs1.setProviderName("org.dcm4chee.storage.filesystem");
-        fs1.setStorageSystemPath("/var/local/dcm4chee-arc/fs1");
+        fs1.setStorageSystemPath(baseStoragePath +
+                "fs1");
         fs1.setAvailability(Availability.ONLINE);
 
         StorageSystem arc = new StorageSystem();
         arc.setStorageSystemID("nearline");
         arc.setProviderName("org.dcm4chee.storage.filesystem");
-        arc.setStorageSystemPath("/var/local/dcm4chee-arc/nearline");
+        arc.setStorageSystemPath(baseStoragePath +
+                "nearline");
         arc.setAvailability(Availability.NEARLINE);
         Map<String, String> exts = new LinkedHashMap<String, String>();
         exts.put(".archived", "ARCHIVED");
@@ -553,7 +553,8 @@ public class DefaultDeviceFactory {
         StorageSystem metadata = new StorageSystem();
         metadata.setStorageSystemID("metadata");
         metadata.setProviderName("org.dcm4chee.storage.filesystem");
-        metadata.setStorageSystemPath("/var/local/dcm4chee-arc/metadata");
+        metadata.setStorageSystemPath(baseStoragePath +
+                "metadata");
         metadata.setAvailability(Availability.ONLINE);
 
         Container container = new Container();
@@ -562,9 +563,11 @@ public class DefaultDeviceFactory {
         FileCache fileCache = new FileCache();
         fileCache.setProviderName("org.dcm4chee.storage.filecache");
         fileCache.setFileCacheRootDirectory(
-                "/var/local/dcm4chee-arc/nearline-cache/data");
+                baseStoragePath +
+                        "nearline-cache/data");
         fileCache.setJournalRootDirectory(
-                "/var/local/dcm4chee-arc/nearline-cache");
+                baseStoragePath +
+                        "nearline-cache");
         fileCache.setMinFreeSpace("100MiB");
         fileCache.setCacheAlgorithm(FileCache.Algorithm.LRU);
 
