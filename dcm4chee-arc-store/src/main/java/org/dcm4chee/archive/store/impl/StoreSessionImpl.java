@@ -67,10 +67,11 @@ public class StoreSessionImpl implements StoreSession {
     private MessageDigest messageDigest;
     private StorageSystem storageSystem;
     private StorageSystem metaDataStorageSystem;
+    private StorageSystem spoolStorageSystem;
     private Path spoolDirectory;
     private HashMap<String,Object> properties = new HashMap<String,Object>();
     private ApplicationEntity remoteAE;
-
+    
     public StoreSessionImpl(StoreService storeService) {
         this.storeService = storeService;
     }
@@ -218,6 +219,16 @@ public class StoreSessionImpl implements StoreSession {
     @Override
     public TimeZone getSourceDeviceTimeZone() {
         return getSourceDevice() != null ? getSourceDevice().getTimeZoneOfDevice() : null;
+    }
+
+    @Override
+    public void setSpoolStorageSystem(StorageSystem spoolStorageSystem) {
+        this.spoolStorageSystem = spoolStorageSystem;
+    }
+
+    @Override
+    public StorageSystem getSpoolStorageSystem() {
+        return spoolStorageSystem;
     }
 }
 

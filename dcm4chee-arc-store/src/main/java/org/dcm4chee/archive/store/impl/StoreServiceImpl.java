@@ -184,6 +184,15 @@ public class StoreServiceImpl implements StoreService {
                     "No writeable Storage System in Storage System Group "
                             + groupID);
         session.setStorageSystem(storageSystem);
+        StorageSystem spoolStorageSystem = null;
+        String spoolGroupID = storageSystem.getStorageSystemGroup().getSpoolStorageGroup();
+        if(spoolGroupID!= null){
+            spoolStorageSystem= storageService.selectStorageSystem(
+                    spoolGroupID, 0);
+                session.setSpoolStorageSystem(spoolStorageSystem != null ? 
+                        spoolStorageSystem : storageSystem);
+        }
+        
     }
 
     @Override
@@ -208,7 +217,7 @@ public class StoreServiceImpl implements StoreService {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         Path spoolDir = Paths.get(arcAE.getSpoolDirectoryPath());
         if (!spoolDir.isAbsolute()) {
-            StorageSystem storageSystem = session.getStorageSystem();
+            StorageSystem storageSystem = session.getSpoolStorageSystem();
             spoolDir = storageService.getBaseDirectory(storageSystem).resolve(
                     spoolDir);
         }
