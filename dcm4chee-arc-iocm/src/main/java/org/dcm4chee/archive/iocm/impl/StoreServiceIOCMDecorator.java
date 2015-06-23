@@ -50,6 +50,7 @@ import org.dcm4chee.archive.conf.RejectionParam;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.iocm.InstanceAlreadyRejectedException;
 import org.dcm4chee.archive.iocm.RejectionEvent;
 import org.dcm4chee.archive.iocm.RejectionService;
@@ -186,10 +187,13 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             if (rejectionParam.isRevokeRejection())
                 rejectionService.restore(context.getStoreSession(), rejectedInstances,
                         rejectionParam.getOverwritePreviousRejection());
-            else
+            else {
                 rejectionService.reject(context.getStoreSession(), rejectedInstances,
                         rejectionCode,
                         rejectionParam.getOverwritePreviousRejection());
+                updateRejectionStatus(context.getInstance()
+                        .getSeries().getStudy());
+            }
         } catch (InstanceAlreadyRejectedException e) {
             Instance inst = e.getInstance();
             LOG.info("{}: referenced {} was already rejected with {} - Rejection Note not applied",
@@ -200,6 +204,31 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
         }
     }
 
+    private void updateRejectionStatus(Study study) {
+        if(isRejected(study)) {
+            study.setRejected(true);
+        }
+    }
+    private boolean isRejected(Study study) {
+        boolean studyisRejected = true;
+        if(study.getSeries()!=null)
+        for (Series series : study.getSeries()) {
+            if (!isRejected(series))
+                studyisRejected = false;
+        }
+        return studyisRejected;
+    }
+    private boolean isRejected(Series series) {
+        
+        if(series.getInstances() != null)
+        for (Instance inst : series.getInstances()) {
+            if (inst.getRejectionNoteCode() == null) {
+                return false;
+            }
+        }
+        series.setRejected(true);
+        return true;
+    }
     private Collection<Instance> queryRejectedInstances(EntityManager em,
             StoreContext context, Instance rejectionNote, 
             RejectionParam rejectionParam, Collection<Series> affectedSeries)

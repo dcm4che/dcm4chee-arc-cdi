@@ -155,6 +155,10 @@ public class Study implements Serializable {
     @Column(name = "access_control_id")
     private String accessControlID;
 
+    @Basic(optional = false)
+    @Column(name = "is_rejected")
+    private boolean isRejected;
+
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
@@ -277,6 +281,14 @@ public class Study implements Serializable {
 
     public void setAccessControlID(String accessControlID) {
         this.accessControlID = accessControlID;
+    }
+
+    public boolean isRejected() {
+        return isRejected;
+    }
+
+    public void setRejected(boolean isRejected) {
+        this.isRejected = isRejected;
     }
 
     public Collection<Code> getProcedureCodes() {
