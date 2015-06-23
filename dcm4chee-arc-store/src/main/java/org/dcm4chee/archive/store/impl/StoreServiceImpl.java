@@ -700,7 +700,8 @@ public class StoreServiceImpl implements StoreService {
 
         // delete replaced
         try {
-            locationManager.scheduleDelete(replaced, 0);
+            if (replaced.size()>0)
+                locationManager.scheduleDelete(replaced, 0);
         } catch (Exception e) {
             LOG.error("StoreService : Error deleting replaced location - {}", e);
         }
