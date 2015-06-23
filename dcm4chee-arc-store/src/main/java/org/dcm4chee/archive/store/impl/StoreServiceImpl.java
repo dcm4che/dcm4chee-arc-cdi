@@ -189,10 +189,9 @@ public class StoreServiceImpl implements StoreService {
         if(spoolGroupID!= null){
             spoolStorageSystem= storageService.selectStorageSystem(
                     spoolGroupID, 0);
-                session.setSpoolStorageSystem(spoolStorageSystem != null ? 
-                        spoolStorageSystem : storageSystem);
         }
-        
+        session.setSpoolStorageSystem(spoolStorageSystem != null ? 
+                spoolStorageSystem : storageSystem);
     }
 
     @Override
@@ -1156,24 +1155,11 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private boolean isRejected(Study study) {
-        
-        if(study.getSeries()!=null)
-        for (Series series : study.getSeries()) {
-            if (!isRejected(series))
-                return false;
-        }
-        return true;
+        return study.isRejected();
     }
 
     private boolean isRejected(Series series) {
-        
-        if(series.getInstances() != null)
-        for (Instance inst : series.getInstances()) {
-            if (inst.getRejectionNoteCode() == null) {
-                return false;
-            }
-        }
-        return true;
+        return series.isRejected();
     }
 
     /**
