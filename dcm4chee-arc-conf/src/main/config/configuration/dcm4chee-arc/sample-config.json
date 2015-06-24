@@ -5,44 +5,7 @@
         "hl7ApplicationName" : "HL7RCV^DCM4CHEE"
       }
     },
-    "dicomUniqueAETitlesRegistryRoot" : {
-      "DCMQRSCP" : {
-        "dicomAETitle" : "DCMQRSCP"
-      },
-      "STGCMTSCU" : {
-        "dicomAETitle" : "STGCMTSCU"
-      },
-      "STORESCP" : {
-        "dicomAETitle" : "STORESCP"
-      },
-      "MPPSSCP" : {
-        "dicomAETitle" : "MPPSSCP"
-      },
-      "IANSCP" : {
-        "dicomAETitle" : "IANSCP"
-      },
-      "STORESCU" : {
-        "dicomAETitle" : "STORESCU"
-      },
-      "MPPSSCU" : {
-        "dicomAETitle" : "MPPSSCU"
-      },
-      "FINDSCU" : {
-        "dicomAETitle" : "FINDSCU"
-      },
-      "GETSCU" : {
-        "dicomAETitle" : "GETSCU"
-      },
-      "DCM4CHEE" : {
-        "dicomAETitle" : "DCM4CHEE"
-      },
-      "DCM4CHEE_ADMIN" : {
-        "dicomAETitle" : "DCM4CHEE_ADMIN"
-      },
-      "DCM4CHEE_TRASH" : {
-        "dicomAETitle" : "DCM4CHEE_TRASH"
-      }
-    },
+    "dicomUniqueAETitlesRegistryRoot" : { },
     "dicomDevicesRoot" : {
       "dcmqrscp" : {
         "dcmLimitOpenAssociations" : 0,
@@ -1767,6 +1730,12 @@
               "dicomTransferRole" : "SCP",
               "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
             }, {
+              "cn" : "Instance Availability Notification SOP Class SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.33",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
               "cn" : "Verification SOP Class SCU",
               "dcmQueryOptions" : [ ],
               "dicomSOPClass" : "1.2.840.10008.1.1",
@@ -3190,6 +3159,12 @@
               "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.6.1",
               "dicomTransferRole" : "SCU",
               "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Instance Availability Notification SOP Class SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.33",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
             } ],
             "dicomAETitle" : "DCM4CHEE_ADMIN",
             "dicomApplicationCluster" : [ ],
@@ -4085,6 +4060,12 @@
               "cn" : "Modality Worklist Information Model - FIND SCP",
               "dcmQueryOptions" : [ 0, 1, 2, 3 ],
               "dicomSOPClass" : "1.2.840.10008.5.1.4.31",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
+            }, {
+              "cn" : "Instance Availability Notification SOP Class SCP",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.33",
               "dicomTransferRole" : "SCP",
               "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
             }, {
@@ -5511,6 +5492,12 @@
               "dicomSOPClass" : "1.2.840.10008.5.1.4.1.1.9.6.1",
               "dicomTransferRole" : "SCU",
               "dicomTransferSyntax" : [ "1.2.840.10008.1.2", "1.2.840.10008.1.2.1", "1.2.840.10008.1.2.1.99", "1.2.840.10008.1.2.2" ]
+            }, {
+              "cn" : "Instance Availability Notification SOP Class SCU",
+              "dcmQueryOptions" : [ ],
+              "dicomSOPClass" : "1.2.840.10008.5.1.4.33",
+              "dicomTransferRole" : "SCU",
+              "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
             } ],
             "dicomAETitle" : "DCM4CHEE_TRASH",
             "dicomApplicationCluster" : [ ],

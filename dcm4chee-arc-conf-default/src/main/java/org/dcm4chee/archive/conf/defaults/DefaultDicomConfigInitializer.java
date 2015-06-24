@@ -1,6 +1,7 @@
 package org.dcm4chee.archive.conf.defaults;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.api.TCConfiguration;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
@@ -24,7 +25,10 @@ public class DefaultDicomConfigInitializer {
         return arc;
     }
 
-    public DefaultDicomConfigInitializer persistDefaultConfig(DicomConfiguration config, HL7Configuration hl7Config, String baseStoragePath) throws Exception {
+    public DefaultDicomConfigInitializer persistDefaultConfig(DicomConfiguration config,
+                                                              HL7Configuration hl7Config,
+                                                              String baseStoragePath,
+                                                              boolean isUseGroupBasedTCConfig) throws Exception {
 
 
         for (int i = 0; i < DefaultDeviceFactory.OTHER_AES.length; i++) {
@@ -40,8 +44,15 @@ public class DefaultDicomConfigInitializer {
         arrDevice = DefaultDeviceFactory.createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
         config.persist(arrDevice);
 
-        arc = DefaultDeviceFactory.createArchiveDevice("dcm4chee-arc", arrDevice, baseStoragePath);
+        DefaultDeviceFactory defaultDeviceFactory = new DefaultDeviceFactory();
+        defaultDeviceFactory.setBaseStoragePath(baseStoragePath);
+        defaultDeviceFactory.setUseGroupBasedTCConfig(isUseGroupBasedTCConfig);
+        arc = defaultDeviceFactory.createArchiveDevice("dcm4chee-arc", arrDevice);
         config.persist(arc);
+
+        // create TC Group config extension
+        if (isUseGroupBasedTCConfig)
+            TCConfiguration.persistDefaultTCGroups(config);
 
         return this;
     }

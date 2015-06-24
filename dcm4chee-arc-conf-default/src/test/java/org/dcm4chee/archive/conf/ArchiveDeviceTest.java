@@ -46,7 +46,6 @@ import java.util.Properties;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
-import org.dcm4che3.net.DefaultTransferCapabilities;
 import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
@@ -97,6 +96,7 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
         builder.registerAEExtension(ArchiveAEExtension.class);
         builder.registerAEExtension(ExternalArchiveAEExtension.class);
         builder.registerAEExtension(WebServiceAEExtension.class);
+        builder.registerAEExtension(TCGroupConfigAEExtension.class);
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
 
         CommonDicomConfigurationWithHL7 configWithHL7 = builder
@@ -115,8 +115,8 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
     @Test
     public void test() throws Exception {
 
-        String baseStoragePath = "/var/local/dcm4chee-arc/";
-        DefaultDicomConfigInitializer defaultDicomConfigInitializer = new DefaultDicomConfigInitializer().persistDefaultConfig(config, hl7Config, baseStoragePath);
+        setBaseStoragePath("/var/local/dcm4chee-arc/");
+        DefaultDicomConfigInitializer defaultDicomConfigInitializer = new DefaultDicomConfigInitializer().persistDefaultConfig(config, hl7Config, getBaseStoragePath(), false);
         Device arc = defaultDicomConfigInitializer.getArc();
         Device arrDevice = defaultDicomConfigInitializer.getArrDevice();
 
@@ -148,11 +148,11 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
         assertTrue("Store/read failed for an attribute. See console output.", res);
 
         // Reconfiguration test
-        Device anotherArc = createArchiveDevice("dcm4chee-arc", arrDevice, baseStoragePath);
+        Device anotherArc = createArchiveDevice("dcm4chee-arc", arrDevice);
         anotherArc.removeApplicationEntity("DCM4CHEE");
 
         ApplicationEntity anotherAe = createAnotherAE("DCM4CHEE",
-                DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS, null, PIX_MANAGER);
+                null, PIX_MANAGER);
         anotherArc.addApplicationEntity(anotherAe);
 
         //anotherAe.getAEExtension(ArchiveAEExtension.class).reconfigure(from);

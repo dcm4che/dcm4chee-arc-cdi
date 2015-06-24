@@ -57,10 +57,7 @@ import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.storage.conf.*;
 
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.dcm4che3.net.TransferCapability.Role.SCP;
@@ -353,6 +350,15 @@ public class DefaultDeviceFactory {
         STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyStatus, "EXTENDED STUDY");
     }
 
+    private String baseStoragePath = "/var/local/dcm4chee-arc/";
+    private boolean useGroupBasedTCConfig;
+
+
+    public String getBaseStoragePath() {
+        return baseStoragePath;
+    }
+
+
     private static QueryRetrieveView createQueryRetrieveView(String viewID,
                                                              Code[] showInstancesRejectedByCodes, Code[] hideRejectionNoteCodes,
                                                              boolean hideNotRejectedInstances) {
@@ -469,7 +475,7 @@ public class DefaultDeviceFactory {
         return device;
     }
 
-    protected static Device createArchiveDevice(String name, Device arrDevice, String baseStoragePath)
+    protected Device createArchiveDevice(String name, Device arrDevice)
             throws Exception {
 
         //KeyStore keyStore = SSLManagerFactory.loadKeyStore("JKS", ResourceLocator.resourceURL("cacerts.jks"), "secret");
@@ -497,7 +503,7 @@ public class DefaultDeviceFactory {
         addArchiveDeviceExtension(device);
         addHL7DeviceExtension(device);
         addAuditLogger(device, arrDevice);
-        addStorageDeviceExtension(device, baseStoragePath);
+        addStorageDeviceExtension(device, getBaseStoragePath());
         device.addDeviceExtension(new ImageReaderExtension(ImageReaderFactory.getDefault()));
         device.addDeviceExtension(new ImageWriterExtension(ImageWriterFactory.getDefault()));
 
@@ -515,18 +521,14 @@ public class DefaultDeviceFactory {
 //                    (X509Certificate) keystore.getCertificate(other));
 
         device.addApplicationEntity(createAE("DCM4CHEE", dicom, dicomTLS,
-                DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
                 HIDE_REJECTED_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_ADMIN", dicom, dicomTLS,
-                        DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
                         REGULAR_USE_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(createAE("DCM4CHEE_FETCH", dicom, dicomTLS,
-                DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
                 HIDE_REJECTED_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_TRASH", dicom, dicomTLS,
-                        DefaultTransferCapabilities.IMAGE_TSUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS, DefaultTransferCapabilities.OTHER_TSUIDS,
                         TRASH_VIEW, null, PIX_MANAGER));
 
         return device;
@@ -709,9 +711,8 @@ public class DefaultDeviceFactory {
         return param;
     }
 
-    private static ApplicationEntity createAE(String aet,
+    private ApplicationEntity createAE(String aet,
                                               Connection dicom, Connection dicomTLS,
-                                              String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
                                               QueryRetrieveView queryRetrieveView,
                                               String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
@@ -860,21 +861,10 @@ public class DefaultDeviceFactory {
         archivingRule.setAeTitles(new String[]{"ARCHIVE"});
         aeExt.addArchivingRule(archivingRule);
 
-        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        addTCs(ae,
+                EnumSet.allOf(TCGroupConfigAEExtension.DefaultGroup.class),
+                EnumSet.of(TCGroupConfigAEExtension.DefaultGroup.STORAGE, TCGroupConfigAEExtension.DefaultGroup.PPS));
+
 
         aeExt.setReturnOtherPatientIDs(true);
         aeExt.setReturnOtherPatientNames(true);
@@ -904,9 +894,8 @@ public class DefaultDeviceFactory {
         return ae;
     }
 
-    private static ApplicationEntity createQRAE(String aet,
+    private ApplicationEntity createQRAE(String aet,
                                                 Connection dicom, Connection dicomTLS,
-                                                String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
                                                 QueryRetrieveView queryRetrieveView,
                                                 String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
@@ -926,14 +915,11 @@ public class DefaultDeviceFactory {
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
 
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        addTCs(ae,
+                EnumSet.of(
+                        TCGroupConfigAEExtension.DefaultGroup.QUERY_RETRIEVE,
+                        TCGroupConfigAEExtension.DefaultGroup.MWL),
+                EnumSet.of(TCGroupConfigAEExtension.DefaultGroup.STORAGE));
 
         aeExt.setReturnOtherPatientIDs(true);
         aeExt.setReturnOtherPatientNames(true);
@@ -943,7 +929,6 @@ public class DefaultDeviceFactory {
     }
 
     protected ApplicationEntity createAnotherAE(String aet,
-                                                String[] image_tsuids, String[] video_tsuids, String[] other_tsuids,
                                                 String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
@@ -1028,21 +1013,9 @@ public class DefaultDeviceFactory {
                 UID.JPEG2000LosslessOnly,
                 "maxPixelValueError=0"
         ));
-        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCP, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.IMAGE_CUIDS, image_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.VIDEO_CUIDS, video_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, null, SCU, DefaultTransferCapabilities.OTHER_CUIDS, other_tsuids);
-        DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), SCP, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), SCP, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCP, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
-        DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+        addTCs(ae,
+                EnumSet.allOf(TCGroupConfigAEExtension.DefaultGroup.class),
+                EnumSet.of(TCGroupConfigAEExtension.DefaultGroup.STORAGE, TCGroupConfigAEExtension.DefaultGroup.PPS));
 
         aeExt.setReturnOtherPatientIDs(false);
         aeExt.setReturnOtherPatientNames(true);
@@ -1051,4 +1024,74 @@ public class DefaultDeviceFactory {
         return ae;
     }
 
+
+    private void addTCs(ApplicationEntity ae,
+                               Set<TCGroupConfigAEExtension.DefaultGroup> scpGroups,
+                               Set<TCGroupConfigAEExtension.DefaultGroup> scuGroups) {
+
+        if (isUseGroupBasedTCConfig()) {
+
+            TCGroupConfigAEExtension tcGroupConfig = ae.getAEExtension(TCGroupConfigAEExtension.class);
+            if (tcGroupConfig == null) {
+                tcGroupConfig = new TCGroupConfigAEExtension();
+                ae.addAEExtension(tcGroupConfig);
+            }
+
+            for (TCGroupConfigAEExtension.DefaultGroup scpGroup : scpGroups)
+                tcGroupConfig.getScpTCs().put(scpGroup.name(), new TCGroupConfigAEExtension.TCGroupDetails());
+
+            for (TCGroupConfigAEExtension.DefaultGroup scuGroup : scuGroups)
+                tcGroupConfig.getScuTCs().put(scuGroup.name(), new TCGroupConfigAEExtension.TCGroupDetails());
+
+
+        } else {
+            for (TCGroupConfigAEExtension.DefaultGroup group : scpGroups)
+                addTCsForDefaultGroup(ae, SCP, group);
+
+            for (TCGroupConfigAEExtension.DefaultGroup group : scuGroups)
+                addTCsForDefaultGroup(ae, SCU, group);
+        }
+    }
+
+    private static void addTCsForDefaultGroup(ApplicationEntity ae, TransferCapability.Role role, TCGroupConfigAEExtension.DefaultGroup group) {
+        switch (group) {
+            case STORAGE:
+                DefaultTransferCapabilities.addTCs(ae, null, role, DefaultTransferCapabilities.IMAGE_CUIDS, DefaultTransferCapabilities.IMAGE_TSUIDS);
+                DefaultTransferCapabilities.addTCs(ae, null, role, DefaultTransferCapabilities.VIDEO_CUIDS, DefaultTransferCapabilities.VIDEO_TSUIDS);
+                DefaultTransferCapabilities.addTCs(ae, null, role, DefaultTransferCapabilities.OTHER_CUIDS, DefaultTransferCapabilities.OTHER_TSUIDS);
+                DefaultTransferCapabilities.addTC(ae, null, role, UID.InstanceAvailabilityNotificationSOPClass, UID.ImplicitVRLittleEndian);
+                DefaultTransferCapabilities.addTC(ae, null, role, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+                break;
+            case PPS:
+                DefaultTransferCapabilities.addTC(ae, null, role, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
+                DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+                break;
+            case QUERY_RETRIEVE:
+                DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), role, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
+                DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), role, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+                DefaultTransferCapabilities.addTC(ae, null, role, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
+                DefaultTransferCapabilities.addTC(ae, null, role, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+                break;
+            case MWL:
+                DefaultTransferCapabilities.addTC(ae, EnumSet.allOf(QueryOption.class), role, UID.ModalityWorklistInformationModelFIND, UID.ImplicitVRLittleEndian);
+                DefaultTransferCapabilities.addTC(ae, null, role, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+                break;
+            case STORAGE_COMMITMENT:
+                DefaultTransferCapabilities.addTC(ae, null, role, UID.StorageCommitmentPushModelSOPClass, UID.ImplicitVRLittleEndian);
+                DefaultTransferCapabilities.addTC(ae, null, role, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+                break;
+        }
+    }
+
+    public void setBaseStoragePath(String baseSoragePath) {
+        this.baseStoragePath = baseSoragePath;
+    }
+
+    public boolean isUseGroupBasedTCConfig() {
+        return useGroupBasedTCConfig;
+    }
+
+    public void setUseGroupBasedTCConfig(boolean useGroupBasedTCConfig) {
+        this.useGroupBasedTCConfig = useGroupBasedTCConfig;
+    }
 }
