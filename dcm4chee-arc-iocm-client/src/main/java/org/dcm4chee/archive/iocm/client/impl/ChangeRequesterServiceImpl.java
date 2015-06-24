@@ -38,30 +38,41 @@
 
 package org.dcm4chee.archive.iocm.client.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.service.BasicCStoreSCUResp;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.QCEventInstance;
+import org.dcm4chee.archive.dto.Service;
 import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.fetch.forward.FetchForwardCallBack;
+import org.dcm4chee.archive.fetch.forward.FetchForwardService;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.store.scu.CStoreSCUResponse;
+import org.dcm4chee.archive.store.verify.StoreVerifyService;
+import org.dcm4chee.archive.stow.client.StowContext;
+import org.dcm4chee.archive.stow.client.StowResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,18 +82,19 @@ import org.slf4j.LoggerFactory;
 @ApplicationScoped
 public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 
-    private static final int DEFAULT_PRIORITY = 5;
-
     private static Logger LOG = LoggerFactory.getLogger(ChangeRequesterServiceImpl.class);
 
     @Inject
     private Device device;
     
     @Inject
-    private CStoreSCUService storescuService;
+    private StoreVerifyService storeVerify;
     
     @Inject
     private RetrieveService retrieveService;
+    
+    @Inject
+    private FetchForwardService fetchForwardService;
 
     private transient ArchiveDeviceExtension archDeviceExt;
     
@@ -93,53 +105,57 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             LOG.info("IOCMConfig not configured! Skipped!");
             return;
         }
-        String[] targetAETs = cfg.getIocmDestinations();
-        LOG.debug("targetAETs from IOCMConfig:{}", Arrays.toString(targetAETs));
+        ApplicationEntity callingAE = device.getApplicationEntity(cfg.getCallingAET());
+        String[] targets = cfg.getIocmDestinations();
+        LOG.debug("targetAETs from IOCMConfig:{}", Arrays.toString(targets));
         if (rejNote != null) {
             List<ArchiveInstanceLocator> locators = locate(rejNote.getSopInstanceUID());
-            for (int i = 0 ; i < targetAETs.length ; i++) {
-                storescuService.scheduleStoreSCU(
-                        UUID.randomUUID().toString(),
-                        new CStoreSCUContext(device.getApplicationEntity(cfg
-                                .getCallingAET()), device
-                                .getApplicationEntity(targetAETs[i]),
-                                ServiceType.IOCMSERVICE), locators, cfg
-                                .getIocmMaxRetries(), DEFAULT_PRIORITY, cfg
-                                .getIocmRetryInterval());
-            }
+            scheduleStore(callingAE, targets, locators, ServiceType.IOCMSERVICE);
         }
         if (updatedInstanceUIDs != null && updatedInstanceUIDs.size() > 0) {
             List<ArchiveInstanceLocator> locators = locate(toIUIDArray(updatedInstanceUIDs));
-            for (int i = 0 ; i < targetAETs.length ; i++) {
-                storescuService.scheduleStoreSCU(
-                        UUID.randomUUID().toString(),
-                        new CStoreSCUContext(device.getApplicationEntity(cfg
-                                .getCallingAET()), device
-                                .getApplicationEntity(targetAETs[i]),
-                                ServiceType.IOCMSERVICE), locators, cfg
-                                .getIocmMaxRetries(), DEFAULT_PRIORITY, cfg
-                                .getIocmRetryInterval());
-            }
+            scheduleStore(callingAE, targets, locators, ServiceType.STOREVERIFY);
 
             String[] noneIOCM = cfg.getNoneIocmDestinations();
             LOG.debug("NoneIocmDestinations from IOCMConfig:{}", Arrays.toString(noneIOCM));
             if (noneIOCM != null && noneIOCM.length > 0) {
-                for (int i = 0 ; i < noneIOCM.length ; i++) {
-                    storescuService.scheduleStoreSCU(
-                            UUID.randomUUID().toString(),
-                            new CStoreSCUContext(device.getApplicationEntity(cfg
-                                    .getCallingAET()), device
-                                    .getApplicationEntity(noneIOCM[i]),
-                                    ServiceType.IOCMSERVICE), locators, cfg
-                                    .getIocmMaxRetries(), DEFAULT_PRIORITY, cfg
-                                    .getIocmRetryInterval());
-                }
+            	scheduleStore(callingAE, noneIOCM, locators, ServiceType.STOREVERIFY);
             }
         }
 
     }
 
-    public void scheduleUpdateOnlyChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs) {
+	private List<ArchiveInstanceLocator> scheduleStore(ApplicationEntity callingAE, String[] targets,
+			final List<ArchiveInstanceLocator> locators, ServiceType serviceType) {
+		List<ArchiveInstanceLocator> failedForward = null;
+		List<ArchiveInstanceLocator> externalLocators = extractExternalLocators(locators);
+        if(!externalLocators.isEmpty()) {
+            FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
+                @Override
+                public void onFetch(Collection<ArchiveInstanceLocator> instances,
+                        BasicCStoreSCUResp resp) {
+                	locators.addAll(instances);
+                }
+            };
+            failedForward = fetchForwardService.fetchForward(archDeviceExt.getDefaultAETitle(), externalLocators, fetchCallBack, fetchCallBack);
+        }
+		for (String target : targets) {
+			ApplicationEntity targetAE = device.getApplicationEntity(target);
+			WebServiceAEExtension wsExt = targetAE.getAEExtension(WebServiceAEExtension.class);
+			if (wsExt != null && wsExt.getStowRSBaseURL() != null) {
+				StowContext stowCtx = new StowContext(callingAE, targetAE, serviceType);
+				stowCtx.setStowRemoteBaseURL(wsExt.getStowRSBaseURL());
+				stowCtx.setQidoRemoteBaseURL(wsExt.getQidoRSBaseURL());
+				storeVerify.store(stowCtx, locators);
+			} else {
+				storeVerify.store( new CStoreSCUContext(callingAE, targetAE, serviceType), 
+		            locators );
+			}
+		}
+		return failedForward == null ? new ArrayList<ArchiveInstanceLocator>() : failedForward;
+	}
+
+	public void scheduleUpdateOnlyChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs) {
         if (updatedInstanceUIDs == null || updatedInstanceUIDs.isEmpty()) {
             LOG.info("No updated instance UIDs given! Skipped!");
             return;
@@ -153,16 +169,8 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
         LOG.debug("NoneIocmDestinations from IOCMConfig:{}", Arrays.toString(noneIOCM));
         if (noneIOCM != null && noneIOCM.length > 0) {
             List<ArchiveInstanceLocator> locators = locate(toIUIDArray(updatedInstanceUIDs));
-            for (int i = 0 ; i < noneIOCM.length ; i++) {
-                storescuService.scheduleStoreSCU(
-                        UUID.randomUUID().toString(),
-                        new CStoreSCUContext(device.getApplicationEntity(cfg
-                                .getCallingAET()), device
-                                .getApplicationEntity(noneIOCM[i]),
-                                ServiceType.IOCMSERVICE), locators, cfg
-                                .getIocmMaxRetries(), DEFAULT_PRIORITY, cfg
-                                .getIocmRetryInterval());
-            }
+        	scheduleStore(device.getApplicationEntity(cfg.getCallingAET()), 
+        			noneIOCM, locators, ServiceType.IOCMSERVICE);
         }
     }
     
@@ -187,6 +195,18 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
         return retrieveService.calculateMatches(null, keys, queryParam, true);
     }
 
+    private List<ArchiveInstanceLocator> extractExternalLocators(List<ArchiveInstanceLocator> locators) {
+    	ArrayList<ArchiveInstanceLocator> externalLocators = new ArrayList<ArchiveInstanceLocator>();
+    	for (Iterator<ArchiveInstanceLocator> iter = locators.iterator(); iter.hasNext();) {
+    		ArchiveInstanceLocator loc = iter.next();
+    		if (loc.getStorageSystem() == null) {
+    			externalLocators.add(loc);
+    			iter.remove();
+    		}
+    	}
+    	return externalLocators;
+    }
+
     private String[] toIUIDArray(Collection<QCEventInstance> qcEventInstances) {
         String[] arr = new String[qcEventInstances.size()];
         int index = 0;
@@ -195,4 +215,10 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
         return arr;
     }
 
+    public void verifyStorage(@Observes @Service(ServiceType.IOCMSERVICE) CStoreSCUResponse storeResponse) {
+    	
+    }
+    public void verifyStorage(@Observes @Service(ServiceType.IOCMSERVICE) StowResponse storeResponse) {
+    	
+    }
 }
