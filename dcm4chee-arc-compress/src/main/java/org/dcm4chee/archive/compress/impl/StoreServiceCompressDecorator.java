@@ -45,6 +45,7 @@ import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.compress.CompressionService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -59,9 +60,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 
 /**
@@ -72,6 +78,8 @@ import java.security.MessageDigest;
 public class StoreServiceCompressDecorator extends DelegatingStoreService {
 
     static Logger LOG = LoggerFactory.getLogger(StoreServiceCompressDecorator.class);
+    
+    static final int bufferLength = 1024 * 1024 * 8; // eight megabytes;
 
     @Inject
     private StorageService storageService;
@@ -80,17 +88,90 @@ public class StoreServiceCompressDecorator extends DelegatingStoreService {
     private CompressionService compressionService;
 
     @Override
+    public void processAttr(StoreContext context)
+    		throws DicomServiceException {
+    	
+    	if (!compressAttr(context)) {
+    		getNextDecorator().processAttr(context);
+    	}
+    }
+    
+    @Override
     public void processFile(StoreContext context)
             throws DicomServiceException {
         
         // if possible, compress the file, store on file system and
         // update store context. Otherwise call the standard moveFile.
-        if (!compress(context)) {
+        if (!compressFile(context)) {
             getNextDecorator().processFile(context);
         }
     }
+    
+    private boolean compressAttr(StoreContext context) throws DicomServiceException {
+    	Attributes attrs = context.getAttributes();
+    	Attributes fmi = context.getFileMetaInfo();
+        Object pixelData = attrs.getValue(Tag.PixelData);
+        if (!(pixelData instanceof BulkData))
+            return false;
+        
+        StoreSession session = context.getStoreSession();
+        ArchiveAEExtension arcAE = session.getArchiveAEExtension();
+        CompressionRules rules = arcAE.getCompressionRules();
+        CompressionRule rule = rules.findCompressionRule(session.getRemoteAET(), attrs);
+        if (rule == null)
+            return false;
+        else
+            LOG.info("Compression rule selected:"+rule.getCommonName());
 
-    private boolean compress(StoreContext context) throws DicomServiceException {
+        StorageContext storageContext = storageService.createStorageContext(session.getStorageSystem());
+        MessageDigest digest = session.getMessageDigest();
+        String targetPath = context.calcStoragePath();
+        String createPath = targetPath;
+        OutputStream out = null;
+        int copy = 1;
+        
+        while (true) {
+            try {
+                out = storageService.openOutputStream(storageContext, createPath);
+                break;
+            } catch (ObjectAlreadyExistsException e) {
+                createPath = targetPath + '.' + copy++;
+            } catch (Exception e) {
+                throw new DicomServiceException(Status.UnableToProcess, e);
+            }
+        }
+
+        try {
+            try {
+                compressionService.compress(rule, null, out, digest, fmi.getString(Tag.TransferSyntaxUID), attrs);
+            } finally {
+            	SafeClose.close(out);
+            }
+        } catch (Exception e) {
+            LOG.info("{}: Compression failed:", session, e);
+            try {
+                storageService.deleteObject(storageContext, createPath);
+            } catch (IOException e1) {
+                LOG.warn("{}: Failed to delete compressed file - {}",
+                        context.getStoreSession(), createPath, e);
+            }
+            return false;
+        }
+        
+        context.setFinalFileSize(10000000);
+        context.setStoragePath(createPath);
+        context.setStorageContext(storageContext);
+        context.setTransferSyntax(rule.getTransferSyntax());
+        
+        if (digest != null) {
+            context.setFinalFileDigest(
+                    TagUtils.toHexString(digest.digest()));
+        }
+        
+        return true;
+    }
+    
+    private boolean compressFile(StoreContext context) throws DicomServiceException {
         Attributes attrs = context.getAttributes();
         Object pixelData = attrs.getValue(Tag.PixelData);
         if (!(pixelData instanceof BulkData))
@@ -149,5 +230,4 @@ public class StoreServiceCompressDecorator extends DelegatingStoreService {
         }
         return true;
      }
-
 }

@@ -71,6 +71,10 @@ public interface StoreContext {
 
     void setTransferSyntax(String transferSyntax);
 
+    Attributes getFileMetaInfo();
+    
+    void setFileMetaInfo(Attributes fmi);
+    
     Attributes getAttributes();
 
     void setAttributes(Attributes attributes);

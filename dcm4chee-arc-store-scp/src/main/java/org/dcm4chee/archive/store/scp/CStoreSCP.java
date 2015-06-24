@@ -109,9 +109,7 @@ public class CStoreSCP extends BasicCStoreSCP {
                   rq.getString(Tag.AffectedSOPClassUID),
                   pc.getTransferSyntax());
             StoreContext context = storeService.createStoreContext(session);
-            storeService.writeSpoolFile(context, fmi, data);
-            storeService.parseSpoolFile(context);
-            storeService.store(context);
+            storeService.store(context, fmi, data);
             Attributes coercedAttrs = context.getCoercedOriginalAttributes();
             if (!coercedAttrs.isEmpty() 
                     && !session.getArchiveAEExtension()

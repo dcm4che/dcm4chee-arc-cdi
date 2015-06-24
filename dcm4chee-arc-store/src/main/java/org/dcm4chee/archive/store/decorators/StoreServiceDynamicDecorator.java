@@ -69,6 +69,10 @@ public abstract class StoreServiceDynamicDecorator extends DynamicDecoratorWrapp
         wrapWithDynamicDecorators(delegate).store(context);
     }
 
+    public void store(StoreContext context, Attributes fmi, InputStream data) throws DicomServiceException {
+    	wrapWithDynamicDecorators(delegate).store(context, fmi, data);
+    }
+    
     public Path spool(StoreSession session, InputStream in, String suffix) throws IOException {
         return wrapWithDynamicDecorators(delegate).spool(session, in, suffix);
     }
@@ -81,6 +85,10 @@ public abstract class StoreServiceDynamicDecorator extends DynamicDecoratorWrapp
         wrapWithDynamicDecorators(delegate).processFile(context);
     }
 
+    public void processAttr(StoreContext context) throws DicomServiceException {
+    	wrapWithDynamicDecorators(delegate).processAttr(context);
+    }
+    
     public void updateDB(StoreContext context) throws DicomServiceException {
         wrapWithDynamicDecorators(delegate).updateDB(context);
     }

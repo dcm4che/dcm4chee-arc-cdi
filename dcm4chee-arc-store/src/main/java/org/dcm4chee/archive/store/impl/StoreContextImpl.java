@@ -68,6 +68,7 @@ public class StoreContextImpl implements StoreContext {
     private String metaDataStoragePath;
     private String transferSyntax;
     private Attributes attributes;
+    private Attributes fmi;
     private Attributes coercedAttributes = new Attributes();
     private StoreAction storeAction;
     private StorageContext storageContext;
@@ -147,6 +148,16 @@ public class StoreContextImpl implements StoreContext {
         this.transferSyntax = transferSyntax;
     }
 
+    @Override
+    public Attributes getFileMetaInfo() {
+    	return fmi;
+    }
+    
+    @Override
+    public void setFileMetaInfo(Attributes fmi) {
+    	this.fmi = fmi;
+    }
+    
     @Override
     public Attributes getAttributes() {
         return attributes;

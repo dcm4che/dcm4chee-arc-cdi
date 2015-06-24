@@ -75,7 +75,7 @@ public class CompressionServiceImpl implements CompressionService {
                 out = new DigestOutputStream(out, digest);
             }
             DicomOutputStream dout = new DicomOutputStream(
-                    new BufferedOutputStream(out), 
+                    new BufferedOutputStream(out,65536), 
                     UID.ExplicitVRLittleEndian);
             out = dout;
             String ts = rule.getTransferSyntax();
@@ -88,5 +88,4 @@ public class CompressionServiceImpl implements CompressionService {
             SafeClose.close(compressor);
         }
     }
-
 }

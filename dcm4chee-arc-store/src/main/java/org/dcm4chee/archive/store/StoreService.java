@@ -65,6 +65,9 @@ public interface StoreService {
 
     StoreContext createStoreContext(StoreSession session);
 
+    // prototypes-skipspool uses this method to bypass writing spool file and use inline compression
+    void store(StoreContext context, Attributes fmi, InputStream data) throws DicomServiceException;
+    
     void initStorageSystem(StoreSession session)
             throws DicomServiceException;
 
@@ -91,6 +94,8 @@ public interface StoreService {
     void coerceAttributes(StoreContext context) throws DicomServiceException;
 
     void processFile(StoreContext context) throws DicomServiceException;
+    
+    void processAttr(StoreContext context) throws DicomServiceException;
 
     void updateDB(StoreContext context) throws DicomServiceException;
 

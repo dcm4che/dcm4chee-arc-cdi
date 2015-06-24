@@ -61,6 +61,10 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
         getNextDecorator().store(context);
     }
 
+    public void store(StoreContext context, Attributes fmi, InputStream data) throws DicomServiceException {
+    	getNextDecorator().store(context, fmi, data);
+    }
+    
     public Path spool(StoreSession session, InputStream in, String suffix) throws IOException {
         return getNextDecorator().spool(session, in, suffix);
     }
@@ -73,6 +77,10 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
         getNextDecorator().processFile(context);
     }
 
+    public void processAttr(StoreContext context) throws DicomServiceException {
+    	getNextDecorator().processAttr(context);
+    }
+    
     public void updateDB(StoreContext context) throws DicomServiceException {
         getNextDecorator().updateDB(context);
     }
