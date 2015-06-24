@@ -188,6 +188,14 @@ public class StoreServiceImpl implements StoreService {
                     "No writeable Storage System in Storage System Group "
                             + groupID);
         session.setStorageSystem(storageSystem);
+        StorageSystem spoolStorageSystem = null;
+        String spoolGroupID = storageSystem.getStorageSystemGroup().getSpoolStorageGroup();
+        if(spoolGroupID!= null){
+            spoolStorageSystem= storageService.selectStorageSystem(
+                    spoolGroupID, 0);
+        }
+        session.setSpoolStorageSystem(spoolStorageSystem != null ? 
+                spoolStorageSystem : storageSystem);
     }
 
     @Override
@@ -866,7 +874,8 @@ public class StoreServiceImpl implements StoreService {
 
         // delete replaced
         try {
-            locationManager.scheduleDelete(replaced, 0);
+            if (replaced.size()>0)
+                locationManager.scheduleDelete(replaced, 0);
         } catch (Exception e) {
             LOG.error("StoreService : Error deleting replaced location - {}", e);
         }
@@ -1321,24 +1330,19 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private boolean isRejected(Study study) {
-        
-        if(study.getSeries()!=null)
-        for (Series series : study.getSeries()) {
-            if (!isRejected(series))
-                return false;
+        if(study.isRejected()) {
+            study.setRejected(false);
+            return true;
         }
-        return true;
+        return false;
     }
 
     private boolean isRejected(Series series) {
-        
-        if(series.getInstances() != null)
-        for (Instance inst : series.getInstances()) {
-            if (inst.getRejectionNoteCode() == null) {
-                return false;
-            }
+        if(series.isRejected()) {
+            series.setRejected(false);
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**
