@@ -81,19 +81,23 @@ import org.dcm4chee.storage.conf.Availability;
  */
 @NamedQueries({
 @NamedQuery(
-        name=Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
+        name=Instance.FIND_BY_SOP_INSTANCE_UID,
         query="SELECT i FROM Instance i "
-                + "JOIN FETCH i.series se "
-                + "JOIN FETCH se.study st "
-                + "JOIN FETCH st.patient p "
-                + "JOIN FETCH i.attributesBlob "
-                + "JOIN FETCH se.attributesBlob "                
-                + "JOIN FETCH st.attributesBlob "                
-                + "JOIN FETCH p.attributesBlob "
-                + "LEFT JOIN FETCH p.patientName pn "
-                + "LEFT JOIN FETCH st.referringPhysicianName rpn "
-                + "LEFT JOIN FETCH se.performingPhysicianName ppn "
-                + "WHERE i.sopInstanceUID = ?1"),            
+                + "WHERE i.sopInstanceUID = ?1"),
+@NamedQuery(
+name=Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
+query="SELECT i FROM Instance i "
+        + "JOIN FETCH i.series se "
+        + "JOIN FETCH se.study st "
+        + "JOIN FETCH st.patient p "
+        + "JOIN FETCH i.attributesBlob "
+        + "JOIN FETCH se.attributesBlob "
+        + "JOIN FETCH st.attributesBlob "
+        + "JOIN FETCH p.attributesBlob "
+        + "LEFT JOIN FETCH p.patientName pn "
+        + "LEFT JOIN FETCH st.referringPhysicianName rpn "
+        + "LEFT JOIN FETCH se.performingPhysicianName ppn "
+        + "WHERE i.sopInstanceUID = ?1"),
 @NamedQuery(
         name=Instance.FIND_BY_SOP_INSTANCE_UID_EAGER_MANY,
         query="SELECT i FROM Instance i "
@@ -118,6 +122,8 @@ public class Instance implements Serializable {
 
     private static final long serialVersionUID = -6510894512195470408L;
 
+    public static final String FIND_BY_SOP_INSTANCE_UID =
+            "Instance.findBySOPInstanceUID";
     public static final String FIND_BY_SOP_INSTANCE_UID_EAGER =
             "Instance.findBySOPInstanceUID.eager";
     public static final String FIND_BY_SOP_INSTANCE_UID_EAGER_MANY =
@@ -217,7 +223,7 @@ public class Instance implements Serializable {
 //    @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = false)
 //    private Collection<Location> locations;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "series_fk")
     private Series series;
 

@@ -42,30 +42,15 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
-import javax.persistence.Version;
+import javax.persistence.*;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -114,6 +99,8 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "FROM Series s WHERE s.pk = ?1")
 })
 @Entity
+@Cacheable(true)
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
 @Table(name = "series")
 public class Series implements Serializable {
 
@@ -217,7 +204,8 @@ public class Series implements Serializable {
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
-    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval =
+            true)
     @JoinColumn(name = "perf_phys_name_fk")
     private PersonName performingPhysicianName;
 
@@ -235,14 +223,15 @@ public class Series implements Serializable {
 //    private Collection<ScheduledProcedureStep> scheduledProcedureSteps;
 
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch=FetchType.LAZY, optional = false)
     @JoinColumn(name = "study_fk")
     private Study study;
 
     @OneToMany(mappedBy = "series", orphanRemoval = true)
     private Collection<Instance> instances;
 
-    @OneToMany(mappedBy = "series", cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch=FetchType.LAZY, mappedBy = "series", cascade=CascadeType
+            .ALL, orphanRemoval = true)
     private Collection<SeriesQueryAttributes> queryAttributes;
 
     @Override
@@ -263,7 +252,7 @@ public class Series implements Serializable {
 
     @PreUpdate
     public void onPreUpdate() {
-        updatedTime = new Date();
+//        updatedTime = new Date();
     }
 
     public AttributesBlob getAttributesBlob() {

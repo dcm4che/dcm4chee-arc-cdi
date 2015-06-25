@@ -45,28 +45,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.Version;
+import javax.persistence.*;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
@@ -76,6 +55,8 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.entity.ext.PatientExtension;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -86,6 +67,8 @@ import org.dcm4chee.archive.entity.ext.PatientExtension;
 @NamedQueries({ @NamedQuery(name = "Patient.findByPatientFamilyName", query = "SELECT p FROM Patient p "
         + "WHERE p.patientName.familyName = ?1") })
 @Entity
+@Cacheable(true)
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
 @Table(name = "patient")
 public class Patient implements Serializable {
 
@@ -152,10 +135,11 @@ public class Patient implements Serializable {
     @OneToMany(mappedBy = "mergedWith", orphanRemoval = true)
     private Collection<Patient> previous;
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "patient", cascade =
+            CascadeType.ALL, orphanRemoval = true)
     private Collection<PatientID> patientIDs;
 
-    @ManyToMany
+    @ManyToMany (fetch = FetchType.LAZY)
     @JoinTable(name = "rel_linked_patient_id", joinColumns = @JoinColumn(name = "patient_fk", referencedColumnName = "pk"), inverseJoinColumns = @JoinColumn(name = "patient_id_fk", referencedColumnName = "pk"))
     private Collection<PatientID> linkedPatientIDs;
 

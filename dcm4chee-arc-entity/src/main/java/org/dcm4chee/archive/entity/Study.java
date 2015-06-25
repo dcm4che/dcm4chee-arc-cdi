@@ -42,32 +42,15 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
-import javax.persistence.Version;
+import javax.persistence.*;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 
 /**
@@ -91,6 +74,8 @@ import org.dcm4chee.archive.conf.AttributeFilter;
                 + "WHERE st.studyInstanceUID = ?1")
 })
 @Entity
+@Cacheable(true)
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL)
 @Table(name = "study")
 public class Study implements Serializable {
 
@@ -163,7 +148,8 @@ public class Study implements Serializable {
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
-    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval =
+            true)
     @JoinColumn(name = "ref_phys_name_fk")
     private PersonName referringPhysicianName;
 
@@ -184,7 +170,7 @@ public class Study implements Serializable {
     @OneToMany(mappedBy = "study", orphanRemoval = true)
     private Collection<Series> series;
 
-    @OneToMany(mappedBy = "study", cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch=FetchType.LAZY, mappedBy = "study", cascade=CascadeType.ALL, orphanRemoval = true)
     private Collection<StudyQueryAttributes> queryAttributes;
 
     @Override

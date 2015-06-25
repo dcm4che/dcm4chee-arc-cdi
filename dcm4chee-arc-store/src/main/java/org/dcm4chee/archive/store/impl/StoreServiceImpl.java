@@ -59,8 +59,7 @@ import java.util.Iterator;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
+import javax.persistence.*;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 
@@ -822,6 +821,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+//    @Monitored(name="findOrCreateInstance")
     public Instance findOrCreateInstance(EntityManager em, StoreContext context)
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
@@ -833,7 +833,7 @@ public class StoreServiceImpl implements StoreService {
 
             Attributes attrs = context.getAttributes();
             Instance inst = em
-                    .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
+                    .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID,
                             Instance.class)
                     .setParameter(1, attrs.getString(Tag.SOPInstanceUID))
                     .getSingleResult();
@@ -883,17 +883,37 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+    @Monitored(name="findOrCreateSeries")
     public Series findOrCreateSeries(EntityManager em, StoreContext context)
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         try {
-            Series series = em
-                    .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID_EAGER,
-                            Series.class)
-                    .setParameter(1, attrs.getString(Tag.SeriesInstanceUID))
+            long t = System.currentTimeMillis();
+            String siud = attrs.getString(Tag.SeriesInstanceUID);
+            long seriesPK = em.createQuery("select s.pk FROM Series s " +
+                    "WHERE s.seriesInstanceUID = ?", Long.class)
+                    .setParameter(1, siud)
+                    .setHint("org.hibernate.cacheable", true)
+                    .setHint("org.hibernate.cacheMode", "NORMAL")
                     .getSingleResult();
+            Series series = em.find(Series.class, seriesPK);
+//            Series series = em
+//                    .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID,
+//                            Series.class)
+//                    .setParameter(1, siud)
+//                    .setHint("org.hibernate.cacheable", true)
+//                    .setHint("org.hibernate.cacheMode", "NORMAL")
+//                    .setHint("javax.persistence.cache.storeMode", CacheStoreMode.REFRESH)
+//                    .getSingleResult();
+            t = System.currentTimeMillis()-t;
+            LOG.trace("FIND_BY_SERIES_INSTANCE_UID_EAGER in " + t);
+//            Cache cache = em.getEntityManagerFactory().getCache();
+//            if (cache.contains(Series.class, series.getPk()))
+//                LOG.trace("Series Cached: " + series.getPk());
+//            Study study = series.getStudy();
+//            LOG.trace("Study IUID: " + study.getStudyInstanceUID());
             service.updateSeries(em, context, series);
             return series;
         } catch (NoResultException e) {
@@ -904,17 +924,26 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+//    @Monitored(name="findOrCreateStudy")
     public Study findOrCreateStudy(EntityManager em, StoreContext context)
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         try {
-            Study study = em
-                    .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID_EAGER,
-                            Study.class)
-                    .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
+            String siud = attrs.getString(Tag.StudyInstanceUID);
+            long studyPK = em.createQuery("select st.pk FROM Study st " +
+                    "WHERE st.studyInstanceUID = ?", Long.class)
+                    .setParameter(1, siud)
+                    .setHint("org.hibernate.cacheable", true)
+                    .setHint("org.hibernate.cacheMode", "NORMAL")
                     .getSingleResult();
+            Study study = em.find(Study.class, studyPK);
+//            Study study = em
+//                    .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID_EAGER,
+//                            Study.class)
+//                    .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
+//                    .getSingleResult();
             service.updateStudy(em, context, study);
             return study;
         } catch (NoResultException e) {
