@@ -111,6 +111,7 @@ public class PriorsCacheProviderEJB {
                         "{} already cached to Storage System Group {} - schedule for delete",
                         location, targetGroupID);
                 duplicates.add(location);
+                location.getInstances().remove(inst);
                 iter.remove();
             }
         }
@@ -123,16 +124,12 @@ public class PriorsCacheProviderEJB {
 
         updateAvailability(inst, availability);
 
-        Location newLocation = new Location.Builder()
-                .storageSystemGroupID(targetGroupID)
-                .storageSystemID(targetSystemID)
-                .storagePath(targetStoragePath)
+        Location newLocation = new Location.Builder().storageSystemGroupID(targetGroupID)
+                .storageSystemID(targetSystemID).storagePath(targetStoragePath)
                 .transferSyntaxUID(sourceLocation.getTransferSyntaxUID())
-                .size(sourceLocation.getSize())
-                .digest(sourceLocation.getDigest())
+                .size(sourceLocation.getSize()).digest(sourceLocation.getDigest())
                 .timeZone(sourceLocation.getTimeZone())
-                .otherAttsDigest(sourceLocation.getOtherAttsDigest())
-                .build();
+                .otherAttsDigest(sourceLocation.getOtherAttsDigest()).build();
         LOG.info("Create {}", newLocation);
         em.persist(newLocation);
 
@@ -148,7 +145,7 @@ public class PriorsCacheProviderEJB {
                 ArchiveDeviceExtension devExt = device
                         .getDeviceExtension(ArchiveDeviceExtension.class);
                 fileMgmt.scheduleDelete(duplicates,
-                        devExt.getPriorsCacheDeleteDuplicateLocationsDelay());
+                        devExt.getPriorsCacheDeleteDuplicateLocationsDelay() * 1000);
             } catch (Exception e) {
                 LOG.error("Schedule delete failed for duplicate locations: {}",
                         duplicates, e);
@@ -179,8 +176,11 @@ public class PriorsCacheProviderEJB {
         List<Location> locations;
         while ((locations = selectLocationsFrom(groupID, maxResults, offset)).size() > 0) {
             offset += locations.size();
-            for (Location location : locations)
+            for (Location location : locations) {
+                for (Instance instance : location.getInstances())
+                    instance.getLocations().remove(location);
                 location.getInstances().clear();
+            }
             em.flush();
             try {
                 fileMgmt.scheduleDelete(locations, 0);
