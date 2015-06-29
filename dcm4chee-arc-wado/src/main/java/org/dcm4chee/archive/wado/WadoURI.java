@@ -61,6 +61,7 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+import javax.imageio.stream.MemoryCacheImageOutputStream;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -91,7 +92,6 @@ import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory.ImageWriterParam;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
 import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
-import org.dcm4che3.imageio.stream.OutputStreamAdapter;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.io.TemplatesCache;
@@ -541,7 +541,12 @@ public class WadoURI extends Wado {
             public void write(OutputStream out) throws IOException,
                     WebApplicationException {
                 BufferedImage bi = getBufferedImage(ref, attrs);
-                writeImage("JPEG", bi, new OutputStreamAdapter(out));
+                ImageOutputStream imageOut = new MemoryCacheImageOutputStream(out);
+                try {
+                    writeImage("JPEG", bi, imageOut);
+                } finally {
+                    imageOut.close();
+                }
             }
         }, MediaTypes.IMAGE_JPEG_TYPE).build();
     }
@@ -554,7 +559,12 @@ public class WadoURI extends Wado {
             public void write(OutputStream out) throws IOException,
                     WebApplicationException {
                 BufferedImage bi = getBufferedImage(ref, attrs);
-                writeImage("PNG", bi, new OutputStreamAdapter(out));
+                ImageOutputStream imageOut = new MemoryCacheImageOutputStream(out);
+                try {
+                    writeImage("PNG", bi, imageOut);
+                } finally {
+                    imageOut.close();
+                }
             }
         }, MediaTypes.IMAGE_PNG_TYPE).build();
     }
@@ -603,25 +613,29 @@ public class WadoURI extends Wado {
             @Override
             public void write(OutputStream out) throws IOException,
                     WebApplicationException {
-                if(attrs.getInt(Tag.NumberOfFrames,1) == 1)
-                {
-                    BufferedImage bi = getBufferedImage(ref, attrs);
-                    writeGIF(bi, new OutputStreamAdapter(out));
-                }
-                else
-                {
-                    if(frameNumber != 0)
+                ImageOutputStream imageOut = new MemoryCacheImageOutputStream(out);
+                try {
+                    if (attrs.getInt(Tag.NumberOfFrames, 1) == 1)
                     {
                         BufferedImage bi = getBufferedImage(ref, attrs);
-                        writeGIF(bi, new OutputStreamAdapter(out));
+                        writeGIF(bi, imageOut);
                     }
                     else
                     {
-                        //return all frames as GIF sequence
-                        List<BufferedImage> bis = getBufferedImages(ref, attrs);
-                        writeGIFs(ref.tsuid,bis, new OutputStreamAdapter(out));
+                        if (frameNumber != 0)
+                        {
+                            BufferedImage bi = getBufferedImage(ref, attrs);
+                            writeGIF(bi, imageOut);
+                        }
+                        else
+                        {
+                            //return all frames as GIF sequence
+                            List<BufferedImage> bis = getBufferedImages(ref, attrs);
+                            writeGIFs(ref.tsuid, bis, imageOut);
+                        }
                     }
-                    
+                } finally {
+                    imageOut.close();
                 }
             }
         }, mediaType).build();
