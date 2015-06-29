@@ -55,72 +55,47 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.dcm4chee</groupId>
+            <artifactId>dcm4chee-conf-db</artifactId>
+            <version>${dcm4chee-conf-db.version}</version>
+        </dependency>
+
+        <!-- Arquillian stuff -->
+
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-remote</artifactId>
+            <version>7.2.0.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.shrinkwrap.resolver</groupId>
+            <artifactId>shrinkwrap-resolver-impl-maven-archive</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.junit</groupId>
+            <artifactId>arquillian-junit-container</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.arquillian</groupId>
+                <artifactId>arquillian-bom</artifactId>
+                <version>1.1.5.Final</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <profiles>
-        <profile>
-            <id>conf-db</id>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.jboss.arquillian</groupId>
-                        <artifactId>arquillian-bom</artifactId>
-                        <version>1.1.5.Final</version>
-                        <scope>import</scope>
-                        <type>pom</type>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-            <dependencies>
-                <dependency>
-                    <groupId>org.dcm4chee</groupId>
-                    <artifactId>dcm4chee-conf-db</artifactId>
-                    <version>${dcm4chee-conf-db.version}</version>
-                </dependency>
-
-                <!-- Arquillian stuff -->
-
-                <dependency>
-                    <groupId>org.jboss.as</groupId>
-                    <artifactId>jboss-as-arquillian-container-remote</artifactId>
-                    <version>7.1.1.Final</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.shrinkwrap.resolver</groupId>
-                    <artifactId>shrinkwrap-resolver-impl-maven-archive</artifactId>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.arquillian.junit</groupId>
-                    <artifactId>arquillian-junit-container</artifactId>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>build-helper-maven-plugin</artifactId>
-                        <version>1.9.1</version>
-                        <executions>
-                            <execution>
-                                <phase>compile</phase>
-                                <goals>
-                                    <goal>add-test-source</goal>
-                                </goals>
-                                <configuration>
-                                    <sources>
-                                        <source>src/testIT/java</source>
-                                    </sources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-
-        </profile>
         <profile>
             <id>ldap</id>
             <activation>
@@ -157,7 +132,8 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Dependencies>org.dcm4che.conf.dicom, org.dcm4che.imageio, org.dcm4che.net-hl7, org.dcm4che.soundex
+                            <Dependencies>org.dcm4che.conf.dicom, org.dcm4che.imageio, org.dcm4che.net-hl7,
+                                org.dcm4che.soundex
                             </Dependencies>
                         </manifestEntries>
                     </archive>

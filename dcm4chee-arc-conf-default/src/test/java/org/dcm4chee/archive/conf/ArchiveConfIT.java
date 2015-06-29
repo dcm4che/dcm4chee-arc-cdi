@@ -49,6 +49,10 @@ import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
+import org.dcm4chee.archive.conf.defaults.DeepEquals;
+import org.dcm4chee.archive.conf.defaults.DefaultDeviceFactory;
+import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
+import org.dcm4chee.archive.conf.defaults.ExtendedStudyDictionary;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -58,7 +62,6 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -69,7 +72,7 @@ import java.io.File;
  * @author Roman K
  */
 @RunWith(Arquillian.class)
-public class ConfIT extends ArchiveDeviceTest {
+public class ArchiveConfIT extends ArchiveDeviceTest {
 
     @Inject
     Configuration dbConfigStorage;
@@ -78,11 +81,14 @@ public class ConfIT extends ArchiveDeviceTest {
     public static WebArchive createDeployment() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
 
-        war.addClass(ConfIT.class);
+        war.addClass(ArchiveConfIT.class);
         war.addClass(ArchiveDeviceTest.class);
-        war.addClass(DeviceMocker.class);
         war.addClass(DeepEquals.class);
         war.addClass(CustomEquals.class);
+        war.addClass(DefaultDeviceFactory.class);
+        war.addClass(ExtendedStudyDictionary.class);
+        war.addClass(DefaultDicomConfigInitializer.class);
+
 
         war.addAsManifestResource(new FileAsset(new File("src/test/resources/META-INF/MANIFEST.MF")), "MANIFEST.MF");
         JavaArchive[] archs = Maven.resolver()
@@ -105,7 +111,6 @@ public class ConfIT extends ArchiveDeviceTest {
         DicomConfigurationBuilder builder = new DicomConfigurationBuilder();
 
         builder.registerCustomConfigurationStorage(dbConfigStorage);
-        builder.cache();
 
         builder.registerDeviceExtension(ArchiveDeviceExtension.class);
         builder.registerDeviceExtension(StorageDeviceExtension.class);
@@ -136,10 +141,18 @@ public class ConfIT extends ArchiveDeviceTest {
         Device arrDevice = createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
         config.persist(arrDevice);
 
+        int numofdevices = 10;
+
+        System.out.println("removing devices");
+        for (int i = 0; i < numofdevices; i++) {
+            String name = "dcm4chee-arc" + i;
+            if (i % 10 == 0) System.out.println(i);
+            config.removeDevice(name);
+        }
 
         //persist
         System.out.println("persisting devices");
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < numofdevices; i++) {
             String name = "dcm4chee-arc" + i;
             if (i % 10 == 0) System.out.println(i);
             Device arc = createArchiveDevice(name, arrDevice);
@@ -148,14 +161,11 @@ public class ConfIT extends ArchiveDeviceTest {
 
         System.out.println("loading devices");
         config.sync();
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < numofdevices; i++) {
+            if (i % 10 == 0) System.out.println(i);
             config.findDevice("dcm4chee-arc" + i);
-
-        System.out.println("removing devices");
-        for (int i = 0; i < 50; i++) {
-            String name = "dcm4chee-arc" + i;
-            config.removeDevice(name);
         }
+
 
     }
 
