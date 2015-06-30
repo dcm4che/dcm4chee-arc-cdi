@@ -78,10 +78,6 @@ public class StudyOnStorageSystemGroup implements Serializable {
     @Basic(optional = false)
     private boolean markedForDeletion;
 
-    @Column(name = "archived_any_where")
-    @Basic(optional = false)
-    private boolean archivedAnyWhere;
-
     @Column(name = "storage_system_group_id")
     @Basic(optional = false)
     private String storageSystemGroupID;
@@ -116,14 +112,6 @@ public class StudyOnStorageSystemGroup implements Serializable {
 
     public void setStorageSystemGroupID(String storageSystemGroupID) {
         this.storageSystemGroupID = storageSystemGroupID;
-    }
-
-    public boolean isArchivedAnyWhere() {
-        return archivedAnyWhere;
-    }
-
-    public void setArchivedAnyWhere(boolean archivedAnyWhere) {
-        this.archivedAnyWhere = archivedAnyWhere;
     }
 
     public long getPk() {
