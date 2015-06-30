@@ -581,7 +581,11 @@ public class DefaultDeviceFactory {
         online.setBaseStorageAccessTime(1000);
         online.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         online.setActiveStorageSystemIDs(fs1.getStorageSystemID());
-
+        online.setArchivedOnGroups(new String[]{"NEARLINE"});
+        online.setDeleteAsMuchAsPossible(false);
+        online.setMinTimeStudyNotAccessed(30);
+        online.setMinTimeStudyNotAccessedUnit("DAYS");
+        online.setDeletionThreshold("7:1h;19:24h");
         StorageSystemGroup nearline = new StorageSystemGroup();
         nearline.setRetrieveAETs(new String[]{"DCM4CHEE"});
         nearline.setGroupID("ARCHIVE");

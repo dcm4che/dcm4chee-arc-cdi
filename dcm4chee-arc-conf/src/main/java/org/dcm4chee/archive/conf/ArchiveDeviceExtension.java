@@ -131,6 +131,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmMppsEmulationPollInterval", defaultValue = "0")
     private int mppsEmulationPollInterval;
 
+    @ConfigurableProperty(name = "dcmDeletionServicePollInterval", defaultValue = "0")
+    private int deletionServicePollInterval;
+
     @ConfigurableProperty(name = "dcmArchivingSchedulerPollInterval", defaultValue = "0")
     private int archivingSchedulerPollInterval;
 
@@ -494,6 +497,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     public void setPriorsCacheClearMaxLocationsPerDelete(
             int priorsCacheClearMaxLocationsPerDelete) {
         this.priorsCacheClearMaxLocationsPerDelete = priorsCacheClearMaxLocationsPerDelete;
+    }
+
+    public int getDeletionServicePollInterval() {
+        return deletionServicePollInterval;
+    }
+
+    public void setDeletionServicePollInterval(int deletionServicePollInterval) {
+        this.deletionServicePollInterval = deletionServicePollInterval;
     }
 
 }
