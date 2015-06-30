@@ -111,8 +111,8 @@ public class StoreServiceCompressDecorator extends DelegatingStoreService {
     	Attributes attrs = context.getAttributes();
     	Attributes fmi = context.getFileMetaInfo();
         Object pixelData = attrs.getValue(Tag.PixelData);
-        if (!(pixelData instanceof BulkData))
-            return false;
+//        if (!(pixelData instanceof BulkData))
+//            return false;
         
         StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
