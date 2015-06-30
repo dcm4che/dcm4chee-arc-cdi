@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <properties>
-        <dcm4chee-conf-db.version>1.0.0-SNAPSHOT</dcm4chee-conf-db.version>
+        <dcm4chee-conf-db.version>1.1.0-SNAPSHOT</dcm4chee-conf-db.version>
     </properties>
     <parent>
         <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -56,7 +56,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.dcm4chee</groupId>
+            <groupId>org.dcm4che.dcm4chee-conf</groupId>
             <artifactId>dcm4chee-conf-db</artifactId>
             <version>${dcm4chee-conf-db.version}</version>
         </dependency>
