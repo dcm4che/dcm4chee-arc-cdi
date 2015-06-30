@@ -416,7 +416,7 @@ public class StoreServiceImpl implements StoreService {
     		} else {
     			
     			DicomInputStream dis = new DicomInputStream(bis);
-    			dis.setIncludeBulkData(IncludeBulkData.URI);
+    			dis.setIncludeBulkData(IncludeBulkData.YES);
     			Attributes attrs = dis.readDataset(-1, -1);
     			context.setTransferSyntax(fmi.getString(Tag.TransferSyntaxUID));
     			context.setFileMetaInfo(fmi);
