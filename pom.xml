@@ -314,11 +314,16 @@
           <artifactId>dcm4chee-conf-cdi</artifactId>
           <version>${dcm4chee-conf.version}</version>
       </dependency>
-      <dependency>
-          <groupId>org.dcm4che.dcm4chee-conf</groupId>
-          <artifactId>dcm4chee-conf-decorators</artifactId>
-          <version>${dcm4chee-conf.version}</version>
-      </dependency>
+        <dependency>
+            <groupId>org.dcm4che.dcm4chee-conf</groupId>
+            <artifactId>dcm4chee-conf-decorators</artifactId>
+            <version>${dcm4chee-conf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dcm4che.dcm4chee-conf</groupId>
+            <artifactId>dcm4chee-conf-db</artifactId>
+            <version>${dcm4chee-conf.version}</version>
+        </dependency>
 
       <!-- Monitoring dependencies -->
       <dependency>
