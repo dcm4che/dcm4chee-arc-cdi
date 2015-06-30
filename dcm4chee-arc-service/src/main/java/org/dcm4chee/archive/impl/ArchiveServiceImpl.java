@@ -47,9 +47,11 @@ import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.enterprise.event.Event;
+import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
+import org.dcm4che3.conf.api.ConfigChangeEvent;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
@@ -66,6 +68,8 @@ import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.event.ConnectionEventSource;
 import org.dcm4chee.archive.event.LocalSource;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -74,6 +78,7 @@ import org.dcm4chee.archive.event.StartStopReloadEvent;
 @Singleton
 @Startup
 public class ArchiveServiceImpl implements ArchiveService {
+    private static final Logger LOG = LoggerFactory.getLogger(ArchiveServiceImpl.class);
     
     @Inject
     private ArchiveDeviceProducer deviceProducer;
@@ -201,6 +206,15 @@ public class ArchiveServiceImpl implements ArchiveService {
         }
     }
 
+    @Override
+    public void onConfigChange(@Observes ConfigChangeEvent configChange) {
+        try {
+            reload(null);
+        } catch (Exception e) {
+            LOG.error("Error while reloading configuration", e);
+        }
+    }
+    
     @Override
     public void reload(Participant source) throws Exception {
         aeCache.clear();
