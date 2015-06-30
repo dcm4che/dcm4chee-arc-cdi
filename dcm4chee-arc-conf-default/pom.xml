@@ -121,14 +121,6 @@
                 </configuration>
             </plugin>
         </plugins>
-        <resources>
-          <resource>
-            <directory>src/test/java</directory>
-              <excludes>
-                 <exclude>**/ArchiveConfIT.java</exclude>
-              </excludes>
-          </resource>
-        </resources>
     </build>
     </profile>
     <profile>
