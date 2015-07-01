@@ -608,7 +608,7 @@ Setup JBoss
     -  Oracle: `jdbc:oracle:thin:@localhost:1521:<database-name>`
     -  Microsoft SQL Server: `jdbc:sqlserver://localhost:1433;databaseName=<database-name>`
 
-16. Create JMS Queues using JBoss CLI:
+16. Create JMS Queues / Topics using JBoss CLI:
 
         [standalone@localhost:9999 /] jms-queue add --queue-address=ianscu --entries=queue/ianscu
         [standalone@localhost:9999 /] jms-queue add --queue-address=mppsscu --entries=queue/mppsscu
@@ -617,6 +617,7 @@ Setup JBoss
         [standalone@localhost:9999 /] jms-queue add --queue-address=archiver --entries=queue/archiver
         [standalone@localhost:9999 /] jms-queue add --queue-address=stowclient --entries=queue/stowclient
         [standalone@localhost:9999 /] jms-queue add --queue-address=storescu --entries=queue/storescu
+        [standalone@localhost:9999 /] jms-topic add --topic-address=DicomConfigurationChangeTopic --entries=/topic/DicomConfigurationChangeTopic
 
 17. At default, DCM4CHEE Archive 4.x will assume `dcm4chee-arc` as its Device Name, used to find its
     configuration in the configuration backend (LDAP Server or Java Preferences). You may specify a different
