@@ -133,6 +133,9 @@ public class DefaultRetrieveService implements RetrieveService {
     /**
      * Given study and/or series and/or object uids, performs the query and
      * returns references to the instances.
+     * The list contains one ArchiveInstanceLocator for each instance. 
+     * Additional locations of an instance are available in a chain of FallBackLocator.
+     * Note: The external locations are only available if the instance has no Location. 
      */
     @Override
     public List<ArchiveInstanceLocator> calculateMatches(String studyIUID,
@@ -181,7 +184,7 @@ public class DefaultRetrieveService implements RetrieveService {
                 locator = null;
             }
             instPk = nextInstPk;
-            if(tuple.get(QLocation.location.storageSystemGroupID) == null)
+            if(tuple.get(QLocation.location.storageSystemGroupID) == null) //can only be null if instance has no location!
                 locator = augmentExternalLocations(updateLocator(storageConf, 
                         locator, seriesAttrs, tuple));
             else
