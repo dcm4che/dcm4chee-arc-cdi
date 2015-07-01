@@ -468,7 +468,7 @@ public class WadoURI extends Wado {
                 try {
                     th = factory.newTransformerHandler(templates);
                 } catch (TransformerConfigurationException e2) {
-                    e2.printStackTrace();
+                    LOG.error("Error configuring transformer handler - reason {}",e2);
                 }
                 Transformer tr = th.getTransformer();
                 String wado = request.getRequestURL().toString();
@@ -480,7 +480,7 @@ public class WadoURI extends Wado {
                 try {
                     w.write(data);
                 } catch (SAXException e) {
-                    e.printStackTrace();
+                    LOG.error("Unable to write SR using defined template - reason {}",e);
                 }
             }
         }, MediaType.TEXT_HTML_TYPE).build();
