@@ -316,7 +316,7 @@ public class QCBeanImpl  implements QCBean{
         Collection<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
         Collection<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
-        Collection<Instance> toMove = locateInstances((String[]) toMoveUIDs.toArray());
+        Collection<Instance> toMove = locateInstances( toMoveUIDs.toArray(new String[toMoveUIDs.size()]));
         Study sourceStudy= toMove.iterator().next().getSeries().getStudy();
 
         if(!allInstancesFromSameStudy(toMove)) {
@@ -405,8 +405,8 @@ public class QCBeanImpl  implements QCBean{
         Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         //check move and clone belong to same study
         ArrayList<Instance> tmpAllInstancesInvolved = new ArrayList<Instance>();
-        Collection<Instance> toMove = locateInstances(toMoveUIDs.isEmpty()?new String[]{}:(String[]) toMoveUIDs.toArray());
-        Collection<Instance> toClone = locateInstances(toCloneUIDs.isEmpty()?new String[]{}:(String[]) toCloneUIDs.toArray());
+        Collection<Instance> toMove = locateInstances(toMoveUIDs.isEmpty()?new String[]{}:toMoveUIDs.toArray(new String[toMoveUIDs.size()]));
+        Collection<Instance> toClone = locateInstances(toCloneUIDs.isEmpty()?new String[]{}:toCloneUIDs.toArray(new String[toCloneUIDs.size()]));
         tmpAllInstancesInvolved.addAll(toMove);
         tmpAllInstancesInvolved.addAll(toClone);
         Study sourceStudy = tmpAllInstancesInvolved.get(0).getSeries().getStudy();
