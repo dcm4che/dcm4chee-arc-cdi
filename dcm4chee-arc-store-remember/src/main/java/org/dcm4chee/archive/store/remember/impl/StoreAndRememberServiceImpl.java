@@ -157,11 +157,13 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         }
 
         if (refSops != null) {
-            for (int i = 0; i < refSops.size(); i++)
-                addExternalLocation(refSops.get(i)
-                        .getString(Tag.ReferencedSOPInstanceUID),
-                        commitEvent.getRemoteAET(),
+        	Attributes item;
+            for (int i = 0; i < refSops.size(); i++) {
+                item = refSops.get(i);
+                addExternalLocation(item.getString(Tag.ReferencedSOPInstanceUID),
+                	    item.getString(Tag.RetrieveAETitle),
                         remoteDeviceName, defaultAvailability);
+            }
         }
 
         if (statusChanged)
