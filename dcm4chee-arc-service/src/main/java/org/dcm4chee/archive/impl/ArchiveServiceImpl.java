@@ -51,7 +51,7 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.api.ConfigChangeEvent;
+import org.dcm4che3.conf.core.api.ConfigChangeEvent;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
