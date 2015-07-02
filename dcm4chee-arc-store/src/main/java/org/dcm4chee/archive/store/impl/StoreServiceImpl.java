@@ -416,7 +416,7 @@ public class StoreServiceImpl implements StoreService {
     		} else {
     			
     			DicomInputStream dis = new DicomInputStream(bis);
-    			dis.setIncludeBulkData(IncludeBulkData.URI);
+    			dis.setIncludeBulkData(IncludeBulkData.YES);
     			Attributes attrs = dis.readDataset(-1, -1);
     			context.setTransferSyntax(fmi.getString(Tag.TransferSyntaxUID));
     			context.setFileMetaInfo(fmi);
@@ -1082,6 +1082,13 @@ public class StoreServiceImpl implements StoreService {
         return fileRef;
     }
 
+    private boolean needsUpdate(StoreContext context) {
+    	StoreSession session = context.getStoreSession();
+    	String localAET = session.getLocalAET();
+    	String fetchAET = device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle();
+    	return !context.isFetch() && !localAET.equalsIgnoreCase(fetchAET);    	
+    }
+    
     @Override
     public void updateStudy(EntityManager em, StoreContext context, Study study) {
         StoreSession session = context.getStoreSession();
@@ -1091,33 +1098,31 @@ public class StoreServiceImpl implements StoreService {
         study.clearQueryAttributes();
         AttributeFilter studyFilter = storeParam
                 .getAttributeFilter(Entity.Study);
-        Attributes studyAttrs = study.getAttributes();
-        Attributes modified = new Attributes();
-        // check if trashed
+        
+        boolean needsUpdate = needsUpdate(context);
+        
         if (isRejected(study)) {
             em.remove(study.getAttributesBlob());
             study.setAttributes(new Attributes(data), studyFilter,
                     storeParam.getFuzzyStr());
         } else {
-            if (!context.isFetch()
-                    && !session.getLocalAET().equalsIgnoreCase(
-                            device.getDeviceExtension(
-                                    ArchiveDeviceExtension.class)
-                                    .getFetchAETitle())
-                                    && studyAttrs.updateSelected(data, modified,
-                    studyFilter.getCompleteSelection(data))) {
-                study.setAttributes(studyAttrs, studyFilter,
-                        storeParam.getFuzzyStr());
-                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
-                        studyAttrs, modified);
+        	if (needsUpdate) {
+            	Attributes studyAttrs = study.getAttributes();
+            	Attributes modified = new Attributes();
+            	
+            	if (studyAttrs.updateSelected(data, modified,
+                        studyFilter.getCompleteSelection(data))) {
+            		study.setAttributes(studyAttrs, studyFilter,
+                            storeParam.getFuzzyStr());
+                    LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
+                            studyAttrs, modified);
+            	}
             }
         }
-        if (!context.isFetch()
-                && !session.getLocalAET().equalsIgnoreCase(
-                        device.getDeviceExtension(
-                                ArchiveDeviceExtension.class)
-                                .getFetchAETitle()))
-        service.updatePatient(em, context, study.getPatient());
+        
+        if (needsUpdate) {
+        	service.updatePatient(em, context, study.getPatient());
+        }
     }
 
     @Override
@@ -1136,28 +1141,26 @@ public class StoreServiceImpl implements StoreService {
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         series.clearQueryAttributes();
-        Attributes seriesAttrs = series.getAttributes();
         AttributeFilter seriesFilter = storeParam
                 .getAttributeFilter(Entity.Series);
-        Attributes modified = new Attributes();
-        // check if trashed
+               
         if (isRejected(series)) {
             em.remove(series.getAttributesBlob());
             series.setAttributes(new Attributes(data), seriesFilter,
                     storeParam.getFuzzyStr());
         } else {
-            if (!context.isFetch()
-                    && !session.getLocalAET().equalsIgnoreCase(
-                            device.getDeviceExtension(
-                                    ArchiveDeviceExtension.class)
-                                    .getFetchAETitle())
-                    && seriesAttrs.updateSelected(data, modified,
-                            seriesFilter.getCompleteSelection(data))) {
-                series.setAttributes(seriesAttrs, seriesFilter,
-                        storeParam.getFuzzyStr());
-                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
-                        seriesAttrs, modified);
-            }
+        	if (needsUpdate(context)) {
+        		Attributes seriesAttrs = series.getAttributes();
+                Attributes modified = new Attributes();
+                
+                if (seriesAttrs.updateSelected(data, modified,
+                        seriesFilter.getCompleteSelection(data))) {
+                	series.setAttributes(seriesAttrs, seriesFilter,
+                			storeParam.getFuzzyStr());
+                	LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
+                			seriesAttrs, modified);
+                }
+        	}   
         }
         service.updateStudy(em, context, series.getStudy());
     }
@@ -1169,20 +1172,19 @@ public class StoreServiceImpl implements StoreService {
         StoreService service = session.getStoreService();
         Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
-        Attributes instAttrs = inst.getAttributes();
         AttributeFilter instFilter = storeParam
                 .getAttributeFilter(Entity.Instance);
-        Attributes modified = new Attributes();
-        if (!context.isFetch()
-                && !session.getLocalAET().equalsIgnoreCase(
-                        device.getDeviceExtension(
-                                ArchiveDeviceExtension.class)
-                                .getFetchAETitle())
-                && instAttrs.updateSelected(data, modified,
-                        instFilter.getCompleteSelection(data))) {
-            inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
-            LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
-                    modified);
+        
+        if (needsUpdate(context)) {
+        	Attributes instAttrs = inst.getAttributes();
+            Attributes modified = new Attributes();
+            
+            if (instAttrs.updateSelected(data, modified,
+                    instFilter.getCompleteSelection(data))) {
+            	inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
+            	LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
+            			modified);
+            }    
         }
         service.updateSeries(em, context, inst.getSeries());
     }
