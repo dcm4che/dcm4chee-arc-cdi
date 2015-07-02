@@ -234,11 +234,11 @@ public class QCBeanImpl  implements QCBean{
             org.dcm4che3.data.Code qcRejectionCode) {
         
         QCActionHistory mergeAction = generateQCAction(QCOperation.MERGE);
-        Collection<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
-        Collection<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
+        List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
+        List<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
         List<Instance> rejectedInstances = new ArrayList<Instance>();
 
-        Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
+        List<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         Study source = findStudy(sourceStudyUid);
         Study target = findStudy(targetStudyUID);
         boolean samePatient = source.getPatient().getPk()==target.getPatient().getPk()?
@@ -298,7 +298,7 @@ public class QCBeanImpl  implements QCBean{
                 codeService.findOrCreate(new Code(qcRejectionCode)), rejectedInstances);
         QCEvent mergeEvent = new QCEvent(QCOperation.MERGE, null,null,sourceUIDs,targetUIDs);
         mergeEvent.addRejectionNote(rejNote);
-        changeRequester.scheduleChangeRequest(targetUIDs, rejNote);
+        changeRequester.scheduleChangeRequest(sourceUIDs, targetUIDs, rejNote);
         return mergeEvent;
     }
 
@@ -313,9 +313,9 @@ public class QCBeanImpl  implements QCBean{
             Attributes targetSeriesAttrs, org.dcm4che3.data.Code qcRejectionCode) {
         
         QCActionHistory splitAction = generateQCAction(QCOperation.SPLIT);
-        Collection<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
-        Collection<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
-        Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
+        List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
+        List<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
+        List<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         Collection<Instance> toMove = locateInstances( toMoveUIDs.toArray(new String[toMoveUIDs.size()]));
         Study sourceStudy= toMove.iterator().next().getSeries().getStudy();
 
@@ -382,7 +382,7 @@ public class QCBeanImpl  implements QCBean{
         Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, toMove);
         QCEvent splitEvent = new QCEvent(QCOperation.SPLIT,null,null,sourceUIDs,targetUIDs);
         splitEvent.addRejectionNote(rejNote);
-        changeRequester.scheduleChangeRequest(targetUIDs, rejNote);
+        changeRequester.scheduleChangeRequest(sourceUIDs, targetUIDs, rejNote);
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(splitEvent);
         return splitEvent;
     }
@@ -398,11 +398,11 @@ public class QCBeanImpl  implements QCBean{
             Attributes createdStudyAttrs,Attributes targetSeriesAttrs,
             org.dcm4che3.data.Code qcRejectionCode) {
         QCActionHistory segmentAction = generateQCAction(QCOperation.SEGMENT);
-        Collection<QCEventInstance> movedSourceUIDs = new ArrayList<QCEventInstance>();
-        Collection<QCEventInstance> movedTargetUIDs = new ArrayList<QCEventInstance>();
-        Collection<QCEventInstance> clonedSourceUIDs = new ArrayList<QCEventInstance>();
-        Collection<QCEventInstance> clonedTargetUIDs = new ArrayList<QCEventInstance>();
-        Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
+        List<QCEventInstance> movedSourceUIDs = new ArrayList<QCEventInstance>();
+        List<QCEventInstance> movedTargetUIDs = new ArrayList<QCEventInstance>();
+        List<QCEventInstance> clonedSourceUIDs = new ArrayList<QCEventInstance>();
+        List<QCEventInstance> clonedTargetUIDs = new ArrayList<QCEventInstance>();
+        List<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         //check move and clone belong to same study
         ArrayList<Instance> tmpAllInstancesInvolved = new ArrayList<Instance>();
         Collection<Instance> toMove = locateInstances(toMoveUIDs.isEmpty()?new String[]{}:toMoveUIDs.toArray(new String[toMoveUIDs.size()]));
@@ -501,7 +501,7 @@ public class QCBeanImpl  implements QCBean{
         recordHistoryEntry(instancesHistory);
         QCEvent segmentEvent = new QCEvent(QCOperation.SEGMENT,null,null,movedSourceUIDs,movedTargetUIDs);
         segmentEvent.addRejectionNote(rejNote);
-        changeRequester.scheduleChangeRequest(movedTargetUIDs, rejNote);
+        changeRequester.scheduleChangeRequest(movedSourceUIDs, movedTargetUIDs, rejNote);
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(segmentEvent);
         return segmentEvent;
     }
@@ -532,7 +532,7 @@ public class QCBeanImpl  implements QCBean{
         Instance rejNote =createAndStoreRejectionNote(qcRejectionCode, src);
         QCEvent rejectEvent = new QCEvent(QCOperation.REJECT, null, null, iuids, null);
         rejectEvent.addRejectionNote(rejNote);
-        changeRequester.scheduleChangeRequest(null, rejNote);
+        changeRequester.scheduleChangeRequest(iuids, null, rejNote);
         return rejectEvent;
     }
 
@@ -691,7 +691,7 @@ public class QCBeanImpl  implements QCBean{
         deleteEvent.addRejectionNote(rejNote);
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
         rejectAndScheduleForDeletion(rejectedInstances);
-        changeRequester.scheduleChangeRequest(null, rejNote);
+        changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
         return deleteEvent;
     }
 
@@ -718,7 +718,7 @@ public class QCBeanImpl  implements QCBean{
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
         rejectAndScheduleForDeletion(insts);
 
-        changeRequester.scheduleChangeRequest(null, rejNote);
+        changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
         return deleteEvent;
     }
 
@@ -740,7 +740,7 @@ public class QCBeanImpl  implements QCBean{
         LOG.info("{}:  QC info[Delete] info - Removed instance entity {}", qcSource, sopInstanceUID);
         series.clearQueryAttributes();
         study.clearQueryAttributes();
-        Collection<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
+        List<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
         for(Instance inst : tmpList) {
             eventUIDs.add(new QCEventInstance(inst.getSopInstanceUID(),series.getSeriesInstanceUID(), study.getStudyInstanceUID()));
         }
@@ -749,7 +749,7 @@ public class QCBeanImpl  implements QCBean{
         deleteEvent.addRejectionNote(rejNote);
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
         rejectAndScheduleForDeletion(tmpList);
-        changeRequester.scheduleChangeRequest(null, rejNote);
+        changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
         return deleteEvent;
     }
 

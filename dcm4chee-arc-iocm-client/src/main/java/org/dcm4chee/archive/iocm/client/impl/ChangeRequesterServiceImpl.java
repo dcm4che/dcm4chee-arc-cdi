@@ -41,12 +41,16 @@ package org.dcm4chee.archive.iocm.client.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -55,6 +59,7 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.web.WebServiceAEExtension;
+import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.QueryParam;
@@ -96,9 +101,12 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     @Inject
     private FetchForwardService fetchForwardService;
 
+    @PersistenceContext(unitName = "dcm4chee-arc")
+    private EntityManager em;
+
     private transient ArchiveDeviceExtension archDeviceExt;
     
-    public void scheduleChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs, Instance rejNote) {
+    public void scheduleChangeRequest(List<QCEventInstance> sourceInstanceUIDs, List<QCEventInstance> updatedInstanceUIDs, Instance rejNote) {
         LOG.debug("ChangeRequestor: scheduleChangeRequest called! rejNote:{}\nupdated:{}", rejNote, updatedInstanceUIDs);
         IOCMConfig cfg = getIOCMConfig();
         if (cfg == null) {
@@ -108,25 +116,26 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
         ApplicationEntity callingAE = device.getApplicationEntity(cfg.getCallingAET());
         String[] targets = cfg.getIocmDestinations();
         LOG.debug("targetAETs from IOCMConfig:{}", Arrays.toString(targets));
+        Collection<String> storeRememberAETs = this.getStoreAndRememberAETitles(sourceInstanceUIDs);
         if (rejNote != null) {
             List<ArchiveInstanceLocator> locators = locate(rejNote.getSopInstanceUID());
-            scheduleStore(callingAE, targets, locators, ServiceType.IOCMSERVICE);
+            scheduleStore(callingAE, targets, locators, storeRememberAETs);
         }
         if (updatedInstanceUIDs != null && updatedInstanceUIDs.size() > 0) {
             List<ArchiveInstanceLocator> locators = locate(toIUIDArray(updatedInstanceUIDs));
-            scheduleStore(callingAE, targets, locators, ServiceType.STOREVERIFY);
+            scheduleStore(callingAE, targets, locators, storeRememberAETs);
 
             String[] noneIOCM = cfg.getNoneIocmDestinations();
             LOG.debug("NoneIocmDestinations from IOCMConfig:{}", Arrays.toString(noneIOCM));
             if (noneIOCM != null && noneIOCM.length > 0) {
-            	scheduleStore(callingAE, noneIOCM, locators, ServiceType.STOREVERIFY);
+            	scheduleStore(callingAE, noneIOCM, locators, storeRememberAETs);
             }
         }
 
     }
 
 	private List<ArchiveInstanceLocator> scheduleStore(ApplicationEntity callingAE, String[] targets,
-			final List<ArchiveInstanceLocator> locators, ServiceType serviceType) {
+			final List<ArchiveInstanceLocator> locators, Collection<String> storeRememberAETs) {
 		List<ArchiveInstanceLocator> failedForward = null;
 		List<ArchiveInstanceLocator> externalLocators = extractExternalLocators(locators);
         if(!externalLocators.isEmpty()) {
@@ -142,8 +151,9 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 		for (String target : targets) {
 			ApplicationEntity targetAE = device.getApplicationEntity(target);
 			WebServiceAEExtension wsExt = targetAE.getAEExtension(WebServiceAEExtension.class);
+			ServiceType serviceType = storeRememberAETs.contains(target) ? ServiceType.STOREREMEMBER : ServiceType.IOCMSERVICE;
 			if (wsExt != null && wsExt.getStowRSBaseURL() != null) {
-				StowContext stowCtx = new StowContext(callingAE, targetAE, serviceType);
+				StowContext stowCtx = new StowContext(callingAE, targetAE, serviceType );
 				stowCtx.setStowRemoteBaseURL(wsExt.getStowRSBaseURL());
 				stowCtx.setQidoRemoteBaseURL(wsExt.getQidoRSBaseURL());
 				storeVerify.store(stowCtx, locators);
@@ -155,7 +165,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 		return failedForward == null ? new ArrayList<ArchiveInstanceLocator>() : failedForward;
 	}
 
-	public void scheduleUpdateOnlyChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs) {
+	public void scheduleUpdateOnlyChangeRequest(List<QCEventInstance> updatedInstanceUIDs) {
         if (updatedInstanceUIDs == null || updatedInstanceUIDs.isEmpty()) {
             LOG.info("No updated instance UIDs given! Skipped!");
             return;
@@ -166,11 +176,12 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             return;
         }
         String[] noneIOCM = cfg.getNoneIocmDestinations();
+        Collection<String> storeRememberAETs = this.getStoreAndRememberAETitles(updatedInstanceUIDs);
         LOG.debug("NoneIocmDestinations from IOCMConfig:{}", Arrays.toString(noneIOCM));
         if (noneIOCM != null && noneIOCM.length > 0) {
             List<ArchiveInstanceLocator> locators = locate(toIUIDArray(updatedInstanceUIDs));
         	scheduleStore(device.getApplicationEntity(cfg.getCallingAET()), 
-        			noneIOCM, locators, ServiceType.IOCMSERVICE);
+        			noneIOCM, locators, storeRememberAETs);
         }
     }
     
@@ -205,6 +216,22 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     		}
     	}
     	return externalLocators;
+    }
+    
+    private Collection<String> getStoreAndRememberAETitles(List<QCEventInstance> sourceInstanceUIDs) {
+    	Query q = em.createQuery("SELECT DISTINCT instance.retrieveAETs from Instance i "
+                    + " where i.sopInstanceUID IN ?1");
+    	q.setParameter(1, sourceInstanceUIDs);
+    	List<String> retrieveAETs = (List<String>) q.getResultList();
+    	HashSet<String> allRetrieveAETs = new HashSet<String>(retrieveAETs.size());
+    	for (String aets : retrieveAETs) {
+    		for (String aet : StringUtils.split(aets, '\\')) {
+    			allRetrieveAETs.add(aet);
+    		}
+    	}
+    	Collection<String> localAETitles = device.getApplicationAETitles();
+    	allRetrieveAETs.removeAll(localAETitles);
+    	return allRetrieveAETs;
     }
 
     private String[] toIUIDArray(Collection<QCEventInstance> qcEventInstances) {
