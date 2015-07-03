@@ -743,8 +743,8 @@ public class StoreServiceImpl implements StoreService {
         Attributes attrs = context.getAttributes();
         Attributes modified = new Attributes();
         attrs.update(patient.getAttributes(), modified);
-        attrs.update(study.getAttributes(), modified);
-        attrs.update(series.getAttributes(), modified);
+        attrs.update((Attributes)context.getStoreSession().getProperty("mruStudyAttributes"), modified);
+        attrs.update((Attributes)context.getStoreSession().getProperty("mruSeriesAttributes"), modified);
         attrs.update(instance.getAttributes(), modified);
         if (!modified.isEmpty()) {
             modified.addAll(context.getCoercedOriginalAttributes());
@@ -1107,16 +1107,25 @@ public class StoreServiceImpl implements StoreService {
                     storeParam.getFuzzyStr());
         } else {
         	if (needsUpdate) {
-            	Attributes studyAttrs = study.getAttributes();
+        		
+        		String uid = (String)session.getProperty("mruStudyUID");
+        		Attributes attributes = (Attributes)session.getProperty("mruStudyAttributes");
+        		if (attributes == null || !uid.equals(data.getString(Tag.StudyInstanceUID))) {
+        			attributes = new Attributes(study.getAttributes());
+        		}
+        		
             	Attributes modified = new Attributes();
             	
-            	if (studyAttrs.updateSelected(data, modified,
+            	if (attributes.updateSelected(data, modified,
                         studyFilter.getCompleteSelection(data))) {
-            		study.setAttributes(studyAttrs, studyFilter,
+            		study.setAttributes(attributes, studyFilter,
                             storeParam.getFuzzyStr());
                     LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
-                            studyAttrs, modified);
+                    		attributes, modified);
             	}
+            	
+            	session.setProperty("mruStudyAttributes", attributes);
+            	session.setProperty("mruStudyUID", data.getString(Tag.StudyInstanceUID));
             }
         }
         
@@ -1150,16 +1159,25 @@ public class StoreServiceImpl implements StoreService {
                     storeParam.getFuzzyStr());
         } else {
         	if (needsUpdate(context)) {
-        		Attributes seriesAttrs = series.getAttributes();
+        		
+        		String uid = (String)session.getProperty("mruSeriesUID");
+        		Attributes attributes = (Attributes)session.getProperty("mruSeriesAttributes");
+        		if (attributes == null || !uid.equals(data.getString(Tag.SeriesInstanceUID))) {
+        			attributes = new Attributes(series.getAttributes());
+        		}
+
                 Attributes modified = new Attributes();
                 
-                if (seriesAttrs.updateSelected(data, modified,
+                if (attributes.updateSelected(data, modified,
                         seriesFilter.getCompleteSelection(data))) {
-                	series.setAttributes(seriesAttrs, seriesFilter,
+                	series.setAttributes(attributes, seriesFilter,
                 			storeParam.getFuzzyStr());
                 	LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
-                			seriesAttrs, modified);
+                			attributes, modified);
                 }
+                
+                session.setProperty("mruSeriesAttributes", attributes);
+                session.setProperty("mruSeriesUID", data.getString(Tag.SeriesInstanceUID));
         	}   
         }
         service.updateStudy(em, context, series.getStudy());
