@@ -36,50 +36,24 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.filemgmt;
+package org.dcm4chee.archive.locationmgmt;
 
-import java.util.Collection;
-
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
 
-@MessageDriven(activationConfig = {
-        @ActivationConfigProperty(propertyName = "destinationType",
-                                  propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination",
-                                  propertyValue = "queue/delete"),
-        @ActivationConfigProperty(propertyName = "acknowledgeMode",
-                                  propertyValue = "Auto-acknowledge") })
-public class FileMgmtMDB implements MessageListener{
+public interface DeleterService {
 
-    @Inject
-    private FileMgmt fileManager;
+    void freeUpSpaceDeleteSeries(String seriesInstanceUID);
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileMgmtMDB.class);
+    void freeUpSpaceDeleteStudy(String studyInstanceUID);
 
-    @Override
-    public void onMessage(Message message) {
-        try {
-            //TODO - AUDIT here using provided properties
-            @SuppressWarnings("unchecked")
-            Collection<Long> refPks = (Collection<Long>) ((ObjectMessage) message).getObject();
-            LOG.info("{} Locations removed!",fileManager.doDelete(refPks));
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + message, th);
-        } 
-    }
-    
+    void freeUpSpace(StorageSystemGroup groupToFree);
 
+    void freeUpSpace();
+
+    boolean validateGroupForDeletion(StorageSystemGroup group);
 }

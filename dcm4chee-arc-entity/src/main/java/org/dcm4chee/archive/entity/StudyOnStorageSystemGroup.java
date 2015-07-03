@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
@@ -49,28 +50,51 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
+@NamedQueries({
+@NamedQuery(
+    name=StudyOnStorageSystemGroup.FIND_BY_STUDY_INSTANCE_UID_AND_GRP_UID,
+    query="SELECT s FROM StudyOnStorageSystemGroup s WHERE s.study.studyInstanceUID = ?1 and s.storageSystemGroupID = ?2"),
+@NamedQuery(
+        name=StudyOnStorageSystemGroup.FIND_INSTANCES_DUE_DELETE,
+        query="SELECT DISTINCT i FROM Instance i "
+                + "JOIN i.series se "
+                + "JOIN se.study st "
+                + "JOIN FETCH i.locations l "
+                + "WHERE EXISTS (SELECT ss FROM StudyOnStorageSystemGroup ss "
+                + "WHERE ss.study = st AND "
+                + "ss.storageSystemGroupID = ?1 AND "
+                + "ss.accessTime < :dueDate)")
+})
 @Entity
 @Table(name = "study_on_stg_sys")
 public class StudyOnStorageSystemGroup implements Serializable {
 
     private static final long serialVersionUID = -370822446832524107L;
 
+    public static final String FIND_BY_STUDY_INSTANCE_UID_AND_GRP_UID = 
+            "StudyOnStorageSystemGroup.findByStudyInstanceUID";
+
+    public static final String FIND_INSTANCES_DUE_DELETE = 
+            "StudyOnStorageSystemGroup.findInstancesDueDelete";
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "pk")
     private long pk;
 
     @Column(name = "access_time")
     @Basic(optional = false)
-    private long accessTime;
+    private Date accessTime;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "study_fk")
     private Study study;
 
@@ -82,11 +106,11 @@ public class StudyOnStorageSystemGroup implements Serializable {
     @Basic(optional = false)
     private String storageSystemGroupID;
 
-    public long getAccessTime() {
+    public Date getAccessTime() {
         return accessTime;
     }
 
-    public void setAccessTime(long accessTime) {
+    public void setAccessTime(Date accessTime) {
         this.accessTime = accessTime;
     }
 

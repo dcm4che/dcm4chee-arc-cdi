@@ -36,30 +36,50 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.filemgmt;
+package org.dcm4chee.archive.locationmgmt;
 
 import java.util.Collection;
 
-import org.dcm4chee.archive.entity.Location;
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.MessageDriven;
+import javax.inject.Inject;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
 
-public interface FileMgmt {
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType",
+                                  propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination",
+                                  propertyValue = "queue/delete"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode",
+                                  propertyValue = "Auto-acknowledge") })
+public class LocationMgmtMDB implements MessageListener{
 
-    //deletes a file and returns true if deleted otherwise returns false
-    boolean doDelete(Location ref);
-    int doDelete(Collection<Long> refPks);
+    @Inject
+    private LocationMgmt fileManager;
 
-    //send a file delete message to the queue
-    void scheduleDelete(Collection<Location> refs, int delay) throws Exception;
-    void scheduleDeleteByPks(Collection<Long> refPks, int delay) throws Exception;
+    private static final Logger LOG = LoggerFactory.getLogger(LocationMgmtMDB.class);
 
-    //sets file-ref status to delete failed
-    void failDelete(Location ref);
-
-    Location getLocation(Long pk);
+    @Override
+    public void onMessage(Message message) {
+        try {
+            //TODO - AUDIT here using provided properties
+            @SuppressWarnings("unchecked")
+            Collection<Long> refPks = (Collection<Long>) ((ObjectMessage) message).getObject();
+            LOG.info("{} Locations removed!",fileManager.doDelete(refPks));
+        } catch (Throwable th) {
+            LOG.warn("Failed to process " + message, th);
+        } 
+    }
+    
 
 }

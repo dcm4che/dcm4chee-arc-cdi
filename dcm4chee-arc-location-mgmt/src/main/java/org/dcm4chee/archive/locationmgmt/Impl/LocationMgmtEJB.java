@@ -36,14 +36,17 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.filemgmt;
+package org.dcm4chee.archive.locationmgmt.Impl;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 import javax.ejb.Stateless;
@@ -56,11 +59,16 @@ import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.StudyOnStorageSystemGroup;
+import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
@@ -74,9 +82,10 @@ import org.slf4j.LoggerFactory;
  */
 
 @Stateless
-public class FileMgmtEJB implements FileMgmt{
+public class LocationMgmtEJB implements LocationMgmt {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileMgmtEJB.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(LocationMgmtEJB.class);
 
     @Inject
     private Device device;
@@ -84,31 +93,35 @@ public class FileMgmtEJB implements FileMgmt{
     @Inject
     private StorageService storageService;
 
-    @Resource(mappedName="java:/ConnectionFactory")
+    @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
-    @Resource(mappedName="java:/queue/delete")
+    @Resource(mappedName = "java:/queue/delete")
     private Queue deleteQueue;
 
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
     @Override
-    public void scheduleDelete(Collection<Location> refs, int delay) throws Exception {
+    public void scheduleDelete(Collection<Location> refs, int delay)
+            throws Exception {
         ArrayList<Long> refPks = new ArrayList<Long>(refs.size());
-        for (Location ref : refs) 
+        for (Location ref : refs)
             refPks.add(ref.getPk());
         scheduleDeleteByPks(refPks, delay);
     }
-    
+
     @Override
-    public void scheduleDeleteByPks(Collection<Long> refPks, int delay) throws Exception {
+    public void scheduleDeleteByPks(Collection<Long> refPks, int delay)
+            throws Exception {
         try {
             Connection conn = connFactory.createConnection();
             try {
-                Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                Session session = conn.createSession(false,
+                        Session.AUTO_ACKNOWLEDGE);
                 MessageProducer producer = session.createProducer(deleteQueue);
-                ObjectMessage msg = session.createObjectMessage((Serializable) refPks);
+                ObjectMessage msg = session
+                        .createObjectMessage((Serializable) refPks);
                 if (delay > 0)
                     msg.setLongProperty("_HQ_SCHED_DELIVERY",
                             System.currentTimeMillis() + delay);
@@ -124,67 +137,63 @@ public class FileMgmtEJB implements FileMgmt{
     @Override
     public void failDelete(Location ref) {
         ref.setStatus(Location.Status.DELETE_FAILED);
-        LOG.warn("Failed to delete file {}, setting file reference status to {}",ref.getStoragePath(),ref.getStatus() );
-    }
-
-    private void removeDeadFileRef(Location ref) {
-
-        try {
-            em.remove(ref);
-        }
-        catch (Exception e)
-        {
-            LOG.error("Failed to remove File Ref {}", ref.toString());
-        }
-
+        LOG.warn(
+                "Failed to delete file {}, setting file reference status to {}",
+                ref.getStoragePath(), ref.getStatus());
     }
 
     @Override
     public boolean doDelete(Location ref) {
         if (ref.getInstances().size() > 0) {
-            LOG.warn("Deletion failed! Location {} is still referenced by instances:{}", ref, ref.getInstances());
+            LOG.warn(
+                    "Deletion failed! Location {} is still referenced by instances:{}",
+                    ref, ref.getInstances());
             return false;
         }
-        try{
-            StorageDeviceExtension ext = device.getDeviceExtensionNotNull(
-                    StorageDeviceExtension.class);
+        try {
+            StorageDeviceExtension ext = device
+                    .getDeviceExtensionNotNull(StorageDeviceExtension.class);
             StorageSystem storageSystem = ext.getStorageSystem(
                     ref.getStorageSystemGroupID(), ref.getStorageSystemID());
-            StorageContext cxt = storageService.createStorageContext(storageSystem);
+            StorageContext cxt = storageService
+                    .createStorageContext(storageSystem);
             storageService.deleteObject(cxt, ref.getStoragePath());
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             return false;
         }
         removeDeadFileRef(ref);
         return true;
     }
-    
+
+    @SuppressWarnings("unchecked")
     @Override
     public int doDelete(Collection<Long> refPks) {
         LOG.debug("Called doDelete refPks:{}", refPks);
         if (refPks == null || refPks.isEmpty())
             return 0;
         int count = 0;
-        Query query = em.createQuery("SELECT l FROM Location l WHERE l.pk IN :pks", Location.class);
+        Query query = em.createQuery(
+                "SELECT l FROM Location l WHERE l.pk IN :pks", Location.class);
         query.setParameter("pks", refPks);
         List<Location> result = query.getResultList();
         HashMap<String, Location> containerLocations = new HashMap<String, Location>();
         Location ref;
         count += result.size();
-        for (int i = 0, len = result.size() ; i < len ; i++) {
+        for (int i = 0, len = result.size(); i < len; i++) {
             ref = result.get(i);
             if (ref.getEntryName() == null) {
                 LOG.debug("Location is not in a container, we can delete stored object and entity!");
                 if (!doDelete(ref)) {
-                    LOG.warn("Deletion of {} failed! Mark Location as DELETION_FAILED", ref);
+                    LOG.warn(
+                            "Deletion of {} failed! Mark Location as DELETION_FAILED",
+                            ref);
                     failDelete(ref);
                     count--;
                 }
             } else {
                 LOG.debug("Location is in a container, we can not delete the container at this moment!");
-                String key = ref.getStorageSystemID()+"_&_"+ref.getStoragePath();
+                String key = ref.getStorageSystemID() + "_&_"
+                        + ref.getStoragePath();
                 if (containerLocations.containsKey(key)) {
                     removeDeadFileRef(ref);
                 } else {
@@ -199,23 +208,123 @@ public class FileMgmtEJB implements FileMgmt{
         return count;
     }
 
+    @Override
+    public Location getLocation(Long pk) {
+        return em.find(Location.class, pk);
+    }
+
+
+    @Override
+    public void findOrCreateStudyOnStorageGroup(String studyUID, String groupID) {
+        Study study = findStudy(studyUID);
+        if(study != null)
+        findOrCreateStudyOnStorageGroup(study, groupID);
+    }
+
+    @Override
+    public void findOrCreateStudyOnStorageGroup(Study study, String groupID) {
+        try {
+            String studyUID = study.getStudyInstanceUID();
+            StudyOnStorageSystemGroup studyOnStgSysGrp = em
+                    .createNamedQuery(
+                            StudyOnStorageSystemGroup.FIND_BY_STUDY_INSTANCE_UID_AND_GRP_UID,
+                            StudyOnStorageSystemGroup.class)
+                    .setParameter(1, studyUID).setParameter(2, groupID)
+                    .getSingleResult();
+            studyOnStgSysGrp
+                    .setAccessTime(new Date(System.currentTimeMillis()));
+            studyOnStgSysGrp.setMarkedForDeletion(false);
+        } catch (NoResultException e) {
+            StudyOnStorageSystemGroup studyOnStgSysGrp = new StudyOnStorageSystemGroup();
+            studyOnStgSysGrp.setStudy(study);
+            studyOnStgSysGrp.setStorageSystemGroupID(groupID);
+            studyOnStgSysGrp.setMarkedForDeletion(false);
+            studyOnStgSysGrp
+                    .setAccessTime(new Date(System.currentTimeMillis()));
+            em.persist(studyOnStgSysGrp);
+        }
+    }
+
+    public List<Instance> findInstancesDueDelete(int studyRetention, 
+            String studyRetentionUnit, String groupID) {
+        Timestamp studyDueDate = getStudyDueDate(studyRetention, studyRetentionUnit);
+        List<Instance> locationsToDelete;
+        Query query = em.createNamedQuery(StudyOnStorageSystemGroup.FIND_INSTANCES_DUE_DELETE);
+        query.setParameter(1, groupID).setParameter("dueDate", studyDueDate);
+        locationsToDelete = query.getResultList();
+        return locationsToDelete == null ? new ArrayList<Instance>() : locationsToDelete;
+    }
+
+    private Timestamp getStudyDueDate(int studyRetention, String studyRetentionUnit) {
+        Timestamp dueDate;
+        long now = System.currentTimeMillis();
+        switch (TimeUnit.valueOf(studyRetentionUnit)) {
+          case DAYS:
+              dueDate = new Timestamp(now - 86400000 * studyRetention);
+            break;
+          case HOURS:
+              dueDate = new Timestamp(now - 3600000 * studyRetention);
+            break;
+          case MINUTES:
+              dueDate = new Timestamp(now - 60000 * studyRetention);
+            break;
+          default:
+              dueDate = new Timestamp(now - 86400000 * studyRetention);
+            break;
+        }
+        return dueDate;
+    }
+
+    private void removeDeadFileRef(Location ref) {
+
+        try {
+            em.remove(ref);
+        } catch (Exception e) {
+            LOG.error("Failed to remove File Ref {}", ref.toString());
+        }
+    }
+
+    private Study findStudy(String studyUID) {
+        Study study = null;
+        try {
+            study = em.createNamedQuery(
+                    Study.FIND_BY_STUDY_INSTANCE_UID_EAGER,
+                    Study.class).setParameter(1, studyUID)
+                    .getSingleResult();
+        }
+        catch(NoResultException e) {
+            LOG.error("Unable to find study {} - failure reason {}",
+                    studyUID, e);
+        }
+        return study;
+    }
+
+    @SuppressWarnings("unchecked")
     private int deleteContainer(HashMap<String, Location> containerLocations) {
         List<Location> result;
         int count = 0;
-        Query queryRemaining = em.createQuery("SELECT l from Location l WHERE l.storageSystemGroupID = :storageSystemGroupID"+
-                                        " AND l.storageSystemID = :storageID AND l.storagePath = :storagePath", Location.class);
+        Query queryRemaining = em
+                .createQuery(
+                        "SELECT l from Location l WHERE l.storageSystemGroupID = :storageSystemGroupID"
+                                + " AND l.storageSystemID = :storageID AND l.storagePath = :storagePath",
+                        Location.class);
         for (Location l : containerLocations.values()) {
-            queryRemaining.setParameter("storageSystemGroupID", l.getStorageSystemGroupID());
+            queryRemaining.setParameter("storageSystemGroupID",
+                    l.getStorageSystemGroupID());
             queryRemaining.setParameter("storageID", l.getStorageSystemID());
             queryRemaining.setParameter("storagePath", l.getStoragePath());
             result = queryRemaining.getResultList();
             LOG.debug("Remaining Locations for container: {}", result);
             if (result.size() == 1 && result.get(0).getPk() == l.getPk()) {
-                LOG.debug("Only one Location (from the delete request) reference the container {}. We can delete the container", queryRemaining.getParameters());
+                LOG.debug(
+                        "Only one Location (from the delete request) reference the container {}. We can delete the container",
+                        queryRemaining.getParameters());
                 if (doDelete(l)) {
                     count++;
                 } else {
-                    LOG.warn("Deletion of {} failed! mark Location as DELETION_FAILED", l);
+                    LOG.warn(
+                            "Deletion of {} failed! mark Location as DELETION_FAILED",
+                            l);
                     failDelete(l);
                 }
             } else {
@@ -227,8 +336,4 @@ public class FileMgmtEJB implements FileMgmt{
         return count;
     }
 
-    @Override
-    public Location getLocation(Long pk) {
-        return em.find(Location.class, pk);
-    }
 }

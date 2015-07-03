@@ -102,7 +102,7 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.entity.VerifyingObserver;
-import org.dcm4chee.archive.filemgmt.FileMgmt;
+import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.monitoring.api.Monitored;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
@@ -131,7 +131,7 @@ public class StoreServiceImpl implements StoreService {
     static Logger LOG = LoggerFactory.getLogger(StoreServiceImpl.class);
 
     @Inject
-    private FileMgmt locationManager;
+    private LocationMgmt locationManager;
 
     @Inject
     private StorageService storageService;
@@ -535,12 +535,19 @@ public class StoreServiceImpl implements StoreService {
             // availability update
             updateAvailability(session, instance);
 
+            findOrCreateStudyOnStorageGroup(context);
             if (context.getMetaDataStoragePath() != null) {
                 Location metaDataRef = createMetaDataRef(em, context);
                 locations.add(metaDataRef);
             }
             context.setFileRef(location);
         }
+    }
+
+    private void findOrCreateStudyOnStorageGroup(StoreContext context) {
+        locationManager.findOrCreateStudyOnStorageGroup(context.getInstance()
+                .getSeries().getStudy(), context.getStoreSession()
+                .getStorageSystem().getStorageSystemGroup().getGroupID());
     }
 
     private void updateRetrieveAETs(StoreSession session, Instance instance) {

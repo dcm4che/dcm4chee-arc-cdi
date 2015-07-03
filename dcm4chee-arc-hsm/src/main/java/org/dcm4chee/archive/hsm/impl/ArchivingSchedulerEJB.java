@@ -60,8 +60,9 @@ import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Location.Status;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.filemgmt.FileMgmt;
+import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.storage.ContainerEntry;
 import org.dcm4chee.storage.archiver.service.ArchiverContext;
@@ -104,7 +105,7 @@ public class ArchivingSchedulerEJB {
     private ArchiverService archiverService;
 
     @Inject
-    private FileMgmt fileMgt;
+    private LocationMgmt locationMgmt;
 
     public void onStoreInstance(StoreContext storeContext,
             ArchivingRule archivingRule) {
@@ -276,6 +277,7 @@ public class ArchivingSchedulerEJB {
         boolean notInContainer = ctx.isNotInContainer();
         for (ContainerEntry entry : entries) {
             Instance inst = em.find(Instance.class, entry.getProperty(INSTANCE_PK));
+            updateStudyAccessTime(inst, ctx.getStorageSystemGroupID());
             Location location = new Location.Builder()
             .storageSystemGroupID(ctx.getStorageSystemGroupID())
             .storageSystemID(ctx.getStorageSystemID())
@@ -302,6 +304,12 @@ public class ArchivingSchedulerEJB {
         LOG.debug("onContainerEntriesStored for {} finished", ctx.getStorageSystemGroupID());
     }
     
+    private void updateStudyAccessTime(Instance inst,
+            String storageSystemGroupID) {
+        Study study = inst.getSeries().getStudy();
+        locationMgmt.findOrCreateStudyOnStorageGroup(study, storageSystemGroupID);
+    }
+
     private void deleteLocations(LocationDeleteContext srcLocationToDeleteCtx) {
         List<Location> locations = em.createQuery("SELECT l FROM Location l JOIN FETCH l.instances WHERE l.pk IN :locationPks",
                 Location.class)
@@ -335,7 +343,7 @@ public class ArchivingSchedulerEJB {
         } else {
             LOG.debug("Schedule deletion of source Locations:{}",locations);
             try {
-                fileMgt.scheduleDelete(locationToDeletePks, 100);
+                locationMgmt.scheduleDelete(locationToDeletePks, 100);
             } catch (Exception x) {
                 LOG.error("Schedule deletion of source Locations failed! locations:{}", locations, x);
             }

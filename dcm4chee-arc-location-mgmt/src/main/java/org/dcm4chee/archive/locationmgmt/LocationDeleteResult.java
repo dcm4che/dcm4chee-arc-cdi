@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2013
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -36,79 +36,71 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.entity;
+package org.dcm4chee.archive.locationmgmt;
 
-import java.io.Serializable;
-
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * 
  */
-@Entity
-@Table(name = "location_failed_to_delete")
-public class LocationFailedToDelete implements Serializable {
 
-    private static final long serialVersionUID = -6079980226678035526L;
+public class LocationDeleteResult {
 
-    public enum DeletionFailureReasons {
-        FS_FAILURE,
-        DB_FAILURE;
+    enum DeletionStatus{
+        CRITERIA_NOT_MET, FAILURES_PRESENT, COMPLETE_SUCCESS, UNDEFINED
     }
 
-    @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name = "pk")
-    private long pk;
+    private DeletionStatus status;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
-    @JoinColumn(name = "location_fk")
-    private Location location;
+    private List<String> instancesDeleted;
 
-    @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
-    @JoinColumn(name = "study_fk")
-    private Study study;
+    private List<String> failedInstances;
 
-    @Column(name = "failure_reason")
-    @Basic(optional = false)
-    private DeletionFailureReasons failureReason;
+    private String failureReason;
 
-    public Location getLocation() {
-        return location;
+    public LocationDeleteResult(){
+        this.setStatus(DeletionStatus.UNDEFINED);
+        this.setFailureReason("Reason Undefined");
+        this.setInstancesDeleted(new ArrayList<String>());
+        this.setFailedInstances(new ArrayList<String>());
     }
 
-    public void setLocation(Location location) {
-        this.location = location;
+    public DeletionStatus getStatus() {
+        return status;
     }
 
-    public Study getStudy() {
-        return study;
+    public void setStatus(DeletionStatus status) {
+        this.status = status;
     }
 
-    public void setStudy(Study study) {
-        this.study = study;
+    public List<String> getInstancesDeleted() {
+        return instancesDeleted;
     }
 
-    public DeletionFailureReasons getFailureReason() {
+    public void setInstancesDeleted(List<String> instancesDeleted) {
+        this.instancesDeleted = instancesDeleted;
+    }
+
+    public void addInstanceDeleted(String instancesDeleted) {
+        this.instancesDeleted.add(instancesDeleted);
+    }
+
+    public String getFailureReason() {
         return failureReason;
     }
 
-    public void setFailureReason(DeletionFailureReasons failureReason) {
+    public void setFailureReason(String failureReason) {
         this.failureReason = failureReason;
     }
 
-    public long getPk() {
-        return pk;
+    public List<String> getFailedInstances() {
+        return failedInstances;
     }
 
+    public void setFailedInstances(List<String> failedInstances) {
+        this.failedInstances = failedInstances;
+    }
+    
 }

@@ -548,7 +548,7 @@
     <module>dcm4chee-arc-ctrl</module>
     <module>dcm4chee-arc-qc</module>
     <module>dcm4chee-arc-qc-rest</module>
-    <module>dcm4chee-arc-file-mgmt</module>
+    <module>dcm4chee-arc-location-mgmt</module>
     <module>dcm4chee-arc-war</module>
     <module>dcm4chee-arc-compress</module>
     <module>dcm4chee-arc-stgcmt</module>

@@ -36,71 +36,42 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.filemgmt;
+package org.dcm4chee.archive.locationmgmt;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Study;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
 
-public class DeleteResult {
+public interface LocationMgmt {
 
-    enum DeletionStatus{
-        CRITERIA_NOT_MET, FAILURES_PRESENT, COMPLETE_SUCCESS, UNDEFINED
-    }
+    boolean doDelete(Location ref);
 
-    private DeletionStatus status;
+    int doDelete(Collection<Long> refPks);
 
-    private List<String> instancesDeleted;
+    void scheduleDelete(Collection<Location> refs, int delay) throws Exception;
 
-    private List<String> failedInstances;
+    void scheduleDeleteByPks(Collection<Long> refPks, int delay)
+            throws Exception;
 
-    private String failureReason;
+    void failDelete(Location ref);
 
-    public DeleteResult(){
-        this.setStatus(DeletionStatus.UNDEFINED);
-        this.setFailureReason("Reason Undefined");
-        this.setInstancesDeleted(new ArrayList<String>());
-        this.setFailedInstances(new ArrayList<String>());
-    }
+    Location getLocation(Long pk);
 
-    public DeletionStatus getStatus() {
-        return status;
-    }
+    void findOrCreateStudyOnStorageGroup(Study study, String groupID);
 
-    public void setStatus(DeletionStatus status) {
-        this.status = status;
-    }
+    void findOrCreateStudyOnStorageGroup(String studyUID,
+            String groupID);
 
-    public List<String> getInstancesDeleted() {
-        return instancesDeleted;
-    }
+    List<Instance> findInstancesDueDelete(int minTimeToKeepStudy,
+            String minTimeToKeppStudyUnit, String groupID); 
 
-    public void setInstancesDeleted(List<String> instancesDeleted) {
-        this.instancesDeleted = instancesDeleted;
-    }
-
-    public void addInstanceDeleted(String instancesDeleted) {
-        this.instancesDeleted.add(instancesDeleted);
-    }
-
-    public String getFailureReason() {
-        return failureReason;
-    }
-
-    public void setFailureReason(String failureReason) {
-        this.failureReason = failureReason;
-    }
-
-    public List<String> getFailedInstances() {
-        return failedInstances;
-    }
-
-    public void setFailedInstances(List<String> failedInstances) {
-        this.failedInstances = failedInstances;
-    }
-    
+    long calculateDataVolumePerDayInBytes(String group);
 }
