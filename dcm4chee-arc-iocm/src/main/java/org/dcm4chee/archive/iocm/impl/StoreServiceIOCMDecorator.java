@@ -191,8 +191,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
                 rejectionService.reject(context.getStoreSession(), rejectedInstances,
                         rejectionCode,
                         rejectionParam.getOverwritePreviousRejection());
-                updateRejectionStatus(context.getInstance()
-                        .getSeries().getStudy());
+                updateRejectionStatus(rejectionNote.getSeries().getStudy());
             }
         } catch (InstanceAlreadyRejectedException e) {
             Instance inst = e.getInstance();
