@@ -203,7 +203,7 @@ public class QueryServiceEJB {
                 .where(createPredicate(
                         QSeries.series.study.pk.eq(studyPk), queryParam))
                 .iterate(studyDerivedFields.fields())) {
-
+        	studyDerivedFields.reset();
             while (results.hasNext()) {
                 studyDerivedFields.addInstance(results.next());
             }
@@ -237,6 +237,7 @@ public class QueryServiceEJB {
                         QInstance.instance.series.pk.eq(seriesPk), queryParam))
                 .iterate(seriesDerivedFields.fields())) {
 
+        	seriesDerivedFields.reset();
             while (results.hasNext()) {
                 seriesDerivedFields.addInstance(results.next());
             }

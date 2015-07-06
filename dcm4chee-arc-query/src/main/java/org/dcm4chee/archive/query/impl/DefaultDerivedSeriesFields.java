@@ -106,5 +106,13 @@ public class DefaultDerivedSeriesFields implements DerivedSeriesFields {
                 availability = availability1;
         }
     }
+    
+    @Override
+    public void reset() {
+        numberOfInstances = 0;
+        retrieveAETs = null;
+        availability = null;
+        numberOfVisibleImages = 0;
+    }
 
 }

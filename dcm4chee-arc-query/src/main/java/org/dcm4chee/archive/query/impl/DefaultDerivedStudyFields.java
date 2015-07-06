@@ -144,4 +144,16 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
         if (lastUpdateTime == null || instanceUpdateTime.after(lastUpdateTime))
             lastUpdateTime = instanceUpdateTime;
     }
+    
+    @Override
+    public void reset() {
+        numberOfInstances = 0;
+        retrieveAETs = null;
+        availability = null;
+        seriesPKs.clear();
+        mods.clear();
+        cuids.clear();
+        lastUpdateTime = null;
+        numberOfVisibleImages = 0;
+    }
 }

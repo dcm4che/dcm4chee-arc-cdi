@@ -108,5 +108,10 @@ public interface DerivedStudyFields {
      * @return number of visible images of this Study (proprietary field)
      */
     int getNumberOfVisibleImages();
+    
+    /**
+     * Reset fields for calculation 
+     */
+    void reset();
 
 }

@@ -40,6 +40,7 @@ package org.dcm4chee.archive.query.decorators;
 
 import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
+
 import org.dcm4chee.archive.query.DerivedSeriesFields;
 import org.dcm4chee.archive.query.DerivedStudyFields;
 import org.dcm4chee.conf.decorators.DynamicDecoratorWrapper;
@@ -48,6 +49,7 @@ import org.dcm4chee.storage.conf.Availability;
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
 import javax.inject.Inject;
+
 import java.util.Date;
 import java.util.Set;
 
@@ -85,5 +87,10 @@ public class DerivedSeriesFieldsDynamicDecorator extends DynamicDecoratorWrapper
 	@Override
 	public int getNumberOfVisibleImages() {
 		return wrapWithDynamicDecorators(delegate).getNumberOfVisibleImages();
+	}
+	
+	@Override
+	public void reset() {
+		wrapWithDynamicDecorators(delegate).reset();
 	}
 }

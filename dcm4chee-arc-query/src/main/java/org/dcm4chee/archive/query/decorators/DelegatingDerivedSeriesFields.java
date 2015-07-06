@@ -82,4 +82,9 @@ public class DelegatingDerivedSeriesFields extends
 	public int getNumberOfVisibleImages() {
 		return getNextDecorator().getNumberOfVisibleImages();
 	}
+
+	@Override
+	public void reset() {
+		getNextDecorator().reset();
+	}
 }

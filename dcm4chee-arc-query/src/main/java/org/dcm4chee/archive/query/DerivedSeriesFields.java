@@ -87,4 +87,6 @@ public interface DerivedSeriesFields {
      * @return number of visible images of this Series (proprietary field)
      */
     int getNumberOfVisibleImages();
+    
+    void reset();
 }

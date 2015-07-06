@@ -101,4 +101,9 @@ public class DelegatingDerivedStudyFields extends
 	public int getNumberOfVisibleImages() {
 		return getNextDecorator().getNumberOfVisibleImages();
 	}
+	
+	@Override
+	public void reset() {
+		getNextDecorator().reset();
+	}
 }
