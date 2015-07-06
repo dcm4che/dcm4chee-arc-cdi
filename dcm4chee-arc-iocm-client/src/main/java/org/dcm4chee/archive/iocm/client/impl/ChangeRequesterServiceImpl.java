@@ -51,7 +51,10 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.servlet.jsp.jstl.core.Config;
 
+import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -103,6 +106,9 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
+    
+    @Inject
+    private DicomConfiguration config;
 
     private transient ArchiveDeviceExtension archDeviceExt;
     
@@ -139,6 +145,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 		List<ArchiveInstanceLocator> failedForward = null;
 		List<ArchiveInstanceLocator> externalLocators = extractExternalLocators(locators);
         if(!externalLocators.isEmpty()) {
+        	LOG.info("Perform fetchForward of {} external instances", externalLocators.size());
             FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
                 @Override
                 public void onFetch(Collection<ArchiveInstanceLocator> instances,
@@ -147,20 +154,30 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
                 }
             };
             failedForward = fetchForwardService.fetchForward(archDeviceExt.getDefaultAETitle(), externalLocators, fetchCallBack, fetchCallBack);
+            LOG.info("FetchForward finished!");
         }
 		for (String target : targets) {
-			ApplicationEntity targetAE = device.getApplicationEntity(target);
+			ApplicationEntity targetAE;
+			try {
+				targetAE = config.findApplicationEntity(target);
+			} catch (ConfigurationException e) {
+				LOG.error("Target AE Title {} not found in configuration! skipped.");
+				continue;
+			}
 			WebServiceAEExtension wsExt = targetAE.getAEExtension(WebServiceAEExtension.class);
 			ServiceType serviceType = storeRememberAETs.contains(target) ? ServiceType.STOREREMEMBER : ServiceType.IOCMSERVICE;
 			if (wsExt != null && wsExt.getStowRSBaseURL() != null) {
+				LOG.info("Store objects to {} and verify with ", wsExt.getStowRSBaseURL(), wsExt.getQidoRSBaseURL());
 				StowContext stowCtx = new StowContext(callingAE, targetAE, serviceType );
 				stowCtx.setStowRemoteBaseURL(wsExt.getStowRSBaseURL());
 				stowCtx.setQidoRemoteBaseURL(wsExt.getQidoRSBaseURL());
 				storeVerify.store(stowCtx, locators);
 			} else {
+				LOG.info("Store objects to {}", targetAE.getAETitle());
 				storeVerify.store( new CStoreSCUContext(callingAE, targetAE, serviceType), 
 		            locators );
 			}
+			LOG.info("Store finished");
 		}
 		return failedForward == null ? new ArrayList<ArchiveInstanceLocator>() : failedForward;
 	}
@@ -218,11 +235,16 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     	return externalLocators;
     }
     
-    private Collection<String> getStoreAndRememberAETitles(List<QCEventInstance> sourceInstanceUIDs) {
-    	Query q = em.createQuery("SELECT DISTINCT instance.retrieveAETs from Instance i "
+    private Collection<String> getStoreAndRememberAETitles(List<QCEventInstance> qcEventInstances) {
+    	List<String> uids = new ArrayList<String>(qcEventInstances.size());
+    	for (QCEventInstance qci : qcEventInstances) {
+    		uids.add(qci.getSopInstanceUID());
+    	}
+    	Query q = em.createQuery("SELECT DISTINCT i.retrieveAETs from Instance i "
                     + " where i.sopInstanceUID IN ?1");
-    	q.setParameter(1, sourceInstanceUIDs);
-    	List<String> retrieveAETs = (List<String>) q.getResultList();
+    	q.setParameter(1, uids);
+    	@SuppressWarnings("unchecked")
+		List<String> retrieveAETs = (List<String>) q.getResultList();
     	HashSet<String> allRetrieveAETs = new HashSet<String>(retrieveAETs.size());
     	for (String aets : retrieveAETs) {
     		for (String aet : StringUtils.split(aets, '\\')) {
@@ -241,7 +263,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             arr[index++] = inst.getSopInstanceUID();
         return arr;
     }
-
+    
     public void verifyStorage(@Observes @Service(ServiceType.IOCMSERVICE) CStoreSCUResponse storeResponse) {
     	
     }
