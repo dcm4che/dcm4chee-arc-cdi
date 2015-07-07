@@ -511,7 +511,10 @@ public class DefaultDeviceFactory {
         device.setManufacturerModelName("dcm4chee-arc");
         device.setSoftwareVersions("4.2.0.Alpha3");
         device.setKeyStoreURL(DCM4CHEE_ARC_KEY_JKS);
+        device.setTrustStoreURL(DCM4CHEE_ARC_KEY_JKS);
         device.setKeyStoreType("JKS");
+        device.setTrustStoreType("JKS");
+        device.setTrustStorePin("secret");
         device.setKeyStorePin("secret");
 
 //        device.setThisNodeCertificates(config.deviceRef(name),
