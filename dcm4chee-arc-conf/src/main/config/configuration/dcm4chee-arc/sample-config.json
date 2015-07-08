@@ -513,6 +513,9 @@
         "dcmKeyStoreType" : "JKS",
         "dcmKeyStoreURL" : "${jboss.server.config.url}/dcm4chee-arc/key.jks",
         "dcmLimitOpenAssociations" : 0,
+        "dcmTrustStorePin" : "secret",
+        "dcmTrustStoreType" : "JKS",
+        "dcmTrustStoreURL" : "${jboss.server.config.url}/dcm4chee-arc/key.jks",
         "deviceExtensions" : {
           "ArchiveDeviceExtension" : {
             "ExternalArchivesMap" : { },
@@ -745,6 +748,7 @@
                 },
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "nearline" ],
+                "dcmArchivedAnyWhere" : false,
                 "dcmBaseStorageAccessTime" : 2000,
                 "dcmDeleteAsMuchAsPossible" : false,
                 "dcmMinTimeStudyNotAccessed" : 0,
@@ -764,6 +768,7 @@
                 },
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "fs1" ],
+                "dcmArchivedAnyWhere" : false,
                 "dcmArchivedOnGroups" : [ "NEARLINE" ],
                 "dcmBaseStorageAccessTime" : 1000,
                 "dcmDeleteAsMuchAsPossible" : false,
@@ -787,6 +792,7 @@
                 },
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "metadata" ],
+                "dcmArchivedAnyWhere" : false,
                 "dcmDeleteAsMuchAsPossible" : false,
                 "dcmMinTimeStudyNotAccessed" : 0,
                 "dcmNextStorageSystemID" : "metadata",
