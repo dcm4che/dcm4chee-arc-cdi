@@ -79,6 +79,11 @@ public class DelegatingDerivedSeriesFields extends
 	}
 
 	@Override
+	public Date getLastUpdateTime() {
+		return getNextDecorator().getLastUpdateTime();
+	}
+
+	@Override
 	public int getNumberOfVisibleImages() {
 		return getNextDecorator().getNumberOfVisibleImages();
 	}

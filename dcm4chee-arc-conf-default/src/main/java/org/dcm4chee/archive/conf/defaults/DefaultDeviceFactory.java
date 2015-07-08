@@ -1076,8 +1076,8 @@ public class DefaultDeviceFactory {
                 DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
                 break;
             case QUERY_RETRIEVE:
-                DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), role, DefaultTransferCapabilities.QUERY_CUIDS, UID.ImplicitVRLittleEndian);
-                DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), role, DefaultTransferCapabilities.RETRIEVE_CUIDS, UID.ImplicitVRLittleEndian);
+                DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), role, DefaultTransferCapabilities.QUERY_CUIDS, DefaultTransferCapabilities.OTHER_TSUIDS);
+                DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), role, DefaultTransferCapabilities.RETRIEVE_CUIDS, DefaultTransferCapabilities.OTHER_TSUIDS);
                 DefaultTransferCapabilities.addTC(ae, null, role, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
                 DefaultTransferCapabilities.addTC(ae, null, role, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
                 break;

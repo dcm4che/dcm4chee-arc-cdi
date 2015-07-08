@@ -84,6 +84,11 @@ public interface DerivedSeriesFields {
     Availability getAvailability();
 
     /**
+     * @return Last Update Time of the Series (proprietary field)
+     */
+    Date getLastUpdateTime();
+
+    /**
      * @return number of visible images of this Series (proprietary field)
      */
     int getNumberOfVisibleImages();

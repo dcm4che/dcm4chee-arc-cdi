@@ -49,6 +49,7 @@ import org.dcm4chee.archive.query.DerivedSeriesFields;
 import org.dcm4chee.storage.conf.Availability;
 
 import javax.enterprise.context.RequestScoped;
+import java.util.Date;
 
 /**
  * Created by Umberto Cappellini on 6/12/15.
@@ -59,13 +60,15 @@ public class DefaultDerivedSeriesFields implements DerivedSeriesFields {
     protected int numberOfInstances;
     protected String[] retrieveAETs;
     protected Availability availability;
+    private Date lastUpdateTime = null;
     private int numberOfVisibleImages;
 
     @Override
     public Expression<?>[] fields() {
         return new Expression<?>[]{
                 QInstance.instance.retrieveAETs,
-                QInstance.instance.availability
+                QInstance.instance.availability,
+                QInstance.instance.updatedTime
         };
     }
 
@@ -82,6 +85,11 @@ public class DefaultDerivedSeriesFields implements DerivedSeriesFields {
     @Override
     public Availability getAvailability() {
         return availability;
+    }
+
+    @Override
+    public Date getLastUpdateTime() {
+        return lastUpdateTime;
     }
 
     @Override
@@ -105,6 +113,10 @@ public class DefaultDerivedSeriesFields implements DerivedSeriesFields {
             if (availability.compareTo(availability1) < 0)
                 availability = availability1;
         }
+        Date instanceUpdateTime = result.get(QInstance.instance
+                .updatedTime);
+        if (lastUpdateTime == null || instanceUpdateTime.after(lastUpdateTime))
+            lastUpdateTime = instanceUpdateTime;
     }
     
     @Override

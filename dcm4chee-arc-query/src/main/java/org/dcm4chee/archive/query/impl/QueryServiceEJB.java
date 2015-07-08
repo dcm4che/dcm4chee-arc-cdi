@@ -71,6 +71,7 @@ public class QueryServiceEJB {
         QStudy.study.pk,
         QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances,
         QSeriesQueryAttributes.seriesQueryAttributes.numberOfVisibleInstances,
+        QSeriesQueryAttributes.seriesQueryAttributes.lastUpdateTime,
         QStudyQueryAttributes.studyQueryAttributes.numberOfInstances,
         QStudyQueryAttributes.studyQueryAttributes.numberOfSeries,
         QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy,
@@ -113,14 +114,18 @@ public class QueryServiceEJB {
         Integer numberOfSeriesRelatedInstances =
                 result.get(QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances);
         Integer numberOfSeriesVisibleInstances;
+        Date seriesLastUpdateTime;
         if (numberOfSeriesRelatedInstances == null) {
             SeriesQueryAttributes seriesQueryAttributes =
                     calculateSeriesQueryAttributes(seriesPk, context.getQueryParam());
             numberOfSeriesRelatedInstances = seriesQueryAttributes.getNumberOfInstances();
             numberOfSeriesVisibleInstances = seriesQueryAttributes.getNumberOfVisibleInstances();
+            seriesLastUpdateTime = seriesQueryAttributes.getLastUpdateTime();
         } else {
             numberOfSeriesVisibleInstances = result.get(QSeriesQueryAttributes
                     .seriesQueryAttributes.numberOfVisibleInstances);
+            seriesLastUpdateTime = result.get(QSeriesQueryAttributes
+                    .seriesQueryAttributes.lastUpdateTime);
         }
 
 
@@ -179,7 +184,9 @@ public class QueryServiceEJB {
         Utils.setSeriesQueryAttributes(attrs,
                 numberOfSeriesRelatedInstances,
                 numberOfSeriesVisibleInstances,
-                ade.getPrivateDerivedFields().findSeriesNumberOfVisibleInstancesTag());
+                ade.getPrivateDerivedFields().findSeriesNumberOfVisibleInstancesTag(),
+                seriesLastUpdateTime,
+                ade.getPrivateDerivedFields().findSeriesUpdateTimeTag());
         return attrs;
     }
 
@@ -249,6 +256,7 @@ public class QueryServiceEJB {
         if (seriesDerivedFields.getNumberOfInstances() > 0) {
             queryAttrs.setRetrieveAETs(seriesDerivedFields.getRetrieveAETs());
             queryAttrs.setAvailability(seriesDerivedFields.getAvailability());
+            queryAttrs.setLastUpdateTime(seriesDerivedFields.getLastUpdateTime());
         }
         em.persist(queryAttrs);
         return queryAttrs;

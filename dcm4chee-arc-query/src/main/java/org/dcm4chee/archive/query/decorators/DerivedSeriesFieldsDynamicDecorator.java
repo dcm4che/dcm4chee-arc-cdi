@@ -85,6 +85,11 @@ public class DerivedSeriesFieldsDynamicDecorator extends DynamicDecoratorWrapper
 	}
 
 	@Override
+	public Date getLastUpdateTime() {
+		return wrapWithDynamicDecorators(delegate).getLastUpdateTime();
+	}
+
+	@Override
 	public int getNumberOfVisibleImages() {
 		return wrapWithDynamicDecorators(delegate).getNumberOfVisibleImages();
 	}
