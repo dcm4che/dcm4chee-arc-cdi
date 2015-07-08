@@ -870,7 +870,9 @@ public class DefaultDeviceFactory {
 
         addTCs(ae,
                 EnumSet.allOf(TCGroupConfigAEExtension.DefaultGroup.class),
-                EnumSet.of(TCGroupConfigAEExtension.DefaultGroup.STORAGE, TCGroupConfigAEExtension.DefaultGroup.PPS));
+                EnumSet.of(TCGroupConfigAEExtension.DefaultGroup.STORAGE, 
+                		TCGroupConfigAEExtension.DefaultGroup.PPS, 
+                		TCGroupConfigAEExtension.DefaultGroup.STORAGE_COMMITMENT));
 
 
         aeExt.setReturnOtherPatientIDs(true);
