@@ -123,6 +123,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
                 .getDefaultExternalRetrieveAETAvailability();
 
         Attributes eventInfo = commitEvent.getEventInfo();
+        String retrieveAET = eventInfo.getString(Tag.RetrieveAETitle);
         Sequence failSops = eventInfo.getSequence(Tag.FailedSOPSequence);
         Sequence refSops = eventInfo.getSequence(Tag.ReferencedSOPSequence);
         StoreVerifyDimse dimse = ejb.getDimseEntry(transactionUID);
@@ -161,7 +162,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             for (int i = 0; i < refSops.size(); i++) {
                 item = refSops.get(i);
                 addExternalLocation(item.getString(Tag.ReferencedSOPInstanceUID),
-                	    item.getString(Tag.RetrieveAETitle),
+                		retrieveAET != null ? retrieveAET : item.getString(Tag.RetrieveAETitle),
                         remoteDeviceName, defaultAvailability);
             }
         }
