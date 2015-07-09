@@ -40,6 +40,7 @@ package org.dcm4chee.archive.query;
 
 import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
+import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.storage.conf.Availability;
 
 import java.util.Date;
@@ -65,9 +66,10 @@ public interface DerivedStudyFields {
      * calculate derived fields. Partially calculated
      * fields are stored in the private properties of the
      * bean (note: bean is RequestScoped) and returned
-     * by the relative getters.
+     * by the relative getters. QueryParam is also passed,
+     * to calculate fields based on config parameters.
      */
-    void addInstance(Tuple result);
+    void addInstance(Tuple result, QueryParam param);
 
     /**
      * @return number of instances of this Study

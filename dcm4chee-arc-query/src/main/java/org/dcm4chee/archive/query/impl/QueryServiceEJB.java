@@ -212,7 +212,7 @@ public class QueryServiceEJB {
                 .iterate(studyDerivedFields.fields())) {
         	studyDerivedFields.reset();
             while (results.hasNext()) {
-                studyDerivedFields.addInstance(results.next());
+                studyDerivedFields.addInstance(results.next(), queryParam);
             }
         }
         StudyQueryAttributes queryAttrs = new StudyQueryAttributes();
@@ -228,6 +228,7 @@ public class QueryServiceEJB {
             queryAttrs.setRetrieveAETs(studyDerivedFields.getRetrieveAETs());
             queryAttrs.setAvailability(studyDerivedFields.getAvailability());
             queryAttrs.setLastUpdateTime(studyDerivedFields.getLastUpdateTime());
+            queryAttrs.setNumberOfVisibleInstances(studyDerivedFields.getNumberOfVisibleImages());
         }
         em.persist(queryAttrs);
         return queryAttrs;
@@ -246,7 +247,7 @@ public class QueryServiceEJB {
 
         	seriesDerivedFields.reset();
             while (results.hasNext()) {
-                seriesDerivedFields.addInstance(results.next());
+                seriesDerivedFields.addInstance(results.next(), queryParam);
             }
         }
         SeriesQueryAttributes queryAttrs = new SeriesQueryAttributes();
