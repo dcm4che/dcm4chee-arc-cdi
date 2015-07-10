@@ -54,7 +54,13 @@
     }, "org.dcm4chee.archive.query.DerivedStudyFields": {
       "decorators": [
         {
-          "decoratorClassName": "org.dcm4chee.archive.query.decorators.VisibleImagesDecorator"
+          "decoratorClassName": "org.dcm4chee.archive.query.decorators.StudyVisibleImagesDecorator"
+        }
+      ]
+    }, "org.dcm4chee.archive.query.DerivedSeriesFields": {
+      "decorators": [
+        {
+          "decoratorClassName": "org.dcm4chee.archive.query.decorators.SeriesVisibleImagesDecorator"
         }
       ]
     }

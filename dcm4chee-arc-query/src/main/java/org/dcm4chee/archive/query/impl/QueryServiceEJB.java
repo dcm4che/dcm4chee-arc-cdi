@@ -258,6 +258,7 @@ public class QueryServiceEJB {
             queryAttrs.setRetrieveAETs(seriesDerivedFields.getRetrieveAETs());
             queryAttrs.setAvailability(seriesDerivedFields.getAvailability());
             queryAttrs.setLastUpdateTime(seriesDerivedFields.getLastUpdateTime());
+            queryAttrs.setNumberOfVisibleInstances(seriesDerivedFields.getNumberOfVisibleImages());
         }
         em.persist(queryAttrs);
         return queryAttrs;
