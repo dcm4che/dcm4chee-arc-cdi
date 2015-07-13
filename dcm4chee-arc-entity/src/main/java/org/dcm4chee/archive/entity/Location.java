@@ -61,6 +61,7 @@ import javax.persistence.Table;
  * @author Justin Falk <jfalkmu@gmail.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @NamedQueries({
         @NamedQuery(
@@ -77,7 +78,12 @@ import javax.persistence.Table;
                 name = Location.COUNT_BY_STORAGE_GROUP_AND_STORAGE_SYSTEM,
                 query = "SELECT COUNT(l) FROM Location l "
                         + "WHERE l.storageSystemGroupID = :storageSystemGroupID "
-                        + "AND l.storageSystemID = :storageSystemID")
+                        + "AND l.storageSystemID = :storageSystemID"),
+        @NamedQuery(
+                name = Location.CALCULATE_SUM_DATA_VOLUME_PER_DAY,
+                query = "SELECT SUM(l.size) FROM Location l "
+                        + "WHERE l.storageSystemGroupID = ?1 "
+                        + "AND l.createdTime >= ?2")
 })
 @Entity
 @Table(name = "location")
@@ -90,6 +96,8 @@ public class Location implements Serializable {
     public static final String COUNT_BY_STORAGE_GROUP = "Location.countByStorageGroup";
 
     public static final String COUNT_BY_STORAGE_GROUP_AND_STORAGE_SYSTEM = "Location.countByStorageGroupAndStorageSystem";
+
+    public static final String CALCULATE_SUM_DATA_VOLUME_PER_DAY = "Location.calculateAverageDataVolumePerDay";;
 
     public enum Status {
         OK, DELETE_FAILED, TO_ARCHIVE, ARCHIVED, ARCHIVE_FAILED, QUERY_FAILED, VERIFY_FAILED

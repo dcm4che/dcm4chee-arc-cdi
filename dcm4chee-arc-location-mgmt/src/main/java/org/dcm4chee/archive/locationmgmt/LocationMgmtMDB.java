@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.filemgmt;
+package org.dcm4chee.archive.locationmgmt;
 
 import java.util.Collection;
 
@@ -62,20 +62,21 @@ import org.slf4j.LoggerFactory;
                                   propertyValue = "queue/delete"),
         @ActivationConfigProperty(propertyName = "acknowledgeMode",
                                   propertyValue = "Auto-acknowledge") })
-public class FileMgmtMDB implements MessageListener{
+public class LocationMgmtMDB implements MessageListener{
 
     @Inject
-    private FileMgmt fileManager;
+    private LocationMgmt locationManager;
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileMgmtMDB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LocationMgmtMDB.class);
 
     @Override
     public void onMessage(Message message) {
         try {
-            //TODO - AUDIT here using provided properties
             @SuppressWarnings("unchecked")
             Collection<Long> refPks = (Collection<Long>) ((ObjectMessage) message).getObject();
-            LOG.info("{} Locations removed!",fileManager.doDelete(refPks));
+            LOG.info("Removing {} locations", refPks.size());
+            LOG.info("{} Locations removed!",locationManager.doDelete(refPks, 
+                    message.getBooleanProperty("checkStudyMarked")));
         } catch (Throwable th) {
             LOG.warn("Failed to process " + message, th);
         } 

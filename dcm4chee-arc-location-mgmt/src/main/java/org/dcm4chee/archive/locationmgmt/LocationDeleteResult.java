@@ -36,67 +36,40 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.filemgmt.Impl;
+package org.dcm4chee.archive.locationmgmt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
-import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.filemgmt.DeleteResult;
-import org.dcm4chee.archive.filemgmt.DeleterService;
-import org.dcm4chee.storage.conf.StorageSystemGroup;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
 
-@ApplicationScoped
-public class DeleteServiceImpl implements DeleterService {
+public class LocationDeleteResult {
 
-    @Inject
-    private Device device;
-
-    @Override
-    public DeleteResult freeUpSpaceDeleteSeries(String seriesInstanceUID) {
-        // TODO Auto-generated method stub
-        return null;
+    public enum DeletionStatus{
+        CRITERIA_NOT_MET, SCHEDULED, FAILED
     }
 
-    @Override
-    public DeleteResult freeUpSpaceDeleteStudy(String studyInstanceUID) {
-        // TODO Auto-generated method stub
-        return null;
+    private DeletionStatus status;
+
+    private String failureReason;
+
+    public LocationDeleteResult(DeletionStatus status, String failureReason) {
+        super();
+        this.status = status;
+        this.failureReason = failureReason;
     }
 
-    @Override
-    public DeleteResult freeUpSpace(StorageSystemGroup groupToFree) {
-        return null;
+    public DeletionStatus getStatus() {
+        return status;
     }
 
-    @Override
-    public DeleteResult freeUpSpace() {
-        
-        return null;
+    public void setStatus(DeletionStatus status) {
+        this.status = status;
     }
 
-    private ArrayList<String> getArchivedOnGroupIDs(StorageSystemGroup group) {
-        if (group.getArchivedOnGroups() != null) {
-            return (ArrayList<String>) Arrays.asList(group
-                    .getArchivedOnGroups());
-        }
-        return new ArrayList<String>();
+    public String getFailureReason() {
+        return failureReason;
     }
 
-    private ArrayList<String> getArchivedOnExternalSystems(
-            StorageSystemGroup group) {
-        if (group.getArchivedOnExternalSystems() != null) {
-            return (ArrayList<String>) Arrays.asList(group
-                    .getArchivedOnExternalSystems());
-        }
-        return new ArrayList<String>();
-    }
 }

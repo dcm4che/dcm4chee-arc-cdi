@@ -36,8 +36,17 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.filemgmt;
+package org.dcm4chee.archive.locationmgmt;
 
+import java.util.Collection;
+import java.util.List;
+
+import javax.jms.JMSException;
+import javax.persistence.NoResultException;
+
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
 
 /**
@@ -45,13 +54,41 @@ import org.dcm4chee.storage.conf.StorageSystemGroup;
  * 
  */
 
-public interface DeleterService {
+public interface LocationMgmt {
 
-    DeleteResult freeUpSpaceDeleteSeries(String seriesInstanceUID);
+    boolean doDelete(Location ref);
 
-    DeleteResult freeUpSpaceDeleteStudy(String studyInstanceUID);
+    int doDelete(Collection<Long> refPks, boolean checkStudyMarked);
 
-    DeleteResult freeUpSpace(StorageSystemGroup groupToFree);
+    void scheduleDelete(Collection<Location> refs, int delay,
+            boolean checkStudyMarked) throws JMSException;
 
-    DeleteResult freeUpSpace();
+    void scheduleDeleteByPks(Collection<Long> refPks, int delay, boolean checkStudyMarked)
+            throws JMSException;
+
+    void failDelete(Location ref);
+
+    Location getLocation(Long pk);
+
+    void findOrCreateStudyOnStorageGroup(Study study, String groupID);
+
+    void findOrCreateStudyOnStorageGroup(String studyUID,
+            String groupID);
+
+    List<Instance> findInstancesDueDelete(int studyRetention,
+            String studyRetentionUnit, String groupID, String studyInstanceUID,
+            String seriesInstanceUID);
+
+    long calculateDataVolumePerDayInBytes(String groupID, 
+            int dvdAverageOnNDays);
+
+    boolean isMarkedForDelete(String studyInstanceUID, String groupID);
+
+    List<Location> findFailedToDeleteLocations(StorageSystemGroup group);
+
+    void markForDeletion(String studyInstanceUID, String groupID)
+            throws NoResultException;
+
+    Collection<Location> detachInstanceOnGroup(long instancePK, String groupID);
+
 }

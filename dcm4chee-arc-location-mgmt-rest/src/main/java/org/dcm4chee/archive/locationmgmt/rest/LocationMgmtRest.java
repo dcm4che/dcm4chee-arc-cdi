@@ -36,30 +36,58 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.filemgmt;
+package org.dcm4chee.archive.locationmgmt.rest;
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-import java.util.Collection;
-
-import org.dcm4chee.archive.entity.Location;
+import org.dcm4che3.conf.core.api.ConfigurationException;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.locationmgmt.DeleterService;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
+@Path("/locationManagement")
+@RequestScoped
+public class LocationMgmtRest {
 
-public interface FileMgmt {
+    @Inject
+    private Device device;
 
-    //deletes a file and returns true if deleted otherwise returns false
-    boolean doDelete(Location ref);
-    int doDelete(Collection<Long> refPks);
+    @Inject
+    private DeleterService localDeleterService;
 
-    //send a file delete message to the queue
-    void scheduleDelete(Collection<Location> refs, int delay) throws Exception;
-    void scheduleDeleteByPks(Collection<Long> refPks, int delay) throws Exception;
+    @Context
+    private HttpServletRequest request;
 
-    //sets file-ref status to delete failed
-    void failDelete(Location ref);
-
-    Location getLocation(Long pk);
+    @GET
+    @Path("/getDataVolumePerDayAllGroups")
+    @Produces(MediaType.TEXT_HTML)
+    public Response getDataVolumePerDayAllGroups() throws ConfigurationException {
+        String response = "";
+        StorageDeviceExtension stgDevExt = device
+                .getDeviceExtension(StorageDeviceExtension.class);
+        for (String groupID : stgDevExt.getStorageSystemGroups().keySet()) {
+            StorageSystemGroup group = stgDevExt.getStorageSystemGroup(groupID);
+            response += "<div>Group:<p>"
+                    + groupID
+                    + "<br>Data Volume Per "
+                    + group.getDataVolumePerDayAverageOnNDays()
+                    + " Days In Bytes: "
+                    + localDeleterService
+                            .calculateDataVolumePerDayInBytes(groupID);
+        }
+        return Response.ok(response).build();
+    }
 
 }

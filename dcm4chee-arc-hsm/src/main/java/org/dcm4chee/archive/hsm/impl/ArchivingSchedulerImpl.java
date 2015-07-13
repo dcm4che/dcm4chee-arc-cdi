@@ -57,6 +57,7 @@ import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.hsm.ArchivingScheduler;
+import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.storage.archiver.service.ArchiverContext;

@@ -36,71 +36,29 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.filemgmt;
+package org.dcm4chee.archive.locationmgmt;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
 
-public class DeleteResult {
+public interface DeleterService {
 
-    enum DeletionStatus{
-        CRITERIA_NOT_MET, FAILURES_PRESENT, COMPLETE_SUCCESS, UNDEFINED
-    }
+    void freeUpSpaceDeleteSeries(String seriesInstanceUID,
+            StorageSystemGroup group);
 
-    private DeletionStatus status;
+    void freeUpSpaceDeleteStudy(String studyInstanceUID,
+            StorageSystemGroup group);
 
-    private List<String> instancesDeleted;
+    void freeUpSpace(StorageSystemGroup groupToFree);
 
-    private List<String> failedInstances;
+    void freeUpSpace();
 
-    private String failureReason;
+    long calculateDataVolumePerDayInBytes(String groupID);
 
-    public DeleteResult(){
-        this.setStatus(DeletionStatus.UNDEFINED);
-        this.setFailureReason("Reason Undefined");
-        this.setInstancesDeleted(new ArrayList<String>());
-        this.setFailedInstances(new ArrayList<String>());
-    }
+    boolean validateGroupForDeletion(StorageSystemGroup group);
 
-    public DeletionStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(DeletionStatus status) {
-        this.status = status;
-    }
-
-    public List<String> getInstancesDeleted() {
-        return instancesDeleted;
-    }
-
-    public void setInstancesDeleted(List<String> instancesDeleted) {
-        this.instancesDeleted = instancesDeleted;
-    }
-
-    public void addInstanceDeleted(String instancesDeleted) {
-        this.instancesDeleted.add(instancesDeleted);
-    }
-
-    public String getFailureReason() {
-        return failureReason;
-    }
-
-    public void setFailureReason(String failureReason) {
-        this.failureReason = failureReason;
-    }
-
-    public List<String> getFailedInstances() {
-        return failedInstances;
-    }
-
-    public void setFailedInstances(List<String> failedInstances) {
-        this.failedInstances = failedInstances;
-    }
-    
 }
