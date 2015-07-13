@@ -36,6 +36,11 @@
       <artifactId>dcm4chee-arc-qc-rest</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-location-mgmt-rest</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <profiles>
     <profile>
@@ -112,6 +117,7 @@
             WEB-INF/lib/dcm4chee-arc-wado-${project.version}.jar,
             WEB-INF/lib/dcm4chee-arc-qido-${project.version}.jar,
             WEB-INF/lib/dcm4chee-arc-qc-rest-${project.version}.jar,
+            WEB-INF/lib/dcm4chee-arc-location-mgmt-rest-${project.version}.jar,
             WEB-INF/keycloak.json
           </packagingIncludes>
         </configuration>

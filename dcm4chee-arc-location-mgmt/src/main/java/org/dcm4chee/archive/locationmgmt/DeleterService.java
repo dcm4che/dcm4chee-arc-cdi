@@ -47,13 +47,18 @@ import org.dcm4chee.storage.conf.StorageSystemGroup;
 
 public interface DeleterService {
 
-    void freeUpSpaceDeleteSeries(String seriesInstanceUID);
+    void freeUpSpaceDeleteSeries(String seriesInstanceUID,
+            StorageSystemGroup group);
 
-    void freeUpSpaceDeleteStudy(String studyInstanceUID);
+    void freeUpSpaceDeleteStudy(String studyInstanceUID,
+            StorageSystemGroup group);
 
     void freeUpSpace(StorageSystemGroup groupToFree);
 
     void freeUpSpace();
 
+    long calculateDataVolumePerDayInBytes(String groupID);
+
     boolean validateGroupForDeletion(StorageSystemGroup group);
+
 }

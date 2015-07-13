@@ -41,9 +41,13 @@ package org.dcm4chee.archive.locationmgmt;
 import java.util.Collection;
 import java.util.List;
 
+import javax.jms.JMSException;
+import javax.persistence.NoResultException;
+
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -54,12 +58,13 @@ public interface LocationMgmt {
 
     boolean doDelete(Location ref);
 
-    int doDelete(Collection<Long> refPks);
+    int doDelete(Collection<Long> refPks, boolean checkStudyMarked);
 
-    void scheduleDelete(Collection<Location> refs, int delay) throws Exception;
+    void scheduleDelete(Collection<Location> refs, int delay,
+            boolean checkStudyMarked) throws JMSException;
 
-    void scheduleDeleteByPks(Collection<Long> refPks, int delay)
-            throws Exception;
+    void scheduleDeleteByPks(Collection<Long> refPks, int delay, boolean checkStudyMarked)
+            throws JMSException;
 
     void failDelete(Location ref);
 
@@ -70,8 +75,20 @@ public interface LocationMgmt {
     void findOrCreateStudyOnStorageGroup(String studyUID,
             String groupID);
 
-    List<Instance> findInstancesDueDelete(int minTimeToKeepStudy,
-            String minTimeToKeppStudyUnit, String groupID); 
+    List<Instance> findInstancesDueDelete(int studyRetention,
+            String studyRetentionUnit, String groupID, String studyInstanceUID,
+            String seriesInstanceUID);
 
-    long calculateDataVolumePerDayInBytes(String group);
+    long calculateDataVolumePerDayInBytes(String groupID, 
+            int dvdAverageOnNDays);
+
+    boolean isMarkedForDelete(String studyInstanceUID, String groupID);
+
+    List<Location> findFailedToDeleteLocations(StorageSystemGroup group);
+
+    void markForDeletion(String studyInstanceUID, String groupID)
+            throws NoResultException;
+
+    Collection<Location> detachInstanceOnGroup(long instancePK, String groupID);
+
 }

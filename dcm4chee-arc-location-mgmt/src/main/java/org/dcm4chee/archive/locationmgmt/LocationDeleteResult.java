@@ -38,8 +38,6 @@
 
 package org.dcm4chee.archive.locationmgmt;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -48,23 +46,18 @@ import java.util.List;
 
 public class LocationDeleteResult {
 
-    enum DeletionStatus{
-        CRITERIA_NOT_MET, FAILURES_PRESENT, COMPLETE_SUCCESS, UNDEFINED
+    public enum DeletionStatus{
+        CRITERIA_NOT_MET, SCHEDULED, FAILED
     }
 
     private DeletionStatus status;
 
-    private List<String> instancesDeleted;
-
-    private List<String> failedInstances;
-
     private String failureReason;
 
-    public LocationDeleteResult(){
-        this.setStatus(DeletionStatus.UNDEFINED);
-        this.setFailureReason("Reason Undefined");
-        this.setInstancesDeleted(new ArrayList<String>());
-        this.setFailedInstances(new ArrayList<String>());
+    public LocationDeleteResult(DeletionStatus status, String failureReason) {
+        super();
+        this.status = status;
+        this.failureReason = failureReason;
     }
 
     public DeletionStatus getStatus() {
@@ -75,32 +68,8 @@ public class LocationDeleteResult {
         this.status = status;
     }
 
-    public List<String> getInstancesDeleted() {
-        return instancesDeleted;
-    }
-
-    public void setInstancesDeleted(List<String> instancesDeleted) {
-        this.instancesDeleted = instancesDeleted;
-    }
-
-    public void addInstanceDeleted(String instancesDeleted) {
-        this.instancesDeleted.add(instancesDeleted);
-    }
-
     public String getFailureReason() {
         return failureReason;
     }
 
-    public void setFailureReason(String failureReason) {
-        this.failureReason = failureReason;
-    }
-
-    public List<String> getFailedInstances() {
-        return failedInstances;
-    }
-
-    public void setFailedInstances(List<String> failedInstances) {
-        this.failedInstances = failedInstances;
-    }
-    
 }

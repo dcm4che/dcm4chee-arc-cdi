@@ -343,7 +343,7 @@ public class ArchivingSchedulerEJB {
         } else {
             LOG.debug("Schedule deletion of source Locations:{}",locations);
             try {
-                locationMgmt.scheduleDelete(locationToDeletePks, 100);
+                locationMgmt.scheduleDelete(locationToDeletePks, 100, false);
             } catch (Exception x) {
                 LOG.error("Schedule deletion of source Locations failed! locations:{}", locations, x);
             }

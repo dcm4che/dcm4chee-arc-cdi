@@ -36,51 +36,58 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.locationmgmt;
-
-import java.util.Collection;
-
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
+package org.dcm4chee.archive.locationmgmt.rest;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcm4che3.conf.core.api.ConfigurationException;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.locationmgmt.DeleterService;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
-
-@MessageDriven(activationConfig = {
-        @ActivationConfigProperty(propertyName = "destinationType",
-                                  propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination",
-                                  propertyValue = "queue/delete"),
-        @ActivationConfigProperty(propertyName = "acknowledgeMode",
-                                  propertyValue = "Auto-acknowledge") })
-public class LocationMgmtMDB implements MessageListener{
+@Path("/locationManagement")
+@RequestScoped
+public class LocationMgmtRest {
 
     @Inject
-    private LocationMgmt locationManager;
+    private Device device;
 
-    private static final Logger LOG = LoggerFactory.getLogger(LocationMgmtMDB.class);
+    @Inject
+    private DeleterService localDeleterService;
 
-    @Override
-    public void onMessage(Message message) {
-        try {
-            @SuppressWarnings("unchecked")
-            Collection<Long> refPks = (Collection<Long>) ((ObjectMessage) message).getObject();
-            LOG.info("Removing {} locations", refPks.size());
-            LOG.info("{} Locations removed!",locationManager.doDelete(refPks, 
-                    message.getBooleanProperty("checkStudyMarked")));
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + message, th);
-        } 
+    @Context
+    private HttpServletRequest request;
+
+    @GET
+    @Path("/getDataVolumePerDayAllGroups")
+    @Produces(MediaType.TEXT_HTML)
+    public Response getDataVolumePerDayAllGroups() throws ConfigurationException {
+        String response = "";
+        StorageDeviceExtension stgDevExt = device
+                .getDeviceExtension(StorageDeviceExtension.class);
+        for (String groupID : stgDevExt.getStorageSystemGroups().keySet()) {
+            StorageSystemGroup group = stgDevExt.getStorageSystemGroup(groupID);
+            response += "<div>Group:<p>"
+                    + groupID
+                    + "<br>Data Volume Per "
+                    + group.getDataVolumePerDayAverageOnNDays()
+                    + " Days In Bytes: "
+                    + localDeleterService
+                            .calculateDataVolumePerDayInBytes(groupID);
+        }
+        return Response.ok(response).build();
     }
-    
 
 }
