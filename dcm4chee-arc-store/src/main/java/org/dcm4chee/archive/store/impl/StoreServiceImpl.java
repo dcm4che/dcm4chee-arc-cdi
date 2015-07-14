@@ -73,7 +73,6 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
-import org.dcm4che3.net.AEExtension;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;

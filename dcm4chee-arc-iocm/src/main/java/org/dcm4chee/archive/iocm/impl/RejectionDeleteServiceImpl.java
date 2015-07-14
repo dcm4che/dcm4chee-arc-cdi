@@ -49,6 +49,7 @@ import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.filemgmt.FileMgmt;
 import org.dcm4chee.archive.iocm.RejectionDeleteService;
 import org.dcm4chee.archive.iocm.RejectionServiceDeleteBean;
+import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,13 +67,13 @@ public class RejectionDeleteServiceImpl implements RejectionDeleteService{
     private RejectionServiceDeleteBean rejectionServiceDeleter;
 
     @Inject
-    private FileMgmt fileManager;
+    private LocationMgmt fileManager;
 
     @Override
     public void deleteRejected(Object source, Collection<Instance> instances) {
         Collection<Location> tosScheduleForDelete = rejectionServiceDeleter.deleteRejected(source, instances);
         try {
-            fileManager.scheduleDelete(tosScheduleForDelete, 0);
+            fileManager.scheduleDelete(tosScheduleForDelete, 0, false);
         } catch (Exception e) {
             LOG.error("{} : Unable to schedule FileRefs {} for deletion",e ,tosScheduleForDelete);
         }

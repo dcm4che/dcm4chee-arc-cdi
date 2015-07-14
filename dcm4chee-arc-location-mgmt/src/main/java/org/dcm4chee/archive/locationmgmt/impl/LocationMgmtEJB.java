@@ -45,9 +45,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
@@ -71,8 +73,8 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.QInstance;
-import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.QStudyOnStorageSystemGroup;
+import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyOnStorageSystemGroup;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
@@ -214,6 +216,7 @@ public class LocationMgmtEJB implements LocationMgmt {
         List<Location> locations = checkStudyMarked 
                 ? filterForMarkedStudies(result) : result;
         Map<String, Location> containerLocations = new HashMap<String, Location>();
+        Set<Series> seriesToPurge = new HashSet<Series>();
         Location ref;
         count += locations.size();
         for (int i = 0, len = locations.size(); i < len; i++) {
@@ -238,9 +241,22 @@ public class LocationMgmtEJB implements LocationMgmt {
                     count--;
                 }
             }
+            for(Instance inst : ref.getInstances()) {
+                if(inst.getSeries().isRejected())
+                    seriesToPurge.add(inst.getSeries());
+            }
         }
         if (containerLocations.isEmpty()) {
             count += deleteContainer(containerLocations);
+        }
+        
+        for(Series series : seriesToPurge) {
+            try{
+            em.remove(series);
+            }
+            catch(Exception e) {
+                LOG.error("Unable to remove purged series {} - reason {}", series, e);
+            }
         }
         return count;
     }
