@@ -71,6 +71,7 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.entity.QLocation;
 import org.dcm4chee.archive.entity.QStudyOnStorageSystemGroup;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyOnStorageSystemGroup;
@@ -286,23 +287,28 @@ public class LocationMgmtEJB implements LocationMgmt {
             String studyRetentionUnit, String groupID, String studyInstanceUID, String seriesInstanceUID) {
         Timestamp studyDueDate = getStudyDueDate(studyRetention, studyRetentionUnit);
         JPAQuery query = new JPAQuery(em);
+        
         query.from(QInstance.instance).from(QStudyOnStorageSystemGroup.studyOnStorageSystemGroup)
-        .distinct()
-        .join(QInstance.instance.locations).fetch()
+        .leftJoin(QInstance.instance.locations).fetch()
         .join(QInstance.instance.series)
         .join(QInstance.instance.series.study);
-        query.where(QStudyOnStorageSystemGroup.studyOnStorageSystemGroup.markedForDeletion.not())
+        
+        query.where(QStudyOnStorageSystemGroup.studyOnStorageSystemGroup.markedForDeletion.isFalse())
         .where(QStudyOnStorageSystemGroup.studyOnStorageSystemGroup.accessTime.before(studyDueDate))
         .where(QStudyOnStorageSystemGroup.studyOnStorageSystemGroup.storageSystemGroupID.eq(groupID))
         .where(QStudyOnStorageSystemGroup.studyOnStorageSystemGroup.study.studyInstanceUID
                 .eq(QInstance.instance.series.study.studyInstanceUID))
-        .where(QInstance.instance.series.study.studyInstanceUID.eq(studyInstanceUID))
-        .where(QInstance.instance.series.seriesInstanceUID.eq(seriesInstanceUID))
-        .where(QInstance.instance.rejectionNoteCode.isNull());
+                .where(QInstance.instance.rejectionNoteCode.isNull());
+        if(studyInstanceUID != null)
+        query.where(QInstance.instance.series.study.studyInstanceUID.eq(studyInstanceUID));
+        if(seriesInstanceUID != null)
+        query.where(QInstance.instance.series.seriesInstanceUID.eq(seriesInstanceUID));
+        
         query.orderBy(QStudyOnStorageSystemGroup.studyOnStorageSystemGroup.accessTime.asc());
         List<Tuple> tuples = query.list(QInstance.instance, QStudyOnStorageSystemGroup.studyOnStorageSystemGroup);
         List<Instance> locationsToDelete = new ArrayList<>();
         for(Tuple tuple: tuples) {
+            if(!locationsToDelete.contains(tuple.get(QInstance.instance)))
             locationsToDelete.add(tuple.get(QInstance.instance));
         }
         return locationsToDelete;

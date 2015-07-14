@@ -512,6 +512,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
             return instancesOnGroupPerStudyMap;
         
         for(Instance inst : allInstancesDueDelete) {
+            
             String studyUID = inst.getSeries().getStudy().getStudyInstanceUID();
             if(!instancesOnGroupPerStudyMap.containsKey(studyUID))
                 instancesOnGroupPerStudyMap.put(studyUID, new ArrayList<Instance>());
