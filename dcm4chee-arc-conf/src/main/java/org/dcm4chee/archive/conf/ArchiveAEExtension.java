@@ -623,7 +623,10 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public MPPSEmulationRule getMppsEmulationRule(String sourceAET) {
-        return mppsEmulationRuleMap.get(sourceAET);
+        return mppsEmulationRuleMap.get(sourceAET) == null
+                ? ( mppsEmulationRuleMap.get("*") == null 
+                ? null : mppsEmulationRuleMap.get("*")) 
+                : mppsEmulationRuleMap.get(sourceAET);
     }
 
     public void addMppsEmulationRule(MPPSEmulationRule rule) {

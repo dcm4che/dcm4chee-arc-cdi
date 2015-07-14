@@ -892,6 +892,9 @@ public class DefaultDeviceFactory {
         aeExt.addMppsEmulationRule(
                 createMPPSEmulationRule("MPPS Emulation Rule 1", 120,
                         "DCM4CHEE", "EMULATE_MPPS"));
+        aeExt.addMppsEmulationRule(
+                createMPPSEmulationRule("Default EmulateAll Rule", 10,
+                        "DCM4CHEE", "*"));
         ExternalArchiveAEExtension extArcAEExt = new ExternalArchiveAEExtension();
         ae.addAEExtension(extArcAEExt);
         extArcAEExt.setAeFetchPriority(0);

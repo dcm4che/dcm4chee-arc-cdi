@@ -986,6 +986,11 @@
                   "dcmAETitle" : [ "EMULATE_MPPS" ],
                   "dcmMPPSEmulationDelay" : 120,
                   "dicomAETitle" : "DCM4CHEE"
+                }, {
+                  "cn" : "Default EmulateAll Rule",
+                  "dcmAETitle" : [ "*" ],
+                  "dcmMPPSEmulationDelay" : 10,
+                  "dicomAETitle" : "DCM4CHEE"
                 } ],
                 "dcmMatchUnknown" : true,
                 "dcmMetaDataStorageSystemGroupID" : "METADATA",
@@ -3326,6 +3331,11 @@
                   "cn" : "MPPS Emulation Rule 1",
                   "dcmAETitle" : [ "EMULATE_MPPS" ],
                   "dcmMPPSEmulationDelay" : 120,
+                  "dicomAETitle" : "DCM4CHEE"
+                }, {
+                  "cn" : "Default EmulateAll Rule",
+                  "dcmAETitle" : [ "*" ],
+                  "dcmMPPSEmulationDelay" : 10,
                   "dicomAETitle" : "DCM4CHEE"
                 } ],
                 "dcmMatchUnknown" : true,
