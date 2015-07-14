@@ -9,6 +9,7 @@
     "dicomDevicesRoot" : {
       "dcmqrscp" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "b66bbf4d-1e0c-4497-a8b9-28e7e22b46ad",
         "dicomConnection" : [ {
           "cn" : "dicom",
           "dcmBlacklistedHostname" : [ ],
@@ -41,6 +42,7 @@
             },
             "dcmAcceptedCallingAETitle" : [ ],
             "dcmTransferCapability" : [ ],
+            "dcmUUID" : "9272662a-b3af-483f-ab6b-3b8530e3ef56",
             "dicomAETitle" : "DCMQRSCP",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -59,6 +61,7 @@
       },
       "stgcmtscu" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "f2da8fd2-5086-43c4-b69d-a5447332cc66",
         "dicomConnection" : [ {
           "cn" : "dicom",
           "dcmBlacklistedHostname" : [ ],
@@ -84,6 +87,7 @@
           "STGCMTSCU" : {
             "dcmAcceptedCallingAETitle" : [ ],
             "dcmTransferCapability" : [ ],
+            "dcmUUID" : "597be862-f2c1-4b39-bd18-ecbfe24da57c",
             "dicomAETitle" : "STGCMTSCU",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -102,6 +106,7 @@
       },
       "storescp" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "05c79e84-6444-4aaf-b3a0-899ff2fa3480",
         "dicomConnection" : [ {
           "cn" : "dicom",
           "dcmBlacklistedHostname" : [ ],
@@ -129,6 +134,7 @@
           "STORESCP" : {
             "dcmAcceptedCallingAETitle" : [ ],
             "dcmTransferCapability" : [ ],
+            "dcmUUID" : "f77d955b-f5db-4f40-8ba6-5eb2aa56aba0",
             "dicomAETitle" : "STORESCP",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -147,6 +153,7 @@
       },
       "mppsscp" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "66ffc728-f3e1-444e-9b4b-93a951df585a",
         "dicomConnection" : [ {
           "cn" : "dicom",
           "dcmBlacklistedHostname" : [ ],
@@ -174,6 +181,7 @@
           "MPPSSCP" : {
             "dcmAcceptedCallingAETitle" : [ ],
             "dcmTransferCapability" : [ ],
+            "dcmUUID" : "30ec73b6-9542-492c-ac6b-0c21d4a645c7",
             "dicomAETitle" : "MPPSSCP",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -192,6 +200,7 @@
       },
       "ianscp" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "2c62ce67-0c05-45ff-874e-0505e03aae1e",
         "dicomConnection" : [ {
           "cn" : "dicom",
           "dcmBlacklistedHostname" : [ ],
@@ -217,6 +226,7 @@
           "IANSCP" : {
             "dcmAcceptedCallingAETitle" : [ ],
             "dcmTransferCapability" : [ ],
+            "dcmUUID" : "46905b57-3cfd-438a-92ad-c19551027daf",
             "dicomAETitle" : "IANSCP",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -235,6 +245,7 @@
       },
       "storescu" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "d320991d-16f3-4621-9d28-acbda5eb6d08",
         "dicomConnection" : [ {
           "cn" : "dicom",
           "dcmBlacklistedHostname" : [ ],
@@ -260,6 +271,7 @@
           "STORESCU" : {
             "dcmAcceptedCallingAETitle" : [ ],
             "dcmTransferCapability" : [ ],
+            "dcmUUID" : "3c932958-b650-473a-be4b-d9d002c6382a",
             "dicomAETitle" : "STORESCU",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -278,6 +290,7 @@
       },
       "mppsscu" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "2dbb1034-fd84-40ef-b012-fdd211e91b44",
         "dicomConnection" : [ {
           "cn" : "dicom",
           "dcmBlacklistedHostname" : [ ],
@@ -303,6 +316,7 @@
           "MPPSSCU" : {
             "dcmAcceptedCallingAETitle" : [ ],
             "dcmTransferCapability" : [ ],
+            "dcmUUID" : "dba8782e-e3cb-43cf-bbf7-475916a09c53",
             "dicomAETitle" : "MPPSSCU",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -321,6 +335,7 @@
       },
       "findscu" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "865c0a17-d5e1-447c-a9c3-0329f476d968",
         "dicomConnection" : [ {
           "cn" : "dicom",
           "dcmBlacklistedHostname" : [ ],
@@ -346,6 +361,7 @@
           "FINDSCU" : {
             "dcmAcceptedCallingAETitle" : [ ],
             "dcmTransferCapability" : [ ],
+            "dcmUUID" : "36b7c9cd-240c-49a5-8bc7-bf8d8eaf2f28",
             "dicomAETitle" : "FINDSCU",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -364,6 +380,7 @@
       },
       "getscu" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "861ecb83-6b46-4714-a428-c499c3b649ca",
         "dicomConnection" : [ {
           "cn" : "dicom",
           "dcmBlacklistedHostname" : [ ],
@@ -389,6 +406,7 @@
           "GETSCU" : {
             "dcmAcceptedCallingAETitle" : [ ],
             "dcmTransferCapability" : [ ],
+            "dcmUUID" : "eefe87e8-a0f6-4079-a87d-8cf087831a51",
             "dicomAETitle" : "GETSCU",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -407,6 +425,7 @@
       },
       "movescu" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "566f4cd8-b3b4-4a5b-83e9-8e4e210045a5",
         "dicomConnection" : [ ],
         "dicomDeviceName" : "movescu",
         "dicomInstalled" : true,
@@ -422,6 +441,7 @@
       },
       "hl7snd" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "d1ef1b7a-86a2-408b-99dc-029d690b0eca",
         "dicomConnection" : [ ],
         "dicomDeviceName" : "hl7snd",
         "dicomInstalled" : true,
@@ -437,6 +457,7 @@
       },
       "hl7rcv" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "a6b5fee1-7d1b-466c-bfcc-90c129569d8f",
         "deviceExtensions" : {
           "HL7DeviceExtension" : {
             "hl7Apps" : {
@@ -482,6 +503,7 @@
       },
       "syslog" : {
         "dcmLimitOpenAssociations" : 0,
+        "dcmUUID" : "8c83c863-ea6f-4f5f-88dc-a050f01a0e92",
         "deviceExtensions" : {
           "AuditRecordRepository" : {
             "dicomNetworkConnectionReference" : [ "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='syslog']/dicomConnection[cn='audit-udp']" ]
@@ -516,6 +538,7 @@
         "dcmTrustStorePin" : "secret",
         "dcmTrustStoreType" : "JKS",
         "dcmTrustStoreURL" : "${jboss.server.config.url}/dcm4chee-arc/key.jks",
+        "dcmUUID" : "03569d6b-7980-4ec1-9469-8d4955175e80",
         "deviceExtensions" : {
           "ArchiveDeviceExtension" : {
             "ExternalArchivesMap" : { },
@@ -2429,6 +2452,7 @@
               "dicomTransferRole" : "SCU",
               "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
             } ],
+            "dcmUUID" : "a341ccf2-6e72-4cb1-9a6d-b35f059bdb41",
             "dicomAETitle" : "DCM4CHEE",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -3200,6 +3224,7 @@
               "dicomTransferRole" : "SCU",
               "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
             } ],
+            "dcmUUID" : "766a3a74-a5e4-40be-8759-7055cbc333d5",
             "dicomAETitle" : "DCM4CHEE_ADMIN",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -4775,6 +4800,7 @@
               "dicomTransferRole" : "SCU",
               "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
             } ],
+            "dcmUUID" : "756eab5d-a814-42b5-8cce-09d42a07de4c",
             "dicomAETitle" : "DCM4CHEE_FETCH",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,
@@ -5546,6 +5572,7 @@
               "dicomTransferRole" : "SCU",
               "dicomTransferSyntax" : [ "1.2.840.10008.1.2" ]
             } ],
+            "dcmUUID" : "7a8c5a30-ecb0-4b8f-b7b6-d67603b055cc",
             "dicomAETitle" : "DCM4CHEE_TRASH",
             "dicomApplicationCluster" : [ ],
             "dicomAssociationAcceptor" : true,

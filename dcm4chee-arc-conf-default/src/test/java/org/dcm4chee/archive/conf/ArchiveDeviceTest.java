@@ -151,15 +151,15 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
         Device anotherArc = createArchiveDevice("dcm4chee-arc", arrDevice);
         anotherArc.removeApplicationEntity("DCM4CHEE");
 
-        ApplicationEntity anotherAe = createAnotherAE("DCM4CHEE",
+        ApplicationEntity anotherAe = createAnotherAE("DCM4CHEE1",
                 null, PIX_MANAGER);
         anotherArc.addApplicationEntity(anotherAe);
 
         //anotherAe.getAEExtension(ArchiveAEExtension.class).reconfigure(from);
 
-        arcLoaded.reconfigure(anotherArc);
+        anotherArc.reconfigure(arc);
 
-        res = DeepEquals.deepEquals(anotherArc, arcLoaded);
+        res = DeepEquals.deepEquals(anotherArc, arc);
 
         assertTrue("Reconfigure", res);
 
