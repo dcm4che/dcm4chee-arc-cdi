@@ -37,21 +37,19 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.iocm.impl;
 
-import java.sql.Timestamp;
-import java.util.Collection;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.filemgmt.FileMgmt;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.iocm.RejectionDeleteService;
 import org.dcm4chee.archive.iocm.RejectionServiceDeleteBean;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import java.sql.Timestamp;
+import java.util.Collection;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
