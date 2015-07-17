@@ -87,9 +87,6 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigurableProperty(name = "dcmWadoOverlayRendering", defaultValue = "true")
     private boolean wadoOverlayRendering;
 
-    @ConfigurableProperty(name = "dcmVisibleImageClasses")
-    private String[] visibleImageSRClasses = {};
-
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
     private String storageSystemGroupID;
 
@@ -237,14 +234,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setWadoSupportedSRClasses(String[] wadoSupportedSRClasses) {
         this.wadoSupportedSRClasses = wadoSupportedSRClasses;
-    }
-
-    public String[] getVisibleImageSRClasses() {
-        return visibleImageSRClasses;
-    }
-
-    public void setVisibleImageSRClasses(String[] visibleImageSRClasses) {
-        this.visibleImageSRClasses = visibleImageSRClasses;
     }
 
     public boolean isWadoOverlayRendering() {
@@ -587,7 +576,6 @@ public class ArchiveAEExtension extends AEExtension {
                 personNameComponentOrderInsensitiveMatching);
         queryParam.setMatchUnknown(matchUnknown);
         queryParam.setMatchLinkedPatientIDs(matchLinkedPatientIDs);
-        queryParam.setVisibleImageSRClasses(visibleImageSRClasses);
         queryParam.setAccessControlIDs(accessControlIDs);
         queryParam.setQueryRetrieveView(
                 arcDev.getQueryRetrieveView(queryRetrieveViewID));

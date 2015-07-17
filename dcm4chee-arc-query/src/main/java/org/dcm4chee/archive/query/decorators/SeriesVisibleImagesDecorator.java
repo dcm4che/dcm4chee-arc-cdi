@@ -40,28 +40,42 @@ package org.dcm4chee.archive.query.decorators;
 
 import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
+
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.query.VisibleSOPClassDetector;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
+import javax.inject.Inject;
+
 @DynamicDecorator
 public class SeriesVisibleImagesDecorator extends DelegatingDerivedSeriesFields {
+    private static final Logger LOG = LoggerFactory.getLogger(SeriesVisibleImagesDecorator.class);
+    
     private int numberOfVisibleImages=0;
-
+    
+    @Inject
+    VisibleSOPClassDetector visibleSOPClassDetector;
+    
     @Override
     public void addInstance(Tuple result, QueryParam param) {
         getNextDecorator().addInstance(result, param);
         AttributesBlob blob = result.get(QInstance.instance.attributesBlob);
         String sopClass = result.get(QInstance.instance.sopClassUID);
-        if (param.getVisibleImageSRClasses() != null &&
-                param.getVisibleImageSRClasses().length>0 &&
-                Arrays.asList(param.getVisibleImageSRClasses()).contains(sopClass))
-            numberOfVisibleImages+= blob != null ? blob.getAttributes()
+
+        if (visibleSOPClassDetector.isVisibleSOPClass(sopClass)) {
+            int numberOfVisibleImagesInInstance = blob != null ? blob.getAttributes()
                     .getInt(Tag.NumberOfFrames, 1) : 1;
+            numberOfVisibleImages+= numberOfVisibleImagesInInstance;
+            LOG.debug("Found {} frames in instance. Number of visible images is now {}.", numberOfVisibleImagesInInstance, numberOfVisibleImages);
+        }
     }
 
     @Override
