@@ -81,6 +81,12 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-location-mgmt</artifactId>
+      <version>${project.version}</version>
+      <type>ejb</type>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-store-scp</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -93,6 +99,7 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-store-scu</artifactId>
       <version>${project.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -291,6 +298,8 @@
     <dependency>
       <groupId>org.dcm4che.dcm4chee-conf</groupId>
       <artifactId>dcm4chee-conf-cdi</artifactId>
+      <version>${dcm4chee-conf.version}</version>
+      <type>ejb</type>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-monitoring</groupId>
@@ -313,6 +322,33 @@
 	      <version>1.55.0</version>
 	    </dependency>    
 	  </dependencies>      
+    </profile>
+    <profile>
+      <id>csp</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-arc</groupId>
+          <artifactId>dcm4chee-arc-conf-default</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+       </dependencies>
+    </profile>
+    <profile>
+      <id>conf-db</id>
+      <activation>
+        <property>
+          <name>conf-db</name>
+          <value>true</value>
+        </property>
+      </activation>     
+      <dependencies>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-conf</groupId>
+          <artifactId>dcm4chee-conf-db</artifactId>
+          <version>${dcm4chee-conf.version}</version>
+          <type>ejb</type>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>perf-monitoring</id>

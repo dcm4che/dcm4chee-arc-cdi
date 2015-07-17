@@ -38,7 +38,7 @@
 
 package org.dcm4chee.archive.qc.test;
 
-import java.util.Collection;
+import java.util.List;
 
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
@@ -72,7 +72,7 @@ public class ChangeRequesterMockDecorator implements ChangeRequesterService {
     private Device device;
 
     @Override
-    public void scheduleChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs,
+    public void scheduleChangeRequest(List<QCEventInstance> sourceInstanceUIDs, List<QCEventInstance> updatedInstanceUIDs,
             Instance rejNote) {
         LOG.info("############## scheduleChangeRequest called!count:{}",++count);
         IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
@@ -81,7 +81,7 @@ public class ChangeRequesterMockDecorator implements ChangeRequesterService {
     }
     
     @Override
-    public void scheduleUpdateOnlyChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs) {
+    public void scheduleUpdateOnlyChangeRequest(List<QCEventInstance> updatedInstanceUIDs) {
         LOG.info("############## scheduleUpdateOnlyChangeRequest called!count:{}",++count);
         IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
         String[] aets = cfg != null ? cfg.getNoneIocmDestinations() : null;

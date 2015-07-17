@@ -56,6 +56,7 @@ import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.QAttributesBlob;
 import org.dcm4chee.archive.entity.QCode;
 import org.dcm4chee.archive.entity.QContentItem;
+import org.dcm4chee.archive.entity.QExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QIssuer;
 import org.dcm4chee.archive.entity.QPatient;
@@ -418,6 +419,12 @@ public class QueryBuilder {
                 true));
         builder.and(hideRejectedInstance(queryParam));
         builder.and(hideRejectionNote(queryParam));
+        builder.and(hideDummyInstances());
+    }
+
+    public static Predicate hideDummyInstances() {
+        return QInstance.instance.locations.isNotEmpty()
+                .or(QInstance.instance.externalRetrieveLocations.isNotEmpty());
     }
 
     public static Predicate hideRejectedInstance(QueryParam queryParam) {

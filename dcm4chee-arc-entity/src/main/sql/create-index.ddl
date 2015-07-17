@@ -101,3 +101,5 @@ create index qc_action_hist_cr_tm_idx on qc_action_history (created_time);
 
 create index store_verify_web_tid_idx on store_verify_web (transaction_id);
 create index store_verify_dimse_tid_idx on store_verify_dimse (transaction_id);
+
+create index study_on_stg_sys_idx on study_on_stg_sys (access_time);

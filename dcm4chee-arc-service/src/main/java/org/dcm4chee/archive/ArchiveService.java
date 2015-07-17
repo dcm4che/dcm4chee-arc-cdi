@@ -37,6 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive;
 
+import org.dcm4che3.conf.core.api.ConfigChangeEvent;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.dto.Participant;
 /**
@@ -55,5 +56,7 @@ public interface ArchiveService {
     void start(Participant source) throws Exception;
 
     void stop(Participant source);
+    
+    void onConfigChange(ConfigChangeEvent configChange);
     
 }

@@ -50,6 +50,8 @@ import javax.persistence.Table;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.storage.conf.Availability;
 
+import java.util.Date;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
@@ -77,6 +79,10 @@ public class SeriesQueryAttributes {
 
     @Column(name = "num_visible_instances")
     private int numberOfVisibleInstances;
+
+    @Column(name = "last_update_time")
+    private Date lastUpdateTime;
+
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "series_fk")
@@ -128,6 +134,14 @@ public class SeriesQueryAttributes {
 
     public void setNumberOfVisibleInstances(int numberOfVisibleInstances) {
         this.numberOfVisibleInstances = numberOfVisibleInstances;
+    }
+
+    public Date getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    public void setLastUpdateTime(Date lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
     }
 
     public Series getSeries() {

@@ -38,8 +38,12 @@
 
 package org.dcm4chee.archive.conf.producer;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Disposes;
+import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
+
 import org.dcm4che3.conf.api.ApplicationEntityCache;
-import org.dcm4che3.conf.api.DicomConfigurationBuilderAddon;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.conf.api.hl7.HL7ApplicationCache;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
@@ -47,9 +51,9 @@ import org.dcm4che3.conf.api.hl7.IHL7ApplicationCache;
 import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
 import org.dcm4che3.conf.api.internal.ExtendedDicomConfiguration;
 import org.dcm4che3.conf.core.api.ConfigurationException;
-import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
 import org.dcm4che3.net.ExternalArchiveAEExtension;
+import org.dcm4che3.net.TCGroupConfigAEExtension;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
@@ -63,12 +67,6 @@ import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Disposes;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
-import java.util.Iterator;
-
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
@@ -77,20 +75,14 @@ public class DicomConfigurationProducer {
 
     private static final Logger LOG =
             LoggerFactory.getLogger(DicomConfigurationProducer.class);
+    
+    @Inject
+    private DicomConfigurationBuilder builder;
 
     @Produces
     @ApplicationScoped
-    public static DicomConfigurationManager getDicomConfiguration(Instance<DicomConfigurationBuilderAddon> builderAddons)
+    public DicomConfigurationManager getDicomConfiguration()
             throws ConfigurationException {
-        DicomConfigurationBuilder builder = DicomConfigurationBuilder
-                .newConfigurationBuilder(System.getProperties());
-
-        // Allow configuration bootstrap extensibility through CDI
-        for (DicomConfigurationBuilderAddon addon : builderAddons) {
-            LOG.info("Registering dicom configuration add-on: " + addon.getClass().toString());
-            builder.registerAddon(addon);
-        }
-
         builder.registerDeviceExtension(ArchiveDeviceExtension.class);
         builder.registerDeviceExtension(StorageDeviceExtension.class);
         builder.registerDeviceExtension(HL7DeviceExtension.class);
@@ -101,6 +93,7 @@ public class DicomConfigurationProducer {
         builder.registerAEExtension(ArchiveAEExtension.class);
         builder.registerAEExtension(WebServiceAEExtension.class);
         builder.registerAEExtension(ExternalArchiveAEExtension.class);
+        builder.registerAEExtension(TCGroupConfigAEExtension.class);
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
         return builder.build();
     }

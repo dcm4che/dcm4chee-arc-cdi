@@ -432,4 +432,16 @@
       </id>
     </attributes>
   </entity>
+
+  <entity class="StudyOnStorageSystemGroup">
+    <table name="study_on_stg_sys"/>
+    <sequence-generator name="seq" sequence-name="study_on_stg_sys_pks" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
 </entity-mappings>

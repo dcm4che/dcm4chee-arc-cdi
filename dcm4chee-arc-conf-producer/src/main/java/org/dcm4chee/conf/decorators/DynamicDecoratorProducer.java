@@ -1,18 +1,15 @@
 package org.dcm4chee.conf.decorators;
 
 import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.query.DerivedSeriesFields;
+import org.dcm4chee.archive.query.DerivedStudyFields;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.dcm4chee.conf.decorators.ConfiguredDynamicDecorators;
-import org.dcm4chee.conf.decorators.DelegatingServiceImpl;
-import org.dcm4chee.conf.decorators.DynamicDecorator;
-import org.dcm4chee.conf.decorators.ServiceDecorator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
@@ -41,7 +38,16 @@ public class DynamicDecoratorProducer {
 	@Inject
 	@DynamicDecorator
 	Instance<DelegatingServiceImpl<CStoreSCUService>> dynamicCStoreSCUDecorators;
-	
+
+	@Inject
+	@DynamicDecorator
+	Instance<DelegatingServiceImpl<DerivedStudyFields>> dynamicDerivedStudyFieldsDecorators;
+
+	@Inject
+	@DynamicDecorator
+	Instance<DelegatingServiceImpl<DerivedSeriesFields>> dynamicDerivedSeriesFieldsDecorators;
+
+
 	@Inject
 	private ServiceDecorator<StoreService> storeDecorators;
 	
@@ -56,6 +62,12 @@ public class DynamicDecoratorProducer {
 	
 	@Inject
 	private ServiceDecorator<CStoreSCUService> cstoreSCUDecorators;
+
+	@Inject
+	private ServiceDecorator<DerivedStudyFields> derivedStudyDecorators;
+
+	@Inject
+	private ServiceDecorator<DerivedSeriesFields> derivedSeriesDecorators;
 	
 	@Produces
 	@ConfiguredDynamicDecorators
@@ -86,5 +98,20 @@ public class DynamicDecoratorProducer {
 	public Collection<DelegatingServiceImpl<CStoreSCUService>> getConfiguredCStoreSCUServiceDynamicDecorators() {
 		return cstoreSCUDecorators.getOrderedDecorators(dynamicCStoreSCUDecorators, CStoreSCUService.class.getName());
 	}
-	
+
+	@Produces @RequestScoped
+	@ConfiguredDynamicDecorators
+	public Collection<DelegatingServiceImpl<DerivedStudyFields>> getConfiguredDerivedStudyFieldsDynamicDecorators() {
+		return derivedStudyDecorators.getOrderedDecorators(dynamicDerivedStudyFieldsDecorators,
+				DerivedStudyFields.class.getName(), false); //false => not using cache
+	}
+
+	@Produces @RequestScoped
+	@ConfiguredDynamicDecorators
+	public Collection<DelegatingServiceImpl<DerivedSeriesFields>> getConfiguredDerivedSeriesFieldsDynamicDecorators() {
+		return derivedSeriesDecorators.getOrderedDecorators
+				(dynamicDerivedSeriesFieldsDecorators,
+				DerivedSeriesFields.class.getName(), false); //false => not using cache
+	}
+
 }

@@ -26,6 +26,9 @@ public final class ArchivingRule implements Serializable {
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
     private String[] storageSystemGroupIDs;
 
+    @ConfigurableProperty(name = "dcmExternalSystemsDeviceName")
+    private String[] externalSystemsDeviceName;
+
     @ConfigurableProperty(name = "dcmDelayReasonCode")
     private Code delayReasonCode;
 
@@ -43,6 +46,14 @@ public final class ArchivingRule implements Serializable {
 
     public void setStorageSystemGroupIDs(String ... storageSystemGroupIDs) {
         this.storageSystemGroupIDs = storageSystemGroupIDs;
+    }
+
+    public String[] getExternalSystemsDeviceName() {
+        return externalSystemsDeviceName;
+    }
+
+    public void setExternalSystemsDeviceName(String[] externalSystemsDeviceName) {
+        this.externalSystemsDeviceName = externalSystemsDeviceName;
     }
 
     public int getDelayAfterInstanceStored() {

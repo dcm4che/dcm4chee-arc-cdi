@@ -96,6 +96,10 @@ public class ArchivingTask implements Serializable {
     private String targetStorageSystemGroupID;
 
     @Basic(optional = false)
+    @Column(name = "target_external_device", updatable = false)
+    private String targetExternalDevice;
+
+    @Basic(optional = false)
     @Column(name = "source_stg_group_id", updatable = false)
     private String sourceStorageSystemGroupID;
 
@@ -162,6 +166,14 @@ public class ArchivingTask implements Serializable {
 
     public void setTargetName(String targetName) {
         this.targetName = targetName;
+    }
+
+    public String getTargetExternalDevice() {
+        return targetExternalDevice;
+    }
+
+    public void setTargetExternalDevice(String targetExternalDevice) {
+        this.targetExternalDevice = targetExternalDevice;
     }
 
     @Override

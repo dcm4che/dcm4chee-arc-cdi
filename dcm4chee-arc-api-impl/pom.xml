@@ -110,6 +110,11 @@
       <version>1.2.0.Final</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+       <groupId>org.easymock</groupId>
+       <artifactId>easymock</artifactId>
+       <scope>provided</scope>
+    </dependency>
     <!-- end testing dependencies -->
   </dependencies>
 

@@ -209,6 +209,10 @@ public class Series implements Serializable {
     @Column(name = "src_aet")
     private String sourceAET;
 
+    @Basic(optional = false)
+    @Column(name = "is_rejected")
+    private boolean isRejected;
+
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
@@ -374,6 +378,14 @@ public class Series implements Serializable {
         this.version = version;
     }
     
+    public boolean isRejected() {
+        return isRejected;
+    }
+
+    public void setRejected(boolean isRejected) {
+        this.isRejected = isRejected;
+    }
+
     public Collection<RequestAttributes> getRequestAttributes() {
         return requestAttributes;
     }

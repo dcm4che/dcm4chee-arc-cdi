@@ -1257,6 +1257,19 @@ m-equality: integerMatch
 m-syntax: 1.3.6.1.4.1.1466.115.121.1.27
 m-singleValue: TRUE
 
+dn: m-oid=1.2.40.0.13.1.15.10.3.99, ou=attributetypes, cn=dcm4chee-archive, ou=s
+ chema
+objectclass: metaAttributeType
+objectclass: metaTop
+objectclass: top
+m-oid: 1.2.40.0.13.1.15.10.3.99
+m-name: dcmDeletionServicePollInterval
+m-description: The poll interval for the deletion service in seconds. Default
+ value is 0 for no run
+m-equality: integerMatch
+m-syntax: 1.3.6.1.4.1.1466.115.121.1.27
+m-singleValue: TRUE
+
 dn: ou=comparators, cn=dcm4chee-archive, ou=schema
 objectclass: organizationalUnit
 objectclass: top
@@ -1317,6 +1330,7 @@ m-may: dcmWadoAttributesStaleTimeout
 m-may: dcmRejectedObjectsCleanUpPollInterval
 m-may: dcmRejectedObjectsCleanUpMaxNumberOfDeletes
 m-may: dcmMPPSEmulationPollInterval
+m-may: dcmDeletionServicePollInterval
 m-may: dcmArchivingSchedulerPollInterval
 m-may: dcmSyncLocationStatusPollInterval
 m-may: dcmSyncLocationStatusCheckDelay

@@ -41,6 +41,7 @@ package org.dcm4chee.archive.query.impl;
 import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
 import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.query.DerivedStudyFields;
 import org.dcm4chee.storage.conf.Availability;
@@ -118,7 +119,7 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
     }
 
     @Override
-    public void addInstance(Tuple result) {
+    public void addInstance(Tuple result, QueryParam param) {
         String[] retrieveAETs1 = StringUtils.split(
                 result.get(QInstance.instance.retrieveAETs),
                 '\\');
@@ -143,5 +144,17 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
                 .updatedTime);
         if (lastUpdateTime == null || instanceUpdateTime.after(lastUpdateTime))
             lastUpdateTime = instanceUpdateTime;
+    }
+    
+    @Override
+    public void reset() {
+        numberOfInstances = 0;
+        retrieveAETs = null;
+        availability = null;
+        seriesPKs.clear();
+        mods.clear();
+        cuids.clear();
+        lastUpdateTime = null;
+        numberOfVisibleImages = 0;
     }
 }

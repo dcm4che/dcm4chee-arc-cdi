@@ -38,7 +38,7 @@
 
 package org.dcm4chee.archive.iocm.client;
 
-import java.util.Collection;
+import java.util.List;
 
 import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Instance;
@@ -49,6 +49,6 @@ import org.dcm4chee.archive.entity.Instance;
  */
 public interface ChangeRequesterService {
 
-    public void scheduleChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs, Instance rejNote);
-    public void scheduleUpdateOnlyChangeRequest(Collection<QCEventInstance> updatedInstanceUIDs);
+    public void scheduleChangeRequest(List<QCEventInstance> sourceInstanceUIDs, List<QCEventInstance> updatedInstanceUIDs, Instance rejNote);
+    public void scheduleUpdateOnlyChangeRequest(List<QCEventInstance> updatedInstanceUIDs);
 }

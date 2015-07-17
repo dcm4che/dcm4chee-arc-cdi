@@ -156,13 +156,17 @@ public class Utils {
 
     public static void setSeriesQueryAttributes(Attributes attrs,
             int numberOfSeriesRelatedInstances, int numberVisibleInstances,
-            PrivateTag numberVisibleInstancesTag) {
+            PrivateTag numberVisibleInstancesTag, Date lastUpdateTime,
+            PrivateTag lastUpdateTimeTag) {
         attrs.setInt(Tag.NumberOfSeriesRelatedInstances, VR.IS,
                 numberOfSeriesRelatedInstances);
         if (numberVisibleInstancesTag!=null)
             attrs.setInt(numberVisibleInstancesTag.getCreator(),
                     numberVisibleInstancesTag.getIntTag(), VR.IS,
                     numberVisibleInstances);
+        if (lastUpdateTimeTag!=null && lastUpdateTime!=null)
+            attrs.setDate(lastUpdateTimeTag.getCreator(),
+                    lastUpdateTimeTag.getIntTag(), VR.DT, lastUpdateTime);
     }
 
     public static String[] decodeAETs(String aetsSeparated) {

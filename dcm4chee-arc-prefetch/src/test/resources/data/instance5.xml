@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NativeDicomModel xml:space="preserve">
+<DicomAttribute keyword="FileMetaInformationVersion" tag="00020001" vr="OB">
+<InlineBinary>AAE=</InlineBinary>
+</DicomAttribute>
+<DicomAttribute keyword="MediaStorageSOPClassUID" tag="00020002" vr="UI">
+<Value number="1">1.2.840.10008.5.1.4.1.1.7</Value>
+</DicomAttribute>
+<DicomAttribute keyword="MediaStorageSOPInstanceUID" tag="00020003" vr="UI">
+<Value number="1">2.0.1.5.0.6.1.6.1.1.1.5</Value>
+</DicomAttribute>
+<DicomAttribute keyword="TransferSyntaxUID" tag="00020010" vr="UI">
+<Value number="1">1.2.840.10008.1.2</Value>
+</DicomAttribute>
+<DicomAttribute keyword="ImplementationClassUID" tag="00020012" vr="UI">
+<Value number="1">1.2.124.113532.3510.50</Value>
+</DicomAttribute>
+<DicomAttribute keyword="ImplementationVersionName" tag="00020013" vr="SH">
+<Value number="1">DCM4CHEMAY2015</Value>
+</DicomAttribute>
+<DicomAttribute keyword="SourceApplicationEntityTitle" tag="00020016" vr="SH">
+<Value number="1">DCM4CHE</Value>
+</DicomAttribute>
+<DicomAttribute keyword="SOPClassUID" tag="00080016" vr="UI">
+<Value number="1">1.2.840.10008.5.1.4.1.1.7</Value>
+</DicomAttribute>
+<DicomAttribute keyword="SOPInstanceUID" tag="00080018" vr="UI">
+<Value number="1">2.0.1.5.0.6.1.6.1.1.1.5</Value>
+</DicomAttribute>
+<DicomAttribute keyword="StudyDate" tag="00080020" vr="DA">
+<Value number="1">19961225</Value>
+</DicomAttribute>
+<DicomAttribute keyword="StudyTime" tag="00080030" vr="TM">
+<Value number="1">010101.9999</Value>
+</DicomAttribute>
+<DicomAttribute keyword="AccessionNumber" tag="00080050" vr="SH">
+<Value number="1">A001001</Value>
+</DicomAttribute>
+<DicomAttribute keyword="Modality" tag="00080060" vr="CS">
+<Value number="1">SC</Value>
+</DicomAttribute>
+<DicomAttribute keyword="ConversionType" tag="00080064" vr="CS"/>
+<DicomAttribute keyword="ReferringPhysicianName" tag="00080090" vr="PN">
+<PersonName number="1">
+<Alphabetic>
+<FamilyName>Black</FamilyName>
+<GivenName>Francis</GivenName>
+<MiddleName>T.</MiddleName>
+<NamePrefix>Dr.</NamePrefix>
+</Alphabetic>
+</PersonName>
+</DicomAttribute>
+<DicomAttribute keyword="StationName" tag="00081010" vr="SH">
+<Value number="1">DCM4CHE</Value>
+</DicomAttribute>
+<DicomAttribute keyword="StudyDescription" tag="00081030" vr="LO">
+<Value number="1">Software</Value>
+</DicomAttribute>
+<DicomAttribute keyword="AdmittingDiagnosesDescription" tag="00081080" vr="LO"/>
+<DicomAttribute keyword="PatientName" tag="00100010" vr="PN">
+<PersonName number="1">
+<Alphabetic>
+<FamilyName>test</FamilyName>
+<GivenName>tester</GivenName>
+<NamePrefix>testing</NamePrefix>
+</Alphabetic>
+</PersonName>
+</DicomAttribute>
+<DicomAttribute keyword="PatientID" tag="00100020" vr="LO">
+<Value number="1">2.0.1.5.0.6.1.6.1</Value>
+</DicomAttribute>
+<DicomAttribute keyword="PatientBirthDate" tag="00100030" vr="DA">
+<Value number="1">19900624</Value>
+</DicomAttribute>
+<DicomAttribute keyword="PatientSex" tag="00100040" vr="CS">
+<Value number="1">M</Value>
+</DicomAttribute>
+<DicomAttribute keyword="StudyInstanceUID" tag="0020000D" vr="UI">
+<Value number="1">2.0.1.5.0.6.1.6.1.1</Value>
+</DicomAttribute>
+<DicomAttribute keyword="SeriesInstanceUID" tag="0020000E" vr="UI">
+<Value number="1">2.0.1.5.0.6.1.6.1.1.1</Value>
+</DicomAttribute>
+<DicomAttribute keyword="StudyID" tag="00200010" vr="SH">
+<Value number="1">S001001</Value>
+</DicomAttribute>
+<DicomAttribute keyword="SeriesNumber" tag="00200011" vr="IS">
+<Value number="1">1</Value>
+</DicomAttribute>
+<DicomAttribute keyword="InstanceNumber" tag="00200013" vr="IS">
+<Value number="1">5</Value>
+</DicomAttribute>
+<DicomAttribute keyword="FrameOfReferenceUID" tag="00200052" vr="UI">
+<Value number="1">2.0.1.5.0.6.1.6.1.1.1</Value>
+</DicomAttribute>
+<DicomAttribute keyword="SamplesPerPixel" tag="00280002" vr="US">
+<Value number="1">1</Value>
+</DicomAttribute>
+<DicomAttribute keyword="PhotometricInterpretation" tag="00280004" vr="CS">
+<Value number="1">MONOCHROME2</Value>
+</DicomAttribute>
+<DicomAttribute keyword="Rows" tag="00280010" vr="US">
+<Value number="1">512</Value>
+</DicomAttribute>
+<DicomAttribute keyword="Columns" tag="00280011" vr="US">
+<Value number="1">512</Value>
+</DicomAttribute>
+<DicomAttribute keyword="PixelSpacing" tag="00280030" vr="DS">
+<Value number="1">1.0</Value>
+<Value number="2">1.0</Value>
+</DicomAttribute>
+<DicomAttribute keyword="BitsAllocated" tag="00280100" vr="US">
+<Value number="1">8</Value>
+</DicomAttribute>
+<DicomAttribute keyword="BitsStored" tag="00280101" vr="US">
+<Value number="1">8</Value>
+</DicomAttribute>
+<DicomAttribute keyword="HighBit" tag="00280102" vr="US">
+<Value number="1">7</Value>
+</DicomAttribute>
+<DicomAttribute keyword="PixelRepresentation" tag="00280103" vr="US">
+<Value number="1">0</Value>
+</DicomAttribute>
+<DicomAttribute keyword="WindowCenter" tag="00281050" vr="DS">
+<Value number="1">127</Value>
+</DicomAttribute>
+<DicomAttribute keyword="WindowWidth" tag="00281051" vr="DS">
+<Value number="1">255</Value>
+</DicomAttribute>
+<DicomAttribute keyword="RescaleIntercept" tag="00281052" vr="DS">
+<Value number="1">0.0</Value>
+</DicomAttribute>
+<DicomAttribute keyword="RescaleSlope" tag="00281053" vr="DS">
+<Value number="1">1.0</Value>
+</DicomAttribute>
+</NativeDicomModel>

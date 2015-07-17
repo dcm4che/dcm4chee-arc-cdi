@@ -193,8 +193,7 @@ public class MPPSEmulatorImpl implements MPPSEmulator {
                     try {
                         emulateAllScheduled();
                     } catch (DicomServiceException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        LOG.error("MPPS Emulator Service: Error starting service - reason {}",e);
                     }
                 }
             }, pollInterval, pollInterval, TimeUnit.SECONDS);

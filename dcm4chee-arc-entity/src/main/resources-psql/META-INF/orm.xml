@@ -99,7 +99,7 @@
   </entity>
 
   <entity class="StoreVerifyWeb">
-    <table name="store_vetrify_web" />
+    <table name="store_verify_web" />
     <sequence-generator name="seq" sequence-name="store_verify_web_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -376,4 +376,16 @@
       </id>
     </attributes>
   </entity>
+
+  <entity class="StudyOnStorageSystemGroup">
+    <table name="study_on_stg_sys"/>
+    <sequence-generator name="seq" sequence-name="study_on_stg_sys_pks" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
 </entity-mappings>

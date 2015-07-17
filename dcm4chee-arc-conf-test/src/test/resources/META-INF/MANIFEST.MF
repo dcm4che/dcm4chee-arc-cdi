@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Dependencies: org.dcm4che.conf.api, org.dcm4che.conf.api-hl7, org.dcm4che.net-audit, org.dcm4che.conf.core, org.dcm4che.net-imageio, org.dcm4che.net-hl7, org.dcm4che.soundex
-

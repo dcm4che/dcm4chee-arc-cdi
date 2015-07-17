@@ -52,7 +52,7 @@ public class InstanceAlreadyRejectedException extends RuntimeException {
     private final Instance instance;
 
     public InstanceAlreadyRejectedException(Instance instance) {
-        super(MessageFormat.format("{} already rejected by {}",
+        super(MessageFormat.format("{0} already rejected by {1}",
                 instance, instance.getRejectionNoteCode()));
         this.instance = instance;
     }

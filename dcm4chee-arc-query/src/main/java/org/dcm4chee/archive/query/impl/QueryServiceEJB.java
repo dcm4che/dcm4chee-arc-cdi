@@ -71,6 +71,7 @@ public class QueryServiceEJB {
         QStudy.study.pk,
         QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances,
         QSeriesQueryAttributes.seriesQueryAttributes.numberOfVisibleInstances,
+        QSeriesQueryAttributes.seriesQueryAttributes.lastUpdateTime,
         QStudyQueryAttributes.studyQueryAttributes.numberOfInstances,
         QStudyQueryAttributes.studyQueryAttributes.numberOfSeries,
         QStudyQueryAttributes.studyQueryAttributes.modalitiesInStudy,
@@ -113,14 +114,18 @@ public class QueryServiceEJB {
         Integer numberOfSeriesRelatedInstances =
                 result.get(QSeriesQueryAttributes.seriesQueryAttributes.numberOfInstances);
         Integer numberOfSeriesVisibleInstances;
+        Date seriesLastUpdateTime;
         if (numberOfSeriesRelatedInstances == null) {
             SeriesQueryAttributes seriesQueryAttributes =
                     calculateSeriesQueryAttributes(seriesPk, context.getQueryParam());
             numberOfSeriesRelatedInstances = seriesQueryAttributes.getNumberOfInstances();
             numberOfSeriesVisibleInstances = seriesQueryAttributes.getNumberOfVisibleInstances();
+            seriesLastUpdateTime = seriesQueryAttributes.getLastUpdateTime();
         } else {
             numberOfSeriesVisibleInstances = result.get(QSeriesQueryAttributes
                     .seriesQueryAttributes.numberOfVisibleInstances);
+            seriesLastUpdateTime = result.get(QSeriesQueryAttributes
+                    .seriesQueryAttributes.lastUpdateTime);
         }
 
 
@@ -179,7 +184,9 @@ public class QueryServiceEJB {
         Utils.setSeriesQueryAttributes(attrs,
                 numberOfSeriesRelatedInstances,
                 numberOfSeriesVisibleInstances,
-                ade.getPrivateDerivedFields().findSeriesNumberOfVisibleInstancesTag());
+                ade.getPrivateDerivedFields().findSeriesNumberOfVisibleInstancesTag(),
+                seriesLastUpdateTime,
+                ade.getPrivateDerivedFields().findSeriesUpdateTimeTag());
         return attrs;
     }
 
@@ -187,6 +194,7 @@ public class QueryServiceEJB {
         BooleanBuilder builder = new BooleanBuilder(initial);
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNote(queryParam));
+        builder.and(QueryBuilder.hideDummyInstances());
         return builder;
     }
 
@@ -202,9 +210,9 @@ public class QueryServiceEJB {
                 .where(createPredicate(
                         QSeries.series.study.pk.eq(studyPk), queryParam))
                 .iterate(studyDerivedFields.fields())) {
-
+        	studyDerivedFields.reset();
             while (results.hasNext()) {
-                studyDerivedFields.addInstance(results.next());
+                studyDerivedFields.addInstance(results.next(), queryParam);
             }
         }
         StudyQueryAttributes queryAttrs = new StudyQueryAttributes();
@@ -220,6 +228,7 @@ public class QueryServiceEJB {
             queryAttrs.setRetrieveAETs(studyDerivedFields.getRetrieveAETs());
             queryAttrs.setAvailability(studyDerivedFields.getAvailability());
             queryAttrs.setLastUpdateTime(studyDerivedFields.getLastUpdateTime());
+            queryAttrs.setNumberOfVisibleInstances(studyDerivedFields.getNumberOfVisibleImages());
         }
         em.persist(queryAttrs);
         return queryAttrs;
@@ -236,8 +245,9 @@ public class QueryServiceEJB {
                         QInstance.instance.series.pk.eq(seriesPk), queryParam))
                 .iterate(seriesDerivedFields.fields())) {
 
+        	seriesDerivedFields.reset();
             while (results.hasNext()) {
-                seriesDerivedFields.addInstance(results.next());
+                seriesDerivedFields.addInstance(results.next(), queryParam);
             }
         }
         SeriesQueryAttributes queryAttrs = new SeriesQueryAttributes();
@@ -247,6 +257,8 @@ public class QueryServiceEJB {
         if (seriesDerivedFields.getNumberOfInstances() > 0) {
             queryAttrs.setRetrieveAETs(seriesDerivedFields.getRetrieveAETs());
             queryAttrs.setAvailability(seriesDerivedFields.getAvailability());
+            queryAttrs.setLastUpdateTime(seriesDerivedFields.getLastUpdateTime());
+            queryAttrs.setNumberOfVisibleInstances(seriesDerivedFields.getNumberOfVisibleImages());
         }
         em.persist(queryAttrs);
         return queryAttrs;

@@ -37,11 +37,15 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.prefetch.impl;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.locationmgmt.LocationMgmt;
+import org.dcm4chee.archive.prefetch.Fetched;
+import org.dcm4chee.storage.conf.Availability;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ejb.Stateless;
 import javax.enterprise.event.Event;
@@ -49,16 +53,11 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
-
-import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.Location;
-import org.dcm4chee.archive.filemgmt.FileMgmt;
-import org.dcm4chee.archive.prefetch.Fetched;
-import org.dcm4chee.storage.conf.Availability;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Steve Kroetsch<stevekroetsch@hotmail.com>
@@ -76,7 +75,7 @@ public class PriorsCacheProviderEJB {
     private EntityManager em;
 
     @Inject
-    private FileMgmt fileMgmt;
+    private LocationMgmt locationMgmt;
 
     @Inject
     @Fetched
@@ -111,6 +110,7 @@ public class PriorsCacheProviderEJB {
                         "{} already cached to Storage System Group {} - schedule for delete",
                         location, targetGroupID);
                 duplicates.add(location);
+                location.getInstances().remove(inst);
                 iter.remove();
             }
         }
@@ -123,16 +123,12 @@ public class PriorsCacheProviderEJB {
 
         updateAvailability(inst, availability);
 
-        Location newLocation = new Location.Builder()
-                .storageSystemGroupID(targetGroupID)
-                .storageSystemID(targetSystemID)
-                .storagePath(targetStoragePath)
+        Location newLocation = new Location.Builder().storageSystemGroupID(targetGroupID)
+                .storageSystemID(targetSystemID).storagePath(targetStoragePath)
                 .transferSyntaxUID(sourceLocation.getTransferSyntaxUID())
-                .size(sourceLocation.getSize())
-                .digest(sourceLocation.getDigest())
+                .size(sourceLocation.getSize()).digest(sourceLocation.getDigest())
                 .timeZone(sourceLocation.getTimeZone())
-                .otherAttsDigest(sourceLocation.getOtherAttsDigest())
-                .build();
+                .otherAttsDigest(sourceLocation.getOtherAttsDigest()).build();
         LOG.info("Create {}", newLocation);
         em.persist(newLocation);
 
@@ -147,8 +143,8 @@ public class PriorsCacheProviderEJB {
             try {
                 ArchiveDeviceExtension devExt = device
                         .getDeviceExtension(ArchiveDeviceExtension.class);
-                fileMgmt.scheduleDelete(duplicates,
-                        devExt.getPriorsCacheDeleteDuplicateLocationsDelay());
+                locationMgmt.scheduleDelete(duplicates,
+                        devExt.getPriorsCacheDeleteDuplicateLocationsDelay() * 1000, false);
             } catch (Exception e) {
                 LOG.error("Schedule delete failed for duplicate locations: {}",
                         duplicates, e);
@@ -179,11 +175,14 @@ public class PriorsCacheProviderEJB {
         List<Location> locations;
         while ((locations = selectLocationsFrom(groupID, maxResults, offset)).size() > 0) {
             offset += locations.size();
-            for (Location location : locations)
+            for (Location location : locations) {
+                for (Instance instance : location.getInstances())
+                    instance.getLocations().remove(location);
                 location.getInstances().clear();
+            }
             em.flush();
             try {
-                fileMgmt.scheduleDelete(locations, 0);
+                locationMgmt.scheduleDelete(locations, 0, false);
             } catch (Exception e) {
                 LOG.error("Schedule delete failed for Storage System Group {}", groupID);
             }

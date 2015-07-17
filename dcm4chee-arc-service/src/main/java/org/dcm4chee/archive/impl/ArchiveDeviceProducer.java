@@ -85,9 +85,9 @@ public class ArchiveDeviceProducer {
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
         }
-        findOrCreateRejectionCodes();
-        initImageReaderFactory();
-        initImageWriterFactory();
+        findOrCreateRejectionCodes(device);
+        initImageReaderFactory(device);
+        initImageWriterFactory(device);
     }
 
     @Produces
@@ -96,10 +96,11 @@ public class ArchiveDeviceProducer {
     }
 
     public void reloadConfiguration() throws Exception {
-        device.reconfigure(findDevice());
-        findOrCreateRejectionCodes();
-        initImageReaderFactory();
-        initImageWriterFactory();
+        Device deviceLoaded = findDevice();
+        findOrCreateRejectionCodes(deviceLoaded);
+        initImageReaderFactory(deviceLoaded);
+        initImageWriterFactory(deviceLoaded);
+        this.device.reconfigure(deviceLoaded);
     }
 
     private Device findDevice() throws ConfigurationException {
@@ -112,7 +113,7 @@ public class ArchiveDeviceProducer {
         return arcDevice;
     }
 
-    private void findOrCreateRejectionCodes() {
+    private void findOrCreateRejectionCodes(Device device) {
         Collection<Code> found = new ArrayList<Code>();
         ArchiveDeviceExtension arcDev =
                 device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class);
@@ -146,7 +147,7 @@ public class ArchiveDeviceProducer {
         }
     }
 
-    private void initImageReaderFactory() {
+    private void initImageReaderFactory(Device device) {
         ImageReaderExtension ext = device.getDeviceExtension(ImageReaderExtension.class);
         if (ext != null)
             ImageReaderFactory.setDefault(ext.getImageReaderFactory());
@@ -154,7 +155,7 @@ public class ArchiveDeviceProducer {
             ImageReaderFactory.resetDefault();
     }
 
-    private void initImageWriterFactory() {
+    private void initImageWriterFactory(Device device) {
         ImageWriterExtension ext = device.getDeviceExtension(ImageWriterExtension.class);
         if (ext != null)
             ImageWriterFactory.setDefault(ext.getImageWriterFactory());

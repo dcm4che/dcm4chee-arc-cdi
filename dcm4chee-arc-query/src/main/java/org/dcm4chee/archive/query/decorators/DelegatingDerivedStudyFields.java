@@ -40,6 +40,7 @@ package org.dcm4chee.archive.query.decorators;
 
 import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
+import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.query.DerivedStudyFields;
 import org.dcm4chee.conf.decorators.DelegatingService;
 import org.dcm4chee.conf.decorators.DelegatingServiceImpl;
@@ -53,8 +54,8 @@ public class DelegatingDerivedStudyFields extends
 		DelegatingServiceImpl<DerivedStudyFields> implements DerivedStudyFields {
 
 	@Override
-	public void addInstance(Tuple result) {
-		getNextDecorator().addInstance(result);
+	public void addInstance(Tuple result, QueryParam param) {
+		getNextDecorator().addInstance(result, param);
 	}
 
 	@Override
@@ -100,5 +101,10 @@ public class DelegatingDerivedStudyFields extends
 	@Override
 	public int getNumberOfVisibleImages() {
 		return getNextDecorator().getNumberOfVisibleImages();
+	}
+	
+	@Override
+	public void reset() {
+		getNextDecorator().reset();
 	}
 }

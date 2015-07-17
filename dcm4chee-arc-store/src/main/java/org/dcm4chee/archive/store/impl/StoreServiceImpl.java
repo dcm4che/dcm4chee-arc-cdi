@@ -73,6 +73,7 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.PDVInputStream;
@@ -102,7 +103,7 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.entity.VerifyingObserver;
-import org.dcm4chee.archive.filemgmt.FileMgmt;
+import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.monitoring.api.Monitored;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
@@ -131,7 +132,7 @@ public class StoreServiceImpl implements StoreService {
     static Logger LOG = LoggerFactory.getLogger(StoreServiceImpl.class);
 
     @Inject
-    private FileMgmt locationManager;
+    private LocationMgmt locationManager;
 
     @Inject
     private StorageService storageService;
@@ -184,6 +185,14 @@ public class StoreServiceImpl implements StoreService {
                     "No writeable Storage System in Storage System Group "
                             + groupID);
         session.setStorageSystem(storageSystem);
+        StorageSystem spoolStorageSystem = null;
+        String spoolGroupID = storageSystem.getStorageSystemGroup().getSpoolStorageGroup();
+        if(spoolGroupID!= null){
+            spoolStorageSystem= storageService.selectStorageSystem(
+                    spoolGroupID, 0);
+        }
+        session.setSpoolStorageSystem(spoolStorageSystem != null ? 
+                spoolStorageSystem : storageSystem);
     }
 
     @Override
@@ -208,7 +217,7 @@ public class StoreServiceImpl implements StoreService {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         Path spoolDir = Paths.get(arcAE.getSpoolDirectoryPath());
         if (!spoolDir.isAbsolute()) {
-            StorageSystem storageSystem = session.getStorageSystem();
+            StorageSystem storageSystem = session.getSpoolStorageSystem();
             spoolDir = storageService.getBaseDirectory(storageSystem).resolve(
                     spoolDir);
         }
@@ -527,12 +536,19 @@ public class StoreServiceImpl implements StoreService {
             // availability update
             updateAvailability(session, instance);
 
+            findOrCreateStudyOnStorageGroup(context);
             if (context.getMetaDataStoragePath() != null) {
                 Location metaDataRef = createMetaDataRef(em, context);
                 locations.add(metaDataRef);
             }
             context.setFileRef(location);
         }
+    }
+
+    private void findOrCreateStudyOnStorageGroup(StoreContext context) {
+        locationManager.findOrCreateStudyOnStorageGroup(context.getInstance()
+                .getSeries().getStudy(), context.getStoreSession()
+                .getStorageSystem().getStorageSystemGroup().getGroupID());
     }
 
     private void updateRetrieveAETs(StoreSession session, Instance instance) {
@@ -663,6 +679,7 @@ public class StoreServiceImpl implements StoreService {
             case UPDATEDB:
                 service.updateInstance(em, context, inst);
             case IGNORE:
+                unmarkLocationsForDelete(inst, context);
                 return inst;
             case REPLACE:
                 for (Iterator<Location> iter = inst.getLocations().iterator(); iter
@@ -692,7 +709,8 @@ public class StoreServiceImpl implements StoreService {
 
         // delete replaced
         try {
-            locationManager.scheduleDelete(replaced, 0);
+            if (replaced.size()>0)
+                locationManager.scheduleDelete(replaced, 0,false);
         } catch (Exception e) {
             LOG.error("StoreService : Error deleting replaced location - {}", e);
         }
@@ -857,11 +875,20 @@ public class StoreServiceImpl implements StoreService {
     private Location createMetaDataRef(EntityManager em, StoreContext context) {
         StoreSession session = context.getStoreSession();
         StorageSystem storageSystem = session.getMetaDataStorageSystem();
+        long metadataFileSize = 0l;
+        try {
+            metadataFileSize = Files.size(Paths.get(storageSystem.getStorageSystemPath())
+                    .resolve(context.getMetaDataStoragePath()));
+        } catch (IOException e) {
+            LOG.error("{}: Unable to calculate Metadata File Size, setting the Metadata "
+                    + "size to 0 for instance {} ", session, context.getInstance());
+        }
         Location fileRef = new Location.Builder()
                 .storageSystemGroupID(
                         storageSystem.getStorageSystemGroup().getGroupID())
                 .storageSystemID(storageSystem.getStorageSystemID())
-                .storagePath(context.getStoragePath())
+                .storagePath(context.getMetaDataStoragePath())
+                .size(metadataFileSize)
                 .transferSyntaxUID(UID.ExplicitVRLittleEndian)
                 .timeZone(context.getSourceTimeZoneID()).withoutBulkdata(true)
                 .build();
@@ -1147,24 +1174,45 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private boolean isRejected(Study study) {
-        
-        if(study.getSeries()!=null)
-        for (Series series : study.getSeries()) {
-            if (!isRejected(series))
-                return false;
+        if(study.isRejected()) {
+            study.setRejected(false);
+            return true;
         }
-        return true;
+        return false;
     }
 
     private boolean isRejected(Series series) {
-        
-        if(series.getInstances() != null)
-        for (Instance inst : series.getInstances()) {
-            if (inst.getRejectionNoteCode() == null) {
-                return false;
+        if(series.isRejected()) {
+            series.setRejected(false);
+            return true;
+        }
+        return false;
+    }
+
+    private void unmarkLocationsForDelete(Instance inst, StoreContext context) {
+        for (Location loc : inst.getLocations()) {
+            if (loc.getStatus() == Location.Status.DELETE_FAILED) {
+                if (loc.getStorageSystemGroupID().compareTo(
+                        context.getStoreSession().getArchiveAEExtension()
+                                .getStorageSystemGroupID()) == 0) 
+                    loc.setStatus(Location.Status.OK);
+                else if(belongsToAnyOnline(loc))
+                    loc.setStatus(Location.Status.OK);
+                else
+                    loc.setStatus(Location.Status.ARCHIVE_FAILED);
             }
         }
-        return true;
+    }
+
+    private boolean belongsToAnyOnline(Location loc) {
+        for (ApplicationEntity ae : device.getApplicationEntities()) {
+            ArchiveAEExtension arcAEExt = ae
+                    .getAEExtension(ArchiveAEExtension.class);
+            if (arcAEExt.getStorageSystemGroupID().compareTo(
+                    loc.getStorageSystemGroupID()) == 0)
+                return true;
+        }
+        return false;
     }
 
     /**

@@ -289,17 +289,8 @@ public class MPPSServiceImpl implements MPPSService {
         LOG.info("Received MPPS complete event , initiating derived fields calculation");
         ArchiveDeviceExtension arcDevExt = device
                 .getDeviceExtension(ArchiveDeviceExtension.class);
-        String defaultAETitle = "";
-        try {
-         defaultAETitle =  arcDevExt.getDefaultAETitle();
-        }
-        catch(Exception e) {
-            LOG.error("Undefined defaultAETitle, "
-                    + "Can not calculate derived fields on MPPS COMPLETE");
-            return;
-        }
-        ApplicationEntity archiveAE = device
-                .getApplicationEntity(defaultAETitle);
+
+        ApplicationEntity archiveAE = event.getApplicationEntity();
         ArchiveAEExtension arcAEExt = archiveAE
                 .getAEExtension(ArchiveAEExtension.class);
         QueryRetrieveView view = arcDevExt
