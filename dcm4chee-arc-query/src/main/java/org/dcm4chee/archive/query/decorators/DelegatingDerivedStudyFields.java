@@ -107,4 +107,9 @@ public class DelegatingDerivedStudyFields extends
 	public void reset() {
 		getNextDecorator().reset();
 	}
+
+    @Override
+    public int getNumberOfVisibleSeries() {
+        return getNextDecorator().getNumberOfVisibleSeries();
+    }
 }

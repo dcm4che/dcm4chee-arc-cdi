@@ -95,6 +95,7 @@ public class DerivedSeriesFieldsDynamicDecorator extends DynamicDecoratorWrapper
 		return wrapWithDynamicDecorators(delegate).getNumberOfVisibleImages();
 	}
 	
+	
 	@Override
 	public void reset() {
 		wrapWithDynamicDecorators(delegate).reset();

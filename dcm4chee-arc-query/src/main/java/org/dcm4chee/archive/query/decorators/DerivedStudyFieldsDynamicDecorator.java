@@ -109,6 +109,11 @@ public class DerivedStudyFieldsDynamicDecorator extends DynamicDecoratorWrapper<
 		return wrapWithDynamicDecorators(delegate).getNumberOfVisibleImages();
 	}
 
+    @Override
+    public int getNumberOfVisibleSeries() {
+        return wrapWithDynamicDecorators(delegate).getNumberOfVisibleSeries();
+    }
+
 	@Override
 	public void reset() {
 		wrapWithDynamicDecorators(delegate).reset();

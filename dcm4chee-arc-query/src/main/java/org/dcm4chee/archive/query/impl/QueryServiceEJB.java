@@ -229,6 +229,7 @@ public class QueryServiceEJB {
             queryAttrs.setAvailability(studyDerivedFields.getAvailability());
             queryAttrs.setLastUpdateTime(studyDerivedFields.getLastUpdateTime());
             queryAttrs.setNumberOfVisibleInstances(studyDerivedFields.getNumberOfVisibleImages());
+            queryAttrs.setNumberOfVisibleSeries(studyDerivedFields.getNumberOfVisibleSeries());
         }
         em.persist(queryAttrs);
         return queryAttrs;
