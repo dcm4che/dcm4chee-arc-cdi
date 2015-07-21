@@ -345,10 +345,11 @@ public class DefaultDeviceFactory {
             REGULAR_USE_VIEW,
             TRASH_VIEW};
 
-    static {
-        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyLastUpdateDateTime, "EXTENDED STUDY");
-        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyStatus, "EXTENDED STUDY");
-    }
+    //ASK BEA: SHE REALLY WANTS TO KICK THIS 2 TAGS IN THEIR PRIVATE ASS :-)
+//    static {
+//        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyLastUpdateDateTime, "EXTENDED STUDY");
+//        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyStatus, "EXTENDED STUDY");
+//    }
 
     private String baseStoragePath = "/var/local/dcm4chee-arc/";
     private boolean useGroupBasedTCConfig;
