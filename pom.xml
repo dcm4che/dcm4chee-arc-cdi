@@ -60,7 +60,7 @@
     <ds>java:/PacsDS</ds>
 
     <!-- by default, the config browser is not protected -->
-    <conf-web-classifier>-unsecure</conf-web-classifier>
+    <conf-web-classifier>arc-unsecure</conf-web-classifier>
   </properties>
   <name>dcm4chee archive server</name>
   <description>dcm4chee archive server</description>
@@ -621,6 +621,7 @@
         <properties>
             <ds>java:jboss/datasources/OracleDS</ds>
             <db>oracle</db>
+            <conf-web-classifier>csp-asb</conf-web-classifier>
         </properties>
     </profile>
     <profile>
