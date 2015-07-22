@@ -61,12 +61,12 @@ import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.defaults.DeepEquals;
 import org.dcm4chee.archive.conf.defaults.DeepEquals.CustomDeepEquals;
 import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
-import org.dcm4chee.archive.conf.defaults.DefaultDeviceFactory;
+import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ArchiveDeviceTest extends DefaultDeviceFactory {
+public class ArchiveDeviceTest {
 
     protected DicomConfiguration config;
     protected HL7Configuration hl7Config;
@@ -115,8 +115,10 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
     @Test
     public void test() throws Exception {
 
-        setBaseStoragePath("/var/local/dcm4chee-arc/");
-        DefaultDicomConfigInitializer defaultDicomConfigInitializer = new DefaultDicomConfigInitializer().persistDefaultConfig(config, hl7Config, getBaseStoragePath(), false);
+        DefaultArchiveConfigurationFactory.FactoryParams factoryParams = new DefaultArchiveConfigurationFactory.FactoryParams();
+        factoryParams.generateUUIDsBasedOnName = true;
+
+        DefaultDicomConfigInitializer defaultDicomConfigInitializer = new DefaultDicomConfigInitializer().persistDefaultConfig(config, hl7Config, factoryParams);
         Device arc = defaultDicomConfigInitializer.getArc();
         Device arrDevice = defaultDicomConfigInitializer.getArrDevice();
 
@@ -148,11 +150,14 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
         assertTrue("Store/read failed for an attribute. See console output.", res);
 
         // Reconfiguration test
-        Device anotherArc = createArchiveDevice("dcm4chee-arc", arrDevice);
+
+        DefaultArchiveConfigurationFactory deviceFactory = new DefaultArchiveConfigurationFactory(factoryParams);
+
+        Device anotherArc = deviceFactory.createArchiveDevice("dcm4chee-arc", arrDevice);
         anotherArc.removeApplicationEntity("DCM4CHEE");
 
-        ApplicationEntity anotherAe = createAnotherAE("DCM4CHEE1",
-                null, PIX_MANAGER);
+        ApplicationEntity anotherAe = deviceFactory.createAnotherAE("DCM4CHEE1",
+                null, DefaultArchiveConfigurationFactory.PIX_MANAGER);
         anotherArc.addApplicationEntity(anotherAe);
 
         //anotherAe.getAEExtension(ArchiveAEExtension.class).reconfigure(from);
@@ -166,7 +171,7 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
     }
 
     protected void cleanUp() throws Exception {
-        hl7Config.unregisterHL7Application(PIX_MANAGER);
+        hl7Config.unregisterHL7Application(DefaultArchiveConfigurationFactory.PIX_MANAGER);
         try {
             config.removeDevice("dcm4chee-arc");
         } catch (ConfigurationNotFoundException e) {
@@ -179,7 +184,7 @@ public class ArchiveDeviceTest extends DefaultDeviceFactory {
             config.removeDevice("hl7rcv");
         } catch (ConfigurationNotFoundException e) {
         }
-        for (String name : OTHER_DEVICES)
+        for (String name : DefaultArchiveConfigurationFactory.OTHER_DEVICES)
             try {
                 config.removeDevice(name);
             } catch (ConfigurationNotFoundException e) {

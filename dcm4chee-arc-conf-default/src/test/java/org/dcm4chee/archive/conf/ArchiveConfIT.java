@@ -50,7 +50,7 @@ import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4chee.archive.conf.defaults.DeepEquals;
-import org.dcm4chee.archive.conf.defaults.DefaultDeviceFactory;
+import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory;
 import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
 import org.dcm4chee.archive.conf.defaults.ExtendedStudyDictionary;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
@@ -85,7 +85,7 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
         war.addClass(ArchiveDeviceTest.class);
         war.addClass(DeepEquals.class);
         war.addClass(CustomEquals.class);
-        war.addClass(DefaultDeviceFactory.class);
+        war.addClass(DefaultArchiveConfigurationFactory.class);
         war.addClass(ExtendedStudyDictionary.class);
         war.addClass(DefaultDicomConfigInitializer.class);
 
@@ -137,8 +137,9 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
     @Test
     public void performanceTest() throws Exception {
 
+        DefaultArchiveConfigurationFactory configurationFactory = new DefaultArchiveConfigurationFactory();
 
-        Device arrDevice = createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
+        Device arrDevice = configurationFactory.createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
         config.persist(arrDevice);
 
         int numofdevices = 10;
@@ -155,7 +156,7 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
         for (int i = 0; i < numofdevices; i++) {
             String name = "dcm4chee-arc" + i;
             if (i % 10 == 0) System.out.println(i);
-            Device arc = createArchiveDevice(name, arrDevice);
+            Device arc = configurationFactory.createArchiveDevice(name, arrDevice);
             config.persist(arc);
         }
 
@@ -172,12 +173,14 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
     //@Test
     public void leakTest() throws Exception {
 
+        DefaultArchiveConfigurationFactory configurationFactory = new DefaultArchiveConfigurationFactory();
+
         System.out.println("look for leaks");
-        Device arrDevice = createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
+        Device arrDevice = configurationFactory.createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
         config.persist(arrDevice);
 
         for (int i = 0; i < 200; i++) {
-            Device arc = createArchiveDevice("leakTestDevice", arrDevice);
+            Device arc = configurationFactory.createArchiveDevice("leakTestDevice", arrDevice);
             config.persist(arc);
             config.sync();
             config.findDevice("leakTestDevice");

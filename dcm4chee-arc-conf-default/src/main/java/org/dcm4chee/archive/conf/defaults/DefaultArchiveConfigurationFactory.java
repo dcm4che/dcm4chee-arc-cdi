@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.conf.defaults;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.Tag;
@@ -57,16 +58,19 @@ import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.storage.conf.*;
 
+import javax.security.auth.login.Configuration;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.dcm4che3.net.TransferCapability.Role.SCP;
 import static org.dcm4che3.net.TransferCapability.Role.SCU;
 
-public class DefaultDeviceFactory {
+public class DefaultArchiveConfigurationFactory {
 
-    protected static final String PIX_MANAGER = "HL7RCV^DCM4CHEE";
-    protected static final String[] OTHER_DEVICES = {
+    public static final String PIX_MANAGER = "HL7RCV^DCM4CHEE";
+    public static final String[] OTHER_DEVICES = {
             "dcmqrscp",
             "stgcmtscu",
             "storescp",
@@ -351,14 +355,25 @@ public class DefaultDeviceFactory {
 //        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyStatus, "EXTENDED STUDY");
 //    }
 
-    private String baseStoragePath = "/var/local/dcm4chee-arc/";
-    private boolean useGroupBasedTCConfig;
-
-
-    public String getBaseStoragePath() {
-        return baseStoragePath;
+    public DefaultArchiveConfigurationFactory() {
+        factoryParams = new FactoryParams();
     }
 
+    public DefaultArchiveConfigurationFactory(FactoryParams params) {
+        factoryParams = params;
+    }
+
+    public static class FactoryParams {
+        public String baseStoragePath = "/var/local/dcm4chee-arc/";
+        public boolean useGroupBasedTCConfig;
+        public boolean generateUUIDsBasedOnName;
+    }
+
+    FactoryParams factoryParams = new FactoryParams();
+
+    public FactoryParams getFactoryParams() {
+        return factoryParams;
+    }
 
     private static QueryRetrieveView createQueryRetrieveView(String viewID,
                                                              Code[] showInstancesRejectedByCodes, Code[] hideRejectionNoteCodes,
@@ -385,7 +400,7 @@ public class DefaultDeviceFactory {
         return rule;
     }
 
-    protected static Device createARRDevice(String name, Connection.Protocol protocol, int port) {
+    public Device createARRDevice(String name, Connection.Protocol protocol, int port) {
         Device arrDevice = new Device(name);
         AuditRecordRepository arr = new AuditRecordRepository();
         arrDevice.addDeviceExtension(arr);
@@ -397,7 +412,7 @@ public class DefaultDeviceFactory {
     }
 
 
-    protected static Device createDevice(String name) throws Exception {
+    protected Device createDevice(String name) throws Exception {
         return init(new Device(name), null, null);
     }
 
@@ -418,7 +433,7 @@ public class DefaultDeviceFactory {
         return device;
     }
 
-    protected static Device createDevice(String name,
+    protected Device createDevice(String name,
                                          Issuer issuer, Code institutionCode, String aet,
                                          String host, int port, int tlsPort) throws Exception {
         Device device = init(new Device(name), issuer, institutionCode);
@@ -453,7 +468,7 @@ public class DefaultDeviceFactory {
         return false;
     }
 
-    protected static Device createHL7Device(String name,
+    protected Device createHL7Device(String name,
                                             Issuer issuer, Code institutionCode, String appName,
                                             String host, int port, int tlsPort) throws Exception {
         Device device = new Device(name);
@@ -476,7 +491,7 @@ public class DefaultDeviceFactory {
         return device;
     }
 
-    protected Device createArchiveDevice(String name, Device arrDevice)
+    public Device createArchiveDevice(String name, Device arrDevice)
             throws Exception {
 
         //KeyStore keyStore = SSLManagerFactory.loadKeyStore("JKS", ResourceLocator.resourceURL("cacerts.jks"), "secret");
@@ -504,7 +519,7 @@ public class DefaultDeviceFactory {
         addArchiveDeviceExtension(device);
         addHL7DeviceExtension(device);
         addAuditLogger(device, arrDevice);
-        addStorageDeviceExtension(device, getBaseStoragePath());
+        addStorageDeviceExtension(device, factoryParams.baseStoragePath);
         device.addDeviceExtension(new ImageReaderExtension(ImageReaderFactory.getDefault()));
         device.addDeviceExtension(new ImageWriterExtension(ImageWriterFactory.getDefault()));
 
@@ -726,6 +741,10 @@ public class DefaultDeviceFactory {
                                               QueryRetrieveView queryRetrieveView,
                                               String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
+
+        if (factoryParams.generateUUIDsBasedOnName)
+            ae.setUuid(makeUuidFromAet(aet));
+
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
 
@@ -909,11 +928,23 @@ public class DefaultDeviceFactory {
         return ae;
     }
 
+    private String makeUuidFromAet(String aet) {
+        try {
+            return javax.xml.bind.DatatypeConverter.printHexBinary(MessageDigest.getInstance("SHA-1").digest(aet.getBytes()));
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private ApplicationEntity createQRAE(String aet,
                                                 Connection dicom, Connection dicomTLS,
                                                 QueryRetrieveView queryRetrieveView,
                                                 String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
+
+        if (factoryParams.generateUUIDsBasedOnName)
+            ae.setUuid(makeUuidFromAet(aet));
+
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
 
@@ -943,9 +974,13 @@ public class DefaultDeviceFactory {
         return ae;
     }
 
-    protected ApplicationEntity createAnotherAE(String aet,
-                                                String pixConsumer, String pixManager) {
+    public ApplicationEntity createAnotherAE(String aet,
+                                             String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
+
+        if (factoryParams.generateUUIDsBasedOnName)
+            ae.setUuid(makeUuidFromAet(aet));
+
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
         ae.addAEExtension(aeExt);
         ae.setAssociationAcceptor(true);
@@ -1044,7 +1079,7 @@ public class DefaultDeviceFactory {
                                Set<TCGroupConfigAEExtension.DefaultGroup> scpGroups,
                                Set<TCGroupConfigAEExtension.DefaultGroup> scuGroups) {
 
-        if (isUseGroupBasedTCConfig()) {
+        if (factoryParams.useGroupBasedTCConfig) {
 
             TCGroupConfigAEExtension tcGroupConfig = ae.getAEExtension(TCGroupConfigAEExtension.class);
             if (tcGroupConfig == null) {
@@ -1098,15 +1133,4 @@ public class DefaultDeviceFactory {
         }
     }
 
-    public void setBaseStoragePath(String baseSoragePath) {
-        this.baseStoragePath = baseSoragePath;
-    }
-
-    public boolean isUseGroupBasedTCConfig() {
-        return useGroupBasedTCConfig;
-    }
-
-    public void setUseGroupBasedTCConfig(boolean useGroupBasedTCConfig) {
-        this.useGroupBasedTCConfig = useGroupBasedTCConfig;
-    }
 }

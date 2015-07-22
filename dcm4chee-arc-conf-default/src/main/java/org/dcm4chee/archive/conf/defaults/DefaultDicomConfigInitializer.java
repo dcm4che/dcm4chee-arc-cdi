@@ -32,42 +32,40 @@ public class DefaultDicomConfigInitializer {
 
     public DefaultDicomConfigInitializer persistDefaultConfig(DicomConfiguration config,
                                                               HL7Configuration hl7Config,
-                                                              String baseStoragePath,
-                                                              boolean isUseGroupBasedTCConfig) throws Exception {
+                                                              DefaultArchiveConfigurationFactory.FactoryParams params) throws Exception {
 
+        DefaultArchiveConfigurationFactory defaultArchiveConfigurationFactory = new DefaultArchiveConfigurationFactory(params);
 
         log.debug("Creating external devices with AEs");
 
-        for (int i = 0; i < DefaultDeviceFactory.OTHER_AES.length; i++) {
-            String aet = DefaultDeviceFactory.OTHER_AES[i];
-            config.persist(DefaultDeviceFactory.createDevice(DefaultDeviceFactory.OTHER_DEVICES[i], DefaultDeviceFactory.OTHER_ISSUER[i], DefaultDeviceFactory.OTHER_INST_CODES[i],
-                    aet, "localhost", DefaultDeviceFactory.OTHER_PORTS[i << 1], DefaultDeviceFactory.OTHER_PORTS[(i << 1) + 1]));
+        for (int i = 0; i < DefaultArchiveConfigurationFactory.OTHER_AES.length; i++) {
+            String aet = DefaultArchiveConfigurationFactory.OTHER_AES[i];
+            config.persist(defaultArchiveConfigurationFactory.createDevice(DefaultArchiveConfigurationFactory.OTHER_DEVICES[i], DefaultArchiveConfigurationFactory.OTHER_ISSUER[i], DefaultArchiveConfigurationFactory.OTHER_INST_CODES[i],
+                    aet, "localhost", DefaultArchiveConfigurationFactory.OTHER_PORTS[i << 1], DefaultArchiveConfigurationFactory.OTHER_PORTS[(i << 1) + 1]));
         }
 
         log.debug("Creating other external devices");
 
-        hl7Config.registerHL7Application(DefaultDeviceFactory.PIX_MANAGER);
-        for (int i = DefaultDeviceFactory.OTHER_AES.length; i < DefaultDeviceFactory.OTHER_DEVICES.length; i++)
-            config.persist(DefaultDeviceFactory.createDevice(DefaultDeviceFactory.OTHER_DEVICES[i]));
+        hl7Config.registerHL7Application(DefaultArchiveConfigurationFactory.PIX_MANAGER);
+        for (int i = DefaultArchiveConfigurationFactory.OTHER_AES.length; i < DefaultArchiveConfigurationFactory.OTHER_DEVICES.length; i++)
+            config.persist(defaultArchiveConfigurationFactory.createDevice(DefaultArchiveConfigurationFactory.OTHER_DEVICES[i]));
 
-        config.persist(DefaultDeviceFactory.createHL7Device("hl7rcv", DefaultDeviceFactory.SITE_A, DefaultDeviceFactory.INST_A, DefaultDeviceFactory.PIX_MANAGER,
+        config.persist(defaultArchiveConfigurationFactory.createHL7Device("hl7rcv", DefaultArchiveConfigurationFactory.SITE_A, DefaultArchiveConfigurationFactory.INST_A, DefaultArchiveConfigurationFactory.PIX_MANAGER,
                 "localhost", 2576, 12576));
 
         log.debug("Creating arr device");
-        arrDevice = DefaultDeviceFactory.createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
+        arrDevice = defaultArchiveConfigurationFactory.createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
         config.persist(arrDevice);
 
         log.debug("Creating archive device");
-        DefaultDeviceFactory defaultDeviceFactory = new DefaultDeviceFactory();
-        defaultDeviceFactory.setBaseStoragePath(baseStoragePath);
-        defaultDeviceFactory.setUseGroupBasedTCConfig(isUseGroupBasedTCConfig);
-        arc = defaultDeviceFactory.createArchiveDevice("dcm4chee-arc", arrDevice);
+
+        arc = defaultArchiveConfigurationFactory.createArchiveDevice("dcm4chee-arc", arrDevice);
         config.persist(arc);
 
 
 
         // create TC Group config extension
-        if (isUseGroupBasedTCConfig) {
+        if (params.useGroupBasedTCConfig) {
             log.debug("Creating transfer capability groups");
             TCConfiguration.persistDefaultTCGroups(config);
         }

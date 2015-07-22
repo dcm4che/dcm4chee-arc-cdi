@@ -18,12 +18,16 @@ public class DefaultArchiveConfigInitScript implements UpgradeScript {
         if (upgradeContext.getFromVersion().equals(NO_VERSION)) {
 
             try {
+                DefaultArchiveConfigurationFactory.FactoryParams params = new DefaultArchiveConfigurationFactory.FactoryParams();
+                params.baseStoragePath=upgradeContext.getProperties().getProperty("org.dcm4che.config.init.baseStorageDir", "/var/local/dcm4chee-arc/");
+                params.useGroupBasedTCConfig = true;
+
+
                 new DefaultDicomConfigInitializer()
                         .persistDefaultConfig(
                                 upgradeContext.getDicomConfiguration(),
                                 upgradeContext.getDicomConfiguration().getDicomConfigurationExtension(HL7Configuration.class),
-                                upgradeContext.getProperties().getProperty("org.dcm4che.config.init.baseStorageDir", "/var/local/dcm4chee-arc/"),
-                                true);
+                                params);
             } catch (Exception e) {
                 throw new ConfigurationException("Cannot initialize default config",e);
             }
