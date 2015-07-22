@@ -136,24 +136,26 @@ public class LocationMgmtEJB implements LocationMgmt {
     @Override
     public void scheduleDeleteByPks(Collection<Long> refPks, int delay, boolean checkStudyMarked)
             throws JMSException {
-        try {
-            Connection conn = connFactory.createConnection();
+        if (refPks!=null && refPks.size()>0) {
             try {
-                Session session = conn.createSession(false,
-                        Session.AUTO_ACKNOWLEDGE);
-                MessageProducer producer = session.createProducer(deleteQueue);
-                ObjectMessage msg = session
-                        .createObjectMessage((Serializable) refPks);
-                if (delay > 0)
-                    msg.setLongProperty("_HQ_SCHED_DELIVERY",
-                            System.currentTimeMillis() + delay);
-                msg.setBooleanProperty("checkStudyMarked", checkStudyMarked);
-                producer.send(msg);
-            } finally {
-                conn.close();
+                Connection conn = connFactory.createConnection();
+                try {
+                    Session session = conn.createSession(false,
+                            Session.AUTO_ACKNOWLEDGE);
+                    MessageProducer producer = session.createProducer(deleteQueue);
+                    ObjectMessage msg = session
+                            .createObjectMessage((Serializable) refPks);
+                    if (delay > 0)
+                        msg.setLongProperty("_HQ_SCHED_DELIVERY",
+                                System.currentTimeMillis() + delay);
+                    msg.setBooleanProperty("checkStudyMarked", checkStudyMarked);
+                    producer.send(msg);
+                } finally {
+                    conn.close();
+                }
+            } catch (JMSException e) {
+                throw e;
             }
-        } catch (JMSException e) {
-            throw e;
         }
     }
 

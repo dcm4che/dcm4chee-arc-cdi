@@ -176,8 +176,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
 
         int pollInterval = device.getDeviceExtension(
                 ArchiveDeviceExtension.class).getDeletionServicePollInterval();
-        if (pollInterval > 0)
-            startPolling(pollInterval);
+        startPolling(pollInterval);
     }
 
     public void onArchiveServiceStopped(
@@ -525,7 +524,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
     }
 
     private synchronized void startPolling(int pollInterval) {
-        if (deleteTask == null) {
+        if (deleteTask == null && pollInterval > 0) {
             deleteTask = device.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
