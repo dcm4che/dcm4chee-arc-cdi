@@ -67,7 +67,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private static final long serialVersionUID = -3611223780276386740L;
 
     @ConfigurableProperty(name = "dcmVisibleImageClasses")
-    private String[] visibleImageSRClasses = DefaultTransferCapabilities.IMAGE_CUIDS;
+    private String[] visibleImageSRClasses = {};
     
     @ConfigurableProperty(name = "dcmNonVisibleImageClasses")
     private String[] nonVisibleImageSRClasses = {};

@@ -683,6 +683,8 @@ public class DefaultDeviceFactory {
         ext.addPrivateDerivedField(new PrivateTag(PrivateDerivedFields.NAMES
                 .StudyUpdateTimeDerivedField.name(), "7FD91060",
                 "studyUpdate"));
+        ext.setVisibleImageSRClasses(DefaultTransferCapabilities.IMAGE_CUIDS);
+        ext.setUseWhitelistOfVisibleImageSRClasses(false);
     }
 
     private static RejectionParam[] createRejectionNotes() {
