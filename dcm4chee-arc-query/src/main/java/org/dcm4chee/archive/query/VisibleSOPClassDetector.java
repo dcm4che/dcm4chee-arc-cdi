@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2015
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,69 +35,10 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.query;
 
-package org.dcm4chee.archive.query.decorators;
 
-import com.mysema.query.Tuple;
-import com.mysema.query.types.Expression;
+public interface VisibleSOPClassDetector {
 
-import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.query.DerivedSeriesFields;
-import org.dcm4chee.archive.query.DerivedStudyFields;
-import org.dcm4chee.conf.decorators.DynamicDecoratorWrapper;
-import org.dcm4chee.storage.conf.Availability;
-
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
-import javax.inject.Inject;
-
-import java.util.Date;
-import java.util.Set;
-
-@Decorator
-public class DerivedSeriesFieldsDynamicDecorator extends DynamicDecoratorWrapper<DerivedSeriesFields> implements DerivedSeriesFields {
-	@Inject
-	@Delegate
-	DerivedSeriesFields delegate;
-
-	@Override
-	public void addInstance(Tuple result, QueryParam param) {
-		wrapWithDynamicDecorators(delegate).addInstance(result, param);
-	}
-
-	@Override
-	public Expression<?>[] fields() {
-		return wrapWithDynamicDecorators(delegate).fields();
-	}
-
-	@Override
-	public int getNumberOfInstances() {
-		return wrapWithDynamicDecorators(delegate).getNumberOfInstances();
-	}
-
-	@Override
-	public String[] getRetrieveAETs() {
-		return wrapWithDynamicDecorators(delegate).getRetrieveAETs();
-	}
-
-	@Override
-	public Availability getAvailability() {
-		return wrapWithDynamicDecorators(delegate).getAvailability();
-	}
-
-	@Override
-	public Date getLastUpdateTime() {
-		return wrapWithDynamicDecorators(delegate).getLastUpdateTime();
-	}
-
-	@Override
-	public int getNumberOfVisibleImages() {
-		return wrapWithDynamicDecorators(delegate).getNumberOfVisibleImages();
-	}
-	
-	
-	@Override
-	public void reset() {
-		wrapWithDynamicDecorators(delegate).reset();
-	}
+    public boolean isVisibleSOPClass(String sopClassUID);
 }

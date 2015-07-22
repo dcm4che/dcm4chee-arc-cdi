@@ -60,7 +60,6 @@ public class QueryParam {
     private Issuer defaultIssuerOfPatientID;
     private Issuer defaultIssuerOfAccessionNumber;
     private boolean deIdentifyLogs = false;
-    private String[] visibleImageSRClasses;
     private QueryRetrieveView queryRetrieveView;
 
     public final boolean isCombinedDatetimeMatching() {
@@ -151,15 +150,6 @@ public class QueryParam {
     public void setDeIdentifyLogs(boolean deIdentifyLogs) {
         this.deIdentifyLogs = deIdentifyLogs;
     }
-
-    public String[] getVisibleImageSRClasses() {
-        return visibleImageSRClasses;
-    }
-
-    public void setVisibleImageSRClasses(String[] visibleImageSRClasses) {
-        this.visibleImageSRClasses = visibleImageSRClasses;
-    }
-
 
     public QueryRetrieveView getQueryRetrieveView() {
         return queryRetrieveView;

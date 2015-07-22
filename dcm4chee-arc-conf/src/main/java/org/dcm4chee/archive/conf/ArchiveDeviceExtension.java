@@ -51,6 +51,7 @@ import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.io.TemplatesCache;
+import org.dcm4che3.net.DefaultTransferCapabilities;
 import org.dcm4che3.net.DeviceExtension;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.StringUtils;
@@ -64,6 +65,15 @@ import org.dcm4che3.util.StringUtils;
 public class ArchiveDeviceExtension extends DeviceExtension {
 
     private static final long serialVersionUID = -3611223780276386740L;
+
+    @ConfigurableProperty(name = "dcmVisibleImageClasses")
+    private String[] visibleImageSRClasses = DefaultTransferCapabilities.IMAGE_CUIDS;
+    
+    @ConfigurableProperty(name = "dcmNonVisibleImageClasses")
+    private String[] nonVisibleImageSRClasses = {};
+    
+    @ConfigurableProperty(name = "dcmUseWhitelistOfVisibleImageSRClasses"/*, defaultValue = "true"*/)
+    private boolean useWhitelistOfVisibleImageSRClasses;
 
     @ConfigurableProperty(name = "dcmDisabledDecorators")
     private String[] disabledDecorators = {};
@@ -506,5 +516,30 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     public void setDeletionServicePollInterval(int deletionServicePollInterval) {
         this.deletionServicePollInterval = deletionServicePollInterval;
     }
+    
+    public String[] getVisibleImageSRClasses() {
+        return visibleImageSRClasses;
+    }
+
+    public void setVisibleImageSRClasses(String[] visibleImageSRClasses) {
+        this.visibleImageSRClasses = visibleImageSRClasses;
+    }
+    
+    public String[] getNonVisibleImageSRClasses() {
+        return nonVisibleImageSRClasses;
+    }
+
+    public void setNonVisibleImageSRClasses(String[] nonVisibleImageSRClasses) {
+        this.nonVisibleImageSRClasses = nonVisibleImageSRClasses;
+    }
+    
+    public boolean getUseWhitelistOfVisibleImageSRClasses() {
+        return useWhitelistOfVisibleImageSRClasses;
+    }
+
+    public void setUseWhitelistOfVisibleImageSRClasses(boolean useWhitelistOfVisibleImageSRClasses) {
+        this.useWhitelistOfVisibleImageSRClasses = useWhitelistOfVisibleImageSRClasses;
+    }
+
 
 }

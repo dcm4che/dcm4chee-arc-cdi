@@ -81,6 +81,9 @@ public class StudyQueryAttributes {
 
     @Column(name = "num_visible_instances")
     private int numberOfVisibleInstances;
+    
+    @Column(name = "num_visible_series")
+    private int numberOfVisibleSeries;
 
     @Column(name = "last_update_time")
     private Date lastUpdateTime;
@@ -167,6 +170,14 @@ public class StudyQueryAttributes {
 
     public void setNumberOfVisibleInstances(int numberOfVisibleInstances) {
         this.numberOfVisibleInstances = numberOfVisibleInstances;
+    }
+    
+    public int getNumberOfVisibleSeries() {
+        return numberOfVisibleSeries;
+    }
+
+    public void setNumberOfVisibleSeries(int numberOfVisibleSeries) {
+        this.numberOfVisibleSeries = numberOfVisibleSeries;
     }
 
     public Date getLastUpdateTime() {

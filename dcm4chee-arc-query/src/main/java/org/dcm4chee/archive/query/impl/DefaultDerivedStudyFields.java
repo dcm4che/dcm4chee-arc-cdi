@@ -65,6 +65,7 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
     protected Set<String> cuids = new HashSet<String>();
     private Date lastUpdateTime = null;
     private int numberOfVisibleImages;
+    private int numberOfVisibleSeries;
 
     @Override
     public Expression<?>[] fields() {
@@ -117,6 +118,11 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
     public int getNumberOfVisibleImages() {
         return numberOfVisibleImages;
     }
+    
+    @Override
+    public int getNumberOfVisibleSeries() {
+        return numberOfVisibleSeries;
+    }
 
     @Override
     public void addInstance(Tuple result, QueryParam param) {
@@ -156,5 +162,6 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
         cuids.clear();
         lastUpdateTime = null;
         numberOfVisibleImages = 0;
+        numberOfVisibleSeries = 0;
     }
 }

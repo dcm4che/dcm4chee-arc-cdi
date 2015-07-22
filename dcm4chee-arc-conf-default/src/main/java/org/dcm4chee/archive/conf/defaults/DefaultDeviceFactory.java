@@ -745,7 +745,6 @@ public class DefaultDeviceFactory {
         aeExt.setQueryRetrieveViewID(queryRetrieveView.getViewID());
         aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
-        aeExt.setVisibleImageSRClasses(DefaultTransferCapabilities.IMAGE_CUIDS);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
         aeExt.setQidoClientAcceptType("application/json");
         aeExt.setDefaultExternalRetrieveAETAvailability(Availability.ONLINE);
@@ -927,7 +926,6 @@ public class DefaultDeviceFactory {
 
         aeExt.setWadoSRTemplateURI(WADO_SR_TEMPLATE_URI);
         aeExt.setWadoSupportedSRClasses(WADO_SUPPORTED_SR_SOP_CLASSES);
-        aeExt.setVisibleImageSRClasses(DefaultTransferCapabilities.IMAGE_CUIDS);
         aeExt.setQIDOMaxNumberOfResults(QIDO_MAX_NUMBER_OF_RESULTS);
 
         addTCs(ae,

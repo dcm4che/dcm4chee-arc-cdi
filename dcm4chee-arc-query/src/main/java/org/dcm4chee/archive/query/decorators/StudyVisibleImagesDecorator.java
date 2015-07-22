@@ -40,40 +40,70 @@ package org.dcm4chee.archive.query.decorators;
 
 import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
+
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.entity.QSeries;
+import org.dcm4chee.archive.query.VisibleSOPClassDetector;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.inject.Inject;
 
 @DynamicDecorator
 public class StudyVisibleImagesDecorator extends DelegatingDerivedStudyFields {
+	
+    private static final Logger LOG = LoggerFactory.getLogger(StudyVisibleImagesDecorator.class);
+    
     private int numberOfVisibleImages=0;
-
+    private Set<String> visibleSeriesUIDs = new HashSet<String>();
+    
+	@Inject
+	VisibleSOPClassDetector visibleSOPClassDetector;
+	
     @Override
     public void addInstance(Tuple result, QueryParam param) {
         getNextDecorator().addInstance(result, param);
-        AttributesBlob blob = result.get(QInstance.instance.attributesBlob);
         String sopClass = result.get(QInstance.instance.sopClassUID);
-        if (param.getVisibleImageSRClasses() != null &&
-                param.getVisibleImageSRClasses().length>0 &&
-                Arrays.asList(param.getVisibleImageSRClasses()).contains(sopClass))
-            numberOfVisibleImages+= blob != null ? blob.getAttributes()
+
+        if (visibleSOPClassDetector.isVisibleSOPClass(sopClass)) {
+            String seriesUID = result.get(QSeries.series.seriesInstanceUID);
+            AttributesBlob blob = result.get(QInstance.instance.attributesBlob);
+            if (!visibleSeriesUIDs.contains(seriesUID)) {
+                LOG.debug("Found a visible series {}.", seriesUID);
+                visibleSeriesUIDs.add(seriesUID);
+            }
+            int numberOfVisibleImagesInInstance = blob != null ? blob.getAttributes()
                     .getInt(Tag.NumberOfFrames, 1) : 1;
+            numberOfVisibleImages+= numberOfVisibleImagesInInstance;
+            LOG.debug("Found {} frames in instance. Number of visible images is now {}.", numberOfVisibleImagesInInstance, numberOfVisibleImages);
+        }
     }
 
     @Override
     public Expression<?>[] fields() {
         Expression[] old = getNextDecorator().fields();
-        Expression[] ret = Arrays.copyOf(old, old.length+1);
+        Expression[] ret = Arrays.copyOf(old, old.length+2);
         ret[old.length] = QInstance.instance.attributesBlob;
+        ret[old.length+1] = QSeries.series.seriesInstanceUID;
         return ret;
     }
 
     @Override
     public int getNumberOfVisibleImages() {
         return numberOfVisibleImages;
+    }
+    
+    @Override
+    public int getNumberOfVisibleSeries() {
+        return visibleSeriesUIDs.size();
     }
 }
