@@ -441,6 +441,10 @@ public class DefaultArchiveConfigurationFactory {
                 || name.equalsIgnoreCase("dcm4chee-arc"))
             device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
         ApplicationEntity ae = new ApplicationEntity(aet);
+
+        if (factoryParams.generateUUIDsBasedOnName)
+            ae.setUuid(makeUuidFromAet(aet));
+        
         ExternalArchiveAEExtension externalArchiveExt =
                 new ExternalArchiveAEExtension();
         if (containsArchiveType(device.getPrimaryDeviceTypes()))
