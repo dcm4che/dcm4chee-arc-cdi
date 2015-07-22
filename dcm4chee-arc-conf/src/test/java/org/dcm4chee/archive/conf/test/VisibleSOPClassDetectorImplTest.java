@@ -35,12 +35,12 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.query.test;
+package org.dcm4chee.archive.conf.test;
 
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.query.VisibleSOPClassDetector;
-import org.dcm4chee.archive.query.impl.VisibleSOPClassDetectorImpl;
+import org.dcm4chee.archive.conf.VisibleSOPClassDetector;
+import org.dcm4chee.archive.conf.VisibleSOPClassDetectorImpl;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRule;
 import org.easymock.EasyMockSupport;

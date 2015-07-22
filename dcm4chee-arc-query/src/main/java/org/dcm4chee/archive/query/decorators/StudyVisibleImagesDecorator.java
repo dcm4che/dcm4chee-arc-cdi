@@ -47,7 +47,7 @@ import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QSeries;
-import org.dcm4chee.archive.query.VisibleSOPClassDetector;
+import org.dcm4chee.archive.conf.VisibleSOPClassDetector;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -35,10 +35,33 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.query;
+package org.dcm4chee.archive.conf;
 
+import java.util.Arrays;
 
-public interface VisibleSOPClassDetector {
+import javax.inject.Inject;
 
-    public boolean isVisibleSOPClass(String sopClassUID);
+import org.dcm4che3.net.Device;
+
+public class VisibleSOPClassDetectorImpl implements VisibleSOPClassDetector {
+
+    @Inject
+    Device device;
+
+    @Override
+    public boolean isVisibleSOPClass(String sopClassUID) {
+        
+        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        
+        if (arcDevExt.getUseWhitelistOfVisibleImageSRClasses()) {
+            return doesImageSRListContainSOPClass(sopClassUID, arcDevExt.getVisibleImageSRClasses());
+        } else {
+            return !doesImageSRListContainSOPClass(sopClassUID, arcDevExt.getNonVisibleImageSRClasses()); 
+        }
+    }
+
+    private boolean doesImageSRListContainSOPClass(String sopClassUID, String[] arrayOfSOPClasses) {
+        return arrayOfSOPClasses != null && arrayOfSOPClasses.length>0 &&
+                Arrays.asList(arrayOfSOPClasses).contains(sopClassUID);
+    }
 }
