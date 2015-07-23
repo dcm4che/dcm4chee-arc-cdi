@@ -11,34 +11,34 @@ import java.util.TreeMap;
 @LDAP(objectClasses = "dcmRetrieveSuppressionCriteria")
 @ConfigurableClass
 public class RetrieveSuppressionCriteria implements Serializable {
-private static final long serialVersionUID = -7215371541145445328L;
+    private static final long serialVersionUID = -7215371541145445328L;
 
-@ConfigurableProperty(name = "dcmCheckTransferCapabilities", defaultValue = "false")
-private boolean checkTransferCapabilities;
+    @ConfigurableProperty(name = "dcmCheckTransferCapabilities", defaultValue = "false")
+    private boolean checkTransferCapabilities;
 
 
-@LDAP(
-        distinguishingField = "dicomAETitle",
-        mapEntryObjectClass = "dcmRetrieveSuppressionCriteriaEntry",
-        mapValueAttribute = "labeledURI"
-)
-@ConfigurableProperty(name = "dcmRetrieveSuppressionCriteriaMap")
-private Map<String, String> suppressionCriteriaMap = new TreeMap<String, String>();
+    @LDAP(
+            distinguishingField = "dicomAETitle",
+            mapEntryObjectClass = "dcmRetrieveSuppressionCriteriaEntry",
+            mapValueAttribute = "labeledURI"
+    )
+    @ConfigurableProperty(name = "dcmRetrieveSuppressionCriteriaMap")
+    private Map<String, String> suppressionCriteriaMap = new TreeMap<String, String>();
 
-public boolean isCheckTransferCapabilities() {
-    return checkTransferCapabilities;
-}
+    public boolean isCheckTransferCapabilities() {
+        return checkTransferCapabilities;
+    }
 
-public void setCheckTransferCapabilities(boolean checkTransferCapabilities) {
-    this.checkTransferCapabilities = checkTransferCapabilities;
-}
+    public void setCheckTransferCapabilities(boolean checkTransferCapabilities) {
+        this.checkTransferCapabilities = checkTransferCapabilities;
+    }
 
-public Map<String, String> getSuppressionCriteriaMap() {
-    return suppressionCriteriaMap;
-}
+    public Map<String, String> getSuppressionCriteriaMap() {
+        return suppressionCriteriaMap;
+    }
 
-public void setSuppressionCriteriaMap(Map<String, String> suppressionCriteriaMap) {
-    this.suppressionCriteriaMap = suppressionCriteriaMap;
-}
+    public void setSuppressionCriteriaMap(Map<String, String> suppressionCriteriaMap) {
+        this.suppressionCriteriaMap = suppressionCriteriaMap;
+    }
 
 }
