@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -7,16 +7,19 @@
     <version>4.5.0-SNAPSHOT</version>
   </parent>
   <artifactId>dcm4chee-arc-store</artifactId>
+  <properties>
+    <skipITs>true</skipITs>
+  </properties>
   <dependencies>
-  <dependency>
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-net</artifactId>
     </dependency>
-            <dependency>
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-conf-api</artifactId>
     </dependency>
-            <dependency>
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-conf-api-hl7</artifactId>
     </dependency>
@@ -149,86 +152,55 @@
       <groupId>org.dcm4che.dcm4chee-conf</groupId>
       <artifactId>dcm4chee-conf-decorators</artifactId>
     </dependency>
-  <!--<build>
-    <resources>
-      <resource>
-        <directory>src/main/resources/META-INF</directory>
-        <includes>
-          <include>**/*beans.xml</include>
-        </includes>
-      </resource>
-    </resources>
-  </build>-->
-    </dependencies>  
-
+    <!--<build>
+      <resources>
+        <resource>
+          <directory>src/main/resources/META-INF</directory>
+          <includes>
+            <include>**/*beans.xml</include>
+          </includes>
+        </resource>
+      </resources>
+    </build>-->
+  </dependencies>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <archive>
+              <manifestEntries>
+                <Dependencies>org.dcm4che.net,org.dcm4che.net-hl7, org.dcm4che.soundex, org.dcm4che.conf.api,
+                  org.dcm4che.conf.api-hl7
+                </Dependencies>
+              </manifestEntries>
+            </archive>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
   <profiles>
-    <profile>
-      <id>default</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <skipITs>true</skipITs>
-      </properties>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <artifactId>maven-jar-plugin</artifactId>
-              <configuration>
-                <archive>
-                  <manifestEntries>
-                  <Dependencies>org.dcm4che.net,org.dcm4che.net-hl7, org.dcm4che.soundex, org.dcm4che.conf.api, org.dcm4che.conf.api-hl7</Dependencies>
-                  </manifestEntries>
-                </archive>
-              </configuration>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-      </build>
-    </profile>
+
     <profile>
       <id>jboss8</id>
       <build>
         <plugins>
           <plugin>
-            <artifactId>maven-jar-plugin</artifactId>
-            <version>2.3.2</version>
-            <configuration>
-              <archive>
-                <manifestEntries>
-                  <Dependencies>org.dcm4che.net,org.dcm4che.net-hl7, org.dcm4che.soundex, org.dcm4che.conf.api, org.dcm4che.conf.api-hl7</Dependencies>
-                </manifestEntries>
-              </archive>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>jboss-packaging-maven-plugin</artifactId>
-            <version>2.1.1</version>
-            <extensions>true</extensions>
-          </plugin>
-          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-	       	  <excludes>
-	          	<exclude>**/InitDataForIT.java</exclude>
-	          	<exclude>**/ClearDataForIT.java</exclude>
-	          </excludes>
-	      	</configuration>
- 	      </plugin>
+              <excludes>
+                <exclude>**/InitDataForIT.java</exclude>
+                <exclude>**/ClearDataForIT.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
-      <dependencies>
-        <dependency>
-          <groupId>org.wildfly</groupId>
-          <artifactId>wildfly-arquillian-container-remote</artifactId>
-          <version>8.0.0.Final</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
     </profile>
+
     <profile>
       <id>jbossas-remote-7</id>
       <build>
@@ -242,42 +214,17 @@
         </resources>
         <plugins>
           <plugin>
-            <artifactId>maven-jar-plugin</artifactId>
-            <version>2.3.2</version>
-            <configuration>
-              <archive>
-                <manifestEntries>
-                  <Dependencies>org.dcm4che.net,org.dcm4che.net-hl7, org.dcm4che.soundex, org.dcm4che.conf.api, org.dcm4che.conf.api-hl7</Dependencies>
-                </manifestEntries>
-              </archive>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>jboss-packaging-maven-plugin</artifactId>
-            <version>2.1.1</version>
-            <extensions>true</extensions>
-          </plugin>
-          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-	       	  <excludes>
-	          	<exclude>**/InitDataForIT.java</exclude>
-	          	<exclude>**/ClearDataForIT.java</exclude>
-	          </excludes>
-	      	</configuration>
- 	      </plugin>
+              <excludes>
+                <exclude>**/InitDataForIT.java</exclude>
+                <exclude>**/ClearDataForIT.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
-      <dependencies>
-        <dependency>
-          <groupId>org.jboss.as</groupId>
-          <artifactId>jboss-as-arquillian-container-remote</artifactId>
-          <version>7.2.0.Final</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
     </profile>
   </profiles>
 </project>

@@ -9,10 +9,12 @@
     <artifactId>dcm4chee-arc-parent</artifactId>
     <version>4.5.0-SNAPSHOT</version>
   </parent>
+
   <artifactId>dcm4chee-arc-store-verify</artifactId>
   <name>dcm4chee-arc-store-verify</name>
   <url>http://maven.apache.org</url>
   <properties>
+    <skipITs>true</skipITs>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
@@ -192,64 +194,24 @@
     
 </dependencies>
 
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <archive>
+              <manifestEntries>
+                <Dependencies>org.dcm4che.net, org.dcm4che.conf.api, org.dcm4che.json</Dependencies>
+              </manifestEntries>
+            </archive>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
   <profiles>
-    <profile>
-      <id>default</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <skipITs>true</skipITs>
-      </properties>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <artifactId>maven-jar-plugin</artifactId>
-              <configuration>
-                <archive>
-                  <manifestEntries>
-                    <Dependencies>org.dcm4che.net, org.dcm4che.conf.api, org.dcm4che.json</Dependencies>
-                  </manifestEntries>
-                </archive>
-              </configuration>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-      </build>
-    </profile>
-    <profile>
-      <id>jboss8</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-jar-plugin</artifactId>
-            <version>2.3.2</version>
-            <configuration>
-              <archive>
-                <manifestEntries>
-                  <Dependencies>org.dcm4che.net, org.dcm4che.conf.api, org.dcm4che.json</Dependencies>
-                </manifestEntries>
-              </archive>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>jboss-packaging-maven-plugin</artifactId>
-            <version>2.1.1</version>
-            <extensions>true</extensions>
-          </plugin>
-        </plugins>
-      </build>
-      <dependencies>
-        <dependency>
-          <groupId>org.wildfly</groupId>
-          <artifactId>wildfly-arquillian-container-remote</artifactId>
-          <version>8.0.0.Final</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
     <profile>
       <id>jbossas-remote-7</id>
       <build>
@@ -261,35 +223,7 @@
             </excludes>
           </resource>
         </resources>
-        <plugins>
-          <plugin>
-            <artifactId>maven-jar-plugin</artifactId>
-            <version>2.3.2</version>
-            <configuration>
-              <archive>
-                <manifestEntries>
-                  <Dependencies>org.dcm4che.net, org.dcm4che.conf.api, org.dcm4che.json</Dependencies>
-                </manifestEntries>
-              </archive>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>jboss-packaging-maven-plugin</artifactId>
-            <version>2.1.1</version>
-            <extensions>true</extensions>
-          </plugin>
-        </plugins>
       </build>
-      <dependencies>
-        <dependency>
-          <groupId>org.jboss.as</groupId>
-          <artifactId>jboss-as-arquillian-container-remote</artifactId>
-          <version>7.1.1.Final</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
     </profile>
   </profiles>
-
 </project>

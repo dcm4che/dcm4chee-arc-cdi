@@ -636,5 +636,50 @@
             </repository>
         </distributionManagement>
     </profile>
+
+
+      <!-- Arquillian testing -->
+    <profile>
+        <id>jbossas-remote-7</id>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.as</groupId>
+                <artifactId>jboss-as-arquillian-container-remote</artifactId>
+                <version>7.2.0.Final</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>jboss-packaging-maven-plugin</artifactId>
+                    <version>2.1.1</version>
+                    <extensions>true</extensions>
+                </plugin>
+            </plugins>
+        </build>
+    </profile>
+    <profile>
+        <id>jboss8</id>
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>jboss-packaging-maven-plugin</artifactId>
+                    <version>2.1.1</version>
+                    <extensions>true</extensions>
+                </plugin>
+            </plugins>
+        </build>
+        <dependencies>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-arquillian-container-remote</artifactId>
+                <version>8.0.0.Final</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </profile>
   </profiles>
 </project>
