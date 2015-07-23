@@ -58,7 +58,9 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.conf.api, org.dcm4che.conf.api-hl7 org.dcm4che.net-hl7, org.dcm4che.net-imageio, org.dcm4che.net-audit</Dependencies>
+              <Dependencies>org.dcm4che.conf.api, org.dcm4che.conf.api-hl7,
+                org.dcm4che.net-hl7, org.dcm4che.net-imageio,
+                org.dcm4che.net-audit, org.dcm4che.core services</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>
