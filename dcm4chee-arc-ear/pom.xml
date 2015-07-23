@@ -388,7 +388,7 @@
           <plugin>
             <artifactId>maven-ear-plugin</artifactId>
             <configuration>
-              <modules>
+              <modules combine.children="append">
                 <webModule>
                   <groupId>org.dcm4che.dcm4chee-monitoring</groupId>
                   <artifactId>dcm4chee-monitoring-rs</artifactId>
@@ -408,7 +408,7 @@
         <configuration>
           <classifier>${db}</classifier>
           <defaultLibBundleDir>lib</defaultLibBundleDir>
-          <modules>
+          <modules combine.children="append">
             <webModule>
               <groupId>org.dcm4che.dcm4chee-arc</groupId>
               <artifactId>dcm4chee-arc-war-skinny</artifactId>
