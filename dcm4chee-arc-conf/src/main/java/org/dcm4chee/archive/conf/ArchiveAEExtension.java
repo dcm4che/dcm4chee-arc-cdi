@@ -90,6 +90,9 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
     private String storageSystemGroupID;
 
+    @ConfigurableProperty(name = "dcmStorageSystemGroupType")
+    private String storageSystemGroupType;
+
     @ConfigurableProperty(name= "dcmQidoClientAcceptMediaType", defaultValue="application/json")
     private String qidoClientAcceptType = "application/json";
 
@@ -305,6 +308,14 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setStorageSystemGroupID(String storageSystemGroupID) {
         this.storageSystemGroupID = storageSystemGroupID;
+    }
+
+    public void setStorageSystemGroupType(String storageSystemGroupType) {
+        this.storageSystemGroupType = storageSystemGroupType;
+    }
+
+    public String getStorageSystemGroupType() {
+        return storageSystemGroupType;
     }
 
     public String getSpoolDirectoryPath() {

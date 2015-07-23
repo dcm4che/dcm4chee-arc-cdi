@@ -544,10 +544,7 @@
                 "dcmTag" : [ 524293, 524384, 524400, 524416, 524418, 528400, 528446, 528448, 528464, 528528, 528657, 1572885, 2097166, 2097169, 2097248, 4194884, 4194885, 4194933 ]
               },
               "Study" : {
-                "dcmPrivateTag" : {
-                  "1114113" : "EXTENDED STUDY",
-                  "1114114" : "EXTENDED STUDY"
-                },
+                "dcmPrivateTag" : { },
                 "dcmTag" : [ 524293, 524320, 524336, 524368, 524369, 524432, 528432, 528434, 1052688, 1052704, 1052705, 1052720, 1057152, 1057200, 1057283, 2097165, 2097168 ]
               }
             },
@@ -760,12 +757,7 @@
                 },
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "nearline" ],
-                "dcmArchivedAnyWhere" : false,
                 "dcmBaseStorageAccessTime" : 2000,
-                "dcmDataVolumePerDayAverageOnNDays" : 1,
-                "dcmDeleteAsMuchAsPossible" : false,
-                "dcmMaxDeleteServiceRetries" : 0,
-                "dcmMinTimeStudyNotAccessed" : 0,
                 "dcmNextStorageSystemID" : "nearline",
                 "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}",
@@ -782,14 +774,10 @@
                 },
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "fs1" ],
-                "dcmArchivedAnyWhere" : false,
                 "dcmArchivedOnGroups" : [ "NEARLINE" ],
                 "dcmBaseStorageAccessTime" : 1000,
-                "dcmDataVolumePerDayAverageOnNDays" : 1,
-                "dcmDeleteAsMuchAsPossible" : false,
                 "dcmDeletionThreshold" : "7:1h;19:24h",
                 "dcmDigestAlgorithm" : "MD5",
-                "dcmMaxDeleteServiceRetries" : 0,
                 "dcmMinTimeStudyNotAccessed" : 30,
                 "dcmMinTimeStudyNotAccessedUnit" : "DAYS",
                 "dcmNextStorageSystemID" : "fs1",
@@ -808,11 +796,6 @@
                 },
                 "StorageAccessTimeOffsetMap" : { },
                 "dcmActiveStorageSystemID" : [ "metadata" ],
-                "dcmArchivedAnyWhere" : false,
-                "dcmDataVolumePerDayAverageOnNDays" : 1,
-                "dcmDeleteAsMuchAsPossible" : false,
-                "dcmMaxDeleteServiceRetries" : 0,
-                "dcmMinTimeStudyNotAccessed" : 0,
                 "dcmNextStorageSystemID" : "metadata",
                 "dcmRetrieveAET" : [ ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",

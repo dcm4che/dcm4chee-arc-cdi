@@ -117,6 +117,7 @@ import org.dcm4chee.storage.ObjectAlreadyExistsException;
 import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.dcm4chee.storage.service.RetrieveService;
 import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
@@ -178,6 +179,15 @@ public class StoreServiceImpl implements StoreService {
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         String groupID = arcAE.getStorageSystemGroupID();
+        if (groupID == null) {
+            String groupType = arcAE.getStorageSystemGroupType();
+            if (groupType != null) {
+                StorageSystemGroup group = storageService
+                        .selectBestStorageSystemGroup(groupType);
+                if (group != null)
+                    groupID = group.getGroupID();
+            }
+        }
         StorageSystem storageSystem = storageService.selectStorageSystem(
                 groupID, 0);
         if (storageSystem == null)

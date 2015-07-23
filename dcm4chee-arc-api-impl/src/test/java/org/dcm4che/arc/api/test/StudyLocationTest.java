@@ -55,6 +55,7 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.ExternalLocationTuple;
 import org.dcm4chee.storage.conf.Availability;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.easymock.EasyMockRule;
@@ -88,7 +89,10 @@ public class StudyLocationTest extends EasyMockSupport {
     public void testGetStorageSystems() {
         List<ArchiveInstanceLocator> matches = new ArrayList<ArchiveInstanceLocator>();
 
+        StorageDeviceExtension devExt = new StorageDeviceExtension();
+
         StorageSystemGroup grp1 = new StorageSystemGroup();
+        grp1.setStorageDeviceExtension(devExt);
         grp1.setGroupID("G1");
         grp1.setBaseStorageAccessTime(1000);
         StorageSystem sys1 = new StorageSystem();
@@ -97,6 +101,7 @@ public class StudyLocationTest extends EasyMockSupport {
         sys1.setStorageSystemGroup(grp1);
 
         StorageSystemGroup grp2 = new StorageSystemGroup();
+        grp2.setStorageDeviceExtension(devExt);
         grp2.setGroupID("G2");
         grp2.setBaseStorageAccessTime(2000);
         StorageSystem sys2 = new StorageSystem();

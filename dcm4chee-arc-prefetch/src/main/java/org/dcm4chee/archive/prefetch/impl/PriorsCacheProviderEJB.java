@@ -44,6 +44,7 @@ import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.prefetch.Fetched;
 import org.dcm4chee.storage.conf.Availability;
+import org.dcm4chee.storage.conf.StorageSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -81,9 +83,11 @@ public class PriorsCacheProviderEJB {
     @Fetched
     private Event<Location> fetched;
 
-    public void register(String sourceGroupID, String sourceSystemID,
-            String sourceStoragePath, String targetGroupID, String targetSystemID,
+    public void register(StorageSystem sourceStorageSystem,
+            String sourceStoragePath, StorageSystem targetStorageSystem,
             String targetStoragePath, String iuid, Availability availability) {
+        String sourceGroupID = sourceStorageSystem.getStorageSystemGroup().getGroupID();
+        String targetGroupID = targetStorageSystem.getStorageSystemGroup().getGroupID();
         if (sourceGroupID.equals(targetGroupID))
             throw new IllegalArgumentException(
                     "Source and target Storage System Groups are the same ("
@@ -95,6 +99,8 @@ public class PriorsCacheProviderEJB {
             return;
         }
 
+        String sourceSystemID = sourceStorageSystem.getStorageSystemID();
+        String targetSystemID = targetStorageSystem.getStorageSystemID();
         Location sourceLocation = null;
         Collection<Location> duplicates = new ArrayList<Location>();
         for (Iterator<Location> iter = inst.getLocations().iterator(); iter.hasNext();) {

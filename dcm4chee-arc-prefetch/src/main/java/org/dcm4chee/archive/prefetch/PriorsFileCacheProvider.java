@@ -46,19 +46,23 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.enterprise.context.Dependent;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.prefetch.impl.PriorsCacheProviderEJB;
 import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.FileCache;
 import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.dcm4chee.storage.service.StorageService;
 import org.dcm4chee.storage.spi.FileCacheProvider;
 
@@ -70,8 +74,6 @@ import org.dcm4chee.storage.spi.FileCacheProvider;
 @Dependent
 public class PriorsFileCacheProvider implements FileCacheProvider {
 
-    private static final String STORAGE_SYSTEM_ID = "storage_system_id";
-
     @Inject
     private Device device;
 
@@ -81,30 +83,56 @@ public class PriorsFileCacheProvider implements FileCacheProvider {
     @Inject
     private StorageService storageService;
 
-    private Map<Path, String> resolvedPaths;
+    private Map<Path, StorageSystem> resolvedPaths;
 
     private String groupID;
 
+    private FileCache fileCache;
+
     @Override
     public void init(FileCache fileCache) {
-        groupID = fileCache.getStorageSystemGroupID();
+        this.fileCache = fileCache;
+        groupID = storageSystemGroup(fileCache);
         ArchiveDeviceExtension devExt = device
                 .getDeviceExtension(ArchiveDeviceExtension.class);
         final int maxEntries = devExt.getPriorsCacheMaxResolvedPathEntries();
-        resolvedPaths = Collections.synchronizedMap(new LinkedHashMap<Path, String>() {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<Path, String> eldest) {
-                return size() > maxEntries;
-            }
-        });
+        resolvedPaths = Collections
+                .synchronizedMap(new LinkedHashMap<Path, StorageSystem>() {
+                    @Override
+                    protected boolean removeEldestEntry(
+                            Map.Entry<Path, StorageSystem> eldest) {
+                        return size() > maxEntries;
+                    }
+                });
+    }
+
+    private String storageSystemGroup(FileCache fileCache) {
+        String groupID = fileCache.getStorageSystemGroupID();
+        if (groupID != null)
+            return groupID;
+        String groupType = fileCache.getStorageSystemGroupType();
+        if (groupType == null)
+            throw new IllegalStateException(
+                    "Storage System Group ID or Storage System Type not defined");
+        StorageSystemGroup group = storageService.selectBestStorageSystemGroup(groupType);
+        if (group == null)
+            throw new IllegalStateException(
+                    "No Storage System Group defined for type " + groupType);
+        return group.getGroupID();
+    }
+
+    public void onArchiveSeriviceReloaded(
+            @Observes @ArchiveServiceReloaded StartStopReloadEvent reload) {
+        groupID = storageSystemGroup(fileCache);
+        resolvedPaths.clear();
     }
 
     @Override
     public Path toPath(RetrieveContext ctx, String name) throws IOException {
         Path path = Paths.get(ctx.getStorageSystem().getStorageSystemID(), name);
-        String systemID = resolveStorageSystemID(path);
-        ctx.setProperty(STORAGE_SYSTEM_ID, systemID);
-        return getBaseDirectory(systemID).resolve(path);
+        StorageSystem system = resolveStorageSystem(path);
+        ctx.setProperty(StorageSystem.class.getName(), system);
+        return storageService.getBaseDirectory(system).resolve(path);
     }
 
     @Override
@@ -112,24 +140,24 @@ public class PriorsFileCacheProvider implements FileCacheProvider {
         throw new UnsupportedOperationException();
     }
 
-    private String resolveStorageSystemID(Path path) throws IOException {
-        String systemID = resolvedPaths.get(path);
-        if (systemID == null)
-            systemID = resolvedPaths.get(path.getParent());
-        if (systemID == null) {
-            systemID = selectStorageSystem().getStorageSystemID();
-            String prev;
+    private StorageSystem resolveStorageSystem(Path path) throws IOException {
+        StorageSystem system = resolvedPaths.get(path);
+        if (system == null)
+            system = resolvedPaths.get(path.getParent());
+        if (system == null) {
+            system = selectStorageSystem();
+            StorageSystem prev;
             synchronized (resolvedPaths) {
                 prev = resolvedPaths.get(path);
                 if (prev == null) {
-                    resolvedPaths.put(path, systemID);
-                    resolvedPaths.put(path.getParent(), systemID);
+                    resolvedPaths.put(path, system);
+                    resolvedPaths.put(path.getParent(), system);
                 }
             }
             if (prev != null)
-                systemID = prev;
+                system = prev;
         }
-        return systemID;
+        return system;
     }
 
     private StorageSystem selectStorageSystem() throws IOException {
@@ -140,11 +168,6 @@ public class PriorsFileCacheProvider implements FileCacheProvider {
         return storageSystem;
     }
 
-    private Path getBaseDirectory(String systemID) {
-        return storageService.getBaseDirectory(storageService.getStorageSystem(groupID,
-                systemID));
-    }
-
     @Override
     public boolean access(Path path) throws IOException {
         return Files.exists(path);
@@ -153,9 +176,11 @@ public class PriorsFileCacheProvider implements FileCacheProvider {
     @Override
     public void register(final RetrieveContext ctx, final String name, Path path)
             throws IOException {
-        final String systemID = (String) ctx.getProperty(STORAGE_SYSTEM_ID);
-        final String storagePath = getBaseDirectory(systemID).relativize(path).toString();
-        final Availability availability = getAvailability(systemID);
+        final StorageSystem system = (StorageSystem) ctx.getProperty(StorageSystem.class
+                .getName());
+        final String storagePath = storageService.getBaseDirectory(system)
+                .relativize(path).toString();
+        final Availability availability = system.getAvailability();
         final String iuid;
         try (DicomInputStream in = new DicomInputStream(path.toFile())) {
             iuid = in.readFileMetaInformation().getString(Tag.MediaStorageSOPInstanceUID);
@@ -164,9 +189,8 @@ public class PriorsFileCacheProvider implements FileCacheProvider {
         device.execute(new Runnable() {
             @Override
             public void run() {
-                ejb.register(ctx.getStorageSystem().getStorageSystemGroup().getGroupID(),
-                        ctx.getStorageSystem().getStorageSystemID(), name, groupID,
-                        systemID, storagePath, iuid, availability);
+                ejb.register(ctx.getStorageSystem(), name, system, storagePath, iuid,
+                        availability);
             }
         });
     }
@@ -174,10 +198,6 @@ public class PriorsFileCacheProvider implements FileCacheProvider {
     @Override
     public void register(StorageContext ctx, String name, Path path) throws IOException {
         throw new UnsupportedOperationException();
-    }
-
-    private Availability getAvailability(String systemID) {
-        return storageService.getStorageSystem(groupID, systemID).getAvailability();
     }
 
     @Override

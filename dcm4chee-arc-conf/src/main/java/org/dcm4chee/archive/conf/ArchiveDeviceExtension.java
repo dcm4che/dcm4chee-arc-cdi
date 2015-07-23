@@ -72,7 +72,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmNonVisibleImageClasses")
     private String[] nonVisibleImageSRClasses = {};
     
-    @ConfigurableProperty(name = "dcmUseWhitelistOfVisibleImageSRClasses"/*, defaultValue = "true"*/)
+    @ConfigurableProperty(name = "dcmUseWhitelistOfVisibleImageSRClasses", defaultValue = "true")
     private boolean useWhitelistOfVisibleImageSRClasses;
 
     @ConfigurableProperty(name = "dcmDisabledDecorators")

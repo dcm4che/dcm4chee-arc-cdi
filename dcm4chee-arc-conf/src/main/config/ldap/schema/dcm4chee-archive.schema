@@ -614,7 +614,7 @@ attributetype ( 1.2.40.0.13.1.15.10.3.101 NAME 'dcmNonVisibleImageClasses'
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
 
-attributetype ( 1.2.40.0.13.1.15.10.3.86 NAME 'dcmUseWhitelistOfVisibleImageSRClasses'
+attributetype ( 1.2.40.0.13.1.15.10.3.102 NAME 'dcmUseWhitelistOfVisibleImageSRClasses'
   DESC 'Specifies whether to use white or black list to calculate visible
   images'
   EQUALITY booleanMatch
@@ -659,6 +659,7 @@ objectclass ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
     dcmDefaultExternalRetrieveAETAvailability $
     dcmQidoClientAcceptMediaType $
     dcmStorageSystemGroupID $
+    dcmStorageSystemGroupType $
     dcmSpoolDirectoryPath $
     dcmMetaDataStorageSystemGroupID $
     dcmPersonNameComponentOrderInsensitiveMatching $
