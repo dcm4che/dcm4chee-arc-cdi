@@ -42,12 +42,12 @@ import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
 
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.archive.entity.QSeries;
-import org.dcm4chee.archive.conf.VisibleSOPClassDetector;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,14 +67,14 @@ public class StudyVisibleImagesDecorator extends DelegatingDerivedStudyFields {
     private Set<String> visibleSeriesUIDs = new HashSet<String>();
     
 	@Inject
-	VisibleSOPClassDetector visibleSOPClassDetector;
+	Device device;
 	
     @Override
     public void addInstance(Tuple result, QueryParam param) {
         getNextDecorator().addInstance(result, param);
         String sopClass = result.get(QInstance.instance.sopClassUID);
 
-        if (visibleSOPClassDetector.isVisibleSOPClass(sopClass)) {
+        if (device.getDeviceExtension(ArchiveDeviceExtension.class).isVisibleSOPClass(sopClass)) {
             String seriesUID = result.get(QSeries.series.seriesInstanceUID);
             AttributesBlob blob = result.get(QInstance.instance.attributesBlob);
             if (!visibleSeriesUIDs.contains(seriesUID)) {

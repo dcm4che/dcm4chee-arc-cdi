@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.conf;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -51,7 +52,6 @@ import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.io.TemplatesCache;
-import org.dcm4che3.net.DefaultTransferCapabilities;
 import org.dcm4che3.net.DeviceExtension;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.StringUtils;
@@ -182,6 +182,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
+
 
     public boolean isHostnameAEResolution() {
         return hostnameAEResolution;
@@ -541,5 +542,18 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.useWhitelistOfVisibleImageSRClasses = useWhitelistOfVisibleImageSRClasses;
     }
 
+
+    public boolean isVisibleSOPClass(String sopClassUID) {
+        if (getUseWhitelistOfVisibleImageSRClasses()) {
+            return doesImageSRListContainSOPClass(sopClassUID, getVisibleImageSRClasses());
+        } else {
+            return !doesImageSRListContainSOPClass(sopClassUID, getNonVisibleImageSRClasses());
+        }
+    }
+
+    private boolean doesImageSRListContainSOPClass(String sopClassUID, String[] arrayOfSOPClasses) {
+        return arrayOfSOPClasses != null && arrayOfSOPClasses.length>0 &&
+                Arrays.asList(arrayOfSOPClasses).contains(sopClassUID);
+    }
 
 }

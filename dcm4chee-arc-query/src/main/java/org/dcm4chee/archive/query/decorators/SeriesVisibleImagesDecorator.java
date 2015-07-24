@@ -42,9 +42,9 @@ import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
 
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.conf.VisibleSOPClassDetector;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.QInstance;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
@@ -62,7 +62,7 @@ public class SeriesVisibleImagesDecorator extends DelegatingDerivedSeriesFields 
     private int numberOfVisibleImages=0;
     
     @Inject
-    VisibleSOPClassDetector visibleSOPClassDetector;
+    Device device;
     
     @Override
     public void addInstance(Tuple result, QueryParam param) {
@@ -70,7 +70,7 @@ public class SeriesVisibleImagesDecorator extends DelegatingDerivedSeriesFields 
         AttributesBlob blob = result.get(QInstance.instance.attributesBlob);
         String sopClass = result.get(QInstance.instance.sopClassUID);
 
-        if (visibleSOPClassDetector.isVisibleSOPClass(sopClass)) {
+        if (device.getDeviceExtension(ArchiveDeviceExtension.class).isVisibleSOPClass(sopClass)) {
             int numberOfVisibleImagesInInstance = blob != null ? blob.getAttributes()
                     .getInt(Tag.NumberOfFrames, 1) : 1;
             numberOfVisibleImages+= numberOfVisibleImagesInInstance;

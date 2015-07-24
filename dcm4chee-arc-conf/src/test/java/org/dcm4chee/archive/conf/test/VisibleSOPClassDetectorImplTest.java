@@ -39,8 +39,6 @@ package org.dcm4chee.archive.conf.test;
 
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.VisibleSOPClassDetector;
-import org.dcm4chee.archive.conf.VisibleSOPClassDetectorImpl;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRule;
 import org.easymock.EasyMockSupport;
@@ -58,9 +56,7 @@ public class VisibleSOPClassDetectorImplTest extends EasyMockSupport {
     @Rule
     public EasyMockRule mocks = new EasyMockRule(this);
 
-    @TestSubject
-    private VisibleSOPClassDetector api = new VisibleSOPClassDetectorImpl();
-    
+
     @Mock(type = MockType.STRICT)
     private Device mockDevice;
     
@@ -74,8 +70,8 @@ public class VisibleSOPClassDetectorImplTest extends EasyMockSupport {
                 devExt);
         
         replayAll();
-        
-        Assert.assertTrue(api.isVisibleSOPClass("1.2.3"));
+
+        Assert.assertTrue(mockDevice.getDeviceExtension(ArchiveDeviceExtension.class).isVisibleSOPClass("1.2.3"));
         
         verifyAll();
     }
@@ -90,8 +86,8 @@ public class VisibleSOPClassDetectorImplTest extends EasyMockSupport {
                 devExt);
         
         replayAll();
-        
-        Assert.assertFalse(api.isVisibleSOPClass("7.8.9"));
+
+        Assert.assertFalse(mockDevice.getDeviceExtension(ArchiveDeviceExtension.class).isVisibleSOPClass("7.8.9"));
         
         verifyAll();
     }
@@ -106,8 +102,8 @@ public class VisibleSOPClassDetectorImplTest extends EasyMockSupport {
                 devExt);
         
         replayAll();
-        
-        Assert.assertFalse(api.isVisibleSOPClass("7.8.9"));
+
+        Assert.assertEquals(false, mockDevice.getDeviceExtension(ArchiveDeviceExtension.class).isVisibleSOPClass("7.8.9"));
         
         verifyAll();
     }
@@ -122,8 +118,8 @@ public class VisibleSOPClassDetectorImplTest extends EasyMockSupport {
                 devExt);
         
         replayAll();
-        
-        Assert.assertTrue(api.isVisibleSOPClass("1.2.3"));
+
+        Assert.assertTrue(mockDevice.getDeviceExtension(ArchiveDeviceExtension.class).isVisibleSOPClass("1.2.3"));
         
         verifyAll();
     }
