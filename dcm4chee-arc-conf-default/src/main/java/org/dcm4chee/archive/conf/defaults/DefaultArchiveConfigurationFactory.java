@@ -704,6 +704,7 @@ public class DefaultArchiveConfigurationFactory {
                 "studyUpdate"));
         ext.setVisibleImageSRClasses(DefaultTransferCapabilities.IMAGE_CUIDS);
         ext.setUseWhitelistOfVisibleImageSRClasses(false);
+        ext.setUseNullForEmptyQueryFields(true);
     }
 
     private static RejectionParam[] createRejectionNotes() {

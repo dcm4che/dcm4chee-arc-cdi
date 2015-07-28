@@ -180,6 +180,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmPriorsCacheClearMaxLocationsPerDelete", defaultValue = "1000")
     private int priorsCacheClearMaxLocationsPerDelete;
 
+    @ConfigurableProperty(name = "dcmUseNullForEmptyQueryFields", defaultValue = "true")
+    private boolean useNullForEmptyQueryFields;
+
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
 
@@ -549,6 +552,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         } else {
             return !doesImageSRListContainSOPClass(sopClassUID, getNonVisibleImageSRClasses());
         }
+    }
+
+    public boolean isUseNullForEmptyQueryFields() {
+        return useNullForEmptyQueryFields;
+    }
+
+    public void setUseNullForEmptyQueryFields(boolean useNullForEmptyQueryFields) {
+        this.useNullForEmptyQueryFields = useNullForEmptyQueryFields;
     }
 
     private boolean doesImageSRListContainSOPClass(String sopClassUID, String[] arrayOfSOPClasses) {
