@@ -566,7 +566,7 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public StoreParam getStoreParam() {
-        StoreParam storeParam = ae.getDevice()
+        StoreParam storeParam = applicationEntity.getDevice()
                 .getDeviceExtension(ArchiveDeviceExtension.class)
                 .getStoreParam();
         storeParam.setModifyingSystem(getEffectiveModifyingSystem());
@@ -576,7 +576,7 @@ public class ArchiveAEExtension extends AEExtension {
 
     public QueryParam getQueryParam(EnumSet<QueryOption> queryOpts,
                                     String[] accessControlIDs) {
-        ArchiveDeviceExtension arcDev = ae.getDevice()
+        ArchiveDeviceExtension arcDev = applicationEntity.getDevice()
                 .getDeviceExtension(ArchiveDeviceExtension.class);
         QueryParam queryParam = arcDev.getQueryParam();
         queryParam.setCombinedDatetimeMatching(queryOpts
