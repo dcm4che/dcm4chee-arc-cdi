@@ -65,8 +65,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 
 import org.dcm4che3.data.Attributes;
@@ -187,17 +187,12 @@ public class WadoRS extends Wado {
 
     private void init(String method) {
 
+        ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
+        if (sourceAE == null) {
+            LOG.info("Unable to find the mapped AE for host {} or even the fallback AE, elimination/coercion will not be applied", request.getRemoteHost());
+        }
 
-            ApplicationEntity sourceAE = aeCache
-                    .findAE(new HttpSource(request));
-            if (sourceAE == null) {
-                LOG.info("Unable to find the mapped AE for this host or even "
-                        + "the fallback AE, elimination/coercion"
-                        + " will not be applied");
-            }
-            
-            context = new CStoreSCUContext(arcAE.getApplicationEntity()
-                    , sourceAE, ServiceType.WADOSERVICE);
+        context = new CStoreSCUContext(arcAE.getApplicationEntity(), sourceAE, ServiceType.WADOSERVICE);
 
         this.method = method;
         List<MediaType> acceptableMediaTypes = headers
@@ -302,6 +297,7 @@ public class WadoRS extends Wado {
         try {
             requiredMediaType = MediaTypes.forTransferSyntax(ts);
         } catch (IllegalArgumentException e) {
+            // ignored
         }
         if (requiredMediaType == null)
             return null;
