@@ -46,16 +46,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.enterprise.context.Dependent;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.prefetch.impl.PriorsCacheProviderEJB;
 import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.StorageContext;
@@ -119,12 +116,6 @@ public class PriorsFileCacheProvider implements FileCacheProvider {
             throw new IllegalStateException(
                     "No Storage System Group defined for type " + groupType);
         return group.getGroupID();
-    }
-
-    public void onArchiveSeriviceReloaded(
-            @Observes @ArchiveServiceReloaded StartStopReloadEvent reload) {
-        groupID = storageSystemGroup(fileCache);
-        resolvedPaths.clear();
     }
 
     @Override
