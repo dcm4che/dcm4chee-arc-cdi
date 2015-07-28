@@ -84,11 +84,8 @@ public class PriorsFileCacheProvider implements FileCacheProvider {
 
     private String groupID;
 
-    private FileCache fileCache;
-
     @Override
     public void init(FileCache fileCache) {
-        this.fileCache = fileCache;
         groupID = storageSystemGroup(fileCache);
         ArchiveDeviceExtension devExt = device
                 .getDeviceExtension(ArchiveDeviceExtension.class);

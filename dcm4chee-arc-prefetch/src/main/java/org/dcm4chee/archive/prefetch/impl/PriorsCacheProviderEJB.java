@@ -41,6 +41,7 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.prefetch.Fetched;
 import org.dcm4chee.storage.conf.Availability;
@@ -129,6 +130,8 @@ public class PriorsCacheProviderEJB {
 
         updateAvailability(inst, availability);
 
+        updateStudyAccessTime(inst, targetGroupID);
+
         Location newLocation = new Location.Builder().storageSystemGroupID(targetGroupID)
                 .storageSystemID(targetSystemID).storagePath(targetStoragePath)
                 .transferSyntaxUID(sourceLocation.getTransferSyntaxUID())
@@ -173,13 +176,18 @@ public class PriorsCacheProviderEJB {
             inst.setAvailability(availability);
     }
 
+    private void updateStudyAccessTime(Instance inst, String groupID) {
+        Study study = inst.getSeries().getStudy();
+        locationMgmt.findOrCreateStudyOnStorageGroup(study, groupID);
+    }
+
     public void clearCache(String groupID) throws IOException {
         ArchiveDeviceExtension devExt = device
                 .getDeviceExtension(ArchiveDeviceExtension.class);
         int maxResults = devExt.getPriorsCacheClearMaxLocationsPerDelete();
         int offset = 0;
         List<Location> locations;
-        while ((locations = selectLocationsFrom(groupID, maxResults, offset)).size() > 0) {
+        while ((locations = selectLocationsFromGroup(groupID, maxResults, offset)).size() > 0) {
             offset += locations.size();
             for (Location location : locations) {
                 for (Instance instance : location.getInstances())
@@ -195,7 +203,7 @@ public class PriorsCacheProviderEJB {
         }
     }
 
-    private List<Location> selectLocationsFrom(String groupID, int maxResults, int offset) {
+    private List<Location> selectLocationsFromGroup(String groupID, int maxResults, int offset) {
         return em
                 .createQuery(
                         "SELECT l FROM Location l where l.storageSystemGroupID = ?1",
