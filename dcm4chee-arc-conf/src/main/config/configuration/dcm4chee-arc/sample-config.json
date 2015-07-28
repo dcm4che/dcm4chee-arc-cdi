@@ -326,60 +326,6 @@
         "dcmTrustStoreType" : "JKS",
         "dcmTrustStoreURL" : "${jboss.server.config.url}/dcm4chee-arc/key.jks",
         "deviceExtensions" : {
-          "ImageWriterExtension" : {
-            "Image Writer Factory" : {
-              "dicomImageWriterMap" : {
-                "1.2.840.10008.1.2.4.50" : {
-                  "dcmIIOFormatName" : "jpeg"
-                },
-                "1.2.840.10008.1.2.4.51" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter"
-                },
-                "1.2.840.10008.1.2.4.57" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmImageWriteParam" : [ "compressionType=JPEG-LOSSLESS" ],
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter"
-                },
-                "1.2.840.10008.1.2.4.70" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmImageWriteParam" : [ "compressionType=JPEG-LOSSLESS" ],
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter"
-                },
-                "1.2.840.10008.1.2.4.80" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmImageWriteParam" : [ "compressionType=JPEG-LS" ],
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter",
-                  "dcmPatchJPEGLS" : "JAI2ISO"
-                },
-                "1.2.840.10008.1.2.4.90" : {
-                  "dcmIIOFormatName" : "jpeg2000",
-                  "dcmImageWriteParam" : [ "writeCodeStreamOnly=true" ],
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageWriterCodecLib"
-                },
-                "1.2.840.10008.1.2.4.91" : {
-                  "dcmIIOFormatName" : "jpeg2000",
-                  "dcmImageWriteParam" : [ "writeCodeStreamOnly=true" ],
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageWriterCodecLib"
-                }
-              }
-            }
-          },
-          "HL7DeviceExtension" : {
-            "hl7Apps" : {
-              "*" : {
-                "dicomNetworkConnectionReference" : [ "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='dcm4chee-arc']/dicomConnection[cn='hl7']", "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='dcm4chee-arc']/dicomConnection[cn='hl7-tls']" ],
-                "hl7AcceptedMessageType" : [ "ADT^A02", "ADT^A03", "ADT^A06", "ADT^A07", "ADT^A08", "ADT^A40", "ORM^O01" ],
-                "hl7AppExtensions" : {
-                  "ArchiveHL7ApplicationExtension" : {
-                    "labeledURI" : [ "${jboss.server.config.url}/dcm4chee-arc/hl7-adt2dcm.xsl adt2dcm" ]
-                  }
-                },
-                "hl7ApplicationName" : "*",
-                "hl7DefaultCharacterSet" : "8859/1"
-              }
-            }
-          },
           "ArchiveDeviceExtension" : {
             "dcmArchivingSchedulerPollInterval" : 60,
             "dcmAttributeFilter" : {
@@ -471,6 +417,102 @@
             "dcmAuditSourceTypeCode" : [ "4" ],
             "dicomNetworkConnectionReference" : [ "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='dcm4chee-arc']/dicomConnection[cn='audit-udp']" ]
           },
+          "HL7DeviceExtension" : {
+            "hl7Apps" : {
+              "*" : {
+                "dicomNetworkConnectionReference" : [ "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='dcm4chee-arc']/dicomConnection[cn='hl7']", "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='dcm4chee-arc']/dicomConnection[cn='hl7-tls']" ],
+                "hl7AcceptedMessageType" : [ "ADT^A02", "ADT^A03", "ADT^A06", "ADT^A07", "ADT^A08", "ADT^A40", "ORM^O01" ],
+                "hl7AppExtensions" : {
+                  "ArchiveHL7ApplicationExtension" : {
+                    "labeledURI" : [ "${jboss.server.config.url}/dcm4chee-arc/hl7-adt2dcm.xsl adt2dcm" ]
+                  }
+                },
+                "hl7ApplicationName" : "*",
+                "hl7DefaultCharacterSet" : "8859/1"
+              }
+            }
+          },
+          "ImageReaderExtension" : {
+            "Image Reader Factory" : {
+              "dicomImageReaderMap" : {
+                "1.2.840.10008.1.2.4.50" : {
+                  "dcmIIOFormatName" : "jpeg"
+                },
+                "1.2.840.10008.1.2.4.51" : {
+                  "dcmIIOFormatName" : "jpeg",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader"
+                },
+                "1.2.840.10008.1.2.4.57" : {
+                  "dcmIIOFormatName" : "jpeg",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader"
+                },
+                "1.2.840.10008.1.2.4.70" : {
+                  "dcmIIOFormatName" : "jpeg",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader"
+                },
+                "1.2.840.10008.1.2.4.80" : {
+                  "dcmIIOFormatName" : "jpeg",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader",
+                  "dcmPatchJPEGLS" : "ISO2JAI_IF_APP_OR_COM"
+                },
+                "1.2.840.10008.1.2.4.81" : {
+                  "dcmIIOFormatName" : "jpeg",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader"
+                },
+                "1.2.840.10008.1.2.4.90" : {
+                  "dcmIIOFormatName" : "jpeg2000",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageReaderCodecLib"
+                },
+                "1.2.840.10008.1.2.4.91" : {
+                  "dcmIIOFormatName" : "jpeg2000",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageReaderCodecLib"
+                },
+                "1.2.840.10008.1.2.5" : {
+                  "dcmIIOFormatName" : "rle",
+                  "dcmJavaClassName" : "org.dcm4che3.imageio.plugins.rle.RLEImageReader"
+                }
+              }
+            }
+          },
+          "ImageWriterExtension" : {
+            "Image Writer Factory" : {
+              "dicomImageWriterMap" : {
+                "1.2.840.10008.1.2.4.50" : {
+                  "dcmIIOFormatName" : "jpeg"
+                },
+                "1.2.840.10008.1.2.4.51" : {
+                  "dcmIIOFormatName" : "jpeg",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter"
+                },
+                "1.2.840.10008.1.2.4.57" : {
+                  "dcmIIOFormatName" : "jpeg",
+                  "dcmImageWriteParam" : [ "compressionType=JPEG-LOSSLESS" ],
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter"
+                },
+                "1.2.840.10008.1.2.4.70" : {
+                  "dcmIIOFormatName" : "jpeg",
+                  "dcmImageWriteParam" : [ "compressionType=JPEG-LOSSLESS" ],
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter"
+                },
+                "1.2.840.10008.1.2.4.80" : {
+                  "dcmIIOFormatName" : "jpeg",
+                  "dcmImageWriteParam" : [ "compressionType=JPEG-LS" ],
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter",
+                  "dcmPatchJPEGLS" : "JAI2ISO"
+                },
+                "1.2.840.10008.1.2.4.90" : {
+                  "dcmIIOFormatName" : "jpeg2000",
+                  "dcmImageWriteParam" : [ "writeCodeStreamOnly=true" ],
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageWriterCodecLib"
+                },
+                "1.2.840.10008.1.2.4.91" : {
+                  "dcmIIOFormatName" : "jpeg2000",
+                  "dcmImageWriteParam" : [ "writeCodeStreamOnly=true" ],
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageWriterCodecLib"
+                }
+              }
+            }
+          },
           "StorageDeviceExtension" : {
             "Storage Archiver" : {
               "dcmStorageArchiverObjectStatus" : "TO_ARCHIVE"
@@ -536,48 +578,6 @@
                 "dcmNextStorageSystemID" : "metadata",
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "METADATA"
-              }
-            }
-          },
-          "ImageReaderExtension" : {
-            "Image Reader Factory" : {
-              "dicomImageReaderMap" : {
-                "1.2.840.10008.1.2.4.50" : {
-                  "dcmIIOFormatName" : "jpeg"
-                },
-                "1.2.840.10008.1.2.4.51" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader"
-                },
-                "1.2.840.10008.1.2.4.57" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader"
-                },
-                "1.2.840.10008.1.2.4.70" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader"
-                },
-                "1.2.840.10008.1.2.4.80" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader",
-                  "dcmPatchJPEGLS" : "ISO2JAI_IF_APP_OR_COM"
-                },
-                "1.2.840.10008.1.2.4.81" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader"
-                },
-                "1.2.840.10008.1.2.4.90" : {
-                  "dcmIIOFormatName" : "jpeg2000",
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageReaderCodecLib"
-                },
-                "1.2.840.10008.1.2.4.91" : {
-                  "dcmIIOFormatName" : "jpeg2000",
-                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageReaderCodecLib"
-                },
-                "1.2.840.10008.1.2.5" : {
-                  "dcmIIOFormatName" : "rle",
-                  "dcmJavaClassName" : "org.dcm4che3.imageio.plugins.rle.RLEImageReader"
-                }
               }
             }
           }
@@ -749,14 +749,14 @@
                 "dcmWadoSupportedSRClasses" : [ "1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33", "1.2.840.10008.5.1.4.1.1.88.34", "1.2.840.10008.5.1.4.1.1.88.40", "1.2.840.10008.5.1.4.1.1.88.50", "1.2.840.10008.5.1.4.1.1.88.59", "1.2.840.10008.5.1.4.1.1.88.65", "1.2.840.10008.5.1.4.1.1.88.67", "1.2.840.10008.5.1.4.1.1.88.68", "1.2.840.10008.5.1.4.1.1.88.69", "1.2.840.10008.5.1.4.1.1.88.70" ],
                 "hl7PIXManagerApplication" : "HL7RCV^DCM4CHEE"
               },
+              "ExternalArchiveAEExtension" : {
+                "dcmAEFetchPriority" : 0
+              },
               "WebServiceAEExtension" : {
                 "dcmQidoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/qido/DCM4CHEE",
                 "dcmStowRSBaseURL" : "http://localhost:8080/dcm4chee-arc/stow/DCM4CHEE",
                 "dcmWadoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE",
                 "dcmWadoURIBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE"
-              },
-              "ExternalArchiveAEExtension" : {
-                "dcmAEFetchPriority" : 0
               }
             },
             "dcmTransferCapability" : [ {
@@ -2708,14 +2708,14 @@
                 "dcmWadoSupportedSRClasses" : [ "1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33", "1.2.840.10008.5.1.4.1.1.88.34", "1.2.840.10008.5.1.4.1.1.88.40", "1.2.840.10008.5.1.4.1.1.88.50", "1.2.840.10008.5.1.4.1.1.88.59", "1.2.840.10008.5.1.4.1.1.88.65", "1.2.840.10008.5.1.4.1.1.88.67", "1.2.840.10008.5.1.4.1.1.88.68", "1.2.840.10008.5.1.4.1.1.88.69", "1.2.840.10008.5.1.4.1.1.88.70" ],
                 "hl7PIXManagerApplication" : "HL7RCV^DCM4CHEE"
               },
+              "ExternalArchiveAEExtension" : {
+                "dcmAEFetchPriority" : 0
+              },
               "WebServiceAEExtension" : {
                 "dcmQidoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/qido/DCM4CHEE_FETCH",
                 "dcmStowRSBaseURL" : "http://localhost:8080/dcm4chee-arc/stow/DCM4CHEE_FETCH",
                 "dcmWadoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE_FETCH",
                 "dcmWadoURIBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE_FETCH"
-              },
-              "ExternalArchiveAEExtension" : {
-                "dcmAEFetchPriority" : 0
               }
             },
             "dcmTransferCapability" : [ {
