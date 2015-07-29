@@ -116,11 +116,14 @@ import org.xml.sax.SAXException;
 /**
  * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.
  * 
- * @see ftp://medical.nema.org/medical/dicom/2011/11_18pu.pdf
+ * @see <a href=
+ *      "http://medical.nema.org/medical/dicom/current/output/html/part18.html">
+ *      DICOM PS3.18 2015c - Web Services</a>
  * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
 @RequestScoped
 @Path("/wado/{AETitle}")
@@ -370,9 +373,9 @@ public class WadoURI extends Wado {
             return retrieveNativeDicomObject(instance, attrs);
         }
 
-        if (mediaType == MediaTypes.IMAGE_JPEG_TYPE) {
+        if (mediaType == MediaTypes.IMAGE_JPEG_TYPE || mediaType == MediaTypes.IMAGE_PNG_TYPE) {
             instscompleted.addAll(ref);
-            return retrieveJPEG(instance, attrs);
+            return retrieveImage(instance, attrs, mediaType);
         }
 
         if (mediaType == MediaTypes.IMAGE_GIF_TYPE) {
@@ -380,10 +383,6 @@ public class WadoURI extends Wado {
             return retrieveGIF(instance, attrs);
         }
 
-        if (mediaType == MediaTypes.IMAGE_PNG_TYPE) {
-            instscompleted.addAll(ref);
-            return retrievePNG(instance, attrs);
-        }
         if (mediaType.isCompatible(MediaTypes.APPLICATION_PDF_TYPE)
                 || mediaType.isCompatible(MediaType.TEXT_XML_TYPE)
 //                  || mediaType.isCompatible(MediaType.TEXT_PLAIN_TYPE)
@@ -533,7 +532,7 @@ public class WadoURI extends Wado {
                 : UID.ExplicitVRLittleEndian;
     }
 
-    private Response retrieveJPEG(final ArchiveInstanceLocator ref, final Attributes attrs) {
+    private Response retrieveImage(final ArchiveInstanceLocator ref, final Attributes attrs, final MediaType mediaType) {
 
         return Response.ok(new StreamingOutput() {
 
@@ -543,46 +542,26 @@ public class WadoURI extends Wado {
                 BufferedImage bi = getBufferedImage(ref, attrs);
                 ImageOutputStream imageOut = new MemoryCacheImageOutputStream(out);
                 try {
-                    writeImage("JPEG", bi, imageOut);
+                    writeImage(mediaType, bi, imageOut);
                 } finally {
                     imageOut.close();
                 }
             }
-        }, MediaTypes.IMAGE_JPEG_TYPE).build();
+        }, mediaType).build();
     }
 
-    private Response retrievePNG(final ArchiveInstanceLocator ref, final Attributes attrs) {
-
-        return Response.ok(new StreamingOutput() {
-
-            @Override
-            public void write(OutputStream out) throws IOException,
-                    WebApplicationException {
-                BufferedImage bi = getBufferedImage(ref, attrs);
-                ImageOutputStream imageOut = new MemoryCacheImageOutputStream(out);
-                try {
-                    writeImage("PNG", bi, imageOut);
-                } finally {
-                    imageOut.close();
-                }
-            }
-        }, MediaTypes.IMAGE_PNG_TYPE).build();
-    }
-
-    private void writeImage(String format, BufferedImage bi, ImageOutputStream ios)
+    private void writeImage(MediaType mediaType, BufferedImage bi, ImageOutputStream ios)
             throws IOException {
         ColorModel cm = bi.getColorModel();
         if (cm instanceof PaletteColorModel)
             bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
-        ImageWriter imageWriter = (format.equalsIgnoreCase("JPEG")?
-                ImageIO.getImageWritersByFormatName("JPEG").next():
-                ImageIO.getImageWritersByFormatName("PNG").next());
+
+        ImageWriter imageWriter = ImageWriterFactory.getImageWriterForMimeType(mediaType.toString());
 
         try {
             ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
             imageWriter.setOutput(ios);
-            imageWriter.write(null, new IIOImage(bi, null, null),
-                    imageWriteParam);
+            imageWriter.write(null, new IIOImage(bi, null, null), imageWriteParam);
         } finally {
             imageWriter.dispose();
         }
@@ -657,7 +636,7 @@ public class WadoURI extends Wado {
     }
 
     private void writeGIFs(String tsuid, List<BufferedImage> bis, ImageOutputStream ios) throws IOException {
-        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("GIF").next();
+        ImageWriter imageWriter = getGifImageWriter();
         try {
             ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
             imageWriter.setOutput(ios);
@@ -679,6 +658,10 @@ public class WadoURI extends Wado {
         } finally {
             imageWriter.dispose();
         }
+    }
+
+    private ImageWriter getGifImageWriter() {
+        return ImageWriterFactory.getImageWriterForMimeType(MediaTypes.IMAGE_GIF);
     }
 
     private IIOMetadata getIIOMetadata(BufferedImage bi, ImageWriter imageWriter, ImageWriteParam imageWriteParam,
@@ -789,8 +772,7 @@ public class WadoURI extends Wado {
         AffineTransformOp op = new AffineTransformOp(
                 AffineTransform.getScaleInstance(sx, sy),
                 AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-        return op.filter(src,
-                op.createCompatibleDestImage(src, src.getColorModel()));
+        return op.filter(src, op.createCompatibleDestImage(src, src.getColorModel()));
     }
 
     private void init(DicomImageReadParam param)
@@ -821,8 +803,7 @@ public class WadoURI extends Wado {
         ColorModel cm = bi.getColorModel();
         if (cm instanceof PaletteColorModel)
             bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
-        ImageWriter imageWriter = ImageIO.getImageWritersByFormatName("GIF")
-                .next();
+        ImageWriter imageWriter = getGifImageWriter();
         try {
             ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
             imageWriter.setOutput(ios);
