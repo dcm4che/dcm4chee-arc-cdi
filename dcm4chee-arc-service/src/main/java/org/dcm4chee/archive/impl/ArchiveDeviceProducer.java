@@ -46,8 +46,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.net.Device;
@@ -149,18 +149,26 @@ public class ArchiveDeviceProducer {
 
     private void initImageReaderFactory(Device device) {
         ImageReaderExtension ext = device.getDeviceExtension(ImageReaderExtension.class);
-        if (ext != null)
-            ImageReaderFactory.setDefault(ext.getImageReaderFactory());
-        else
+        if (ext != null) {
+            ImageReaderFactory imageReaderFactory = ext.getImageReaderFactory();
+            ImageReaderFactory.setDefault(imageReaderFactory);
+            imageReaderFactory.init();
+        } else {
             ImageReaderFactory.resetDefault();
+            ImageReaderFactory.getDefault(); // init now
+        }
     }
 
     private void initImageWriterFactory(Device device) {
         ImageWriterExtension ext = device.getDeviceExtension(ImageWriterExtension.class);
-        if (ext != null)
-            ImageWriterFactory.setDefault(ext.getImageWriterFactory());
-        else
+        if (ext != null) {
+            ImageWriterFactory imageWriterFactory = ext.getImageWriterFactory();
+            ImageWriterFactory.setDefault(imageWriterFactory);
+            imageWriterFactory.init();
+        } else {
             ImageWriterFactory.resetDefault();
+            ImageWriterFactory.getDefault(); // init now
+        }
     }
 
 }
