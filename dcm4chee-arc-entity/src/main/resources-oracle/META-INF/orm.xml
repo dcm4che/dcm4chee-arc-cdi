@@ -185,7 +185,7 @@
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
-      <basic name="studyDescription" optional="false">
+      <basic name="studyDescription">
         <column name="study_desc" column-definition="nvarchar2(255)" />
       </basic>
     </attributes>
@@ -210,10 +210,10 @@
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
-      <basic name="institutionalDepartmentName" optional="false">
+      <basic name="institutionalDepartmentName">
         <column name="department" column-definition="nvarchar2(255)" />
       </basic>
-      <basic name="institutionName" optional="false">
+      <basic name="institutionName">
         <column name="institution" column-definition="nvarchar2(255)" />
       </basic>
     </attributes>
@@ -238,7 +238,7 @@
         <column name="pk" />
         <generated-value strategy="SEQUENCE" generator="seq" />
       </id>
-      <basic name="requestingService" optional="false">
+      <basic name="requestingService">
         <column name="req_service" column-definition="nvarchar2(255)" />
       </basic>
     </attributes>
