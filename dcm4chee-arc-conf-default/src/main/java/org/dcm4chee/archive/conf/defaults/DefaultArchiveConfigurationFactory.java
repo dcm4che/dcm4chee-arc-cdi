@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.conf.defaults;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
-import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Issuer;
 import org.dcm4che3.data.Tag;
@@ -58,7 +57,6 @@ import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.storage.conf.*;
 
-import javax.security.auth.login.Configuration;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -604,11 +602,6 @@ public class DefaultArchiveConfigurationFactory {
         online.setBaseStorageAccessTime(1000);
         online.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         online.setActiveStorageSystemIDs(fs1.getStorageSystemID());
-        online.setArchivedOnGroups(new String[]{"NEARLINE"});
-        online.setDeleteAsMuchAsPossible(false);
-        online.setMinTimeStudyNotAccessed(30);
-        online.setMinTimeStudyNotAccessedUnit("DAYS");
-        online.setDeletionThreshold("7:1h;19:24h");
         StorageSystemGroup nearline = new StorageSystemGroup();
         nearline.setRetrieveAETs(new String[]{"DCM4CHEE"});
         nearline.setGroupID("ARCHIVE");
@@ -705,6 +698,16 @@ public class DefaultArchiveConfigurationFactory {
         ext.setVisibleImageSRClasses(DefaultTransferCapabilities.IMAGE_CUIDS);
         ext.setUseWhitelistOfVisibleImageSRClasses(false);
         ext.setUseNullForEmptyQueryFields(true);
+
+        DeletionRule deletionRule = new DeletionRule();
+        deletionRule.setCommonName("Deletion Rule");
+        deletionRule.setStorageSystemGroupID("DEFAULT");
+        deletionRule.setArchivedOnGroups(new String[]{"ARCHIVE"});
+        deletionRule.setDeleteAsMuchAsPossible(false);
+        deletionRule.setMinTimeStudyNotAccessed(30);
+        deletionRule.setMinTimeStudyNotAccessedUnit("DAYS");
+        deletionRule.setDeletionThreshold("7:1h;19:24h");
+        ext.addDeletionRule(deletionRule);
     }
 
     private static RejectionParam[] createRejectionNotes() {

@@ -344,11 +344,20 @@
             },
             "dcmConfigurationStaleTimeout" : 60,
             "dcmDefaultAETitle" : "DCM4CHEE",
+            "dcmDeletionRules" : {
+              "list" : [ {
+                "cn" : "Deletion Rule",
+                "dcmArchivedOnGroups" : [ "ARCHIVE" ],
+                "dcmDeletionThreshold" : "7:1h;19:24h",
+                "dcmMinTimeStudyNotAccessed" : 30,
+                "dcmMinTimeStudyNotAccessedUnit" : "DAYS",
+                "dcmStorageSystemGroupID" : "DEFAULT"
+              } ]
+            },
             "dcmFetchAETitle" : "DCM4CHEE_FETCH",
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
             "dcmMppsEmulationPollInterval" : 60,
-            "dcmPriorsCacheClearMaxLocationsPerDelete" : 0,
             "dcmPrivateDerivedFields" : {
               "list" : [ {
                 "cn" : "StudyUpdateTimeDerivedField",
@@ -586,11 +595,7 @@
                   }
                 },
                 "dcmActiveStorageSystemID" : [ "fs1" ],
-                "dcmArchivedOnGroups" : [ "NEARLINE" ],
                 "dcmBaseStorageAccessTime" : 1000,
-                "dcmDeletionThreshold" : "7:1h;19:24h",
-                "dcmMinTimeStudyNotAccessed" : 30,
-                "dcmMinTimeStudyNotAccessedUnit" : "DAYS",
                 "dcmNextStorageSystemID" : "fs1",
                 "dcmRetrieveAET" : [ "DCM4CHEE" ],
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",

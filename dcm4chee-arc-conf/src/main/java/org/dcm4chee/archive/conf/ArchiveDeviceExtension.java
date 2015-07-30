@@ -178,10 +178,26 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private int priorsCacheDeleteDuplicateLocationsDelay = 60;
 
     @ConfigurableProperty(name = "dcmPriorsCacheClearMaxLocationsPerDelete", defaultValue = "1000")
-    private int priorsCacheClearMaxLocationsPerDelete;
+    private int priorsCacheClearMaxLocationsPerDelete = 1000;
 
     @ConfigurableProperty(name = "dcmUseNullForEmptyQueryFields", defaultValue = "true")
     private boolean useNullForEmptyQueryFields;
+
+    @LDAP(noContainerNode=true)
+    @ConfigurableProperty(name = "dcmDeletionRules")
+    private DeletionRules deletionRules = new DeletionRules();
+
+    @ConfigurableProperty(name = "dcmMaxDeleteServiceRetries", defaultValue = "0")
+    private int maxDeleteServiceRetries;
+
+    @ConfigurableProperty(name = "dcmDeleteServiceAllowedInterval")
+    private String deleteServiceAllowedInterval;
+
+    @ConfigurableProperty(name = "dcmDataVolumePerDayCalculationRange", defaultValue = "23-0")
+    private String dataVolumePerDayCalculationRange = "23-0";
+
+    @ConfigurableProperty(name = "dcmDataVolumePerDayAverageOnNDays", defaultValue = "1")
+    private int dataVolumePerDayAverageOnNDays = 1;
 
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
@@ -574,4 +590,54 @@ public class ArchiveDeviceExtension extends DeviceExtension {
                 Arrays.asList(arrayOfSOPClasses).contains(sopClassUID);
     }
 
+    public DeletionRules getDeletionRules() {
+        return deletionRules;
+    }
+
+    public void addDeletionRule(DeletionRule rule) {
+        deletionRules.add(rule);
+    }
+
+    public void setDeletionRules(DeletionRules rules) {
+        deletionRules.clear();
+        if (rules != null)
+            deletionRules.add(rules);
+    }
+
+    public boolean removeDeletionRule(DeletionRule rule) {
+        return deletionRules.remove(rule);
+    }
+
+    public int getMaxDeleteServiceRetries() {
+        return maxDeleteServiceRetries;
+    }
+
+    public void setMaxDeleteServiceRetries(int maxDeleteServiceRetries) {
+        this.maxDeleteServiceRetries = maxDeleteServiceRetries;
+    }
+
+    public String getDeleteServiceAllowedInterval() {
+        return deleteServiceAllowedInterval;
+    }
+
+    public void setDeleteServiceAllowedInterval(String deleteServiceAllowedInterval) {
+        this.deleteServiceAllowedInterval = deleteServiceAllowedInterval;
+    }
+
+    public int getDataVolumePerDayAverageOnNDays() {
+        return dataVolumePerDayAverageOnNDays;
+    }
+
+    public void setDataVolumePerDayAverageOnNDays(int dataVolumePerDayAverageOnNDays) {
+        this.dataVolumePerDayAverageOnNDays = dataVolumePerDayAverageOnNDays;
+    }
+
+    public String getDataVolumePerDayCalculationRange() {
+        return dataVolumePerDayCalculationRange;
+    }
+
+    public void setDataVolumePerDayCalculationRange(
+            String dataVolumePerDayCalculationRange) {
+        this.dataVolumePerDayCalculationRange = dataVolumePerDayCalculationRange;
+    }
 }

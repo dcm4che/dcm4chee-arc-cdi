@@ -49,6 +49,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -63,6 +64,7 @@ import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.DeletionRule;
 import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
@@ -112,63 +114,64 @@ public class LocationDeleteServiceImpl implements DeleterService {
 
     @PostConstruct
     public void init() {
-        lastDVDCalculationDateMap = new HashMap<String, Date>();
-        lastCalculatedDVDInBytesMap = new HashMap<String, Long>();
+        lastDVDCalculationDateMap = new ConcurrentHashMap<String, Date>();
+        lastCalculatedDVDInBytesMap = new ConcurrentHashMap<String, Long>();
     }
 
     @Override
-    public void freeUpSpaceDeleteSeries(String seriesInstanceUID, StorageSystemGroup group) {
-        freeSpaceOnRequest(null, seriesInstanceUID, group);
+    public void freeUpSpaceDeleteSeries(String seriesInstanceUID, String groupID) {
+        freeSpaceOnRequest(null, seriesInstanceUID, groupID);
     }
 
     @Override
-    public void freeUpSpaceDeleteStudy(String studyInstanceUID, StorageSystemGroup group) {
-        freeSpaceOnRequest(studyInstanceUID, null, group);
+    public void freeUpSpaceDeleteStudy(String studyInstanceUID, String groupID) {
+        freeSpaceOnRequest(studyInstanceUID, null, groupID);
     }
 
     @Override
-    public void freeUpSpace(StorageSystemGroup groupToFree) {
-        freeSpace(groupToFree);
+    public void freeUpSpace(String groupID) {
+        ArchiveDeviceExtension arcExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        DeletionRule rule = arcExt.getDeletionRules().findByStorageSystemGroupID(groupID);
+        if (rule != null) {
+            freeSpace(rule);
+        }
     }
 
     @Override
     public void freeUpSpace() {
-
-        StorageDeviceExtension stgDevExt = device.getDeviceExtension(StorageDeviceExtension.class);
-        Map<String,StorageSystemGroup>groups = stgDevExt.getStorageSystemGroups();
-        
-        if(groups == null) {
-            LOG.error("Location Deleter Service: No storage Groups configured, "
+        ArchiveDeviceExtension arcExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        List<DeletionRule> deletionRules = arcExt.getDeletionRules().getList();
+        if(deletionRules.isEmpty()) {
+            LOG.error("Location Deleter Service: No deletion rules configured, "
                     + " Malformed Configuration, some archive services might not function");
             return;
         }
-        
-        for(String groupID : groups.keySet()) {
+
+        for(DeletionRule rule : deletionRules) {
             //check need to free up space
-            StorageSystemGroup group = groups.get(groupID);
             try {
-                if(canDeleteNow(group) || emergencyReached(group))
-                freeSpace(group);
+                if (canDeleteNow(rule.getStorageSystemGroupID())
+                        || emergencyReached(rule.getStorageSystemGroupID()))
+                    freeSpace(rule);
             } catch (IOException e) {
                 LOG.error("Unable to calculate emergency case, "
                         + "error calculating emergency for group "
-                        + "{} - reason {}", groupID, e);
+                        + "{} - reason {}", rule.getStorageSystemGroupID(), e);
             }
             catch (Throwable t) {
                 LOG.error("Exception occured while attempting to "
-                        + "freespace from group {} - reason {}", groupID, t);
+                        + "freespace from group {} - reason {}", rule.getStorageSystemGroupID(), t);
             }
         }
     }
 
     @Override
-    public boolean validateGroupForDeletion(StorageSystemGroup group) {
-
-        if (checkArchivingConstraints(group)
-            && checkDeletionConstraints(group) 
-                    && checkStudyRetentionContraints(group))
-                    return true;
-        return false;
+    public boolean validateGroupForDeletion(String groupID) {
+        ArchiveDeviceExtension arcExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        DeletionRule rule = arcExt.getDeletionRules().findByStorageSystemGroupID(groupID);
+        return rule == null ? false : rule.validate();
     }
 
     public void onArchiveServiceStarted(
@@ -202,7 +205,6 @@ public class LocationDeleteServiceImpl implements DeleterService {
 
     @Override
     public long calculateDataVolumePerDayInBytes(String groupID) {
-
         StorageDeviceExtension stgDevExt = device
                 .getDeviceExtension(StorageDeviceExtension.class);
         StorageSystemGroup group = stgDevExt.getStorageSystemGroup(groupID);
@@ -210,16 +212,15 @@ public class LocationDeleteServiceImpl implements DeleterService {
             LOG.error("Location Deleter Service: Group {} not configured, "
                             + " Malformed Configuration, some archive services"
                             + " might not function", groupID);
-            return lastCalculatedDVDInBytesMap.get(groupID) != null 
+            return lastCalculatedDVDInBytesMap.get(groupID) != null
                     ? lastCalculatedDVDInBytesMap.get(groupID) : 0L;
         }
-        if (!isDueCalculation(group.getDataVolumePerDayCalculationRange(),
+        if (!isDueCalculation(dataVolumePerDayCalculationRange(),
                 lastDVDCalculationDateMap.get(groupID))) {
-
             return lastCalculatedDVDInBytesMap.get(groupID);
         } else {
             long dvdInBytes = locationManager.calculateDataVolumePerDayInBytes(
-                    groupID, group.getDataVolumePerDayAverageOnNDays());
+                    groupID, dataVolumePerDayAverageOnNDays());
             lastCalculatedDVDInBytesMap.put(groupID, dvdInBytes);
             lastDVDCalculationDateMap.put(groupID, new Date());
             return dvdInBytes;
@@ -227,22 +228,26 @@ public class LocationDeleteServiceImpl implements DeleterService {
     }
 
     private LocationDeleteResult freeSpaceOnRequest(String studyInstanceUID, String seriesInstanceUID,
-            StorageSystemGroup group) {
-        if (validateGroupForDeletion(group)) {
+            String groupID) {
+        ArchiveDeviceExtension arcExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        DeletionRule rule = arcExt.getDeletionRules().findByStorageSystemGroupID(groupID);
+        if (validateGroupForDeletion(groupID)) {
             try{
-            int minTimeToKeepStudy = group.getMinTimeStudyNotAccessed();
-            String minTimeToKeppStudyUnit = group
+            int minTimeToKeepStudy = rule.getMinTimeStudyNotAccessed();
+            String minTimeToKeppStudyUnit = rule
                     .getMinTimeStudyNotAccessedUnit();
-            List<Instance> allInstancesDueDeleteOnGroup = (ArrayList<Instance>) 
-                    locationManager.findInstancesDueDelete(minTimeToKeepStudy
-                            , minTimeToKeppStudyUnit, group.getGroupID(),studyInstanceUID, seriesInstanceUID);
+                List<Instance> allInstancesDueDeleteOnGroup = (ArrayList<Instance>) locationManager
+                        .findInstancesDueDelete(minTimeToKeepStudy,
+                                minTimeToKeppStudyUnit, rule.getStorageSystemGroupID(),
+                                studyInstanceUID, seriesInstanceUID);
             List<Instance> actualInstancesToDelete = (ArrayList<Instance>) filterCopiesExist(
-                    (ArrayList<Instance>) allInstancesDueDeleteOnGroup, group);
+                    (ArrayList<Instance>) allInstancesDueDeleteOnGroup, rule);
             
             markCorrespondingStudyAndScheduleForDeletion(studyInstanceUID,
-                    group, actualInstancesToDelete);
+                    rule, actualInstancesToDelete);
             
-            handleFailedToDeleteLocations(group);
+            handleFailedToDeleteLocations(rule.getStorageSystemGroupID());
             }
             catch (Exception e) {
                 return new LocationDeleteResult(DeletionStatus.FAILED,
@@ -251,7 +256,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
             return new LocationDeleteResult(DeletionStatus.SCHEDULED, "No Failure");
         }
         return new LocationDeleteResult(DeletionStatus.CRITERIA_NOT_MET,
-                "Validation Criteria not met, rule on group " + group.getGroupID()
+                "Validation Criteria not met, rule on group " + rule.getStorageSystemGroupID()
                         + "can not be applied");
     }
 
@@ -263,8 +268,10 @@ public class LocationDeleteServiceImpl implements DeleterService {
         return sw.getBuffer().toString();
     }
 
-    private boolean emergencyReached(StorageSystemGroup group) throws IOException {
-
+    private boolean emergencyReached(String groupID) throws IOException {
+        StorageDeviceExtension stgExt = device
+                .getDeviceExtension(StorageDeviceExtension.class);
+        StorageSystemGroup group = stgExt.getStorageSystemGroup(groupID);
         List<StorageSystem> tmpFlaggedsystems = new ArrayList<StorageSystem>();
         for(String systemID : group.getStorageSystems().keySet()) {
             StorageSystem system = group.getStorageSystem(systemID);
@@ -290,16 +297,15 @@ public class LocationDeleteServiceImpl implements DeleterService {
         return tmpFlaggedsystems.isEmpty() ?  false : true;
     }
 
-    private boolean canDeleteNow(StorageSystemGroup group) {
+    private boolean canDeleteNow(String groupID) {
 
-        String deleteServiceAllowedInterval = group
-                .getDeleteServiceAllowedInterval();
+        String deleteServiceAllowedInterval = deleteServiceAllowedInterval();
         if(deleteServiceAllowedInterval == null)
             return false;
         if(deleteServiceAllowedInterval.split("-").length < 1) {
             LOG.error("Location Deleter Service: Allowed interval for deletion"
                     + " is not configured properly, service will not try to"
-                    + " free up disk space on group {}",group.getGroupID());
+                    + " free up disk space on group {}", groupID);
             return false;
         }
         try{
@@ -311,7 +317,8 @@ public class LocationDeleteServiceImpl implements DeleterService {
         } catch (Exception e) {
             LOG.error("Location Deleter Service: Unable to decide allowed"
                     + " deletion interval , service will not attempt to"
-                    + " free up disk space on group {} - reason {}", group.getGroupID(), e);
+                    + " free up disk space on group {} - reason {}",
+                    groupID, e);
             return false;
         }
     }
@@ -355,39 +362,39 @@ public class LocationDeleteServiceImpl implements DeleterService {
         return false;
     }
 
-    private void freeSpace(StorageSystemGroup group) {
+    private void freeSpace(DeletionRule rule) {
 
-        if (validateGroupForDeletion(group)) {
-            int minTimeToKeepStudy = group.getMinTimeStudyNotAccessed();
-            String minTimeToKeppStudyUnit = group
+          if (validateGroupForDeletion(rule.getStorageSystemGroupID())) {
+            int minTimeToKeepStudy = rule.getMinTimeStudyNotAccessed();
+            String minTimeToKeppStudyUnit = rule
                     .getMinTimeStudyNotAccessedUnit();
             List<Instance> allInstancesDueDeleteOnGroup = (ArrayList<Instance>) 
                     locationManager.findInstancesDueDelete(minTimeToKeepStudy
-                            , minTimeToKeppStudyUnit, group.getGroupID(), null, null);
+                            , minTimeToKeppStudyUnit, rule.getStorageSystemGroupID(), null, null);
             
                 Map<String, List<Instance>> mapInstancesFoundOnGroupToStudy = 
-                        getInstancesOnGroupPerStudyMap(allInstancesDueDeleteOnGroup, group);
+                        getInstancesOnGroupPerStudyMap(allInstancesDueDeleteOnGroup, rule);
                     for (String studyUID : mapInstancesFoundOnGroupToStudy
                             .keySet()) {
-                        if (!group.isDeleteAsMuchAsPossible() 
-                                && !needsFreeSpace(group))
+                        if (!rule.isDeleteAsMuchAsPossible() 
+                                && !needsFreeSpace(rule.getStorageSystemGroupID(), calculateExpectedDataVolumePerDay(rule)))
                                 break;
                     markCorrespondingStudyAndScheduleForDeletion(
                             studyUID,
-                            group,
+                            rule,
                             (ArrayList<Instance>) filterCopiesExist(
                                     (ArrayList<Instance>) mapInstancesFoundOnGroupToStudy
-                                            .get(studyUID), group));
+                                            .get(studyUID), rule));
                 }
-            handleFailedToDeleteLocations(group);
+            handleFailedToDeleteLocations(rule.getStorageSystemGroupID());
         }
     }
 
-    private void handleFailedToDeleteLocations(StorageSystemGroup group) {
+    private void handleFailedToDeleteLocations(String groupID) {
         //handle failedToDeleteLocations
         LOG.info("Finding locations that previously failed deletions");
         List<Location> failedToDeleteLocations = (ArrayList<Location>)
-                findFailedToDeleteLocations(group);
+                locationManager.findFailedToDeleteLocations(groupID);
         try {
             locationManager.scheduleDelete(
                     failedToDeleteLocations, 1000, false);
@@ -398,8 +405,9 @@ public class LocationDeleteServiceImpl implements DeleterService {
         }
     }
 
-    private boolean needsFreeSpace(StorageSystemGroup group) {
-        long thresholdInBytes = calculateExpectedDataVolumePerDay(group);
+    private boolean needsFreeSpace(String groupID, long thresholdInBytes) {
+        StorageDeviceExtension stgExt = device.getDeviceExtension(StorageDeviceExtension.class);
+        StorageSystemGroup group = stgExt.getStorageSystemGroup(groupID);
         for(String systemID : group.getStorageSystems().keySet()) {
             StorageSystem system = group.getStorageSystem(systemID);
             StorageSystemProvider provider = system
@@ -431,10 +439,10 @@ public class LocationDeleteServiceImpl implements DeleterService {
         return false;
     }
 
-    private long calculateExpectedDataVolumePerDay(StorageSystemGroup group) {
-        long dvdInBytes = calculateDataVolumePerDayInBytes(group.getGroupID());
+    private long calculateExpectedDataVolumePerDay(DeletionRule rule) {
+        long dvdInBytes = calculateDataVolumePerDayInBytes(rule.getStorageSystemGroupID());
         ThresholdInterval currentInterval = null;
-        String deletionThreshold = group.getDeletionThreshold();
+        String deletionThreshold = rule.getDeletionThreshold();
         List<ThresholdInterval> intervals =  
                 createthresholdDurations(deletionThreshold, dvdInBytes);
         int now = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
@@ -503,7 +511,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
 
     private Map<String,List<Instance>> getInstancesOnGroupPerStudyMap(
             List<Instance> allInstancesDueDelete
-            , StorageSystemGroup group) {
+            , DeletionRule rule) {
 
         Map<String,List<Instance>> instancesOnGroupPerStudyMap = new HashMap<String, List<Instance>>();
         
@@ -516,7 +524,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
             if(!instancesOnGroupPerStudyMap.containsKey(studyUID))
                 instancesOnGroupPerStudyMap.put(studyUID, new ArrayList<Instance>());
             for(Location loc : inst.getLocations()) {
-                if(loc.getStorageSystemGroupID().compareTo(group.getGroupID()) == 0)
+                if(loc.getStorageSystemGroupID().compareTo(rule.getStorageSystemGroupID()) == 0)
                     instancesOnGroupPerStudyMap.get(studyUID).add(inst);
             }
         }
@@ -547,19 +555,21 @@ public class LocationDeleteServiceImpl implements DeleterService {
     }
 
     private void markCorrespondingStudyAndScheduleForDeletion(
-            String studyInstanceUID, StorageSystemGroup group,
+            String studyInstanceUID, DeletionRule rule,
             List<Instance> instancesDueDelete) {
-        deletionRetries = group.getMaxDeleteServiceRetries();
+        deletionRetries = maxDeleteServiceRetries();
         if (!instancesDueDelete.isEmpty())
-            locationManager.markForDeletion(studyInstanceUID, group
-                    .getGroupID());
+            locationManager.markForDeletion(studyInstanceUID,
+                    rule.getStorageSystemGroupID());
             List<Instance> tmpInstancesScheduled = new ArrayList<Instance>();
             for(int i = 0; i<deletionRetries; i++) {
                 instancesDueDelete.removeAll(tmpInstancesScheduled);
                 tmpInstancesScheduled.clear();
             for (Instance inst : instancesDueDelete)
                 try {
-                    locationManager.scheduleDelete(locationManager.detachInstanceOnGroup(inst.getPk(), group.getGroupID()), 1000, true);
+                    locationManager.scheduleDelete(
+                            locationManager.detachInstanceOnGroup(inst.getPk(),
+                                    rule.getStorageSystemGroupID()), 1000, true);
                     tmpInstancesScheduled.add(inst);
                 } catch (JMSException e) {
                         LOG.error("Location Deleter Service: error scheduling "
@@ -570,19 +580,14 @@ public class LocationDeleteServiceImpl implements DeleterService {
             }
     }
 
-    private List<Location> findFailedToDeleteLocations(
-            StorageSystemGroup group) {
-        return  locationManager.findFailedToDeleteLocations(group);
-    }
-
     private List<Instance> filterCopiesExist(
-            List<Instance> instancesDueDeleteOnGroup, StorageSystemGroup group) {
-        List<String> hasToBeOnSystems = Arrays.asList(group.getArchivedOnExternalSystems());
-        List<String> hasToBeOnGroups = Arrays.asList(group.getArchivedOnGroups());
+            List<Instance> instancesDueDeleteOnGroup, DeletionRule rule) {
+        List<String> hasToBeOnSystems = Arrays.asList(rule.getArchivedOnExternalSystems());
+        List<String> hasToBeOnGroups = Arrays.asList(rule.getArchivedOnGroups());
         List<Instance> filteredOnMany = new ArrayList<Instance>();
-        boolean archivedAnyWhere = group.isArchivedAnyWhere();
+        boolean archivedAnyWhere = rule.isArchivedAnyWhere();
         if(archivedAnyWhere) {
-            return filterOneCopyExists(instancesDueDeleteOnGroup, group.getGroupID());
+            return filterOneCopyExists(instancesDueDeleteOnGroup, rule.getStorageSystemGroupID());
         }
         else {
         if( hasToBeOnSystems != null && !hasToBeOnSystems.isEmpty()) {
@@ -645,22 +650,6 @@ public class LocationDeleteServiceImpl implements DeleterService {
         return foundOnAtleastOneGroup;
     }
 
-    private boolean checkStudyRetentionContraints(StorageSystemGroup group) {
-        return group.getMinTimeStudyNotAccessed() > 0
-        && group.getMinTimeStudyNotAccessedUnit() != null;
-    }
-
-    private boolean checkDeletionConstraints(StorageSystemGroup group) {
-        return group.getDeletionThreshold() != null
-                || group.isDeleteAsMuchAsPossible();
-    }
-
-    private boolean checkArchivingConstraints(StorageSystemGroup group) {
-        return group.getArchivedOnExternalSystems() != null
-                || group.getArchivedOnGroups() != null
-                || group.isArchivedAnyWhere();
-    }
-
     private long toValueInBytes(long value, String unit, long dvdInBytes) {
         if ("GB".equalsIgnoreCase(unit))
             return value * 1000000000;
@@ -680,6 +669,30 @@ public class LocationDeleteServiceImpl implements DeleterService {
             return dvdInBytes * value;
         else
             return value;
+    }
+
+    private String deleteServiceAllowedInterval() {
+        ArchiveDeviceExtension arcExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        return arcExt.getDeleteServiceAllowedInterval();
+    }
+
+    private int maxDeleteServiceRetries() {
+        ArchiveDeviceExtension arcExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        return arcExt.getMaxDeleteServiceRetries();
+    }
+
+    private String dataVolumePerDayCalculationRange() {
+        ArchiveDeviceExtension arcExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        return arcExt.getDataVolumePerDayCalculationRange();
+    }
+
+    private int dataVolumePerDayAverageOnNDays() {
+        ArchiveDeviceExtension arcExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        return arcExt.getDataVolumePerDayAverageOnNDays();
     }
 
     protected class ThresholdInterval {

@@ -525,10 +525,65 @@ attributeTypes: ( 1.2.40.0.13.1.15.10.3.102 NAME 'dcmUseWhitelistOfVisibleImageS
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
   SINGLE-VALUE )
-attributeTypes: ( 1.2.40.0.13.1.15.10.3.102 NAME 'dcmUseNullForEmptyQueryFields'
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.103 NAME 'dcmUseNullForEmptyQueryFields'
   DESC 'Specifies whether to use null or star in the db for empty query fields'
   EQUALITY booleanMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.104 NAME 'dcmArchivedOnGroups'
+  DESC 'Only delete objects from this Storage Group, if a copy exists on all specified Storage Groups'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.105 NAME 'dcmArchivedOnExternalSystems'
+  DESC 'Only delete objects from this Storage Group, if a copy exists on all specified External Systems'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.106 NAME 'dcmArchivedAnyWhere'
+  DESC 'Only delete objects from this Storage Group, if a copy exists on any other Storage Group or External Systems'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.107 NAME 'dcmMinTimeStudyNotAccessed'
+  DESC 'Only delete objects from this Storage Group, if none of the objects of the Study to which the object belongs was accessed for specified time'
+  EQUALITY integerMatch
+  SYNTAX  1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.108 NAME 'dcmMinTimeStudyNotAccessedUnit'
+  DESC 'Time Unit of value specified in dcmMinTimeStudyNotAccessed'
+  EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+  SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.109 NAME 'dcmDeleteAsMuchAsPossible'
+  DESC 'Delete objects from this Storage Group as soon as possible - makes dcmDeletionThreshold ineffective. FALSE by default.'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.110 NAME 'dcmDeletionThreshold'
+  DESC 'Specifies Threshold for object deletion on this Storage Group. Format: "[<HH>:]<Threshold>[;<HH>:<Threshold>]", with <HH>: 0-23 and <Threshold>: <integer>{h|d|kB|MB|GB|KiB|MiB|GiB}'
+  EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+  SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.111 NAME 'dcmMaxDeleteServiceRetries'
+  DESC 'Specifies the maximum number of retries the deletion service will perform while scheduling the JMS deletion message'
+  EQUALITY integerMatch
+  SYNTAX  1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.112 NAME 'dcmDeleteServiceAllowedInterval'
+  DESC 'Specifies an interval in which the delete service can function, otherwise in that interval delete service will only run on emergency'
+  EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+  SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.113 NAME 'dcmDataVolumePerDayCalculationRange'
+  DESC 'Specifies a range in which the delete service will attempt to recalculate the data volume per day'
+  EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+  SINGLE-VALUE )
+attributeTypes: ( 1.2.40.0.13.1.15.10.3.114 NAME 'dcmDataVolumePerDayAverageOnNDays'
+  DESC 'Specifies the number of days considered while calculating latest data volume per day, the result is an average of a calculation of data volume per day in all those days'
+  EQUALITY integerMatch
+  SYNTAX  1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
 objectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
@@ -560,7 +615,11 @@ objectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmUseWhitelistOfVisibleImageSRClasses $
     dcmUseNullForEmptyQueryFields $
     dcmPriorsCacheDeleteDuplicateLocationsDelay $
-    dcmPriorsCacheClearMaxLocationsPerDelete ) )
+    dcmPriorsCacheClearMaxLocationsPerDelete
+    dcmMaxDeleteServiceRetries $
+    dcmDeleteServiceAllowedInterval $
+    dcmDataVolumePerDayCalculationRange $
+    dcmDataVolumePerDayAverageOnNDays ) )
 objectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   DESC 'DICOM Archive Network AE related information'
   SUP top AUXILIARY
@@ -746,3 +805,18 @@ objectClasses: ( 1.2.40.0.13.1.15.10.4.26 NAME 'dcmPrivateTagType'
   MAY (
     dcmPrivateTagDescription
   ) )
+objectClasses: ( 1.2.40.0.13.1.15.10.4.27 NAME 'dcmDeletionRule'
+  DESC 'Specifies Deletion rule'
+  SUP top
+  STRUCTURAL
+  MUST (
+    cn $
+    dcmStorageSystemGroupID )
+  MAY (
+    dcmArchivedOnGroups $
+    dcmArchivedOnExternalSystems $
+    dcmArchivedAnyWhere $
+    dcmMinTimeStudyNotAccessed $
+    dcmMinTimeStudyNotAccessedUnit $
+    dcmDeleteAsMuchAsPossible $
+    dcmDeletionThreshold ) )

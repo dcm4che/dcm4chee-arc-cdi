@@ -84,7 +84,7 @@ public interface LocationMgmt {
 
     boolean isMarkedForDelete(String studyInstanceUID, String groupID);
 
-    List<Location> findFailedToDeleteLocations(StorageSystemGroup group);
+    List<Location> findFailedToDeleteLocations(String groupID);
 
     void markForDeletion(String studyInstanceUID, String groupID)
             throws NoResultException;

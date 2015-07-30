@@ -38,8 +38,6 @@
 
 package org.dcm4chee.archive.locationmgmt;
 
-import org.dcm4chee.storage.conf.StorageSystemGroup;
-
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
@@ -48,17 +46,17 @@ import org.dcm4chee.storage.conf.StorageSystemGroup;
 public interface DeleterService {
 
     void freeUpSpaceDeleteSeries(String seriesInstanceUID,
-            StorageSystemGroup group);
+            String groupID);
 
     void freeUpSpaceDeleteStudy(String studyInstanceUID,
-            StorageSystemGroup group);
+            String groupID);
 
-    void freeUpSpace(StorageSystemGroup groupToFree);
+    void freeUpSpace(String groupID);
 
     void freeUpSpace();
 
     long calculateDataVolumePerDayInBytes(String groupID);
 
-    boolean validateGroupForDeletion(StorageSystemGroup group);
+    boolean validateGroupForDeletion(String groupID);
 
 }

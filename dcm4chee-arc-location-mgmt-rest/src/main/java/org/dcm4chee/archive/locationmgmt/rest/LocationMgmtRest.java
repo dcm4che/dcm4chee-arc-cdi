@@ -49,6 +49,7 @@ import javax.ws.rs.core.Response;
 
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.locationmgmt.DeleterService;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
@@ -77,12 +78,13 @@ public class LocationMgmtRest {
         String response = "";
         StorageDeviceExtension stgDevExt = device
                 .getDeviceExtension(StorageDeviceExtension.class);
+        int dataVolumePerDayAverageOnNDays = dataVolumePerDayAverageOnNDays();
         for (String groupID : stgDevExt.getStorageSystemGroups().keySet()) {
             StorageSystemGroup group = stgDevExt.getStorageSystemGroup(groupID);
             response += "<div>Group:<p>"
                     + groupID
                     + "<br>Data Volume Per "
-                    + group.getDataVolumePerDayAverageOnNDays()
+                    + dataVolumePerDayAverageOnNDays
                     + " Days In Bytes: "
                     + localDeleterService
                             .calculateDataVolumePerDayInBytes(groupID);
@@ -90,4 +92,9 @@ public class LocationMgmtRest {
         return Response.ok(response).build();
     }
 
+    private int dataVolumePerDayAverageOnNDays() {
+        ArchiveDeviceExtension arcExt = device
+                .getDeviceExtension(ArchiveDeviceExtension.class);
+        return arcExt.getDataVolumePerDayAverageOnNDays();
+    }
 }

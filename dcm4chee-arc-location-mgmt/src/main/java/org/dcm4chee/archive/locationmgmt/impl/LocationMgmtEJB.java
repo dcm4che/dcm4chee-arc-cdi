@@ -334,11 +334,11 @@ public class LocationMgmtEJB implements LocationMgmt {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<Location> findFailedToDeleteLocations(StorageSystemGroup group) {
+    public List<Location> findFailedToDeleteLocations(String groupID) {
         Query query = em.createQuery("SELECT l FROM Location l WHERE "
                 + "l.storageSystemGroupID = ?1 AND l.status = 1"
                 , Location.class);
-        query.setParameter(1, group.getGroupID());
+        query.setParameter(1, groupID);
         return query.getResultList();
     }
 
