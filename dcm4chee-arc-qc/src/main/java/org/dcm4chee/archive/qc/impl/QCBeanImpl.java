@@ -987,7 +987,7 @@ public class QCBeanImpl  implements QCBean{
         }
         patient.setAttributes(original,
                 arcDevExt.getAttributeFilter(Entity.Patient),
-                arcDevExt.getFuzzyStr());
+                arcDevExt.getFuzzyStr(), arcDevExt.getNullValueForQueryFields());
 
         return new PatientAttrsPKTuple(patient.getPk(), unmodified);
     }
@@ -1039,7 +1039,7 @@ public class QCBeanImpl  implements QCBean{
         original.update(attrs, original);
         study.setAttributes(original,
                 arcDevExt.getAttributeFilter(Entity.Study),
-                arcDevExt.getFuzzyStr());
+                arcDevExt.getFuzzyStr(), arcDevExt.getNullValueForQueryFields());
         return unmodified;
     }
 
@@ -1094,7 +1094,7 @@ public class QCBeanImpl  implements QCBean{
         original.update(attrs, original);
         series.setAttributes(original,
                 arcDevExt.getAttributeFilter(Entity.Series),
-                arcDevExt.getFuzzyStr());
+                arcDevExt.getFuzzyStr(), arcDevExt.getNullValueForQueryFields());
         return unmodified;
     }
 
@@ -1152,7 +1152,7 @@ public class QCBeanImpl  implements QCBean{
         original.update(attrs, original);
         instance.setAttributes(original,
                 arcDevExt.getAttributeFilter(Entity.Instance),
-                arcDevExt.getFuzzyStr());
+                arcDevExt.getFuzzyStr(), arcDevExt.getNullValueForQueryFields());
         return unmodified;
     }
 
@@ -1357,7 +1357,8 @@ public class QCBeanImpl  implements QCBean{
                     || (oldSequence != null && !oldSequence.contains(request))) {
                 Issuer issuerOfAccessionNumber = findIssuerOfAccessionNumber(request);
                 RequestAttributes newRequest = new RequestAttributes(request,
-                        issuerOfAccessionNumber, arcDevExt.getFuzzyStr());
+                        issuerOfAccessionNumber, arcDevExt.getFuzzyStr(),
+                        arcDevExt.getNullValueForQueryFields());
                 newRequest.setSeries(series);
                 oldRequests.add(newRequest);
                 if (LOG.isDebugEnabled()) {
@@ -1440,7 +1441,7 @@ public class QCBeanImpl  implements QCBean{
                     || (verifyingObserversOld != null && !verifyingObserversOld
                             .contains(observer))) {
                 VerifyingObserver newObserver = new VerifyingObserver(observer,
-                        arcDevExt.getFuzzyStr());
+                        arcDevExt.getFuzzyStr(), arcDevExt.getNullValueForQueryFields());
                 newObserver.setInstance(instance);
                 oldObservers.add(newObserver);
                 if (LOG.isDebugEnabled()) {
@@ -1599,7 +1600,7 @@ public class QCBeanImpl  implements QCBean{
         
         study.setAttributes(createdStudyAttrs,
                 archiveDeviceExtension.getAttributeFilter(Entity.Study),
-                archiveDeviceExtension.getFuzzyStr());
+                archiveDeviceExtension.getFuzzyStr(), archiveDeviceExtension.getNullValueForQueryFields());
         
         em.persist(study);
         LOG.info("{}: QC info[createStudy] info - Creating study {}", qcSource, study);
@@ -1637,7 +1638,7 @@ public class QCBeanImpl  implements QCBean{
         
         newSeries.setAttributes(data,
                 archiveDeviceExtension.getAttributeFilter(Entity.Series),
-                archiveDeviceExtension.getFuzzyStr());
+                archiveDeviceExtension.getFuzzyStr(), archiveDeviceExtension.getNullValueForQueryFields());
         em.persist(newSeries);
         LOG.info("{}: QC info[createSeries] info - Creating series {}", qcSource, newSeries);
         return newSeries;
@@ -1681,7 +1682,7 @@ public class QCBeanImpl  implements QCBean{
         inst.setAvailability(oldinstance.getAvailability());
         inst.setAttributes(data,
                 archiveDeviceExtension.getAttributeFilter(Entity.Instance),
-                archiveDeviceExtension.getFuzzyStr());
+                archiveDeviceExtension.getFuzzyStr(), archiveDeviceExtension.getNullValueForQueryFields());
         em.persist(inst);
         LOG.info("{}: QC info[createInstance] info - Creating instance {}", qcSource, inst);
         return inst;
@@ -1704,7 +1705,7 @@ public class QCBeanImpl  implements QCBean{
         for(Attributes attrs : requestedAttrsSeq) {
             RequestAttributes newReqAttr = new RequestAttributes(
                     attrs,attrs.contains(Tag.IssuerOfAccessionNumberSequence)?findIssuerOfAccessionNumber(attrs):null,
-                    archiveDeviceExtension.getFuzzyStr());
+                    archiveDeviceExtension.getFuzzyStr(), archiveDeviceExtension.getNullValueForQueryFields());
             newReqAttr.setSeries(newSeries);
             reqAttrs.add(newReqAttr);
         }
@@ -1728,7 +1729,8 @@ public class QCBeanImpl  implements QCBean{
         Collection<VerifyingObserver> verifyingObservers = new ArrayList<VerifyingObserver>();
         for(Attributes observer : oldVerifyingObserverSeq) {
             VerifyingObserver newObserver = new VerifyingObserver(
-                    observer,archiveDeviceExtension.getFuzzyStr());
+                    observer,archiveDeviceExtension.getFuzzyStr(),
+                    archiveDeviceExtension.getNullValueForQueryFields());
             newObserver.setInstance(inst);
             verifyingObservers.add(newObserver);
         }
@@ -1871,7 +1873,7 @@ public class QCBeanImpl  implements QCBean{
                 + " from instance {}",qcSource, oldInstance, removeFromIdent);
         removeFromIdent.setAttributes(identicalDocumentAttributes, archiveDeviceExtension
                 .getAttributeFilter(Entity.Instance),
-                archiveDeviceExtension.getFuzzyStr());
+                archiveDeviceExtension.getFuzzyStr(), archiveDeviceExtension.getNullValueForQueryFields());
     }
 
     /**

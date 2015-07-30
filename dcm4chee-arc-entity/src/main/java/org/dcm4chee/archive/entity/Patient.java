@@ -102,37 +102,37 @@ public class Patient implements Serializable {
     @Column(name = "version")
     private long version;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "updated_time")
     private Date updatedTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "no_pat_id")
     private boolean noPatientID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pat_birthdate")
-    private String patientBirthDate = "*";
+    private String patientBirthDate;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pat_sex")
-    private String patientSex = "*";
+    private String patientSex;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pat_custom1")
-    private String patientCustomAttribute1 = "*";
+    private String patientCustomAttribute1;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pat_custom2")
-    private String patientCustomAttribute2 = "*";
+    private String patientCustomAttribute2;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pat_custom3")
-    private String patientCustomAttribute3 = "*";
+    private String patientCustomAttribute3;
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
@@ -340,18 +340,17 @@ public class Patient implements Serializable {
     }
 
     public void setAttributes(Attributes attrs, AttributeFilter filter,
-            FuzzyStr fuzzyStr) {
-        patientName = PersonName.valueOf(attrs.getString(Tag.PatientName),
-                fuzzyStr, patientName);
-        patientBirthDate = attrs.getString(Tag.PatientBirthDate, "*");
-        patientSex = attrs.getString(Tag.PatientSex, "*").toUpperCase();
+            FuzzyStr fuzzyStr, String nullValue) {
+        patientName = PersonName.valueOf(attrs.getString(Tag.PatientName), fuzzyStr, nullValue, patientName);
+        patientBirthDate = attrs.getString(Tag.PatientBirthDate, nullValue);
+        patientSex = nullValue == null ? null : attrs.getString(Tag.PatientSex, nullValue).toUpperCase();
 
         patientCustomAttribute1 = AttributeFilter.selectStringValue(attrs,
-                filter.getCustomAttribute1(), "*");
+                filter.getCustomAttribute1(), nullValue);
         patientCustomAttribute2 = AttributeFilter.selectStringValue(attrs,
-                filter.getCustomAttribute2(), "*");
+                filter.getCustomAttribute2(), nullValue);
         patientCustomAttribute3 = AttributeFilter.selectStringValue(attrs,
-                filter.getCustomAttribute3(), "*");
+                filter.getCustomAttribute3(), nullValue);
 
         getAttributesBlob().setAttributes(new Attributes(attrs, filter.getCompleteSelection(attrs)));
     }

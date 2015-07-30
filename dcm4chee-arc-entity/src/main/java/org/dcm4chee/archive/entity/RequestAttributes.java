@@ -74,23 +74,23 @@ public class RequestAttributes implements Serializable {
     @Column(name = "pk")
     private long pk;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "accession_no")
     private String accessionNumber;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_iuid")
     private String studyInstanceUID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "req_proc_id")
     private String requestedProcedureID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "sps_id")
     private String scheduledProcedureStepID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "req_service")
     private String requestingService;
 
@@ -108,17 +108,14 @@ public class RequestAttributes implements Serializable {
     
     public RequestAttributes() {}
 
-    public RequestAttributes(Attributes attrs, Issuer issuerOfAccessionNumber,
-            FuzzyStr fuzzyStr) {
-        studyInstanceUID = attrs.getString(Tag.StudyInstanceUID, "*");
-        accessionNumber = attrs.getString(Tag.AccessionNumber, "*");
+    public RequestAttributes(Attributes attrs, Issuer issuerOfAccessionNumber,FuzzyStr fuzzyStr, String nullValue) {
+        studyInstanceUID = attrs.getString(Tag.StudyInstanceUID, nullValue);
+        accessionNumber = attrs.getString(Tag.AccessionNumber, nullValue);
         this.issuerOfAccessionNumber = issuerOfAccessionNumber;
-        requestedProcedureID = attrs.getString(Tag.RequestedProcedureID, "*");
-        scheduledProcedureStepID = attrs.getString(
-                Tag.ScheduledProcedureStepID, "*");
-        requestingService = attrs.getString(Tag.RequestingService, "*");
-        requestingPhysician = PersonName.valueOf(
-                attrs.getString(Tag.RequestingPhysician), fuzzyStr, null);
+        requestedProcedureID = attrs.getString(Tag.RequestedProcedureID, nullValue);
+        scheduledProcedureStepID = attrs.getString(Tag.ScheduledProcedureStepID, nullValue);
+        requestingService = attrs.getString(Tag.RequestingService, nullValue);
+        requestingPhysician = PersonName.valueOf(attrs.getString(Tag.RequestingPhysician), fuzzyStr, nullValue, null);
     }
 
     public long getPk() {

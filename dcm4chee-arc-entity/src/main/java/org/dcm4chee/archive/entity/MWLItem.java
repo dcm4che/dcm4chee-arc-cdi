@@ -94,42 +94,42 @@ public class MWLItem implements Serializable {
     @Column(name = "version")
     private long version;    
     
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "updated_time")
     private Date updatedTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "sps_id")
     private String scheduledProcedureStepID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "req_proc_id")
     private String requestedProcedureID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_iuid")
     private String studyInstanceUID;
 
     @Column(name = "accession_no")
     private String accessionNumber;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "modality")
     private String modality;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "sps_start_date")
     private String scheduledStartDate;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "sps_start_time")
     private String scheduledStartTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "sps_status")
     private String status;
 
@@ -258,7 +258,7 @@ public class MWLItem implements Serializable {
         return attributesBlob.getAttributes();
     }
 
-    public void setAttributes(Attributes attrs, FuzzyStr fuzzyStr) {
+    public void setAttributes(Attributes attrs, FuzzyStr fuzzyStr, String nullValue) {
         Attributes spsItem = attrs
                 .getNestedDataset(Tag.ScheduledProcedureStepSequence);
         if (spsItem == null) {
@@ -266,19 +266,19 @@ public class MWLItem implements Serializable {
                     "Missing Scheduled Procedure Step Sequence (0040,0100) Item");
         }
         scheduledProcedureStepID = spsItem.getString(Tag.ScheduledProcedureStepID);
-        modality = spsItem.getString(Tag.Modality, "*").toUpperCase();
+        modality = nullValue == null ? null : spsItem.getString(Tag.Modality, nullValue).toUpperCase();
         Date dt = spsItem.getDate(Tag.ScheduledProcedureStepStartDateAndTime);
         if (dt != null) {
             scheduledStartDate = DateUtils.formatDA(null, dt);
             scheduledStartTime = spsItem.containsValue(Tag.ScheduledProcedureStepStartTime)
                     ? DateUtils.formatTM(null, dt)
-                    : "*";
+                    : nullValue;
         } else {
-            scheduledStartDate = "*";
-            scheduledStartTime = "*";
+            scheduledStartDate = nullValue;
+            scheduledStartTime = nullValue;
         }
         scheduledPerformingPhysicianName = PersonName.valueOf(
-                attrs.getString(Tag.ScheduledPerformingPhysicianName), fuzzyStr,
+                attrs.getString(Tag.ScheduledPerformingPhysicianName), fuzzyStr, nullValue,
                 scheduledPerformingPhysicianName);
         status = spsItem.getString(Tag.ScheduledProcedureStepStatus, SCHEDULED);
         

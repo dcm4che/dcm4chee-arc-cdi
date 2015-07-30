@@ -84,10 +84,10 @@ public class SoundexCode implements Serializable{
     public SoundexCode() {}
 
     public SoundexCode(Component personNameComponent, int componentPartIndex,
-            String codeValue) {
+            String codeValue, String nullValue) {
         this.personNameComponent = personNameComponent;
         this.componentPartIndex = componentPartIndex;
-        this.codeValue = codeValue.isEmpty() ? "*" : codeValue;
+        this.codeValue = codeValue.isEmpty() ? nullValue : codeValue;
     }
 
     public static Iterator<String> tokenizePersonNameComponent(String name) {
@@ -122,8 +122,11 @@ public class SoundexCode implements Serializable{
         return componentPartIndex;
     }
 
-    public String getCodeValue() {
-        return codeValue.equals("*") ? "" : codeValue;
+    public String getCodeValue(String nullValue) {
+        if (nullValue == null)
+            return codeValue == null ? "" : codeValue;
+        else
+            return codeValue.equals(nullValue) ? "" : codeValue;
     }
 
     public PersonName getPersonName() {

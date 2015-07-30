@@ -784,7 +784,7 @@ public class StoreServiceImpl implements StoreService {
             StoreSession session = context.getStoreSession();
             return patientService.updateOrCreatePatientOnCStore(context
                     .getAttributes(), PatientSelectorFactory
-                    .createSelector(context.getStoreSession().getStoreParam()),
+                    .createSelector(session.getStoreParam()),
                     session.getStoreParam());
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
@@ -802,7 +802,7 @@ public class StoreServiceImpl implements StoreService {
         study.setPatient(service.findOrCreatePatient(em, context));
         study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
         study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
-                storeParam.getFuzzyStr());
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         study.setIssuerOfAccessionNumber(findOrCreateIssuer(attrs
                 .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         em.persist(study);
@@ -828,11 +828,11 @@ public class StoreServiceImpl implements StoreService {
         series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
         series.setRequestAttributes(createRequestAttributes(
                 data.getSequence(Tag.RequestAttributesSequence),
-                storeParam.getFuzzyStr(), series));
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields(), series));
         series.setSourceAET(session.getRemoteAET());
         series.setAttributes(data,
                 storeParam.getAttributeFilter(Entity.Series),
-                storeParam.getFuzzyStr());
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         em.persist(series);
         LOG.info("{}: Create {}", session, series);
         return series;
@@ -850,7 +850,7 @@ public class StoreServiceImpl implements StoreService {
         inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
         inst.setVerifyingObservers(createVerifyingObservers(
                 data.getSequence(Tag.VerifyingObserverSequence),
-                storeParam.getFuzzyStr(), inst));
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields(), inst));
         inst.setContentItems(createContentItems(
                 data.getSequence(Tag.ContentSequence), inst));
         inst.setRetrieveAETs(session.getStorageSystem().getStorageSystemGroup()
@@ -858,7 +858,7 @@ public class StoreServiceImpl implements StoreService {
         inst.setAvailability(session.getStorageSystem().getAvailability());
         inst.setAttributes(data,
                 storeParam.getAttributeFilter(Entity.Instance),
-                storeParam.getFuzzyStr());
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         em.persist(inst);
         LOG.info("{}: Create {}", session, inst);
         return inst;
@@ -922,7 +922,7 @@ public class StoreServiceImpl implements StoreService {
         if (isRejected(study)) {
             em.remove(study.getAttributesBlob());
             study.setAttributes(new Attributes(data), studyFilter,
-                    storeParam.getFuzzyStr());
+                    storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         } else {
             if (!context.isFetch()
                     && !session.getLocalAET().equalsIgnoreCase(
@@ -932,7 +932,7 @@ public class StoreServiceImpl implements StoreService {
                                     && studyAttrs.updateSelected(data, modified,
                     studyFilter.getCompleteSelection(data))) {
                 study.setAttributes(studyAttrs, studyFilter,
-                        storeParam.getFuzzyStr());
+                        storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
                         studyAttrs, modified);
             }
@@ -969,7 +969,7 @@ public class StoreServiceImpl implements StoreService {
         if (isRejected(series)) {
             em.remove(series.getAttributesBlob());
             series.setAttributes(new Attributes(data), seriesFilter,
-                    storeParam.getFuzzyStr());
+                    storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         } else {
             if (!context.isFetch()
                     && !session.getLocalAET().equalsIgnoreCase(
@@ -979,7 +979,7 @@ public class StoreServiceImpl implements StoreService {
                     && seriesAttrs.updateSelected(data, modified,
                             seriesFilter.getCompleteSelection(data))) {
                 series.setAttributes(seriesAttrs, seriesFilter,
-                        storeParam.getFuzzyStr());
+                        storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
                         seriesAttrs, modified);
             }
@@ -1005,7 +1005,7 @@ public class StoreServiceImpl implements StoreService {
                                 .getFetchAETitle())
                 && instAttrs.updateSelected(data, modified,
                         instFilter.getCompleteSelection(data))) {
-            inst.setAttributes(data, instFilter, storeParam.getFuzzyStr());
+            inst.setAttributes(data, instFilter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
             LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
                     modified);
         }
@@ -1092,7 +1092,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private Collection<RequestAttributes> createRequestAttributes(Sequence seq,
-            FuzzyStr fuzzyStr, Series series) {
+            FuzzyStr fuzzyStr, String nullValue, Series series) {
         if (seq == null || seq.isEmpty())
             return null;
 
@@ -1103,7 +1103,7 @@ public class StoreServiceImpl implements StoreService {
                     item,
                     findOrCreateIssuer(item
                             .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
-                    fuzzyStr);
+                    fuzzyStr, nullValue);
             request.setSeries(series);
             list.add(request);
         }
@@ -1111,14 +1111,14 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private Collection<VerifyingObserver> createVerifyingObservers(
-            Sequence seq, FuzzyStr fuzzyStr, Instance instance) {
+            Sequence seq, FuzzyStr fuzzyStr, String nullValue, Instance instance) {
         if (seq == null || seq.isEmpty())
             return null;
 
         ArrayList<VerifyingObserver> list = new ArrayList<VerifyingObserver>(
                 seq.size());
         for (Attributes item : seq) {
-            VerifyingObserver observer = new VerifyingObserver(item, fuzzyStr);
+            VerifyingObserver observer = new VerifyingObserver(item, fuzzyStr, nullValue);
             observer.setInstance(instance);
             list.add(observer);
         }

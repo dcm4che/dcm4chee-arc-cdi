@@ -61,9 +61,9 @@ import com.mysema.query.types.path.StringPath;
 class MatchPersonName {
 
     public static Predicate match(QPersonName qpn, String value,
-            QueryParam queryParam) {
+            QueryParam queryParam, String nullValue) {
 
-        if (value.equals("*"))
+        if (value == null || value.equals(nullValue))
             return null;
 
         PersonName pn = new PersonName(value, true);
@@ -79,6 +79,7 @@ class MatchPersonName {
 
     private static Predicate literalMatch(QPersonName qpn,
             PersonName pn, QueryParam param) {
+         String nullValue = param.getNullValueForQueryFields();
          BooleanBuilder builder = new BooleanBuilder();
          if (!pn.contains(PersonName.Group.Ideographic)
                 && !pn.contains(PersonName.Group.Phonetic)) {
@@ -86,50 +87,50 @@ class MatchPersonName {
                      qpn.familyName,
                      qpn.givenName,
                      qpn.middleName, 
-                     pn, PersonName.Group.Alphabetic, true));
+                     pn, PersonName.Group.Alphabetic, true, nullValue));
              builder.or(match(
                      qpn.ideographicFamilyName,
                      qpn.ideographicGivenName,
                      qpn.ideographicMiddleName,
-                     pn, PersonName.Group.Alphabetic, false));
+                     pn, PersonName.Group.Alphabetic, false, nullValue));
              builder.or(match(
                      qpn.phoneticFamilyName,
                      qpn.phoneticGivenName,
                      qpn.phoneticMiddleName,
-                     pn, PersonName.Group.Alphabetic, false));
+                     pn, PersonName.Group.Alphabetic, false, nullValue));
         } else {
             builder.and(match(
                     qpn.familyName,
                     qpn.givenName,
                     qpn.middleName, 
-                    pn, PersonName.Group.Alphabetic, true));
+                    pn, PersonName.Group.Alphabetic, true, nullValue));
             builder.and(match(
                     qpn.ideographicFamilyName,
                     qpn.ideographicGivenName,
                     qpn.ideographicMiddleName,
-                    pn, PersonName.Group.Ideographic, false));
+                    pn, PersonName.Group.Ideographic, false, nullValue));
             builder.and(match(
                     qpn.phoneticFamilyName,
                     qpn.phoneticGivenName,
                     qpn.phoneticMiddleName,
-                    pn, PersonName.Group.Phonetic, false));
+                    pn, PersonName.Group.Phonetic, false, nullValue));
         }
         return builder;
     }
 
     private static Predicate match(StringPath familyName,
             StringPath givenName, StringPath middleName,
-            PersonName pn, PersonName.Group group, boolean ignoreCase) {
+            PersonName pn, PersonName.Group group, boolean ignoreCase, String nullValue) {
         if (!pn.contains(group))
             return null;
 
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(QueryBuilder.wildCard(familyName,
-                pn.get(group, PersonName.Component.FamilyName), false, ignoreCase));
+                pn.get(group, PersonName.Component.FamilyName), false, ignoreCase, nullValue));
         builder.and(QueryBuilder.wildCard(givenName,
-                pn.get(group, PersonName.Component.GivenName), false, ignoreCase));
+                pn.get(group, PersonName.Component.GivenName), false, ignoreCase, nullValue));
         builder.and(QueryBuilder.wildCard(middleName,
-                pn.get(group, PersonName.Component.MiddleName), false, ignoreCase));
+                pn.get(group, PersonName.Component.MiddleName), false, ignoreCase, nullValue));
         return builder;
     }
 

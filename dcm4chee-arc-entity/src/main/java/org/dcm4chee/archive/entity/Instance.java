@@ -134,51 +134,51 @@ public class Instance implements Serializable {
     @Column(name = "version")
     private long version;  
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "updated_time")
     private Date updatedTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "sop_iuid", updatable = false)
     private String sopInstanceUID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "sop_cuid", updatable = false)
     private String sopClassUID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "inst_no")
     private String instanceNumber;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "content_date")
     private String contentDate;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "content_time")
     private String contentTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "sr_complete")
     private String completionFlag;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "sr_verified")
     private String verificationFlag;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "inst_custom1")
     private String instanceCustomAttribute1;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "inst_custom2")
     private String instanceCustomAttribute2;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "inst_custom3")
     private String instanceCustomAttribute3;
 
@@ -188,11 +188,11 @@ public class Instance implements Serializable {
     @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<ExternalRetrieveLocation> externalRetrieveLocations;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "availability")
     private Availability availability;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "archived")
     private boolean archived;
 
@@ -431,30 +431,30 @@ public class Instance implements Serializable {
         this.externalRetrieveLocations = externalRetrieveLocations;
     }
 
-    public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
+    public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr, String nullValue) {
         sopInstanceUID = attrs.getString(Tag.SOPInstanceUID);
         sopClassUID = attrs.getString(Tag.SOPClassUID);
-        instanceNumber = attrs.getString(Tag.InstanceNumber, "*");
+        instanceNumber = attrs.getString(Tag.InstanceNumber, nullValue);
         Date dt = attrs.getDate(Tag.ContentDateAndTime);
         if (dt != null) {
             contentDate = DateUtils.formatDA(null, dt);
             contentTime = 
                 attrs.containsValue(Tag.ContentTime)
                     ? DateUtils.formatTM(null, dt)
-                    : "*";
+                    : nullValue;
         } else {
-            contentDate = "*";
-            contentTime = "*";
+            contentDate = nullValue;
+            contentTime = nullValue;
         }
-        completionFlag = attrs.getString(Tag.CompletionFlag, "*").toUpperCase();
-        verificationFlag = attrs.getString(Tag.VerificationFlag, "*").toUpperCase();
+        completionFlag = nullValue == null ? null : attrs.getString(Tag.CompletionFlag, nullValue).toUpperCase();
+        verificationFlag = nullValue == null ? null : attrs.getString(Tag.VerificationFlag, nullValue).toUpperCase();
 
         instanceCustomAttribute1 = 
-                AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
+                AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), nullValue);
         instanceCustomAttribute2 =
-                AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute2(), "*");
+                AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute2(), nullValue);
         instanceCustomAttribute3 =
-                AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
+                AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), nullValue);
 
         if (attributesBlob == null)
                 attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getCompleteSelection(attrs)));

@@ -148,7 +148,7 @@ public class MPPSServiceImpl implements MPPSService {
                 storeParam.getAttributeFilter(Entity.Patient).getCompleteSelection(attrs));
         MPPS mpps = new MPPS();
         mpps.setSopInstanceUID(iuid);
-        mpps.setAttributes(mppsAttrs);
+        mpps.setAttributes(mppsAttrs, storeParam.getNullValueForQueryFields());
         mpps.setPatient(patient);
         ejb.persistPPS(mpps);
         return mpps;
@@ -159,6 +159,7 @@ public class MPPSServiceImpl implements MPPSService {
             String iuid, Attributes modified, MPPSService service)
                     throws DicomServiceException {
         MPPS pps;
+        StoreParam storeParam = arcAE.getStoreParam();
         try {
             pps = ejb.findPPS(iuid);
         } catch (NoResultException e) {
@@ -170,7 +171,7 @@ public class MPPSServiceImpl implements MPPSService {
 
         Attributes attrs = pps.getAttributes();
         attrs.addAll(modified);
-        pps.setAttributes(attrs);
+        pps.setAttributes(attrs, storeParam.getNullValueForQueryFields());
         if (pps.getStatus() != MPPS.Status.IN_PROGRESS) {
             if (!attrs.containsValue(Tag.PerformedSeriesSequence))
                 throw new DicomServiceException(Status.MissingAttributeValue)

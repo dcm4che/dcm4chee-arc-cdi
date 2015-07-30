@@ -75,7 +75,7 @@ public class VerifyingObserver implements Serializable {
     @Column(name = "pk")
     private long pk;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "verify_datetime")
     private String verificationDateTime;
 
@@ -89,11 +89,11 @@ public class VerifyingObserver implements Serializable {
 
     public VerifyingObserver() {}
 
-    public VerifyingObserver(Attributes attrs, FuzzyStr fuzzyStr) {
+    public VerifyingObserver(Attributes attrs, FuzzyStr fuzzyStr, String nullValue) {
         Date dt = attrs.getDate(Tag.VerificationDateTime);
         verificationDateTime = DateUtils.formatDT(null, dt);
         verifyingObserverName = PersonName.valueOf(
-                attrs.getString(Tag.VerifyingObserverName), fuzzyStr, null);
+                attrs.getString(Tag.VerifyingObserverName), fuzzyStr, nullValue, null);
     }
 
     public long getPk() {

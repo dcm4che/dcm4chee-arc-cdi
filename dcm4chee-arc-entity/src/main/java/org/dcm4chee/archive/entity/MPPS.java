@@ -115,38 +115,38 @@ public class MPPS implements Serializable {
     @Column(name = "version")
     private long version;  
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "updated_time")
     private Date updatedTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "mpps_iuid", updatable = true)
     private String sopInstanceUID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pps_start_date")
     private String startDate;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pps_start_time")
     private String startTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "station_aet")
     private String performedStationAET;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "modality")
     private String modality;
 
     @Column(name = "accession_no")
     private String accessionNumber;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "mpps_status")
     private Status status;
 
@@ -263,7 +263,7 @@ public class MPPS implements Serializable {
         return attributesBlob.getAttributes();
     }
 
-    public void setAttributes(Attributes attrs) {
+    public void setAttributes(Attributes attrs, String nullValue) {
         
         Date dt = attrs.getDate(Tag.PerformedProcedureStepStartDateAndTime);
         if (dt != null) {
@@ -271,10 +271,10 @@ public class MPPS implements Serializable {
             startTime = 
                 attrs.containsValue(Tag.PerformedProcedureStepStartDate)
                     ? DateUtils.formatTM(null, dt)
-                    : "*";
+                    : nullValue;
         } else {
-            startDate = "*";
-            startTime = "*";
+            startDate = nullValue;
+            startTime = nullValue;
         }
         this.performedStationAET = attrs.getString(Tag.PerformedStationAETitle);
         this.modality = attrs.getString(Tag.Modality);

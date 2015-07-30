@@ -108,54 +108,54 @@ public class Study implements Serializable {
     @Column(name = "version")
     private long version;    
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "updated_time")
     private Date updatedTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_iuid", updatable = false)
     private String studyInstanceUID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_id")
     private String studyID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_date")
     private String studyDate;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_time")
     private String studyTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "accession_no")
     private String accessionNumber;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_desc")
     private String studyDescription;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_custom1")
     private String studyCustomAttribute1;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_custom2")
     private String studyCustomAttribute2;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "study_custom3")
     private String studyCustomAttribute3;
 
     @Column(name = "access_control_id")
     private String accessControlID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "is_rejected")
     private boolean isRejected;
 
@@ -328,30 +328,29 @@ public class Study implements Serializable {
         this.version = version;
     }
 
-    public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
+    public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr, String nullValue) {
         studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
-        studyID = attrs.getString(Tag.StudyID, "*");
-        studyDescription = attrs.getString(Tag.StudyDescription, "*");
+        studyID = attrs.getString(Tag.StudyID, nullValue);
+        studyDescription = attrs.getString(Tag.StudyDescription, nullValue);
         Date dt = attrs.getDate(Tag.StudyDateAndTime);
         if (dt != null) {
             studyDate = DateUtils.formatDA(null, dt);
             studyTime = attrs.containsValue(Tag.StudyTime)
                     ? DateUtils.formatTM(null, dt)
-                    : "*";
+                    : nullValue;
         } else {
-            studyDate = "*";
-            studyTime = "*";
+            studyDate = nullValue;
+            studyTime = nullValue;
         }
-        accessionNumber = attrs.getString(Tag.AccessionNumber, "*");
+        accessionNumber = attrs.getString(Tag.AccessionNumber, nullValue);
         referringPhysicianName = PersonName.valueOf(
-                attrs.getString(Tag.ReferringPhysicianName), fuzzyStr,
-                referringPhysicianName);
+                attrs.getString(Tag.ReferringPhysicianName), fuzzyStr, nullValue, referringPhysicianName);
         studyCustomAttribute1 = 
-            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
+            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), nullValue);
         studyCustomAttribute2 =
-            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute2(), "*");
+            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute2(), nullValue);
         studyCustomAttribute3 =
-            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
+            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), nullValue);
 
         if (attributesBlob == null)
             attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getCompleteSelection(attrs)));

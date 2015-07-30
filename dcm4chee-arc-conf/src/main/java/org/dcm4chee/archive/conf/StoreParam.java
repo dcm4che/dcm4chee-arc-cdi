@@ -54,6 +54,7 @@ public class StoreParam {
     private String modifyingSystem;
     private PatientSelectorConfig patientSelectorConfig;
     private boolean deIdentifyLogs = false;
+    private String nullValueForQueryFields = null;
 
     public final boolean isStoreOriginalAttributes() {
         return storeOriginalAttributes;
@@ -101,5 +102,13 @@ public class StoreParam {
 
     public void setDeIdentifyLogs(boolean deIdentifyLogs) {
         this.deIdentifyLogs = deIdentifyLogs;
+    }
+
+    public String getNullValueForQueryFields() {
+        return nullValueForQueryFields;
+    }
+
+    public void setNullValueForQueryFields(String nullValueForQueryFields) {
+        this.nullValueForQueryFields = nullValueForQueryFields;
     }
 }

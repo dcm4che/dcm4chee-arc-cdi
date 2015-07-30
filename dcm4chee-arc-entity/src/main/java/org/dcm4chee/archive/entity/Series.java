@@ -134,82 +134,82 @@ public class Series implements Serializable {
     @Column(name = "version")
     private long version;    
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "updated_time")
     private Date updatedTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "series_iuid", updatable = false)
     private String seriesInstanceUID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "series_no")
     private String seriesNumber;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "series_desc")
     private String seriesDescription;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "modality")
     private String modality;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "department")
     private String institutionalDepartmentName;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "institution")
     private String institutionName;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "station_name")
     private String stationName;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "body_part")
     private String bodyPartExamined;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "laterality")
     private String laterality;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pps_start_date")
     private String performedProcedureStepStartDate;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pps_start_time")
     private String performedProcedureStepStartTime;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pps_iuid")
     private String performedProcedureStepInstanceUID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "pps_cuid")
     private String performedProcedureStepClassUID;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "series_custom1")
     private String seriesCustomAttribute1;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "series_custom2")
     private String seriesCustomAttribute2;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "series_custom3")
     private String seriesCustomAttribute3;
 
     @Column(name = "src_aet")
     private String sourceAET;
 
-    @Basic(optional = false)
+    //@Basic(optional = false)
     @Column(name = "is_rejected")
     private boolean isRejected;
 
@@ -424,23 +424,23 @@ public class Series implements Serializable {
             queryAttributes.clear();
     }
 
-    public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr) {
+    public void setAttributes(Attributes attrs, AttributeFilter filter, FuzzyStr fuzzyStr, String nullValue) {
         seriesInstanceUID = attrs.getString(Tag.SeriesInstanceUID);
-        seriesNumber = attrs.getString(Tag.SeriesNumber, "*");
-        seriesDescription = attrs.getString(Tag.SeriesDescription, "*");
-        institutionName = attrs.getString(Tag.InstitutionName, "*");
-        institutionalDepartmentName = attrs.getString(Tag.InstitutionalDepartmentName, "*");
-        modality = attrs.getString(Tag.Modality, "*").toUpperCase();
-        stationName = attrs.getString(Tag.StationName, "*");
-        bodyPartExamined = attrs.getString(Tag.BodyPartExamined, "*").toUpperCase();
-        laterality = attrs.getString(Tag.Laterality, "*").toUpperCase();
+        seriesNumber = attrs.getString(Tag.SeriesNumber, nullValue);
+        seriesDescription = attrs.getString(Tag.SeriesDescription, nullValue);
+        institutionName = attrs.getString(Tag.InstitutionName, nullValue);
+        institutionalDepartmentName = attrs.getString(Tag.InstitutionalDepartmentName, nullValue);
+        modality = attrs.getString(Tag.Modality, nullValue).toUpperCase();
+        stationName = attrs.getString(Tag.StationName, nullValue);
+        bodyPartExamined = nullValue == null ? null : attrs.getString(Tag.BodyPartExamined, nullValue).toUpperCase();
+        laterality = nullValue == null ? null : attrs.getString(Tag.Laterality, nullValue).toUpperCase();
         Attributes refPPS = attrs.getNestedDataset(Tag.ReferencedPerformedProcedureStepSequence);
         if (refPPS != null) {
-            performedProcedureStepInstanceUID = refPPS.getString(Tag.ReferencedSOPInstanceUID, "*");
-            performedProcedureStepClassUID = refPPS.getString(Tag.ReferencedSOPClassUID, "*");
+            performedProcedureStepInstanceUID = refPPS.getString(Tag.ReferencedSOPInstanceUID, nullValue);
+            performedProcedureStepClassUID = refPPS.getString(Tag.ReferencedSOPClassUID, nullValue);
         } else {
-            performedProcedureStepInstanceUID = "*";
-            performedProcedureStepClassUID = "*";
+            performedProcedureStepInstanceUID = nullValue;
+            performedProcedureStepClassUID = nullValue;
         }
         Date dt = attrs.getDate(Tag.PerformedProcedureStepStartDateAndTime);
         if (dt != null) {
@@ -448,20 +448,19 @@ public class Series implements Serializable {
             performedProcedureStepStartTime = 
                 attrs.containsValue(Tag.PerformedProcedureStepStartDate)
                     ? DateUtils.formatTM(null, dt)
-                    : "*";
+                    : nullValue;
         } else {
-            performedProcedureStepStartDate = "*";
-            performedProcedureStepStartTime = "*";
+            performedProcedureStepStartDate = nullValue;
+            performedProcedureStepStartTime = nullValue;
         }
         performingPhysicianName = PersonName.valueOf(
-                attrs.getString(Tag.PerformingPhysicianName), fuzzyStr,
-                performingPhysicianName);
+                attrs.getString(Tag.PerformingPhysicianName), fuzzyStr, null, performingPhysicianName);
         seriesCustomAttribute1 = 
-            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), "*");
+            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), nullValue);
         seriesCustomAttribute2 =
-            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute2(), "*");
+            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute2(), nullValue);
         seriesCustomAttribute3 =
-            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), "*");
+            AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute3(), nullValue);
 
         if (attributesBlob == null)
             attributesBlob = new AttributesBlob(new Attributes(attrs, filter.getCompleteSelection(attrs)));

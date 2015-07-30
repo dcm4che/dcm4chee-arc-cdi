@@ -124,11 +124,11 @@ public class PersonName implements Serializable {
     public PersonName() {
     }
     
-    public PersonName(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr) {
-        fromDicom(pn, fuzzyStr);
+    public PersonName(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr, String nullValue) {
+        fromDicom(pn, fuzzyStr, nullValue);
     }
 
-    private void fromDicom(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr) {
+    private void fromDicom(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr, String nullValue) {
         familyName = pn.get(Group.Alphabetic, Component.FamilyName);
         givenName = pn.get(Group.Alphabetic, Component.GivenName);
         middleName = pn.get(Group.Alphabetic, Component.MiddleName);
@@ -144,12 +144,11 @@ public class PersonName implements Serializable {
         phoneticMiddleName = pn.get(Group.Phonetic, Component.MiddleName);
         phoneticNamePrefix = pn.get(Group.Phonetic, Component.NamePrefix);
         phoneticNameSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
-        createOrUpdateSoundexCodes(familyName, givenName, middleName,
-                    fuzzyStr);
+        createOrUpdateSoundexCodes(familyName, givenName, middleName, fuzzyStr, nullValue);
     }
 
     private void createOrUpdateSoundexCodes(String familyName,
-            String givenName, String middleName, FuzzyStr fuzzyStr) {
+            String givenName, String middleName, FuzzyStr fuzzyStr, String nullValue) {
         
         if (soundexCodes == null)
             soundexCodes = new ArrayList<SoundexCode>();
@@ -160,20 +159,20 @@ public class PersonName implements Serializable {
                 iterator.remove();
             }
 
-        addSoundexCodesTo(Component.FamilyName, familyName, fuzzyStr, soundexCodes);
-        addSoundexCodesTo(Component.GivenName, givenName, fuzzyStr, soundexCodes);
-        addSoundexCodesTo(Component.MiddleName, middleName, fuzzyStr, soundexCodes);
+        addSoundexCodesTo(Component.FamilyName, familyName, fuzzyStr, nullValue, soundexCodes);
+        addSoundexCodesTo(Component.GivenName, givenName, fuzzyStr, nullValue, soundexCodes);
+        addSoundexCodesTo(Component.MiddleName, middleName, fuzzyStr, nullValue, soundexCodes);
     }
 
     private void addSoundexCodesTo(Component component, String name,
-            FuzzyStr fuzzyStr, Collection<SoundexCode> codes) {
+            FuzzyStr fuzzyStr, String nullValue, Collection<SoundexCode> codes) {
         if (name == null)
             return;
 
         Iterator<String> parts = SoundexCode.tokenizePersonNameComponent(name);
         for (int i = 0; parts.hasNext(); i++) {
             SoundexCode soundexCode = new SoundexCode(component, i,
-                    fuzzyStr.toFuzzy(parts.next()));
+                    fuzzyStr.toFuzzy(parts.next()), nullValue);
             soundexCode.setPersonName(this);
             codes.add(soundexCode);
         }
@@ -199,8 +198,7 @@ public class PersonName implements Serializable {
         return pn;
     }
 
-    public static PersonName valueOf(String s, FuzzyStr fuzzyStr,
-            PersonName prev) {
+    public static PersonName valueOf(String s, FuzzyStr fuzzyStr, String nullValue, PersonName prev) {
         if (s == null)
             return null;
 
@@ -211,10 +209,10 @@ public class PersonName implements Serializable {
 
         if (prev != null) {
             if (!pn.equals(prev.toPersonName()))
-                prev.fromDicom(pn, fuzzyStr); //update values
+                prev.fromDicom(pn, fuzzyStr, nullValue); //update values
             return prev;
         } else
-            return new PersonName(pn, fuzzyStr); //create new
+            return new PersonName(pn, fuzzyStr, nullValue); //create new
     }
     
     @Override

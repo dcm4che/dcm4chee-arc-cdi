@@ -60,6 +60,7 @@ public class QueryParam {
     private Issuer defaultIssuerOfPatientID;
     private Issuer defaultIssuerOfAccessionNumber;
     private boolean deIdentifyLogs = false;
+    private String nullValueForQueryFields = null;
     private QueryRetrieveView queryRetrieveView;
 
     public final boolean isCombinedDatetimeMatching() {
@@ -159,4 +160,11 @@ public class QueryParam {
         this.queryRetrieveView = queryRetrieveView;
     }
 
+    public String getNullValueForQueryFields() {
+        return nullValueForQueryFields;
+    }
+
+    public void setNullValueForQueryFields(String nullValueForQueryFields) {
+        this.nullValueForQueryFields = nullValueForQueryFields;
+    }
 }

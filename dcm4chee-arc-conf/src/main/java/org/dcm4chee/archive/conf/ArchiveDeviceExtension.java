@@ -440,6 +440,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         storeParam.setFuzzyStr(getFuzzyStr());
         storeParam.setAttributeFilters(attributeFilters);
         storeParam.setDeIdentifyLogs(isDeIdentifyLogs());
+        storeParam.setNullValueForQueryFields(getNullValueForQueryFields());
         return storeParam;
         
     }
@@ -449,6 +450,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         queryParam.setFuzzyStr(getFuzzyStr());
         queryParam.setAttributeFilters(attributeFilters);
         queryParam.setDeIdentifyLogs(isDeIdentifyLogs());
+        queryParam.setNullValueForQueryFields(getNullValueForQueryFields());
         return queryParam;
     }
 
@@ -557,6 +559,11 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     public boolean isUseNullForEmptyQueryFields() {
         return useNullForEmptyQueryFields;
     }
+
+    public String getNullValueForQueryFields() {
+        return isUseNullForEmptyQueryFields() ? null : "*";
+    }
+
 
     public void setUseNullForEmptyQueryFields(boolean useNullForEmptyQueryFields) {
         this.useNullForEmptyQueryFields = useNullForEmptyQueryFields;

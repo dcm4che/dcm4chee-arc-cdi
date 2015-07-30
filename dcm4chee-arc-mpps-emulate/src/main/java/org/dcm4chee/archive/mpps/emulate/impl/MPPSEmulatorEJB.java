@@ -209,7 +209,7 @@ public class MPPSEmulatorEJB {
                     1).add(mppsRef);
             ser.setAttributes(serAttrs,
                     storeParam.getAttributeFilter(Entity.Series),
-                    storeParam.getFuzzyStr());
+                    storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         }
     }
 

@@ -262,7 +262,7 @@ public class PatientServiceEJB implements PatientService {
         Patient patient = new Patient();
         patient.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Patient),
-                storeParam.getFuzzyStr());
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         patient.setNoPatientID(pids.isEmpty());
         patient.setPatientIDs(createPatientIDs(pids, patient,
                 storeParam.isDeIdentifyLogs()));
@@ -311,10 +311,8 @@ public class PatientServiceEJB implements PatientService {
         }
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (patientAttrs.mergeSelected(attrs, filter.getCompleteSelection(attrs))) {
-            patient.setAttributes(patientAttrs, filter,
-                    storeParam.getFuzzyStr());
-        }
+        if (patientAttrs.mergeSelected(attrs, filter.getCompleteSelection(attrs)))
+            patient.setAttributes(patientAttrs, filter,storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
     }
 
     private boolean mergePatientIDs(Patient patient,
@@ -376,10 +374,8 @@ public class PatientServiceEJB implements PatientService {
         }
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (patientAttrs.updateSelected(attrs, null, filter.getCompleteSelection(attrs))) {
-            patient.setAttributes(patientAttrs, filter,
-                    storeParam.getFuzzyStr());
-        }
+        if (patientAttrs.updateSelected(attrs, null, filter.getCompleteSelection(attrs)))
+            patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
     }
 
     @Override
@@ -673,8 +669,7 @@ public class PatientServiceEJB implements PatientService {
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
         if (patientAttrs.updateSelected(otherPatientAttrs, null,
                 filter.getCompleteSelection(otherPatientAttrs))) {
-            patient.setAttributes(patientAttrs, filter,
-                    storeParam.getFuzzyStr());
+            patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
             em.flush();
             LOG.info("Update ID {} with {} ", pids, otherPids);
         }

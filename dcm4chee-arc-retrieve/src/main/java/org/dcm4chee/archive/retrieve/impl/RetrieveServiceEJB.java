@@ -77,15 +77,16 @@ public class RetrieveServiceEJB {
             IDWithIssuer[] pids, String[] studyIUIDs, String[] seriesIUIDs,
             String[] objectIUIDs, QueryParam queryParam) {
 
+        String nullValue = queryParam.getNullValueForQueryFields();
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(QueryBuilder.pids(pids, 
                 queryParam.isMatchLinkedPatientIDs(), false));
         builder.and(QueryBuilder.uids(QStudy.study.studyInstanceUID,
-                studyIUIDs, false));
+                studyIUIDs, false, nullValue));
         builder.and(QueryBuilder.uids(QSeries.series.seriesInstanceUID,
-                seriesIUIDs, false));
+                seriesIUIDs, false, nullValue));
         builder.and(QueryBuilder.uids(QInstance.instance.sopInstanceUID,
-                objectIUIDs, false));
+                objectIUIDs, false, nullValue));
         builder.and(QueryBuilder.hideRejectedInstance(queryParam));
         builder.and(QueryBuilder.hideRejectionNote(queryParam));
 
