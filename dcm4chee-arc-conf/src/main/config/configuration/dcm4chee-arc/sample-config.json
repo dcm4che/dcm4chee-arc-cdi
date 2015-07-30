@@ -471,6 +471,21 @@
                   "dcmIIOFormatName" : "rle",
                   "dcmJavaClassName" : "org.dcm4che3.imageio.plugins.rle.RLEImageReader"
                 }
+              },
+              "dicomImageReaderMapMime" : {
+                "image/gif" : {
+                  "dcmIIOFormatName" : "gif"
+                },
+                "image/jp2" : {
+                  "dcmIIOFormatName" : "jpeg2000",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageReaderCodecLib"
+                },
+                "image/jpeg" : {
+                  "dcmIIOFormatName" : "jpeg"
+                },
+                "image/png" : {
+                  "dcmIIOFormatName" : "png"
+                }
               }
             }
           },
@@ -509,6 +524,21 @@
                   "dcmIIOFormatName" : "jpeg2000",
                   "dcmImageWriteParam" : [ "writeCodeStreamOnly=true" ],
                   "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageWriterCodecLib"
+                }
+              },
+              "dicomImageWriterMapMime" : {
+                "image/gif" : {
+                  "dcmIIOFormatName" : "gif"
+                },
+                "image/jp2" : {
+                  "dcmIIOFormatName" : "jpeg2000",
+                  "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageWriterCodecLib"
+                },
+                "image/jpeg" : {
+                  "dcmIIOFormatName" : "jpeg"
+                },
+                "image/png" : {
+                  "dcmIIOFormatName" : "png"
                 }
               }
             }
