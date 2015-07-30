@@ -171,10 +171,12 @@ public class PersonName implements Serializable {
 
         Iterator<String> parts = SoundexCode.tokenizePersonNameComponent(name);
         for (int i = 0; parts.hasNext(); i++) {
-            SoundexCode soundexCode = new SoundexCode(component, i,
-                    fuzzyStr.toFuzzy(parts.next()), nullValue);
-            soundexCode.setPersonName(this);
-            codes.add(soundexCode);
+            String fuzzy = fuzzyStr.toFuzzy(parts.next());
+            if (fuzzy.length()>0) {
+                SoundexCode soundexCode = new SoundexCode(component, i, fuzzy, nullValue);
+                soundexCode.setPersonName(this);
+                codes.add(soundexCode);
+            }
         }
     }
 
