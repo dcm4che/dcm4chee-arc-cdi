@@ -159,7 +159,6 @@ public class MPPSServiceImpl implements MPPSService {
             String iuid, Attributes modified, MPPSService service)
                     throws DicomServiceException {
         MPPS pps;
-        StoreParam storeParam = arcAE.getStoreParam();
         try {
             pps = ejb.findPPS(iuid);
         } catch (NoResultException e) {
@@ -171,6 +170,8 @@ public class MPPSServiceImpl implements MPPSService {
 
         Attributes attrs = pps.getAttributes();
         attrs.addAll(modified);
+        StoreParam storeParam = arcAE.getStoreParam();
+
         pps.setAttributes(attrs, storeParam.getNullValueForQueryFields());
         if (pps.getStatus() != MPPS.Status.IN_PROGRESS) {
             if (!attrs.containsValue(Tag.PerformedSeriesSequence))

@@ -205,12 +205,13 @@ public class QueryBuilder {
 
         boolean matchUnknown = queryParam.isMatchUnknown();
         boolean matchLinkedPatientIDs = queryParam.isMatchLinkedPatientIDs();
-        String nullValue = queryParam.getNullValueForQueryFields();
 
         builder.and(pids(pids, matchLinkedPatientIDs, matchUnknown));
 
         if (keys == null)
             return;
+
+        String nullValue = queryParam.getNullValueForQueryFields();
 
         builder.and(MatchPersonName.match(QueryBuilder.patientName,
                 keys.getString(Tag.PatientName, nullValue), queryParam, nullValue));
@@ -236,12 +237,16 @@ public class QueryBuilder {
     }
 
     private static String upper (String value){
-        if (value == null) return null;
+        if (value == null)
+            return null;
+
         return value.toUpperCase();
     }
 
     private static boolean same (String value, String nullValue) {
-        if (nullValue == null) return (value == null);
+        if (nullValue == null)
+            return (value == null);
+
         return nullValue.equals(value);
     }
 
