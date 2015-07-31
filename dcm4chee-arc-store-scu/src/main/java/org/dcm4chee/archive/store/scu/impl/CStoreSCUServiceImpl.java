@@ -205,16 +205,17 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     public void coerceAttributes(Attributes attrs, CStoreSCUContext context)
             throws DicomServiceException {
         try {
-            Templates tpl = context.getArchiveAEExtension()
-                    .getAttributeCoercionTemplates(
-                            attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
-                            Role.SCU, context.getRemoteAE().getAETitle());
-            if (tpl != null)
-                attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false,
-                        new CStoreSCUSetupTransformer(context.getLocalAE()
-                                .getAETitle(), context.getRemoteAE()
-                                .getAETitle())));
-
+            if (context.getRemoteAE()!=null) {
+                Templates tpl = context.getArchiveAEExtension()
+                        .getAttributeCoercionTemplates(
+                                attrs.getString(Tag.SOPClassUID), Dimse.C_STORE_RQ,
+                                Role.SCU, context.getRemoteAE().getAETitle());
+                if (tpl != null)
+                    attrs.addAll(SAXTransformer.transform(attrs, tpl, false, false,
+                            new CStoreSCUSetupTransformer(context.getLocalAE()
+                                    .getAETitle(), context.getRemoteAE()
+                                    .getAETitle())));
+            }
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
