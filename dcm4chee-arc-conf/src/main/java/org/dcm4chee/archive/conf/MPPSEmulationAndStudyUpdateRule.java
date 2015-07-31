@@ -8,25 +8,32 @@ import org.dcm4che3.conf.core.api.LDAP;
 
 @LDAP(objectClasses = "dcmMPPSEmulationRule", distinguishingField = "cn")
 @ConfigurableClass
-public final class MPPSEmulationRule implements Serializable {
+public final class MPPSEmulationAndStudyUpdateRule implements Serializable {
 
     private static final long serialVersionUID = 8047202716204035254L;
 
     @ConfigurableProperty(name = "cn")
     private String commonName;
 
-    @ConfigurableProperty(name = "dcmAETitle")
+    @ConfigurableProperty(name = "dcmAETitle",
+            label = "Source AEs",
+            description= "Source Application Entities for which this rule applies")
     private String[] sourceAETs;
 
-    @ConfigurableProperty(name = "dicomAETitle")
+    @ConfigurableProperty(name = "dicomAETitle",
+            label = "Emulator AET",
+            description = "Which AET should be used as a source for the emulated MPPS event"
+    )
     private String emulatorAET;
 
-    @ConfigurableProperty(name = "dcmMPPSEmulationDelay")
+    @ConfigurableProperty(name = "dcmMPPSEmulationDelay",
+            label = "Study update/MPPS emulator delay",
+            description = "After how many seconds the study update notification and MPPS emulation should be triggered")
     private int emulationDelay;
 
-    @ConfigurableProperty(name = "dcmMPPSEmulationCreationRule",  defaultValue = "ALWAYS")
-    private MPPSCreationRule creationRule = MPPSCreationRule.ALWAYS;    
-    
+    @ConfigurableProperty(name = "dcmMPPSEmulationCreationRule", defaultValue = "ALWAYS")
+    private MPPSCreationRule creationRule = MPPSCreationRule.ALWAYS;
+
     public String getCommonName() {
         return commonName;
     }

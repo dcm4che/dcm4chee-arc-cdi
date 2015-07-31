@@ -47,6 +47,12 @@
       <artifactId>hibernate-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.6</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-junit</artifactId>
       <scope>test</scope>
@@ -143,7 +149,7 @@
           <classifier>${db}</classifier>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.core, org.dcm4che.soundex, com.mysema.querydsl</Dependencies>
+              <Dependencies>org.dcm4che.core, org.dcm4che.soundex, com.mysema.querydsl, org.apache.commons.lang</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

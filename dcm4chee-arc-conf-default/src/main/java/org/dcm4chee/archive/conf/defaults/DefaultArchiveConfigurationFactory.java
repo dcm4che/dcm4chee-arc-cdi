@@ -384,12 +384,12 @@ public class DefaultArchiveConfigurationFactory {
         return view;
     }
 
-    private static MPPSEmulationRule createMPPSEmulationRule(
+    private static MPPSEmulationAndStudyUpdateRule createMPPSEmulationRule(
             String commonName,
             int emulationDelay,
             String emulatorAET,
             String... sourceAETs) {
-        MPPSEmulationRule rule = new MPPSEmulationRule();
+        MPPSEmulationAndStudyUpdateRule rule = new MPPSEmulationAndStudyUpdateRule();
         rule.setCommonName(commonName);
         rule.setEmulationDelay(emulationDelay);
         rule.setEmulatorAET(emulatorAET);

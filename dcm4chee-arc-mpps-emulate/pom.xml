@@ -47,6 +47,11 @@
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-api</artifactId>
+    </dependency>
+
     <!-- test dependencies -->
     <dependency>
       <groupId>org.jboss.shrinkwrap.resolver</groupId>
@@ -138,7 +143,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.net,org.dcm4che.net-hl7, org.dcm4che.soundex, org.dcm4che.conf.api, org.dcm4che.conf.api-hl7</Dependencies>
+              <Dependencies>org.dcm4che.conf.api, org.dcm4che.net,org.dcm4che.net-hl7, org.dcm4che.soundex, org.dcm4che.conf.api, org.dcm4che.conf.api-hl7</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

@@ -199,6 +199,23 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigurableProperty(name = "dcmRetrieveSuppressionCriteria")
     private RetrieveSuppressionCriteria retrieveSuppressionCriteria = new RetrieveSuppressionCriteria();
 
+
+    @LDAP(noContainerNode=true)
+    @ConfigurableProperty(
+            label = "MPPS emulation and Study update rules",
+            name = "dcmMPPSEmulationRules")
+    private List<MPPSEmulationAndStudyUpdateRule> mppsEmulationAndStudyUpdateRules = new ArrayList<MPPSEmulationAndStudyUpdateRule>();
+
+    private Map<String, MPPSEmulationAndStudyUpdateRule> mppsEmulationRuleMap =
+            new HashMap<String, MPPSEmulationAndStudyUpdateRule>();
+
+    @LDAP(noContainerNode=true)
+    @ConfigurableProperty(name = "dcmArchivingRules")
+    private ArchivingRules archivingRules = new ArchivingRules();
+
+    @ConfigurableProperty(name = "dcmPatientSelector")
+    private PatientSelectorConfig patientSelectorConfig;
+
     public RetrieveSuppressionCriteria getRetrieveSuppressionCriteria() {
         return retrieveSuppressionCriteria;
     }
@@ -207,20 +224,6 @@ public class ArchiveAEExtension extends AEExtension {
             RetrieveSuppressionCriteria retrieveSuppressionCriteria) {
         this.retrieveSuppressionCriteria = retrieveSuppressionCriteria;
     }
-
-    @LDAP(noContainerNode=true)
-    @ConfigurableProperty(name = "dcmMPPSEmulationRules")
-    private List<MPPSEmulationRule> mppsEmulationRules = new ArrayList<MPPSEmulationRule>();
-
-    private Map<String, MPPSEmulationRule> mppsEmulationRuleMap =
-            new HashMap<String, MPPSEmulationRule>();
-
-    @LDAP(noContainerNode=true)
-    @ConfigurableProperty(name = "dcmArchivingRules")
-    private ArchivingRules archivingRules = new ArchivingRules();
-
-    @ConfigurableProperty(name = "dcmPatientSelector")
-    private PatientSelectorConfig patientSelectorConfig;
 
     public PatientSelectorConfig getPatientSelectorConfig() {
         return patientSelectorConfig;
@@ -609,27 +612,32 @@ public class ArchiveAEExtension extends AEExtension {
         this.queryRetrieveViewID = queryRetrieveViewID;
     }
 
-    public List<MPPSEmulationRule> getMppsEmulationRules() {
-        return mppsEmulationRules;
+    public List<MPPSEmulationAndStudyUpdateRule> getMppsEmulationAndStudyUpdateRules() {
+        return mppsEmulationAndStudyUpdateRules;
     }
 
-    public void setMppsEmulationRules(List<MPPSEmulationRule> rules) {
-        this.mppsEmulationRules.clear();
+    public void setMppsEmulationAndStudyUpdateRules(List<MPPSEmulationAndStudyUpdateRule> rules) {
+        // exception
+        if (rules == mppsEmulationAndStudyUpdateRules) return;
+
+        this.mppsEmulationAndStudyUpdateRules.clear();
         this.mppsEmulationRuleMap.clear();
-        for (MPPSEmulationRule rule : rules) {
+        for (MPPSEmulationAndStudyUpdateRule rule : rules) {
             addMppsEmulationRule(rule);
         }
     }
 
-    public MPPSEmulationRule getMppsEmulationRule(String sourceAET) {
+    public MPPSEmulationAndStudyUpdateRule getMppsEmulationRule(String sourceAET) {
         return mppsEmulationRuleMap.get(sourceAET) == null
                 ? ( mppsEmulationRuleMap.get("*") == null 
                 ? null : mppsEmulationRuleMap.get("*")) 
                 : mppsEmulationRuleMap.get(sourceAET);
     }
 
-    public void addMppsEmulationRule(MPPSEmulationRule rule) {
-        mppsEmulationRules.add(rule);
+    
+    // TODO change to references, make default by convention, not *
+    public void addMppsEmulationRule(MPPSEmulationAndStudyUpdateRule rule) {
+        mppsEmulationAndStudyUpdateRules.add(rule);
         for (String sourceAET : rule.getSourceAETs()) {
             mppsEmulationRuleMap.put(sourceAET, rule);
         }

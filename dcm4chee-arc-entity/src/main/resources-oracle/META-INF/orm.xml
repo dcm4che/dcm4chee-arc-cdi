@@ -411,7 +411,7 @@
     </attributes>
   </entity>
 
-  <entity class="MPPSEmulate">
+  <entity class="org.dcm4chee.archive.entity.StudyUpdateSession">
     <table name="mpps_emulate"/>
     <sequence-generator name="seq" sequence-name="mmps_emulate_pks" allocation-size="1" />
     <attributes>

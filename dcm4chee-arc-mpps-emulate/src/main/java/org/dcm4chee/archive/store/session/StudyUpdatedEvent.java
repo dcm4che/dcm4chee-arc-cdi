@@ -38,58 +38,25 @@
  *  ***** END LICENSE BLOCK *****
  */
 
-package org.dcm4chee.archive.mpps.emulate;
+package org.dcm4chee.archive.store.session;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
 import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
+import org.dcm4chee.archive.entity.StudyUpdateSession;
 
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
+import java.util.List;
 
 /**
+ * A deferred event that denotes a coarse grained update,
+ * i.e. after a numbers of instances has been stored in a single 'session' (possibly over multiple concurrent associations)
+ *
  * @author Roman K
  */
-public class MPPSEmulator {
+public class StudyUpdatedEvent {
 
-    @Inject
-    private MPPSEmulatorEJB ejb;
+    public String localAET;
+    public String sourceAET;
 
-    @Inject
-    private Device device;
-
-    @Inject
-    private MPPSService mppsService;
-
-    public MPPS onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) throws DicomServiceException {
-
-        String emulatorAET = device
-                .getApplicationEntity(studyUpdatedEvent.localAET)
-                .getAEExtension(ArchiveAEExtension.class)
-                .getMppsEmulationRule(studyUpdatedEvent.sourceAET)
-                .getEmulatorAET();
-
-        ApplicationEntity emulatorAE = device.getApplicationEntity(emulatorAET);
-        MPPS mpps = ejb.emulatePerformedProcedureStep(emulatorAE, studyUpdatedEvent.sourceAET, studyUpdatedEvent.studyInstanceUID, mppsService);
-
-        mppsService.fireCreateMPPSEvent(emulatorAE, MPPSEmulator.setStatus(mpps.getAttributes(), MPPS.IN_PROGRESS), mpps);
-        mppsService.fireFinalMPPSEvent(emulatorAE, MPPSEmulator.setStatus(new Attributes(1), MPPS.COMPLETED), mpps);
-
-        return mpps;
-    }
-
-
-    private static Attributes setStatus(Attributes attrs, String value) {
-        attrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, value);
-        return attrs;
-    }
-
+    public String studyInstanceUID;
+    public List<StudyUpdateSession.StoredInstance> storedInstances;
 
 }

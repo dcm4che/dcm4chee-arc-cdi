@@ -27,7 +27,7 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.MPPSCreationRule;
-import org.dcm4chee.archive.conf.MPPSEmulationRule;
+import org.dcm4chee.archive.conf.MPPSEmulationAndStudyUpdateRule;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.Code;
@@ -35,7 +35,7 @@ import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.mpps.emulate.impl.MPPSEmulatorEJB;
+import org.dcm4chee.archive.store.session.StudyUpdateSessionEJB;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreContext;
@@ -43,14 +43,6 @@ import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.junit.After;
-import org.junit.Before;
 
 public class MppsEmulationGeneral {
 
@@ -74,7 +66,7 @@ public class MppsEmulationGeneral {
     @Inject
     protected MPPSService mppsService;
     @Inject
-    protected MPPSEmulatorEJB mppsEmulatorEJB;
+    protected StudyUpdateSessionEJB studyUpdateSessionEJB;
     @Inject
     PatientService patientService;
     @Inject
@@ -109,7 +101,7 @@ public class MppsEmulationGeneral {
         device.addDeviceExtension(ext);
         device.addApplicationEntity(ae);
 
-        MPPSEmulationRule rule = new MPPSEmulationRule();
+        MPPSEmulationAndStudyUpdateRule rule = new MPPSEmulationAndStudyUpdateRule();
         rule.setCommonName("MPPS Emulation Rule 1");
         rule.setEmulationDelay(0);
         rule.setEmulatorAET(LOCAL_AET);

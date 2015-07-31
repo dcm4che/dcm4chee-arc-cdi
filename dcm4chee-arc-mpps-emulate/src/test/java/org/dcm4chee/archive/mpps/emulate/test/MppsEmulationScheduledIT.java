@@ -91,7 +91,7 @@ public class MppsEmulationScheduledIT extends MppsEmulationGeneral {
 
         //sub test 1
         log.info("calling emulator with rule:" + MPPSCreationRule.NEVER);
-        emulatedMpps = mppsEmulatorEJB.emulatePerformedProcedureStep(
+        emulatedMpps = studyUpdateSessionEJB.emulatePerformedProcedureStep(
                 createConfigAE(MPPSCreationRule.NEVER), SOURCE_AET,
                 STUDY_IUID, mppsService);
         assertTrue("emulated mpps created", emulatedMpps == null);
@@ -99,7 +99,7 @@ public class MppsEmulationScheduledIT extends MppsEmulationGeneral {
 
         //sub test 2
         log.info("calling emulator with rule:" + MPPSCreationRule.NO_MPPS_CREATE);
-        emulatedMpps = mppsEmulatorEJB.emulatePerformedProcedureStep(
+        emulatedMpps = studyUpdateSessionEJB.emulatePerformedProcedureStep(
                 createConfigAE(MPPSCreationRule.NO_MPPS_CREATE), SOURCE_AET,
                 STUDY_IUID, mppsService);
         assertTrue("emulated mpps created", emulatedMpps == null);
@@ -107,7 +107,7 @@ public class MppsEmulationScheduledIT extends MppsEmulationGeneral {
 
         //sub test 3
         log.info("calling emulator with rule:" + MPPSCreationRule.NO_MPPS_FINAL);
-        emulatedMpps = mppsEmulatorEJB.emulatePerformedProcedureStep(
+        emulatedMpps = studyUpdateSessionEJB.emulatePerformedProcedureStep(
                 createConfigAE(MPPSCreationRule.NO_MPPS_FINAL), SOURCE_AET,
                 STUDY_IUID, mppsService);
         assertTrue("emulated mpps created", emulatedMpps == null);
@@ -115,7 +115,7 @@ public class MppsEmulationScheduledIT extends MppsEmulationGeneral {
         
         //sub test 4        
         log.info("calling emulator with rule:" + MPPSCreationRule.ALWAYS);
-        emulatedMpps = mppsEmulatorEJB.emulatePerformedProcedureStep(
+        emulatedMpps = studyUpdateSessionEJB.emulatePerformedProcedureStep(
                 createConfigAE(MPPSCreationRule.ALWAYS), SOURCE_AET,
                 STUDY_IUID, mppsService);
         assertTrue("emulated mpps not created", emulatedMpps != null);

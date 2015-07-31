@@ -217,7 +217,7 @@ public class MPPSServiceImpl implements MPPSService {
                     Study study = series.getStudy();
                     if (!cuid.equals(cuidInPPS)) {
                         LOG.warn("SOP Class of received Instance[iuid={}, cuid={}] "
-                                + "of Series[iuid={}] of Study[iuid={}] differs from"
+                                + "of Series[iuid={}] of Study[iuid={}] differs from "
                                 + "SOP Class[cuid={}] referenced by MPPS[iuid={}]",
                                 iuid, cuid, series.getSeriesInstanceUID(), 
                                 study.getStudyInstanceUID(), cuidInPPS,

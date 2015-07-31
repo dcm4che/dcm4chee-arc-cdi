@@ -38,48 +38,51 @@
 
 package org.dcm4chee.archive.entity;
 
+import org.apache.commons.lang.SerializationUtils;
+import org.dcm4chee.archive.conf.StoreAction;
+
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * Store Study Session denotes a unit of work related to a number of instances of a certain study
+ * stored one after another in a batch (possibly on multiple associations).
  *
+ *
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Roman K
  */
 @NamedQueries({
 @NamedQuery(
-    name=MPPSEmulate.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
-    query="SELECT e FROM MPPSEmulate e "
+    name= StudyUpdateSession.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
+    query="SELECT e FROM StudyUpdateSession e "
         + "WHERE e.studyInstanceUID = ?1 "
         + "AND e.sourceAET = ?2"),
 @NamedQuery(
-    name=MPPSEmulate.FIND_READY_TO_EMULATE,
-    query="SELECT e FROM MPPSEmulate e "
+    name= StudyUpdateSession.FIND_READY_TO_FINISH,
+    query="SELECT e FROM StudyUpdateSession e "
         + "WHERE e.emulationTime <= CURRENT_TIMESTAMP "
         + "ORDER BY e.emulationTime")
 })
 @Entity
-@Table(name = "mpps_emulate")
-public class MPPSEmulate implements Serializable {
+@Table(name = "store_study_session",
+        uniqueConstraints = {
+                // A study being received from a certain AE corresponds to a single store study session
+                @UniqueConstraint(columnNames = {"src_aet", "study_iuid"})
+        })
+
+public class StudyUpdateSession implements Serializable {
 
     private static final long serialVersionUID = -4965589892596116293L;
 
-    public static final String FIND_READY_TO_EMULATE =
-            "MPPSEmulaton.findReadyToEmulate";
+    public static final String FIND_READY_TO_FINISH =
+            "StudyUpdateSession.findReadyToFinish";
 
     public static final String FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET =
-            "MPPSEmulaton.findByStudyInstanceUIDAndSourceAET";
+            "StudyUpdateSession.findByStudyInstanceUIDAndSourceAET";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -87,12 +90,12 @@ public class MPPSEmulate implements Serializable {
     private long pk;
 
     @Basic(optional = false)
-    @Column(name = "emulator_aet", updatable = false)
-    private String emulatorAET;
-
-    @Basic(optional = false)
     @Column(name = "src_aet", updatable = false)
     private String sourceAET;
+
+    @Basic(optional = false)
+    @Column(name = "local_aet", updatable = false)
+    private String localAET;
 
     @Basic(optional = false)
     @Column(name = "study_iuid", updatable = false)
@@ -103,17 +106,35 @@ public class MPPSEmulate implements Serializable {
     @Column(name = "emulation_time")
     private Date emulationTime;
 
+
+    @Transient
+    private ArrayList<StoredInstance> storedInstances = new ArrayList<>();
+
+    public ArrayList<StoredInstance> getStoredInstances() {
+        return storedInstances;
+    }
+
+    @Basic
+    @Column(name = "stored_instances")
+    @Access(AccessType.PROPERTY)
+    @Lob
+    public byte[] getStoredInstancesBlob() {
+        return SerializationUtils.serialize(storedInstances);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void setStoredInstancesBlob(byte[] storedInstancesBlob) {
+        try {
+            this.storedInstances = (ArrayList<StoredInstance>) SerializationUtils.deserialize(storedInstancesBlob);
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error - storedInstances field is corrupted");
+        }
+    }
+
     public final long getPk() {
         return pk;
     }
 
-    public final String getEmulatorAET() {
-        return emulatorAET;
-    }
-
-    public final void setEmulatorAET(String emulatorAET) {
-        this.emulatorAET = emulatorAET;
-    }
 
     public final String getSourceAET() {
         return sourceAET;
@@ -139,4 +160,22 @@ public class MPPSEmulate implements Serializable {
         this.emulationTime = emulationTime;
     }
 
+    public String getLocalAET() {
+        return localAET;
+    }
+
+    public void setLocalAET(String localAET) {
+        this.localAET = localAET;
+    }
+
+    public static class StoredInstance implements Serializable{
+
+        public StoredInstance(String sopInstanceUID, StoreAction action) {
+            this.sopInstanceUID = sopInstanceUID;
+            this.action = action;
+        }
+
+        public String sopInstanceUID;
+        public StoreAction action;
+    }
 }
