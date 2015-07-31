@@ -125,16 +125,6 @@ public class CGetSCP extends BasicCGetSCP {
         try {
             QueryParam queryParam = aeExt.getQueryParam(queryOpts,
                     accessControlIDs());
-            // ApplicationEntity sourceAE = aeCache.get(as.getRemoteAET());
-            // if (sourceAE != null)
-            // queryParam.setDefaultIssuer(sourceAE.getDevice());
-            // IDWithIssuer pid = IDWithIssuer.fromPatientIDWithIssuer(keys);
-            // if (pid != null && pid.getIssuer() == null)
-            // pid.setIssuer(queryParam.getDefaultIssuerOfPatientID());
-            // IDWithIssuer[] pids = Archive.getInstance().pixQuery(ae, pid);
-            // IDWithIssuer[] pids = pid != null
-            // ? new IDWithIssuer[]{ pid }
-            // : IDWithIssuer.EMPTY;
             ApplicationEntity remoteAE = aeCache.get(as.getRemoteAET());
             RetrieveContext context = retrieveService.createRetrieveContext(
                     retrieveService, as.getRemoteAET(), aeExt);
@@ -151,11 +141,7 @@ public class CGetSCP extends BasicCGetSCP {
             BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = new 
                     BasicRetrieveTask<ArchiveInstanceLocator>(
                     Dimse.C_GET_RQ, as, pc, rq, matches, as, cstorescu);
-            // if (sourceAE != null)
-            // retrieveTask.setDestinationDevice(sourceAE.getDevice());
             retrieveTask.setSendPendingRSP(aeExt.isSendPendingCGet());
-            // retrieveTask.setReturnOtherPatientIDs(aeExt.isReturnOtherPatientIDs());
-            // retrieveTask.setReturnOtherPatientNames(aeExt.isReturnOtherPatientNames());
 
             retrieveBeforeEvent.select(new ServiceQualifier(ServiceType.GETSERVICE))
             .fire(new RetrieveBeforeSendEvent(

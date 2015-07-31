@@ -177,11 +177,13 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         } while (attrs == null);
 
         // check for suppression criteria
-        String templateURI = arcAEExt.getRetrieveSuppressionCriteria()
-                .getSuppressionCriteriaMap().get(context.getRemoteAE().getAETitle());
-        if (templateURI != null)
-            inst = service.applySuppressionCriteria(inst, attrs, templateURI,
-                    context);
+        if(context.getRemoteAE() !=null) {
+            String templateURI = arcAEExt.getRetrieveSuppressionCriteria()
+                    .getSuppressionCriteriaMap().get(context.getRemoteAE().getAETitle());
+            if (templateURI != null)
+                inst = service.applySuppressionCriteria(inst, attrs, templateURI,
+                        context);
+        }
 
         service.coerceFileBeforeMerge(inst, attrs, context);
 
@@ -244,26 +246,30 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     }
     private boolean isConfiguredAndAccepted(InstanceLocator ref,
             Set<String> negotiated) {
-        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
-        for (TransferCapability supportedTC : aeTCs) {
-            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0
-                    && supportedTC.containsTransferSyntax(ref.tsuid)
-                    && negotiated.contains(ref.tsuid)) {
-                return true;
+        if(context.getRemoteAE() !=null) {
+            ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                    context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
+            for (TransferCapability supportedTC : aeTCs) {
+                if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0
+                        && supportedTC.containsTransferSyntax(ref.tsuid)
+                        && negotiated.contains(ref.tsuid)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
     private String getDefaultConfiguredTransferSyntax(InstanceLocator ref) {
-        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
-        for (TransferCapability supportedTC : aeTCs) {
-            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0) {
-                return supportedTC
-                        .containsTransferSyntax(UID.ExplicitVRLittleEndian) ? UID.ExplicitVRLittleEndian
-                        : UID.ImplicitVRLittleEndian;
+        if(context.getRemoteAE() !=null) {
+            ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
+                    context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
+            for (TransferCapability supportedTC : aeTCs) {
+                if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0) {
+                    return supportedTC
+                            .containsTransferSyntax(UID.ExplicitVRLittleEndian) ? UID.ExplicitVRLittleEndian
+                            : UID.ImplicitVRLittleEndian;
+                }
             }
         }
         return UID.ImplicitVRLittleEndian;
