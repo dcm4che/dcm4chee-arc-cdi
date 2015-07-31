@@ -84,7 +84,7 @@ public class StudyUpdateSessionEJB {
         Date emulationTime = new Date(System.currentTimeMillis() + rule.getEmulationDelay() * 1000L);
 
         try {
-            // first try to find an existing study update session
+            // try to find an existing study update session
             StudyUpdateSession entity = em
                     .createNamedQuery(
                             StudyUpdateSession.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
@@ -104,7 +104,7 @@ public class StudyUpdateSessionEJB {
             entity.getStoredInstances().add(new StudyUpdateSession.StoredInstance(sopInstanceUID, storeAction));
 
             em.merge(entity);
-            LOG.debug("Updated store study session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);
+            LOG.debug("Modified study update session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);
 
         } catch (NoResultException nre) {
 
@@ -117,7 +117,7 @@ public class StudyUpdateSessionEJB {
             entity.getStoredInstances().add(new StudyUpdateSession.StoredInstance(sopInstanceUID, storeAction));
             em.persist(entity);
 
-            LOG.info("Updated store study session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);
+            LOG.info("Created study update session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);
         }
     }
 
