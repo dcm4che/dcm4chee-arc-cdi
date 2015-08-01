@@ -77,7 +77,7 @@ public class DicomConfigurationProducer {
     private static final Logger LOG = LoggerFactory.getLogger(DicomConfigurationProducer.class);
     
     @Inject
-    private DicomConfigurationBuilder builder;
+    private Instance<DicomConfigurationBuilder> builderInstance;
     
     @Inject
     private Instance<DicomConfigurationManagerFactory> configFactory;
@@ -92,6 +92,15 @@ public class DicomConfigurationProducer {
             return factory.createDicomConfigurationManager();
         } else {
             LOG.warn("Could not retrieve shared DICOM Configuration Factory: Falling back to building application-scoped configuration");
+
+        DicomConfigurationBuilder builder;
+
+        if (!builderInstance.isUnsatisfied())
+            builder = builderInstance.get();
+        else
+            builder = new DicomConfigurationBuilder(System.getProperties());
+
+
             builder.registerDeviceExtension(ArchiveDeviceExtension.class);
             builder.registerDeviceExtension(StorageDeviceExtension.class);
             builder.registerDeviceExtension(HL7DeviceExtension.class);

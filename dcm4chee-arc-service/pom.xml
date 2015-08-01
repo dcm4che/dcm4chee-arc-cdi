@@ -27,6 +27,10 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-conf-api</artifactId>
     </dependency>
@@ -60,7 +64,7 @@
             <manifestEntries>
               <Dependencies>org.dcm4che.conf.api, org.dcm4che.conf.api-hl7,
                 org.dcm4che.net-hl7, org.dcm4che.net-imageio,
-                org.dcm4che.net-audit, org.dcm4che.core services</Dependencies>
+                org.dcm4che.net-audit, org.dcm4che.core services, org.dcm4chee.archive.api</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

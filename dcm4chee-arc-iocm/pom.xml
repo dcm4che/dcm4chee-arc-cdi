@@ -23,6 +23,10 @@
       <artifactId>dcm4chee-arc-store</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-api</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.dcm4che</groupId>
@@ -40,7 +44,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.conf.api</Dependencies>
+              <Dependencies>org.dcm4che.conf.api, org.dcm4chee.archive.api</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

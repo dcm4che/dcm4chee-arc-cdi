@@ -72,7 +72,17 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-query</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-store</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-location-mgmt</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -80,11 +90,11 @@
       <artifactId>dcm4chee-arc-code</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-service</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>org.dcm4che.dcm4chee-arc</groupId>-->
+      <!--<artifactId>dcm4chee-arc-service</artifactId>-->
+      <!--<version>${project.version}</version>-->
+    <!--</dependency>-->
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-mpps</artifactId>
@@ -101,18 +111,6 @@
     <dependency>
       <groupId>org.dcm4che.dcm4chee-conf</groupId>
       <artifactId>dcm4chee-conf-decorators</artifactId>
-    </dependency>
-
-    <!-- test dependencies -->
-    <dependency>
-      <groupId>org.jboss.shrinkwrap.resolver</groupId>
-      <artifactId>shrinkwrap-resolver-impl-maven-archive</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.arquillian.junit</groupId>
-      <artifactId>arquillian-junit-container</artifactId>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
