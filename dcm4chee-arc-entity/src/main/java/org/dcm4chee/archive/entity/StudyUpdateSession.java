@@ -39,7 +39,7 @@
 package org.dcm4chee.archive.entity;
 
 import org.apache.commons.lang.SerializationUtils;
-import org.dcm4chee.archive.conf.StoreAction;
+import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -108,9 +108,9 @@ public class StudyUpdateSession implements Serializable {
 
 
     @Transient
-    private ArrayList<StoredInstance> storedInstances = new ArrayList<>();
+    private ArrayList<StudyUpdatedEvent.StoredInstance> storedInstances = new ArrayList<>();
 
-    public ArrayList<StoredInstance> getStoredInstances() {
+    public ArrayList<StudyUpdatedEvent.StoredInstance> getStoredInstances() {
         return storedInstances;
     }
 
@@ -125,7 +125,7 @@ public class StudyUpdateSession implements Serializable {
     @SuppressWarnings("unchecked")
     public void setStoredInstancesBlob(byte[] storedInstancesBlob) {
         try {
-            this.storedInstances = (ArrayList<StoredInstance>) SerializationUtils.deserialize(storedInstancesBlob);
+            this.storedInstances = (ArrayList<StudyUpdatedEvent.StoredInstance>) SerializationUtils.deserialize(storedInstancesBlob);
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error - storedInstances field is corrupted");
         }
@@ -168,14 +168,4 @@ public class StudyUpdateSession implements Serializable {
         this.localAET = localAET;
     }
 
-    public static class StoredInstance implements Serializable{
-
-        public StoredInstance(String sopInstanceUID, StoreAction action) {
-            this.sopInstanceUID = sopInstanceUID;
-            this.action = action;
-        }
-
-        public String sopInstanceUID;
-        public StoreAction action;
-    }
 }

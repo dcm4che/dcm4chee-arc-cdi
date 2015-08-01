@@ -26,6 +26,10 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-entity-ext</artifactId>
       <classifier>${db}</classifier>
       <version>${project.version}</version>
@@ -149,7 +153,7 @@
           <classifier>${db}</classifier>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.core, org.dcm4che.soundex, com.mysema.querydsl, org.apache.commons.lang</Dependencies>
+              <Dependencies>org.dcm4che.core, org.dcm4che.soundex, com.mysema.querydsl, org.apache.commons.lang, org.dcm4chee.archive.api</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

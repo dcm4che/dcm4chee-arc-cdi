@@ -101,7 +101,7 @@ public class StudyUpdateSessionEJB {
             entity.setEmulationTime(emulationTime);
 
             // add stored instance to the list
-            entity.getStoredInstances().add(new StudyUpdateSession.StoredInstance(sopInstanceUID, storeAction));
+            entity.getStoredInstances().add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
 
             em.merge(entity);
             LOG.debug("Modified study update session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);
@@ -114,7 +114,7 @@ public class StudyUpdateSessionEJB {
             entity.setLocalAET(localAET);
             entity.setStudyInstanceUID(studyInstanceUID);
             entity.setEmulationTime(emulationTime);
-            entity.getStoredInstances().add(new StudyUpdateSession.StoredInstance(sopInstanceUID, storeAction));
+            entity.getStoredInstances().add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
             em.persist(entity);
 
             LOG.info("Created study update session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);

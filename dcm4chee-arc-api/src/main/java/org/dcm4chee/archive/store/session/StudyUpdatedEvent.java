@@ -41,8 +41,9 @@
 package org.dcm4chee.archive.store.session;
 
 import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4chee.archive.entity.StudyUpdateSession;
+import org.dcm4chee.archive.conf.StoreAction;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -57,6 +58,16 @@ public class StudyUpdatedEvent {
     public String sourceAET;
 
     public String studyInstanceUID;
-    public List<StudyUpdateSession.StoredInstance> storedInstances;
+    public List<StoredInstance> storedInstances;
 
+    public static class StoredInstance implements Serializable {
+
+        public StoredInstance(String sopInstanceUID, StoreAction action) {
+            this.sopInstanceUID = sopInstanceUID;
+            this.action = action;
+        }
+
+        public String sopInstanceUID;
+        public StoreAction action;
+    }
 }
