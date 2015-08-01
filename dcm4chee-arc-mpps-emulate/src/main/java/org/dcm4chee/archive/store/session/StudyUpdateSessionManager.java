@@ -133,14 +133,14 @@ public class StudyUpdateSessionManager {
     }
 
     protected synchronized void startPolling(int pollInterval) {
-
         if (polling == null && pollInterval > 0) {
             polling = device.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         int howManyFinished = checkAndNotifyOfUpdatedStudies();
-                        LOG.info("Update notification sent out for {} study(ies)", howManyFinished);
+                        if (howManyFinished > 0)
+                            LOG.info("Update notification sent out for {} study(ies)", howManyFinished);
                     } catch (Exception e) {
                         LOG.error("Error while checking for updated studies (study update session tracking daemon): ", e);
                     }

@@ -50,6 +50,8 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -60,6 +62,8 @@ import javax.inject.Inject;
  */
 @ApplicationScoped
 public class MPPSEmulator {
+
+    private static Logger LOG = LoggerFactory.getLogger(MPPSEmulator.class);
 
     @Inject
     private MPPSEmulatorEJB ejb;
@@ -72,17 +76,25 @@ public class MPPSEmulator {
 
     public MPPS onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) throws DicomServiceException {
 
-        String emulatorAET = device
-                .getApplicationEntity(studyUpdatedEvent.localAET)
-                .getAEExtensionNotNull(ArchiveAEExtension.class)
-                .getMppsEmulationRule(studyUpdatedEvent.sourceAET)
-                .getEmulatorAET();
+        String emulatorAET;
+        try {
+            emulatorAET = device
+                    .getApplicationEntityNotNull(studyUpdatedEvent.localAET)
+                    .getAEExtensionNotNull(ArchiveAEExtension.class)
+                    .getMppsEmulationRule(studyUpdatedEvent.sourceAET)
+                    .getEmulatorAET();
+        } catch (Exception e) {
+            LOG.error("MPPS emulation failed. Cannot determine an appropriate emulator AET", e);
+            return null;
+        }
 
         ApplicationEntity emulatorAE = device.getApplicationEntity(emulatorAET);
         MPPS mpps = ejb.emulatePerformedProcedureStep(emulatorAE, studyUpdatedEvent.sourceAET, studyUpdatedEvent.studyInstanceUID, mppsService);
 
-        mppsService.fireCreateMPPSEvent(emulatorAE, MPPSEmulator.setStatus(mpps.getAttributes(), MPPS.IN_PROGRESS), mpps);
-        mppsService.fireFinalMPPSEvent(emulatorAE, MPPSEmulator.setStatus(new Attributes(1), MPPS.COMPLETED), mpps);
+        if (mpps != null) {
+            mppsService.fireCreateMPPSEvent(emulatorAE, MPPSEmulator.setStatus(mpps.getAttributes(), MPPS.IN_PROGRESS), mpps);
+            mppsService.fireFinalMPPSEvent(emulatorAE, MPPSEmulator.setStatus(new Attributes(1), MPPS.COMPLETED), mpps);
+        }
 
         return mpps;
     }

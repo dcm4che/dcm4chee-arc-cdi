@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.annotation.Resource;
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -43,16 +44,19 @@ import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.emulate.MPPSEmulator;
+import org.dcm4chee.archive.mpps.emulate.MPPSEmulatorEJB;
 import org.dcm4chee.archive.store.session.StudyUpdateSessionEJB;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.FileAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -61,7 +65,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 public class MppsEmulationGeneral {
 
     protected static final String SOURCE_AET = "EMULATE_MPPS";
-    private static final String LOCAL_AET = "DCM4CHEE";
+    protected static final String LOCAL_AET = "DCM4CHEE";
     protected static final String MPPS_IUID = "1.2.40.0.13.1.1.99.20120130";
     protected static final String STUDY_IUID = "1.2.40.0.13.1.1.99.20110607";
     private static final String PID = "STORE_SERVICE_TEST";
@@ -75,6 +79,7 @@ public class MppsEmulationGeneral {
     private static final String[] ISSUERS = { "DCM4CHEE_TESTDATA" };
     protected static final Logger log = Logger
             .getLogger(MppsEmulationGeneral.class);
+    public static final String DCM4CHEE_ARC = "dcm4chee-arc";
     @Inject
     private StoreService storeService;
     @Inject
@@ -99,9 +104,15 @@ public class MppsEmulationGeneral {
 
     protected static WebArchive createWar(Class clazz) {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        //war.addClass(clazz);
+
+        war.addClass(clazz);
         war.addClass(ParamFactory.class);
         war.addClass(MppsEmulationGeneral.class);
+        war.addClass(TestDeviceProducer.class);
+        war.addClass(MPPSEmulator.class);
+        war.addClass(MPPSEmulatorEJB.class);
+
+        war.addAsManifestResource(new FileAsset(new File("src/test/resources/MANIFEST.MF")), "MANIFEST.MF");
         JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies().resolve()
                 .withoutTransitivity().as(JavaArchive.class);
@@ -111,6 +122,9 @@ public class MppsEmulationGeneral {
         }
         for (String resourceName : INSTANCES)
             war.addAsResource(resourceName);
+
+        war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+
         war.addAsLibraries(archs);
         war.as(ZipExporter.class).exportTo(new File("target/test.war"), true);
         return war;
@@ -135,7 +149,7 @@ public class MppsEmulationGeneral {
         ae.setAssociationAcceptor(true);
         ae.setAssociationInitiator(true);
 
-        Device device = new Device("dcm4chee-arc");
+        Device device = new Device(DCM4CHEE_ARC);
         ArchiveDeviceExtension ext = new ArchiveDeviceExtension();
         ext.setFuzzyAlgorithmClass("org.dcm4che3.soundex.ESoundex");
         ext.setAttributeFilter(Entity.Patient, new AttributeFilter(
@@ -286,4 +300,11 @@ public class MppsEmulationGeneral {
         super();
     }
 
+    protected StudyUpdatedEvent createMockStudyUpdatedEvent() {
+        StudyUpdatedEvent studyUpdatedEvent = new StudyUpdatedEvent();
+        studyUpdatedEvent.sourceAET = SOURCE_AET;
+        studyUpdatedEvent.studyInstanceUID = STUDY_IUID;
+        studyUpdatedEvent.localAET = LOCAL_AET;
+        return studyUpdatedEvent;
+    }
 }

@@ -45,10 +45,12 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.UIDUtils;
-import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.MPPSCreationRule;
+import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.store.session.StudyUpdateSessionEJB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,8 +79,7 @@ public class MPPSEmulatorEJB {
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(StudyUpdateSessionEJB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MPPSEmulatorEJB.class);
     private static final int[] PATIENT_Selection = { Tag.SpecificCharacterSet,
             Tag.PatientName, Tag.PatientID, Tag.IssuerOfPatientID,
             Tag.PatientBirthDate, Tag.PatientSex };

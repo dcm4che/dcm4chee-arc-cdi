@@ -45,11 +45,7 @@ import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,9 +78,7 @@ public class MppsEmulationNotCompletedIT extends MppsEmulationGeneral {
     @Test
     public void emulate() throws Exception {
 
-        StudyUpdatedEvent studyUpdatedEvent = new StudyUpdatedEvent();
-        studyUpdatedEvent.sourceAET = SOURCE_AET;
-        studyUpdatedEvent.studyInstanceUID = STUDY_IUID;
+        StudyUpdatedEvent studyUpdatedEvent = createMockStudyUpdatedEvent();
 
         MPPS receivedMpps = find(MPPS_IUID);
         MPPS emulatedMpps = null;

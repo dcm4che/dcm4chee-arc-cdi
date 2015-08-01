@@ -79,9 +79,7 @@ public class MppsEmulationScheduledIT extends MppsEmulationGeneral {
     @Test
     public void emulate() throws Exception {
 
-        StudyUpdatedEvent studyUpdatedEvent = new StudyUpdatedEvent();
-        studyUpdatedEvent.sourceAET = SOURCE_AET;
-        studyUpdatedEvent.studyInstanceUID = STUDY_IUID;
+        StudyUpdatedEvent studyUpdatedEvent = createMockStudyUpdatedEvent();
 
         MPPS receivedMpps = find(MPPS_IUID);
         MPPS emulatedMpps = null;
