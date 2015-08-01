@@ -38,47 +38,17 @@
 
 package org.dcm4chee.archive.mpps.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import javax.xml.transform.Templates;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.*;
 import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.code.CodeService;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.conf.QueryRetrieveView;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.MPPSServiceEJB;
 import org.dcm4chee.archive.mpps.event.MPPSCreate;
@@ -90,6 +60,17 @@ import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.query.QueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
+import javax.enterprise.event.Observes;
+import javax.inject.Inject;
+import javax.persistence.NoResultException;
+import javax.xml.transform.Templates;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
