@@ -51,12 +51,14 @@ import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
 /**
  * @author Roman K
  */
+@ApplicationScoped
 public class MPPSEmulator {
 
     @Inject
@@ -72,7 +74,7 @@ public class MPPSEmulator {
 
         String emulatorAET = device
                 .getApplicationEntity(studyUpdatedEvent.localAET)
-                .getAEExtension(ArchiveAEExtension.class)
+                .getAEExtensionNotNull(ArchiveAEExtension.class)
                 .getMppsEmulationRule(studyUpdatedEvent.sourceAET)
                 .getEmulatorAET();
 

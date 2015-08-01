@@ -1,5 +1,7 @@
 package org.dcm4chee.archive.mpps.emulate.test;
 
+import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -16,6 +18,11 @@ import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import org.apache.log4j.Logger;
+import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
+import org.dcm4che3.conf.api.internal.ExtendedDicomConfiguration;
+import org.dcm4che3.conf.core.api.ConfigurationException;
+import org.dcm4che3.conf.core.api.internal.ConfigurationManager;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -35,6 +42,7 @@ import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.mpps.emulate.MPPSEmulator;
 import org.dcm4chee.archive.store.session.StudyUpdateSessionEJB;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.PatientService;
@@ -43,6 +51,12 @@ import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
 public class MppsEmulationGeneral {
 
@@ -66,7 +80,7 @@ public class MppsEmulationGeneral {
     @Inject
     protected MPPSService mppsService;
     @Inject
-    protected StudyUpdateSessionEJB studyUpdateSessionEJB;
+    protected MPPSEmulator mppsEmulator;
     @Inject
     PatientService patientService;
     @Inject
@@ -76,9 +90,41 @@ public class MppsEmulationGeneral {
     @Resource
     UserTransaction utx;
 
+    @Inject
+    DicomConfigurationManager config;
+
     protected static final String[] INSTANCES = { "testdata/mpps-create.xml",
             "testdata/mpps-set.xml", "testdata/store-ct-1.xml",
             "testdata/store-ct-2.xml" };
+
+    protected static WebArchive createWar(Class clazz) {
+        WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
+        //war.addClass(clazz);
+        war.addClass(ParamFactory.class);
+        war.addClass(MppsEmulationGeneral.class);
+        JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
+                .importRuntimeAndTestDependencies().resolve()
+                .withoutTransitivity().as(JavaArchive.class);
+        for (JavaArchive a : archs) {
+            a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+            war.addAsLibrary(a);
+        }
+        for (String resourceName : INSTANCES)
+            war.addAsResource(resourceName);
+        war.addAsLibraries(archs);
+        war.as(ZipExporter.class).exportTo(new File("target/test.war"), true);
+        return war;
+    }
+
+
+    protected void resetConfig(MPPSCreationRule creationRule) throws ConfigurationException {
+
+        // wipe out config
+        config.getConfigurationStorage().persistNode("/", new HashMap<String, Object>(), null);
+
+        // add device
+        config.persist(createConfigAE(creationRule).getDevice());
+    }
 
     protected static ApplicationEntity createConfigAE(
             MPPSCreationRule creationRule) {

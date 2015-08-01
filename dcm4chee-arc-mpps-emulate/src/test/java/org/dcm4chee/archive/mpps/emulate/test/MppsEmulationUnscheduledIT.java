@@ -42,6 +42,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.dcm4chee.archive.conf.MPPSCreationRule;
 import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -78,46 +79,38 @@ public class MppsEmulationUnscheduledIT extends MppsEmulationGeneral {
     
     @Test
     public void emulate() throws Exception {
+
+
+        StudyUpdatedEvent studyUpdatedEvent = new StudyUpdatedEvent();
+        studyUpdatedEvent.sourceAET = SOURCE_AET;
+        studyUpdatedEvent.studyInstanceUID = STUDY_IUID;
+
         MPPS receivedMpps = find(MPPS_IUID);
         MPPS emulatedMpps = null;
         assertTrue("mpps not null", receivedMpps == null);
 
         //sub test 1
         log.info("calling emulator with rule:" + MPPSCreationRule.NEVER);
-        emulatedMpps = studyUpdateSessionEJB.emulatePerformedProcedureStep(
-                createConfigAE(MPPSCreationRule.NEVER), SOURCE_AET,
-                STUDY_IUID, mppsService);
+
+        resetConfig(MPPSCreationRule.NEVER);
+        emulatedMpps = mppsEmulator.onStudyUpdated(studyUpdatedEvent);
+
         assertTrue("emulated mpps created", emulatedMpps == null);
         log.info("emulated mpps not created.");
 
         //sub test 2
         log.info("calling emulator with rule:" + MPPSCreationRule.NO_MPPS_CREATE);
-        emulatedMpps = studyUpdateSessionEJB.emulatePerformedProcedureStep(
-                createConfigAE(MPPSCreationRule.NO_MPPS_CREATE), SOURCE_AET,
-                STUDY_IUID, mppsService);
+
+        resetConfig(MPPSCreationRule.NO_MPPS_CREATE);
+        emulatedMpps = mppsEmulator.onStudyUpdated(studyUpdatedEvent);
+
         assertTrue("emulated mpps not created", emulatedMpps != null);
         log.info("created emulated mpps:" + emulatedMpps.getSopInstanceUID());
     }
 
     @Deployment
     public static WebArchive createDeployment() {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        war.addClass(MppsEmulationUnscheduledIT.class);
-        war.addClass(ParamFactory.class);
-        war.addClass(MppsEmulationGeneral.class);
-        JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
-                .importRuntimeAndTestDependencies().resolve()
-                .withoutTransitivity().as(JavaArchive.class);
-        for (JavaArchive a : archs) {
-            a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-            war.addAsLibrary(a);
-        }
-        for (String resourceName : INSTANCES)
-            war.addAsResource(resourceName);
-        war.addAsLibraries(archs);
-        // war.as(ZipExporter.class).exportTo(
-        // new File("C:\\Temp\\emul.zip"), true);
-        return war;
+        return createWar(MppsEmulationUnscheduledIT.class);
     }
     
 }
