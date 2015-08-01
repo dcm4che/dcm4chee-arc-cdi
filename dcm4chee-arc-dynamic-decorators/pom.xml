@@ -5,8 +5,12 @@
     <artifactId>dcm4chee-arc-parent</artifactId>
     <version>4.5.0-SNAPSHOT</version>
   </parent>
-  <artifactId>dcm4chee-arc-conf-producer</artifactId>
+  <artifactId>dcm4chee-arc-dynamic-decorators</artifactId>
   <dependencies>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-dicom</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-conf-dicom</artifactId>
@@ -24,8 +28,37 @@
       <artifactId>dcm4chee-storage-conf</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-conf</groupId>
+      <artifactId>dcm4chee-conf-decorators</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-conf</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-mpps</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-store</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-query</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-retrieve</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-store-scu</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
@@ -36,7 +69,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.conf.dicom, org.dcm4che.net-audit, org.dcm4che.net-imageio, org.dcm4che.dcm4chee-conf.cdi-producer meta-inf export</Dependencies>
+              <Dependencies>org.dcm4che.conf.dicom, org.dcm4che.net-audit, org.dcm4che.net-imageio</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>
