@@ -40,7 +40,6 @@
 
 package org.dcm4chee.archive.store.session;
 
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.StoreAction;
 
 import java.io.Serializable;
@@ -59,12 +58,52 @@ public class StudyUpdatedEvent implements Serializable{
 
     private static final long serialVersionUID = -8854586422835724408L;
 
-    public String localAET;
-    public String sourceAET;
+    private String localAET;
+    private String sourceAET;
 
-    public String studyInstanceUID;
-    public List<StoredInstance> storedInstances = new ArrayList<>();
-    public Set<String> affectedSeriesUIDs = new HashSet<>();
+    private String studyInstanceUID;
+    private List<StoredInstance> storedInstances = new ArrayList<>();
+    private Set<String> affectedSeriesUIDs = new HashSet<>();
+
+    public String getLocalAET() {
+        return localAET;
+    }
+
+    public void setLocalAET(String localAET) {
+        this.localAET = localAET;
+    }
+
+    public String getSourceAET() {
+        return sourceAET;
+    }
+
+    public void setSourceAET(String sourceAET) {
+        this.sourceAET = sourceAET;
+    }
+
+    public String getStudyInstanceUID() {
+        return studyInstanceUID;
+    }
+
+    public void setStudyInstanceUID(String studyInstanceUID) {
+        this.studyInstanceUID = studyInstanceUID;
+    }
+
+    public List<StoredInstance> getStoredInstances() {
+        return storedInstances;
+    }
+
+    public void setStoredInstances(List<StoredInstance> storedInstances) {
+        this.storedInstances = storedInstances;
+    }
+
+    public Set<String> getAffectedSeriesUIDs() {
+        return affectedSeriesUIDs;
+    }
+
+    public void setAffectedSeriesUIDs(Set<String> affectedSeriesUIDs) {
+        this.affectedSeriesUIDs = affectedSeriesUIDs;
+    }
 
 
     public static class StoredInstance implements Serializable {
@@ -72,11 +111,27 @@ public class StudyUpdatedEvent implements Serializable{
         private static final long serialVersionUID = 6011313460569751657L;
 
         public StoredInstance(String sopInstanceUID, StoreAction action) {
-            this.sopInstanceUID = sopInstanceUID;
-            this.action = action;
+            this.setSopInstanceUID(sopInstanceUID);
+            this.setAction(action);
         }
 
-        public String sopInstanceUID;
-        public StoreAction action;
+        private String sopInstanceUID;
+        private StoreAction action;
+
+        public String getSopInstanceUID() {
+            return sopInstanceUID;
+        }
+
+        public void setSopInstanceUID(String sopInstanceUID) {
+            this.sopInstanceUID = sopInstanceUID;
+        }
+
+        public StoreAction getAction() {
+            return action;
+        }
+
+        public void setAction(StoreAction action) {
+            this.action = action;
+        }
     }
 }

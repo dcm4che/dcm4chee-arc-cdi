@@ -79,9 +79,9 @@ public class MPPSEmulator {
         String emulatorAET;
         try {
             emulatorAET = device
-                    .getApplicationEntityNotNull(studyUpdatedEvent.localAET)
+                    .getApplicationEntityNotNull(studyUpdatedEvent.getLocalAET())
                     .getAEExtensionNotNull(ArchiveAEExtension.class)
-                    .getMppsEmulationRule(studyUpdatedEvent.sourceAET)
+                    .getMppsEmulationRule(studyUpdatedEvent.getSourceAET())
                     .getEmulatorAET();
         } catch (Exception e) {
             LOG.error("MPPS emulation failed. Cannot determine an appropriate emulator AET", e);

@@ -40,24 +40,29 @@
 
 package org.dcm4chee.archive.mpps.emulate.test;
 
-import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
+import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.MPPSCreationRule;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
 
 @ApplicationScoped
-public class TestDeviceProducer {
+public class TestConfigProducer {
 
     Device device;
 
+    @Inject
+    private DicomConfiguration config;
+
     @Produces
-    public Device getArchiveDevice(DicomConfigurationManager config) {
+    public Device getArchiveDevice() {
         if (device == null) {
             try {
-                MppsEmulationGeneral.resetConfig(MPPSCreationRule.ALWAYS, config);
+                // add device
+                config.persist(MppsEmulationGeneral.createConfigAE(MPPSCreationRule.ALWAYS).getDevice());
                 return device = config.findDevice("dcm4chee-arc");
             } catch (ConfigurationException e) {
                 throw new RuntimeException(e);

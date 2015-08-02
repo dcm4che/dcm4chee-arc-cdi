@@ -10,6 +10,11 @@
   <artifactId>dcm4chee-arc-junit</artifactId>
   <dependencies>
     <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-api</artifactId>
+      <version>${dcm4che.version}</version>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>compile</scope>

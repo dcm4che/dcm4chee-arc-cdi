@@ -38,14 +38,11 @@
 
 package org.dcm4chee.archive.entity;
 
-import org.apache.commons.lang.SerializationUtils;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-
 import javax.persistence.*;
+import java.io.*;
+import java.util.Date;
 
 /**
  * Store Study Session denotes a unit of work related to a number of instances of a certain study
@@ -94,10 +91,6 @@ public class StudyUpdateSession implements Serializable {
     private String sourceAET;
 
     @Basic(optional = false)
-    @Column(name = "local_aet", updatable = false)
-    private String localAET;
-
-    @Basic(optional = false)
     @Column(name = "study_iuid", updatable = false)
     private String studyInstanceUID;
 
@@ -119,22 +112,21 @@ public class StudyUpdateSession implements Serializable {
     @Access(AccessType.PROPERTY)
     @Lob
     public byte[] getEventBlob() {
-        return SerializationUtils.serialize(pendingStudyUpdatedEvent);
+        return serialize(pendingStudyUpdatedEvent);
     }
 
     @SuppressWarnings("unchecked")
     public void setEventBlob(byte[] eventBlob) {
         try {
-            this.pendingStudyUpdatedEvent = (StudyUpdatedEvent) SerializationUtils.deserialize(eventBlob);
+            this.pendingStudyUpdatedEvent = (StudyUpdatedEvent) deserialize(eventBlob);
         } catch (Exception e) {
-            throw new RuntimeException("Unexpected error - event_blob field is corrupted");
+            throw new RuntimeException("Unexpected error - event_blob field is corrupted",e);
         }
     }
 
     public final long getPk() {
         return pk;
     }
-
 
     public final String getSourceAET() {
         return sourceAET;
@@ -143,6 +135,7 @@ public class StudyUpdateSession implements Serializable {
     public final void setSourceAET(String sourceAET) {
         this.sourceAET = sourceAET;
     }
+
 
     public final String getStudyInstanceUID() {
         return studyInstanceUID;
@@ -160,12 +153,52 @@ public class StudyUpdateSession implements Serializable {
         this.emulationTime = emulationTime;
     }
 
-    public String getLocalAET() {
-        return localAET;
+
+    private Object deserialize(byte[] bytes) {
+        if (bytes == null) {
+            throw new IllegalArgumentException("The byte[] must not be null");
+        }
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+        ObjectInputStream in = null;
+        try {
+            // stream closed in the finally
+            in = new ObjectInputStream(inputStream);
+            return in.readObject();
+
+        } catch (ClassNotFoundException | IOException ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException ex) {
+                // ignore close exception
+            }
+        }
+
     }
 
-    public void setLocalAET(String localAET) {
-        this.localAET = localAET;
+    private byte[] serialize(Object pendingStudyUpdatedEvent) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(512);
+        ObjectOutputStream out = null;
+        try {
+            // stream closed in the finally
+            out = new ObjectOutputStream(baos);
+            out.writeObject(pendingStudyUpdatedEvent);
+
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            try {
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException ex) {
+                // ignore close exception
+            }
+        }
+        return baos.toByteArray();
     }
 
 }

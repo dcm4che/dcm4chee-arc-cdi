@@ -60,6 +60,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -98,8 +99,8 @@ public class MPPSEmulatorEJB {
                                               MPPSService mppsService)
             throws DicomServiceException {
 
-        String sourceAET = studyUpdatedEvent.sourceAET;
-        String studyInstanceUID = studyUpdatedEvent.studyInstanceUID;
+        String sourceAET = studyUpdatedEvent.getSourceAET();
+        String studyInstanceUID = studyUpdatedEvent.getStudyInstanceUID();
 
                 List < Series > seriesList = em
                         .createNamedQuery(
@@ -108,6 +109,12 @@ public class MPPSEmulatorEJB {
                         .setParameter(2, sourceAET).getResultList();
         if (seriesList.isEmpty())
             return null;
+
+        // filter series list - leave only ones affected by this StudyUpdateEvent
+        Iterator<Series> seriesIterator = seriesList.iterator();
+        while (seriesIterator.hasNext())
+            if (!studyUpdatedEvent.getAffectedSeriesUIDs().contains(seriesIterator.next().getSeriesInstanceUID()))
+                seriesIterator.remove();
 
         ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
         MPPSCreationRule creationRule = arcAE.getMppsEmulationRule(sourceAET)

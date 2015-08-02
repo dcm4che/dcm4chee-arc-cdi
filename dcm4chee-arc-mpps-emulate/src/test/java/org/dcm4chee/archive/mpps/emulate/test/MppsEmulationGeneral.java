@@ -2,6 +2,7 @@ package org.dcm4chee.archive.mpps.emulate.test;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -33,7 +34,6 @@ import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.MPPSCreationRule;
 import org.dcm4chee.archive.conf.MPPSEmulationAndStudyUpdateRule;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Issuer;
@@ -101,7 +101,7 @@ public class MppsEmulationGeneral {
         war.addClass(clazz);
         war.addClass(ParamFactory.class);
         war.addClass(MppsEmulationGeneral.class);
-        war.addClass(TestDeviceProducer.class);
+        war.addClass(TestConfigProducer.class);
         war.addClass(MPPSEmulator.class);
         war.addClass(MPPSEmulatorEJB.class);
 
@@ -123,15 +123,6 @@ public class MppsEmulationGeneral {
         return war;
     }
 
-
-    public static void resetConfig(MPPSCreationRule creationRule, DicomConfigurationManager config) throws ConfigurationException {
-
-        // wipe out config
-        config.getConfigurationStorage().persistNode("/", new HashMap<String, Object>(), null);
-
-        // add device
-        config.persist(createConfigAE(creationRule).getDevice());
-    }
 
     protected static ApplicationEntity createConfigAE(
             MPPSCreationRule creationRule) {
@@ -294,9 +285,12 @@ public class MppsEmulationGeneral {
 
     protected StudyUpdatedEvent createMockStudyUpdatedEvent() {
         StudyUpdatedEvent studyUpdatedEvent = new StudyUpdatedEvent();
-        studyUpdatedEvent.sourceAET = SOURCE_AET;
-        studyUpdatedEvent.studyInstanceUID = STUDY_IUID;
-        studyUpdatedEvent.localAET = LOCAL_AET;
+        studyUpdatedEvent.setSourceAET(SOURCE_AET);
+        studyUpdatedEvent.setStudyInstanceUID(STUDY_IUID);
+        studyUpdatedEvent.setLocalAET(LOCAL_AET);
+        HashSet<String> affectedSeriesUIDs = new HashSet<>();
+        affectedSeriesUIDs.add("1.2.40.0.13.1.1.99.20110607.1");
+        studyUpdatedEvent.setAffectedSeriesUIDs(affectedSeriesUIDs);
         return studyUpdatedEvent;
     }
 

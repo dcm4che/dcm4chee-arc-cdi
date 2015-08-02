@@ -48,7 +48,6 @@ import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.MPPSEmulationAndStudyUpdateRule;
-import org.dcm4chee.archive.entity.StudyUpdateSession;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
@@ -107,7 +106,7 @@ public class StudyUpdateSessionManager {
                     storeContext.getAttributes().getString(Tag.SeriesInstanceUID),
                     storeContext.getAttributes().getString(Tag.SOPInstanceUID),
                     storeContext.getStoreAction(),
-                    rule);
+                    rule.getEmulationDelay());
     }
 
     public void onArchiveServiceStarted(@Observes @ArchiveServiceStarted StartStopReloadEvent start) {

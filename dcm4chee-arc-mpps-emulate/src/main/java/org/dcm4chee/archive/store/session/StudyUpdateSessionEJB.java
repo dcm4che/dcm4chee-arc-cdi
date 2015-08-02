@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.store.session;
 
 import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.conf.MPPSEmulationAndStudyUpdateRule;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.StudyUpdateSession;
 import org.slf4j.Logger;
@@ -80,9 +79,9 @@ public class StudyUpdateSessionEJB {
                                   String seriesInstanceUID,
                                   String sopInstanceUID,
                                   StoreAction storeAction,
-                                  MPPSEmulationAndStudyUpdateRule rule) {
+                                  int emulationDelaySec) {
 
-        Date emulationTime = new Date(System.currentTimeMillis() + rule.getEmulationDelay() * 1000L);
+        Date emulationTime = new Date(System.currentTimeMillis() + emulationDelaySec * 1000L);
 
         try {
             // try to find an existing study update session
@@ -102,8 +101,8 @@ public class StudyUpdateSessionEJB {
             entity.setEmulationTime(emulationTime);
 
             // add stored instance, affected series 
-            entity.getPendingStudyUpdatedEvent().storedInstances.add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
-            entity.getPendingStudyUpdatedEvent().affectedSeriesUIDs.add(seriesInstanceUID);
+            entity.getPendingStudyUpdatedEvent().getStoredInstances().add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
+            entity.getPendingStudyUpdatedEvent().getAffectedSeriesUIDs().add(seriesInstanceUID);
 
             em.merge(entity);
             LOG.debug("Modified study update session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);
@@ -116,11 +115,11 @@ public class StudyUpdateSessionEJB {
             entity.setStudyInstanceUID(studyInstanceUID);
             entity.setEmulationTime(emulationTime);
 
-            entity.getPendingStudyUpdatedEvent().sourceAET = sourceAET;
-            entity.getPendingStudyUpdatedEvent().localAET = localAET;
-            entity.getPendingStudyUpdatedEvent().studyInstanceUID = studyInstanceUID;
-            entity.getPendingStudyUpdatedEvent().storedInstances.add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
-            entity.getPendingStudyUpdatedEvent().affectedSeriesUIDs.add(seriesInstanceUID);
+            entity.getPendingStudyUpdatedEvent().setSourceAET(sourceAET);
+            entity.getPendingStudyUpdatedEvent().setLocalAET(localAET);
+            entity.getPendingStudyUpdatedEvent().setStudyInstanceUID(studyInstanceUID);
+            entity.getPendingStudyUpdatedEvent().getStoredInstances().add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
+            entity.getPendingStudyUpdatedEvent().getAffectedSeriesUIDs().add(seriesInstanceUID);
 
             em.persist(entity);
 
