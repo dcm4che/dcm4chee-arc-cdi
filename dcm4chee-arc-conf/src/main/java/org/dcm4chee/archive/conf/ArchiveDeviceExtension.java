@@ -181,7 +181,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     private int priorsCacheClearMaxLocationsPerDelete = 1000;
 
     @ConfigurableProperty(name = "dcmUseNullForEmptyQueryFields", defaultValue = "true")
-    private boolean useNullForEmptyQueryFields;
+    private boolean useNullForEmptyQueryFields = true;
 
     @LDAP(noContainerNode=true)
     @ConfigurableProperty(name = "dcmDeletionRules")

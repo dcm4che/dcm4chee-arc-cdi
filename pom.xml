@@ -332,14 +332,19 @@
         <artifactId>dcm4chee-monitoring-api</artifactId>
         <version>${dcm4chee-monitoring.version}</version>
       </dependency>
-      
+
+      <!-- Archive artifacts themselves -->
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-arc</groupId>
+        <artifactId>dcm4chee-arc-conf-default</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.dcm4che.dcm4chee-arc</groupId>
         <artifactId>dcm4chee-arc-api</artifactId>
         <version>${project.version}</version>
         <scope>provided</scope> <!-- provided as JBoss module -->
       </dependency>
-
       <dependency>
         <groupId>org.dcm4che.dcm4chee-arc</groupId>
         <artifactId>dcm4chee-arc-junit</artifactId>
