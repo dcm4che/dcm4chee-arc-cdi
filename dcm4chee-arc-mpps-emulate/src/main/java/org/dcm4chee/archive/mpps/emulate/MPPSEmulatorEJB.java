@@ -54,6 +54,7 @@ import org.dcm4chee.archive.mpps.MPPSService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
@@ -64,6 +65,7 @@ import java.util.List;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini
  */
+@Stateless
 public class MPPSEmulatorEJB {
 
     public static final class EmulationResult {

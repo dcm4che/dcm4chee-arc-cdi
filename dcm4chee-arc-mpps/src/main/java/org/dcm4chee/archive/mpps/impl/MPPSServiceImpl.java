@@ -111,13 +111,15 @@ public class MPPSServiceImpl implements MPPSService {
     @Inject
     private Device device;
 
+    //TODO: REVIEW: why are we looking up and then modifying/persisting in different transactions?
+
     @Override
     public MPPS createPerformedProcedureStep(ArchiveAEExtension arcAE,
             String iuid, Attributes attrs, Patient patient,
             MPPSService service) throws DicomServiceException {
             MPPS pps = ejb.findPPS(iuid);
             if(pps != null)
-            throw new DicomServiceException(Status.DuplicateSOPinstance)
+            throw new DicomServiceException(Status.DuplicateSOPinstance, "PPS with iuid "+iuid+" already exists")
                 .setUID(Tag.AffectedSOPInstanceUID, iuid);
             
         StoreParam storeParam = arcAE.getStoreParam();
@@ -172,9 +174,13 @@ public class MPPSServiceImpl implements MPPSService {
                 }
             }
         }
+
+        ejb.mergePPS(pps);
         return pps;
     }
 
+
+    // TODO: REVIEW: why are study and series entities are modified but not merged back into db?
     private void rejectIncorrectWorklistEntrySelected(MPPS pps) {
         HashMap<String,Attributes> map = new HashMap<String,Attributes>();
         for (Attributes seriesRef : pps.getAttributes()
@@ -268,36 +274,35 @@ public class MPPSServiceImpl implements MPPSService {
                 new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
     }
 
+    // TODO: MPPSFinal - what if it is received before the referenced contents are stored? we should use StudyUpdatedEvent here ...
     public void onMPPSFinalEvent(@Observes @MPPSFinal MPPSEvent event) {
         LOG.info("Received MPPS complete event , initiating derived fields calculation");
-        ArchiveDeviceExtension arcDevExt = device
-                .getDeviceExtension(ArchiveDeviceExtension.class);
-
+        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
         ApplicationEntity archiveAE = event.getApplicationEntity();
-        ArchiveAEExtension arcAEExt = archiveAE
-                .getAEExtension(ArchiveAEExtension.class);
-        QueryRetrieveView view = arcDevExt
-                .getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
+        ArchiveAEExtension arcAEExt = archiveAE.getAEExtension(ArchiveAEExtension.class);
+        QueryRetrieveView view = arcDevExt.getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
+        if (view == null) {
+            LOG.warn("Cannot re-calculate derived fields - query retrieve view ID is not specified for AE {}", archiveAE.getAETitle());
+            return;
+        }
+
         QueryParam param = new QueryParam();
         param.setQueryRetrieveView(view);
-        ArrayList<String> studyInstanceUID = getStudyUIDFromMPPSAttrs(event.getPerformedProcedureStep()
-                .getAttributes());
+        ArrayList<String> studyInstanceUID = getStudyUIDFromMPPSAttrs(event.getPerformedProcedureStep().getAttributes());
         //now for each study
         try {
-        for(String studyUID : studyInstanceUID) {
-            Study study = ejb.findStudyByUID(studyUID);
-            //create study view
-            queryService.createStudyView(study.getPk(), param);
-            //create series view
-            for(Series series : study.getSeries()) {
-                queryService.createSeriesView(series.getPk(), param);
+            for (String studyUID : studyInstanceUID) {
+                Study study = ejb.findStudyByUID(studyUID);
+
+                //create study view
+                queryService.createStudyView(study.getPk(), param);
+
+                //create series view
+                for (Series series : study.getSeries())
+                    queryService.createSeriesView(series.getPk(), param);
             }
-        }
-        }
-        catch(Exception e) {
-            LOG.error("Study or Series lookup failed, "
-                    + "Can not calculate derived fields on MPPS COMPLETE");
-            return;
+        } catch (Exception e) {
+            LOG.error("Error while calculating derived fields on MPPS COMPLETE", e);
         }
     }
 

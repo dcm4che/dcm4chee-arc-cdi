@@ -67,6 +67,11 @@ public class MPPSServiceEJB {
         em.persist(mpps);
     }
 
+    public void mergePPS(MPPS mpps) {
+        em.merge(mpps);
+    }
+
+
     public List<Instance> findBySeriesInstanceUID(Attributes seriesRef) {
        return em
         .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID,

@@ -220,11 +220,13 @@ public class DefaultQueryService implements QueryService {
 
     @Override
     public StudyQueryAttributes createStudyView(Long studyPk, QueryParam queryParam) {
+        if (queryParam == null || queryParam.getQueryRetrieveView() == null) throw new IllegalArgumentException("Cannot create study view - queryParam/queryRetrieveView cannot be null");
         return ejb.calculateStudyQueryAttributes(studyPk, queryParam);
     }
 
     @Override
     public SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam) {
+        if (queryParam == null || queryParam.getQueryRetrieveView() == null) throw new IllegalArgumentException("Cannot create series view - queryParam/queryRetrieveView cannot be null");
         return ejb.calculateSeriesQueryAttributes(seriesPk, queryParam);
     }
 
