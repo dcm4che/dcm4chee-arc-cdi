@@ -5,7 +5,11 @@
     <artifactId>dcm4chee-arc-parent</artifactId>
     <version>4.5.0-SNAPSHOT</version>
   </parent>
-  <artifactId>dcm4chee-arc-api</artifactId>
+  <!--
+  This package contains API of the archive that is only supposed to be used internally, i.e. from within the EAR
+  The core difference with the dcm4chee-arc-api package is that this package can safely depend on other parts of the deployment (e.g. conf)
+  -->
+  <artifactId>dcm4chee-arc-api-local</artifactId>
 
   <dependencies>
     <dependency>
@@ -16,24 +20,11 @@
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-net</artifactId>
     </dependency>
-
-    <!-- TODO: REVIEW: dependency of a module to deployment libs
-    - confusing, smells
-    - does not work if a non-abstract class that depends on deployment is included - class not found is thrown
-    - for interfaces, might break under certain circumstances?
-
-    refactor?
-    -->
-
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-storage</groupId>
-      <artifactId>dcm4chee-storage-conf</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-conf</artifactId>
-      <version>${project.version}</version>
     </dependency>
+
   </dependencies>
 
   <build>

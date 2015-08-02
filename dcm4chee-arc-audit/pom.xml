@@ -68,6 +68,11 @@
       <artifactId>dcm4chee-arc-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-api-local</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-net</artifactId>
       <scope>provided</scope>

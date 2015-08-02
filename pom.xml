@@ -341,9 +341,24 @@
       </dependency>
       <dependency>
         <groupId>org.dcm4che.dcm4chee-arc</groupId>
+        <artifactId>dcm4chee-arc-conf</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-arc</groupId>
+        <artifactId>dcm4chee-arc-api-local</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-arc</groupId>
         <artifactId>dcm4chee-arc-api</artifactId>
         <version>${project.version}</version>
         <scope>provided</scope> <!-- provided as JBoss module -->
+      </dependency>
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee-arc</groupId>
+        <artifactId>dcm4chee-arc-dynamic-decorators</artifactId>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -511,6 +526,14 @@
           </executions>
         </plugin>
         <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.5</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>2.4</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.18.1</version>
         </plugin>
@@ -593,6 +616,7 @@
     <module>dcm4chee-arc-mpps-emulate</module>
     <module>dcm4chee-arc-hsm</module>
     <module>dcm4chee-arc-api</module>
+    <module>dcm4chee-arc-api-local</module>
     <module>dcm4chee-arc-mwl-scp</module>
     <module>dcm4chee-arc-prefetch</module>
     <module>dcm4chee-arc-api-impl</module>
