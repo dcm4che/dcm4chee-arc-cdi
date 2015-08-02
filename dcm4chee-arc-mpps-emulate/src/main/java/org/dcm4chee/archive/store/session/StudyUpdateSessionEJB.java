@@ -77,6 +77,7 @@ public class StudyUpdateSessionEJB {
     public void addStoredInstance(String sourceAET,
                                   String localAET,
                                   String studyInstanceUID,
+                                  String seriesInstanceUID,
                                   String sopInstanceUID,
                                   StoreAction storeAction,
                                   MPPSEmulationAndStudyUpdateRule rule) {
@@ -100,8 +101,9 @@ public class StudyUpdateSessionEJB {
             // bump the timeout
             entity.setEmulationTime(emulationTime);
 
-            // add stored instance to the list
-            entity.getStoredInstances().add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
+            // add stored instance, affected series 
+            entity.getPendingStudyUpdatedEvent().storedInstances.add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
+            entity.getPendingStudyUpdatedEvent().affectedSeriesUIDs.add(seriesInstanceUID);
 
             em.merge(entity);
             LOG.debug("Modified study update session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);
@@ -111,17 +113,22 @@ public class StudyUpdateSessionEJB {
             // create new study update session
             StudyUpdateSession entity = new StudyUpdateSession();
             entity.setSourceAET(sourceAET);
-            entity.setLocalAET(localAET);
             entity.setStudyInstanceUID(studyInstanceUID);
             entity.setEmulationTime(emulationTime);
-            entity.getStoredInstances().add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
+
+            entity.getPendingStudyUpdatedEvent().sourceAET = sourceAET;
+            entity.getPendingStudyUpdatedEvent().localAET = localAET;
+            entity.getPendingStudyUpdatedEvent().studyInstanceUID = studyInstanceUID;
+            entity.getPendingStudyUpdatedEvent().storedInstances.add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction));
+            entity.getPendingStudyUpdatedEvent().affectedSeriesUIDs.add(seriesInstanceUID);
+
             em.persist(entity);
 
             LOG.info("Created study update session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);
         }
     }
 
-    public StudyUpdateSession getNextFinishedStoreStudySession() {
+    public StudyUpdatedEvent findNextFinishedStudyUpdateSession() {
         List<StudyUpdateSession> resultList = em
                 .createNamedQuery(StudyUpdateSession.FIND_READY_TO_FINISH, StudyUpdateSession.class)
                 .setMaxResults(1)
@@ -131,7 +138,7 @@ public class StudyUpdateSessionEJB {
 
         StudyUpdateSession studyUpdateSession = resultList.get(0);
         em.remove(studyUpdateSession);
-        return studyUpdateSession;
+        return studyUpdateSession.getPendingStudyUpdatedEvent();
     }
 
 }

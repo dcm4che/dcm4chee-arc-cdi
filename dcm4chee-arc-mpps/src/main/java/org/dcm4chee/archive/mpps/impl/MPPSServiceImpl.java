@@ -274,7 +274,7 @@ public class MPPSServiceImpl implements MPPSService {
                 new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
     }
 
-    // TODO: MPPSFinal - what if it is received before the referenced contents are stored? we should use StudyUpdatedEvent here ...
+    // TODO: REVIEW: MPPSFinal - what if it is received before the referenced contents are stored? we should use StudyUpdatedEvent here ...
     public void onMPPSFinalEvent(@Observes @MPPSFinal MPPSEvent event) {
         LOG.info("Received MPPS complete event , initiating derived fields calculation");
         ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);

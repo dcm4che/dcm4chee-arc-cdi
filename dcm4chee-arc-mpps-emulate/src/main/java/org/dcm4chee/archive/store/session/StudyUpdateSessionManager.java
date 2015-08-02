@@ -41,10 +41,8 @@
 package org.dcm4chee.archive.store.session;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
-import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
@@ -106,6 +104,7 @@ public class StudyUpdateSessionManager {
             ejb.addStoredInstance(storeSession.getRemoteAET(),
                     storeSession.getLocalAET(),
                     storeContext.getAttributes().getString(Tag.StudyInstanceUID),
+                    storeContext.getAttributes().getString(Tag.SeriesInstanceUID),
                     storeContext.getAttributes().getString(Tag.SOPInstanceUID),
                     storeContext.getStoreAction(),
                     rule);
@@ -165,19 +164,11 @@ public class StudyUpdateSessionManager {
     }
 
     /**
-     * @return true if an updated study was found for notification, false if not
+     * @return true if a pending study update notification was fired, false if not
      */
     public boolean notifyAboutNextFinishedUpdate() {
-        StudyUpdateSession finishedStudySession = ejb.getNextFinishedStoreStudySession();
-        if (finishedStudySession == null) return false;
-
-        StudyUpdatedEvent studyUpdatedEvent = new StudyUpdatedEvent();
-
-        studyUpdatedEvent.sourceAET = finishedStudySession.getSourceAET();
-        studyUpdatedEvent.localAET = finishedStudySession.getLocalAET();
-        studyUpdatedEvent.storedInstances = finishedStudySession.getStoredInstances();
-        studyUpdatedEvent.studyInstanceUID = finishedStudySession.getStudyInstanceUID();
-
+        StudyUpdatedEvent studyUpdatedEvent = ejb.findNextFinishedStudyUpdateSession();
+        if (studyUpdatedEvent == null) return false;
         studyUpdatedEventTrigger.fire(studyUpdatedEvent);
         return true;
     }

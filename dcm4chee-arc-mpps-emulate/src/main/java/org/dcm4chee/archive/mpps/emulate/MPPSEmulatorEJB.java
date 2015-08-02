@@ -51,6 +51,7 @@ import org.dcm4chee.archive.conf.MPPSCreationRule;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,16 +93,19 @@ public class MPPSEmulatorEJB {
             Tag.StudyID };
 
 
-
     public MPPS emulatePerformedProcedureStep(ApplicationEntity ae,
-            String sourceAET, String studyInstanceUID, MPPSService mppsService)
+                                              StudyUpdatedEvent studyUpdatedEvent,
+                                              MPPSService mppsService)
             throws DicomServiceException {
 
-        List<Series> seriesList = em
-                .createNamedQuery(
-                        Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
-                        Series.class).setParameter(1, studyInstanceUID)
-                .setParameter(2, sourceAET).getResultList();
+        String sourceAET = studyUpdatedEvent.sourceAET;
+        String studyInstanceUID = studyUpdatedEvent.studyInstanceUID;
+
+                List < Series > seriesList = em
+                        .createNamedQuery(
+                                Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
+                                Series.class).setParameter(1, studyInstanceUID)
+                        .setParameter(2, sourceAET).getResultList();
         if (seriesList.isEmpty())
             return null;
 
@@ -109,8 +113,7 @@ public class MPPSEmulatorEJB {
         MPPSCreationRule creationRule = arcAE.getMppsEmulationRule(sourceAET)
                 .getCreationRule();
 
-        // checks if emulated MPPS should be created, according to configured
-        // rule
+        // checks if emulated MPPS should be created, according to the configured rule
         if (!checkCreationRule(creationRule, seriesList))
             return null;
 
@@ -124,8 +127,7 @@ public class MPPSEmulatorEJB {
         return mpps;
     }
 
-    private void updateMPPSReferences(String mppsIUID, List<Series> series,
-            StoreParam storeParam) {
+    private void updateMPPSReferences(String mppsIUID, List<Series> series, StoreParam storeParam) {
         for (Series ser : series) {
             Attributes serAttrs = ser.getAttributes();
             Attributes mppsRef = new Attributes(2);
@@ -222,20 +224,24 @@ public class MPPSEmulatorEJB {
     private boolean checkCreationRule(MPPSCreationRule rule,
             List<Series> seriesList) {
 
+        // if rule is NEVER, then just return
+        if (rule.equals(MPPSCreationRule.NEVER)) {
+            LOG.debug("MPPS creation rule is NEVER => NOT emulating MPPS.");
+            return false;
+        }
+
         // check if referenced mpps exists
         List<String> refMppsList = new ArrayList<String>();
         for (Series series : seriesList) {
-            Sequence refPpsSeq = series.getAttributes().getSequence(
-                    Tag.ReferencedPerformedProcedureStepSequence);
+            Sequence refPpsSeq = series.getAttributes().getSequence(Tag.ReferencedPerformedProcedureStepSequence);
             if (refPpsSeq != null
                     && refPpsSeq.size() > 0
                     && refPpsSeq.get(0).getString(Tag.ReferencedSOPInstanceUID) != null)
-                refMppsList.add(refPpsSeq.get(0).getString(
-                        Tag.ReferencedSOPInstanceUID));
+                refMppsList.add(refPpsSeq.get(0).getString(Tag.ReferencedSOPInstanceUID));
         }
 
         if (refMppsList.size() == 0) {
-            LOG.debug("Emulate MPPS (No Reference found always emulate)");
+            LOG.debug("No reference to existing MPPS found => emulating MPPS...");
             return true;
         }
 
@@ -243,31 +249,31 @@ public class MPPSEmulatorEJB {
         List<MPPS> mppsList = null;
         switch (rule) {
         case ALWAYS:
-            LOG.debug("Emulate MPPS (reference found and rule ALWAYS)");
+            LOG.debug("MPPS references found and rule is ALWAYS => emulating MPPS...");
             deleteMPPS(refMppsList);
             return true;
         case NEVER:
-            LOG.debug("NO MPPS Emulation (reference found and rule NEVER)");
+            // will never hit this line, see above
             return false;
         case NO_MPPS_CREATE:
             mppsList = fetchMPPS(refMppsList);
             if (mppsList == null || mppsList.size() == 0) {
-                LOG.debug("Emulate MPPS (reference found, no mpps stored and rule NO_MPPS_CREATE)");
+                LOG.debug("MPPS references found, no mpps stored and rule NO_MPPS_CREATE => emulating MPPS...");
                 return true;
             } else {
-                LOG.debug("NO MPPS Emulation (reference found, mpps stored and rule NO_MPPS_CREATE)");
+                LOG.debug("MPPS references found, mpps stored and rule NO_MPPS_CREATE => NOT emulating MPPS.");
                 return false;
             }
         case NO_MPPS_FINAL:
             mppsList = fetchMPPS(refMppsList);
             for (MPPS mpps : mppsList) {
                 if (mpps.getStatus() == MPPS.Status.IN_PROGRESS) {
-                    LOG.debug("Emulate MPPS (reference found, mpps stored, at least one MPPS not finalized and rule NO_MPPS_FINAL)");
+                    LOG.debug("MPPS reference found, mpps stored, at least one MPPS not finalized and rule NO_MPPS_FINAL => emulating MPPS...");
                     deleteMPPS(refMppsList);
                     return true;
                 }
             }
-            LOG.debug("NO MPPS Emulation (reference found, mpps stored, all MPPS finalized and rule NO_MPPS_FINAL)");
+            LOG.debug("MPPS reference found, mpps stored, all MPPS finalized and rule NO_MPPS_FINAL => NOT emulating MPPS.");
             return false;
         default:
             return true; // default = emulate MPPS

@@ -108,26 +108,26 @@ public class StudyUpdateSession implements Serializable {
 
 
     @Transient
-    private ArrayList<StudyUpdatedEvent.StoredInstance> storedInstances = new ArrayList<>();
+    private StudyUpdatedEvent pendingStudyUpdatedEvent = new StudyUpdatedEvent();
 
-    public ArrayList<StudyUpdatedEvent.StoredInstance> getStoredInstances() {
-        return storedInstances;
+    public StudyUpdatedEvent getPendingStudyUpdatedEvent() {
+        return pendingStudyUpdatedEvent;
     }
 
     @Basic
-    @Column(name = "stored_instances")
+    @Column(name = "event_blob")
     @Access(AccessType.PROPERTY)
     @Lob
-    public byte[] getStoredInstancesBlob() {
-        return SerializationUtils.serialize(storedInstances);
+    public byte[] getEventBlob() {
+        return SerializationUtils.serialize(pendingStudyUpdatedEvent);
     }
 
     @SuppressWarnings("unchecked")
-    public void setStoredInstancesBlob(byte[] storedInstancesBlob) {
+    public void setEventBlob(byte[] eventBlob) {
         try {
-            this.storedInstances = (ArrayList<StudyUpdatedEvent.StoredInstance>) SerializationUtils.deserialize(storedInstancesBlob);
+            this.pendingStudyUpdatedEvent = (StudyUpdatedEvent) SerializationUtils.deserialize(eventBlob);
         } catch (Exception e) {
-            throw new RuntimeException("Unexpected error - storedInstances field is corrupted");
+            throw new RuntimeException("Unexpected error - event_blob field is corrupted");
         }
     }
 

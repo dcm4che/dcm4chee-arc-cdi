@@ -44,7 +44,10 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.StoreAction;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A deferred event that denotes a coarse grained update,
@@ -52,15 +55,21 @@ import java.util.List;
  *
  * @author Roman K
  */
-public class StudyUpdatedEvent {
+public class StudyUpdatedEvent implements Serializable{
+
+    private static final long serialVersionUID = -8854586422835724408L;
 
     public String localAET;
     public String sourceAET;
 
     public String studyInstanceUID;
-    public List<StoredInstance> storedInstances;
+    public List<StoredInstance> storedInstances = new ArrayList<>();
+    public Set<String> affectedSeriesUIDs = new HashSet<>();
+
 
     public static class StoredInstance implements Serializable {
+
+        private static final long serialVersionUID = 6011313460569751657L;
 
         public StoredInstance(String sopInstanceUID, StoreAction action) {
             this.sopInstanceUID = sopInstanceUID;

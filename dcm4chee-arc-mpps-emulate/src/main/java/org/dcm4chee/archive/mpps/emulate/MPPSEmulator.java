@@ -89,7 +89,7 @@ public class MPPSEmulator {
         }
 
         ApplicationEntity emulatorAE = device.getApplicationEntity(emulatorAET);
-        MPPS mpps = ejb.emulatePerformedProcedureStep(emulatorAE, studyUpdatedEvent.sourceAET, studyUpdatedEvent.studyInstanceUID, mppsService);
+        MPPS mpps = ejb.emulatePerformedProcedureStep(emulatorAE, studyUpdatedEvent, mppsService);
 
         if (mpps != null) {
             mppsService.fireCreateMPPSEvent(emulatorAE, MPPSEmulator.setStatus(mpps.getAttributes(), MPPS.IN_PROGRESS), mpps);
