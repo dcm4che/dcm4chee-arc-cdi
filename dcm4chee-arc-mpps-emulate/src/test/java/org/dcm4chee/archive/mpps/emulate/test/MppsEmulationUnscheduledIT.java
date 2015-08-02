@@ -86,7 +86,7 @@ public class MppsEmulationUnscheduledIT extends MppsEmulationGeneral {
         //sub test 1
         log.info("calling emulator with rule:" + MPPSCreationRule.NEVER);
 
-        resetConfig(MPPSCreationRule.NEVER);
+        setMPPSCreationRule(MPPSCreationRule.NEVER);
         emulatedMpps = mppsEmulator.onStudyUpdated(studyUpdatedEvent);
 
         assertTrue("emulated mpps created", emulatedMpps == null);
@@ -95,7 +95,7 @@ public class MppsEmulationUnscheduledIT extends MppsEmulationGeneral {
         //sub test 2
         log.info("calling emulator with rule:" + MPPSCreationRule.NO_MPPS_CREATE);
 
-        resetConfig(MPPSCreationRule.NO_MPPS_CREATE);
+        setMPPSCreationRule(MPPSCreationRule.NO_MPPS_CREATE);
         emulatedMpps = mppsEmulator.onStudyUpdated(studyUpdatedEvent);
 
         assertTrue("emulated mpps not created", emulatedMpps != null);

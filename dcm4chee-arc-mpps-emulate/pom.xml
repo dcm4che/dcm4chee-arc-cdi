@@ -53,6 +53,11 @@
 
     <!-- test dependencies -->
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-conf-default</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.jboss.shrinkwrap.resolver</groupId>
       <artifactId>shrinkwrap-resolver-impl-maven-archive</artifactId>
       <scope>test</scope>
@@ -84,6 +89,11 @@
   <profiles>
     <profile>
       <id>jbossas-remote-7</id>
+      <activation>
+         <property>
+           <name>run-remote-IT-tests-jboss7</name>
+         </property>
+      </activation>
       <build>
         <resources>
           <resource>

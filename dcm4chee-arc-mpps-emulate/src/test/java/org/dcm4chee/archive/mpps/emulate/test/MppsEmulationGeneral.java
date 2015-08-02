@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.annotation.Resource;
-import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -19,11 +18,8 @@ import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import org.apache.log4j.Logger;
-import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
-import org.dcm4che3.conf.api.internal.ExtendedDicomConfiguration;
 import org.dcm4che3.conf.core.api.ConfigurationException;
-import org.dcm4che3.conf.core.api.internal.ConfigurationManager;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -37,6 +33,7 @@ import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.MPPSCreationRule;
 import org.dcm4chee.archive.conf.MPPSEmulationAndStudyUpdateRule;
 import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Issuer;
@@ -45,7 +42,6 @@ import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.emulate.MPPSEmulator;
 import org.dcm4chee.archive.mpps.emulate.MPPSEmulatorEJB;
-import org.dcm4chee.archive.store.session.StudyUpdateSessionEJB;
 import org.dcm4chee.archive.patient.IDPatientSelector;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreContext;
@@ -89,14 +85,11 @@ public class MppsEmulationGeneral {
     @Inject
     PatientService patientService;
     @Inject
-    private Device device;
+    protected Device device;
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
     @Resource
     UserTransaction utx;
-
-    @Inject
-    DicomConfigurationManager config;
 
     protected static final String[] INSTANCES = { "testdata/mpps-create.xml",
             "testdata/mpps-set.xml", "testdata/store-ct-1.xml",
@@ -131,7 +124,7 @@ public class MppsEmulationGeneral {
     }
 
 
-    protected void resetConfig(MPPSCreationRule creationRule) throws ConfigurationException {
+    public static void resetConfig(MPPSCreationRule creationRule, DicomConfigurationManager config) throws ConfigurationException {
 
         // wipe out config
         config.getConfigurationStorage().persistNode("/", new HashMap<String, Object>(), null);
@@ -152,12 +145,11 @@ public class MppsEmulationGeneral {
         Device device = new Device(DCM4CHEE_ARC);
         ArchiveDeviceExtension ext = new ArchiveDeviceExtension();
         ext.setFuzzyAlgorithmClass("org.dcm4che3.soundex.ESoundex");
-        ext.setAttributeFilter(Entity.Patient, new AttributeFilter(
-                ParamFactory.PATIENT_ATTRS));
+        ext.setAttributeFilter(Entity.Patient, new AttributeFilter(ParamFactory.PATIENT_ATTRS));
         ext.setAttributeFilter(Entity.Study, new AttributeFilter(ParamFactory.STUDY_ATTRS));
         ext.setAttributeFilter(Entity.Series, new AttributeFilter(ParamFactory.SERIES_ATTRS));
-        ext.setAttributeFilter(Entity.Instance, new AttributeFilter(
-                ParamFactory.INSTANCE_ATTRS));
+        ext.setAttributeFilter(Entity.Instance, new AttributeFilter(ParamFactory.INSTANCE_ATTRS));
+
         device.addDeviceExtension(ext);
         device.addApplicationEntity(ae);
 
@@ -306,5 +298,12 @@ public class MppsEmulationGeneral {
         studyUpdatedEvent.studyInstanceUID = STUDY_IUID;
         studyUpdatedEvent.localAET = LOCAL_AET;
         return studyUpdatedEvent;
+    }
+
+    protected void setMPPSCreationRule(MPPSCreationRule never) {
+        device.getApplicationEntityNotNull(LOCAL_AET)
+                .getAEExtensionNotNull(ArchiveAEExtension.class)
+                .getMppsEmulationRule(SOURCE_AET)
+                .setCreationRule(never);
     }
 }
