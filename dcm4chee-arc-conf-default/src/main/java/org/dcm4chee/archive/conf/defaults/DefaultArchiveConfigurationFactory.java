@@ -294,24 +294,24 @@ public class DefaultArchiveConfigurationFactory {
             new Code("113039", "DCM", null, "Data Retention Policy Expired");
     private static final Code REVOKE_REJECTION =
             new Code("REVOKE_REJECTION", "99DCM4CHEE", null, "Restore rejected Instances");
-    private static final Code[] REJECTION_CODES = {
+    public static final Code[] REJECTION_CODES = {
             INCORRECT_WORKLIST_ENTRY_SELECTED,
             REJECTED_FOR_QUALITY_REASONS,
             REJECT_FOR_PATIENT_SAFETY_REASONS,
             INCORRECT_MODALITY_WORKLIST_ENTRY,
             DATA_RETENTION_POLICY_EXPIRED
     };
-    private static final QueryRetrieveView REGULAR_USE_VIEW =
+    public static final QueryRetrieveView REGULAR_USE_VIEW =
             createQueryRetrieveView("regularUse",
                     new Code[]{REJECTED_FOR_QUALITY_REASONS},
                     new Code[]{DATA_RETENTION_POLICY_EXPIRED},
                     false);
-    private static final QueryRetrieveView HIDE_REJECTED_VIEW =
+    public static final QueryRetrieveView HIDE_REJECTED_VIEW =
             createQueryRetrieveView("hideRejected",
                     new Code[0],
                     new Code[]{DATA_RETENTION_POLICY_EXPIRED},
                     false);
-    private static final QueryRetrieveView TRASH_VIEW =
+    public static final QueryRetrieveView TRASH_VIEW =
             createQueryRetrieveView("trashView",
                     REJECTION_CODES,
                     new Code[0],
@@ -342,7 +342,7 @@ public class DefaultArchiveConfigurationFactory {
             UID.ColonCADSRStorage,
             UID.ImplantationPlanSRStorage
     };
-    private static QueryRetrieveView[] QUERY_RETRIEVE_VIEWS = {
+    public static QueryRetrieveView[] QUERY_RETRIEVE_VIEWS = {
             HIDE_REJECTED_VIEW,
             REGULAR_USE_VIEW,
             TRASH_VIEW};
@@ -384,12 +384,12 @@ public class DefaultArchiveConfigurationFactory {
         return view;
     }
 
-    private static MPPSEmulationRule createMPPSEmulationRule(
+    private static MPPSEmulationAndStudyUpdateRule createMPPSEmulationRule(
             String commonName,
             int emulationDelay,
             String emulatorAET,
             String... sourceAETs) {
-        MPPSEmulationRule rule = new MPPSEmulationRule();
+        MPPSEmulationAndStudyUpdateRule rule = new MPPSEmulationAndStudyUpdateRule();
         rule.setCommonName(commonName);
         rule.setEmulationDelay(emulationDelay);
         rule.setEmulatorAET(emulatorAET);

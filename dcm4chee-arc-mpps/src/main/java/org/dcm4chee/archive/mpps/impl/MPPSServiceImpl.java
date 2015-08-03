@@ -38,47 +38,17 @@
 
 package org.dcm4chee.archive.mpps.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import javax.xml.transform.Templates;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.*;
 import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.code.CodeService;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.conf.QueryRetrieveView;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.MPPSServiceEJB;
 import org.dcm4chee.archive.mpps.event.MPPSCreate;
@@ -90,6 +60,17 @@ import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.query.QueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
+import javax.enterprise.event.Observes;
+import javax.inject.Inject;
+import javax.persistence.NoResultException;
+import javax.xml.transform.Templates;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -130,13 +111,15 @@ public class MPPSServiceImpl implements MPPSService {
     @Inject
     private Device device;
 
+    //TODO: REVIEW: why are we looking up and then modifying/persisting in different transactions?
+
     @Override
     public MPPS createPerformedProcedureStep(ArchiveAEExtension arcAE,
             String iuid, Attributes attrs, Patient patient,
             MPPSService service) throws DicomServiceException {
             MPPS pps = ejb.findPPS(iuid);
             if(pps != null)
-            throw new DicomServiceException(Status.DuplicateSOPinstance)
+            throw new DicomServiceException(Status.DuplicateSOPinstance, "PPS with iuid "+iuid+" already exists")
                 .setUID(Tag.AffectedSOPInstanceUID, iuid);
             
         StoreParam storeParam = arcAE.getStoreParam();
@@ -191,9 +174,13 @@ public class MPPSServiceImpl implements MPPSService {
                 }
             }
         }
+
+        ejb.mergePPS(pps);
         return pps;
     }
 
+
+    // TODO: REVIEW: why are study and series entities are modified but not merged back into db?
     private void rejectIncorrectWorklistEntrySelected(MPPS pps) {
         HashMap<String,Attributes> map = new HashMap<String,Attributes>();
         for (Attributes seriesRef : pps.getAttributes()
@@ -217,7 +204,7 @@ public class MPPSServiceImpl implements MPPSService {
                     Study study = series.getStudy();
                     if (!cuid.equals(cuidInPPS)) {
                         LOG.warn("SOP Class of received Instance[iuid={}, cuid={}] "
-                                + "of Series[iuid={}] of Study[iuid={}] differs from"
+                                + "of Series[iuid={}] of Study[iuid={}] differs from "
                                 + "SOP Class[cuid={}] referenced by MPPS[iuid={}]",
                                 iuid, cuid, series.getSeriesInstanceUID(), 
                                 study.getStudyInstanceUID(), cuidInPPS,
@@ -287,36 +274,35 @@ public class MPPSServiceImpl implements MPPSService {
                 new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
     }
 
+    // TODO: REVIEW: MPPSFinal - what if it is received before the referenced contents are stored? we should use StudyUpdatedEvent here ...
     public void onMPPSFinalEvent(@Observes @MPPSFinal MPPSEvent event) {
         LOG.info("Received MPPS complete event , initiating derived fields calculation");
-        ArchiveDeviceExtension arcDevExt = device
-                .getDeviceExtension(ArchiveDeviceExtension.class);
-
+        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
         ApplicationEntity archiveAE = event.getApplicationEntity();
-        ArchiveAEExtension arcAEExt = archiveAE
-                .getAEExtension(ArchiveAEExtension.class);
-        QueryRetrieveView view = arcDevExt
-                .getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
+        ArchiveAEExtension arcAEExt = archiveAE.getAEExtension(ArchiveAEExtension.class);
+        QueryRetrieveView view = arcDevExt.getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
+        if (view == null) {
+            LOG.warn("Cannot re-calculate derived fields - query retrieve view ID is not specified for AE {}", archiveAE.getAETitle());
+            return;
+        }
+
         QueryParam param = new QueryParam();
         param.setQueryRetrieveView(view);
-        ArrayList<String> studyInstanceUID = getStudyUIDFromMPPSAttrs(event.getPerformedProcedureStep()
-                .getAttributes());
+        ArrayList<String> studyInstanceUID = getStudyUIDFromMPPSAttrs(event.getPerformedProcedureStep().getAttributes());
         //now for each study
         try {
-        for(String studyUID : studyInstanceUID) {
-            Study study = ejb.findStudyByUID(studyUID);
-            //create study view
-            queryService.createStudyView(study.getPk(), param);
-            //create series view
-            for(Series series : study.getSeries()) {
-                queryService.createSeriesView(series.getPk(), param);
+            for (String studyUID : studyInstanceUID) {
+                Study study = ejb.findStudyByUID(studyUID);
+
+                //create study view
+                queryService.createStudyView(study.getPk(), param);
+
+                //create series view
+                for (Series series : study.getSeries())
+                    queryService.createSeriesView(series.getPk(), param);
             }
-        }
-        }
-        catch(Exception e) {
-            LOG.error("Study or Series lookup failed, "
-                    + "Can not calculate derived fields on MPPS COMPLETE");
-            return;
+        } catch (Exception e) {
+            LOG.error("Error while calculating derived fields on MPPS COMPLETE", e);
         }
     }
 

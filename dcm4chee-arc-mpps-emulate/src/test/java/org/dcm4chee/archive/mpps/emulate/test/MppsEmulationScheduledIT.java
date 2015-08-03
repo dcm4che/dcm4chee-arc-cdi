@@ -42,13 +42,10 @@ import static org.junit.Assert.assertTrue;
 
 import org.dcm4chee.archive.conf.MPPSCreationRule;
 import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,43 +78,48 @@ public class MppsEmulationScheduledIT extends MppsEmulationGeneral {
     
     @Test
     public void emulate() throws Exception {
+
+        StudyUpdatedEvent studyUpdatedEvent = createMockStudyUpdatedEvent();
+
         MPPS receivedMpps = find(MPPS_IUID);
         MPPS emulatedMpps = null;
         assertTrue("mpps null", receivedMpps != null);
-        assertTrue("mpps uid not " + MPPS_IUID, receivedMpps
-                .getSopInstanceUID().equals(MPPS_IUID));
-        assertTrue("mpps status not " + MPPS.COMPLETED, receivedMpps
-                .getStatus().equals(MPPS.Status.COMPLETED));
+        assertTrue("mpps uid not " + MPPS_IUID, receivedMpps.getSopInstanceUID().equals(MPPS_IUID));
+        assertTrue("mpps status not " + MPPS.COMPLETED, receivedMpps.getStatus().equals(MPPS.Status.COMPLETED));
 
         //sub test 1
         log.info("calling emulator with rule:" + MPPSCreationRule.NEVER);
-        emulatedMpps = mppsEmulatorEJB.emulatePerformedProcedureStep(
-                createConfigAE(MPPSCreationRule.NEVER), SOURCE_AET,
-                STUDY_IUID, mppsService);
+
+        setMPPSCreationRule(MPPSCreationRule.NEVER);
+        emulatedMpps = mppsEmulator.onStudyUpdated(studyUpdatedEvent);
+
         assertTrue("emulated mpps created", emulatedMpps == null);
         log.info("emulated mpps not created.");
 
         //sub test 2
         log.info("calling emulator with rule:" + MPPSCreationRule.NO_MPPS_CREATE);
-        emulatedMpps = mppsEmulatorEJB.emulatePerformedProcedureStep(
-                createConfigAE(MPPSCreationRule.NO_MPPS_CREATE), SOURCE_AET,
-                STUDY_IUID, mppsService);
+
+        setMPPSCreationRule(MPPSCreationRule.NO_MPPS_CREATE);
+        emulatedMpps = mppsEmulator.onStudyUpdated(studyUpdatedEvent);
+
         assertTrue("emulated mpps created", emulatedMpps == null);
         log.info("emulated mpps not created.");
 
         //sub test 3
         log.info("calling emulator with rule:" + MPPSCreationRule.NO_MPPS_FINAL);
-        emulatedMpps = mppsEmulatorEJB.emulatePerformedProcedureStep(
-                createConfigAE(MPPSCreationRule.NO_MPPS_FINAL), SOURCE_AET,
-                STUDY_IUID, mppsService);
+
+        setMPPSCreationRule(MPPSCreationRule.NO_MPPS_FINAL);
+        emulatedMpps = mppsEmulator.onStudyUpdated(studyUpdatedEvent);
+
         assertTrue("emulated mpps created", emulatedMpps == null);
         log.info("emulated mpps not created.");
         
         //sub test 4        
         log.info("calling emulator with rule:" + MPPSCreationRule.ALWAYS);
-        emulatedMpps = mppsEmulatorEJB.emulatePerformedProcedureStep(
-                createConfigAE(MPPSCreationRule.ALWAYS), SOURCE_AET,
-                STUDY_IUID, mppsService);
+
+        setMPPSCreationRule(MPPSCreationRule.ALWAYS);
+        emulatedMpps = mppsEmulator.onStudyUpdated(studyUpdatedEvent);
+
         assertTrue("emulated mpps not created", emulatedMpps != null);
         log.info("created emulated mpps:" + emulatedMpps.getSopInstanceUID());
 
@@ -128,23 +130,8 @@ public class MppsEmulationScheduledIT extends MppsEmulationGeneral {
 
     @Deployment
     public static WebArchive createDeployment() {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        war.addClass(MppsEmulationScheduledIT.class);
-        war.addClass(ParamFactory.class);
-        war.addClass(MppsEmulationGeneral.class);
-        JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
-                .importRuntimeAndTestDependencies().resolve()
-                .withoutTransitivity().as(JavaArchive.class);
-        for (JavaArchive a : archs) {
-            a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-            war.addAsLibrary(a);
-        }
-        for (String resourceName : INSTANCES)
-            war.addAsResource(resourceName);
-        war.addAsLibraries(archs);
-        // war.as(ZipExporter.class).exportTo(
-        // new File("C:\\Temp\\emul.zip"), true);
-        return war;
+
+        return createWar(MppsEmulationScheduledIT.class);
     }
-    
+
 }

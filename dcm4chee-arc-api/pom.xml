@@ -16,6 +16,15 @@
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-net</artifactId>
     </dependency>
+
+    <!-- TODO: REVIEW: dependency of a module to deployment libs
+    - confusing, smells
+    - does not work if a non-abstract class that depends on deployment is included - class not found is thrown
+    - for interfaces, might break under certain circumstances?
+
+    refactor?
+    -->
+
     <dependency>
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-conf</artifactId>

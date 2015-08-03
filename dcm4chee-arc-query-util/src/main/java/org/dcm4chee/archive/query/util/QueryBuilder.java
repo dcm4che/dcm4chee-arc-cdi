@@ -423,8 +423,7 @@ public class QueryBuilder {
 
     public static Predicate hideRejectedInstance(QueryParam queryParam) {
         QueryRetrieveView queryRetrieveView = queryParam.getQueryRetrieveView();
-        org.dcm4che3.data.Code[] codes = 
-                queryRetrieveView.getShowInstancesRejectedByCodes();
+        org.dcm4che3.data.Code[] codes = queryRetrieveView.getShowInstancesRejectedByCodes();
         if (codes.length == 0)
             return queryRetrieveView.isHideNotRejectedInstances()
                     ? QInstance.instance.rejectionNoteCode.isNotNull()

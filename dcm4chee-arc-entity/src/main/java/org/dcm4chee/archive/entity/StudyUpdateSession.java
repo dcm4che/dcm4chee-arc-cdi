@@ -38,57 +38,53 @@
 
 package org.dcm4chee.archive.entity;
 
-import java.io.Serializable;
+import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
+
+import javax.persistence.*;
+import java.io.*;
 import java.util.Date;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * Store Study Session denotes a unit of work related to a number of instances of a certain study
+ * stored one after another in a batch (possibly on multiple associations).
  *
+ *
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Roman K
  */
 @NamedQueries({
 @NamedQuery(
-    name=MPPSEmulate.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
-    query="SELECT e FROM MPPSEmulate e "
+    name= StudyUpdateSession.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
+    query="SELECT e FROM StudyUpdateSession e "
         + "WHERE e.studyInstanceUID = ?1 "
         + "AND e.sourceAET = ?2"),
 @NamedQuery(
-    name=MPPSEmulate.FIND_READY_TO_EMULATE,
-    query="SELECT e FROM MPPSEmulate e "
+    name= StudyUpdateSession.FIND_READY_TO_FINISH,
+    query="SELECT e FROM StudyUpdateSession e "
         + "WHERE e.emulationTime <= CURRENT_TIMESTAMP "
         + "ORDER BY e.emulationTime")
 })
 @Entity
-@Table(name = "mpps_emulate")
-public class MPPSEmulate implements Serializable {
+@Table(name = "store_study_session",
+        uniqueConstraints = {
+                // A study being received from a certain AE corresponds to a single store study session
+                @UniqueConstraint(columnNames = {"src_aet", "study_iuid"})
+        })
+
+public class StudyUpdateSession implements Serializable {
 
     private static final long serialVersionUID = -4965589892596116293L;
 
-    public static final String FIND_READY_TO_EMULATE =
-            "MPPSEmulaton.findReadyToEmulate";
+    public static final String FIND_READY_TO_FINISH =
+            "StudyUpdateSession.findReadyToFinish";
 
     public static final String FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET =
-            "MPPSEmulaton.findByStudyInstanceUIDAndSourceAET";
+            "StudyUpdateSession.findByStudyInstanceUIDAndSourceAET";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")
     private long pk;
-
-    @Basic(optional = false)
-    @Column(name = "emulator_aet", updatable = false)
-    private String emulatorAET;
 
     @Basic(optional = false)
     @Column(name = "src_aet", updatable = false)
@@ -103,16 +99,33 @@ public class MPPSEmulate implements Serializable {
     @Column(name = "emulation_time")
     private Date emulationTime;
 
+
+    @Transient
+    private StudyUpdatedEvent pendingStudyUpdatedEvent = new StudyUpdatedEvent();
+
+    public StudyUpdatedEvent getPendingStudyUpdatedEvent() {
+        return pendingStudyUpdatedEvent;
+    }
+
+    @Basic
+    @Column(name = "event_blob")
+    @Access(AccessType.PROPERTY)
+    @Lob
+    public byte[] getEventBlob() {
+        return serialize(pendingStudyUpdatedEvent);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void setEventBlob(byte[] eventBlob) {
+        try {
+            this.pendingStudyUpdatedEvent = (StudyUpdatedEvent) deserialize(eventBlob);
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error - event_blob field is corrupted",e);
+        }
+    }
+
     public final long getPk() {
         return pk;
-    }
-
-    public final String getEmulatorAET() {
-        return emulatorAET;
-    }
-
-    public final void setEmulatorAET(String emulatorAET) {
-        this.emulatorAET = emulatorAET;
     }
 
     public final String getSourceAET() {
@@ -122,6 +135,7 @@ public class MPPSEmulate implements Serializable {
     public final void setSourceAET(String sourceAET) {
         this.sourceAET = sourceAET;
     }
+
 
     public final String getStudyInstanceUID() {
         return studyInstanceUID;
@@ -137,6 +151,54 @@ public class MPPSEmulate implements Serializable {
 
     public final void setEmulationTime(Date emulationTime) {
         this.emulationTime = emulationTime;
+    }
+
+
+    private Object deserialize(byte[] bytes) {
+        if (bytes == null) {
+            throw new IllegalArgumentException("The byte[] must not be null");
+        }
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+        ObjectInputStream in = null;
+        try {
+            // stream closed in the finally
+            in = new ObjectInputStream(inputStream);
+            return in.readObject();
+
+        } catch (ClassNotFoundException | IOException ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException ex) {
+                // ignore close exception
+            }
+        }
+
+    }
+
+    private byte[] serialize(Object pendingStudyUpdatedEvent) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(512);
+        ObjectOutputStream out = null;
+        try {
+            // stream closed in the finally
+            out = new ObjectOutputStream(baos);
+            out.writeObject(pendingStudyUpdatedEvent);
+
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            try {
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException ex) {
+                // ignore close exception
+            }
+        }
+        return baos.toByteArray();
     }
 
 }

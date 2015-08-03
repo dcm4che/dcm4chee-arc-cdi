@@ -43,8 +43,20 @@ package org.dcm4chee.archive.conf;
  *
  */
 public enum MPPSCreationRule {
-    ALWAYS, // always create the MPPS
-    NEVER, // never create the MPPS
-    NO_MPPS_CREATE, // create the MPPS if no related MPPS is already stored
-    NO_MPPS_FINAL // create the MPPS if no finalized MPPS is already stored
+    /**
+     * always create the MPPS
+     */
+    ALWAYS,
+    /**
+     * never create the MPPS
+     */
+    NEVER,
+    /**
+     * create the MPPS if no related MPPS is already stored
+     */
+    NO_MPPS_CREATE,
+    /**
+     * create the MPPS if no finalized MPPS is already stored
+     */
+    NO_MPPS_FINAL
 }
