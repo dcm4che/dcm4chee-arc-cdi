@@ -1,13 +1,13 @@
 package org.dcm4chee.archive.conf;
 
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.net.ApplicationEntity;
+
+import java.io.Serializable;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @LDAP(objectClasses = "dcmMPPSEmulationRule", distinguishingField = "cn")
 @ConfigurableClass
@@ -22,7 +22,7 @@ public final class MPPSEmulationAndStudyUpdateRule implements Serializable {
             label = "Source AEs",
             description= "Source Application Entities for which this rule applies. If empty, will be used as a default rule",
             collectionOfReferences = true)
-    private Set<ApplicationEntity> sourceAEs = new HashSet<>();
+    private Set<ApplicationEntity> sourceAEs = new LinkedHashSet<>();
 
     @ConfigurableProperty(name = "dcmMPPSEmulationDelay",
             label = "Study update/MPPS emulator delay",
