@@ -6,10 +6,9 @@
     <version>4.5.0-SNAPSHOT</version>
   </parent>
   <!--
-  This package contains API of the archive that is only supposed to be used internally, i.e. from within the EAR
-  The core difference with the dcm4chee-arc-api package is that this package can safely depend on other parts of the deployment (e.g. conf)
+  This package contains classes/interfaces of the archive that are only supposed to be used internally
   -->
-  <artifactId>dcm4chee-arc-api-local</artifactId>
+  <artifactId>dcm4chee-arc-core</artifactId>
 
   <dependencies>
     <dependency>

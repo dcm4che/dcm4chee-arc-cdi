@@ -346,7 +346,7 @@
       </dependency>
       <dependency>
         <groupId>org.dcm4che.dcm4chee-arc</groupId>
-        <artifactId>dcm4chee-arc-api-local</artifactId>
+        <artifactId>dcm4chee-arc-core</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -616,7 +616,7 @@
     <module>dcm4chee-arc-mpps-emulate</module>
     <module>dcm4chee-arc-hsm</module>
     <module>dcm4chee-arc-api</module>
-    <module>dcm4chee-arc-api-local</module>
+    <module>dcm4chee-arc-core</module>
     <module>dcm4chee-arc-mwl-scp</module>
     <module>dcm4chee-arc-prefetch</module>
     <module>dcm4chee-arc-api-impl</module>
