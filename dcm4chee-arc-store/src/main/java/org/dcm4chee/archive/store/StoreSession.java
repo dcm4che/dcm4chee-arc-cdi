@@ -101,6 +101,10 @@ public interface StoreSession {
 
     void setProperty(String key, Object value);
 
+    /**
+     * Archive device
+     * @return
+     */
     Device getDevice();
 
     Device getSourceDevice();

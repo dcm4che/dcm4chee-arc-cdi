@@ -384,20 +384,6 @@ public class DefaultArchiveConfigurationFactory {
         return view;
     }
 
-    private static MPPSEmulationAndStudyUpdateRule createMPPSEmulationRule(
-            String commonName,
-            int emulationDelay,
-            String emulatorAET,
-            String... sourceAETs) {
-        MPPSEmulationAndStudyUpdateRule rule = new MPPSEmulationAndStudyUpdateRule();
-        rule.setCommonName(commonName);
-        rule.setEmulationDelay(emulationDelay);
-        rule.setEmulatorAET(emulatorAET);
-        rule.setSourceAETs(sourceAETs);
-        rule.setCreationRule(MPPSCreationRule.ALWAYS);
-        return rule;
-    }
-
     public Device createARRDevice(String name, Connection.Protocol protocol, int port) {
         Device arrDevice = new Device(name);
         AuditRecordRepository arr = new AuditRecordRepository();
@@ -432,8 +418,8 @@ public class DefaultArchiveConfigurationFactory {
     }
 
     protected Device createDevice(String name,
-                                         Issuer issuer, Code institutionCode, String aet,
-                                         String host, int port, int tlsPort) throws Exception {
+                                  Issuer issuer, Code institutionCode, String aet,
+                                  String host, int port, int tlsPort) throws Exception {
         Device device = init(new Device(name), issuer, institutionCode);
         if (name.equalsIgnoreCase(OTHER_DEVICES[0])
                 || name.equalsIgnoreCase("dcm4chee-arc"))
@@ -442,7 +428,7 @@ public class DefaultArchiveConfigurationFactory {
 
         if (factoryParams.generateUUIDsBasedOnName)
             ae.setUuid(makeUuidFromAet(aet));
-        
+
         ExternalArchiveAEExtension externalArchiveExt =
                 new ExternalArchiveAEExtension();
         if (containsArchiveType(device.getPrimaryDeviceTypes()))
@@ -471,8 +457,8 @@ public class DefaultArchiveConfigurationFactory {
     }
 
     protected Device createHL7Device(String name,
-                                            Issuer issuer, Code institutionCode, String appName,
-                                            String host, int port, int tlsPort) throws Exception {
+                                     Issuer issuer, Code institutionCode, String appName,
+                                     String host, int port, int tlsPort) throws Exception {
         Device device = new Device(name);
         HL7DeviceExtension hl7Device = new HL7DeviceExtension();
         device.addDeviceExtension(hl7Device);
@@ -687,10 +673,8 @@ public class DefaultArchiveConfigurationFactory {
         ext.setAttributeFilter(Entity.Patient,
                 new AttributeFilter(PATIENT_ATTRS));
         ext.setAttributeFilter(Entity.Study, new AttributeFilter(STUDY_ATTRS, STUDY_PRIVATE_ATTRS));
-        ext.setAttributeFilter(Entity.Series,
-                new AttributeFilter(SERIES_ATTRS));
-        ext.setAttributeFilter(Entity.Instance,
-                new AttributeFilter(INSTANCE_ATTRS));
+        ext.setAttributeFilter(Entity.Series, new AttributeFilter(SERIES_ATTRS));
+        ext.setAttributeFilter(Entity.Instance, new AttributeFilter(INSTANCE_ATTRS));
         ext.setFetchAETitle("DCM4CHEE_FETCH");
         ext.addPrivateDerivedField(new PrivateTag(PrivateDerivedFields.NAMES
                 .StudyUpdateTimeDerivedField.name(), "7FD91060",
@@ -698,6 +682,8 @@ public class DefaultArchiveConfigurationFactory {
         ext.setVisibleImageSRClasses(DefaultTransferCapabilities.IMAGE_CUIDS);
         ext.setUseWhitelistOfVisibleImageSRClasses(false);
         ext.setUseNullForEmptyQueryFields(true);
+
+        ext.addMppsEmulationRule(new MPPSEmulationAndStudyUpdateRule("Default EmulateAll Rule", new HashSet<ApplicationEntity>(), 10, MPPSCreationRule.ALWAYS));
 
         DeletionRule deletionRule = new DeletionRule();
         deletionRule.setCommonName("Deletion Rule");
@@ -745,9 +731,9 @@ public class DefaultArchiveConfigurationFactory {
     }
 
     private ApplicationEntity createAE(String aet,
-                                              Connection dicom, Connection dicomTLS,
-                                              QueryRetrieveView queryRetrieveView,
-                                              String pixConsumer, String pixManager) {
+                                       Connection dicom, Connection dicomTLS,
+                                       QueryRetrieveView queryRetrieveView,
+                                       String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
 
         if (factoryParams.generateUUIDsBasedOnName)
@@ -900,9 +886,9 @@ public class DefaultArchiveConfigurationFactory {
 
         addTCs(ae,
                 EnumSet.allOf(TCGroupConfigAEExtension.DefaultGroup.class),
-                EnumSet.of(TCGroupConfigAEExtension.DefaultGroup.STORAGE, 
-                		TCGroupConfigAEExtension.DefaultGroup.PPS, 
-                		TCGroupConfigAEExtension.DefaultGroup.STORAGE_COMMITMENT));
+                EnumSet.of(TCGroupConfigAEExtension.DefaultGroup.STORAGE,
+                        TCGroupConfigAEExtension.DefaultGroup.PPS,
+                        TCGroupConfigAEExtension.DefaultGroup.STORAGE_COMMITMENT));
 
 
         aeExt.setReturnOtherPatientIDs(true);
@@ -918,12 +904,6 @@ public class DefaultArchiveConfigurationFactory {
         sels.put("givenName", "BROAD");
         ps.setPatientSelectorProperties(sels);
         aeExt.setPatientSelectorConfig(ps);
-        aeExt.addMppsEmulationRule(
-                createMPPSEmulationRule("MPPS Emulation Rule 1", 120,
-                        "DCM4CHEE", "EMULATE_MPPS"));
-        aeExt.addMppsEmulationRule(
-                createMPPSEmulationRule("Default EmulateAll Rule", 10,
-                        "DCM4CHEE", "*"));
         ExternalArchiveAEExtension extArcAEExt = new ExternalArchiveAEExtension();
         ae.addAEExtension(extArcAEExt);
         extArcAEExt.setAeFetchPriority(0);
@@ -945,9 +925,9 @@ public class DefaultArchiveConfigurationFactory {
     }
 
     private ApplicationEntity createQRAE(String aet,
-                                                Connection dicom, Connection dicomTLS,
-                                                QueryRetrieveView queryRetrieveView,
-                                                String pixConsumer, String pixManager) {
+                                         Connection dicom, Connection dicomTLS,
+                                         QueryRetrieveView queryRetrieveView,
+                                         String pixConsumer, String pixManager) {
         ApplicationEntity ae = new ApplicationEntity(aet);
 
         if (factoryParams.generateUUIDsBasedOnName)
@@ -1084,8 +1064,8 @@ public class DefaultArchiveConfigurationFactory {
 
 
     private void addTCs(ApplicationEntity ae,
-                               Set<TCGroupConfigAEExtension.DefaultGroup> scpGroups,
-                               Set<TCGroupConfigAEExtension.DefaultGroup> scuGroups) {
+                        Set<TCGroupConfigAEExtension.DefaultGroup> scpGroups,
+                        Set<TCGroupConfigAEExtension.DefaultGroup> scuGroups) {
 
         if (factoryParams.useGroupBasedTCConfig) {
 

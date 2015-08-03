@@ -1,10 +1,13 @@
 package org.dcm4chee.archive.conf;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
+import org.dcm4che3.net.ApplicationEntity;
 
 @LDAP(objectClasses = "dcmMPPSEmulationRule", distinguishingField = "cn")
 @ConfigurableClass
@@ -17,14 +20,9 @@ public final class MPPSEmulationAndStudyUpdateRule implements Serializable {
 
     @ConfigurableProperty(name = "dcmAETitle",
             label = "Source AEs",
-            description= "Source Application Entities for which this rule applies")
-    private String[] sourceAETs;
-
-    @ConfigurableProperty(name = "dicomAETitle",
-            label = "Emulator AET",
-            description = "Which AET should be used as a source for the emulated MPPS event"
-    )
-    private String emulatorAET;
+            description= "Source Application Entities for which this rule applies. If empty, will be used as a default rule",
+            collectionOfReferences = true)
+    private Set<ApplicationEntity> sourceAEs = new HashSet<>();
 
     @ConfigurableProperty(name = "dcmMPPSEmulationDelay",
             label = "Study update/MPPS emulator delay",
@@ -34,6 +32,16 @@ public final class MPPSEmulationAndStudyUpdateRule implements Serializable {
     @ConfigurableProperty(name = "dcmMPPSEmulationCreationRule", defaultValue = "ALWAYS")
     private MPPSCreationRule creationRule = MPPSCreationRule.ALWAYS;
 
+    public MPPSEmulationAndStudyUpdateRule() {
+    }
+
+    public MPPSEmulationAndStudyUpdateRule(String commonName, Set<ApplicationEntity> sourceAEs, int emulationDelay, MPPSCreationRule creationRule) {
+        this.commonName = commonName;
+        this.sourceAEs = sourceAEs;
+        this.emulationDelay = emulationDelay;
+        this.creationRule = creationRule;
+    }
+
     public String getCommonName() {
         return commonName;
     }
@@ -42,20 +50,16 @@ public final class MPPSEmulationAndStudyUpdateRule implements Serializable {
         this.commonName = commonName;
     }
 
-    public String[] getSourceAETs() {
-        return sourceAETs;
+    public static long getSerialVersionUID() {
+        return serialVersionUID;
     }
 
-    public void setSourceAETs(String... sourceAETs) {
-        this.sourceAETs = sourceAETs;
+    public Set<ApplicationEntity> getSourceAEs() {
+        return sourceAEs;
     }
 
-    public String getEmulatorAET() {
-        return emulatorAET;
-    }
-
-    public void setEmulatorAET(String emulatorAET) {
-        this.emulatorAET = emulatorAET;
+    public void setSourceAEs(Set<ApplicationEntity> sourceAEs) {
+        this.sourceAEs = sourceAEs;
     }
 
     public int getEmulationDelay() {
@@ -73,5 +77,4 @@ public final class MPPSEmulationAndStudyUpdateRule implements Serializable {
     public void setCreationRule(MPPSCreationRule creationRule) {
         this.creationRule = creationRule;
     }
-
 }

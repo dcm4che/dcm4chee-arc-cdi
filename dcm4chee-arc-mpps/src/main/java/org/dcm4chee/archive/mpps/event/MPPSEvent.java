@@ -51,6 +51,10 @@ import org.dcm4chee.archive.entity.MPPS;
 public class MPPSEvent {
 
     private final MPPS pps;
+
+    /**
+     * A local AE of the archive that received MPPS
+     */
     private final ApplicationEntity ae;
     private final Attributes attrs;
     private final Dimse dimse;

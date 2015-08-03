@@ -54,24 +54,35 @@ import org.dcm4chee.archive.entity.Patient;
  */
 public interface MPPSService {
 
-    MPPS createPerformedProcedureStep(ArchiveAEExtension arcAE,
-            String sopInstanceUID, Attributes attrs, Patient patient,
+    MPPS createPerformedProcedureStep(
+            ArchiveAEExtension arcAE,
+            String sopInstanceUID,
+            Attributes attrs,
+            Patient patient,
             MPPSService service) throws DicomServiceException;
 
-    MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE,
-            String iuid, Attributes attrs, MPPSService service)
+    MPPS updatePerformedProcedureStep(
+            ArchiveAEExtension arcAE,
+            String iuid,
+            Attributes attrs,
+            MPPSService service)
             throws DicomServiceException;
 
+    //TODO: remove from interface
+    @Deprecated
     Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)
             throws DicomServiceException;
 
     void coerceAttributes(Association as, Dimse dimse, Attributes attrs)
             throws DicomServiceException;
 
+    @Deprecated
     void fireCreateMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps);
 
+    @Deprecated
     void fireUpdateMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps);
 
+    @Deprecated
     void fireFinalMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps);
 
 }

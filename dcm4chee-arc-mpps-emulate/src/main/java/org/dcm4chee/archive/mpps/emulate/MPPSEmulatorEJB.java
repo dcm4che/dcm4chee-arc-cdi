@@ -42,13 +42,11 @@ package org.dcm4chee.archive.mpps.emulate;
 
 import org.dcm4che3.data.*;
 import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.UIDUtils;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.MPPSCreationRule;
-import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
@@ -56,6 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ejb.Stateless;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
@@ -66,6 +65,7 @@ import java.util.List;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini
+ * @author Roman K
  */
 @Stateless
 public class MPPSEmulatorEJB {
@@ -83,30 +83,41 @@ public class MPPSEmulatorEJB {
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
+    @Inject
+    Device device;
+
+    @Inject
+    MPPSService mppsService;
+
     private static final Logger LOG = LoggerFactory.getLogger(MPPSEmulatorEJB.class);
-    private static final int[] PATIENT_Selection = { Tag.SpecificCharacterSet,
-            Tag.PatientName, Tag.PatientID, Tag.IssuerOfPatientID,
-            Tag.PatientBirthDate, Tag.PatientSex };
-    private static final int[] SERIES_Selection = { Tag.SeriesDescription,
-            Tag.PerformingPhysicianName, Tag.ProtocolName,
+
+    private static final int[] PATIENT_Selection = {
+            Tag.SpecificCharacterSet,
+            Tag.PatientName,
+            Tag.PatientID,
+            Tag.IssuerOfPatientID,
+            Tag.PatientBirthDate,
+            Tag.PatientSex };
+
+    private static final int[] SERIES_Selection = {
+            Tag.SeriesDescription,
+            Tag.PerformingPhysicianName,
+            Tag.ProtocolName,
             Tag.SeriesInstanceUID };
-    private static final int[] STUDY_Selection = { Tag.ProcedureCodeSequence,
+
+    private static final int[] STUDY_Selection = {
+            Tag.ProcedureCodeSequence,
             Tag.StudyID };
 
-
-    public MPPS emulatePerformedProcedureStep(ApplicationEntity ae,
-                                              StudyUpdatedEvent studyUpdatedEvent,
-                                              MPPSService mppsService)
+    public MPPS emulatePerformedProcedureStep(StudyUpdatedEvent studyUpdatedEvent)
             throws DicomServiceException {
 
-        String sourceAET = studyUpdatedEvent.getSourceAET();
-        String studyInstanceUID = studyUpdatedEvent.getStudyInstanceUID();
+        List<Series> seriesList = em
+                .createNamedQuery(
+                        Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
+                        Series.class).setParameter(1, studyUpdatedEvent.getStudyInstanceUID())
+                .setParameter(2, studyUpdatedEvent.getSourceAET()).getResultList();
 
-                List < Series > seriesList = em
-                        .createNamedQuery(
-                                Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
-                                Series.class).setParameter(1, studyInstanceUID)
-                        .setParameter(2, sourceAET).getResultList();
         if (seriesList.isEmpty())
             return null;
 
@@ -116,20 +127,25 @@ public class MPPSEmulatorEJB {
             if (!studyUpdatedEvent.getAffectedSeriesUIDs().contains(seriesIterator.next().getSeriesInstanceUID()))
                 seriesIterator.remove();
 
-        ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-        MPPSCreationRule creationRule = arcAE.getMppsEmulationRule(sourceAET)
-                .getCreationRule();
+        ApplicationEntity ae = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAET());
+
+        ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
+        MPPSCreationRule creationRule = device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class).getMppsEmulationRule(studyUpdatedEvent.getSourceAET()).getCreationRule();
 
         // checks if emulated MPPS should be created, according to the configured rule
         if (!checkCreationRule(creationRule, seriesList))
             return null;
 
-        LOG.info("Emulate MPPS for Study[iuid={}] received from {}",
-                studyInstanceUID, sourceAET);
+        LOG.info("Emulate MPPS for Study[iuid={}] received from {}", studyUpdatedEvent.getStudyInstanceUID(), studyUpdatedEvent.getSourceAET());
         String mppsIUID = UIDUtils.createUID();
-        MPPS mpps = mppsService.createPerformedProcedureStep(arcAE, mppsIUID,
-                createMPPS(seriesList), seriesList.get(0).getStudy()
-                        .getPatient(), mppsService);
+
+        MPPS mpps = mppsService.createPerformedProcedureStep(
+                arcAE,
+                mppsIUID,
+                createMPPS(seriesList),
+                seriesList.get(0).getStudy().getPatient(),
+                mppsService);
+
         updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
         return mpps;
     }
@@ -138,11 +154,9 @@ public class MPPSEmulatorEJB {
         for (Series ser : series) {
             Attributes serAttrs = ser.getAttributes();
             Attributes mppsRef = new Attributes(2);
-            mppsRef.setString(Tag.ReferencedSOPClassUID, VR.UI,
-                    UID.ModalityPerformedProcedureStepSOPClass);
+            mppsRef.setString(Tag.ReferencedSOPClassUID, VR.UI, UID.ModalityPerformedProcedureStepSOPClass);
             mppsRef.setString(Tag.ReferencedSOPInstanceUID, VR.UI, mppsIUID);
-            serAttrs.newSequence(Tag.ReferencedPerformedProcedureStepSequence,
-                    1).add(mppsRef);
+            serAttrs.newSequence(Tag.ReferencedPerformedProcedureStepSequence, 1).add(mppsRef);
             ser.setAttributes(serAttrs,
                     storeParam.getAttributeFilter(Entity.Series),
                     storeParam.getFuzzyStr(),
@@ -156,37 +170,27 @@ public class MPPSEmulatorEJB {
         Series firstSeries = seriesList.get(0);
         Study study = firstSeries.getStudy();
         Patient patient = study.getPatient();
-        String modality = firstSeries.getModality() == null ? "OT"
-                : firstSeries.getModality();
+        String modality = firstSeries.getModality() == null ? "OT" : firstSeries.getModality();
 
         // pps information
-        mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS,
-                MPPS.COMPLETED);
+        mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.COMPLETED);
         mppsAttrs.addSelected(patient.getAttributes(), PATIENT_Selection);
         mppsAttrs.addSelected(study.getAttributes(), STUDY_Selection);
         mppsAttrs.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
-        mppsAttrs.setString(Tag.SOPClassUID, VR.UI,
-                UID.ModalityPerformedProcedureStepSOPClass);
-        mppsAttrs.setString(Tag.PerformedStationAETitle, VR.AE,
-                firstSeries.getSourceAET());
-        mppsAttrs.setString(Tag.PerformedStationName, VR.SH,
-                firstSeries.getStationName());
+        mppsAttrs.setString(Tag.SOPClassUID, VR.UI, UID.ModalityPerformedProcedureStepSOPClass);
+        mppsAttrs.setString(Tag.PerformedStationAETitle, VR.AE, firstSeries.getSourceAET());
+        mppsAttrs.setString(Tag.PerformedStationName, VR.SH, firstSeries.getStationName());
         mppsAttrs.setNull(Tag.PerformedLocation, VR.SH);
         mppsAttrs.setString(Tag.Modality, VR.CS, modality);
-        mppsAttrs.setString(Tag.PerformedProcedureStepID, VR.SH,
-                makePPSID(modality, study.getStudyInstanceUID()));
-        mppsAttrs.setString(Tag.PerformedProcedureStepDescription, VR.LO,
-                study.getStudyDescription());
+        mppsAttrs.setString(Tag.PerformedProcedureStepID, VR.SH, makePPSID(modality, study.getStudyInstanceUID()));
+        mppsAttrs.setString(Tag.PerformedProcedureStepDescription, VR.LO, study.getStudyDescription());
 
         // scheduled attribute sequence
         // TODO scheduled/unscheduled
-        Sequence SchedStepAttSq = mppsAttrs.newSequence(
-                Tag.ScheduledStepAttributesSequence, 1);
+        Sequence SchedStepAttSq = mppsAttrs.newSequence(Tag.ScheduledStepAttributesSequence, 1);
         Attributes ssasItem = new Attributes();
-        ssasItem.setString(Tag.StudyInstanceUID, VR.UI,
-                study.getStudyInstanceUID());
-        ssasItem.setString(Tag.AccessionNumber, VR.SH,
-                study.getAccessionNumber());
+        ssasItem.setString(Tag.StudyInstanceUID, VR.UI, study.getStudyInstanceUID());
+        ssasItem.setString(Tag.AccessionNumber, VR.SH, study.getAccessionNumber());
         ssasItem.setNull(Tag.RequestedProcedureID, VR.SH);
         ssasItem.setNull(Tag.RequestedProcedureDescription, VR.LO);
         ssasItem.setNull(Tag.ScheduledProcedureStepID, VR.SH);
@@ -196,35 +200,28 @@ public class MPPSEmulatorEJB {
         SchedStepAttSq.add(ssasItem);
 
         // performed series sequence
-        Sequence perfSeriesSq = mppsAttrs.newSequence(
-                Tag.PerformedSeriesSequence, seriesList.size());
-
+        Sequence perfSeriesSq = mppsAttrs.newSequence(Tag.PerformedSeriesSequence, seriesList.size());
         Date start_date = null, end_date = null;
         for (Series series : seriesList) {
             Attributes pssqItem = new Attributes();
             pssqItem.addSelected(series.getAttributes(), SERIES_Selection);
-            Sequence refImgSq = pssqItem.newSequence(
-                    Tag.ReferencedImageSequence, series.getInstances().size());
+            Sequence refImgSq = pssqItem.newSequence(Tag.ReferencedImageSequence, series.getInstances().size());
             for (Instance inst : series.getInstances()) {
                 start_date = choseDate(start_date, inst.getCreatedTime(), false);
                 end_date = choseDate(end_date, inst.getCreatedTime(), true);
                 Attributes refImg = new Attributes();
                 refImg.setString(Tag.SOPClassUID, VR.UI, inst.getSopClassUID());
-                refImg.setString(Tag.SOPInstanceUID, VR.UI,
-                        inst.getSopInstanceUID());
+                refImg.setString(Tag.SOPInstanceUID, VR.UI, inst.getSopInstanceUID());
                 refImgSq.add(refImg);
             }
             perfSeriesSq.add(pssqItem);
         }
 
-        mppsAttrs.setString(Tag.PerformedProcedureStepStartDate, VR.DA,
-                DateUtils.formatDA(null, start_date));
-        mppsAttrs.setString(Tag.PerformedProcedureStepStartTime, VR.TM,
-                DateUtils.formatTM(null, start_date));
-        mppsAttrs.setString(Tag.PerformedProcedureStepEndDate, VR.DA,
-                DateUtils.formatDA(null, end_date));
-        mppsAttrs.setString(Tag.PerformedProcedureStepEndTime, VR.TM,
-                DateUtils.formatTM(null, end_date));
+        // pps datetime
+        mppsAttrs.setString(Tag.PerformedProcedureStepStartDate, VR.DA, DateUtils.formatDA(null, start_date));
+        mppsAttrs.setString(Tag.PerformedProcedureStepStartTime, VR.TM, DateUtils.formatTM(null, start_date));
+        mppsAttrs.setString(Tag.PerformedProcedureStepEndDate, VR.DA, DateUtils.formatDA(null, end_date));
+        mppsAttrs.setString(Tag.PerformedProcedureStepEndTime, VR.TM, DateUtils.formatTM(null, end_date));
 
         return mppsAttrs;
     }

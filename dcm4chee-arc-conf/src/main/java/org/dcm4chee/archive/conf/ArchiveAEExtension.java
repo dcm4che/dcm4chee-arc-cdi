@@ -199,16 +199,6 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigurableProperty(name = "dcmRetrieveSuppressionCriteria")
     private RetrieveSuppressionCriteria retrieveSuppressionCriteria = new RetrieveSuppressionCriteria();
 
-
-    @LDAP(noContainerNode=true)
-    @ConfigurableProperty(
-            label = "MPPS emulation and Study update rules",
-            name = "dcmMPPSEmulationRules")
-    private List<MPPSEmulationAndStudyUpdateRule> mppsEmulationAndStudyUpdateRules = new ArrayList<MPPSEmulationAndStudyUpdateRule>();
-
-    private Map<String, MPPSEmulationAndStudyUpdateRule> mppsEmulationRuleMap =
-            new HashMap<String, MPPSEmulationAndStudyUpdateRule>();
-
     @LDAP(noContainerNode=true)
     @ConfigurableProperty(name = "dcmArchivingRules")
     private ArchivingRules archivingRules = new ArchivingRules();
@@ -610,37 +600,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setQueryRetrieveViewID(String queryRetrieveViewID) {
         this.queryRetrieveViewID = queryRetrieveViewID;
-    }
-
-    public List<MPPSEmulationAndStudyUpdateRule> getMppsEmulationAndStudyUpdateRules() {
-        return mppsEmulationAndStudyUpdateRules;
-    }
-
-    public void setMppsEmulationAndStudyUpdateRules(List<MPPSEmulationAndStudyUpdateRule> rules) {
-        // exception
-        if (rules == mppsEmulationAndStudyUpdateRules) return;
-
-        this.mppsEmulationAndStudyUpdateRules.clear();
-        this.mppsEmulationRuleMap.clear();
-        for (MPPSEmulationAndStudyUpdateRule rule : rules) {
-            addMppsEmulationRule(rule);
-        }
-    }
-
-    public MPPSEmulationAndStudyUpdateRule getMppsEmulationRule(String sourceAET) {
-        return mppsEmulationRuleMap.get(sourceAET) == null
-                ? ( mppsEmulationRuleMap.get("*") == null 
-                ? null : mppsEmulationRuleMap.get("*")) 
-                : mppsEmulationRuleMap.get(sourceAET);
-    }
-
-    
-    // TODO change to references, make default by convention, not *
-    public void addMppsEmulationRule(MPPSEmulationAndStudyUpdateRule rule) {
-        mppsEmulationAndStudyUpdateRules.add(rule);
-        for (String sourceAET : rule.getSourceAETs()) {
-            mppsEmulationRuleMap.put(sourceAET, rule);
-        }
     }
 
     public ReferenceUpdateOnRetrieveScope getQcUpdateReferencesOnRetrieve() {

@@ -38,10 +38,7 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
@@ -52,6 +49,7 @@ import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.io.TemplatesCache;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.DeviceExtension;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.StringUtils;
@@ -199,9 +197,52 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmDataVolumePerDayAverageOnNDays", defaultValue = "1")
     private int dataVolumePerDayAverageOnNDays = 1;
 
+    @LDAP(noContainerNode=true)
+    @ConfigurableProperty(
+            label = "MPPS emulation and Study update rules",
+            name = "dcmMPPSEmulationRules")
+    private List<MPPSEmulationAndStudyUpdateRule> mppsEmulationAndStudyUpdateRules = new ArrayList<MPPSEmulationAndStudyUpdateRule>();
+
+
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
 
+    public List<MPPSEmulationAndStudyUpdateRule> getMppsEmulationAndStudyUpdateRules() {
+        return mppsEmulationAndStudyUpdateRules;
+    }
+
+    private Map<String, MPPSEmulationAndStudyUpdateRule> mppsEmulationRuleMap =
+            new HashMap<String, MPPSEmulationAndStudyUpdateRule>();
+
+    public void setMppsEmulationAndStudyUpdateRules(List<MPPSEmulationAndStudyUpdateRule> rules) {
+        // exception
+        if (rules == mppsEmulationAndStudyUpdateRules) return;
+
+        this.mppsEmulationAndStudyUpdateRules.clear();
+        this.mppsEmulationRuleMap.clear();
+        for (MPPSEmulationAndStudyUpdateRule rule : rules) {
+            addMppsEmulationRule(rule);
+        }
+    }
+
+    public MPPSEmulationAndStudyUpdateRule getMppsEmulationRule(String sourceAET) {
+        return mppsEmulationRuleMap.get(sourceAET) != null
+                ? mppsEmulationRuleMap.get(sourceAET)
+                : (mppsEmulationRuleMap.get("*") != null ? mppsEmulationRuleMap.get("*") : null);
+    }
+
+
+    public void addMppsEmulationRule(MPPSEmulationAndStudyUpdateRule rule) {
+        mppsEmulationAndStudyUpdateRules.add(rule);
+
+        // populate rules by source AE for easy lookup
+        for (ApplicationEntity applicationEntity : rule.getSourceAEs())
+            mppsEmulationRuleMap.put(applicationEntity.getAETitle(), rule);
+
+        // if no AEs specified - consider it a default rule
+        if (rule.getSourceAEs().isEmpty())
+            mppsEmulationRuleMap.put("*", rule);
+    }
 
     public boolean isHostnameAEResolution() {
         return hostnameAEResolution;

@@ -40,6 +40,8 @@
 
 package org.dcm4chee.archive.mpps.emulate;
 
+import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -74,26 +76,28 @@ public class MPPSEmulator {
     @Inject
     private MPPSService mppsService;
 
-    public MPPS onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) throws DicomServiceException {
+    public MPPS onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
 
-        String emulatorAET;
+        MPPS mpps = null;
         try {
-            emulatorAET = device
-                    .getApplicationEntityNotNull(studyUpdatedEvent.getLocalAET())
-                    .getAEExtensionNotNull(ArchiveAEExtension.class)
-                    .getMppsEmulationRule(studyUpdatedEvent.getSourceAET())
-                    .getEmulatorAET();
-        } catch (Exception e) {
-            LOG.error("MPPS emulation failed. Cannot determine an appropriate emulator AET", e);
+            mpps = ejb.emulatePerformedProcedureStep(studyUpdatedEvent);
+        } catch (DicomServiceException e) {
+            LOG.error("Cannot emulate MPPS",e);
             return null;
         }
 
-        ApplicationEntity emulatorAE = device.getApplicationEntity(emulatorAET);
-        MPPS mpps = ejb.emulatePerformedProcedureStep(emulatorAE, studyUpdatedEvent, mppsService);
+        ApplicationEntity applicationEntity;
+        try {
+            applicationEntity = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAET());
+        } catch (Exception e) {
+            LOG.error("Archive AE {} not found", studyUpdatedEvent.getLocalAET(), e);
+            return null;
+        }
 
+        //TODO: that should be done by MPPS service itself
         if (mpps != null) {
-            mppsService.fireCreateMPPSEvent(emulatorAE, MPPSEmulator.setStatus(mpps.getAttributes(), MPPS.IN_PROGRESS), mpps);
-            mppsService.fireFinalMPPSEvent(emulatorAE, MPPSEmulator.setStatus(new Attributes(1), MPPS.COMPLETED), mpps);
+            mppsService.fireCreateMPPSEvent(applicationEntity, MPPSEmulator.setStatus(mpps.getAttributes(), MPPS.IN_PROGRESS), mpps);
+            mppsService.fireFinalMPPSEvent(applicationEntity, MPPSEmulator.setStatus(new Attributes(1), MPPS.COMPLETED), mpps);
         }
 
         return mpps;

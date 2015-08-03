@@ -94,13 +94,14 @@ public class StudyUpdateSessionManager {
 
         // find an applicable rule
         MPPSEmulationAndStudyUpdateRule rule =
-                storeSession
-                        .getArchiveAEExtension()
+                storeSession.getDevice()
+                        .getDeviceExtensionNotNull(ArchiveDeviceExtension.class)
                         .getMppsEmulationRule(storeSession.getRemoteAET());
 
         // if rule exists, update the StudyStoreSession
         if (rule != null)
-            ejb.addStoredInstance(storeSession.getRemoteAET(),
+            ejb.addStoredInstance(
+                    storeSession.getRemoteAET(),
                     storeSession.getLocalAET(),
                     storeContext.getAttributes().getString(Tag.StudyInstanceUID),
                     storeContext.getAttributes().getString(Tag.SeriesInstanceUID),
