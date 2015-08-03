@@ -328,7 +328,7 @@ public class WadoRS extends Wado {
         init("retrieveStudy");
 
         List<ArchiveInstanceLocator> instances = retrieveService
-                .calculateMatches(studyInstanceUID, "*", "*", queryParam, false);
+                .calculateMatches(studyInstanceUID, null, null, queryParam, false);
 
         return retrieve(instances);
     }
@@ -342,7 +342,7 @@ public class WadoRS extends Wado {
         init("retrieveSeries");
 
         List<ArchiveInstanceLocator> instances = retrieveService
-                .calculateMatches(studyInstanceUID, seriesInstanceUID, "*",
+                .calculateMatches(studyInstanceUID, seriesInstanceUID, null,
                         queryParam, false);
 
         return retrieve(instances);
