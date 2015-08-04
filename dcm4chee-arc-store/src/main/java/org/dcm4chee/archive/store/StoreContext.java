@@ -48,6 +48,9 @@ import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.storage.StorageContext;
 
 /**
+ * StoreContext represents the internal state of the current StoreService.store( )
+ * operation. There is one StoreContext instance per received DICOM instance.
+ *
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
