@@ -50,6 +50,9 @@ import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.storage.conf.StorageSystem;
 
 /**
+ * Aggregates a number of useful properties related to the ongoing store,
+ * transaction.  There is one StoreSession instance per Association.
+ *
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
