@@ -147,10 +147,9 @@ public class MppsEmulationGeneral {
         MPPSEmulationAndStudyUpdateRule rule = new MPPSEmulationAndStudyUpdateRule();
         rule.setCommonName("MPPS Emulation Rule 1");
         rule.setEmulationDelay(0);
-        rule.setEmulatorAET(LOCAL_AET);
-        rule.setSourceAETs(SOURCE_AET);
+        rule.setSourceAEs(new HashSet<ApplicationEntity>());
         rule.setCreationRule(creationRule);
-        aeExt.addMppsEmulationRule(rule);
+        ext.addMppsEmulationRule(rule);
 
         return ae;
     }
@@ -295,8 +294,7 @@ public class MppsEmulationGeneral {
     }
 
     protected void setMPPSCreationRule(MPPSCreationRule never) {
-        device.getApplicationEntityNotNull(LOCAL_AET)
-                .getAEExtensionNotNull(ArchiveAEExtension.class)
+        device.getDeviceExtension(ArchiveDeviceExtension.class)
                 .getMppsEmulationRule(SOURCE_AET)
                 .setCreationRule(never);
     }
