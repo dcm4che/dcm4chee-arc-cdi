@@ -83,8 +83,7 @@ public class ArchiveDeviceTest {
             }
             builder = DicomConfigurationBuilder.newLdapConfigurationBuilder(env);
         } else {
-            builder = DicomConfigurationBuilder.newJsonConfigurationBuilder(
-                    "../dcm4chee-arc-conf/src/main/config/configuration/dcm4chee-arc/sample-config.json");
+            builder = DicomConfigurationBuilder.newJsonConfigurationBuilder("target/sample-config.json");
         }
         builder.registerDeviceExtension(ArchiveDeviceExtension.class);
         builder.registerDeviceExtension(StorageDeviceExtension.class);
