@@ -618,7 +618,7 @@ public class DefaultArchiveConfigurationFactory {
     }
 
     private static void addAuditLogger(Device device, Device arrDevice) {
-        Connection auditUDP = new Connection("audit-udp", "localhost");
+        Connection auditUDP = new Connection("audit-udp-initiating", "localhost");
         auditUDP.setProtocol(Connection.Protocol.SYSLOG_UDP);
         device.addConnection(auditUDP);
 
