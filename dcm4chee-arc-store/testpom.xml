@@ -12,13 +12,17 @@
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-net</artifactId>
     </dependency>
-            <dependency>
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-conf-api</artifactId>
     </dependency>
-            <dependency>
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-conf-api-hl7</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-conf-dicom</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
@@ -27,6 +31,11 @@
     <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-imageio</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-core</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -90,7 +99,11 @@
       <artifactId>dcm4chee-arc-service</artifactId>
       <version>${project.version}</version>
     </dependency>
-  <dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-conf</groupId>
+      <artifactId>dcm4chee-conf-cdi</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-conf</artifactId>
     </dependency>
