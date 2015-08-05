@@ -58,7 +58,7 @@ public class StartStopIT extends GenericAuditIT{
         Device arr = getARRDevice();
 
         AuditLogger auditLogger = new AuditLogger();
-        auditLogger.setAuditRecordRepositoryDevice(arr);
+        auditLogger.addAuditRecordRepositoryDevice(arr);
         
         Device test = getLocalTestDevice();
         auditLogger.getConnections().add(test.listConnections().get(0));

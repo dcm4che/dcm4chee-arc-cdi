@@ -506,7 +506,7 @@ public class DefaultArchiveConfigurationFactory {
 
         addArchiveDeviceExtension(device);
         addHL7DeviceExtension(device);
-        addAuditLogger(device, arrDevice);
+        addAuditLogger(device,arrDevice);
         addStorageDeviceExtension(device, factoryParams.baseStoragePath);
         device.addDeviceExtension(new ImageReaderExtension(ImageReaderFactory.getDefault()));
         device.addDeviceExtension(new ImageWriterExtension(ImageWriterFactory.getDefault()));
@@ -626,7 +626,7 @@ public class DefaultArchiveConfigurationFactory {
         device.addDeviceExtension(auditLogger);
         auditLogger.addConnection(auditUDP);
         auditLogger.setAuditSourceTypeCodes("4");
-        auditLogger.setAuditRecordRepositoryDevice(arrDevice);
+        auditLogger.addAuditRecordRepositoryDevice(arrDevice);
     }
 
     private static void addHL7DeviceExtension(Device device) {
