@@ -46,7 +46,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.dcm4chee.archive.api.FileAccess;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OverProtocol;
@@ -58,6 +57,8 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -66,7 +67,7 @@ import org.junit.runner.RunWith;
 @RunWith(Arquillian.class)
 public class GetStudyTestForIT {
 
-    private static final Logger log = Logger.getLogger(GetStudyTestForIT.class);
+    private static final Logger log = LoggerFactory.getLogger(GetStudyTestForIT.class);
 
     private static String studyUID = "1.2.840.113674.514.212.200";
     private static String destBase =  "/tmp/";

@@ -40,7 +40,6 @@ package org.dcm4chee.archive.store.test;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.net.Device;
@@ -61,6 +60,8 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -73,7 +74,7 @@ public class InitDataForIT {
 
     private static final String[] RETRIEVE_AETS = { "RETRIEVE_AET" };
 
-    private static final Logger log = Logger.getLogger(InitDataForIT.class);
+    private static final Logger log = LoggerFactory.getLogger(InitDataForIT.class);
     
     @Inject
     private StoreService storeService;

@@ -57,7 +57,6 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
-import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Sequence;
@@ -82,6 +81,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -91,7 +92,7 @@ import org.junit.runner.RunWith;
 @RunWith(Arquillian.class)
 public class QueryServiceIT {
 
-    private static final Logger log = Logger.getLogger(QueryServiceIT.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryServiceIT.class);
     private Query query;
     @Inject
     PatientService patientService;

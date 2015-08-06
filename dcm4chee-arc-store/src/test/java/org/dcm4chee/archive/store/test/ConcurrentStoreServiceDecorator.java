@@ -45,10 +45,11 @@ import javax.decorator.Delegate;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 
-import org.apache.log4j.Logger;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -57,8 +58,7 @@ import org.dcm4chee.archive.store.StoreService;
 @Decorator
 public abstract class ConcurrentStoreServiceDecorator implements StoreService {
 
-    private static final Logger log = Logger
-            .getLogger(ConcurrentStoreServiceDecorator.class);
+    private static final Logger log = LoggerFactory.getLogger(ConcurrentStoreServiceDecorator.class);
     
     // injected StoreService to be decorated
     @Inject @Delegate StoreService storeService;

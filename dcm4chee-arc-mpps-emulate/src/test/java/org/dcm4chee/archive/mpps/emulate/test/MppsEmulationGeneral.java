@@ -1,7 +1,6 @@
 package org.dcm4chee.archive.mpps.emulate.test;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -18,9 +17,6 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
-import org.apache.log4j.Logger;
-import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
-import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
@@ -57,6 +53,8 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MppsEmulationGeneral {
 
@@ -73,8 +71,7 @@ public class MppsEmulationGeneral {
                     "Rejected for Patient Safety Reasons"),
             new Code("113038", "DCM", null, "Incorrect Modality Worklist Entry"), };
     private static final String[] ISSUERS = { "DCM4CHEE_TESTDATA" };
-    protected static final Logger log = Logger
-            .getLogger(MppsEmulationGeneral.class);
+    protected static final Logger log = LoggerFactory.getLogger(MppsEmulationGeneral.class);
     public static final String DCM4CHEE_ARC = "dcm4chee-arc";
     @Inject
     private StoreService storeService;

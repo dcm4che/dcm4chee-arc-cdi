@@ -52,7 +52,6 @@ import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 
-import org.apache.log4j.Logger;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.net.Device;
@@ -77,6 +76,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -87,8 +88,7 @@ public class OptimisticLockForIT extends BaseStoreIT {
 
     private static final String SOURCE_AET = "SOURCE_AET";
     private static final String[] RETRIEVE_AETS = { "RETRIEVE_AET" };
-    private static final Logger log = Logger
-            .getLogger(OptimisticLockForIT.class);
+    private static final Logger log = LoggerFactory.getLogger(OptimisticLockForIT.class);
 
     private final int SEMAPHORE_WAIT = 10;
     private final boolean[] optimisticLockExceptionWasThrown = new boolean[] { false };
