@@ -107,6 +107,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
@@ -116,8 +117,8 @@ import org.junit.runners.MethodSorters;
  * 
  */
 
-/* @RunWith(Arquillian.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING) */
+@RunWith(Arquillian.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class QCIT {
 
     private static final String[] IOCM_DESTINATIONS = new String[]{"IOCM_DEST"};
@@ -203,7 +204,7 @@ public class QCIT {
             "DELETE FROM qc_action_history", "DELETE FROM qc_update_history",
             "DELETE FROM code", "DELETE FROM dicomattrs" };
 
-    /* @Deployment */
+    @Deployment
     public static WebArchive createDeployment() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
         war.addClass(QCIT.class);
@@ -233,7 +234,7 @@ public class QCIT {
         return war;
     }
 
-    /* @Before */
+    @Before
     public void init() throws Exception {
         archDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
         IOCMConfig iocmCfg = new IOCMConfig();
@@ -262,7 +263,8 @@ public class QCIT {
      * Update DICOM Attributes tests
      */
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testAUpdatePatientAttrs() throws Exception {
 
         store(UPDATE_RESOURCES[0]);
@@ -281,7 +283,8 @@ public class QCIT {
         PerformedChangeRequest.checkNoNewChangeRequest();
     }
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testBUpdateStudyAttrs() throws Exception {
         store(UPDATE_RESOURCES[1]);
         utx.begin();
@@ -322,7 +325,8 @@ public class QCIT {
         PerformedChangeRequest.checkChangeRequest(-1, eventUIDs, null, NONE_IOCM_DESTINATIONS);
     }
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testCUpdateStudyAttrsAndLinkToNextUpdateHistory()
             throws Exception {
         store(UPDATE_RESOURCES[1]);
@@ -365,7 +369,8 @@ public class QCIT {
         PerformedChangeRequest.checkChangeRequest(-1, eventUIDs, null, NONE_IOCM_DESTINATIONS);
     }
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testDUpdateSeriesAttrs() throws Exception {
         store(UPDATE_RESOURCES[2]);
         utx.begin();
@@ -394,7 +399,8 @@ public class QCIT {
         PerformedChangeRequest.checkChangeRequest(-1, eventUIDs, null, NONE_IOCM_DESTINATIONS);
     }
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testEUpdateInstanceAttrs() throws Exception {
         store(UPDATE_RESOURCES[3]);
         utx.begin();
@@ -429,7 +435,8 @@ public class QCIT {
      * Combined operations tests
      */
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testFmergeStudiesUpdateAccessionNumberUpdateBodyPartExamined()
             throws Exception {
         utx.begin();
@@ -524,7 +531,8 @@ public class QCIT {
         PerformedChangeRequest.checkChangeRequests(-1, event.getTarget(), event.getRejectionNotes(), IOCM_DESTINATIONS);
     }
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testGSplitTargetStudyExistsNoEnrichAllReferencedInstancesMoved()
             throws Exception {
         initSplitOrSegmentData();
@@ -640,7 +648,8 @@ public class QCIT {
         PerformedChangeRequest.checkChangeRequest(-1, event.getTarget(), getRejectionNote(event), IOCM_DESTINATIONS);
     }
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testHSplitTargetStudyNotExistsEnrichSomeReferencedInstancesMovedNewStudy()
             throws Exception {
         initSplitOrSegmentData();
@@ -755,7 +764,8 @@ public class QCIT {
         PerformedChangeRequest.checkChangeRequest(-1, event.getTarget(), getRejectionNote(event), IOCM_DESTINATIONS);
     }
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testISegmentNoEnrichMoveOnly() throws Exception {
         initSplitOrSegmentData();
         // test split all from series ( tests all KO references moved case)
@@ -868,7 +878,8 @@ public class QCIT {
         PerformedChangeRequest.checkChangeRequest(-1, event.getTarget(), getRejectionNote(event), IOCM_DESTINATIONS);
     }
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testJSegmentNoEnrichCloneOnly() throws Exception {
         initSplitOrSegmentData();
         // test split all from series ( tests all KO references moved case)
@@ -939,7 +950,8 @@ public class QCIT {
         PerformedChangeRequest.checkChangeRequest(-1, event.getTarget(), getRejectionNote(event), IOCM_DESTINATIONS);
     }
 
-    /* @Test */
+    @Test
+    @Ignore("Test have to be adapted/activated after QC changes by Hesham")
     public void testKSegmentEnrichSeriesEnrichStudyMoveClone() throws Exception {
         initSplitOrSegmentData();
 
