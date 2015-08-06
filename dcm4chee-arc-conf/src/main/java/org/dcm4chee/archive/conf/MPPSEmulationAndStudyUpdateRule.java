@@ -26,7 +26,8 @@ public final class MPPSEmulationAndStudyUpdateRule implements Serializable {
 
     @ConfigurableProperty(name = "dcmMPPSEmulationDelay",
             label = "Study update/MPPS emulator delay",
-            description = "After how many seconds the study update notification and MPPS emulation should be triggered")
+            description = "After how many seconds the study update notification and MPPS emulation should be triggered." +
+                    "If equals to -1, the update/emulation will happen immediately after the association is closed")
     private int emulationDelay;
 
     @ConfigurableProperty(name = "dcmMPPSEmulationCreationRule", defaultValue = "ALWAYS")
