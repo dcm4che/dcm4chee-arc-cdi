@@ -38,14 +38,7 @@
 
 package org.dcm4chee.archive.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.storage.conf.Availability;
@@ -56,9 +49,18 @@ import java.util.Date;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
+@NamedQueries({
+        @NamedQuery(
+                name=SeriesQueryAttributes.FIND_BY_VIEW_ID_AND_SERIES_FK,
+                query="SELECT sqa FROM SeriesQueryAttributes sqa WHERE sqa.viewID = ?1 AND sqa.series.pk = ?2")
+})
 @Entity
-@Table(name = "series_query_attrs")
+@Table(name = "series_query_attrs",
+    uniqueConstraints = {@UniqueConstraint(columnNames = {"series_fk", "view_id"})})
 public class SeriesQueryAttributes {
+
+
+    public static final String FIND_BY_VIEW_ID_AND_SERIES_FK = "SeriesQueryAttributes.findByViewIDAndSeriesFK";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -82,7 +84,6 @@ public class SeriesQueryAttributes {
 
     @Column(name = "last_update_time")
     private Date lastUpdateTime;
-
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "series_fk")

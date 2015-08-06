@@ -57,6 +57,7 @@ import org.hibernate.Session;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import java.util.Date;
 
@@ -117,7 +118,7 @@ public class QueryServiceEJB {
         Date seriesLastUpdateTime;
         if (numberOfSeriesRelatedInstances == null) {
             SeriesQueryAttributes seriesQueryAttributes =
-                    calculateSeriesQueryAttributes(seriesPk, context.getQueryParam());
+                    reCalculateSeriesQueryAttributes(seriesPk, context.getQueryParam());
             numberOfSeriesRelatedInstances = seriesQueryAttributes.getNumberOfInstances();
             numberOfSeriesVisibleInstances = seriesQueryAttributes.getNumberOfVisibleInstances();
             seriesLastUpdateTime = seriesQueryAttributes.getLastUpdateTime();
@@ -138,7 +139,7 @@ public class QueryServiceEJB {
                 result.get(QStudyQueryAttributes.studyQueryAttributes.numberOfInstances);
         if (numberOfStudyRelatedInstances == null) {
             StudyQueryAttributes studyQueryAttributes =
-                    calculateStudyQueryAttributes(result.get(QStudy.study.pk), context.getQueryParam());
+                    reCalculateStudyQueryAttributes(result.get(QStudy.study.pk), context.getQueryParam());
             numberOfStudyRelatedInstances = studyQueryAttributes.getNumberOfInstances();
             numberOfStudyRelatedSeries = studyQueryAttributes.getNumberOfSeries();
             modalitiesInStudy = studyQueryAttributes.getRawModalitiesInStudy();
@@ -198,7 +199,13 @@ public class QueryServiceEJB {
         return builder;
     }
 
-    public StudyQueryAttributes calculateStudyQueryAttributes(
+    /**
+     * Creates or updates StudyQueryAttributes
+     * @param studyPk
+     * @param queryParam
+     * @return
+     */
+    public StudyQueryAttributes reCalculateStudyQueryAttributes(
             Long studyPk, QueryParam queryParam) {
 
         Study study = em.getReference(Study.class, studyPk);
@@ -215,9 +222,31 @@ public class QueryServiceEJB {
                 studyDerivedFields.addInstance(results.next(), queryParam);
             }
         }
-        StudyQueryAttributes queryAttrs = new StudyQueryAttributes();
-        queryAttrs.setViewID(queryParam.getQueryRetrieveView().getViewID());
-        queryAttrs.setStudy(study);
+
+        StudyQueryAttributes queryAttrs;
+        try {
+            Object result = em.createNamedQuery(StudyQueryAttributes.FIND_BY_VIEW_ID_AND_STUDY_FK)
+                    .setParameter(1, queryParam.getQueryRetrieveView().getViewID())
+                    .setParameter(2, studyPk)
+                    .getSingleResult();
+
+            //update
+            queryAttrs = (StudyQueryAttributes) result;
+            populateStudyQueryAttributes(queryAttrs);
+            em.merge(queryAttrs);
+
+        } catch (NoResultException nre) {
+            //create
+            queryAttrs = new StudyQueryAttributes();
+            queryAttrs.setViewID(queryParam.getQueryRetrieveView().getViewID());
+            queryAttrs.setStudy(study);
+            populateStudyQueryAttributes(queryAttrs);
+            em.persist(queryAttrs);
+        }
+        return queryAttrs;
+    }
+
+    private void populateStudyQueryAttributes(StudyQueryAttributes queryAttrs) {
         queryAttrs.setNumberOfInstances(studyDerivedFields.getNumberOfInstances());
         if (studyDerivedFields.getNumberOfInstances() > 0) {
             queryAttrs.setNumberOfSeries(studyDerivedFields.getSeriesPKs().size());
@@ -231,19 +260,22 @@ public class QueryServiceEJB {
             queryAttrs.setNumberOfVisibleInstances(studyDerivedFields.getNumberOfVisibleImages());
             queryAttrs.setNumberOfVisibleSeries(studyDerivedFields.getNumberOfVisibleSeries());
         }
-        em.persist(queryAttrs);
-        return queryAttrs;
     }
 
-    public SeriesQueryAttributes calculateSeriesQueryAttributes(
+    /**
+     * Creates or updates SeriesQueryAttributes
+     * @param seriesPk
+     * @param queryParam
+     * @return
+     */
+    public SeriesQueryAttributes reCalculateSeriesQueryAttributes(
             Long seriesPk, QueryParam queryParam) {
         Series series = em.getReference(Series.class, seriesPk);
         try (
             CloseableIterator<Tuple> results = queryFactory.query(
                     em.unwrap(Session.class))
                 .from(QInstance.instance)
-                .where(createPredicate(
-                        QInstance.instance.series.pk.eq(seriesPk), queryParam))
+                .where(createPredicate(QInstance.instance.series.pk.eq(seriesPk), queryParam))
                 .iterate(seriesDerivedFields.fields())) {
 
         	seriesDerivedFields.reset();
@@ -251,9 +283,32 @@ public class QueryServiceEJB {
                 seriesDerivedFields.addInstance(results.next(), queryParam);
             }
         }
-        SeriesQueryAttributes queryAttrs = new SeriesQueryAttributes();
-        queryAttrs.setSeries(series);
-        queryAttrs.setViewID(queryParam.getQueryRetrieveView().getViewID());
+
+
+        SeriesQueryAttributes queryAttrs;
+        try {
+            Object result = em.createNamedQuery(SeriesQueryAttributes.FIND_BY_VIEW_ID_AND_SERIES_FK)
+                    .setParameter(1, queryParam.getQueryRetrieveView().getViewID())
+                    .setParameter(2, seriesPk)
+                    .getSingleResult();
+
+            // update
+            queryAttrs = ((SeriesQueryAttributes) result);
+            populateSeriesDerivedFields(queryAttrs);
+            em.merge(queryAttrs);
+
+        } catch (NoResultException nre) {
+            // create new
+            queryAttrs = new SeriesQueryAttributes();
+            queryAttrs.setSeries(series);
+            queryAttrs.setViewID(queryParam.getQueryRetrieveView().getViewID());
+            populateSeriesDerivedFields(queryAttrs);
+            em.persist(queryAttrs);
+        }
+        return queryAttrs;
+    }
+
+    private void populateSeriesDerivedFields(SeriesQueryAttributes queryAttrs) {
         queryAttrs.setNumberOfInstances(seriesDerivedFields.getNumberOfInstances());
         if (seriesDerivedFields.getNumberOfInstances() > 0) {
             queryAttrs.setRetrieveAETs(seriesDerivedFields.getRetrieveAETs());
@@ -261,8 +316,6 @@ public class QueryServiceEJB {
             queryAttrs.setLastUpdateTime(seriesDerivedFields.getLastUpdateTime());
             queryAttrs.setNumberOfVisibleInstances(seriesDerivedFields.getNumberOfVisibleImages());
         }
-        em.persist(queryAttrs);
-        return queryAttrs;
     }
 
 }

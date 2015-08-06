@@ -127,7 +127,7 @@ public class MPPSEmulatorEJB {
             if (!studyUpdatedEvent.getAffectedSeriesUIDs().contains(seriesIterator.next().getSeriesInstanceUID()))
                 seriesIterator.remove();
 
-        ApplicationEntity ae = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAET());
+        ApplicationEntity ae = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAETs().iterator().next());
 
         ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
         MPPSCreationRule creationRule = device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class).getMppsEmulationRule(studyUpdatedEvent.getSourceAET()).getCreationRule();
@@ -139,7 +139,8 @@ public class MPPSEmulatorEJB {
         LOG.info("Emulate MPPS for Study[iuid={}] received from {}", studyUpdatedEvent.getStudyInstanceUID(), studyUpdatedEvent.getSourceAET());
         String mppsIUID = UIDUtils.createUID();
 
-        MPPS mpps = mppsService.createPerformedProcedureStep(
+        MPPS mpps = null;
+        mpps = mppsService.createPerformedProcedureStep(
                 arcAE,
                 mppsIUID,
                 createMPPS(seriesList),
@@ -161,6 +162,7 @@ public class MPPSEmulatorEJB {
                     storeParam.getAttributeFilter(Entity.Series),
                     storeParam.getFuzzyStr(),
                     storeParam.getNullValueForQueryFields());
+            em.merge(ser);
         }
     }
 

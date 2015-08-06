@@ -58,19 +58,22 @@ public class StudyUpdatedEvent implements Serializable{
 
     private static final long serialVersionUID = -8854586422835724408L;
 
-    private String localAET;
-    private String sourceAET;
-
     private String studyInstanceUID;
+
+    /**
+     * All local AETs that were used to store instances contained in this study update session
+     */
+    private Set<String> localAETs = new HashSet<>();
+    private String sourceAET;
     private List<StoredInstance> storedInstances = new ArrayList<>();
     private Set<String> affectedSeriesUIDs = new HashSet<>();
 
-    public String getLocalAET() {
-        return localAET;
+    public Set<String> getLocalAETs() {
+        return localAETs;
     }
 
-    public void setLocalAET(String localAET) {
-        this.localAET = localAET;
+    public void setLocalAETs(Set<String> localAETs) {
+        this.localAETs = localAETs;
     }
 
     public String getSourceAET() {
@@ -110,13 +113,15 @@ public class StudyUpdatedEvent implements Serializable{
 
         private static final long serialVersionUID = 6011313460569751657L;
 
-        public StoredInstance(String sopInstanceUID, StoreAction action) {
+        public StoredInstance(String sopInstanceUID, StoreAction action, String localAET) {
+            this.localAET = localAET;
             this.setSopInstanceUID(sopInstanceUID);
             this.setAction(action);
         }
 
         private String sopInstanceUID;
         private StoreAction action;
+        private String localAET;
 
         public String getSopInstanceUID() {
             return sopInstanceUID;
@@ -132,6 +137,14 @@ public class StudyUpdatedEvent implements Serializable{
 
         public void setAction(StoreAction action) {
             this.action = action;
+        }
+
+        public String getLocalAET() {
+            return localAET;
+        }
+
+        public void setLocalAET(String localAET) {
+            this.localAET = localAET;
         }
     }
 }

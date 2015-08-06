@@ -40,15 +40,12 @@
 
 package org.dcm4chee.archive.mpps.emulate;
 
-import org.dcm4che3.conf.api.DicomConfiguration;
-import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
@@ -58,6 +55,7 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import java.util.Set;
 
 /**
  * @author Roman K
@@ -78,6 +76,11 @@ public class MPPSEmulator {
 
     public MPPS onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
 
+        if (studyUpdatedEvent.getLocalAETs()== null || studyUpdatedEvent.getLocalAETs().isEmpty()) {
+            LOG.info("No local AETs are referenced for a study update, will not emulate MPPS");
+            return null;
+        }
+
         MPPS mpps = null;
         try {
             mpps = ejb.emulatePerformedProcedureStep(studyUpdatedEvent);
@@ -87,10 +90,15 @@ public class MPPSEmulator {
         }
 
         ApplicationEntity applicationEntity;
+
+
+        // choose local AE - just take the first one from the list
+        String localAET = studyUpdatedEvent.getLocalAETs().iterator().next();
+
         try {
-            applicationEntity = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAET());
+            applicationEntity = device.getApplicationEntityNotNull(localAET);
         } catch (Exception e) {
-            LOG.error("Archive AE {} not found", studyUpdatedEvent.getLocalAET(), e);
+            LOG.error("Archive AE {} not found", localAET, e);
             return null;
         }
 

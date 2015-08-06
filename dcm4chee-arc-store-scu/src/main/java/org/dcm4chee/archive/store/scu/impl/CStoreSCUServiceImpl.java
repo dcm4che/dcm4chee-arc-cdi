@@ -275,7 +275,7 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
             ArchiveInstanceLocator ref, CStoreSCUContext context) {
         if (context.getRemoteAE() != null)
             try {
-                // here in wado source and destination are the same
+                // for wado source and destination are the same
                 ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
                         context.getRemoteAE().getTransferCapabilitiesWithRole(
                                 Role.SCU));

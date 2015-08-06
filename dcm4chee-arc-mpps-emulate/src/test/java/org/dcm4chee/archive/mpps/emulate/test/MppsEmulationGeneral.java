@@ -283,7 +283,7 @@ public class MppsEmulationGeneral {
         StudyUpdatedEvent studyUpdatedEvent = new StudyUpdatedEvent();
         studyUpdatedEvent.setSourceAET(SOURCE_AET);
         studyUpdatedEvent.setStudyInstanceUID(STUDY_IUID);
-        studyUpdatedEvent.setLocalAET(LOCAL_AET);
+        studyUpdatedEvent.getLocalAETs().add(LOCAL_AET);
         HashSet<String> affectedSeriesUIDs = new HashSet<>();
         affectedSeriesUIDs.add("1.2.40.0.13.1.1.99.20110607.1");
         studyUpdatedEvent.setAffectedSeriesUIDs(affectedSeriesUIDs);
