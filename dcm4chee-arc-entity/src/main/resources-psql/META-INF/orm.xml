@@ -356,8 +356,8 @@
   </entity>
 
   <entity class="org.dcm4chee.archive.entity.StudyUpdateSession">
-    <table name="mpps_emulate"/>
-    <sequence-generator name="seq" sequence-name="mmps_emulate_pks" allocation-size="1" />
+    <table name="study_update_session"/>
+    <sequence-generator name="seq" sequence-name="study_update_session_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />

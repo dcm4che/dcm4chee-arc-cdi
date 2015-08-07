@@ -65,7 +65,7 @@ import java.util.Date;
         + "ORDER BY e.emulationTime")
 })
 @Entity
-@Table(name = "store_study_session",
+@Table(name = "study_update_session",
         uniqueConstraints = {
                 // A study being received from a certain AE corresponds to a single store study session
                 @UniqueConstraint(columnNames = {"src_aet", "study_iuid"})
