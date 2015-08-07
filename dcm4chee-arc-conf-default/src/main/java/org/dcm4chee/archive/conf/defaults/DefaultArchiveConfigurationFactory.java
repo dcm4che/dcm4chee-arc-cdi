@@ -951,7 +951,8 @@ public class DefaultArchiveConfigurationFactory {
 
         addTCs(ae,
                 EnumSet.of(
-                        TCGroupConfigAEExtension.DefaultGroup.QUERY_RETRIEVE,
+                        TCGroupConfigAEExtension.DefaultGroup.QUERY,
+                        TCGroupConfigAEExtension.DefaultGroup.RETRIEVE,
                         TCGroupConfigAEExtension.DefaultGroup.MWL),
                 EnumSet.of(TCGroupConfigAEExtension.DefaultGroup.STORAGE));
 
@@ -1104,8 +1105,11 @@ public class DefaultArchiveConfigurationFactory {
                 DefaultTransferCapabilities.addTC(ae, null, role, UID.ModalityPerformedProcedureStepSOPClass, UID.ImplicitVRLittleEndian);
                 DefaultTransferCapabilities.addTC(ae, null, SCU, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
                 break;
-            case QUERY_RETRIEVE:
+            case QUERY:
                 DefaultTransferCapabilities.addTCs(ae, EnumSet.allOf(QueryOption.class), role, DefaultTransferCapabilities.QUERY_CUIDS, DefaultTransferCapabilities.OTHER_TSUIDS);
+                DefaultTransferCapabilities.addTC(ae, null, role, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
+                break;
+            case RETRIEVE:
                 DefaultTransferCapabilities.addTCs(ae, EnumSet.of(QueryOption.RELATIONAL), role, DefaultTransferCapabilities.RETRIEVE_CUIDS, DefaultTransferCapabilities.OTHER_TSUIDS);
                 DefaultTransferCapabilities.addTC(ae, null, role, UID.CompositeInstanceRetrieveWithoutBulkDataGET, UID.ImplicitVRLittleEndian);
                 DefaultTransferCapabilities.addTC(ae, null, role, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
