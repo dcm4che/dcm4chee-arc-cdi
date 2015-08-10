@@ -99,6 +99,7 @@ public class StudyUpdateSessionManager {
                         .getMppsEmulationRule(storeSession.getRemoteAET());
 
         // if rule exists, update the StudyStoreSession
+        // async call
         if (rule != null)
             ejb.addStoredInstance(
                     storeSession.getRemoteAET(),

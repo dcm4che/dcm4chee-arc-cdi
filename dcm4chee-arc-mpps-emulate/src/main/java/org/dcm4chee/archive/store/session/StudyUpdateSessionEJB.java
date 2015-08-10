@@ -44,6 +44,7 @@ import org.dcm4chee.archive.entity.StudyUpdateSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ejb.Asynchronous;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -73,6 +74,7 @@ public class StudyUpdateSessionEJB {
      * Adds/updates existing StudyUpdateSession entity with information about currently stored study
      */
     @SuppressWarnings("unchecked")
+    @Asynchronous
     public void addStoredInstance(String sourceAET,
                                   String localAET,
                                   String studyInstanceUID,
