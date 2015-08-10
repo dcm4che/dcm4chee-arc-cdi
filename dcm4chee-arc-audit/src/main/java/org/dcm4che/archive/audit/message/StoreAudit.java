@@ -73,20 +73,25 @@ public class StoreAudit extends AuditMessage {
      */
     public StoreAudit(String remoteAET, Participant source, Attributes attributes,
             String eventOutcomeIndicator, AuditLogger logger) {
+    	this(remoteAET, source, attributes, EventActionCode.Create,
+            eventOutcomeIndicator, logger);
+    }
+    public StoreAudit(String remoteAET, Participant source, Attributes attributes, String eventActionCode,
+            String eventOutcomeIndicator, AuditLogger logger) {
         super();
         this.remoteAET = remoteAET;
         this.source= source; 
         this.attributes = attributes;
         this.eventOutcomeIndicator = eventOutcomeIndicator;
         this.logger = logger;
-        init();
+        init(eventActionCode);
     }
 
-    private void init() {
+    private void init(String eventActionCode) {
         
         // Event
         this.setEventIdentification(AuditMessages.createEventIdentification(
-                EventID.DICOMInstancesTransferred, EventActionCode.Create,
+                EventID.DICOMInstancesTransferred, eventActionCode,
                 logger.timeStamp(), eventOutcomeIndicator, null));
 
         // Active Participant 1: The requestor
