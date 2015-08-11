@@ -342,6 +342,7 @@ public class DefaultArchiveConfigurationFactory {
             UID.ColonCADSRStorage,
             UID.ImplantationPlanSRStorage
     };
+    public static final int TIMEOUT = 5000;
     public static QueryRetrieveView[] QUERY_RETRIEVE_VIEWS = {
             HIDE_REJECTED_VIEW,
             REGULAR_USE_VIEW,
@@ -388,7 +389,7 @@ public class DefaultArchiveConfigurationFactory {
         Device arrDevice = new Device(name);
         AuditRecordRepository arr = new AuditRecordRepository();
         arrDevice.addDeviceExtension(arr);
-        Connection auditUDP = new Connection("audit-udp", "localhost", port);
+        Connection auditUDP = new Connection("audit-udp", "localhost", port, TIMEOUT);
         auditUDP.setProtocol(protocol);
         arrDevice.addConnection(auditUDP);
         arr.addConnection(auditUDP);
@@ -437,10 +438,10 @@ public class DefaultArchiveConfigurationFactory {
         externalArchiveExt.setPrefersForwarding(false);
         ae.setAssociationAcceptor(true);
         device.addApplicationEntity(ae);
-        Connection dicom = new Connection("dicom", host, port);
+        Connection dicom = new Connection("dicom", host, port, TIMEOUT);
         device.addConnection(dicom);
         ae.addConnection(dicom);
-        Connection dicomTLS = new Connection("dicom-tls", host, tlsPort);
+        Connection dicomTLS = new Connection("dicom-tls", host, tlsPort, TIMEOUT);
         dicomTLS.setTlsCipherSuites(
                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
@@ -465,11 +466,11 @@ public class DefaultArchiveConfigurationFactory {
         init(device, issuer, institutionCode);
         HL7Application hl7app = new HL7Application(appName);
         hl7Device.addHL7Application(hl7app);
-        Connection hl7 = new Connection("hl7", host, port);
+        Connection hl7 = new Connection("hl7", host, port, TIMEOUT);
         hl7.setProtocol(Connection.Protocol.HL7);
         device.addConnection(hl7);
         hl7app.addConnection(hl7);
-        Connection hl7TLS = new Connection("hl7-tls", host, tlsPort);
+        Connection hl7TLS = new Connection("hl7-tls", host, tlsPort, TIMEOUT);
         hl7TLS.setProtocol(Connection.Protocol.HL7);
         hl7TLS.setTlsCipherSuites(
                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
@@ -489,13 +490,13 @@ public class DefaultArchiveConfigurationFactory {
 
         Device device = new Device(name);
         device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
-        Connection dicom = new Connection("dicom", "localhost", 11112);
+        Connection dicom = new Connection("dicom", "localhost", 11112, TIMEOUT);
         dicom.setBindAddress("0.0.0.0");
         dicom.setMaxOpsInvoked(0);
         dicom.setMaxOpsPerformed(0);
         device.addConnection(dicom);
 
-        Connection dicomTLS = new Connection("dicom-tls", "localhost", 2762);
+        Connection dicomTLS = new Connection("dicom-tls", "localhost", 2762, TIMEOUT);
         dicomTLS.setBindAddress("0.0.0.0");
         dicomTLS.setMaxOpsInvoked(0);
         dicomTLS.setMaxOpsPerformed(0);
@@ -633,12 +634,12 @@ public class DefaultArchiveConfigurationFactory {
         HL7DeviceExtension ext = new HL7DeviceExtension();
         device.addDeviceExtension(ext);
 
-        Connection hl7 = new Connection("hl7", "localhost", 2575);
+        Connection hl7 = new Connection("hl7", "localhost", 2575, TIMEOUT);
         hl7.setBindAddress("0.0.0.0");
         hl7.setProtocol(Connection.Protocol.HL7);
         device.addConnection(hl7);
 
-        Connection hl7TLS = new Connection("hl7-tls", "localhost", 12575);
+        Connection hl7TLS = new Connection("hl7-tls", "localhost", 12575, TIMEOUT);
         hl7TLS.setBindAddress("0.0.0.0");
         hl7TLS.setProtocol(Connection.Protocol.HL7);
         hl7TLS.setTlsCipherSuites(
