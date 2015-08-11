@@ -117,7 +117,7 @@ public class Study implements Serializable {
     private Date updatedTime;
 
     //@Basic(optional = false)
-    @Column(name = "study_iuid", updatable = false)
+    @Column(name = "study_iuid", updatable = false, unique = true)
     private String studyInstanceUID;
 
     //@Basic(optional = false)

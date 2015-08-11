@@ -143,7 +143,7 @@ public class Series implements Serializable {
     private Date updatedTime;
 
     //@Basic(optional = false)
-    @Column(name = "series_iuid", updatable = false)
+    @Column(name = "series_iuid", updatable = false, unique = true)
     private String seriesInstanceUID;
 
     //@Basic(optional = false)
