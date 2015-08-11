@@ -98,9 +98,12 @@ public class StudyUpdateSessionManager {
                         .getDeviceExtensionNotNull(ArchiveDeviceExtension.class)
                         .getMppsEmulationRule(storeSession.getRemoteAET());
 
-        // if rule exists, update the StudyStoreSession
+        // noop if no rule
+        if (rule == null) return;
+
         // async call
-        if (rule != null)
+        // if rule exists and a delay is configured, update the StudyStoreSession
+        if (rule.getEmulationDelay()>-1)
             ejb.addStoredInstance(
                     storeSession.getRemoteAET(),
                     storeSession.getLocalAET(),
@@ -109,6 +112,8 @@ public class StudyUpdateSessionManager {
                     storeContext.getAttributes().getString(Tag.SOPInstanceUID),
                     storeContext.getStoreAction(),
                     rule.getEmulationDelay());
+
+        // TODO: delay == -1 - implement on assoc close/study switch logic
     }
 
     public void onArchiveServiceStarted(@Observes @ArchiveServiceStarted StartStopReloadEvent start) {
