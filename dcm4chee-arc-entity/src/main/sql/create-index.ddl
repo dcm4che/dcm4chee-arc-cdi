@@ -1,10 +1,12 @@
-create unique index code_idx on code (code_value, code_designator, code_version);
+-- handled by JPA anno
+-- create unique index code_idx on code (code_value, code_designator, code_version);
 
 create index content_item_rel_type_idx on content_item (rel_type);
 create index content_item_text_value_idx on content_item (text_value);
 
-create unique index issuer_entity_id_idx on id_issuer (entity_id);
-create unique index issuer_entity_uid_idx on id_issuer (entity_uid, entity_uid_type);
+-- handled by JPA anno
+-- create unique index issuer_entity_id_idx on id_issuer (entity_id);
+-- create unique index issuer_entity_uid_idx on id_issuer (entity_uid, entity_uid_type);
 
 create index family_name_idx on person_name (family_name);
 create index given_name_idx on person_name (given_name);
@@ -20,7 +22,8 @@ create index sx_code_value_idx on soundex_code (sx_code_value);
 create index sx_pn_comp_idx on soundex_code (sx_pn_comp);
 create index sx_pn_comp_part_idx on soundex_code (sx_pn_comp_part);
 
-create unique index inst_sop_iuid_idx on instance (sop_iuid);
+-- handled by JPA anno
+-- create unique index inst_sop_iuid_idx on instance (sop_iuid);
 create index inst_sop_cuid_idx on instance (sop_cuid);
 create index inst_no_idx on instance (inst_no);
 create index inst_content_date_idx on instance (content_date);
@@ -41,7 +44,8 @@ create index pat_custom1_idx on patient (pat_custom1);
 create index pat_custom2_idx on patient (pat_custom2);
 create index pat_custom3_idx on patient (pat_custom3);
 
-create unique index series_iuid_idx on series (series_iuid);
+-- handled by JPA anno
+-- create unique index series_iuid_idx on series (series_iuid);
 create index series_no_idx on series (series_no);
 create index series_modality_idx on series (modality);
 create index series_station_name_idx on series (station_name);
@@ -62,7 +66,8 @@ create index series_req_proc_id_idx on series_req (req_proc_id);
 create index series_req_sps_id_idx on series_req (sps_id);
 create index series_req_study_iuid_idx on series_req (study_iuid);
 
-create unique index study_iuid_idx on study (study_iuid);
+-- handled by JPA anno
+-- create unique index study_iuid_idx on study (study_iuid);
 create index study_id_idx on study (study_id);
 create index study_date_idx on study (study_date);
 create index study_time_idx on study (study_time);
@@ -75,7 +80,8 @@ create index study_access_control_id_idx on study (access_control_id);
 
 create index vo_verify_datetime_idx on verify_observer (verify_datetime);
 
-create unique index mpps_iuid_idx on mpps (mpps_iuid);
+-- handled by JPA anno
+-- create unique index mpps_iuid_idx on mpps (mpps_iuid);
 
 create index mwl_item_sps_id_idx on mwl_item (sps_id);
 create index mwl_item_req_proc_id_idx on mwl_item (req_proc_id);
@@ -91,8 +97,7 @@ create index sps_station_aet_idx on sps_station_aet (station_aet);
 create index study_view_id_idx on study_query_attrs(view_id);
 create index series_view_id_idx on series_query_attrs(view_id);
 
-create unique index mpps_emulate_study_iuid_idx on mpps_emulate(study_iuid,src_aet);
-create index mpps_emulate_time_idx on mpps_emulate(emulation_time);
+create index study_update_session_emu_time_idx on study_update_session(emulation_time);
 
 create index qc_inst_hist_old_uid_idx on qc_instance_history (old_uid);
 create index qc_inst_hist_next_uid_idx on qc_instance_history (next_uid);

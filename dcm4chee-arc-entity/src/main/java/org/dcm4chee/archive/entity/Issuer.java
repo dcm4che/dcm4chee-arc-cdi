@@ -38,14 +38,7 @@
 
 package org.dcm4chee.archive.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.dcm4che3.data.Attributes;
 
@@ -69,7 +62,13 @@ import org.dcm4che3.data.Attributes;
           "OR (i.universalEntityID = ?2 AND i.universalEntityIDType = ?3)")
 })
 @Entity
-@Table(name = "id_issuer")
+@Table(name = "id_issuer",
+uniqueConstraints = {
+        @UniqueConstraint(columnNames = "entity_id"),
+        @UniqueConstraint(columnNames = {"entity_uid", "entity_uid_type"}),
+}
+
+)
 public class Issuer extends org.dcm4che3.data.Issuer {
 
     private static final long serialVersionUID = -3985937520970392728L;

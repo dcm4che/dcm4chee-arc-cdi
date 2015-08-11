@@ -124,7 +124,7 @@ public class MPPS implements Serializable {
     private Date updatedTime;
 
     //@Basic(optional = false)
-    @Column(name = "mpps_iuid", updatable = true)
+    @Column(name = "mpps_iuid", updatable = true, unique = true)
     private String sopInstanceUID;
 
     //@Basic(optional = false)

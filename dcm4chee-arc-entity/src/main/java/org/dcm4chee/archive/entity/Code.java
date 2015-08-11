@@ -38,14 +38,7 @@
 
 package org.dcm4chee.archive.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.dcm4che3.data.Attributes;
 
@@ -70,7 +63,9 @@ import org.dcm4che3.data.Attributes;
             "AND c.codingSchemeVersion = ?3")
 })
 @Entity
-@Table(name = "code")
+@Table(name = "code", uniqueConstraints =
+        @UniqueConstraint(columnNames = {"code_value","code_designator","code_version"})
+)
 public class Code extends org.dcm4che3.data.Code {
 
     private static final long serialVersionUID = -130090842318534124L;
