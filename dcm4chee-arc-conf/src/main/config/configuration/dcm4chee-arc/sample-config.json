@@ -11,11 +11,25 @@
         "dcmLimitOpenAssociations" : 0,
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 11113
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 2763,
@@ -47,11 +61,25 @@
         "dcmLimitOpenAssociations" : 0,
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 11114
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 2765,
@@ -73,11 +101,25 @@
         "dcmLimitOpenAssociations" : 0,
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 11115
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 2766,
@@ -101,11 +143,25 @@
         "dcmLimitOpenAssociations" : 0,
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 11116
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 2767,
@@ -129,11 +185,25 @@
         "dcmLimitOpenAssociations" : 0,
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 11117
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 2768,
@@ -155,10 +225,24 @@
         "dcmLimitOpenAssociations" : 0,
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost"
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomTLSCipherSuite" : [ "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" ]
@@ -183,10 +267,24 @@
         "dcmLimitOpenAssociations" : 0,
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost"
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomTLSCipherSuite" : [ "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" ]
@@ -209,10 +307,24 @@
         "dcmLimitOpenAssociations" : 0,
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost"
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomTLSCipherSuite" : [ "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" ]
@@ -235,10 +347,24 @@
         "dcmLimitOpenAssociations" : 0,
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost"
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomTLSCipherSuite" : [ "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" ]
@@ -281,13 +407,27 @@
         },
         "dicomConnection" : [ {
           "cn" : "hl7",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
           "dcmProtocol" : "HL7",
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 2576
         }, {
           "cn" : "hl7-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
           "dcmProtocol" : "HL7",
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 12576,
@@ -309,7 +449,14 @@
         },
         "dicomConnection" : [ {
           "cn" : "audit-udp",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
           "dcmProtocol" : "SYSLOG_UDP",
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 514
@@ -357,6 +504,10 @@
             "dcmFetchAETitle" : "DCM4CHEE_FETCH",
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
+            "dcmMPPSEmulationRules" : [ {
+              "cn" : "Default EmulateAll Rule",
+              "dcmMPPSEmulationDelay" : 10
+            } ],
             "dcmMppsEmulationPollInterval" : 60,
             "dcmPrivateDerivedFields" : {
               "list" : [ {
@@ -422,9 +573,9 @@
           },
           "AuditLogger" : {
             "dcmAuditIncludeInstanceUID" : false,
-            "dcmAuditRecordRepositoryDeviceReference" : "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='syslog']",
+            "dcmAuditRecordRepositoryDeviceReference" : [ "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='syslog']" ],
             "dcmAuditSourceTypeCode" : [ "4" ],
-            "dicomNetworkConnectionReference" : [ "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='dcm4chee-arc']/dicomConnection[cn='audit-udp']" ]
+            "dicomNetworkConnectionReference" : [ "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='dcm4chee-arc']/dicomConnection[cn='audit-udp-initiating']" ]
           },
           "HL7DeviceExtension" : {
             "hl7Apps" : {
@@ -619,38 +770,66 @@
         },
         "dicomConnection" : [ {
           "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
           "dcmBindAddress" : "0.0.0.0",
+          "dcmIdleTimeout" : 5000,
           "dcmMaxOpsInvoked" : 0,
           "dcmMaxOpsPerformed" : 0,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 11112
         }, {
           "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
           "dcmBindAddress" : "0.0.0.0",
+          "dcmIdleTimeout" : 5000,
           "dcmMaxOpsInvoked" : 0,
           "dcmMaxOpsPerformed" : 0,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 2762,
           "dicomTLSCipherSuite" : [ "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" ]
         }, {
           "cn" : "hl7",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
           "dcmBindAddress" : "0.0.0.0",
+          "dcmIdleTimeout" : 5000,
           "dcmProtocol" : "HL7",
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 2575
         }, {
           "cn" : "hl7-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
           "dcmBindAddress" : "0.0.0.0",
+          "dcmIdleTimeout" : 5000,
           "dcmProtocol" : "HL7",
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost",
           "dicomPort" : 12575,
           "dicomTLSCipherSuite" : [ "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" ]
         }, {
-          "cn" : "audit-udp",
+          "cn" : "audit-udp-initiating",
           "dcmProtocol" : "SYSLOG_UDP",
           "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
           "dicomHostname" : "localhost"
@@ -733,7 +912,8 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSY" ],
                       "dcmBitsStored" : [ 9, 10, 11, 12 ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2" ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2" ],
+                      "dcmPixelRepresentation" : 0
                     },
                     "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=20.0", "avgPixelValueBlockSize=8.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.51"
@@ -742,24 +922,14 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSY" ],
                       "dcmBitsStored" : [ 8 ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "RGB" ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "RGB" ],
+                      "dcmPixelRepresentation" : 0
                     },
                     "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=10.0", "avgPixelValueBlockSize=8.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.50"
                   } ]
                 },
                 "dcmDefaultExternalRetrieveAETAvailability" : "ONLINE",
-                "dcmMPPSEmulationRules" : [ {
-                  "cn" : "MPPS Emulation Rule 1",
-                  "dcmAETitle" : [ "EMULATE_MPPS" ],
-                  "dcmMPPSEmulationDelay" : 120,
-                  "dicomAETitle" : "DCM4CHEE"
-                }, {
-                  "cn" : "Default EmulateAll Rule",
-                  "dcmAETitle" : [ "*" ],
-                  "dcmMPPSEmulationDelay" : 10,
-                  "dicomAETitle" : "DCM4CHEE"
-                } ],
                 "dcmMatchUnknown" : true,
                 "dcmMetaDataStorageSystemGroupID" : "METADATA",
                 "dcmPatientSelector" : {
@@ -2692,7 +2862,8 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSY" ],
                       "dcmBitsStored" : [ 9, 10, 11, 12 ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2" ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2" ],
+                      "dcmPixelRepresentation" : 0
                     },
                     "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=20.0", "avgPixelValueBlockSize=8.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.51"
@@ -2701,24 +2872,14 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSY" ],
                       "dcmBitsStored" : [ 8 ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "RGB" ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "RGB" ],
+                      "dcmPixelRepresentation" : 0
                     },
                     "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=10.0", "avgPixelValueBlockSize=8.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.50"
                   } ]
                 },
                 "dcmDefaultExternalRetrieveAETAvailability" : "ONLINE",
-                "dcmMPPSEmulationRules" : [ {
-                  "cn" : "MPPS Emulation Rule 1",
-                  "dcmAETitle" : [ "EMULATE_MPPS" ],
-                  "dcmMPPSEmulationDelay" : 120,
-                  "dicomAETitle" : "DCM4CHEE"
-                }, {
-                  "cn" : "Default EmulateAll Rule",
-                  "dcmAETitle" : [ "*" ],
-                  "dcmMPPSEmulationDelay" : 10,
-                  "dicomAETitle" : "DCM4CHEE"
-                } ],
                 "dcmMatchUnknown" : true,
                 "dcmMetaDataStorageSystemGroupID" : "METADATA",
                 "dcmPatientSelector" : {
