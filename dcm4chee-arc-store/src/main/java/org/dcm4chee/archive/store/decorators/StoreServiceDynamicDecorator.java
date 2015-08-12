@@ -20,7 +20,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 
 /**
- * We have to be careful with scopes here. Currently the assumption is that all services/dynadecorator beans are @ApplicationScoped
+ * We have to be careful with scopes here. Currently the assumption is that all
+ * services/dynadecorator beans are @ApplicationScoped
  */
 @Decorator
 public abstract class StoreServiceDynamicDecorator extends DynamicDecoratorWrapper<StoreService> implements StoreService {
@@ -85,10 +86,6 @@ public abstract class StoreServiceDynamicDecorator extends DynamicDecoratorWrapp
         wrapWithDynamicDecorators(delegate).updateDB(context);
     }
 
-    public void updateDB(EntityManager em, StoreContext context) throws DicomServiceException {
-        wrapWithDynamicDecorators(delegate).updateDB(em, context);
-    }
-
     public org.dcm4chee.archive.entity.Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
         return wrapWithDynamicDecorators(delegate).findOrCreateInstance(em, context);
     }
@@ -107,34 +104,6 @@ public abstract class StoreServiceDynamicDecorator extends DynamicDecoratorWrapp
 
     public StoreAction instanceExists(EntityManager em, StoreContext context, org.dcm4chee.archive.entity.Instance instance) throws DicomServiceException {
         return wrapWithDynamicDecorators(delegate).instanceExists(em, context, instance);
-    }
-
-    public org.dcm4chee.archive.entity.Instance createInstance(EntityManager em, StoreContext context) throws DicomServiceException {
-        return wrapWithDynamicDecorators(delegate).createInstance(em, context);
-    }
-
-    public Series createSeries(EntityManager em, StoreContext context) throws DicomServiceException {
-        return wrapWithDynamicDecorators(delegate).createSeries(em, context);
-    }
-
-    public Study createStudy(EntityManager em, StoreContext context) throws DicomServiceException {
-        return wrapWithDynamicDecorators(delegate).createStudy(em, context);
-    }
-
-    public void updateInstance(EntityManager em, StoreContext context, org.dcm4chee.archive.entity.Instance inst) throws DicomServiceException {
-        wrapWithDynamicDecorators(delegate).updateInstance(em, context, inst);
-    }
-
-    public void updateSeries(EntityManager em, StoreContext context, Series series) throws DicomServiceException {
-        wrapWithDynamicDecorators(delegate).updateSeries(em, context, series);
-    }
-
-    public void updateStudy(EntityManager em, StoreContext context, Study study) throws DicomServiceException {
-        wrapWithDynamicDecorators(delegate).updateStudy(em, context, study);
-    }
-
-    public void updatePatient(EntityManager em, StoreContext context, Patient patient) {
-        wrapWithDynamicDecorators(delegate).updatePatient(em, context, patient);
     }
 
     public void cleanup(StoreContext context) {

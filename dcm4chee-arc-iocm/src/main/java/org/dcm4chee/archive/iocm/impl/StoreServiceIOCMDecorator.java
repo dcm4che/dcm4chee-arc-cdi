@@ -57,6 +57,7 @@ import org.dcm4chee.archive.iocm.RejectionService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
+import org.dcm4chee.archive.store.impl.StoreServiceEJB;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,9 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
     static Logger LOG = LoggerFactory.getLogger(StoreServiceIOCMDecorator.class);
 
     @Inject RejectionService rejectionService;
+
+    @Inject
+    private StoreServiceEJB storeServiceEJB;
 
     @Inject Event<RejectionEvent> event;
 
@@ -284,7 +288,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
                     LOG.info("{}: referenced Instance(s) not found "
                             + "- Rejection Note arrived early for instances {}",
                             context.getStoreSession(), refSOPs.keySet());
-                    createDummyInstancesToBeReceivedLater(rejectionNote, context, em,
+                    createDummyInstancesToBeReceivedLater(rejectionNote, context,
                             context.getStoreSession(), refSOPs,
                             currentSeriesIUID, studyIUID);
                 }
@@ -293,7 +297,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
         return result;
     }
 
-    private void createDummyInstancesToBeReceivedLater(Instance rejectionNote, StoreContext ctx, EntityManager em,
+    private void createDummyInstancesToBeReceivedLater(Instance rejectionNote, StoreContext ctx,
             StoreSession storeSession, HashMap<String, Attributes> refSOPs,
             String currentSeriesIUID, String studyIUID) {
         for(String sopInstanceUID : refSOPs.keySet()) {
@@ -310,7 +314,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             data.addAll(tempModsInStudy);
             ctx.setAttributes(new Attributes(data));
             try {
-               Instance inst = createInstance(em, ctx);
+               Instance inst = storeServiceEJB.createInstance(ctx);
                inst.setRejectionNoteCode(rejectionNote.getConceptNameCode());
             } catch (DicomServiceException e) {
                 LOG.error("Unable to create dummy instance {}, early arrived "

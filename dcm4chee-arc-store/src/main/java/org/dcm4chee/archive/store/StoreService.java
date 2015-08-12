@@ -94,9 +94,6 @@ public interface StoreService {
 
     void updateDB(StoreContext context) throws DicomServiceException;
 
-    void updateDB(EntityManager em, StoreContext context)
-            throws DicomServiceException;
-
     Instance findOrCreateInstance(EntityManager em, StoreContext context)
             throws DicomServiceException;
 
@@ -111,26 +108,6 @@ public interface StoreService {
 
     StoreAction instanceExists(EntityManager em, StoreContext context,
             Instance instance) throws DicomServiceException;
-
-    Instance createInstance(EntityManager em, StoreContext context)
-            throws DicomServiceException;
-
-    Series createSeries(EntityManager em, StoreContext context)
-            throws DicomServiceException;
-
-    Study createStudy(EntityManager em, StoreContext context)
-            throws DicomServiceException;
-
-    void updateInstance(EntityManager em, StoreContext context, Instance inst)
-            throws DicomServiceException;
-
-    void updateSeries(EntityManager em, StoreContext context, Series series)
-            throws DicomServiceException;
-
-    void updateStudy(EntityManager em, StoreContext context, Study study)
-            throws DicomServiceException;
-
-    void updatePatient(EntityManager em, StoreContext context, Patient patient);
 
     void cleanup(StoreContext context);
 

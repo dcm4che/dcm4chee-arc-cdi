@@ -39,11 +39,40 @@
 package org.dcm4chee.archive.store.impl;
 
 import javax.ejb.Stateless;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.soundex.FuzzyStr;
+import org.dcm4che3.util.TagUtils;
+import org.dcm4chee.archive.code.CodeService;
+import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.issuer.IssuerService;
+import org.dcm4chee.archive.locationmgmt.LocationMgmt;
+import org.dcm4chee.archive.patient.PatientService;
+import org.dcm4chee.archive.store.NewStudyCreated;
 import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreService;
+import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -52,12 +81,399 @@ import org.dcm4chee.archive.store.StoreContext;
 @Stateless
 public class StoreServiceEJB {
 
+    static Logger LOG = LoggerFactory.getLogger(StoreServiceEJB.class);
+
     @PersistenceContext(unitName="dcm4chee-arc")
     private EntityManager em;
 
+    @Inject
+    @NewStudyCreated
+    private Event<String> newStudyCreatedEvent;
+
+    @Inject
+    private LocationMgmt locationManager;
+
+    @Inject
+    private IssuerService issuerService;
+
+    @Inject
+    private CodeService codeService;
+
+    @Inject
+    private PatientService patientService;
+
+    @Inject
+    private Device device;
+
     public void updateDB(StoreContext context)
             throws DicomServiceException {
-        context.getStoreSession().getStoreService().updateDB(em, context);
+
+        StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
+        Instance instance = service.findOrCreateInstance(em, context);
+        context.setInstance(instance);
+        // RESTORE action BLOCK
+        if (context.getStoreAction() != StoreAction.IGNORE
+                && context.getStoreAction() != StoreAction.UPDATEDB
+                && context.getStoragePath() != null) {
+            Collection<Location> locations = instance.getLocations(2);
+            Location location = createLocation(context);
+            locations.add(location);
+
+            // update instance retrieveAET
+            updateRetrieveAETs(session, instance);
+            // availability update
+            updateAvailability(session, instance);
+
+            findOrCreateStudyOnStorageGroup(context);
+            if (context.getMetaDataStoragePath() != null) {
+                Location metaDataRef = createMetaDataRef(context);
+                locations.add(metaDataRef);
+            }
+            context.setFileRef(location);
+        }
+
      }
+
+    public Instance createInstance(StoreContext context)
+            throws DicomServiceException {
+        StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
+        Attributes data = context.getAttributes();
+        StoreParam storeParam = session.getStoreParam();
+        Instance inst = new Instance();
+        inst.setSeries(service.findOrCreateSeries(em, context));
+        inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
+        inst.setVerifyingObservers(createVerifyingObservers(
+                data.getSequence(Tag.VerifyingObserverSequence),
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields(), inst));
+        inst.setContentItems(createContentItems(
+                data.getSequence(Tag.ContentSequence), inst));
+        inst.setRetrieveAETs(session.getStorageSystem().getStorageSystemGroup()
+                .getRetrieveAETs());
+        inst.setAvailability(session.getStorageSystem().getAvailability());
+        inst.setAttributes(data,
+                storeParam.getAttributeFilter(Entity.Instance),
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        em.persist(inst);
+        LOG.info("{}: Create {}", session, inst);
+        return inst;
+    }
+
+    public Series createSeries(StoreContext context)
+            throws DicomServiceException {
+        StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
+        Attributes data = context.getAttributes();
+        StoreParam storeParam = session.getStoreParam();
+        Series series = new Series();
+        series.setStudy(service.findOrCreateStudy(em, context));
+        series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
+        series.setRequestAttributes(createRequestAttributes(
+                data.getSequence(Tag.RequestAttributesSequence),
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields(), series));
+        series.setSourceAET(session.getRemoteAET());
+        series.setAttributes(data,
+                storeParam.getAttributeFilter(Entity.Series),
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        em.persist(series);
+        LOG.info("{}: Create {}", session, series);
+        return series;
+    }
+
+    public Study createStudy(StoreContext context)
+            throws DicomServiceException {
+        StoreSession session = context.getStoreSession();
+        StoreService service = session.getStoreService();
+        Attributes attrs = context.getAttributes();
+        StoreParam storeParam = session.getStoreParam();
+        Study study = new Study();
+        study.setPatient(service.findOrCreatePatient(em, context));
+        study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
+        study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
+                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        study.setIssuerOfAccessionNumber(findOrCreateIssuer(attrs
+                .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
+        em.persist(study);
+        LOG.info("{}: Create {}", session, study);
+        newStudyCreatedEvent.fire(study.getStudyInstanceUID());
+        return study;
+    }
+
+    private Location createLocation(StoreContext context) {
+        StoreSession session = context.getStoreSession();
+        StorageSystem storageSystem = session.getStorageSystem();
+        Location fileRef = new Location.Builder()
+                .storageSystemGroupID(
+                        storageSystem.getStorageSystemGroup().getGroupID())
+                .storageSystemID(storageSystem.getStorageSystemID())
+                .storagePath(context.getStoragePath())
+                .digest(context.getFinalFileDigest())
+                .otherAttsDigest(context.getNoDBAttsDigest())
+                .size(context.getFinalFileSize())
+                .transferSyntaxUID(context.getTransferSyntax())
+                .timeZone(context.getSourceTimeZoneID()).build();
+        em.persist(fileRef);
+        LOG.info("{}: Create {}", session, fileRef);
+        return fileRef;
+    }
+
+    private Location createMetaDataRef(StoreContext context) {
+        StoreSession session = context.getStoreSession();
+        StorageSystem storageSystem = session.getMetaDataStorageSystem();
+        long metadataFileSize = 0l;
+        try {
+            metadataFileSize = Files.size(Paths.get(storageSystem.getStorageSystemPath())
+                    .resolve(context.getMetaDataStoragePath()));
+        } catch (IOException e) {
+            LOG.error("{}: Unable to calculate Metadata File Size, setting the Metadata "
+                    + "size to 0 for instance {} ", session, context.getInstance());
+        }
+        Location fileRef = new Location.Builder()
+                .storageSystemGroupID(
+                        storageSystem.getStorageSystemGroup().getGroupID())
+                .storageSystemID(storageSystem.getStorageSystemID())
+                .storagePath(context.getMetaDataStoragePath())
+                .size(metadataFileSize)
+                .transferSyntaxUID(UID.ExplicitVRLittleEndian)
+                .timeZone(context.getSourceTimeZoneID()).withoutBulkdata(true)
+                .build();
+        em.persist(fileRef);
+        LOG.info("{}: Create {}", session, fileRef);
+        return fileRef;
+    }
+
+    private Collection<ContentItem> createContentItems(Sequence seq,
+            Instance inst) {
+        if (seq == null || seq.isEmpty())
+            return null;
+
+        Collection<ContentItem> list = new ArrayList<>(seq.size());
+        for (Attributes item : seq) {
+            String type = item.getString(Tag.ValueType);
+            ContentItem contentItem = null;
+            if ("CODE".equals(type)) {
+                contentItem = new ContentItem(item.getString(
+                        Tag.RelationshipType).toUpperCase(), singleCode(item,
+                        Tag.ConceptNameCodeSequence), singleCode(item,
+                        Tag.ConceptCodeSequence));
+                list.add(contentItem);
+            } else if ("TEXT".equals(type)) {
+                contentItem = new ContentItem(item.getString(
+                        Tag.RelationshipType).toUpperCase(), singleCode(item,
+                        Tag.ConceptNameCodeSequence), item.getString(
+                        Tag.TextValue, "*"));
+            }
+            if (contentItem != null) {
+                contentItem.setInstance(inst);
+                list.add(contentItem);
+            }
+        }
+        return list;
+    }
+
+    private Collection<RequestAttributes> createRequestAttributes(Sequence seq,
+            FuzzyStr fuzzyStr, String nullValue, Series series) {
+        if (seq == null || seq.isEmpty())
+            return null;
+
+        ArrayList<RequestAttributes> list = new ArrayList<>(
+                seq.size());
+        for (Attributes item : seq) {
+            RequestAttributes request = new RequestAttributes(
+                    item,
+                    findOrCreateIssuer(item
+                            .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
+                    fuzzyStr, nullValue);
+            request.setSeries(series);
+            list.add(request);
+        }
+        return list;
+    }
+
+    private Issuer findOrCreateIssuer(Attributes item) {
+        return item != null ? issuerService.findOrCreate(new Issuer(item))
+                : null;
+    }
+
+    private void findOrCreateStudyOnStorageGroup(StoreContext context) {
+        locationManager.findOrCreateStudyOnStorageGroup(context.getInstance()
+                .getSeries().getStudy(), context.getStoreSession()
+                .getStorageSystem().getStorageSystemGroup().getGroupID());
+    }
+
+    public void updateStudy(StoreContext context, Study study) {
+        StoreSession session = context.getStoreSession();
+        Attributes data = context.getAttributes();
+        StoreParam storeParam = session.getStoreParam();
+        study.clearQueryAttributes();
+        AttributeFilter studyFilter = storeParam
+                .getAttributeFilter(Entity.Study);
+        Attributes studyAttrs = study.getAttributes();
+        Attributes modified = new Attributes();
+        // check if trashed
+        if (isRejected(study)) {
+            em.remove(study.getAttributesBlob());
+            study.setAttributes(new Attributes(data), studyFilter,
+                    storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        } else {
+            if (!context.isFetch()
+                    && !session.getLocalAET().equalsIgnoreCase(
+                    device.getDeviceExtension(
+                            ArchiveDeviceExtension.class)
+                            .getFetchAETitle())
+                    && studyAttrs.updateSelected(data, modified,
+                    studyFilter.getCompleteSelection(data))) {
+                study.setAttributes(studyAttrs, studyFilter,
+                        storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
+                        studyAttrs, modified);
+            }
+        }
+        if (!context.isFetch()
+                && !session.getLocalAET().equalsIgnoreCase(
+                device.getDeviceExtension(
+                        ArchiveDeviceExtension.class)
+                        .getFetchAETitle()))
+            updatePatient(context, study.getPatient());
+    }
+
+    public void updatePatient(StoreContext context, Patient patient) {
+        StoreSession session = context.getStoreSession();
+        patientService.updatePatientByCStore(patient, context.getAttributes(),
+                session.getStoreParam());
+    }
+
+    public void updateSeries(StoreContext context, Series series) throws DicomServiceException {
+        StoreSession session = context.getStoreSession();
+        Attributes data = context.getAttributes();
+        StoreParam storeParam = session.getStoreParam();
+        series.clearQueryAttributes();
+        Attributes seriesAttrs = series.getAttributes();
+        AttributeFilter seriesFilter = storeParam
+                .getAttributeFilter(Entity.Series);
+        Attributes modified = new Attributes();
+        // check if trashed
+        if (isRejected(series)) {
+            em.remove(series.getAttributesBlob());
+            series.setAttributes(new Attributes(data), seriesFilter,
+                    storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        } else {
+            if (!context.isFetch()
+                    && !session.getLocalAET().equalsIgnoreCase(
+                    device.getDeviceExtension(
+                            ArchiveDeviceExtension.class)
+                            .getFetchAETitle())
+                    && seriesAttrs.updateSelected(data, modified,
+                    seriesFilter.getCompleteSelection(data))) {
+                series.setAttributes(seriesAttrs, seriesFilter,
+                        storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
+                        seriesAttrs, modified);
+            }
+        }
+        updateStudy(context, series.getStudy());
+    }
+
+    public void updateInstance(StoreContext context, Instance inst) throws DicomServiceException {
+        StoreSession session = context.getStoreSession();
+        Attributes data = context.getAttributes();
+        StoreParam storeParam = session.getStoreParam();
+        Attributes instAttrs = inst.getAttributes();
+        AttributeFilter instFilter = storeParam
+                .getAttributeFilter(Entity.Instance);
+        Attributes modified = new Attributes();
+        if (!context.isFetch()
+                && !session.getLocalAET().equalsIgnoreCase(
+                device.getDeviceExtension(
+                        ArchiveDeviceExtension.class)
+                        .getFetchAETitle())
+                && instAttrs.updateSelected(data, modified,
+                instFilter.getCompleteSelection(data))) {
+            inst.setAttributes(data, instFilter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+            LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
+                    modified);
+        }
+        updateSeries(context, inst.getSeries());
+    }
+
+    private Collection<Code> codeList(Attributes attrs, int seqTag) {
+        Sequence seq = attrs.getSequence(seqTag);
+        if (seq == null || seq.isEmpty())
+            return Collections.emptyList();
+
+        ArrayList<Code> list = new ArrayList<>(seq.size());
+        for (Attributes item : seq) {
+            try {
+                list.add(codeService.findOrCreate(new Code(item)));
+            } catch (Exception e) {
+                LOG.info("Illegal code item in Sequence {}:\n{}",
+                        TagUtils.toString(seqTag), item);
+            }
+        }
+        return list;
+    }
+
+    private Collection<VerifyingObserver> createVerifyingObservers(
+            Sequence seq, FuzzyStr fuzzyStr, String nullValue, Instance instance) {
+        if (seq == null || seq.isEmpty())
+            return null;
+
+        ArrayList<VerifyingObserver> list = new ArrayList<>(
+                seq.size());
+        for (Attributes item : seq) {
+            VerifyingObserver observer = new VerifyingObserver(item, fuzzyStr, nullValue);
+            observer.setInstance(instance);
+            list.add(observer);
+        }
+        return list;
+    }
+
+    private Code singleCode(Attributes attrs, int seqTag) {
+        Attributes item = attrs.getNestedDataset(seqTag);
+        if (item != null)
+            try {
+                return codeService.findOrCreate(new Code(item));
+            } catch (Exception e) {
+                LOG.info("Illegal code item in Sequence {}:\n{}",
+                        TagUtils.toString(seqTag), item);
+            }
+        return null;
+    }
+
+    private void updateRetrieveAETs(StoreSession session, Instance instance) {
+        ArrayList<String> retrieveAETs = new ArrayList<>();
+        retrieveAETs.addAll(Arrays.asList(session.getStorageSystem()
+                .getStorageSystemGroup().getRetrieveAETs()));
+
+        for (String aet : instance.getRetrieveAETs())
+            if (!retrieveAETs.contains(aet))
+                retrieveAETs.add(aet);
+        String[] retrieveAETsArray = new String[retrieveAETs.size()];
+        instance.setRetrieveAETs(retrieveAETs.toArray(retrieveAETsArray));
+    }
+
+    private void updateAvailability(StoreSession session, Instance instance) {
+        if (session.getStorageSystem().getAvailability().ordinal() < instance
+                .getAvailability().ordinal())
+            instance.setAvailability(session.getStorageSystem()
+                    .getAvailability());
+    }
+
+    private boolean isRejected(Study study) {
+        if(study.isRejected()) {
+            study.setRejected(false);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isRejected(Series series) {
+        if(series.isRejected()) {
+            series.setRejected(false);
+            return true;
+        }
+        return false;
+    }
 
 }

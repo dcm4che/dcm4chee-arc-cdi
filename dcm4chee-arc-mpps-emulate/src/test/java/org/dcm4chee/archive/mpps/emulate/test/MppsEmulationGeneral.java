@@ -43,6 +43,7 @@ import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.store.impl.StoreServiceEJB;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
@@ -75,6 +76,8 @@ public class MppsEmulationGeneral {
     public static final String DCM4CHEE_ARC = "dcm4chee-arc";
     @Inject
     private StoreService storeService;
+    @Inject
+    private StoreServiceEJB storeServiceEJB;
     @Inject
     protected MPPSService mppsService;
     @Inject
@@ -171,7 +174,7 @@ public class MppsEmulationGeneral {
         StoreContext storeContext = storeService.createStoreContext(session);
         storeContext.setAttributes(dicom);
         openTransaction();
-        storeService.updateDB(em, storeContext);
+        storeServiceEJB.updateDB(storeContext);
         closeTransaction();
         log.info("STORE:" + dicom.getString(Tag.SOPInstanceUID));
     }

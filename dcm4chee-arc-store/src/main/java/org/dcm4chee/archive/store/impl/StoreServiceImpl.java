@@ -38,33 +38,7 @@
 
 package org.dcm4chee.archive.store.impl;
 
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.BulkDataDescriptor;
@@ -73,42 +47,18 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.PDVInputStream;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.*;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StreamUtils;
 import org.dcm4che3.util.TagUtils;
-import org.dcm4chee.archive.code.CodeService;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.AttributeFilter;
-import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.ContentItem;
-import org.dcm4chee.archive.entity.Location;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.Issuer;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.RequestAttributes;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.entity.VerifyingObserver;
+import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
-import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.monitoring.api.Monitored;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
-import org.dcm4chee.archive.store.NewStudyCreated;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
@@ -123,6 +73,25 @@ import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.util.*;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -133,7 +102,7 @@ public class StoreServiceImpl implements StoreService {
     static Logger LOG = LoggerFactory.getLogger(StoreServiceImpl.class);
 
     @Inject
-    private LocationMgmt locationManager;
+    private StoreServiceEJB storeServiceEJB;
 
     @Inject
     private StorageService storageService;
@@ -145,20 +114,10 @@ public class StoreServiceImpl implements StoreService {
     private PatientService patientService;
 
     @Inject
-    private IssuerService issuerService;
-
-    @Inject
-    private CodeService codeService;
-
-    @Inject
-    private StoreServiceEJB storeServiceEJB;
-
-    @Inject
     private Event<StoreContext> storeEvent;
 
     @Inject
-    @NewStudyCreated
-    private Event<String> newStudyCreatedEvent;
+    private LocationMgmt locationManager;
 
     @Inject
     @StoreSessionClosed
@@ -526,60 +485,6 @@ public class StoreServiceImpl implements StoreService {
         updateAttributes(context);
     }
 
-    @Override
-    public void updateDB(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Instance instance = service.findOrCreateInstance(em, context);
-        context.setInstance(instance);
-        // RESTORE action BLOCK
-        if (context.getStoreAction() != StoreAction.IGNORE
-                && context.getStoreAction() != StoreAction.UPDATEDB
-                && context.getStoragePath() != null) {
-            Collection<Location> locations = instance.getLocations(2);
-            Location location = createLocation(em, context);
-            locations.add(location);
-
-            // update instance retrieveAET
-            updateRetrieveAETs(session, instance);
-            // availability update
-            updateAvailability(session, instance);
-
-            findOrCreateStudyOnStorageGroup(context);
-            if (context.getMetaDataStoragePath() != null) {
-                Location metaDataRef = createMetaDataRef(em, context);
-                locations.add(metaDataRef);
-            }
-            context.setFileRef(location);
-        }
-    }
-
-    private void findOrCreateStudyOnStorageGroup(StoreContext context) {
-        locationManager.findOrCreateStudyOnStorageGroup(context.getInstance()
-                .getSeries().getStudy(), context.getStoreSession()
-                .getStorageSystem().getStorageSystemGroup().getGroupID());
-    }
-
-    private void updateRetrieveAETs(StoreSession session, Instance instance) {
-        ArrayList<String> retrieveAETs = new ArrayList<String>();
-        retrieveAETs.addAll(Arrays.asList(session.getStorageSystem()
-                .getStorageSystemGroup().getRetrieveAETs()));
-
-        for (String aet : instance.getRetrieveAETs())
-            if (!retrieveAETs.contains(aet))
-                retrieveAETs.add(aet);
-        String[] retrieveAETsArray = new String[retrieveAETs.size()];
-        instance.setRetrieveAETs(retrieveAETs.toArray(retrieveAETsArray));
-    }
-
-    private void updateAvailability(StoreSession session, Instance instance) {
-        if (session.getStorageSystem().getAvailability().ordinal() < instance
-                .getAvailability().ordinal())
-            instance.setAvailability(session.getStorageSystem()
-                    .getAvailability());
-    }
-
     private void updateAttributes(StoreContext context) {
         Instance instance = context.getInstance();
         Series series = instance.getSeries();
@@ -669,9 +574,8 @@ public class StoreServiceImpl implements StoreService {
     public Instance findOrCreateInstance(EntityManager em, StoreContext context)
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        StoreParam storeParam = session.getStoreParam();
         StoreService service = session.getStoreService();
-        Collection<Location> replaced = new ArrayList<Location>();
+        Collection<Location> replaced = new ArrayList<>();
 
         try {
 
@@ -687,7 +591,7 @@ public class StoreServiceImpl implements StoreService {
             switch (action) {
             case RESTORE:
             case UPDATEDB:
-                service.updateInstance(em, context, inst);
+                storeServiceEJB.updateInstance(context, inst);
             case IGNORE:
                 unmarkLocationsForDelete(inst, context);
                 return inst;
@@ -715,7 +619,7 @@ public class StoreServiceImpl implements StoreService {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
 
-        Instance newInst = service.createInstance(em, context);
+        Instance newInst = storeServiceEJB.createInstance(context);
 
         // delete replaced
         try {
@@ -730,8 +634,6 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public Series findOrCreateSeries(EntityManager em, StoreContext context)
             throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         try {
             Series series = em
@@ -739,10 +641,10 @@ public class StoreServiceImpl implements StoreService {
                             Series.class)
                     .setParameter(1, attrs.getString(Tag.SeriesInstanceUID))
                     .getSingleResult();
-            service.updateSeries(em, context, series);
+            storeServiceEJB.updateSeries(context, series);
             return series;
         } catch (NoResultException e) {
-            return service.createSeries(em, context);
+            return storeServiceEJB.createSeries(context);
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
@@ -751,8 +653,6 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public Study findOrCreateStudy(EntityManager em, StoreContext context)
             throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
         try {
             Study study = em
@@ -760,10 +660,10 @@ public class StoreServiceImpl implements StoreService {
                             Study.class)
                     .setParameter(1, attrs.getString(Tag.StudyInstanceUID))
                     .getSingleResult();
-            service.updateStudy(em, context, study);
+            storeServiceEJB.updateStudy(context, study);
             return study;
         } catch (NoResultException e) {
-            return service.createStudy(em, context);
+            return storeServiceEJB.createStudy(context);
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
@@ -789,227 +689,6 @@ public class StoreServiceImpl implements StoreService {
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-    }
-
-    @Override
-    public Study createStudy(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes attrs = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        Study study = new Study();
-        study.setPatient(service.findOrCreatePatient(em, context));
-        study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
-        study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
-                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-        study.setIssuerOfAccessionNumber(findOrCreateIssuer(attrs
-                .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
-        em.persist(study);
-        LOG.info("{}: Create {}", session, study);
-        newStudyCreatedEvent.fire(study.getStudyInstanceUID());
-        return study;
-    }
-
-    private Issuer findOrCreateIssuer(Attributes item) {
-        return item != null ? issuerService.findOrCreate(new Issuer(item))
-                : null;
-    }
-
-    @Override
-    public Series createSeries(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        Series series = new Series();
-        series.setStudy(service.findOrCreateStudy(em, context));
-        series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
-        series.setRequestAttributes(createRequestAttributes(
-                data.getSequence(Tag.RequestAttributesSequence),
-                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields(), series));
-        series.setSourceAET(session.getRemoteAET());
-        series.setAttributes(data,
-                storeParam.getAttributeFilter(Entity.Series),
-                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-        em.persist(series);
-        LOG.info("{}: Create {}", session, series);
-        return series;
-    }
-
-    @Override
-    public Instance createInstance(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        Instance inst = new Instance();
-        inst.setSeries(service.findOrCreateSeries(em, context));
-        inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
-        inst.setVerifyingObservers(createVerifyingObservers(
-                data.getSequence(Tag.VerifyingObserverSequence),
-                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields(), inst));
-        inst.setContentItems(createContentItems(
-                data.getSequence(Tag.ContentSequence), inst));
-        inst.setRetrieveAETs(session.getStorageSystem().getStorageSystemGroup()
-                .getRetrieveAETs());
-        inst.setAvailability(session.getStorageSystem().getAvailability());
-        inst.setAttributes(data,
-                storeParam.getAttributeFilter(Entity.Instance),
-                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-        em.persist(inst);
-        LOG.info("{}: Create {}", session, inst);
-        return inst;
-    }
-
-    private Location createLocation(EntityManager em, StoreContext context) {
-        StoreSession session = context.getStoreSession();
-        StorageSystem storageSystem = session.getStorageSystem();
-        Location fileRef = new Location.Builder()
-                .storageSystemGroupID(
-                        storageSystem.getStorageSystemGroup().getGroupID())
-                .storageSystemID(storageSystem.getStorageSystemID())
-                .storagePath(context.getStoragePath())
-                .digest(context.getFinalFileDigest())
-                .otherAttsDigest(context.getNoDBAttsDigest())
-                .size(context.getFinalFileSize())
-                .transferSyntaxUID(context.getTransferSyntax())
-                .timeZone(context.getSourceTimeZoneID()).build();
-        em.persist(fileRef);
-        LOG.info("{}: Create {}", session, fileRef);
-        return fileRef;
-    }
-
-    private Location createMetaDataRef(EntityManager em, StoreContext context) {
-        StoreSession session = context.getStoreSession();
-        StorageSystem storageSystem = session.getMetaDataStorageSystem();
-        long metadataFileSize = 0l;
-        try {
-            metadataFileSize = Files.size(Paths.get(storageSystem.getStorageSystemPath())
-                    .resolve(context.getMetaDataStoragePath()));
-        } catch (IOException e) {
-            LOG.error("{}: Unable to calculate Metadata File Size, setting the Metadata "
-                    + "size to 0 for instance {} ", session, context.getInstance());
-        }
-        Location fileRef = new Location.Builder()
-                .storageSystemGroupID(
-                        storageSystem.getStorageSystemGroup().getGroupID())
-                .storageSystemID(storageSystem.getStorageSystemID())
-                .storagePath(context.getMetaDataStoragePath())
-                .size(metadataFileSize)
-                .transferSyntaxUID(UID.ExplicitVRLittleEndian)
-                .timeZone(context.getSourceTimeZoneID()).withoutBulkdata(true)
-                .build();
-        em.persist(fileRef);
-        LOG.info("{}: Create {}", session, fileRef);
-        return fileRef;
-    }
-
-    @Override
-    public void updateStudy(EntityManager em, StoreContext context, Study study) {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        study.clearQueryAttributes();
-        AttributeFilter studyFilter = storeParam
-                .getAttributeFilter(Entity.Study);
-        Attributes studyAttrs = study.getAttributes();
-        Attributes modified = new Attributes();
-        // check if trashed
-        if (isRejected(study)) {
-            em.remove(study.getAttributesBlob());
-            study.setAttributes(new Attributes(data), studyFilter,
-                    storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-        } else {
-            if (!context.isFetch()
-                    && !session.getLocalAET().equalsIgnoreCase(
-                            device.getDeviceExtension(
-                                    ArchiveDeviceExtension.class)
-                                    .getFetchAETitle())
-                                    && studyAttrs.updateSelected(data, modified,
-                    studyFilter.getCompleteSelection(data))) {
-                study.setAttributes(studyAttrs, studyFilter,
-                        storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
-                        studyAttrs, modified);
-            }
-        }
-        if (!context.isFetch()
-                && !session.getLocalAET().equalsIgnoreCase(
-                        device.getDeviceExtension(
-                                ArchiveDeviceExtension.class)
-                                .getFetchAETitle()))
-        service.updatePatient(em, context, study.getPatient());
-    }
-
-    @Override
-    public void updatePatient(EntityManager em, StoreContext context,
-            Patient patient) {
-        StoreSession session = context.getStoreSession();
-        patientService.updatePatientByCStore(patient, context.getAttributes(),
-                session.getStoreParam());
-    }
-
-    @Override
-    public void updateSeries(EntityManager em, StoreContext context,
-            Series series) throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        series.clearQueryAttributes();
-        Attributes seriesAttrs = series.getAttributes();
-        AttributeFilter seriesFilter = storeParam
-                .getAttributeFilter(Entity.Series);
-        Attributes modified = new Attributes();
-        // check if trashed
-        if (isRejected(series)) {
-            em.remove(series.getAttributesBlob());
-            series.setAttributes(new Attributes(data), seriesFilter,
-                    storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-        } else {
-            if (!context.isFetch()
-                    && !session.getLocalAET().equalsIgnoreCase(
-                            device.getDeviceExtension(
-                                    ArchiveDeviceExtension.class)
-                                    .getFetchAETitle())
-                    && seriesAttrs.updateSelected(data, modified,
-                            seriesFilter.getCompleteSelection(data))) {
-                series.setAttributes(seriesAttrs, seriesFilter,
-                        storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
-                        seriesAttrs, modified);
-            }
-        }
-        service.updateStudy(em, context, series.getStudy());
-    }
-
-    @Override
-    public void updateInstance(EntityManager em, StoreContext context,
-            Instance inst) throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
-        Attributes instAttrs = inst.getAttributes();
-        AttributeFilter instFilter = storeParam
-                .getAttributeFilter(Entity.Instance);
-        Attributes modified = new Attributes();
-        if (!context.isFetch()
-                && !session.getLocalAET().equalsIgnoreCase(
-                        device.getDeviceExtension(
-                                ArchiveDeviceExtension.class)
-                                .getFetchAETitle())
-                && instAttrs.updateSelected(data, modified,
-                        instFilter.getCompleteSelection(data))) {
-            inst.setAttributes(data, instFilter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-            LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
-                    modified);
-        }
-        service.updateSeries(em, context, inst.getSeries());
     }
 
     private int[] getStoreFilters(Attributes attrs) {
@@ -1089,114 +768,6 @@ public class StoreServiceImpl implements StoreService {
         }
 
         return res;
-    }
-
-    private Collection<RequestAttributes> createRequestAttributes(Sequence seq,
-            FuzzyStr fuzzyStr, String nullValue, Series series) {
-        if (seq == null || seq.isEmpty())
-            return null;
-
-        ArrayList<RequestAttributes> list = new ArrayList<RequestAttributes>(
-                seq.size());
-        for (Attributes item : seq) {
-            RequestAttributes request = new RequestAttributes(
-                    item,
-                    findOrCreateIssuer(item
-                            .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
-                    fuzzyStr, nullValue);
-            request.setSeries(series);
-            list.add(request);
-        }
-        return list;
-    }
-
-    private Collection<VerifyingObserver> createVerifyingObservers(
-            Sequence seq, FuzzyStr fuzzyStr, String nullValue, Instance instance) {
-        if (seq == null || seq.isEmpty())
-            return null;
-
-        ArrayList<VerifyingObserver> list = new ArrayList<VerifyingObserver>(
-                seq.size());
-        for (Attributes item : seq) {
-            VerifyingObserver observer = new VerifyingObserver(item, fuzzyStr, nullValue);
-            observer.setInstance(instance);
-            list.add(observer);
-        }
-        return list;
-    }
-
-    private Collection<ContentItem> createContentItems(Sequence seq,
-            Instance inst) {
-        if (seq == null || seq.isEmpty())
-            return null;
-
-        Collection<ContentItem> list = new ArrayList<ContentItem>(seq.size());
-        for (Attributes item : seq) {
-            String type = item.getString(Tag.ValueType);
-            ContentItem contentItem = null;
-            if ("CODE".equals(type)) {
-                contentItem = new ContentItem(item.getString(
-                        Tag.RelationshipType).toUpperCase(), singleCode(item,
-                        Tag.ConceptNameCodeSequence), singleCode(item,
-                        Tag.ConceptCodeSequence));
-                list.add(contentItem);
-            } else if ("TEXT".equals(type)) {
-                contentItem = new ContentItem(item.getString(
-                        Tag.RelationshipType).toUpperCase(), singleCode(item,
-                        Tag.ConceptNameCodeSequence), item.getString(
-                        Tag.TextValue, "*"));
-            }
-            if (contentItem != null) {
-                contentItem.setInstance(inst);
-                list.add(contentItem);
-            }
-        }
-        return list;
-    }
-
-    private Code singleCode(Attributes attrs, int seqTag) {
-        Attributes item = attrs.getNestedDataset(seqTag);
-        if (item != null)
-            try {
-                return codeService.findOrCreate(new Code(item));
-            } catch (Exception e) {
-                LOG.info("Illegal code item in Sequence {}:\n{}",
-                        TagUtils.toString(seqTag), item);
-            }
-        return null;
-    }
-
-    private Collection<Code> codeList(Attributes attrs, int seqTag) {
-        Sequence seq = attrs.getSequence(seqTag);
-        if (seq == null || seq.isEmpty())
-            return Collections.emptyList();
-
-        ArrayList<Code> list = new ArrayList<Code>(seq.size());
-        for (Attributes item : seq) {
-            try {
-                list.add(codeService.findOrCreate(new Code(item)));
-            } catch (Exception e) {
-                LOG.info("Illegal code item in Sequence {}:\n{}",
-                        TagUtils.toString(seqTag), item);
-            }
-        }
-        return list;
-    }
-
-    private boolean isRejected(Study study) {
-        if(study.isRejected()) {
-            study.setRejected(false);
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isRejected(Series series) {
-        if(series.isRejected()) {
-            series.setRejected(false);
-            return true;
-        }
-        return false;
     }
 
     private void unmarkLocationsForDelete(Instance inst, StoreContext context) {

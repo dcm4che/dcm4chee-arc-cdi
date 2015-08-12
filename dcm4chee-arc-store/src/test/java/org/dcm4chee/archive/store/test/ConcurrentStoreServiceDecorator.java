@@ -66,10 +66,10 @@ public abstract class ConcurrentStoreServiceDecorator implements StoreService {
     @Inject SemaphoreHolder semaphores;
     
     @Override
-    public void updateDB(EntityManager em, StoreContext context)
+    public void updateDB(StoreContext context)
             throws DicomServiceException {
         
-        storeService.updateDB(em, context);
+        storeService.updateDB(context);
         
         // tell the master we're done
         semaphores.getReady().release();

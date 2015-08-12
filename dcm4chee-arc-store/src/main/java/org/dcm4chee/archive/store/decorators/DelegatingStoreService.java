@@ -77,10 +77,6 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
         getNextDecorator().updateDB(context);
     }
 
-    public void updateDB(EntityManager em, StoreContext context) throws DicomServiceException {
-        getNextDecorator().updateDB(em, context);
-    }
-
     public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
         return getNextDecorator().findOrCreateInstance(em, context);
     }
@@ -99,34 +95,6 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
 
     public StoreAction instanceExists(EntityManager em, StoreContext context, Instance instance) throws DicomServiceException {
         return getNextDecorator().instanceExists(em, context, instance);
-    }
-
-    public Instance createInstance(EntityManager em, StoreContext context) throws DicomServiceException {
-        return getNextDecorator().createInstance(em, context);
-    }
-
-    public Series createSeries(EntityManager em, StoreContext context) throws DicomServiceException {
-        return getNextDecorator().createSeries(em, context);
-    }
-
-    public Study createStudy(EntityManager em, StoreContext context) throws DicomServiceException {
-        return getNextDecorator().createStudy(em, context);
-    }
-
-    public void updateInstance(EntityManager em, StoreContext context, Instance inst) throws DicomServiceException {
-        getNextDecorator().updateInstance(em, context, inst);
-    }
-
-    public void updateSeries(EntityManager em, StoreContext context, Series series) throws DicomServiceException {
-        getNextDecorator().updateSeries(em, context, series);
-    }
-
-    public void updateStudy(EntityManager em, StoreContext context, Study study) throws DicomServiceException {
-        getNextDecorator().updateStudy(em, context, study);
-    }
-
-    public void updatePatient(EntityManager em, StoreContext context, Patient patient) {
-        getNextDecorator().updatePatient(em, context, patient);
     }
 
     public void cleanup(StoreContext context) {
