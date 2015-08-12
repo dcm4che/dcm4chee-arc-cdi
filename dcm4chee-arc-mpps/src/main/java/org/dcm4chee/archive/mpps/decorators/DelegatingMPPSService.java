@@ -16,21 +16,49 @@ import org.dcm4chee.conf.decorators.DelegatingServiceImpl;
 @DelegatingService
 public class DelegatingMPPSService extends DelegatingServiceImpl<MPPSService> implements MPPSService {
 
-	@Override
+    /**
+     * will be removed soon, redirected to createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
+     * @param arcAE
+     * @param sopInstanceUID
+     * @param attrs
+     * @param patient ignored
+     * @param service ignored
+     * @return
+     * @throws DicomServiceException
+     */
+    @Deprecated
+    @Override
 	public MPPS createPerformedProcedureStep(ArchiveAEExtension arcAE, String sopInstanceUID, Attributes attrs,
 			Patient patient, MPPSService service) throws DicomServiceException {
-		return getNextDecorator().createPerformedProcedureStep(arcAE, sopInstanceUID, attrs, patient, service);
-	}
+        return getNextDecorator().createPerformedProcedureStep(arcAE.getApplicationEntity(), sopInstanceUID, attrs);
+    }
 
+    /**
+     * will be removed soon, redirected to updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
+     * @param arcAE
+     * @param iuid
+     * @param attrs
+     * @param service ignored
+     * @return
+     * @throws DicomServiceException
+     */
+    @Deprecated
 	@Override
 	public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE,
 			String iuid, Attributes attrs, MPPSService service)	throws DicomServiceException {
-		return getNextDecorator().updatePerformedProcedureStep(arcAE, iuid, attrs, service);
+        return getNextDecorator().updatePerformedProcedureStep(arcAE.getApplicationEntity(), iuid, attrs);
+    }
+
+	@Override
+	public MPPS createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
+			throws DicomServiceException {
+		return getNextDecorator().createPerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
 	}
 
 	@Override
-	public Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)	throws DicomServiceException {
-		return getNextDecorator().findOrCreatePatient(attrs, storeParam);
+	public MPPS updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
+			throws DicomServiceException {
+		return getNextDecorator().updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
 	}
 
 	@Override

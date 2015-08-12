@@ -40,7 +40,9 @@ package org.dcm4chee.archive.mpps.impl;
 
 import org.dcm4che3.data.UID;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.StoreAction;
+import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Series;
@@ -57,8 +59,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
  *
+ * Rejects all instances that have an associated MPPS which is discontinued due to an incorrectly selected worklist entry
+ *
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Roman K
  */
 @DynamicDecorator
 public class StoreServiceMPPSDecorator extends DelegatingStoreService {
@@ -69,16 +74,20 @@ public class StoreServiceMPPSDecorator extends DelegatingStoreService {
     @Inject MPPSService mppsService;
 
     @Override
-    public Instance findOrCreateInstance(EntityManager em, StoreContext context)
-            throws DicomServiceException {
+    public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
         Instance inst = getNextDecorator().findOrCreateInstance(em, context);
         if (context.getStoreAction() != StoreAction.IGNORE) {
             StoreSession session = context.getStoreSession();
             MPPS mpps = findMPPS(em, session, inst);
-            if (Utils.isIncorrectWorklistEntrySelected(mpps, session.getDevice())) {
+            Code incorrectWorklistEntrySelectedCode = (Code) session.getDevice()
+                    .getDeviceExtension(ArchiveDeviceExtension.class)
+                    .getIncorrectWorklistEntrySelectedCode();
+
+            if (mpps != null && mpps.discontinuedForReason(incorrectWorklistEntrySelectedCode)) {
                 inst.setRejectionNoteCode(mpps.getDiscontinuationReasonCode());
                 LOG.info("{}: Reject {} by MPPS Discontinuation Reason - {}",
-                        context.getStoreSession(), inst,
+                        context.getStoreSession(),
+                        inst,
                         mpps.getDiscontinuationReasonCode());
             }
         }
@@ -86,24 +95,26 @@ public class StoreServiceMPPSDecorator extends DelegatingStoreService {
     }
 
     private MPPS findMPPS(EntityManager em, StoreSession session, Instance inst) {
-        MPPS mpps = null;
         Series series = inst.getSeries();
         String ppsiuid = series.getPerformedProcedureStepInstanceUID();
         String ppscuid = series.getPerformedProcedureStepClassUID();
-        if (ppsiuid != null
-                && !UID.ModalityPerformedProcedureStepSOPClass.equals(ppscuid)) {
-            mpps = (MPPS) session.getProperty(MPPS.class.getName());
-            if (mpps != null && mpps.getSopInstanceUID().equals(ppsiuid))
-                return mpps;
+        MPPS mpps = null;
 
-            mpps = null;
-            try {
-                mpps = em.createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UID, MPPS.class)
-                        .setParameter(1, ppsiuid)
-                        .getSingleResult();
-            } catch (NoResultException e) {
+        // if series reference MPPS
+        if (ppsiuid != null && !UID.ModalityPerformedProcedureStepSOPClass.equals(ppscuid)) {
+
+            // check if there is an applicable MPPS stored in the session, otherwise get from the db
+            mpps = (MPPS) session.getProperty(MPPS.class.getName());
+            if (mpps == null || !mpps.getSopInstanceUID().equals(ppsiuid)) {
+                try {
+                    mpps = em.createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UID, MPPS.class)
+                            .setParameter(1, ppsiuid)
+                            .getSingleResult();
+                } catch (NoResultException ignored) {
+                }
             }
         }
+
         session.setProperty(MPPS.class.getName(), mpps);
         return mpps;
     }

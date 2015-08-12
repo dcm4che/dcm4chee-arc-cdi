@@ -44,9 +44,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.net.*;
-import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.mpps.MPPSService;
@@ -55,7 +53,6 @@ import org.dcm4chee.archive.mpps.event.MPPSCreate;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.mpps.event.MPPSUpdate;
-import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.query.QueryService;
 import org.slf4j.Logger;
@@ -65,24 +62,20 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import javax.persistence.NoResultException;
 import javax.xml.transform.Templates;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- *
  */
 
 @ApplicationScoped
-public class MPPSServiceImpl implements MPPSService {
+public class DefaultMPPSService implements MPPSService {
 
     private static Logger LOG = LoggerFactory
-            .getLogger(MPPSServiceImpl.class);
+            .getLogger(DefaultMPPSService.class);
 
     @Inject
     private MPPSServiceEJB ejb;
@@ -92,9 +85,6 @@ public class MPPSServiceImpl implements MPPSService {
 
     @Inject
     private QueryService queryService;
-
-    @Inject
-    private CodeService codeService;
 
     @Inject
     @MPPSCreate
@@ -111,137 +101,45 @@ public class MPPSServiceImpl implements MPPSService {
     @Inject
     private Device device;
 
-    //TODO: REVIEW: why are we looking up and then modifying/persisting in different transactions?
+
 
     @Override
-    public MPPS createPerformedProcedureStep(ArchiveAEExtension arcAE,
-            String iuid, Attributes attrs, Patient patient,
+    public MPPS createPerformedProcedureStep(
+            ArchiveAEExtension arcAE,
+            String iuid,
+            Attributes attrs,
+            Patient patient,
             MPPSService service) throws DicomServiceException {
-            MPPS pps = ejb.findPPS(iuid);
-            if(pps != null)
-            throw new DicomServiceException(Status.DuplicateSOPinstance, "PPS with iuid "+iuid+" already exists")
-                .setUID(Tag.AffectedSOPInstanceUID, iuid);
-            
-        StoreParam storeParam = arcAE.getStoreParam();
-        if (patient == null) {
-            patient = service.findOrCreatePatient(attrs, storeParam);
-        }
-        Attributes mppsAttrs = new Attributes(attrs.size());
-        mppsAttrs.addNotSelected(attrs,
-                storeParam.getAttributeFilter(Entity.Patient).getCompleteSelection(attrs));
-        MPPS mpps = new MPPS();
-        mpps.setSopInstanceUID(iuid);
-        mpps.setAttributes(mppsAttrs, storeParam.getNullValueForQueryFields());
-        mpps.setPatient(patient);
-        ejb.persistPPS(mpps);
+
+        return createPerformedProcedureStep(arcAE.getApplicationEntity(), iuid, attrs);
+    }
+
+    @Override
+    public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE,String iuid, Attributes modified, MPPSService service)
+            throws DicomServiceException {
+        return updatePerformedProcedureStep(arcAE.getApplicationEntity(), iuid, modified);
+    }
+
+    @Override
+    public MPPS createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
+        MPPS mpps = ejb.createPerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
         return mpps;
     }
 
     @Override
-    public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE,
-            String iuid, Attributes modified, MPPSService service)
-                    throws DicomServiceException {
-        MPPS pps;
-        try {
-            pps = ejb.findPPS(iuid);
-        } catch (NoResultException e) {
-            throw new DicomServiceException(Status.NoSuchObjectInstance)
-                .setUID(Tag.AffectedSOPInstanceUID, iuid);
-        }
-        if (pps.getStatus() != MPPS.Status.IN_PROGRESS)
-            BasicMPPSSCP.mayNoLongerBeUpdated();
-
-        Attributes attrs = pps.getAttributes();
-        attrs.addAll(modified);
-        StoreParam storeParam = arcAE.getStoreParam();
-
-        pps.setAttributes(attrs, storeParam.getNullValueForQueryFields());
-        if (pps.getStatus() != MPPS.Status.IN_PROGRESS) {
-            if (!attrs.containsValue(Tag.PerformedSeriesSequence))
-                throw new DicomServiceException(Status.MissingAttributeValue)
-                        .setAttributeIdentifierList(Tag.PerformedSeriesSequence);
-        }
-
-        if (pps.getStatus() == MPPS.Status.DISCONTINUED) {
-            Attributes codeItem = attrs.getNestedDataset(
-                    Tag.PerformedProcedureStepDiscontinuationReasonCodeSequence);
-            if (codeItem != null) {
-                Code code = codeService.findOrCreate(new Code(codeItem));
-                pps.setDiscontinuationReasonCode(code);
-                if (Utils.isIncorrectWorklistEntrySelected(pps, 
-                        arcAE.getApplicationEntity().getDevice())) {
-                    rejectIncorrectWorklistEntrySelected(pps);
-                }
-            }
-        }
-
-        ejb.mergePPS(pps);
-        return pps;
-    }
-
-
-    // TODO: REVIEW: why are study and series entities are modified but not merged back into db?
-    private void rejectIncorrectWorklistEntrySelected(MPPS pps) {
-        HashMap<String,Attributes> map = new HashMap<String,Attributes>();
-        for (Attributes seriesRef : pps.getAttributes()
-                .getSequence(Tag.PerformedSeriesSequence)) {
-            for (Attributes ref : seriesRef
-                    .getSequence(Tag.ReferencedImageSequence)) {
-                map.put(ref.getString(Tag.ReferencedSOPInstanceUID), ref);
-            }
-            for (Attributes ref : seriesRef
-                    .getSequence(Tag.ReferencedNonImageCompositeSOPInstanceSequence)) {
-                map.put(ref.getString(Tag.ReferencedSOPInstanceUID), ref);
-            }
-            List<Instance> insts = ejb.findBySeriesInstanceUID(seriesRef);
-            for (Instance inst : insts) {
-                String iuid = inst.getSopInstanceUID();
-                Attributes ref = map.get(iuid);
-                if (ref != null) {
-                    String cuid = inst.getSopClassUID();
-                    String cuidInPPS = ref.getString(Tag.ReferencedSOPClassUID);
-                    Series series = inst.getSeries();
-                    Study study = series.getStudy();
-                    if (!cuid.equals(cuidInPPS)) {
-                        LOG.warn("SOP Class of received Instance[iuid={}, cuid={}] "
-                                + "of Series[iuid={}] of Study[iuid={}] differs from "
-                                + "SOP Class[cuid={}] referenced by MPPS[iuid={}]",
-                                iuid, cuid, series.getSeriesInstanceUID(), 
-                                study.getStudyInstanceUID(), cuidInPPS,
-                                pps.getSopInstanceUID());
-                    }
-                    inst.setRejectionNoteCode(pps.getDiscontinuationReasonCode());
-                    series.clearQueryAttributes();
-                    study.clearQueryAttributes();
-                    LOG.info("Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
-                            inst.getPk(), iuid,
-                            pps.getDiscontinuationReasonCode());
-                }
-            }
-            map.clear();
-        }
-    }
-
-    @Override
-    public Patient findOrCreatePatient(Attributes attrs, StoreParam storeParam)
-            throws DicomServiceException {
-        try {
-            return patientService.updateOrCreatePatientOnMPPSNCreate(
-                    attrs, PatientSelectorFactory.createSelector(storeParam), storeParam);
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.ProcessingFailure, e);
-        }
+    public MPPS updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
+        return ejb.updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
     }
 
     @Override
     public void coerceAttributes(Association as, Dimse dimse,
-            Attributes attrs) throws DicomServiceException {
+                                 Attributes attrs) throws DicomServiceException {
         try {
             ApplicationEntity ae = as.getApplicationEntity();
             ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     UID.ModalityPerformedProcedureStepSOPClass,
-                    dimse, TransferCapability.Role.SCP, 
+                    dimse, TransferCapability.Role.SCP,
                     as.getRemoteAET());
             if (tpl != null) {
                 Attributes modified = new Attributes();
@@ -255,21 +153,21 @@ public class MPPSServiceImpl implements MPPSService {
 
     @Override
     public void fireCreateMPPSEvent(ApplicationEntity ae, Attributes data,
-            MPPS mpps) {
+                                    MPPS mpps) {
         createMPPSEvent.fire(
                 new MPPSEvent(ae, Dimse.N_CREATE_RQ, data, mpps));
     }
 
     @Override
     public void fireUpdateMPPSEvent(ApplicationEntity ae, Attributes data,
-            MPPS mpps) {
+                                    MPPS mpps) {
         updateMPPSEvent.fire(
                 new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
     }
 
     @Override
     public void fireFinalMPPSEvent(ApplicationEntity ae, Attributes data,
-            MPPS mpps) {
+                                   MPPS mpps) {
         finalMPPSEvent.fire(
                 new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
     }
@@ -309,11 +207,11 @@ public class MPPSServiceImpl implements MPPSService {
     private ArrayList<String> getStudyUIDFromMPPSAttrs(Attributes attributes) {
         ArrayList<String> suids = new ArrayList<>();
         Sequence ssas = attributes.getSequence(Tag.ScheduledStepAttributesSequence);
-        for(Iterator<Attributes> iter = ssas.iterator(); iter.hasNext();) {
+        for (Iterator<Attributes> iter = ssas.iterator(); iter.hasNext(); ) {
             Attributes ssasItem = iter.next();
-           String studyIUID = ssasItem.getString(Tag.StudyInstanceUID);
-           if(studyIUID != null)
-               suids.add(studyIUID);
+            String studyIUID = ssasItem.getString(Tag.StudyInstanceUID);
+            if (studyIUID != null)
+                suids.add(studyIUID);
         }
         return suids;
     }

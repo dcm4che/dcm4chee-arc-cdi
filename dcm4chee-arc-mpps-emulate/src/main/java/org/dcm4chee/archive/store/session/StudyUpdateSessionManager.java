@@ -65,8 +65,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Observes store events and triggers StudyUpdatedEvent notifications when a coarse-grain update of a study is finished
- * (when no more instances of a study are received for a configured amount of time)
+ * Observes store events (StoreContext, StoreSession) and triggers StudyUpdatedEvent notifications when a coarse-grain update of a study is finished
+ * Configurable behavior:
+ * - when store session is finished/when study is changed during the session
+ * - when no more instances of a study are received for a configured amount of time
  *
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Roman K
@@ -166,7 +168,7 @@ public class StudyUpdateSessionManager {
         stopPolling();
     }
 
-    public void onArchiveSeriviceReloaded(@Observes @ArchiveServiceReloaded StartStopReloadEvent reload) {
+    public void onArchiveServiceReloaded(@Observes @ArchiveServiceReloaded StartStopReloadEvent reload) {
         if (lastPollingInterval != getConfiguredPollInterval()) {
             stopPolling();
             startPolling(lastPollingInterval = getConfiguredPollInterval());

@@ -55,7 +55,6 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import java.util.Set;
 
 /**
  * @author Roman K
@@ -83,7 +82,7 @@ public class MPPSEmulator {
 
         MPPS mpps = null;
         try {
-            mpps = ejb.emulatePerformedProcedureStep(studyUpdatedEvent);
+            mpps = ejb.emulateMPPS(studyUpdatedEvent);
         } catch (DicomServiceException e) {
             LOG.error("Cannot emulate MPPS",e);
             return null;

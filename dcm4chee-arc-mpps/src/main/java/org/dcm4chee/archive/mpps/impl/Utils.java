@@ -47,16 +47,6 @@ import org.dcm4chee.archive.entity.MPPS;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-class Utils {
-
-    static boolean isIncorrectWorklistEntrySelected(MPPS mpps, Device device) {
-        return mpps != null
-                && mpps.getStatus() == MPPS.Status.DISCONTINUED
-                && mpps.getDiscontinuationReasonCode() != null
-                && mpps.getDiscontinuationReasonCode()
-                    .equals((Code) device
-                            .getDeviceExtension(ArchiveDeviceExtension.class)
-                            .getIncorrectWorklistEntrySelectedCode());
-    }
+public class Utils {
 
 }

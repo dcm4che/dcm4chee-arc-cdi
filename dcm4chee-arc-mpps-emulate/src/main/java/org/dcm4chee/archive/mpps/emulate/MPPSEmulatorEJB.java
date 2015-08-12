@@ -109,9 +109,63 @@ public class MPPSEmulatorEJB {
             Tag.ProcedureCodeSequence,
             Tag.StudyID };
 
-    public MPPS emulatePerformedProcedureStep(StudyUpdatedEvent studyUpdatedEvent)
-            throws DicomServiceException {
+    /**
+     * Checks configured rule, finds the series, emulates MPPS
+     * @param studyUpdatedEvent
+     * @return
+     * @throws DicomServiceException
+     */
+    public MPPS emulateMPPS(StudyUpdatedEvent studyUpdatedEvent) throws DicomServiceException {
 
+        // find all series that are to be affected by this emulated MPPS
+        List<Series> seriesList = findAffectedSeries(studyUpdatedEvent);
+        if (seriesList == null) return null;
+
+        // there could be multiple local AETs used - just get the first one for providing configuration fvor MPPS service
+        String localAET = studyUpdatedEvent.getLocalAETs().iterator().next();
+
+        // checks if emulated MPPS should be created, according to the configured rule
+        MPPSCreationRule creationRule = device
+                .getDeviceExtensionNotNull(ArchiveDeviceExtension.class)
+                .getMppsEmulationRule(studyUpdatedEvent.getSourceAET())
+                .getCreationRule();
+        if (!checkCreationRule(creationRule, seriesList)) return null;
+
+        LOG.info("Emulate MPPS for Study[iuid={}] received from {}", studyUpdatedEvent.getStudyInstanceUID(), studyUpdatedEvent.getSourceAET());
+        String mppsIUID = UIDUtils.createUID();
+
+        MPPS mpps = emulateMPPS(seriesList, localAET, mppsIUID);
+
+        return mpps;
+    }
+
+    /**
+     *
+     * @param seriesList
+     * @param localAETForMPPSConfiguration Used to fetch rules like attribute filters etc
+     * @param mppsIUID
+     * @return
+     * @throws DicomServiceException
+     */
+    private MPPS emulateMPPS(List<Series> seriesList, String localAETForMPPSConfiguration, String mppsIUID) throws DicomServiceException {
+
+        ApplicationEntity ae = device.getApplicationEntityNotNull(localAETForMPPSConfiguration);
+        ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
+
+        MPPS mpps = null;
+        mpps = mppsService.createPerformedProcedureStep(
+                arcAE,
+                mppsIUID,
+                createMPPS(seriesList),
+                seriesList.get(0).getStudy().getPatient(),
+                mppsService);
+
+        updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
+
+        return mpps;
+    }
+
+    private List<Series> findAffectedSeries(StudyUpdatedEvent studyUpdatedEvent) {
         List<Series> seriesList = em
                 .createNamedQuery(
                         Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
@@ -126,29 +180,7 @@ public class MPPSEmulatorEJB {
         while (seriesIterator.hasNext())
             if (!studyUpdatedEvent.getAffectedSeriesUIDs().contains(seriesIterator.next().getSeriesInstanceUID()))
                 seriesIterator.remove();
-
-        ApplicationEntity ae = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAETs().iterator().next());
-
-        ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
-        MPPSCreationRule creationRule = device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class).getMppsEmulationRule(studyUpdatedEvent.getSourceAET()).getCreationRule();
-
-        // checks if emulated MPPS should be created, according to the configured rule
-        if (!checkCreationRule(creationRule, seriesList))
-            return null;
-
-        LOG.info("Emulate MPPS for Study[iuid={}] received from {}", studyUpdatedEvent.getStudyInstanceUID(), studyUpdatedEvent.getSourceAET());
-        String mppsIUID = UIDUtils.createUID();
-
-        MPPS mpps = null;
-        mpps = mppsService.createPerformedProcedureStep(
-                arcAE,
-                mppsIUID,
-                createMPPS(seriesList),
-                seriesList.get(0).getStudy().getPatient(),
-                mppsService);
-
-        updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
-        return mpps;
+        return seriesList;
     }
 
     private void updateMPPSReferences(String mppsIUID, List<Series> series, StoreParam storeParam) {

@@ -73,8 +73,7 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
             ApplicationEntity ae = as.getApplicationEntity();
             ArchiveAEExtension aeArc = ae.getAEExtension(ArchiveAEExtension.class);
             mppsService.coerceAttributes(as, Dimse.N_CREATE_RQ, data);
-            MPPS mpps = mppsService.createPerformedProcedureStep(aeArc,
-                    iuid, data, null, mppsService);
+            MPPS mpps = mppsService.createPerformedProcedureStep(aeArc,iuid, data, null, mppsService);
 
             mppsService.fireCreateMPPSEvent(ae, data, mpps);
         } catch (DicomServiceException e) {

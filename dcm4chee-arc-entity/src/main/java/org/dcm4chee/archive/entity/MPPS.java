@@ -70,21 +70,27 @@ import org.dcm4che3.util.DateUtils;
  */
 @NamedQueries({
     @NamedQuery(
-            name="MPPS.findBySOPInstanceUIDEager",
-            query="SELECT mpps FROM MPPS mpps JOIN FETCH mpps.attributesBlob  WHERE mpps.sopInstanceUID = ?1)"),
+            name=MPPS.FIND_BY_SOP_INSTANCE_UID_EAGER,
+            query="SELECT mpps FROM MPPS mpps JOIN FETCH mpps.attributesBlob  WHERE mpps.sopInstanceUID = ?1"),
     @NamedQuery(
             name="MPPS.findBySOPInstanceUID",
-            query="SELECT mpps FROM MPPS mpps WHERE mpps.sopInstanceUID = ?1)"),
+            query="SELECT mpps FROM MPPS mpps WHERE mpps.sopInstanceUID = ?1"),
     @NamedQuery(
             name="MPPS.findBySOPInstanceUIDs",
-            query="SELECT mpps FROM MPPS mpps WHERE mpps.sopInstanceUID IN :idList)"),
+            query="SELECT mpps FROM MPPS mpps WHERE mpps.sopInstanceUID IN :idList"),
     @NamedQuery(
             name="MPPS.deleteBySOPInstanceUIDs",
-            query="DELETE FROM MPPS mpps WHERE mpps.sopInstanceUID IN :idList)"),            
+            query="DELETE FROM MPPS mpps WHERE mpps.sopInstanceUID IN :idList"),
 })
 @Entity
 @Table(name = "mpps")
 public class MPPS implements Serializable {
+
+    public boolean discontinuedForReason(Code reasonCode) {
+        return getStatus() == Status.DISCONTINUED
+                && getDiscontinuationReasonCode() != null
+                && getDiscontinuationReasonCode().equals(reasonCode);
+    }
 
     public enum Status {
         IN_PROGRESS, COMPLETED, DISCONTINUED;
