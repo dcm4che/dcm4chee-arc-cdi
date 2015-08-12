@@ -203,6 +203,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
             name = "dcmMPPSEmulationRules")
     private List<MPPSEmulationAndStudyUpdateRule> mppsEmulationAndStudyUpdateRules = new ArrayList<MPPSEmulationAndStudyUpdateRule>();
 
+    @ConfigurableProperty(name = "dcmIgnoreCoercionErrorsAETs")
+    private String[] ignoreCoercionErrorsAETs = {};
+    
 
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
@@ -681,4 +684,12 @@ public class ArchiveDeviceExtension extends DeviceExtension {
             String dataVolumePerDayCalculationRange) {
         this.dataVolumePerDayCalculationRange = dataVolumePerDayCalculationRange;
     }
+
+	public String[] getIgnoreCoercionErrorsAETs() {
+		return ignoreCoercionErrorsAETs;
+	}
+
+	public void setIgnoreCoercionErrorsAETs(String[] ignoreCoercionErrorsAETs) {
+		this.ignoreCoercionErrorsAETs = ignoreCoercionErrorsAETs;
+	}
 }
