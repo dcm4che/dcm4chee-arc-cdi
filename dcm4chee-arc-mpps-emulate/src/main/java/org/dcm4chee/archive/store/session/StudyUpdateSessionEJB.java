@@ -103,7 +103,9 @@ public class StudyUpdateSessionEJB {
             entity.setEmulationTime(emulationTime);
 
             // add stored instance, affected series 
-            entity.getPendingStudyUpdatedEvent().addStoredInstance(localAET, sopInstanceUID, seriesInstanceUID, storeAction);
+            entity.getPendingStudyUpdatedEvent().getStoredInstances().add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction, localAET));
+            entity.getPendingStudyUpdatedEvent().getAffectedSeriesUIDs().add(seriesInstanceUID);
+            entity.getPendingStudyUpdatedEvent().getLocalAETs().add(localAET);
 
             em.merge(entity);
             LOG.debug("Modified study update session for Study[iuid={}] received from {}", studyInstanceUID, sourceAET);
@@ -117,8 +119,10 @@ public class StudyUpdateSessionEJB {
             entity.setEmulationTime(emulationTime);
 
             entity.getPendingStudyUpdatedEvent().setSourceAET(sourceAET);
+            entity.getPendingStudyUpdatedEvent().getLocalAETs().add(localAET);
             entity.getPendingStudyUpdatedEvent().setStudyInstanceUID(studyInstanceUID);
-            entity.getPendingStudyUpdatedEvent().addStoredInstance(localAET, sopInstanceUID, seriesInstanceUID, storeAction);
+            entity.getPendingStudyUpdatedEvent().getStoredInstances().add(new StudyUpdatedEvent.StoredInstance(sopInstanceUID, storeAction, localAET));
+            entity.getPendingStudyUpdatedEvent().getAffectedSeriesUIDs().add(seriesInstanceUID);
 
             em.persist(entity);
 
