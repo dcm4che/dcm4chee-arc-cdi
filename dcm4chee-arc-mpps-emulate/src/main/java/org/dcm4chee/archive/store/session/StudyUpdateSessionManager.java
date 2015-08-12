@@ -48,9 +48,12 @@ import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.MPPSEmulationAndStudyUpdateRule;
+import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.store.StoreSessionClosed;
+import org.dcm4chee.archive.store.impl.StoreSessionImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,30 +94,69 @@ public class StudyUpdateSessionManager {
     public void onInstanceStored(@Observes StoreContext storeContext) {
 
         StoreSession storeSession = storeContext.getStoreSession();
+        String remoteAET = storeSession.getRemoteAET();
+        String studyInstanceUID = storeContext.getAttributes().getString(Tag.StudyInstanceUID);
+        String seriesInstanceUID = storeContext.getAttributes().getString(Tag.SeriesInstanceUID);
+        String sopInstanceUID = storeContext.getAttributes().getString(Tag.SOPInstanceUID);
+        String localAET = storeSession.getLocalAET();
+        StoreAction storeAction = storeContext.getStoreAction();
 
         // find an applicable rule
         MPPSEmulationAndStudyUpdateRule rule =
                 storeSession.getDevice()
                         .getDeviceExtensionNotNull(ArchiveDeviceExtension.class)
-                        .getMppsEmulationRule(storeSession.getRemoteAET());
+                        .getMppsEmulationRule(remoteAET);
 
         // noop if no rule
         if (rule == null) return;
 
-        // async call
-        // if rule exists and a delay is configured, update the StudyStoreSession
-        if (rule.getEmulationDelay()>-1)
+        // if a delay is configured => multiple associations/cluster nodes case => update the StudyStoreSession entity
+        if (rule.getEmulationDelay() > -1) {
+            // async call
             ejb.addStoredInstance(
-                    storeSession.getRemoteAET(),
-                    storeSession.getLocalAET(),
-                    storeContext.getAttributes().getString(Tag.StudyInstanceUID),
-                    storeContext.getAttributes().getString(Tag.SeriesInstanceUID),
-                    storeContext.getAttributes().getString(Tag.SOPInstanceUID),
-                    storeContext.getStoreAction(),
+                    remoteAET,
+                    localAET,
+                    studyInstanceUID,
+                    seriesInstanceUID,
+                    sopInstanceUID,
+                    storeAction,
                     rule.getEmulationDelay());
+        }
+        // otherwise the StudyUpdatedEvent is bound to the Association/StoreSession
+        else {
 
-        // TODO: delay == -1 - implement on assoc close/study switch logic
+            // get/init pending StudyUpdatedEvent
+            StudyUpdatedEvent pendingStudyUpdatedEvent = (StudyUpdatedEvent) storeSession.getProperty("pendingStudyUpdatedEvent");
+            if (pendingStudyUpdatedEvent == null) {
+                pendingStudyUpdatedEvent = new StudyUpdatedEvent(studyInstanceUID, remoteAET);
+                storeSession.setProperty("pendingStudyUpdatedEvent", pendingStudyUpdatedEvent);
+            }
+
+            // check if there was a "study switch", i.e. an instance of a different study is sent in the same StoreSession
+            if (!studyInstanceUID.equals(pendingStudyUpdatedEvent.getStudyInstanceUID())) {
+
+                // fire StudyUpdatedEvent, async from the current thread, not blocking for the store itself
+                fireStudyUpdatedEventAsync(pendingStudyUpdatedEvent);
+
+                // create a new pendingStudyUpdatedEvent
+                pendingStudyUpdatedEvent = new StudyUpdatedEvent(studyInstanceUID, remoteAET);
+                storeSession.setProperty("pendingStudyUpdatedEvent", pendingStudyUpdatedEvent);
+            }
+
+            // add instance to the pending event
+            pendingStudyUpdatedEvent.addStoredInstance(localAET, sopInstanceUID, seriesInstanceUID, storeAction);
+        }
     }
+
+    public void onStoreSessionClosed(@Observes @StoreSessionClosed StoreSession storeSession) {
+        StudyUpdatedEvent pendingStudyUpdatedEvent = (StudyUpdatedEvent) storeSession.getProperty("pendingStudyUpdatedEvent");
+
+        // ... just in case
+        if (pendingStudyUpdatedEvent == null) return;
+
+        fireStudyUpdatedEventAsync(pendingStudyUpdatedEvent);
+    }
+
 
     public void onArchiveServiceStarted(@Observes @ArchiveServiceStarted StartStopReloadEvent start) {
         startPolling(lastPollingInterval = getConfiguredPollInterval());
@@ -143,9 +185,7 @@ public class StudyUpdateSessionManager {
                 @Override
                 public void run() {
                     try {
-                        int howManyFinished = checkAndNotifyOfUpdatedStudies();
-                        if (howManyFinished > 0)
-                            LOG.info("Update notification sent out for {} study(ies)", howManyFinished);
+                        checkAndNotifyOfUpdatedStudies();
                     } catch (Exception e) {
                         LOG.error("Error while checking for updated studies (study update session tracking daemon): ", e);
                     }
@@ -175,7 +215,23 @@ public class StudyUpdateSessionManager {
     public boolean notifyAboutNextFinishedUpdate() {
         StudyUpdatedEvent studyUpdatedEvent = ejb.findNextFinishedStudyUpdateSession();
         if (studyUpdatedEvent == null) return false;
-        studyUpdatedEventTrigger.fire(studyUpdatedEvent);
+        fireStudyUpdatedEvent(studyUpdatedEvent);
         return true;
     }
+
+    public void fireStudyUpdatedEventAsync(final StudyUpdatedEvent studyUpdatedEvent) {
+        device.getExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                fireStudyUpdatedEvent(studyUpdatedEvent);
+            }
+        });
+    }
+
+    private void fireStudyUpdatedEvent(StudyUpdatedEvent studyUpdatedEvent) {
+        LOG.info("Study {} updated, triggering StudyUpdatedEvent", studyUpdatedEvent.getStudyInstanceUID());
+        studyUpdatedEventTrigger.fire(studyUpdatedEvent);
+    }
+
+
 }
