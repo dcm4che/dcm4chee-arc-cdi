@@ -93,6 +93,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mysema.query.types.OrderSpecifier;
+import com.mysema.query.types.path.DateTimePath;
 import com.mysema.query.types.path.StringPath;
 
 /**
@@ -512,8 +513,15 @@ public class QidoRS {
                 for (String field : StringUtils.split(s, ',')) {
                     boolean desc = field.charAt(0) == '-';
                     int tag = parseTag(desc ? field.substring(1) : field);
-                    for (StringPath path : QueryBuilder.stringPathOf(tag, qrLevel)) {
-                        list.add(desc ? path.desc() : path.asc());
+                    for (com.mysema.query.types.Path<?> path : QueryBuilder.stringOrDateTimePathOf(tag, qrLevel)) {
+                        if (path instanceof DateTimePath) {
+                            list.add(desc ? 
+                                    ((DateTimePath<java.util.Date>) path).desc() 
+                                    : ((DateTimePath<java.util.Date>) path).asc());
+                        }
+                        else {
+                            list.add(desc ? ((StringPath) path).desc() : ((StringPath) path).asc());
+                        }
                     }
                 }
             } catch (IllegalArgumentException e) {

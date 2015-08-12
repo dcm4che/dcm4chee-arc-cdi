@@ -80,6 +80,7 @@ import com.mysema.query.types.expr.SimpleExpression;
 import com.mysema.query.types.expr.StringExpression;
 import com.mysema.query.types.path.BeanPath;
 import com.mysema.query.types.path.CollectionPath;
+import com.mysema.query.types.path.DateTimePath;
 import com.mysema.query.types.path.StringPath;
 
 /**
@@ -110,7 +111,7 @@ public class QueryBuilder {
     private QueryBuilder() {
     }
 
-    public static StringPath[] stringPathOf(int tag, QueryRetrieveLevel qrLevel) {
+    public static Path<?>[] stringOrDateTimePathOf(int tag, QueryRetrieveLevel qrLevel) {
         switch (qrLevel) {
         case FRAME:
         case IMAGE:
@@ -167,9 +168,8 @@ public class QueryBuilder {
             case Tag.StudyID:
                 return arrayOf(QStudy.study.studyID);
             case Tag.StudyDate:
-                return arrayOf(QStudy.study.studyDate);
             case Tag.StudyTime:
-                return arrayOf(QStudy.study.studyTime);
+            	return arrayOf(QStudy.study.studyDateTime);
             case Tag.ReferringPhysicianName:
                 return arrayOf(
                         QStudy.study.referringPhysicianName.familyName,
@@ -197,6 +197,10 @@ public class QueryBuilder {
     }
 
     private static StringPath[] arrayOf(StringPath... paths) {
+        return paths;
+    }
+
+    private static DateTimePath<?>[] arrayOf(DateTimePath<?>... paths) {
         return paths;
     }
 
@@ -262,10 +266,8 @@ public class QueryBuilder {
                     keys.getStrings(Tag.StudyInstanceUID), false, nullValue));
             builder.and(wildCard(QStudy.study.studyID,
                     keys.getString(Tag.StudyID, nullValue), matchUnknown, false, nullValue));
-            builder.and(MatchDateTimeRange.rangeMatch(QStudy.study.studyDate,
-                    QStudy.study.studyTime, Tag.StudyDate, Tag.StudyTime,
-                    Tag.StudyDateAndTime, keys, combinedDatetimeMatching,
-                    matchUnknown));
+            builder.and(MatchDateTimeRange.rangeMatch(QStudy.study.studyDateTime, Tag.StudyDate, Tag.StudyTime,
+                    Tag.StudyDateAndTime, keys, combinedDatetimeMatching, matchUnknown));
             builder.and(MatchPersonName.match(
                     QueryBuilder.referringPhysicianName,
                     keys.getString(Tag.ReferringPhysicianName, nullValue), queryParam, nullValue));

@@ -42,7 +42,6 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 
-import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -124,14 +123,9 @@ public class Study implements Serializable {
     @Column(name = "study_id")
     private String studyID;
 
-    //@Basic(optional = false)
-    @Column(name = "study_date")
-    private String studyDate;
-
-    //@Basic(optional = false)
-    @Column(name = "study_time")
-    private String studyTime;
-
+    @Column(name = "study_date_time", nullable = true)
+    private Date studyDateTime;
+    
     //@Basic(optional = false)
     @Column(name = "accession_no")
     private String accessionNumber;
@@ -225,14 +219,6 @@ public class Study implements Serializable {
 
     public String getStudyID() {
         return studyID;
-    }
-
-    public String getStudyDate() {
-        return studyDate;
-    }
-
-    public String getStudyTime() {
-        return studyTime;
     }
 
     public String getAccessionNumber() {
@@ -333,15 +319,16 @@ public class Study implements Serializable {
         studyID = attrs.getString(Tag.StudyID, nullValue);
         studyDescription = attrs.getString(Tag.StudyDescription, nullValue);
         Date dt = attrs.getDate(Tag.StudyDateAndTime);
-        if (dt != null) {
-            studyDate = DateUtils.formatDA(null, dt);
-            studyTime = attrs.containsValue(Tag.StudyTime)
-                    ? DateUtils.formatTM(null, dt)
-                    : nullValue;
-        } else {
-            studyDate = nullValue;
-            studyTime = nullValue;
-        }
+//        if (dt != null) {
+        	studyDateTime = dt;
+//            studyDate = DateUtils.formatDA(null, dt);
+//            studyTime = attrs.containsValue(Tag.StudyTime)
+//                    ? DateUtils.formatTM(null, dt)
+//                    : nullValue;
+//        } else {
+//            studyDate = nullValue;
+//            studyTime = nullValue;
+//        }
         accessionNumber = attrs.getString(Tag.AccessionNumber, nullValue);
         referringPhysicianName = PersonName.valueOf(
                 attrs.getString(Tag.ReferringPhysicianName), fuzzyStr, nullValue, referringPhysicianName);
