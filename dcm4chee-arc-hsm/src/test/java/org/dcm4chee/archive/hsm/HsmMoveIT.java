@@ -162,7 +162,8 @@ public class HsmMoveIT extends HsmITBase {
         List<Location> zipRefs = getLocationsOnStorageGroup(TEST_NEARLINE_ZIP);
         String targetName = zipRefs.get(0).getStoragePath()+"_inst";
         List<Instance> instances = getInstancesOfStudy(STUDY_INSTANCE_UID_2);
-        ejb.scheduleInstances(instances.subList(0, 2), TEST_NEARLINE_ZIP, TEST_NEARLINE_FLAT, targetName, true);
+        ArchivingSchedulerEJB.StorageSystemArchiveTarget target = new ArchivingSchedulerEJB.StorageSystemArchiveTarget(targetName, TEST_NEARLINE_FLAT);
+        ejb.scheduleInstances(instances.subList(0, 2), TEST_NEARLINE_ZIP, target, true);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         this.checkLocationsOfInstances(instances, 1);//check if sources are still available (container not deleted)
         scheduler.moveStudy(STUDY_INSTANCE_UID_2, TEST_NEARLINE_ZIP, TEST_NEARLINE_FLAT);

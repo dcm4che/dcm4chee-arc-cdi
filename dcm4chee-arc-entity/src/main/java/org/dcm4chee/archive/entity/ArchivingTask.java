@@ -91,11 +91,11 @@ public class ArchivingTask implements Serializable {
     @Column(name = "series_iuid", updatable = false)
     private String seriesInstanceUID;
 
-    @Basic(optional = false)
+    @Basic(optional = true)
     @Column(name = "target_stg_group_id", updatable = false)
     private String targetStorageSystemGroupID;
 
-    @Basic(optional = false)
+    @Basic(optional = true)
     @Column(name = "target_external_device", updatable = false)
     private String targetExternalDevice;
 
@@ -103,7 +103,7 @@ public class ArchivingTask implements Serializable {
     @Column(name = "source_stg_group_id", updatable = false)
     private String sourceStorageSystemGroupID;
 
-    @Basic(optional = false)
+    @Basic(optional = true)
     @Column(name = "target_name", updatable = false)
     private String targetName;
 

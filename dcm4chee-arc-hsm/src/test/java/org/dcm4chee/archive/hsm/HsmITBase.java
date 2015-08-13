@@ -92,8 +92,8 @@ import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.storage.RetrieveContext;
-import org.dcm4chee.storage.archiver.service.ArchiverContext;
 import org.dcm4chee.storage.archiver.service.ContainerEntriesStored;
+import org.dcm4chee.storage.archiver.service.StorageSystemArchiverContext;
 import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.Container;
 import org.dcm4chee.storage.conf.FileCache;
@@ -419,11 +419,11 @@ public class HsmITBase {
         return true;
     }
 
-    public void onContainerEntriesStored(@Observes @ContainerEntriesStored ArchiverContext archiverContext) {
+    public void onContainerEntriesStored(@Observes @ContainerEntriesStored StorageSystemArchiverContext archiverContext) {
         if (this.getClass() == HsmITBase.class)
             return;
         synchronized (finishedTargets) {
-            finishedTargets.add(archiverContext.getStorageSystemGroupID()+":"+archiverContext.getName());
+            finishedTargets.add(archiverContext.getStorageSystemGroupID() + ":" + archiverContext.getName());
             finishedTargets.notifyAll();
         }
     }

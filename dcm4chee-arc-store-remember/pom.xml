@@ -44,6 +44,16 @@
       <artifactId>dcm4chee-arc-store-verify</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-storage</groupId>
+      <artifactId>dcm4chee-storage-archiver</artifactId>
+      <version>${dcm4chee-storage.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-retrieve</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 </dependencies>
 
 </project>
