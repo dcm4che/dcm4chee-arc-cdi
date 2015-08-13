@@ -203,8 +203,10 @@ public class ArchiveDeviceExtension extends DeviceExtension {
             name = "dcmMPPSEmulationRules")
     private List<MPPSEmulationAndStudyUpdateRule> mppsEmulationAndStudyUpdateRules = new ArrayList<MPPSEmulationAndStudyUpdateRule>();
 
-    @ConfigurableProperty(name = "dcmIgnoreCoercionErrorsAETs")
-    private String[] ignoreCoercionErrorsAETs = {};
+    @ConfigurableProperty(name = "dcmIgnoreSeriesStudyMissmatchErrorsAETs",
+    		description="List of Application Entities which will not get a C-STORE rejected, if a Series/Study mismatch is detected",
+    		collectionOfReferences=true)
+    private Collection<ApplicationEntity> ignoreSeriesStudyMissmatchErrorsAETs = new ArrayList<ApplicationEntity>();
     
 
     private transient FuzzyStr fuzzyStr;
@@ -685,11 +687,19 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.dataVolumePerDayCalculationRange = dataVolumePerDayCalculationRange;
     }
 
-	public String[] getIgnoreCoercionErrorsAETs() {
-		return ignoreCoercionErrorsAETs;
+	public Collection<ApplicationEntity> getIgnoreSeriesStudyMissmatchErrorsAETs() {
+		return ignoreSeriesStudyMissmatchErrorsAETs;
 	}
 
-	public void setIgnoreCoercionErrorsAETs(String[] ignoreCoercionErrorsAETs) {
-		this.ignoreCoercionErrorsAETs = ignoreCoercionErrorsAETs;
+	public void setIgnoreSeriesStudyMissmatchErrorsAETs(Collection<ApplicationEntity> ignoreSeriesStudyMissmatchErrorsAETs) {
+		this.ignoreSeriesStudyMissmatchErrorsAETs = ignoreSeriesStudyMissmatchErrorsAETs;
 	}
+	
+	public void addIgnoreSeriesStudyMissmatchErrorsAET(ApplicationEntity ae) {
+		this.ignoreSeriesStudyMissmatchErrorsAETs.add(ae);
+	}
+	public boolean removeIgnoreSeriesStudyMissmatchErrorsAET(ApplicationEntity ae) {
+		return this.ignoreSeriesStudyMissmatchErrorsAETs.remove(ae);
+	}
+	
 }
