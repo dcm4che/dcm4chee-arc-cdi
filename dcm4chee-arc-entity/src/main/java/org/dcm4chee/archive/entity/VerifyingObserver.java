@@ -41,7 +41,6 @@ package org.dcm4chee.archive.entity;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -56,7 +55,6 @@ import javax.persistence.Table;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
-import org.dcm4che3.util.DateUtils;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -77,7 +75,7 @@ public class VerifyingObserver implements Serializable {
 
     //@Basic(optional = false)
     @Column(name = "verify_datetime")
-    private String verificationDateTime;
+    private Date verificationDateTime;
 
     @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "observer_name_fk")
@@ -91,7 +89,7 @@ public class VerifyingObserver implements Serializable {
 
     public VerifyingObserver(Attributes attrs, FuzzyStr fuzzyStr, String nullValue) {
         Date dt = attrs.getDate(Tag.VerificationDateTime);
-        verificationDateTime = DateUtils.formatDT(null, dt);
+        verificationDateTime = dt;
         verifyingObserverName = PersonName.valueOf(
                 attrs.getString(Tag.VerifyingObserverName), fuzzyStr, nullValue, null);
     }
@@ -100,7 +98,7 @@ public class VerifyingObserver implements Serializable {
         return pk;
     }
 
-    public String getVerificationDateTime() {
+    public Date getVerificationDateTime() {
         return verificationDateTime;
     }
 

@@ -179,12 +179,12 @@ public class Series implements Serializable {
     private String laterality;
 
     //@Basic(optional = false)
-    @Column(name = "pps_start_date")
-    private String performedProcedureStepStartDate;
-
-    //@Basic(optional = false)
-    @Column(name = "pps_start_time")
-    private String performedProcedureStepStartTime;
+    @Column(name = "pps_start_date_time", nullable=true)
+    private Date performedProcedureStepStartDateTime;
+//
+//    //@Basic(optional = false)
+//    @Column(name = "pps_start_time")
+//    private String performedProcedureStepStartTime;
 
     //@Basic(optional = false)
     @Column(name = "pps_iuid")
@@ -326,13 +326,10 @@ public class Series implements Serializable {
         return performingPhysicianName;
     }
 
-    public String getPerformedProcedureStepStartDate() {
-        return performedProcedureStepStartDate;
+    public Date getPerformedProcedureStepStartDateTime() {
+        return performedProcedureStepStartDateTime;
     }
 
-    public String getPerformedProcedureStepStartTime() {
-        return performedProcedureStepStartTime;
-    }
 
     public String getPerformedProcedureStepInstanceUID() {
         return performedProcedureStepInstanceUID;
@@ -443,16 +440,17 @@ public class Series implements Serializable {
             performedProcedureStepClassUID = nullValue;
         }
         Date dt = attrs.getDate(Tag.PerformedProcedureStepStartDateAndTime);
-        if (dt != null) {
-            performedProcedureStepStartDate = DateUtils.formatDA(null, dt);
-            performedProcedureStepStartTime = 
-                attrs.containsValue(Tag.PerformedProcedureStepStartDate)
-                    ? DateUtils.formatTM(null, dt)
-                    : nullValue;
-        } else {
-            performedProcedureStepStartDate = nullValue;
-            performedProcedureStepStartTime = nullValue;
-        }
+        performedProcedureStepStartDateTime = dt;
+//        if (dt != null) {
+//            performedProcedureStepStartDate = DateUtils.formatDA(null, dt);
+//            performedProcedureStepStartTime = 
+//                attrs.containsValue(Tag.PerformedProcedureStepStartDate)
+//                    ? DateUtils.formatTM(null, dt)
+//                    : nullValue;
+//        } else {
+//            performedProcedureStepStartDate = nullValue;
+//            performedProcedureStepStartTime = nullValue;
+//        }
         performingPhysicianName = PersonName.valueOf(
                 attrs.getString(Tag.PerformingPhysicianName), fuzzyStr, null, performingPhysicianName);
         seriesCustomAttribute1 = 

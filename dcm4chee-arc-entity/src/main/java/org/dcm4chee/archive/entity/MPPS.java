@@ -40,7 +40,6 @@ package org.dcm4chee.archive.entity;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -128,12 +127,8 @@ public class MPPS implements Serializable {
     private String sopInstanceUID;
 
     //@Basic(optional = false)
-    @Column(name = "pps_start_date")
-    private String startDate;
-
-    //@Basic(optional = false)
-    @Column(name = "pps_start_time")
-    private String startTime;
+    @Column(name = "pps_start_date_time", nullable=true)
+    private Date startDateTime;
 
     //@Basic(optional = false)
     @Column(name = "station_aet")
@@ -182,12 +177,8 @@ public class MPPS implements Serializable {
         this.sopInstanceUID = sopInstanceUID;
     }
 
-    public String getStartDate() {
-        return startDate;
-    }
-
-    public String getStartTime() {
-        return startTime;
+    public Date getStartDateTime() {
+        return startDateTime;
     }
 
     public String getPerformedStationAET() {
@@ -236,8 +227,7 @@ public class MPPS implements Serializable {
                 + ", iuid=" + sopInstanceUID
                 + ", status=" + status
                 + ", accno=" + accessionNumber
-                + ", startDate=" + startDate
-                + ", startTime=" + startTime
+                + ", startDateTime=" + startDateTime.toString()
                 + ", mod=" + modality
                 + ", aet=" + performedStationAET
                 + "]";
@@ -266,16 +256,17 @@ public class MPPS implements Serializable {
     public void setAttributes(Attributes attrs, String nullValue) {
         
         Date dt = attrs.getDate(Tag.PerformedProcedureStepStartDateAndTime);
-        if (dt != null) {
-            startDate = DateUtils.formatDA(null, dt);
-            startTime = 
-                attrs.containsValue(Tag.PerformedProcedureStepStartDate)
-                    ? DateUtils.formatTM(null, dt)
-                    : nullValue;
-        } else {
-            startDate = nullValue;
-            startTime = nullValue;
-        }
+        startDateTime = dt;
+//        if (dt != null) {
+//            startDate = DateUtils.formatDA(null, dt);
+//            startTime = 
+//                attrs.containsValue(Tag.PerformedProcedureStepStartDate)
+//                    ? DateUtils.formatTM(null, dt)
+//                    : nullValue;
+//        } else {
+//            startDate = nullValue;
+//            startTime = nullValue;
+//        }
         this.performedStationAET = attrs.getString(Tag.PerformedStationAETitle);
         this.modality = attrs.getString(Tag.Modality);
         Attributes ssa = attrs.getNestedDataset(

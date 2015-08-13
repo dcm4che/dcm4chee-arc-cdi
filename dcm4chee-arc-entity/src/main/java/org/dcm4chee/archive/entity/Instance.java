@@ -136,12 +136,8 @@ public class Instance implements Serializable {
     private String instanceNumber;
 
     //@Basic(optional = false)
-    @Column(name = "content_date")
-    private String contentDate;
-
-    //@Basic(optional = false)
-    @Column(name = "content_time")
-    private String contentTime;
+    @Column(name = "content_date_time", nullable=true)
+    private Date contentDateTime;
 
     //@Basic(optional = false)
     @Column(name = "sr_complete")
@@ -264,12 +260,8 @@ public class Instance implements Serializable {
         return instanceNumber;
     }
 
-    public String getContentDate() {
-        return contentDate;
-    }
-
-    public String getContentTime() {
-        return contentTime;
+    public Date getContentDateTime() {
+        return contentDateTime;
     }
 
     public String getCompletionFlag() {
@@ -417,16 +409,17 @@ public class Instance implements Serializable {
         sopClassUID = attrs.getString(Tag.SOPClassUID);
         instanceNumber = attrs.getString(Tag.InstanceNumber, nullValue);
         Date dt = attrs.getDate(Tag.ContentDateAndTime);
-        if (dt != null) {
-            contentDate = DateUtils.formatDA(null, dt);
-            contentTime = 
-                attrs.containsValue(Tag.ContentTime)
-                    ? DateUtils.formatTM(null, dt)
-                    : nullValue;
-        } else {
-            contentDate = nullValue;
-            contentTime = nullValue;
-        }
+        contentDateTime = dt;
+//        if (dt != null) {
+//            contentDate = DateUtils.formatDA(null, dt);
+//            contentTime = 
+//                attrs.containsValue(Tag.ContentTime)
+//                    ? DateUtils.formatTM(null, dt)
+//                    : nullValue;
+//        } else {
+//            contentDate = nullValue;
+//            contentTime = nullValue;
+//        }
         completionFlag = nullValue == null ? null : attrs.getString(Tag.CompletionFlag, nullValue).toUpperCase();
         verificationFlag = nullValue == null ? null : attrs.getString(Tag.VerificationFlag, nullValue).toUpperCase();
 

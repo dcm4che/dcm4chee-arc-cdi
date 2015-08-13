@@ -86,6 +86,7 @@ import com.mysema.query.types.path.StringPath;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@gmail.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 public class QueryBuilder {
 
@@ -127,9 +128,8 @@ public class QueryBuilder {
             case Tag.CompletionFlag:
                 return arrayOf(QInstance.instance.completionFlag);
             case Tag.ContentDate:
-                return arrayOf(QInstance.instance.contentDate);
             case Tag.ContentTime:
-                return arrayOf(QInstance.instance.contentTime);
+                return arrayOf(QInstance.instance.contentDateTime);
             }
         case SERIES:
             switch (tag) {
@@ -144,9 +144,8 @@ public class QueryBuilder {
             case Tag.Laterality:
                 return arrayOf(QSeries.series.laterality);
             case Tag.PerformedProcedureStepStartDate:
-                return arrayOf(QSeries.series.performedProcedureStepStartDate);
             case Tag.PerformedProcedureStepStartTime:
-                return arrayOf(QSeries.series.performedProcedureStepStartTime);
+                return arrayOf(QSeries.series.performedProcedureStepStartDateTime);
             case Tag.PerformingPhysicianName:
                 return arrayOf(
                         QSeries.series.performingPhysicianName.familyName,
@@ -330,8 +329,7 @@ public class QueryBuilder {
             builder.and(wildCard(QSeries.series.laterality,
                     upper(keys.getString(Tag.Laterality, nullValue)), matchUnknown, false, nullValue));
             builder.and(MatchDateTimeRange.rangeMatch(
-                    QSeries.series.performedProcedureStepStartDate,
-                    QSeries.series.performedProcedureStepStartTime,
+                    QSeries.series.performedProcedureStepStartDateTime,
                     Tag.PerformedProcedureStepStartDate,
                     Tag.PerformedProcedureStepStartTime,
                     Tag.PerformedProcedureStepStartDateAndTime, keys,
@@ -389,7 +387,7 @@ public class QueryBuilder {
         builder.and(wildCard(QInstance.instance.completionFlag,
                 upper(keys.getString(Tag.CompletionFlag, nullValue)), matchUnknown, false, nullValue));
         builder.and(MatchDateTimeRange.rangeMatch(
-                QInstance.instance.contentDate, QInstance.instance.contentTime,
+                QInstance.instance.contentDateTime,
                 Tag.ContentDate, Tag.ContentTime, Tag.ContentDateAndTime, keys,
                 combinedDatetimeMatching, matchUnknown));
         builder.and(code(QInstance.instance.conceptNameCode,keys.getNestedDataset(Tag.ConceptNameCodeSequence),
