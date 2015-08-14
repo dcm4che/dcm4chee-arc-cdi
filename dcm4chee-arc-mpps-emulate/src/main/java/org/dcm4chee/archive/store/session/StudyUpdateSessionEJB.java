@@ -40,6 +40,7 @@ package org.dcm4chee.archive.store.session;
 
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.StoreAction;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyUpdateSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,10 +48,7 @@ import org.slf4j.LoggerFactory;
 import javax.ejb.Asynchronous;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
+import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
@@ -137,6 +135,21 @@ public class StudyUpdateSessionEJB {
         StudyUpdateSession studyUpdateSession = resultList.get(0);
         em.remove(studyUpdateSession);
         return studyUpdateSession.getPendingStudyUpdatedEvent();
+    }
+
+
+    // temporarily here...
+    public Study findStudyByUID(String studyUID) {
+        String queryStr = "SELECT s FROM Study s JOIN FETCH s.series se WHERE s.studyInstanceUID = ?1";
+        Query query = em.createQuery(queryStr);
+        Study study = null;
+        try {
+            query.setParameter(1, studyUID);
+            study = (Study) query.getSingleResult();
+        } catch (NoResultException e) {
+            LOG.error("Unable to find study {}, related to an already performed procedure", studyUID);
+        }
+        return study;
     }
 
 }

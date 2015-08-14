@@ -74,8 +74,6 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
             ArchiveAEExtension aeArc = ae.getAEExtension(ArchiveAEExtension.class);
             mppsService.coerceAttributes(as, Dimse.N_CREATE_RQ, data);
             MPPS mpps = mppsService.createPerformedProcedureStep(aeArc,iuid, data, null, mppsService);
-
-            mppsService.fireCreateMPPSEvent(ae, data, mpps);
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -94,11 +92,6 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
             mppsService.coerceAttributes(as, Dimse.N_SET_RQ, data);
             MPPS mpps = mppsService.updatePerformedProcedureStep(aeArc,
                     iuid, data, mppsService);
-
-            if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
-                mppsService.fireUpdateMPPSEvent(ae, data, mpps);
-            else
-                mppsService.fireFinalMPPSEvent(ae, data, mpps);
 
         } catch (DicomServiceException e) {
             throw e;

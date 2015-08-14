@@ -96,7 +96,7 @@ public class MPPSSCUImpl implements MPPSSCU {
         if (arcAE == null)
             return;
 
-        String iuid = event.getPerformedProcedureStep().getSopInstanceUID();
+        String iuid = event.getMppsSopInstanceUID();
         Attributes attrs = event.getAttributes();
         for (String remoteAET : arcAE.getForwardMPPSDestinations()) {
             scheduleForwardMPPS(event.getDIMSE(), ae.getAETitle(), remoteAET,

@@ -136,8 +136,7 @@ public class IANSCUImpl implements IANSCU {
                 ? (Code) arcDev.getIncorrectWorklistEntrySelectedCode()
                 : null;
         return incorrectWorklistEntrySelected != null
-                && incorrectWorklistEntrySelected.equals(
-                        mpps.getDiscontinuationReasonCode());
+                && incorrectWorklistEntrySelected.equals(mpps.getDiscontinuationReasonCode());
     }
 
     private void scheduleSendIAN(String localAET, String[] remoteAETs,

@@ -108,7 +108,7 @@ public class MPPSServiceEJB {
 
         Attributes mppsAttrs = new Attributes(attrs.size());
 
-        /// TODO: not selected?
+        // Filter out patient attrs - they are already in Patient blob
         mppsAttrs.addNotSelected(attrs,storeParam.getAttributeFilter(Entity.Patient).getCompleteSelection(attrs));
         MPPS mpps = new MPPS();
         mpps.setSopInstanceUID(mppsIuid);
@@ -122,24 +122,24 @@ public class MPPSServiceEJB {
     public MPPS updatePerformedProcedureStep(ApplicationEntity ae,
                                              String iuid,
                                              Attributes modified) throws DicomServiceException {
-        MPPS pps;
+        MPPS mpps;
         try {
-            pps = findPPS(iuid);
+            mpps = findPPS(iuid);
         } catch (NoResultException e) {
             throw new DicomServiceException(Status.NoSuchObjectInstance).setUID(Tag.AffectedSOPInstanceUID, iuid);
         }
 
-        if (pps.getStatus() != MPPS.Status.IN_PROGRESS)
+        if (mpps.getStatus() != MPPS.Status.IN_PROGRESS)
             BasicMPPSSCP.mayNoLongerBeUpdated();
 
         // overwrite attributes
-        Attributes attrs = pps.getAttributes();
+        Attributes attrs = mpps.getAttributes();
         attrs.addAll(modified);
         StoreParam storeParam = ae.getAEExtensionNotNull(ArchiveAEExtension.class).getStoreParam();
-        pps.setAttributes(attrs, storeParam.getNullValueForQueryFields());
+        mpps.setAttributes(attrs, storeParam.getNullValueForQueryFields());
 
         // check if allowed to change
-        if (pps.getStatus() != MPPS.Status.IN_PROGRESS) {
+        if (mpps.getStatus() != MPPS.Status.IN_PROGRESS) {
             if (!attrs.containsValue(Tag.PerformedSeriesSequence))
                 throw new DicomServiceException(Status.MissingAttributeValue)
                         .setAttributeIdentifierList(Tag.PerformedSeriesSequence);
@@ -147,20 +147,20 @@ public class MPPSServiceEJB {
 
         // What happens if we receive this before all the instances are stored? - See the StoreServiceMPPSDecorator
         // reject stored instances that are a result of an incorrectly chosen worklist entry
-        if (pps.getStatus() == MPPS.Status.DISCONTINUED) {
+        if (mpps.getStatus() == MPPS.Status.DISCONTINUED) {
 
             // set discontinuation code
             Attributes codeItem = attrs.getNestedDataset(Tag.PerformedProcedureStepDiscontinuationReasonCodeSequence);
             if (codeItem != null) {
                 Code code = codeService.findOrCreate(new Code(codeItem));
-                pps.setDiscontinuationReasonCode(code);
+                mpps.setDiscontinuationReasonCode(code);
             }
 
-            if (pps.discontinuedForReason(incorrectWorklistEntrySelectedCode()))
-                rejectReferencedInstancesDueToIncorrectlySelectedWorklistEntry(pps);
+            if (mpps.discontinuedForReason(incorrectWorklistEntrySelectedCode()))
+                rejectReferencedInstancesDueToIncorrectlySelectedWorklistEntry(mpps);
         }
-        em.merge(pps);
-        return pps;
+        em.merge(mpps);
+        return mpps;
     }
 
     private Code incorrectWorklistEntrySelectedCode() {
@@ -244,16 +244,4 @@ public class MPPSServiceEJB {
                 .getSingleResult();
     }
 
-    public Study findStudyByUID(String studyUID) {
-        String queryStr = "SELECT s FROM Study s JOIN FETCH s.series se WHERE s.studyInstanceUID = ?1";
-        Query query = em.createQuery(queryStr);
-        Study study = null;
-        try {
-            query.setParameter(1, studyUID);
-            study = (Study) query.getSingleResult();
-        } catch (NoResultException e) {
-            LOG.error("Unable to find study {}, related to an already performed procedure", studyUID);
-        }
-        return study;
-    }
 }

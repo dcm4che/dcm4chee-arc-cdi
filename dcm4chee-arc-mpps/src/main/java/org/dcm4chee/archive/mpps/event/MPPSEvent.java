@@ -46,11 +46,10 @@ import org.dcm4chee.archive.entity.MPPS;
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Roman K
  *
  */
 public class MPPSEvent {
-
-    private final MPPS pps;
 
     /**
      * A local AE of the archive that received MPPS
@@ -58,13 +57,13 @@ public class MPPSEvent {
     private final ApplicationEntity ae;
     private final Attributes attrs;
     private final Dimse dimse;
+    private final String mppsSopInstanceUID;
 
-    public MPPSEvent(ApplicationEntity ae, Dimse dimse, Attributes attrs,
-            MPPS pps) {
+    public MPPSEvent(ApplicationEntity ae, Dimse dimse, Attributes attrs, String mppsSopInstanceUID) {
         this.dimse = dimse;
         this.ae = ae;
-        this.pps = pps;
         this.attrs = attrs;
+        this.mppsSopInstanceUID = mppsSopInstanceUID;
     }
 
     public Dimse getDIMSE() {
@@ -75,10 +74,19 @@ public class MPPSEvent {
         return ae;
     }
 
+    public String getMppsSopInstanceUID() {
+        return mppsSopInstanceUID;
+    }
+
     public Attributes getAttributes() {
         return attrs;
     }
 
+    /**
+     * This method will be removed - use getAttributes
+     * @return
+     */
+    @Deprecated
     public MPPS getPerformedProcedureStep() {
         return pps;
     }

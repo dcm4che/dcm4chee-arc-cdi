@@ -54,10 +54,10 @@ import org.dcm4chee.archive.entity.Patient;
  */
 public interface MPPSService {
 
-    MPPS createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
+    void createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
             throws DicomServiceException;
 
-    MPPS updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
+    void updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
             throws DicomServiceException;
 
     void coerceAttributes(Association as, Dimse dimse, Attributes attrs) throws DicomServiceException;
@@ -82,14 +82,5 @@ public interface MPPSService {
             String iuid,
             Attributes attrs,
             MPPSService service) throws DicomServiceException;
-
-    @Deprecated
-    void fireCreateMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps);
-
-    @Deprecated
-    void fireUpdateMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps);
-
-    @Deprecated
-    void fireFinalMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps);
 
 }

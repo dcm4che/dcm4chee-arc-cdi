@@ -28,12 +28,12 @@ public abstract class MPPSServiceDynamicDecorator extends DynamicDecoratorWrappe
     }
 
     @Override
-    public MPPS createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
+    public void createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
         return wrapWithDynamicDecorators(delegate).createPerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
     }
 
     @Override
-    public MPPS updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
+    public void updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
         return wrapWithDynamicDecorators(delegate).updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
     }
 

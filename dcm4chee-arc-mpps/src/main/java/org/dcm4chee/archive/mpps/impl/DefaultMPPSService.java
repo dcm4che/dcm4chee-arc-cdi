@@ -39,8 +39,6 @@
 package org.dcm4chee.archive.mpps.impl;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Sequence;
-import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.net.*;
@@ -60,11 +58,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.xml.transform.Templates;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -102,7 +97,7 @@ public class DefaultMPPSService implements MPPSService {
     private Device device;
 
 
-
+    @Deprecated
     @Override
     public MPPS createPerformedProcedureStep(
             ArchiveAEExtension arcAE,
@@ -111,24 +106,32 @@ public class DefaultMPPSService implements MPPSService {
             Patient patient,
             MPPSService service) throws DicomServiceException {
 
-        return createPerformedProcedureStep(arcAE.getApplicationEntity(), iuid, attrs);
+        createPerformedProcedureStep(arcAE.getApplicationEntity(), iuid, attrs);
+        return null;
     }
 
+    @Deprecated
     @Override
     public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE,String iuid, Attributes modified, MPPSService service)
             throws DicomServiceException {
-        return updatePerformedProcedureStep(arcAE.getApplicationEntity(), iuid, modified);
+        updatePerformedProcedureStep(arcAE.getApplicationEntity(), iuid, modified);
+        return null;
     }
 
     @Override
-    public MPPS createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
+    public void createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
         MPPS mpps = ejb.createPerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
-        return mpps;
+        createMPPSEvent.fire(new MPPSEvent(ae, Dimse.N_CREATE_RQ, attrs, mppsSopInstanceUID));
     }
 
     @Override
-    public MPPS updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
-        return ejb.updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
+    public void updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
+        MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
+
+        if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
+            updateMPPSEvent.fire(new MPPSEvent(ae, Dimse.N_SET_RQ, attrs, mppsSopInstanceUID));
+        else
+            finalMPPSEvent.fire(new MPPSEvent(ae, Dimse.N_SET_RQ, attrs, mppsSopInstanceUID));
     }
 
     @Override
@@ -151,69 +154,5 @@ public class DefaultMPPSService implements MPPSService {
         }
     }
 
-    @Override
-    public void fireCreateMPPSEvent(ApplicationEntity ae, Attributes data,
-                                    MPPS mpps) {
-        createMPPSEvent.fire(
-                new MPPSEvent(ae, Dimse.N_CREATE_RQ, data, mpps));
-    }
-
-    @Override
-    public void fireUpdateMPPSEvent(ApplicationEntity ae, Attributes data,
-                                    MPPS mpps) {
-        updateMPPSEvent.fire(
-                new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
-    }
-
-    @Override
-    public void fireFinalMPPSEvent(ApplicationEntity ae, Attributes data,
-                                   MPPS mpps) {
-        finalMPPSEvent.fire(
-                new MPPSEvent(ae, Dimse.N_SET_RQ, data, mpps));
-    }
-
-    // TODO: REVIEW: MPPSFinal - what if it is received before the referenced contents are stored? we should use StudyUpdatedEvent here ...
-    public void onMPPSFinalEvent(@Observes @MPPSFinal MPPSEvent event) {
-        LOG.info("Received MPPS complete event , initiating derived fields calculation");
-        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
-        ApplicationEntity archiveAE = event.getApplicationEntity();
-        ArchiveAEExtension arcAEExt = archiveAE.getAEExtension(ArchiveAEExtension.class);
-        QueryRetrieveView view = arcDevExt.getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
-        if (view == null) {
-            LOG.warn("Cannot re-calculate derived fields - query retrieve view ID is not specified for AE {}", archiveAE.getAETitle());
-            return;
-        }
-
-        QueryParam param = new QueryParam();
-        param.setQueryRetrieveView(view);
-        ArrayList<String> studyInstanceUID = getStudyUIDFromMPPSAttrs(event.getPerformedProcedureStep().getAttributes());
-        //now for each study
-        try {
-            for (String studyUID : studyInstanceUID) {
-                Study study = ejb.findStudyByUID(studyUID);
-
-                //create study view
-                queryService.createStudyView(study.getPk(), param);
-
-                //create series view
-                for (Series series : study.getSeries())
-                    queryService.createSeriesView(series.getPk(), param);
-            }
-        } catch (Exception e) {
-            LOG.error("Error while calculating derived fields on MPPS COMPLETE", e);
-        }
-    }
-
-    private ArrayList<String> getStudyUIDFromMPPSAttrs(Attributes attributes) {
-        ArrayList<String> suids = new ArrayList<>();
-        Sequence ssas = attributes.getSequence(Tag.ScheduledStepAttributesSequence);
-        for (Iterator<Attributes> iter = ssas.iterator(); iter.hasNext(); ) {
-            Attributes ssasItem = iter.next();
-            String studyIUID = ssasItem.getString(Tag.StudyInstanceUID);
-            if (studyIUID != null)
-                suids.add(studyIUID);
-        }
-        return suids;
-    }
 
 }

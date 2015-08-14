@@ -147,7 +147,7 @@ public class MPPSEmulatorEJB {
      * @return
      * @throws DicomServiceException
      */
-    private MPPS emulateMPPS(List<Series> seriesList, String localAETForMPPSConfiguration, String mppsIUID) throws DicomServiceException {
+    public MPPS emulateMPPS(List<Series> seriesList, String localAETForMPPSConfiguration, String mppsIUID) throws DicomServiceException {
 
         ApplicationEntity ae = device.getApplicationEntityNotNull(localAETForMPPSConfiguration);
         ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
