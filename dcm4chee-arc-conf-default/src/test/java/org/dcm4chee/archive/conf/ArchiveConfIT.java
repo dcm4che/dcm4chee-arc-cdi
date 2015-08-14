@@ -39,16 +39,20 @@
  */
 package org.dcm4chee.archive.conf;
 
+import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
 import org.dcm4che3.conf.core.api.Configuration;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.ExternalArchiveAEExtension;
+import org.dcm4che3.net.TCGroupConfigAEExtension;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.defaults.DeepEquals;
 import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory;
 import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
@@ -57,6 +61,7 @@ import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.FileAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -65,7 +70,12 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Any;
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
+
 import java.io.File;
 
 /**
@@ -74,8 +84,10 @@ import java.io.File;
 @RunWith(Arquillian.class)
 public class ArchiveConfIT extends ArchiveDeviceTest {
 
-    @Inject
-    Configuration dbConfigStorage;
+	CommonDicomConfigurationWithHL7 configWithHL7;
+	
+    @Inject @Any
+    Instance<Configuration> dbConfigStorage;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -91,6 +103,7 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
 
 
         war.addAsManifestResource(new FileAsset(new File("src/test/resources/META-INF/MANIFEST.MF")), "MANIFEST.MF");
+        war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
         JavaArchive[] archs = Maven.resolver()
                 .loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies()
@@ -110,7 +123,15 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
     public void setUp() throws Exception {
         DicomConfigurationBuilder builder = new DicomConfigurationBuilder();
 
-        builder.registerCustomConfigurationStorage(dbConfigStorage);
+        for (Configuration configuration : dbConfigStorage) {
+            String storageClassName = configuration.getClass().getName();
+            System.out.println(storageClassName);
+
+
+            if (storageClassName.startsWith("org.dcm4chee.conf.storage.SemiSerialized"))
+                builder.registerCustomConfigurationStorage(configuration);
+
+        }
 
         builder.registerDeviceExtension(ArchiveDeviceExtension.class);
         builder.registerDeviceExtension(StorageDeviceExtension.class);
@@ -120,10 +141,12 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
         builder.registerDeviceExtension(AuditRecordRepository.class);
         builder.registerDeviceExtension(AuditLogger.class);
         builder.registerAEExtension(ArchiveAEExtension.class);
+        builder.registerAEExtension(ExternalArchiveAEExtension.class);
+        builder.registerAEExtension(WebServiceAEExtension.class);
+        builder.registerAEExtension(TCGroupConfigAEExtension.class);
         builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
 
-
-        CommonDicomConfigurationWithHL7 configWithHL7 = builder.build();
+        configWithHL7 = builder.build();
         config = configWithHL7;
         hl7Config = configWithHL7;
 
@@ -190,5 +213,9 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
 
     }
 
+    @Produces
+    public DicomConfigurationManager getDicomConfiguration() {
+    	return configWithHL7;
+    }
 
 }
