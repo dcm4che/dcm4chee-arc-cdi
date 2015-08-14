@@ -1625,7 +1625,8 @@ public class QCBeanImpl  implements QCBean{
     private Series createSeries(Series series, Study target, Attributes targetSeriesAttrs) {
         Attributes data = new Attributes(series.getAttributes());
         data.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
-        data.update(targetSeriesAttrs, data);
+        if (targetSeriesAttrs != null)
+        	data.update(targetSeriesAttrs, data);
         Series newSeries = new Series();
         newSeries.setStudy(target);
         newSeries.setSourceAET(series.getSourceAET());
@@ -1935,10 +1936,10 @@ public class QCBeanImpl  implements QCBean{
                 if(allReferencedSopUIDs.contains(moved.getSopInstanceUID()))
                     allReferencesCount--;
             }
-            if(allReferencesCount ==0) {
+            if(allReferencesCount == 0) {
                 return ReferenceState.ALLMOVED;
             }
-            else if(allReferencesCount <= allReferencedSopUIDs.size()
+            else if(allReferencesCount < allReferencedSopUIDs.size()
                     && allReferencesCount > 0){
                 return ReferenceState.SOMEMOVED;
             }
@@ -2063,8 +2064,7 @@ public class QCBeanImpl  implements QCBean{
                             qcSource, series.getModality(), series.getModality());
                     if(!oldToNewSeries.keySet().contains(
                             inst.getSeries().getSeriesInstanceUID())) {
-                        newSeries= createSeries(inst.getSeries(), targetStudy, 
-                                targetSeriesAttrs);
+                        newSeries= createSeries(inst.getSeries(), targetStudy, null);
                         QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
                                 series.getAttributes(), studyHistory);
                         oldToNewSeries.put(inst.getSeries().getSeriesInstanceUID(), 
@@ -2106,8 +2106,7 @@ public class QCBeanImpl  implements QCBean{
                             qcSource, series.getModality(), series.getModality());
                     if(!oldToNewSeries.keySet().contains(
                             inst.getSeries().getSeriesInstanceUID())) {
-                        newSeries= createSeries(inst.getSeries(), targetStudy, 
-                                targetSeriesAttrs);
+                        newSeries= createSeries(inst.getSeries(), targetStudy, null);
                         QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
                                 series.getAttributes(), studyHistory);
                         oldToNewSeries.put(inst.getSeries().getSeriesInstanceUID(), 
