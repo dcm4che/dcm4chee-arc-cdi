@@ -41,8 +41,6 @@
 package org.dcm4chee.archive.store.session;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
@@ -50,16 +48,11 @@ import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.conf.*;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
-import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
-import org.dcm4chee.archive.store.impl.StoreSessionImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,8 +60,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -244,46 +235,11 @@ public class StudyUpdateSessionManager {
     private void fireStudyUpdatedEvent(StudyUpdatedEvent studyUpdatedEvent) {
 
         // calc derived fields
-
+        ApplicationEntity ae = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAETs().iterator().next());
+        queryService.recalculateDerivedFields(ejb.findStudyByUID(studyUpdatedEvent.getStudyInstanceUID()), ae);
 
         LOG.info("Study {} updated, triggering StudyUpdatedEvent", studyUpdatedEvent.getStudyInstanceUID());
         studyUpdatedEventTrigger.fire(studyUpdatedEvent);
-    }
-
-    public void recalculateDerivedFields(StudyUpdatedEvent studyUpdatedEvent) {
-        LOG.info("Calculating derived fields");
-        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
-
-        ApplicationEntity applicationEntity;
-        try {
-            applicationEntity = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAETs().iterator().next());
-        } catch (Exception e) {
-            LOG.warn("Cannot lookup ae, not calculating derived fields", e);
-            return;
-        }
-
-        ArchiveAEExtension arcAEExt = applicationEntity.getAEExtension(ArchiveAEExtension.class);
-        QueryRetrieveView view = arcDevExt.getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
-        if (view == null) {
-            LOG.warn("Cannot re-calculate derived fields - query retrieve view ID is not specified for AE {}", applicationEntity.getAETitle());
-            return;
-        }
-
-        QueryParam param = new QueryParam();
-        param.setQueryRetrieveView(view);
-
-        Study study = ejb.findStudyByUID(studyUpdatedEvent.getStudyInstanceUID());
-        try {
-            //create study view
-            queryService.createStudyView(study.getPk(), param);
-
-            //create series view
-            for (Series series : study.getSeries())
-                queryService.createSeriesView(series.getPk(), param);
-
-        } catch (Exception e) {
-            LOG.error("Error while calculating derived fields on MPPS COMPLETE", e);
-        }
     }
 
 }

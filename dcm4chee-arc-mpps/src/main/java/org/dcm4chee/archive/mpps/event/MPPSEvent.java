@@ -39,9 +39,8 @@
 package org.dcm4chee.archive.mpps.event;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Dimse;
-import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.mpps.MPPSContext;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -51,27 +50,25 @@ import org.dcm4chee.archive.entity.MPPS;
  */
 public class MPPSEvent {
 
-    /**
-     * A local AE of the archive that received MPPS
-     */
-    private final ApplicationEntity ae;
     private final Attributes attrs;
     private final Dimse dimse;
     private final String mppsSopInstanceUID;
+    private MPPSContext context;
 
-    public MPPSEvent(ApplicationEntity ae, Dimse dimse, Attributes attrs, String mppsSopInstanceUID) {
+    public MPPSEvent(String mppsSopInstanceUID, Dimse dimse, Attributes attrs, MPPSContext context) {
+        this.context = context;
         this.dimse = dimse;
-        this.ae = ae;
         this.attrs = attrs;
         this.mppsSopInstanceUID = mppsSopInstanceUID;
     }
 
-    public Dimse getDIMSE() {
-        return dimse;
+
+    public MPPSContext getContext() {
+        return context;
     }
 
-    public ApplicationEntity getApplicationEntity() {
-        return ae;
+    public Dimse getDIMSE() {
+        return dimse;
     }
 
     public String getMppsSopInstanceUID() {
@@ -80,15 +77,6 @@ public class MPPSEvent {
 
     public Attributes getAttributes() {
         return attrs;
-    }
-
-    /**
-     * This method will be removed - use getAttributes
-     * @return
-     */
-    @Deprecated
-    public MPPS getPerformedProcedureStep() {
-        return pps;
     }
 
 }

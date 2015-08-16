@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.mpps.impl;
+package org.dcm4chee.archive.mpps.rejection;
 
 import org.dcm4che3.data.UID;
 import org.dcm4che3.net.service.DicomServiceException;

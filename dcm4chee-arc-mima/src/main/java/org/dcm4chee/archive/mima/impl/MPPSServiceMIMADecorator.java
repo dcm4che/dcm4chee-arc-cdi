@@ -43,10 +43,10 @@ import javax.inject.Inject;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.decorators.DelegatingMPPSService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 
@@ -66,14 +66,14 @@ public class MPPSServiceMIMADecorator extends DelegatingMPPSService {
     private IApplicationEntityCache aeCache;
 
     @Override
-    public void coerceAttributes(Association as, Dimse dimse, Attributes attrs)
+    public void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs)
             throws DicomServiceException {
-        getNextDecorator().coerceAttributes(as, dimse, attrs);
+        getNextDecorator().coerceAttributes(context, dimse, attrs);
         if (dimse == Dimse.N_CREATE_RQ)
         try {
-            ApplicationEntity remoteAE = aeCache.get(as.getRemoteAET());
+            ApplicationEntity remoteAE = aeCache.get(context.getRemoteAET());
             if (remoteAE != null) {
-                Supplements.supplementMPPS(as, attrs, remoteAE.getDevice());
+                Supplements.supplementMPPS(context, attrs, remoteAE.getDevice());
             }
         } catch (Exception e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);

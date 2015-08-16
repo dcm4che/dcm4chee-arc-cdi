@@ -37,16 +37,6 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.mpps;
 
-import java.util.HashMap;
-import java.util.List;
-
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
@@ -56,14 +46,22 @@ import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.mpps.rejection.IncorrectWorkListEntrySelectedHandlerEJB;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -84,6 +82,9 @@ public class MPPSServiceEJB {
 
     @Inject
     Device device;
+
+    @Inject
+    IncorrectWorkListEntrySelectedHandlerEJB incorrectWorkListEntrySelectedHandler;
 
     public MPPS createPerformedProcedureStep(
             ApplicationEntity ae,
@@ -145,8 +146,6 @@ public class MPPSServiceEJB {
                         .setAttributeIdentifierList(Tag.PerformedSeriesSequence);
         }
 
-        // What happens if we receive this before all the instances are stored? - See the StoreServiceMPPSDecorator
-        // reject stored instances that are a result of an incorrectly chosen worklist entry
         if (mpps.getStatus() == MPPS.Status.DISCONTINUED) {
 
             // set discontinuation code
@@ -156,86 +155,13 @@ public class MPPSServiceEJB {
                 mpps.setDiscontinuationReasonCode(code);
             }
 
-            if (mpps.discontinuedForReason(incorrectWorklistEntrySelectedCode()))
-                rejectReferencedInstancesDueToIncorrectlySelectedWorklistEntry(mpps);
+            // What happens if we receive this before all the instances are stored? - See the StoreServiceMPPSDecorator
+            // reject stored instances that are a result of an incorrectly chosen worklist entry
+            incorrectWorkListEntrySelectedHandler.checkStatusAndRejectRejectInstancesIfNeeded(mpps);
+
         }
         em.merge(mpps);
         return mpps;
-    }
-
-    private Code incorrectWorklistEntrySelectedCode() {
-        return (Code) device
-                .getDeviceExtension(ArchiveDeviceExtension.class)
-                .getIncorrectWorklistEntrySelectedCode();
-    }
-
-    private void rejectReferencedInstancesDueToIncorrectlySelectedWorklistEntry(MPPS pps) {
-        HashMap<String, Attributes> referencedInstancesByIuid = new HashMap<>();
-
-        // inited by first local instance if found
-        Study study = null;
-
-        for (Attributes seriesRef : pps.getAttributes().getSequence(Tag.PerformedSeriesSequence)) {
-
-            // put all mpps- referenced instances into a map by iuid
-            for (Attributes ref : seriesRef.getSequence(Tag.ReferencedImageSequence))
-                referencedInstancesByIuid.put(ref.getString(Tag.ReferencedSOPInstanceUID), ref);
-            for (Attributes ref : seriesRef.getSequence(Tag.ReferencedNonImageCompositeSOPInstanceSequence))
-                referencedInstancesByIuid.put(ref.getString(Tag.ReferencedSOPInstanceUID), ref);
-
-            // inited by first local instance if found
-            Series series = null;
-
-            // iterate over the instances we have locally for this series
-            for (Instance localInstance : findBySeriesInstanceUID(seriesRef)) {
-                String iuid = localInstance.getSopInstanceUID();
-                Attributes referencedInstance = referencedInstancesByIuid.get(iuid);
-                if (referencedInstance != null) {
-                    String cuid = localInstance.getSopClassUID();
-                    String cuidInPPS = referencedInstance.getString(Tag.ReferencedSOPClassUID);
-
-                    series = localInstance.getSeries();
-                    study = series.getStudy();
-
-                    if (!cuid.equals(cuidInPPS)) {
-                        LOG.warn("SOP Class of received Instance[iuid={}, cuid={}] "
-                                        + "of Series[iuid={}] of Study[iuid={}] differs from "
-                                        + "SOP Class[cuid={}] referenced by MPPS[iuid={}]",
-                                iuid, cuid, series.getSeriesInstanceUID(),
-                                study.getStudyInstanceUID(), cuidInPPS,
-                                pps.getSopInstanceUID());
-                    }
-
-                    LOG.info("Reject Instance[pk={},iuid={}] by MPPS Discontinuation Reason - {}",
-                            localInstance.getPk(), iuid,
-                            incorrectWorklistEntrySelectedCode());
-
-                    localInstance.setRejectionNoteCode(incorrectWorklistEntrySelectedCode());
-                    em.merge(localInstance);
-                }
-            }
-            referencedInstancesByIuid.clear();
-
-            // TODO: Derived fields: this should be decoupled...
-            // cleanup
-            if (series != null) {
-                series.clearQueryAttributes();
-                em.merge(series);
-            }
-
-        }
-        // TODO: Derived fields: this should be decoupled...
-        // cleanup
-        if (study != null) {
-            study.clearQueryAttributes();
-            em.merge(study);
-        }
-    }
-
-    public List<Instance> findBySeriesInstanceUID(Attributes seriesRef) {
-        return em.createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID, Instance.class)
-                .setParameter(1, seriesRef.getString(Tag.SeriesInstanceUID))
-                .getResultList();
     }
 
     public MPPS findPPS(String sopInstanceUID) {

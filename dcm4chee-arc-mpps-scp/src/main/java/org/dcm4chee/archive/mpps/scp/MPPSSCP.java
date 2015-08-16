@@ -38,10 +38,6 @@
 
 package org.dcm4chee.archive.mpps.scp;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Typed;
-import javax.inject.Inject;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
@@ -53,7 +49,12 @@ import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Typed;
+import javax.inject.Inject;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -72,8 +73,7 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
             String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
             ApplicationEntity ae = as.getApplicationEntity();
             ArchiveAEExtension aeArc = ae.getAEExtension(ArchiveAEExtension.class);
-            mppsService.coerceAttributes(as, Dimse.N_CREATE_RQ, data);
-            MPPS mpps = mppsService.createPerformedProcedureStep(aeArc,iuid, data, null, mppsService);
+            mppsService.createPerformedProcedureStep(iuid, data, new MPPSContext(null, ae.getAETitle()));
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -90,8 +90,7 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
             ApplicationEntity ae = as.getApplicationEntity();
             ArchiveAEExtension aeArc = ae.getAEExtension(ArchiveAEExtension.class);
             mppsService.coerceAttributes(as, Dimse.N_SET_RQ, data);
-            MPPS mpps = mppsService.updatePerformedProcedureStep(aeArc,
-                    iuid, data, mppsService);
+            MPPS mpps = mppsService.updatePerformedProcedureStep(aeArc, iuid, data, mppsService);
 
         } catch (DicomServiceException e) {
             throw e;

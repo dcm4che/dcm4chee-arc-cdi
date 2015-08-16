@@ -1,19 +1,18 @@
 package org.dcm4chee.archive.mpps.decorators;
 
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
-import javax.inject.Inject;
-
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.conf.decorators.DynamicDecoratorWrapper;
+
+import javax.decorator.Decorator;
+import javax.decorator.Delegate;
+import javax.inject.Inject;
 
 @Decorator
 public abstract class MPPSServiceDynamicDecorator extends DynamicDecoratorWrapper<MPPSService> implements MPPSService {
@@ -23,18 +22,18 @@ public abstract class MPPSServiceDynamicDecorator extends DynamicDecoratorWrappe
     MPPSService delegate;
 
     @Override
-    public void coerceAttributes(Association as, Dimse dimse, Attributes attrs) throws DicomServiceException {
-        wrapWithDynamicDecorators(delegate).coerceAttributes(as, dimse, attrs);
+    public void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs) throws DicomServiceException {
+        wrapWithDynamicDecorators(delegate).coerceAttributes(context, dimse, attrs);
     }
 
     @Override
-    public void createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
-        return wrapWithDynamicDecorators(delegate).createPerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
+    public void createPerformedProcedureStep(String mppsSopInstanceUID, Attributes attrs, MPPSContext mppsContext) throws DicomServiceException {
+        wrapWithDynamicDecorators(delegate).createPerformedProcedureStep(mppsSopInstanceUID, attrs, mppsContext);
     }
 
     @Override
-    public void updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
-        return wrapWithDynamicDecorators(delegate).updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
+    public void updatePerformedProcedureStep(String mppsSopInstanceUID, Attributes attrs, MPPSContext mppsContext) throws DicomServiceException {
+        wrapWithDynamicDecorators(delegate).updatePerformedProcedureStep(mppsSopInstanceUID, attrs, mppsContext);
     }
 
     @Override
@@ -46,21 +45,6 @@ public abstract class MPPSServiceDynamicDecorator extends DynamicDecoratorWrappe
 	@Override
 	public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE, String iuid, Attributes attrs, MPPSService service) throws DicomServiceException {
 		return wrapWithDynamicDecorators(delegate).updatePerformedProcedureStep(arcAE, iuid, attrs, service);
-	}
-
-	@Override
-	public void fireCreateMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps) {
-		wrapWithDynamicDecorators(delegate).fireCreateMPPSEvent(ae, data, mpps);
-	}
-
-	@Override
-	public void fireUpdateMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps) {
-		wrapWithDynamicDecorators(delegate).fireUpdateMPPSEvent(ae, data, mpps);
-	}
-
-	@Override
-	public void fireFinalMPPSEvent(ApplicationEntity ae, Attributes data, MPPS mpps) {
-		wrapWithDynamicDecorators(delegate).fireFinalMPPSEvent(ae, data, mpps);
 	}
 
 }

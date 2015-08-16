@@ -39,12 +39,9 @@
 package org.dcm4chee.archive.mpps;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
 
@@ -54,13 +51,13 @@ import org.dcm4chee.archive.entity.Patient;
  */
 public interface MPPSService {
 
-    void createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
+    void createPerformedProcedureStep(String mppsSopInstanceUID, Attributes attrs, MPPSContext mppsContext)
             throws DicomServiceException;
 
-    void updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs)
+    void updatePerformedProcedureStep(String mppsSopInstanceUID, Attributes attrs, MPPSContext mppsContext)
             throws DicomServiceException;
 
-    void coerceAttributes(Association as, Dimse dimse, Attributes attrs) throws DicomServiceException;
+    void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs) throws DicomServiceException;
 
     /**
      * will be removed very soon

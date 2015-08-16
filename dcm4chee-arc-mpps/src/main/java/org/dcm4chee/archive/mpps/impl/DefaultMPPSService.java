@@ -45,6 +45,7 @@ import org.dcm4che3.net.*;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.MPPSServiceEJB;
 import org.dcm4chee.archive.mpps.event.MPPSCreate;
@@ -96,6 +97,12 @@ public class DefaultMPPSService implements MPPSService {
     @Inject
     private Device device;
 
+    /**
+     * We need to move coercion out of the interface to remove this 'self' injection
+     */
+    @Inject
+    MPPSService mppsService;
+
 
     @Deprecated
     @Override
@@ -106,7 +113,7 @@ public class DefaultMPPSService implements MPPSService {
             Patient patient,
             MPPSService service) throws DicomServiceException {
 
-        createPerformedProcedureStep(arcAE.getApplicationEntity(), iuid, attrs);
+        createPerformedProcedureStep(iuid, attrs, new MPPSContext(null, arcAE.getApplicationEntity().getAETitle()));
         return null;
     }
 
@@ -114,36 +121,40 @@ public class DefaultMPPSService implements MPPSService {
     @Override
     public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE,String iuid, Attributes modified, MPPSService service)
             throws DicomServiceException {
-        updatePerformedProcedureStep(arcAE.getApplicationEntity(), iuid, modified);
+        updatePerformedProcedureStep(iuid, modified, new MPPSContext(null, arcAE.getApplicationEntity().getAETitle()));
         return null;
     }
 
     @Override
-    public void createPerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
-        MPPS mpps = ejb.createPerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
-        createMPPSEvent.fire(new MPPSEvent(ae, Dimse.N_CREATE_RQ, attrs, mppsSopInstanceUID));
+    public void createPerformedProcedureStep(String mppsSopInstanceUID, Attributes attrs, MPPSContext mppsContext) throws DicomServiceException {
+
+        ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
+        mppsService.coerceAttributes(mppsContext, Dimse.N_CREATE_RQ, attrs);
+        ejb.createPerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
+        createMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_CREATE_RQ, attrs, mppsContext));
     }
 
     @Override
-    public void updatePerformedProcedureStep(ApplicationEntity ae, String mppsSopInstanceUID, Attributes attrs) throws DicomServiceException {
+    public void updatePerformedProcedureStep(String mppsSopInstanceUID, Attributes attrs, MPPSContext mppsContext) throws DicomServiceException {
+
+        ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
         MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
 
         if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
-            updateMPPSEvent.fire(new MPPSEvent(ae, Dimse.N_SET_RQ, attrs, mppsSopInstanceUID));
+            updateMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_SET_RQ, attrs, mppsContext));
         else
-            finalMPPSEvent.fire(new MPPSEvent(ae, Dimse.N_SET_RQ, attrs, mppsSopInstanceUID));
+            finalMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_SET_RQ, attrs, mppsContext));
     }
 
     @Override
-    public void coerceAttributes(Association as, Dimse dimse,
-                                 Attributes attrs) throws DicomServiceException {
+    public void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs) throws DicomServiceException {
         try {
-            ApplicationEntity ae = as.getApplicationEntity();
+            ApplicationEntity ae = device.getApplicationEntityNotNull(context.getReceivingAET());
             ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     UID.ModalityPerformedProcedureStepSOPClass,
                     dimse, TransferCapability.Role.SCP,
-                    as.getRemoteAET());
+                    context.getSendingAET());
             if (tpl != null) {
                 Attributes modified = new Attributes();
                 attrs.update(SAXTransformer.transform(attrs, tpl, false, false),
