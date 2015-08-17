@@ -48,6 +48,7 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.slf4j.Logger;
@@ -109,9 +110,65 @@ public class MPPSEmulatorEJB {
             Tag.ProcedureCodeSequence,
             Tag.StudyID };
 
-    public MPPS emulatePerformedProcedureStep(StudyUpdatedEvent studyUpdatedEvent)
-            throws DicomServiceException {
+    private static final int[] MPPS_SET_Selection = { Tag.SpecificCharacterSet,
+            Tag.SOPInstanceUID, Tag.PerformedProcedureStepEndDate, Tag.PerformedProcedureStepEndTime,
+            Tag.PerformedProcedureStepStatus, Tag.PerformedSeriesSequence };
 
+    /**
+     * Checks configured rule, finds the series, emulates MPPS
+     * @param studyUpdatedEvent
+     * @return
+     * @throws DicomServiceException
+     */
+    public MPPS emulateMPPS(StudyUpdatedEvent studyUpdatedEvent) throws DicomServiceException {
+
+        // find all series that are to be affected by this emulated MPPS
+        List<Series> seriesList = findAffectedSeries(studyUpdatedEvent);
+        if (seriesList == null) return null;
+
+        // there could be multiple local AETs used - just get the first one for providing configuration for MPPS service
+        String localAET = studyUpdatedEvent.getLocalAETs().iterator().next();
+
+        // checks if emulated MPPS should be created, according to the configured rule
+        MPPSCreationRule creationRule = device
+                .getDeviceExtensionNotNull(ArchiveDeviceExtension.class)
+                .getMppsEmulationRule(studyUpdatedEvent.getSourceAET())
+                .getCreationRule();
+        if (!checkCreationRule(creationRule, seriesList)) return null;
+
+        LOG.info("Emulate MPPS for Study[iuid={}] received from {}", studyUpdatedEvent.getStudyInstanceUID(), studyUpdatedEvent.getSourceAET());
+        String mppsIUID = UIDUtils.createUID();
+
+        ApplicationEntity ae = device.getApplicationEntityNotNull(localAET);
+        ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
+
+        updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
+
+        // create MPPS
+        Attributes mppsCreateAttributes = makeMPPSCreateAttributes(seriesList, mppsIUID);
+        MPPSContext mppsContext = new MPPSContext(studyUpdatedEvent.getSourceAET(), localAET);
+        mppsService.createPerformedProcedureStep(
+                mppsIUID,
+                mppsCreateAttributes,
+                mppsContext
+        );
+
+        // update MPPS with status COMPLETED
+        Attributes completedAttributes = makeMPPSUpdateCompletedAttributes(mppsCreateAttributes);
+        mppsService.updatePerformedProcedureStep(
+                mppsIUID,
+                completedAttributes,
+                mppsContext
+        );
+
+        ArrayList<String> refMppsList = new ArrayList<>();
+        refMppsList.add(mppsIUID);
+        List<MPPS> mppsList = fetchMPPS(refMppsList);
+
+        return mppsList.get(0);
+    }
+
+    public List<Series> findAffectedSeries(StudyUpdatedEvent studyUpdatedEvent) {
         List<Series> seriesList = em
                 .createNamedQuery(
                         Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
@@ -126,32 +183,10 @@ public class MPPSEmulatorEJB {
         while (seriesIterator.hasNext())
             if (!studyUpdatedEvent.getAffectedSeriesUIDs().contains(seriesIterator.next().getSeriesInstanceUID()))
                 seriesIterator.remove();
-
-        ApplicationEntity ae = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAETs().iterator().next());
-
-        ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
-        MPPSCreationRule creationRule = device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class).getMppsEmulationRule(studyUpdatedEvent.getSourceAET()).getCreationRule();
-
-        // checks if emulated MPPS should be created, according to the configured rule
-        if (!checkCreationRule(creationRule, seriesList))
-            return null;
-
-        LOG.info("Emulate MPPS for Study[iuid={}] received from {}", studyUpdatedEvent.getStudyInstanceUID(), studyUpdatedEvent.getSourceAET());
-        String mppsIUID = UIDUtils.createUID();
-
-        MPPS mpps = null;
-        mpps = mppsService.createPerformedProcedureStep(
-                arcAE,
-                mppsIUID,
-                createMPPS(seriesList),
-                seriesList.get(0).getStudy().getPatient(),
-                mppsService);
-
-        updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
-        return mpps;
+        return seriesList;
     }
 
-    private void updateMPPSReferences(String mppsIUID, List<Series> series, StoreParam storeParam) {
+    public void updateMPPSReferences(String mppsIUID, List<Series> series, StoreParam storeParam) {
         for (Series ser : series) {
             Attributes serAttrs = ser.getAttributes();
             Attributes mppsRef = new Attributes(2);
@@ -166,7 +201,7 @@ public class MPPSEmulatorEJB {
         }
     }
 
-    private Attributes createMPPS(List<Series> seriesList) {
+    private Attributes makeMPPSCreateAttributes(List<Series> seriesList, String mppsSOPInstanceUID) {
         Attributes mppsAttrs = new Attributes();
 
         Series firstSeries = seriesList.get(0);
@@ -175,10 +210,10 @@ public class MPPSEmulatorEJB {
         String modality = firstSeries.getModality() == null ? "OT" : firstSeries.getModality();
 
         // pps information
-        mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.COMPLETED);
+        mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.IN_PROGRESS);
         mppsAttrs.addSelected(patient.getAttributes(), PATIENT_Selection);
         mppsAttrs.addSelected(study.getAttributes(), STUDY_Selection);
-        mppsAttrs.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
+        mppsAttrs.setString(Tag.SOPInstanceUID, VR.UI, mppsSOPInstanceUID);
         mppsAttrs.setString(Tag.SOPClassUID, VR.UI, UID.ModalityPerformedProcedureStepSOPClass);
         mppsAttrs.setString(Tag.PerformedStationAETitle, VR.AE, firstSeries.getSourceAET());
         mppsAttrs.setString(Tag.PerformedStationName, VR.SH, firstSeries.getStationName());
@@ -226,6 +261,15 @@ public class MPPSEmulatorEJB {
         mppsAttrs.setString(Tag.PerformedProcedureStepEndTime, VR.TM, DateUtils.formatTM(null, end_date));
 
         return mppsAttrs;
+    }
+
+    private Attributes makeMPPSUpdateCompletedAttributes(Attributes mppsCreateAttributes) {
+
+        Attributes attributes = new Attributes();
+        attributes.addSelected(mppsCreateAttributes, MPPS_SET_Selection);
+        attributes.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.COMPLETED);
+
+        return attributes;
     }
 
     private boolean checkCreationRule(MPPSCreationRule rule,

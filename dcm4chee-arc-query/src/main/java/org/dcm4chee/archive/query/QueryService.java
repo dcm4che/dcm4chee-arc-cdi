@@ -38,15 +38,17 @@
 
 package org.dcm4chee.archive.query;
 
-import java.util.EnumSet;
-
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.SeriesQueryAttributes;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyQueryAttributes;
+
+import java.util.EnumSet;
 
 /**
  * Query service for different information models (Patient, Study, Modality
@@ -87,4 +89,5 @@ public interface QueryService {
 
     SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam);
 
+    void recalculateDerivedFields(Study study, ApplicationEntity ae);
 }

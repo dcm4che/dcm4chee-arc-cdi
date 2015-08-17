@@ -37,73 +37,139 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.mpps;
 
-import java.util.List;
-
-import javax.ejb.Stateless;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
-import org.dcm4chee.archive.entity.Instance;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.service.BasicMPPSSCP;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.code.CodeService;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.mpps.rejection.IncorrectWorkListEntrySelectedHandlerEJB;
+import org.dcm4chee.archive.patient.PatientSelectorFactory;
+import org.dcm4chee.archive.patient.PatientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
+
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- *
+ * @author Roman K
  */
 @Stateless
 public class MPPSServiceEJB {
     private static final Logger LOG = LoggerFactory.getLogger(MPPSServiceEJB.class);
-    @PersistenceContext(unitName="dcm4chee-arc")
+
+    @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
-    public void persistPPS(MPPS mpps) {
+    @Inject
+    private PatientService patientService;
+
+    @Inject
+    private CodeService codeService;
+
+    @Inject
+    Device device;
+
+    @Inject
+    IncorrectWorkListEntrySelectedHandlerEJB incorrectWorkListEntrySelectedHandler;
+
+    public MPPS createPerformedProcedureStep(
+            ApplicationEntity ae,
+            String mppsIuid,
+            Attributes attrs) throws DicomServiceException {
+
+        // mpps with such iuid must not exist
+        try {
+            findPPS(mppsIuid);
+            throw new DicomServiceException(Status.DuplicateSOPinstance, "PPS with iuid " + mppsIuid + " already exists")
+                    .setUID(Tag.AffectedSOPInstanceUID, mppsIuid);
+        } catch (NoResultException ignore) {
+        }
+
+        StoreParam storeParam = ae.getAEExtensionNotNull(ArchiveAEExtension.class).getStoreParam();
+        Patient patient;
+        try {
+            patient = patientService.updateOrCreatePatientOnMPPSNCreate(attrs, PatientSelectorFactory.createSelector(storeParam), storeParam);
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.ProcessingFailure, e);
+        }
+
+        Attributes mppsAttrs = new Attributes(attrs.size());
+
+        // Filter out patient attrs - they are already in Patient blob
+        mppsAttrs.addNotSelected(attrs,storeParam.getAttributeFilter(Entity.Patient).getCompleteSelection(attrs));
+        MPPS mpps = new MPPS();
+        mpps.setSopInstanceUID(mppsIuid);
+        mpps.setAttributes(mppsAttrs, storeParam.getNullValueForQueryFields());
+        mpps.setPatient(patient);
+
         em.persist(mpps);
+        return mpps;
     }
 
-    public void mergePPS(MPPS mpps) {
+    public MPPS updatePerformedProcedureStep(ApplicationEntity ae,
+                                             String iuid,
+                                             Attributes modified) throws DicomServiceException {
+        MPPS mpps;
+        try {
+            mpps = findPPS(iuid);
+        } catch (NoResultException e) {
+            throw new DicomServiceException(Status.NoSuchObjectInstance).setUID(Tag.AffectedSOPInstanceUID, iuid);
+        }
+
+        if (mpps.getStatus() != MPPS.Status.IN_PROGRESS)
+            BasicMPPSSCP.mayNoLongerBeUpdated();
+
+        // overwrite attributes
+        Attributes attrs = mpps.getAttributes();
+        attrs.addAll(modified);
+        StoreParam storeParam = ae.getAEExtensionNotNull(ArchiveAEExtension.class).getStoreParam();
+        mpps.setAttributes(attrs, storeParam.getNullValueForQueryFields());
+
+        // check if allowed to change
+        if (mpps.getStatus() != MPPS.Status.IN_PROGRESS) {
+            if (!attrs.containsValue(Tag.PerformedSeriesSequence))
+                throw new DicomServiceException(Status.MissingAttributeValue)
+                        .setAttributeIdentifierList(Tag.PerformedSeriesSequence);
+        }
+
+        if (mpps.getStatus() == MPPS.Status.DISCONTINUED) {
+
+            // set discontinuation code
+            Attributes codeItem = attrs.getNestedDataset(Tag.PerformedProcedureStepDiscontinuationReasonCodeSequence);
+            if (codeItem != null) {
+                Code code = codeService.findOrCreate(new Code(codeItem));
+                mpps.setDiscontinuationReasonCode(code);
+            }
+
+        }
         em.merge(mpps);
-    }
 
+        // TODO: this should be decoupled - but we have to think about fail/retry strategy here
+        // What happens if we receive this before all the instances are stored? - See the StoreServiceMPPSDecorator
+        // reject stored instances that are a result of an incorrectly chosen worklist entry
+        incorrectWorkListEntrySelectedHandler.checkStatusAndRejectRejectInstancesIfNeeded(mpps);
 
-    public List<Instance> findBySeriesInstanceUID(Attributes seriesRef) {
-       return em
-        .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID,
-                Instance.class)
-        .setParameter(1, seriesRef.getString(Tag.SeriesInstanceUID))
-        .getResultList();
+        return mpps;
     }
 
     public MPPS findPPS(String sopInstanceUID) {
-        MPPS pps = null;
-        try {
-            pps = em.createNamedQuery(
-            MPPS.FIND_BY_SOP_INSTANCE_UID_EAGER, MPPS.class)
-                    .setParameter(1, sopInstanceUID).getSingleResult();
-        } catch (Exception e) {
-        }
-        return pps;
+        return em.createNamedQuery(MPPS.FIND_BY_SOP_INSTANCE_UID_EAGER, MPPS.class)
+                .setParameter(1, sopInstanceUID)
+                .getSingleResult();
     }
 
-    public Study findStudyByUID(String studyUID) {
-        String queryStr = "SELECT s FROM Study s JOIN FETCH s.series se WHERE s.studyInstanceUID = ?1";
-            Query query = em.createQuery(queryStr);
-            Study study = null;
-            try {
-                query.setParameter(1, studyUID);
-             study = (Study) query.getSingleResult();
-            }
-            catch(NoResultException e) {
-                LOG.error(
-                        "Unable to find study {}, related to"
-                        + " an already performed procedure",studyUID);
-            }
-            return study;
-    }
 }

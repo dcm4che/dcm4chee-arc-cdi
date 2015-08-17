@@ -40,10 +40,6 @@
 
 package org.dcm4chee.archive.mpps.emulate;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.entity.MPPS;
@@ -55,7 +51,6 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import java.util.Set;
 
 /**
  * @author Roman K
@@ -81,41 +76,11 @@ public class MPPSEmulator {
             return null;
         }
 
-        MPPS mpps = null;
         try {
-            mpps = ejb.emulatePerformedProcedureStep(studyUpdatedEvent);
+            return ejb.emulateMPPS(studyUpdatedEvent);
         } catch (DicomServiceException e) {
             LOG.error("Cannot emulate MPPS",e);
             return null;
         }
-
-        ApplicationEntity applicationEntity;
-
-
-        // choose local AE - just take the first one from the list
-        String localAET = studyUpdatedEvent.getLocalAETs().iterator().next();
-
-        try {
-            applicationEntity = device.getApplicationEntityNotNull(localAET);
-        } catch (Exception e) {
-            LOG.error("Archive AE {} not found", localAET, e);
-            return null;
-        }
-
-        //TODO: that should be done by MPPS service itself
-        if (mpps != null) {
-            mppsService.fireCreateMPPSEvent(applicationEntity, MPPSEmulator.setStatus(mpps.getAttributes(), MPPS.IN_PROGRESS), mpps);
-            mppsService.fireFinalMPPSEvent(applicationEntity, MPPSEmulator.setStatus(new Attributes(1), MPPS.COMPLETED), mpps);
-        }
-
-        return mpps;
     }
-
-
-    private static Attributes setStatus(Attributes attrs, String value) {
-        attrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, value);
-        return attrs;
-    }
-
-
 }

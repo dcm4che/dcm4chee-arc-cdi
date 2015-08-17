@@ -38,28 +38,10 @@
 
 package org.dcm4chee.archive.mpps.scu.impl;
 
-import java.io.IOException;
-
-import javax.annotation.Resource;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.Session;
-
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.UID;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.DimseRSP;
+import org.dcm4che3.net.*;
 import org.dcm4che3.net.pdu.AAssociateRQ;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -67,6 +49,14 @@ import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.scu.MPPSSCU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Resource;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
+import javax.inject.Inject;
+import javax.jms.Connection;
+import javax.jms.*;
+import java.io.IOException;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -91,16 +81,21 @@ public class MPPSSCUImpl implements MPPSSCU {
 
     @SuppressWarnings("unused")
     private void onMPPSReceive(@Observes MPPSEvent event) {
-        ApplicationEntity ae = event.getApplicationEntity();
-        ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-        if (arcAE == null)
-            return;
+        try {
+            ApplicationEntity ae = device.getApplicationEntityNotNull(event.getContext().getReceivingAET());
 
-        String iuid = event.getPerformedProcedureStep().getSopInstanceUID();
-        Attributes attrs = event.getAttributes();
-        for (String remoteAET : arcAE.getForwardMPPSDestinations()) {
-            scheduleForwardMPPS(event.getDIMSE(), ae.getAETitle(), remoteAET,
-                    iuid, attrs, 0, 0);
+            ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
+            if (arcAE == null)
+                return;
+
+            String iuid = event.getMppsSopInstanceUID();
+            Attributes attrs = event.getAttributes();
+            for (String remoteAET : arcAE.getForwardMPPSDestinations()) {
+                scheduleForwardMPPS(event.getDIMSE(), ae.getAETitle(), remoteAET,
+                        iuid, attrs, 0, 0);
+            }
+        } catch (Exception e) {
+            LOG.error("Error while scheduling MPPS forwarding",e);
         }
     }
 

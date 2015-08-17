@@ -68,6 +68,14 @@ public class StudyUpdatedEvent implements Serializable{
     private List<StoredInstance> storedInstances = new ArrayList<>();
     private Set<String> affectedSeriesUIDs = new HashSet<>();
 
+    public StudyUpdatedEvent() {
+    }
+
+    public StudyUpdatedEvent(String studyInstanceUID, String sourceAET) {
+        this.studyInstanceUID = studyInstanceUID;
+        this.sourceAET = sourceAET;
+    }
+
     public Set<String> getLocalAETs() {
         return localAETs;
     }
@@ -106,6 +114,12 @@ public class StudyUpdatedEvent implements Serializable{
 
     public void setAffectedSeriesUIDs(Set<String> affectedSeriesUIDs) {
         this.affectedSeriesUIDs = affectedSeriesUIDs;
+    }
+
+    public void addStoredInstance(String localAET, String sopInstanceUID, String seriesInstanceUID, StoreAction storeAction) {
+        getStoredInstances().add(new StoredInstance(sopInstanceUID, storeAction, localAET));
+        getAffectedSeriesUIDs().add(seriesInstanceUID);
+        getLocalAETs().add(localAET);
     }
 
 

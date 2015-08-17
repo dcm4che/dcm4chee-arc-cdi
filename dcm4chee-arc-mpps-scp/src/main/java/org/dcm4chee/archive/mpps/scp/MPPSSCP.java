@@ -38,22 +38,19 @@
 
 package org.dcm4chee.archive.mpps.scp;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Typed;
-import javax.inject.Inject;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Typed;
+import javax.inject.Inject;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -70,18 +67,13 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
             Attributes data, Attributes rsp) throws DicomServiceException {
         try {
             String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
-            ApplicationEntity ae = as.getApplicationEntity();
-            ArchiveAEExtension aeArc = ae.getAEExtension(ArchiveAEExtension.class);
-            mppsService.coerceAttributes(as, Dimse.N_CREATE_RQ, data);
-            MPPS mpps = mppsService.createPerformedProcedureStep(aeArc,
-                    iuid, data, null, mppsService);
-
-            mppsService.fireCreateMPPSEvent(ae, data, mpps);
+            mppsService.createPerformedProcedureStep(iuid, data, new MPPSContext(as.getCallingAET(), as.getCalledAET()));
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }
+        
         return null;
     }
 
@@ -90,17 +82,7 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
             Attributes rsp) throws DicomServiceException {
         try {
             String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
-            ApplicationEntity ae = as.getApplicationEntity();
-            ArchiveAEExtension aeArc = ae.getAEExtension(ArchiveAEExtension.class);
-            mppsService.coerceAttributes(as, Dimse.N_SET_RQ, data);
-            MPPS mpps = mppsService.updatePerformedProcedureStep(aeArc,
-                    iuid, data, mppsService);
-
-            if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
-                mppsService.fireUpdateMPPSEvent(ae, data, mpps);
-            else
-                mppsService.fireFinalMPPSEvent(ae, data, mpps);
-
+            mppsService.updatePerformedProcedureStep(iuid, data, new MPPSContext(as.getCallingAET(), as.getCalledAET()));
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {

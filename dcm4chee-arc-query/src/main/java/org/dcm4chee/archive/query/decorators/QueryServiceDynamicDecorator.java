@@ -1,11 +1,13 @@
 package org.dcm4chee.archive.query.decorators;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.SeriesQueryAttributes;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyQueryAttributes;
 import org.dcm4chee.archive.query.Query;
 import org.dcm4chee.archive.query.QueryContext;
@@ -88,5 +90,10 @@ public class QueryServiceDynamicDecorator extends DynamicDecoratorWrapper<QueryS
 	@Override
 	public SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam) {
 		return wrapWithDynamicDecorators(delegate).createSeriesView(seriesPk, queryParam);
+	}
+
+	@Override
+	public void recalculateDerivedFields(Study study, ApplicationEntity ae) {
+		wrapWithDynamicDecorators(delegate).recalculateDerivedFields(study, ae);
 	}
 }
