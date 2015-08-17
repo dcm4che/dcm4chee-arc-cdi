@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -109,17 +110,15 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
             query.setMaxResults(1);
             return query.getResultList().isEmpty()? false: true;
         }
-        ArrayList<String> uids = new ArrayList<String>();
         
         if(pat == null) {
             LOG.error("{}:  QC info[requiresReferenceUpdate] Failure - "
                     + "Attributes supplied missing PatientID",qcSource);
             throw new IllegalArgumentException("Attributes supplied missing PatientID");
             }
-        
-        for(Study study : pat.getStudies()) {
-            uids.add(study.getStudyInstanceUID());
-            }
+        Query queryStudy = em.createQuery("SELECT s.studyInstanceUID FROM Study s WHERE s.patient = ?1");
+        queryStudy.setParameter(1, pat);
+        List<String> uids = queryStudy.getResultList();
         Query query = em.createNamedQuery(QCInstanceHistory.STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
         query.setParameter("uids", uids);
         query.setMaxResults(1);
