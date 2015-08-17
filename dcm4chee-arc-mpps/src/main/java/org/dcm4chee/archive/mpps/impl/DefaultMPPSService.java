@@ -147,6 +147,7 @@ public class DefaultMPPSService implements MPPSService {
     public void updatePerformedProcedureStep(final String mppsSopInstanceUID, final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
 
         ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
+        mppsService.coerceAttributes(mppsContext, Dimse.N_SET_RQ, attrs);
         final MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
 
         transaction.afterSuccessfulCommit(new Runnable() {

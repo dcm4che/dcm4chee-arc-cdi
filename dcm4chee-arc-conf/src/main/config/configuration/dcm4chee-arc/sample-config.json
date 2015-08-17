@@ -592,7 +592,7 @@
               }
             }
           },
-         "HsmServiceDeviceExtension" : {
+          "HsmServiceDeviceExtension" : {
             "archivingQueueMappings" : {
               "defaultExternalDeviceArchivingQueueName" : "queue/archiver_2",
               "defaultStorageSystemArchivingQueueName" : "queue/archiver_1",
@@ -737,6 +737,7 @@
                     },
                     "dcmInstanceAvailability" : "NEARLINE",
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
+                    "dcmSpoolingCutoffLength" : 8388608,
                     "dcmStorageSystemID" : "nearline",
                     "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/nearline"
                   }
@@ -752,6 +753,7 @@
                 "Storage Systems" : {
                   "fs1" : {
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
+                    "dcmSpoolingCutoffLength" : 8388608,
                     "dcmStorageSystemID" : "fs1",
                     "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/fs1"
                   }
@@ -767,6 +769,7 @@
                 "Storage Systems" : {
                   "metadata" : {
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
+                    "dcmSpoolingCutoffLength" : 8388608,
                     "dcmStorageSystemID" : "metadata",
                     "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/metadata"
                   }
