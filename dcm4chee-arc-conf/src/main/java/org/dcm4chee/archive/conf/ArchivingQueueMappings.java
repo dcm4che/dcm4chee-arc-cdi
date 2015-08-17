@@ -47,6 +47,7 @@ import java.util.List;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
+import org.dcm4che3.net.Device;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
@@ -124,7 +125,8 @@ public class ArchivingQueueMappings implements Iterable<ArchivingQueueMapping>, 
     
     public ArchivingQueueMapping findByExternalDeviceName(String externalDeviceName) {
         for(ArchivingQueueMapping mapping : list) {
-            if(externalDeviceName.equals(mapping.getExternalDevice().getDeviceName())) {
+            Device externalDevice = mapping.getExternalDevice();
+            if(externalDevice != null && externalDeviceName.equals(externalDevice.getDeviceName())) {
                 return mapping;
             }
         }
