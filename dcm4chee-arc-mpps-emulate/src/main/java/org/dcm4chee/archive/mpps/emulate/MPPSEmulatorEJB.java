@@ -269,7 +269,7 @@ public class MPPSEmulatorEJB {
         attributes.addSelected(mppsCreateAttributes, MPPS_SET_Selection);
         attributes.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.COMPLETED);
 
-        return null;
+        return attributes;
     }
 
     private boolean checkCreationRule(MPPSCreationRule rule,
