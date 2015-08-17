@@ -592,6 +592,17 @@
               }
             }
           },
+         "HsmServiceDeviceExtension" : {
+            "archivingQueueMappings" : {
+              "defaultExternalDeviceArchivingQueueName" : "queue/archiver_2",
+              "defaultStorageSystemArchivingQueueName" : "queue/archiver_1",
+              "list" : [ {
+                "cn" : "Archiving Queue Mapping 1",
+                "dcmArchivingQueueName" : "queue/archiver_1",
+                "dcmStorageSystemGroupID" : "ARCHIVE"
+              } ]
+            }
+          },
           "ImageReaderExtension" : {
             "Image Reader Factory" : {
               "dicomImageReaderMap" : {
