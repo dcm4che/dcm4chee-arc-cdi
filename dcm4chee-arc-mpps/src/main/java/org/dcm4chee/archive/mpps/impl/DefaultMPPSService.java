@@ -180,5 +180,10 @@ public class DefaultMPPSService implements MPPSService {
         }
     }
 
+    @Override
+    public void coerceAttributes(Association as, Dimse dimse, Attributes attrs) throws DicomServiceException {
+
+    }
+
 
 }

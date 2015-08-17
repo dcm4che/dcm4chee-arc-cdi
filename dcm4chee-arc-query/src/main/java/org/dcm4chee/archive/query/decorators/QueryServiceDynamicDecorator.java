@@ -5,10 +5,7 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.conf.QueryRetrieveView;
-import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.SeriesQueryAttributes;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyQueryAttributes;
@@ -97,29 +94,6 @@ public class QueryServiceDynamicDecorator extends DynamicDecoratorWrapper<QueryS
 
 	@Override
 	public void recalculateDerivedFields(Study study, ApplicationEntity ae) {
-        StudyUpdateSessionManager.LOG.info("Calculating derived fields");
-        ArchiveDeviceExtension arcDevExt = studyUpdateSessionManager.device.getDeviceExtension(ArchiveDeviceExtension.class);
-
-        ArchiveAEExtension arcAEExt = ae.getAEExtension(ArchiveAEExtension.class);
-        QueryRetrieveView view = arcDevExt.getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
-        if (view == null) {
-            StudyUpdateSessionManager.LOG.warn("Cannot re-calculate derived fields - query retrieve view ID is not specified for AE {}", ae.getAETitle());
-            return;
-        }
-
-        QueryParam param = new QueryParam();
-        param.setQueryRetrieveView(view);
-
-        try {
-            //create study view
-            createStudyView(study.getPk(), param);
-
-            //create series view
-            for (Series series : study.getSeries())
-                createSeriesView(series.getPk(), param);
-
-        } catch (Exception e) {
-            StudyUpdateSessionManager.LOG.error("Error while calculating derived fields on MPPS COMPLETE", e);
-        }
-    }
+		wrapWithDynamicDecorators(delegate).recalculateDerivedFields(study, ae);
+	}
 }

@@ -38,8 +38,6 @@
 
 package org.dcm4chee.archive.mima.impl;
 
-import javax.inject.Inject;
-
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.ApplicationEntity;
@@ -49,6 +47,8 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.decorators.DelegatingMPPSService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
+
+import javax.inject.Inject;
 
 /**
  * Decorator to apply MIMA specifications to the MPPS Service.
@@ -71,7 +71,7 @@ public class MPPSServiceMIMADecorator extends DelegatingMPPSService {
         getNextDecorator().coerceAttributes(context, dimse, attrs);
         if (dimse == Dimse.N_CREATE_RQ)
         try {
-            ApplicationEntity remoteAE = aeCache.get(context.getRemoteAET());
+            ApplicationEntity remoteAE = aeCache.get(context.getSendingAET());
             if (remoteAE != null) {
                 Supplements.supplementMPPS(context, attrs, remoteAE.getDevice());
             }

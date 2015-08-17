@@ -506,7 +506,7 @@
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
             "dcmMPPSEmulationRules" : [ {
               "cn" : "Default EmulateAll Rule",
-              "dcmMPPSEmulationDelay" : 10
+              "dcmMPPSEmulationDelay" : -1
             } ],
             "dcmMppsEmulationPollInterval" : 60,
             "dcmPrivateDerivedFields" : {

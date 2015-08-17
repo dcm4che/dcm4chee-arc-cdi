@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.mpps;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -58,6 +59,9 @@ public interface MPPSService {
             throws DicomServiceException;
 
     void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs) throws DicomServiceException;
+
+    @Deprecated
+    void coerceAttributes(Association as, Dimse dimse, Attributes attrs) throws DicomServiceException;
 
     /**
      * will be removed very soon
