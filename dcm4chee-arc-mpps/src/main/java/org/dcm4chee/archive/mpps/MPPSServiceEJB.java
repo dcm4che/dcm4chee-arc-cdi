@@ -155,12 +155,14 @@ public class MPPSServiceEJB {
                 mpps.setDiscontinuationReasonCode(code);
             }
 
-            // What happens if we receive this before all the instances are stored? - See the StoreServiceMPPSDecorator
-            // reject stored instances that are a result of an incorrectly chosen worklist entry
-            incorrectWorkListEntrySelectedHandler.checkStatusAndRejectRejectInstancesIfNeeded(mpps);
-
         }
         em.merge(mpps);
+
+        // TODO: this should be decoupled - but we have to think about fail/retry strategy here
+        // What happens if we receive this before all the instances are stored? - See the StoreServiceMPPSDecorator
+        // reject stored instances that are a result of an incorrectly chosen worklist entry
+        incorrectWorkListEntrySelectedHandler.checkStatusAndRejectRejectInstancesIfNeeded(mpps);
+
         return mpps;
     }
 

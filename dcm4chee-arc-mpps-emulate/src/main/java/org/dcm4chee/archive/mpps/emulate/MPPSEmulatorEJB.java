@@ -48,6 +48,7 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.slf4j.Logger;
@@ -121,7 +122,7 @@ public class MPPSEmulatorEJB {
         List<Series> seriesList = findAffectedSeries(studyUpdatedEvent);
         if (seriesList == null) return null;
 
-        // there could be multiple local AETs used - just get the first one for providing configuration fvor MPPS service
+        // there could be multiple local AETs used - just get the first one for providing configuration for MPPS service
         String localAET = studyUpdatedEvent.getLocalAETs().iterator().next();
 
         // checks if emulated MPPS should be created, according to the configured rule
@@ -134,38 +135,25 @@ public class MPPSEmulatorEJB {
         LOG.info("Emulate MPPS for Study[iuid={}] received from {}", studyUpdatedEvent.getStudyInstanceUID(), studyUpdatedEvent.getSourceAET());
         String mppsIUID = UIDUtils.createUID();
 
-        MPPS mpps = emulateMPPS(seriesList, localAET, mppsIUID);
-
-        return mpps;
-    }
-
-    /**
-     *
-     * @param seriesList
-     * @param localAETForMPPSConfiguration Used to fetch rules like attribute filters etc
-     * @param mppsIUID
-     * @return
-     * @throws DicomServiceException
-     */
-    public MPPS emulateMPPS(List<Series> seriesList, String localAETForMPPSConfiguration, String mppsIUID) throws DicomServiceException {
-
-        ApplicationEntity ae = device.getApplicationEntityNotNull(localAETForMPPSConfiguration);
+        ApplicationEntity ae = device.getApplicationEntityNotNull(localAET);
         ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
 
-        MPPS mpps = null;
-        mpps = mppsService.createPerformedProcedureStep(
-                arcAE,
+        mppsService.createPerformedProcedureStep(
                 mppsIUID,
-                createMPPS(seriesList),
-                seriesList.get(0).getStudy().getPatient(),
-                mppsService);
+                makeMPPSCreateAttributes(seriesList),
+                new MPPSContext(studyUpdatedEvent.getSourceAET(), localAET)
+        );
 
         updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
 
-        return mpps;
+        ArrayList<String> refMppsList = new ArrayList<>();
+        refMppsList.add(mppsIUID);
+        List<MPPS> mppsList = fetchMPPS(refMppsList);
+
+        return mppsList.get(0);
     }
 
-    private List<Series> findAffectedSeries(StudyUpdatedEvent studyUpdatedEvent) {
+    public List<Series> findAffectedSeries(StudyUpdatedEvent studyUpdatedEvent) {
         List<Series> seriesList = em
                 .createNamedQuery(
                         Series.FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET,
@@ -183,7 +171,7 @@ public class MPPSEmulatorEJB {
         return seriesList;
     }
 
-    private void updateMPPSReferences(String mppsIUID, List<Series> series, StoreParam storeParam) {
+    public void updateMPPSReferences(String mppsIUID, List<Series> series, StoreParam storeParam) {
         for (Series ser : series) {
             Attributes serAttrs = ser.getAttributes();
             Attributes mppsRef = new Attributes(2);
@@ -198,7 +186,7 @@ public class MPPSEmulatorEJB {
         }
     }
 
-    private Attributes createMPPS(List<Series> seriesList) {
+    private Attributes makeMPPSCreateAttributes(List<Series> seriesList) {
         Attributes mppsAttrs = new Attributes();
 
         Series firstSeries = seriesList.get(0);
@@ -207,7 +195,7 @@ public class MPPSEmulatorEJB {
         String modality = firstSeries.getModality() == null ? "OT" : firstSeries.getModality();
 
         // pps information
-        mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.COMPLETED);
+        mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.IN_PROGRESS);
         mppsAttrs.addSelected(patient.getAttributes(), PATIENT_Selection);
         mppsAttrs.addSelected(study.getAttributes(), STUDY_Selection);
         mppsAttrs.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
