@@ -40,16 +40,10 @@
 
 package org.dcm4chee.archive.mpps.emulate;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
-import org.dcm4chee.archive.mpps.impl.DefaultMPPSService;
+import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +67,7 @@ public class MPPSEmulator {
     private Device device;
 
     @Inject
-    private DefaultMPPSService mppsService;
+    private MPPSService mppsService;
 
     public MPPS onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
 
@@ -89,12 +83,4 @@ public class MPPSEmulator {
             return null;
         }
     }
-
-
-    private static Attributes setStatus(Attributes attrs, String value) {
-        attrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, value);
-        return attrs;
-    }
-
-
 }

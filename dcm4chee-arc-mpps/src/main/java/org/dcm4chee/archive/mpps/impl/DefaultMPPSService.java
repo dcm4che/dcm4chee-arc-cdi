@@ -54,6 +54,7 @@ import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.mpps.event.MPPSUpdate;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.util.TransactionSynchronization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,6 +98,9 @@ public class DefaultMPPSService implements MPPSService {
     @Inject
     private Device device;
 
+    @Inject
+    TransactionSynchronization transaction;
+
     /**
      * We need to move coercion out of the interface to remove this 'self' injection
      */
@@ -119,31 +123,42 @@ public class DefaultMPPSService implements MPPSService {
 
     @Deprecated
     @Override
-    public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE,String iuid, Attributes modified, MPPSService service)
+    public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE, String iuid, Attributes modified, MPPSService service)
             throws DicomServiceException {
         updatePerformedProcedureStep(iuid, modified, new MPPSContext(null, arcAE.getApplicationEntity().getAETitle()));
         return null;
     }
 
     @Override
-    public void createPerformedProcedureStep(String mppsSopInstanceUID, Attributes attrs, MPPSContext mppsContext) throws DicomServiceException {
-
+    public void createPerformedProcedureStep(final String mppsSopInstanceUID, final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
         ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
         mppsService.coerceAttributes(mppsContext, Dimse.N_CREATE_RQ, attrs);
         ejb.createPerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
-        createMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_CREATE_RQ, attrs, mppsContext));
+
+        transaction.afterSuccessfulCommit(new Runnable() {
+            @Override
+            public void run() {
+                createMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_CREATE_RQ, attrs, mppsContext));
+            }
+        });
     }
 
     @Override
-    public void updatePerformedProcedureStep(String mppsSopInstanceUID, Attributes attrs, MPPSContext mppsContext) throws DicomServiceException {
+    public void updatePerformedProcedureStep(final String mppsSopInstanceUID, final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
 
         ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
-        MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
+        final MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
 
-        if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
-            updateMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_SET_RQ, attrs, mppsContext));
-        else
-            finalMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_SET_RQ, attrs, mppsContext));
+        transaction.afterSuccessfulCommit(new Runnable() {
+            @Override
+            public void run() {
+                if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
+                    updateMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_SET_RQ, attrs, mppsContext));
+                else
+                    finalMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_SET_RQ, attrs, mppsContext));
+            }
+        });
+
     }
 
     @Override

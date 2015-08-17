@@ -110,6 +110,10 @@ public class MPPSEmulatorEJB {
             Tag.ProcedureCodeSequence,
             Tag.StudyID };
 
+    private static final int[] MPPS_SET_Selection = { Tag.SpecificCharacterSet,
+            Tag.SOPInstanceUID, Tag.PerformedProcedureStepEndDate, Tag.PerformedProcedureStepEndTime,
+            Tag.PerformedProcedureStepStatus, Tag.PerformedSeriesSequence };
+
     /**
      * Checks configured rule, finds the series, emulates MPPS
      * @param studyUpdatedEvent
@@ -138,13 +142,24 @@ public class MPPSEmulatorEJB {
         ApplicationEntity ae = device.getApplicationEntityNotNull(localAET);
         ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
 
+        updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
+
+        // create MPPS
+        Attributes mppsCreateAttributes = makeMPPSCreateAttributes(seriesList, mppsIUID);
+        MPPSContext mppsContext = new MPPSContext(studyUpdatedEvent.getSourceAET(), localAET);
         mppsService.createPerformedProcedureStep(
                 mppsIUID,
-                makeMPPSCreateAttributes(seriesList),
-                new MPPSContext(studyUpdatedEvent.getSourceAET(), localAET)
+                mppsCreateAttributes,
+                mppsContext
         );
 
-        updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
+        // update MPPS with status COMPLETED
+        Attributes completedAttributes = makeMPPSUpdateCompletedAttributes(mppsCreateAttributes);
+        mppsService.updatePerformedProcedureStep(
+                mppsIUID,
+                completedAttributes,
+                mppsContext
+        );
 
         ArrayList<String> refMppsList = new ArrayList<>();
         refMppsList.add(mppsIUID);
@@ -186,7 +201,7 @@ public class MPPSEmulatorEJB {
         }
     }
 
-    private Attributes makeMPPSCreateAttributes(List<Series> seriesList) {
+    private Attributes makeMPPSCreateAttributes(List<Series> seriesList, String mppsSOPInstanceUID) {
         Attributes mppsAttrs = new Attributes();
 
         Series firstSeries = seriesList.get(0);
@@ -198,7 +213,7 @@ public class MPPSEmulatorEJB {
         mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.IN_PROGRESS);
         mppsAttrs.addSelected(patient.getAttributes(), PATIENT_Selection);
         mppsAttrs.addSelected(study.getAttributes(), STUDY_Selection);
-        mppsAttrs.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
+        mppsAttrs.setString(Tag.SOPInstanceUID, VR.UI, mppsSOPInstanceUID);
         mppsAttrs.setString(Tag.SOPClassUID, VR.UI, UID.ModalityPerformedProcedureStepSOPClass);
         mppsAttrs.setString(Tag.PerformedStationAETitle, VR.AE, firstSeries.getSourceAET());
         mppsAttrs.setString(Tag.PerformedStationName, VR.SH, firstSeries.getStationName());
@@ -246,6 +261,15 @@ public class MPPSEmulatorEJB {
         mppsAttrs.setString(Tag.PerformedProcedureStepEndTime, VR.TM, DateUtils.formatTM(null, end_date));
 
         return mppsAttrs;
+    }
+
+    private Attributes makeMPPSUpdateCompletedAttributes(Attributes mppsCreateAttributes) {
+
+        Attributes attributes = new Attributes();
+        attributes.addSelected(mppsCreateAttributes, MPPS_SET_Selection);
+        attributes.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.COMPLETED);
+
+        return null;
     }
 
     private boolean checkCreationRule(MPPSCreationRule rule,
