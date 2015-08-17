@@ -38,19 +38,13 @@
 
 package org.dcm4chee.archive.conf.producer;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Disposes;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-
 import org.dcm4che3.conf.api.ApplicationEntityCache;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.conf.api.hl7.HL7ApplicationCache;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.conf.api.hl7.IHL7ApplicationCache;
-import org.dcm4che3.conf.api.internal.DicomConfigurationManagerFactory;
 import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
+import org.dcm4che3.conf.api.internal.DicomConfigurationManagerFactory;
 import org.dcm4che3.conf.api.internal.ExtendedDicomConfiguration;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
@@ -65,9 +59,17 @@ import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.ArchiveHL7ApplicationExtension;
+import org.dcm4chee.conf.decorators.ConfiguredDynamicDecorators;
+import org.dcm4chee.conf.decorators.DynamicDecoratorsConfig;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Disposes;
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -82,10 +84,19 @@ public class DicomConfigurationProducer {
     @Inject
     private Instance<DicomConfigurationManagerFactory> configFactory;
 
+
+    @Inject
+    @ConfiguredDynamicDecorators
+    DynamicDecoratorsConfig decoratorsConfig;
+
     @Produces
     @ApplicationScoped
     public DicomConfigurationManager getDicomConfiguration()
             throws ConfigurationException {
+
+        // this just touched and thus init'ed here to improve init log output, TBD where to move it
+        decoratorsConfig.getDecoratedServices();
+
         if(!configFactory.isUnsatisfied()) {
             LOG.info("Using shared DICOM Configuration Factory to retrieve / create configuration instance for archive");
             DicomConfigurationManagerFactory factory = configFactory.get();
