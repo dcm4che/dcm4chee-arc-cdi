@@ -1,0 +1,48 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<jboss:ejb-jar xmlns:jboss="http://www.jboss.com/xml/ns/javaee"
+               xmlns="http://java.sun.com/xml/ns/javaee"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:c="urn:clustering:1.0"
+               version="3.1"
+               impl-version="2.0">
+  <enterprise-beans>
+    <message-driven>
+      <ejb-name>StorageAndRememberMDB_1</ejb-name>
+      <ejb-class>org.dcm4chee.archive.store.remember.impl.StoreAndRememberMDB</ejb-class>
+      <message-destination-type>javax.jms.Queue</message-destination-type>
+      <activation-config>
+        <activation-config-property>
+          <activation-config-property-name>acknowledgeMode</activation-config-property-name>
+          <activation-config-property-value>AUTO_ACKNOWLEDGE</activation-config-property-value>
+        </activation-config-property>
+        <activation-config-property>
+          <activation-config-property-name>destination</activation-config-property-name>
+          <activation-config-property-value>queue/archiver_1</activation-config-property-value>
+        </activation-config-property>
+        <activation-config-property>
+          <activation-config-property-name>messageSelector</activation-config-property-name>
+          <activation-config-property-value>archiving_msg_type = 'org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext'</activation-config-property-value>
+        </activation-config-property>
+      </activation-config>
+    </message-driven>
+    <message-driven>
+      <ejb-name>StorageAndRememberMDB_2</ejb-name>
+      <ejb-class>org.dcm4chee.archive.store.remember.impl.StoreAndRememberMDB</ejb-class>
+      <message-destination-type>javax.jms.Queue</message-destination-type>
+      <activation-config>
+        <activation-config-property>
+          <activation-config-property-name>acknowledgeMode</activation-config-property-name>
+          <activation-config-property-value>AUTO_ACKNOWLEDGE</activation-config-property-value>
+        </activation-config-property>
+        <activation-config-property>
+          <activation-config-property-name>destination</activation-config-property-name>
+          <activation-config-property-value>queue/archiver_2</activation-config-property-value>
+        </activation-config-property>
+        <activation-config-property>
+          <activation-config-property-name>messageSelector</activation-config-property-name>
+          <activation-config-property-value>archiving_msg_type = 'org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext'</activation-config-property-value>
+        </activation-config-property>
+      </activation-config>
+    </message-driven>
+  </enterprise-beans>
+</jboss:ejb-jar>

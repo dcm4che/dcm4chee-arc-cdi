@@ -37,39 +37,66 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.remember.impl;
+package org.dcm4chee.archive.conf;
 
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
+import java.io.Serializable;
 
-import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
+import org.dcm4che3.net.Device;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class StoreAndRememberMDB implements MessageListener {
-    private static final Logger LOG = LoggerFactory.getLogger(StoreAndRememberMDB.class);
+@LDAP(objectClasses = "archivingQueueMapping", distinguishingField = "cn")
+@ConfigurableClass
+public class ArchivingQueueMapping implements Serializable {
+    private static final long serialVersionUID = 567823408149L;
+
+    @ConfigurableProperty(name = "cn")
+    private String commonName;
     
-    @Inject
-    private ExternalArchiverServiceImpl archiverService;
-   
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            ExternalDeviceArchiverContext ctx = (ExternalDeviceArchiverContext) ((ObjectMessage) msg).getObject();
-            int retries = msg.getIntProperty("Retries");
-            archiverService.store(ctx, retries);
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
-        }
+    @ConfigurableProperty(name = "dcmStorageSystemGroupID")
+    private String storageSystemGroupID;
+    
+    @ConfigurableProperty(name = "dcmExternalDevice", isReference = true)
+    private Device externalDevice;
+    
+    @ConfigurableProperty(name = "dcmArchivingQueueName")
+    private String archivingQueueName;
+    
+    public String getCommonName() {
+        return commonName;
+    }
+
+    public void setCommonName(String commonName) {
+        this.commonName = commonName;
+    }
+
+    public String getStorageSystemGroupID() {
+        return storageSystemGroupID;
+    }
+    
+    public void setStorageSystemGroupID(String storageSystemGroupID) {
+        this.storageSystemGroupID = storageSystemGroupID;
+    }
+    
+    public String getArchivingQueueName() {
+        return archivingQueueName;
+    }
+    
+    public void setArchivingQueueName(String archivingQueueName) {
+        this.archivingQueueName = archivingQueueName;
+    }
+
+    public Device getExternalDevice() {
+        return externalDevice;
+    }
+
+    public void setExternalDevice(Device externalDevice) {
+        this.externalDevice = externalDevice;
     }
 
 }

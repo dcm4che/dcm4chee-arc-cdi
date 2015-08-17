@@ -37,39 +37,42 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.remember.impl;
+package org.dcm4chee.archive.conf;
 
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
-
-import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcm4che3.conf.api.extensions.CommonDeviceExtension;
+import org.dcm4che3.conf.core.api.ConfigurableClass;
+import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.LDAP;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class StoreAndRememberMDB implements MessageListener {
-    private static final Logger LOG = LoggerFactory.getLogger(StoreAndRememberMDB.class);
+@LDAP(objectClasses = "dcmHsmServiceDevice", noContainerNode = true)
+@ConfigurableClass
+public class HsmServiceDeviceExtension extends CommonDeviceExtension {
+    private static final long serialVersionUID = 1118394798234L;
     
-    @Inject
-    private ExternalArchiverServiceImpl archiverService;
-   
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            ExternalDeviceArchiverContext ctx = (ExternalDeviceArchiverContext) ((ObjectMessage) msg).getObject();
-            int retries = msg.getIntProperty("Retries");
-            archiverService.store(ctx, retries);
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
-        }
+    @LDAP(noContainerNode=true)
+    @ConfigurableProperty(name = "archivingQueueMappings")
+    private ArchivingQueueMappings archivingQueueMappings = new ArchivingQueueMappings();
+    
+    public ArchivingQueueMappings getArchivingQueueMappings() {
+        return archivingQueueMappings;
+    }
+
+    public void addArchivingQueueMapping(ArchivingQueueMapping mapping) {
+        archivingQueueMappings.add(mapping);
+    }
+
+    public void setArchivingQueueMappings(ArchivingQueueMappings mappings) {
+        archivingQueueMappings.clear();
+        if (mappings != null)
+            archivingQueueMappings.add(mappings);
+    }
+
+    public boolean removeArchivingQueueMapping(ArchivingQueueMapping mapping) {
+        return archivingQueueMappings.remove(mapping);
     }
 
 }

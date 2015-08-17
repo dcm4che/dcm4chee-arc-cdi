@@ -91,6 +91,7 @@ public class ArchiveDeviceTest {
         builder.registerDeviceExtension(HL7DeviceExtension.class);
         builder.registerDeviceExtension(ImageReaderExtension.class);
         builder.registerDeviceExtension(ImageWriterExtension.class);
+        builder.registerDeviceExtension(HsmServiceDeviceExtension.class);
         builder.registerDeviceExtension(AuditRecordRepository.class);
         builder.registerDeviceExtension(AuditLogger.class);
         builder.registerAEExtension(ArchiveAEExtension.class);

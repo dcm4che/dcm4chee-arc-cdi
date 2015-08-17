@@ -6,8 +6,8 @@ jms-queue add --queue-address=ianscu --entries=queue/ianscu
 jms-queue add --queue-address=mppsscu --entries=queue/mppsscu
 jms-queue add --queue-address=stgcmtscp --entries=queue/stgcmtscp
 jms-queue add --queue-address=delete --entries=queue/delete
-jms-queue add --queue-address=archiver --entries=queue/archiver
-jms-queue add --queue-address=extDeviceArchiver --entries=queue/extDeviceArchiver
+jms-queue add --queue-address=archiver_1 --entries=queue/archiver_1
+jms-queue add --queue-address=archiver_2 --entries=queue/archiver_2
 jms-queue add --queue-address=storescu --entries=queue/storescu
 jms-queue add --queue-address=stowclient --entries=queue/stowclient
 jms-topic add --topic-address=DicomConfigurationChangeTopic --entries=/topic/DicomConfigurationChangeTopic
