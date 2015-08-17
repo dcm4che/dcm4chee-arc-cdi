@@ -67,8 +67,11 @@ public class HsmServiceDeviceExtension extends CommonDeviceExtension {
 
     public void setArchivingQueueMappings(ArchivingQueueMappings mappings) {
         archivingQueueMappings.clear();
-        if (mappings != null)
+        if (mappings != null) {
             archivingQueueMappings.add(mappings);
+        }
+        archivingQueueMappings.setDefaultExternalDeviceArchivingQueueName(mappings.getDefaultExternalDeviceArchivingQueueName());
+        archivingQueueMappings.setDefaultStorageSystemArchivingQueueName(mappings.getDefaultStorageSystemArchivingQueueName());
     }
 
     public boolean removeArchivingQueueMapping(ArchivingQueueMapping mapping) {
