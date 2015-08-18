@@ -201,6 +201,7 @@ public class StoreServiceImpl implements StoreService {
         Path spoolingPath = Paths.get(system.getStorageSystemPath(), "spool");
 
         try {
+            LOG.info("INIT spool storage - {}", spoolingPath);
             Files.createDirectories(spoolingPath);
         } catch (IOException e) {
             throw new DicomServiceException(Status.OutOfResources,
