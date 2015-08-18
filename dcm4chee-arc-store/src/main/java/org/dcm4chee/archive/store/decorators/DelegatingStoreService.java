@@ -12,6 +12,7 @@ import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.conf.decorators.DelegatingService;
 import org.dcm4chee.conf.decorators.DelegatingServiceImpl;
+import org.dcm4chee.storage.StorageContext;
 
 import javax.persistence.EntityManager;
 import java.io.IOException;
@@ -29,16 +30,16 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
         return getNextDecorator().createStoreContext(session);
     }
 
-    public void initStorageSystem(StoreSession session) throws DicomServiceException {
-        getNextDecorator().initStorageSystem(session);
+    public void initBulkdataStorage(StoreSession session) throws DicomServiceException {
+        getNextDecorator().initBulkdataStorage(session);
     }
 
-    public void initMetaDataStorageSystem(StoreSession session) throws DicomServiceException {
-        getNextDecorator().initMetaDataStorageSystem(session);
+    public void initMetadataStorage(StoreSession session) throws DicomServiceException {
+        getNextDecorator().initMetadataStorage(session);
     }
 
-    public void initSpoolDirectory(StoreSession session) throws DicomServiceException {
-        getNextDecorator().initSpoolDirectory(session);
+    public void initSpoolingStorage(StoreSession session) throws DicomServiceException {
+        getNextDecorator().initSpoolingStorage(session);
     }
 
     public void writeSpoolFile(StoreContext session, Attributes fmi, Attributes attrs) throws DicomServiceException {
@@ -65,12 +66,16 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
         return getNextDecorator().spool(session, in, suffix);
     }
 
+    public void spool(StoreContext context) throws DicomServiceException {
+        getNextDecorator().spool(context);
+    }
+
     public void coerceAttributes(StoreContext context) throws DicomServiceException {
         getNextDecorator().coerceAttributes(context);
     }
 
-    public void processFile(StoreContext context) throws DicomServiceException {
-        getNextDecorator().processFile(context);
+    public StorageContext processFile(StoreContext context) throws DicomServiceException {
+        return getNextDecorator().processFile(context);
     }
 
     public void updateDB(StoreContext context) throws DicomServiceException {
@@ -105,8 +110,15 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
         getNextDecorator().fireStoreEvent(context);
     }
 
-    public void storeMetaData(StoreContext context) throws DicomServiceException {
-        getNextDecorator().storeMetaData(context);
+    public StorageContext storeMetaData(StoreContext context) throws DicomServiceException {
+        return getNextDecorator().storeMetaData(context);
     }
 
+    public void beginProcessFile(StoreContext context) {
+        getNextDecorator().beginProcessFile(context);
+    }
+
+    public void beginStoreMetadata(StoreContext context) {
+        getNextDecorator().beginStoreMetadata(context);
+    }
 }

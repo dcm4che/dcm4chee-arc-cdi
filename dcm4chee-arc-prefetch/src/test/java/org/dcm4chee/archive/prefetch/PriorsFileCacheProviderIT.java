@@ -323,8 +323,8 @@ public class PriorsFileCacheProviderIT {
         session.setSource(new GenericParticipant("", "priorsFileCacheTest"));
         session.setRemoteAET("none");
         session.setArchiveAEExtension(arcAEExt);
-        storeService.initStorageSystem(session);
-        storeService.initSpoolDirectory(session);
+        storeService.initBulkdataStorage(session);
+        storeService.initSpoolingStorage(session);
         StoreContext context = storeService.createStoreContext(session);
         Attributes attrs = loadAttributes(resourceName);
         Attributes fmi = attrs.createFileMetaInformation(UID.ImplicitVRLittleEndian);

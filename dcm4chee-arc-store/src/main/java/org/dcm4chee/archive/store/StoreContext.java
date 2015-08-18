@@ -38,14 +38,15 @@
 
 package org.dcm4chee.archive.store;
 
-import java.nio.file.Path;
-import java.util.TimeZone;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.storage.StorageContext;
+
+import java.io.InputStream;
+import java.util.TimeZone;
+import java.util.concurrent.Future;
 
 /**
  * StoreContext represents the internal state of the current StoreService.store( )
@@ -56,23 +57,6 @@ import org.dcm4chee.storage.StorageContext;
  */
 public interface StoreContext {
 
-    StoreSession getStoreSession();
-
-    Path getSpoolFile();
-
-    void setSpoolFile(Path spoolFile);
-
-    String getSpoolFileDigest();
-
-    void setSpoolFileDigest(String spoolFileDigest);
-    
-    String getNoDBAttsDigest();
-
-    void setNoDBAttsDigest(String noDBAttsDigest);    
-
-    String getTransferSyntax();
-
-    void setTransferSyntax(String transferSyntax);
 
     Attributes getAttributes();
 
@@ -82,15 +66,23 @@ public interface StoreContext {
 
     void setCoercedOrginalAttributes(Attributes attributes);
 
-    String getStoragePath();
+    Attributes getFileMetainfo();
 
-    void setStoragePath(String storagePath);
+    void setFileMetainfo(Attributes fileMetainfo);
 
-    String calcMetaDataStoragePath();
+    StoreSession getStoreSession();
 
-    StorageContext getStorageContext();
+    String getSpoolFileSuffix();
 
-    void setStorageContext(StorageContext storageContext);
+    void setSpoolFileSuffix(String spoolFileSuffix);
+
+    String getNoDBAttsDigest();
+
+    void setNoDBAttsDigest(String noDBAttsDigest);    
+
+    String getTransferSyntax();
+
+    void setTransferSyntax(String transferSyntax);
 
     StoreAction getStoreAction();
 
@@ -99,14 +91,6 @@ public interface StoreContext {
     Location getFileRef();
 
     void setFileRef(Location createFileRef);
-
-    String getFinalFileDigest();
-
-    void setFinalFileDigest(String finalFileDigest);
-
-    long getFinalFileSize();
-
-    void setFinalFileSize(long size);
 
     Instance getInstance();
 
@@ -124,19 +108,29 @@ public interface StoreContext {
     
     void setThrowable(Throwable t);
 
-    String calcStoragePath();
-
     TimeZone getSourceTimeZone();
 
     void setSourceTimeZone(TimeZone sourceTimeZone);
 
     String getSourceTimeZoneID();
 
-    String getMetaDataStoragePath();
-
-    void setMetaDataStoragePath(String storagePath);
-
     boolean isFetch();
 
     void setFetch(boolean fetch);
+
+    InputStream getInputStream();
+
+    void setInputStream(InputStream inputStream);
+
+    StorageContext getSpoolingContext();
+
+    void setSpoolingContext(StorageContext spoolingContext);
+
+    Future<StorageContext> getBulkdataContext();
+
+    void setBulkdataContext(Future<StorageContext> bulkdataContext);
+
+    Future<StorageContext> getMetadataContext();
+
+    void setMetadataContext(Future<StorageContext> metadataContext);
 }

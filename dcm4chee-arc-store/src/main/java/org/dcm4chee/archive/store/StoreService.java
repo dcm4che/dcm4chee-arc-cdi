@@ -38,12 +38,6 @@
 
 package org.dcm4chee.archive.store;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-
-import javax.persistence.EntityManager;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.StoreAction;
@@ -51,6 +45,12 @@ import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.storage.StorageContext;
+
+import javax.persistence.EntityManager;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -65,13 +65,13 @@ public interface StoreService {
 
     StoreContext createStoreContext(StoreSession session);
 
-    void initStorageSystem(StoreSession session)
+    void initBulkdataStorage(StoreSession session)
             throws DicomServiceException;
 
-    void initMetaDataStorageSystem(StoreSession session)
+    void initMetadataStorage(StoreSession session)
             throws DicomServiceException;
 
-    void initSpoolDirectory(StoreSession session) throws DicomServiceException;
+    void initSpoolingStorage(StoreSession session) throws DicomServiceException;
 
     void writeSpoolFile(StoreContext session, Attributes fmi, Attributes attrs)
             throws DicomServiceException;
@@ -83,6 +83,8 @@ public interface StoreService {
 
     void onClose(StoreSession session);
 
+    void spool(StoreContext context) throws DicomServiceException;
+
     void store(StoreContext context) throws DicomServiceException;
 
     Path spool(StoreSession session, InputStream in, String suffix)
@@ -90,7 +92,7 @@ public interface StoreService {
 
     void coerceAttributes(StoreContext context) throws DicomServiceException;
 
-    void processFile(StoreContext context) throws DicomServiceException;
+    StorageContext processFile(StoreContext context) throws DicomServiceException;
 
     void updateDB(StoreContext context) throws DicomServiceException;
 
@@ -113,5 +115,9 @@ public interface StoreService {
 
     void fireStoreEvent(StoreContext context);
 
-    void storeMetaData(StoreContext context) throws DicomServiceException;
+    StorageContext storeMetaData(StoreContext context) throws DicomServiceException;
+
+    void beginProcessFile(StoreContext context);
+
+    void beginStoreMetadata(StoreContext context);
 }

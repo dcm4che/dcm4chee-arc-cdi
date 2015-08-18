@@ -38,16 +38,16 @@
 
 package org.dcm4chee.archive.store;
 
-import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.util.TimeZone;
-
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.storage.conf.StorageSystem;
+
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.TimeZone;
 
 /**
  * Aggregates a number of useful properties related to the ongoing store,
@@ -104,10 +104,6 @@ public interface StoreSession {
 
     void setProperty(String key, Object value);
 
-    /**
-     * Archive device
-     * @return
-     */
     Device getDevice();
 
     Device getSourceDevice();

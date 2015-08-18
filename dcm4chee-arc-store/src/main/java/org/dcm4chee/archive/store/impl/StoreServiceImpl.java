@@ -49,11 +49,14 @@ import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
 import org.dcm4che3.net.*;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.StreamUtils;
 import org.dcm4che3.util.TagUtils;
-import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.monitoring.api.Monitored;
@@ -91,15 +94,19 @@ import java.nio.file.Paths;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Umberto Cappellini
  */
 @ApplicationScoped
 public class StoreServiceImpl implements StoreService {
 
     static Logger LOG = LoggerFactory.getLogger(StoreServiceImpl.class);
+
+    static ExecutorService executor = Executors.newCachedThreadPool();
 
     @Inject
     private StoreServiceEJB storeServiceEJB;
@@ -120,6 +127,12 @@ public class StoreServiceImpl implements StoreService {
     private LocationMgmt locationManager;
 
     @Inject
+    private MemoryOrFileSpooler memoryOrfileSpooler;
+
+    @Inject
+    private FileSpooler fileSpooler;
+
+    @Inject
     @StoreSessionClosed
     private Event<StoreSession> storeSessionClosed;
 
@@ -134,7 +147,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void initStorageSystem(StoreSession session)
+    public void initBulkdataStorage(StoreSession session)
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         String groupID = arcAE.getStorageSystemGroupID();
@@ -154,18 +167,10 @@ public class StoreServiceImpl implements StoreService {
                     "No writeable Storage System in Storage System Group "
                             + groupID);
         session.setStorageSystem(storageSystem);
-        StorageSystem spoolStorageSystem = null;
-        String spoolGroupID = storageSystem.getStorageSystemGroup().getSpoolStorageGroup();
-        if(spoolGroupID!= null){
-            spoolStorageSystem= storageService.selectStorageSystem(
-                    spoolGroupID, 0);
-        }
-        session.setSpoolStorageSystem(spoolStorageSystem != null ? 
-                spoolStorageSystem : storageSystem);
     }
 
     @Override
-    public void initMetaDataStorageSystem(StoreSession session)
+    public void initMetadataStorage(StoreSession session)
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         String groupID = arcAE.getMetaDataStorageSystemGroupID();
@@ -181,23 +186,30 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void initSpoolDirectory(StoreSession session)
+    public void initSpoolingStorage(StoreSession session)
             throws DicomServiceException {
-        ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        Path spoolDir = Paths.get(arcAE.getSpoolDirectoryPath());
-        if (!spoolDir.isAbsolute()) {
-            StorageSystem storageSystem = session.getSpoolStorageSystem();
-            spoolDir = storageService.getBaseDirectory(storageSystem).resolve(
-                    spoolDir);
+
+        StorageSystem system = session.getStorageSystem();
+        if (system == null) {
+            throw new DicomServiceException(Status.ProcessingFailure,
+                    "No writeable storage group conifugred");
         }
+
+        //spool is in the same dir of the destination, to ease the
+        //move operation
+        //TODO check consequences with compression
+        Path spoolingPath = Paths.get(system.getStorageSystemPath(), "spool");
+
         try {
-            Files.createDirectories(spoolDir);
-            Path dir = Files.createTempDirectory(spoolDir, null);
-            LOG.info("{}: M-WRITE spool directory - {}", session, dir);
-            session.setSpoolDirectory(dir);
+            Files.createDirectories(spoolingPath);
         } catch (IOException e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
+            throw new DicomServiceException(Status.OutOfResources,
+                    "No writeable storage system in group " +
+                            system.getStorageSystemGroup().getGroupID());
         }
+
+        session.setSpoolStorageSystem(system);
+        session.setSpoolDirectory(spoolingPath);
     }
 
     @Override
@@ -206,14 +218,14 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void writeSpoolFile(StoreContext context, Attributes fmi,
-            InputStream data) throws DicomServiceException {
+    public void writeSpoolFile(StoreContext context, Attributes fmi, InputStream data)
+            throws DicomServiceException {
         writeSpoolFile(context, fmi, null, data);
     }
 
     @Override
-    public void writeSpoolFile(StoreContext context, Attributes fmi,
-            Attributes attrs) throws DicomServiceException {
+    public void writeSpoolFile(StoreContext context, Attributes fmi, Attributes attrs)
+            throws DicomServiceException {
         writeSpoolFile(context, fmi, attrs, null);
         context.setTransferSyntax(fmi.getString(Tag.TransferSyntaxUID));
         context.setAttributes(attrs);
@@ -228,68 +240,78 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public void cleanup(StoreContext context) {
         if (context.getFileRef() == null) {
-            deleteFinalFile(context);
-            deleteMetaData(context);
+            cleanFinalFile(context);
+            cleanMetaData(context);
         }
     }
 
-    private void deleteMetaData(StoreContext context) {
-        String storagePath = context.getMetaDataStoragePath();
-        if (storagePath != null) {
+    private void cleanMetaData(StoreContext context) {
+        Future<StorageContext> futureMetadataContext = context.getMetadataContext();
+        context.setMetadataContext(null);
+
+        if (futureMetadataContext != null) {
+            Path metadataPath = null;
             try {
-                StorageSystem storageSystem = context.getStoreSession()
-                        .getMetaDataStorageSystem();
-                storageService.deleteObject(
-                        storageService.createStorageContext(storageSystem),
-                        storagePath);
-            } catch (IOException e) {
-                LOG.warn("{}: Failed to delete meta data - {}",
-                        context.getStoreSession(), storagePath, e);
+                StorageContext metadataContext = futureMetadataContext.get();
+                metadataPath = metadataContext.getFilePath();
+                if (metadataPath != null) {
+                    storageService.deleteObject(metadataContext, metadataPath.toString());
+                }
+            } catch (Exception e) {
+                LOG.warn("{} failed to clean metadata path {}",
+                        context.getStoreSession(), metadataPath, e);
             }
         }
     }
 
-    private void deleteFinalFile(StoreContext context) {
-        String storagePath = context.getStoragePath();
-        if (storagePath != null) {
+    private void cleanFinalFile(StoreContext context) {
+        Future<StorageContext> futureBulkdataContext = context.getBulkdataContext();
+        context.setBulkdataContext(null);
+
+        if (futureBulkdataContext != null) {
+            Path bulkdataPath = null;
             try {
-                storageService.deleteObject(context.getStorageContext(),
-                        storagePath);
-            } catch (IOException e) {
-                LOG.warn("{}: Failed to delete final file - {}",
-                        context.getStoreSession(), storagePath, e);
+                StorageContext bulkdataContext = futureBulkdataContext.get();
+                bulkdataPath = bulkdataContext.getFilePath();
+                if (bulkdataPath != null) {
+                    storageService.deleteObject(bulkdataContext, bulkdataPath.toString());
+                }
+            } catch (Exception e) {
+                LOG.warn("{} failed to clean Final File path {}",
+                        context.getStoreSession(), bulkdataPath, e);
             }
         }
     }
 
     private void deleteSpoolDirectory(StoreSession session) {
         Path dir = session.getSpoolDirectory();
-        try (DirectoryStream<Path> directory = Files.newDirectoryStream(dir)) {
-            for (Path file : directory) {
-                try {
-                    Files.delete(file);
-                    LOG.info("{}: M-DELETE spool file - {}", session, file);
-                } catch (IOException e) {
-                    LOG.warn("{}: Failed to M-DELETE spool file - {}", session,
-                            file, e);
+        if (dir!=null) {
+            try (DirectoryStream<Path> directory = Files.newDirectoryStream(dir)) {
+                for (Path file : directory) {
+                    try {
+                        Files.delete(file);
+                        LOG.info("{}: M-DELETE spool file - {}", session, file);
+                    } catch (IOException e) {
+                        LOG.warn("{}: Failed to M-DELETE spool file - {}", session,
+                                file, e);
+                    }
                 }
+                Files.delete(dir);
+                LOG.info("{}: M-DELETE spool directory - {}", session, dir);
+            } catch (IOException e) {
+                LOG.warn("{}: Failed to M-DELETE spool directory - {}", session,
+                        dir, e);
             }
-            Files.delete(dir);
-            LOG.info("{}: M-DELETE spool directory - {}", session, dir);
-        } catch (IOException e) {
-            LOG.warn("{}: Failed to M-DELETE spool directory - {}", session,
-                    dir, e);
         }
     }
 
     private void writeSpoolFile(StoreContext context, Attributes fmi,
             Attributes ds, InputStream in) throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
-        MessageDigest digest = session.getMessageDigest();
+        context.setFileMetainfo(fmi);
+        context.setInputStream(in);
+        context.setAttributes(ds);
         try {
-            context.setSpoolFile(spool(session, fmi, ds, in, ".dcm", digest));
-            if (digest != null)
-                context.setSpoolFileDigest(TagUtils.toHexString(digest.digest()));
+            fileSpooler.spool(context);
         } catch (IOException e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
@@ -298,8 +320,8 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public void parseSpoolFile(StoreContext context)
             throws DicomServiceException {
-        Path path = context.getSpoolFile();
-        try (DicomInputStream in = new DicomInputStream(path.toFile());) {
+        Path path = context.getSpoolingContext().getFilePath();
+        try (DicomInputStream in = new DicomInputStream(path.toFile())) {
             in.setIncludeBulkData(IncludeBulkData.URI);
             Attributes fmi = in.readFileMetaInformation();
             Attributes ds = in.readDataset(-1, -1);
@@ -313,54 +335,41 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public Path spool(StoreSession session, InputStream in, String suffix)
-            throws IOException {
-        return spool(session, null, null, in, suffix, null);
+    public Path spool(StoreSession session, InputStream in, String suffix) throws IOException {
+        StoreContext context = createStoreContext(session);
+        context.setInputStream(in);
+        context.setSpoolFileSuffix(suffix);
+        fileSpooler.spool(context);
+        return context.getSpoolingContext().getFilePath();
     }
 
-    private Path spool(StoreSession session, Attributes fmi, Attributes ds,
-            InputStream in, String suffix, MessageDigest digest)
-            throws IOException {
-        Path spoolDirectory = session.getSpoolDirectory();
-        Path path = Files.createTempFile(spoolDirectory, null, suffix);
-        OutputStream out = Files.newOutputStream(path);
-        try {
-            if (digest != null) {
-                digest.reset();
-                out = new DigestOutputStream(out, digest);
-            }
-            out = new BufferedOutputStream(out);
-            if (fmi != null) {
-                @SuppressWarnings("resource")
-                DicomOutputStream dout = new DicomOutputStream(out,
-                        UID.ExplicitVRLittleEndian);
-                if (ds == null)
-                    dout.writeFileMetaInformation(fmi);
-                else
-                    dout.writeDataset(fmi, ds);
-                out = dout;
-            }
-            if (in instanceof PDVInputStream) {
-                ((PDVInputStream) in).copyTo(out);
-            } else if (in != null) {
-                StreamUtils.copy(in, out);
-            }
-        } finally {
-            SafeClose.close(out);
-        }
-        LOG.info("{}: M-WRITE spool file - {}", session, path);
-        return path;
+    @Override
+    public void spool(StoreContext context) throws DicomServiceException {
+        memoryOrfileSpooler.spool(context);
     }
 
     @Override
     public void store(StoreContext context) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
+        updateFetchStatus(context);
+
         try {
-            service.storeMetaData(context);
-            service.processFile(context);
+            // spools either in memory or file
+            service.spool(context);
+
+            // stores metadata (async)
+            service.beginStoreMetadata(context);
+
+            // stores complete file meta+bulkdata (async)
+            service.beginProcessFile(context);
+
+            // coerce attrs
             service.coerceAttributes(context);
+
+            // updates
             service.updateDB(context);
+
         } catch (DicomServiceException e) {
             context.setStoreAction(StoreAction.FAIL);
             context.setThrowable(e);
@@ -374,6 +383,20 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public void fireStoreEvent(StoreContext context) {
         storeEvent.fire(context);
+    }
+
+    private void updateFetchStatus(StoreContext context) {
+
+        StoreSession session = context.getStoreSession();
+
+        String fetchAET = session.getDevice()
+                .getDeviceExtension(ArchiveDeviceExtension.class)
+                .getFetchAETitle();
+
+        String localAET = session.getLocalAET();
+        if (fetchAET.equalsIgnoreCase(localAET)) {
+            context.setFetch(true);
+        }
     }
 
     /*
@@ -408,8 +431,6 @@ public class StoreServiceImpl implements StoreService {
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-        // store service time zone support moved to decorator
-
     }
 
     private void setParameters(Transformer tr, StoreSession session) {
@@ -424,32 +445,63 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     @Monitored(name="processFile")
-    public void processFile(StoreContext context) throws DicomServiceException {
-        try {
-            StoreSession session = context.getStoreSession();
-            StorageContext storageContext = storageService
-                    .createStorageContext(session.getStorageSystem());
-            Path source = context.getSpoolFile();
-            context.setStorageContext(storageContext);
-            context.setFinalFileDigest(context.getSpoolFileDigest());
-            context.setFinalFileSize(Files.size(source));
+    public StorageContext processFile(StoreContext context) throws DicomServiceException {
+        StorageContext spoolingContext = context.getSpoolingContext();
 
-            String origStoragePath = context.calcStoragePath();
-            String storagePath = origStoragePath;
-            int copies = 1;
-            for (;;) {
+        Attributes fmi = context.getFileMetainfo();
+        Attributes attributes = context.getAttributes();
+        StorageSystem bulkdataStorage = context.getStoreSession().getStorageSystem();
+        StorageContext bulkdataContext = storageService.createStorageContext(bulkdataStorage);
+        String bulkdataRoot = calculatePath(bulkdataStorage, attributes);
+        String bulkdataPath = bulkdataRoot;
+
+        int copies = 1;
+        if (spoolingContext.getFilePath() != null) {
+            //spool in file
+            while (spoolingContext.getFilePath() != null) {
                 try {
-                    storageService
-                            .moveFile(storageContext, source, storagePath);
-                    context.setStoragePath(storagePath);
-                    return;
-                } catch (ObjectAlreadyExistsException e) {
-                    storagePath = origStoragePath + '.' + copies++;
+                    storageService.moveFile(bulkdataContext, spoolingContext.getFilePath(), bulkdataPath);
+                    bulkdataContext.setFileDigest(spoolingContext.getFileDigest());
+                    bulkdataContext.setFileSize(spoolingContext.getFileSize());
+                    bulkdataContext.setFilePath(Paths.get(bulkdataPath));
+                    spoolingContext.setFilePath(null);
+                } catch (IOException e) {
+                    bulkdataPath = bulkdataRoot + '.' + copies++;
                 }
             }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
+        } else {
+            //spool in memory
+            int bufferLength = bulkdataStorage.getBufferedOutputLength();
+            OutputStream out = null;
+
+            try {
+                while (out == null) {
+                    try {
+                        out = storageService.openOutputStream(bulkdataContext, bulkdataPath);
+                    } catch (ObjectAlreadyExistsException e) {
+                        bulkdataPath = bulkdataRoot + '.' + copies++;
+                    }
+                }
+
+                out = new BufferedOutputStream(out, bufferLength);
+                out = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
+                ((DicomOutputStream) out).writeDataset(fmi, attributes);
+
+            } catch (Exception e) {
+                throw new DicomServiceException(Status.UnableToProcess, e);
+            } finally {
+                try {
+                    SafeClose.close(out);
+                    bulkdataContext.setFilePath(Paths.get(bulkdataPath));
+                    bulkdataContext.setFileSize(Files.size(Paths.get(bulkdataStorage.getStorageSystemPath(), bulkdataPath)));
+                    bulkdataContext.setFileDigest(spoolingContext.getFileDigest());
+                } catch (IOException e) {
+                    throw new DicomServiceException(Status.UnableToProcess, e);
+                }
+            }
         }
+
+        return bulkdataContext;
     }
 
     @Override
@@ -459,10 +511,10 @@ public class StoreServiceImpl implements StoreService {
                 .getDeviceExtension(ArchiveDeviceExtension.class);
 
         try {
-            String nodbAttrsDigest = noDBAttsDigest(context.getStoragePath(),
-                    context.getStoreSession());
+            StorageContext bulkdataContext = context.getBulkdataContext().get();
+            String nodbAttrsDigest = noDBAttsDigest(bulkdataContext.getFilePath(),context.getStoreSession());
             context.setNoDBAttsDigest(nodbAttrsDigest);
-        } catch (IOException e1) {
+        } catch (IOException|InterruptedException|ExecutionException e1) {
             throw new DicomServiceException(Status.UnableToProcess, e1);
         }
 
@@ -482,6 +534,8 @@ public class StoreServiceImpl implements StoreService {
             }
         }
 
+        context.setBulkdataContext(null);
+        context.setMetadataContext(null);
         updateAttributes(context);
     }
 
@@ -530,7 +584,7 @@ public class StoreServiceImpl implements StoreService {
         if (!hasSameSourceAET(instance, session.getRemoteAET()))
             return StoreAction.IGNORE;
 
-        if (hasFileRefWithDigest(fileRefs, context.getSpoolFileDigest()))
+        if (hasFileRefWithDigest(fileRefs, context.getSpoolingContext().getFileDigest()))
             return StoreAction.IGNORE;
 
         if (context.getStoreSession().getArchiveAEExtension()
@@ -540,6 +594,14 @@ public class StoreServiceImpl implements StoreService {
             return StoreAction.UPDATEDB;
 
         return StoreAction.REPLACE;
+    }
+
+    private String calculatePath(StorageSystem system, Attributes attributes) {
+        String pattern = system.getStorageSystemGroup().getStorageFilePathFormat();
+        AttributesFormat format = AttributesFormat.valueOf(pattern);
+        synchronized (format) {
+            return format.format(attributes);
+        }
     }
 
     private boolean hasSameSourceAET(Instance instance, String remoteAET) {
@@ -712,44 +774,50 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void storeMetaData(StoreContext context)
-            throws DicomServiceException {
+    public StorageContext storeMetaData(StoreContext context) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        StorageSystem storageSystem = session.getMetaDataStorageSystem();
-        if (storageSystem == null)
-            return;
+        Attributes attributes = context.getAttributes();
+        StorageSystem metadataStorage = session.getMetaDataStorageSystem();
+        StorageContext metadataContext = storageService.createStorageContext(metadataStorage);
+        String metadataRoot = calculatePath(metadataStorage, attributes);
+        String metadataPath = metadataRoot;
+        int copies = 1;
+
+        int bufferLength = metadataStorage.getBufferedOutputLength();
+        MessageDigest digest = metadataContext.getDigest();
+        OutputStream out = null;
 
         try {
-            StorageContext storageContext = storageService
-                    .createStorageContext(storageSystem);
-            String origStoragePath = context.calcMetaDataStoragePath();
-            String storagePath = origStoragePath;
-            int copies = 1;
-            for (;;) {
+            while (out == null) {
                 try {
-                    try (DicomOutputStream out = new DicomOutputStream(
-                            storageService.openOutputStream(storageContext,
-                                    storagePath), UID.ExplicitVRLittleEndian)) {
-                        storeMetaDataTo(context.getAttributes(), out);
-                    }
-                    context.setMetaDataStoragePath(storagePath);
-                    return;
+                    out = storageService.openOutputStream(metadataContext, metadataPath);
+                    metadataContext.setFilePath(Paths.get(metadataPath));
                 } catch (ObjectAlreadyExistsException e) {
-                    storagePath = origStoragePath + '.' + copies++;
+                    metadataPath = metadataRoot + '.' + copies++;
                 }
             }
+
+            Attributes metadata = new Attributes(attributes.bigEndian(), attributes.size());
+            metadata.addWithoutBulkData(attributes, BulkDataDescriptor.DEFAULT);
+
+            if (digest != null) {
+                digest.reset();
+                out = new DigestOutputStream(out, digest);
+            }
+
+            out = new BufferedOutputStream(out, bufferLength);
+            out = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
+            ((DicomOutputStream)out).writeDataset(metadata.
+                    createFileMetaInformation(UID.ExplicitVRLittleEndian), metadata);
+
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
+        } finally {
 
-    private void storeMetaDataTo(Attributes attrs, DicomOutputStream out)
-            throws IOException {
-        Attributes metaData = new Attributes(attrs.bigEndian(), attrs.size());
-        metaData.addWithoutBulkData(attrs, BulkDataDescriptor.DEFAULT);
-        out.writeDataset(
-                metaData.createFileMetaInformation(UID.ExplicitVRLittleEndian),
-                metaData);
+            SafeClose.close(out);
+            metadataContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
+        }
+        return metadataContext;
     }
 
     public int[] merge(final int[]... arrays) {
@@ -801,16 +869,13 @@ public class StoreServiceImpl implements StoreService {
      * digest of all the attributes (including bulk data), not stored in the
      * database. This step is optionally skipped by configuration.
      */
-    private String noDBAttsDigest(String path, StoreSession session)
-            throws IOException {
+    private String noDBAttsDigest(Path path, StoreSession session) throws IOException {
 
         if (session.getArchiveAEExtension().isCheckNonDBAttributesOnStorage()) {
 
             // retrieves and parses the object
-            RetrieveContext retrieveContext = retrieveService
-                    .createRetrieveContext(session.getStorageSystem());
-            InputStream stream = retrieveService.openInputStream(
-                    retrieveContext, path);
+            RetrieveContext retrieveContext = retrieveService.createRetrieveContext(session.getStorageSystem());
+            InputStream stream = retrieveService.openInputStream(retrieveContext, path.toString());
             DicomInputStream dstream = new DicomInputStream(stream);
             dstream.setIncludeBulkData(IncludeBulkData.URI);
             Attributes attrs = dstream.readDataset(-1, -1);
@@ -823,6 +888,38 @@ public class StoreServiceImpl implements StoreService {
             return Utils.digestAttributes(noDBAtts, session.getMessageDigest());
         } else
             return null;
+    }
+
+    @Override
+    public void beginProcessFile(final StoreContext context) {
+
+        final StoreSession session = context.getStoreSession();
+        final StoreService service = session.getStoreService();
+
+        Future<StorageContext> futureBulkDataContext = executor.submit
+                (new Callable<StorageContext>() {
+                    @Override
+                    public StorageContext call() throws DicomServiceException {
+                        return service.processFile(context);
+                    }
+                });
+        context.setBulkdataContext(futureBulkDataContext);
+    }
+
+    @Override
+    public void beginStoreMetadata(final StoreContext context) {
+
+        final StoreSession session = context.getStoreSession();
+        final StoreService service = session.getStoreService();
+
+        Future<StorageContext> futureMetadataContext = executor.submit
+                (new Callable<StorageContext>() {
+                    @Override
+                    public StorageContext call() throws DicomServiceException {
+                        return service.storeMetaData(context);
+                    }
+                });
+        context.setMetadataContext(futureMetadataContext);
     }
 
 }

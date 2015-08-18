@@ -400,8 +400,8 @@ public class HsmITBase {
             session.setSource(new GenericParticipant("", "hsmTest"));
             session.setRemoteAET(SOURCE_AET);
             session.setArchiveAEExtension(arcAEExt);
-            storeService.initStorageSystem(session);
-            storeService.initSpoolDirectory(session);
+            storeService.initBulkdataStorage(session);
+            storeService.initSpoolingStorage(session);
             StoreContext context = storeService.createStoreContext(session);
             Attributes fmi = new Attributes();
             fmi.setString(Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2");

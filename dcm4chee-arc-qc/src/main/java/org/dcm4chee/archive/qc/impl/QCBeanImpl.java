@@ -2446,8 +2446,8 @@ public class QCBeanImpl  implements QCBean{
                 session.setSource(new GenericParticipant(hostname, "QCAction"));
                 session.setRemoteAET(arcAEExt.getApplicationEntity().getAETitle());
                 session.setArchiveAEExtension(arcAEExt);
-                storeService.initStorageSystem(session);
-                storeService.initSpoolDirectory(session);
+                storeService.initBulkdataStorage(session);
+                storeService.initSpoolingStorage(session);
                 StoreContext context = storeService.createStoreContext(session);
                 Attributes fmi = new Attributes();
                 fmi.setString(Tag.TransferSyntaxUID, VR.UI, UID.ImplicitVRLittleEndian);

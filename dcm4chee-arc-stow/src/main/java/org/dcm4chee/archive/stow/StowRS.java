@@ -231,9 +231,9 @@ public class StowRS {
         ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
         session.setRemoteAET(sourceAE != null ? sourceAE.getAETitle():null); //add AE for the web source
         session.setArchiveAEExtension(arcAE);
-        storeService.initStorageSystem(session);
-        storeService.initSpoolDirectory(session);
-        storeService.initMetaDataStorageSystem(session);
+        storeService.initBulkdataStorage(session);
+        storeService.initSpoolingStorage(session);
+        storeService.initMetadataStorage(session);
         try {
             new MultipartParser(boundary).parse(in, new MultipartParser.Handler() {
                 

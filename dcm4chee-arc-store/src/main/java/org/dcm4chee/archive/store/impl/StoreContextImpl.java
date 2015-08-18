@@ -38,19 +38,18 @@
 
 package org.dcm4chee.archive.store.impl;
 
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.TimeZone;
-
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.util.AttributesFormat;
 import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.storage.StorageContext;
-import org.dcm4chee.storage.conf.StorageSystem;
+
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.TimeZone;
+import java.util.concurrent.Future;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -59,25 +58,25 @@ import org.dcm4chee.storage.conf.StorageSystem;
 public class StoreContextImpl implements StoreContext {
 
     private final StoreSession session;
-    private Path spoolFile;
-    private String spoolFileDigest;
-    private String finalFileDigest;
-    private String noDBAttsDigest;    
-    private long finalFileSize;
-    private String storagePath;
+    private String spoolFileSuffix;
+    private String noDBAttsDigest;
     private String metaDataStoragePath;
     private String transferSyntax;
     private Attributes attributes;
     private Attributes coercedAttributes = new Attributes();
     private StoreAction storeAction;
-    private StorageContext storageContext;
     private Instance instance;
     private Location fileRef;
     private Throwable throwable;
-    private HashMap<String,Object> properties = new HashMap<String,Object>();
+    private HashMap<String,Object> properties = new HashMap<>();
     private TimeZone sourceTimeZone;
     private boolean fetch;
-    
+    private Attributes fileMetainfo;
+    private InputStream inputStream;
+    private StorageContext spoolingContext;
+    private Future<StorageContext> bulkdataContext;
+    private Future<StorageContext> metadataContext;
+
     public StoreContextImpl(StoreSession session) {
         this.session = session;
     }
@@ -88,48 +87,14 @@ public class StoreContextImpl implements StoreContext {
     }
 
     @Override
-    public Path getSpoolFile() {
-        return spoolFile;
-    }
+    public String getSpoolFileSuffix() { return spoolFileSuffix; }
 
     @Override
-    public void setSpoolFile(Path spoolFile) {
-        this.spoolFile = spoolFile;
-    }
-
-    @Override
-    public String getSpoolFileDigest() {
-        return spoolFileDigest;
-    }
-
-    @Override
-    public void setSpoolFileDigest(String spoolFileDigest) {
-        this.spoolFileDigest = spoolFileDigest;
-    }
-
-    @Override
-    public long getFinalFileSize() {
-        return finalFileSize;
-    }
-
-    @Override
-    public void setFinalFileSize(long finalFileSize) {
-        this.finalFileSize = finalFileSize;
-    }
+    public void setSpoolFileSuffix(String spoolFileSuffix) { this.spoolFileSuffix = spoolFileSuffix;}
 
     @Override
     public String getTransferSyntax() {
         return transferSyntax;
-    }
-
-    @Override
-    public String getFinalFileDigest() {
-        return finalFileDigest;
-    }
-
-    @Override
-    public void setFinalFileDigest(String finalFileDigest) {
-        this.finalFileDigest = finalFileDigest;
     }
 
     @Override    
@@ -228,54 +193,6 @@ public class StoreContextImpl implements StoreContext {
     }
 
     @Override
-    public String getStoragePath() {
-        return storagePath;
-    }
-
-    @Override
-    public void setStoragePath(String storagePath) {
-        this.storagePath = storagePath;
-    }
-
-    @Override
-    public String calcStoragePath() {
-        return calcStoragePath(session.getStorageSystem());
-    }
-
-    @Override
-    public String getMetaDataStoragePath() {
-        return metaDataStoragePath;
-    }
-
-    @Override
-    public void setMetaDataStoragePath(String metaDataStoragePath) {
-        this.metaDataStoragePath = metaDataStoragePath;
-    }
-
-    @Override
-    public String calcMetaDataStoragePath() {
-        return calcStoragePath(session.getMetaDataStorageSystem());
-    }
-
-    private String calcStoragePath(StorageSystem storageSystem) {
-        String pattern = storageSystem.getStorageSystemGroup().getStorageFilePathFormat();
-        AttributesFormat format = AttributesFormat.valueOf(pattern);
-        synchronized (format) {
-            return format.format(attributes);
-        }
-    }
-
-    @Override
-    public StorageContext getStorageContext() {
-        return storageContext;
-    }
-
-    @Override
-    public void setStorageContext(StorageContext storageContext) {
-        this.storageContext = storageContext;
-    }
-    
-    @Override
     public TimeZone getSourceTimeZone() {
         return sourceTimeZone;
     }
@@ -300,4 +217,53 @@ public class StoreContextImpl implements StoreContext {
         
     }
 
+    @Override
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
+    @Override
+    public void setInputStream(InputStream inputStream) {
+        this.inputStream = inputStream;
+    }
+
+    @Override
+    public Attributes getFileMetainfo() {
+        return fileMetainfo;
+    }
+
+    @Override
+    public void setFileMetainfo(Attributes fileMetainfo) {
+        this.fileMetainfo = fileMetainfo;
+    }
+
+    @Override
+    public StorageContext getSpoolingContext() {
+        return spoolingContext;
+    }
+
+    @Override
+    public void setSpoolingContext(StorageContext spoolingContext) {
+        this.spoolingContext = spoolingContext;
+    }
+
+    @Override
+    public Future<StorageContext> getBulkdataContext() {
+        return bulkdataContext;
+    }
+
+    @Override
+    public void setBulkdataContext(Future<StorageContext> bulkdataContext) {
+        this.bulkdataContext = bulkdataContext;
+    }
+
+    @Override
+    public Future<StorageContext> getMetadataContext() {
+        return metadataContext;
+    }
+
+    @Override
+    public void setMetadataContext(Future<StorageContext> metadataContext) {
+        this.metadataContext = metadataContext;
+    }
 }

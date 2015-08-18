@@ -156,8 +156,7 @@ public class WadoClient {
             InputStream min, StoreContext ctx, String receivedIUID, 
             ArrayList<String> completed, ArrayList<String> failed) {
         try {
-            ctx = service.spool(localAET, remoteAET, min,
-                    service.getCallBack());
+            ctx = service.spool(localAET, remoteAET, min, service.getCallBack());
             if (service.store(ctx)) {
                 LOG.debug("Successfully fetched instance "
                         + "{} from {}", receivedIUID,

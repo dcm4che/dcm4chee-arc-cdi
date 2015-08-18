@@ -1188,8 +1188,8 @@ public class QCIT {
             session.setSource(new GenericParticipant("", "qcTest"));
             session.setRemoteAET("none");
             session.setArchiveAEExtension(arcAEExt);
-            storeService.initStorageSystem(session);
-            storeService.initSpoolDirectory(session);
+            storeService.initBulkdataStorage(session);
+            storeService.initSpoolingStorage(session);
             StoreContext context = storeService.createStoreContext(session);
             Attributes fmi = new Attributes();
             fmi.setString(Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2");

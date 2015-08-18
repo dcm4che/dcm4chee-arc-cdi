@@ -38,22 +38,20 @@
 
 package org.dcm4chee.archive.store.impl;
 
-import javax.ejb.Stateless;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.code.CodeService;
-import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.AttributeFilter;
+import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
@@ -62,17 +60,19 @@ import org.dcm4chee.archive.store.NewStudyCreated;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import javax.ejb.Stateless;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -112,27 +112,34 @@ public class StoreServiceEJB {
         StoreService service = session.getStoreService();
         Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
-        // RESTORE action BLOCK
-        if (context.getStoreAction() != StoreAction.IGNORE
-                && context.getStoreAction() != StoreAction.UPDATEDB
-                && context.getStoragePath() != null) {
-            Collection<Location> locations = instance.getLocations(2);
-            Location location = createLocation(context);
-            locations.add(location);
 
-            // update instance retrieveAET
-            updateRetrieveAETs(session, instance);
-            // availability update
-            updateAvailability(session, instance);
+        switch(context.getStoreAction()) {
+            case IGNORE:
+            case UPDATEDB:
+                return;
+            default:
+                Collection<Location> locations = instance.getLocations(2);
+                try {
 
-            findOrCreateStudyOnStorageGroup(context);
-            if (context.getMetaDataStoragePath() != null) {
-                Location metaDataRef = createMetaDataRef(context);
-                locations.add(metaDataRef);
-            }
-            context.setFileRef(location);
+                    StorageContext metadataContext = context.getMetadataContext().get();
+                    if (metadataContext != null) {
+                        Location metadata = createMetadataLocation(context);
+                        locations.add(metadata);
+                    }
+
+                    StorageContext bulkdataContext = context.getBulkdataContext().get();
+                    if (bulkdataContext != null) {
+                        Location bulkdata = createBulkdataLocation(context);
+                        locations.add(bulkdata);
+
+                        updateRetrieveAETs(session, instance);
+                        updateAvailability(session, instance);
+                    }
+
+                } catch (Exception e) {
+                    throw new DicomServiceException(Status.UnableToProcess, e);
+                }
         }
-
      }
 
     public Instance createInstance(StoreContext context)
@@ -200,47 +207,60 @@ public class StoreServiceEJB {
         return study;
     }
 
-    private Location createLocation(StoreContext context) {
-        StoreSession session = context.getStoreSession();
-        StorageSystem storageSystem = session.getStorageSystem();
-        Location fileRef = new Location.Builder()
-                .storageSystemGroupID(
-                        storageSystem.getStorageSystemGroup().getGroupID())
-                .storageSystemID(storageSystem.getStorageSystemID())
-                .storagePath(context.getStoragePath())
-                .digest(context.getFinalFileDigest())
-                .otherAttsDigest(context.getNoDBAttsDigest())
-                .size(context.getFinalFileSize())
+    private Location createBulkdataLocation(StoreContext context) throws InterruptedException, ExecutionException {
+
+        Future<StorageContext> futureBulkdataContext = context.getBulkdataContext();
+        if (futureBulkdataContext == null) return null;
+
+        StorageContext bulkdataContext = futureBulkdataContext.get();
+        StorageSystem bulkdataSystem = bulkdataContext.getStorageSystem();
+
+        Device source = context.getStoreSession().getSourceDevice();
+        TimeZone timezone = source!=null ? source.getTimeZoneOfDevice() : null;
+        if (timezone == null) timezone = context.getStoreSession().getDevice().getTimeZoneOfDevice();
+        if (timezone == null) timezone = TimeZone.getDefault();
+
+        Location bulkdataLocation = new Location.Builder()
+                .timeZone(timezone.getID())
+                .storageSystemGroupID(bulkdataSystem.getStorageSystemGroup().getGroupID())
+                .storageSystemID(bulkdataSystem.getStorageSystemID())
+                .storagePath(bulkdataContext.getFilePath().toString())
+                .digest(bulkdataContext.getFileDigest())
+                .otherAttsDigest(null)
+                .size(bulkdataContext.getFileSize())
                 .transferSyntaxUID(context.getTransferSyntax())
-                .timeZone(context.getSourceTimeZoneID()).build();
-        em.persist(fileRef);
-        LOG.info("{}: Create {}", session, fileRef);
-        return fileRef;
+                .build();
+
+        em.persist(bulkdataLocation);
+        LOG.info("{}: Create {}", context.getStoreSession(), bulkdataLocation);
+        return bulkdataLocation;
     }
 
-    private Location createMetaDataRef(StoreContext context) {
-        StoreSession session = context.getStoreSession();
-        StorageSystem storageSystem = session.getMetaDataStorageSystem();
-        long metadataFileSize = 0l;
-        try {
-            metadataFileSize = Files.size(Paths.get(storageSystem.getStorageSystemPath())
-                    .resolve(context.getMetaDataStoragePath()));
-        } catch (IOException e) {
-            LOG.error("{}: Unable to calculate Metadata File Size, setting the Metadata "
-                    + "size to 0 for instance {} ", session, context.getInstance());
-        }
-        Location fileRef = new Location.Builder()
-                .storageSystemGroupID(
-                        storageSystem.getStorageSystemGroup().getGroupID())
-                .storageSystemID(storageSystem.getStorageSystemID())
-                .storagePath(context.getMetaDataStoragePath())
-                .size(metadataFileSize)
+    private Location createMetadataLocation(StoreContext context) throws InterruptedException, ExecutionException  {
+
+        Future<StorageContext> futureMetadataContext = context.getMetadataContext();
+        if (futureMetadataContext == null) return null;
+
+        StorageContext metadataContext = futureMetadataContext.get();
+        StorageSystem metadataSystem = metadataContext.getStorageSystem();
+
+        Device source = context.getStoreSession().getSourceDevice();
+        TimeZone timezone = source!=null ? source.getTimeZoneOfDevice() : null;
+        if (timezone == null) timezone = context.getStoreSession().getDevice().getTimeZoneOfDevice();
+        if (timezone == null) timezone = TimeZone.getDefault();
+
+        Location metadataLocation = new Location.Builder()
+                .timeZone(timezone.getID())
+                .storageSystemGroupID(metadataSystem.getStorageSystemGroup().getGroupID())
+                .storageSystemID(metadataSystem.getStorageSystemID())
+                .storagePath(metadataContext.getFilePath().toString())
                 .transferSyntaxUID(UID.ExplicitVRLittleEndian)
-                .timeZone(context.getSourceTimeZoneID()).withoutBulkdata(true)
+                .withoutBulkdata(true)
                 .build();
-        em.persist(fileRef);
-        LOG.info("{}: Create {}", session, fileRef);
-        return fileRef;
+
+        em.persist(metadataLocation);
+        LOG.info("{}: Create {}", context.getStoreSession(), metadataLocation);
+        return metadataLocation;
     }
 
     private Collection<ContentItem> createContentItems(Sequence seq,
