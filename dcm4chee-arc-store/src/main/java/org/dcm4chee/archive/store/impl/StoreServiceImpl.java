@@ -206,7 +206,7 @@ public class StoreServiceImpl implements StoreService {
         } catch (IOException e) {
             throw new DicomServiceException(Status.OutOfResources,
                     "No writeable storage system in group " +
-                            system.getStorageSystemGroup().getGroupID());
+                            system.getStorageSystemGroup().getGroupID(), e);
         }
 
         session.setSpoolStorageSystem(system);
