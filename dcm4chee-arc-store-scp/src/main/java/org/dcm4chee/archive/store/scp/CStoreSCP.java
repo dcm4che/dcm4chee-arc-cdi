@@ -114,6 +114,7 @@ public class CStoreSCP extends BasicCStoreSCP {
             context.setFileMetainfo(fmi);
             context.setInputStream(data);
 
+            storeService.spool(context);
             storeService.store(context);
 
             Attributes coercedAttrs = context.getCoercedOriginalAttributes();
