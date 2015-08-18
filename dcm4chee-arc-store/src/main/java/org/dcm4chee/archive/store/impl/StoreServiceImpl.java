@@ -346,6 +346,7 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     public void spool(StoreContext context) throws DicomServiceException {
+        // spools either in memory or file
         memoryOrfileSpooler.spool(context);
     }
 
@@ -357,7 +358,7 @@ public class StoreServiceImpl implements StoreService {
 
         try {
             // spools either in memory or file
-            service.spool(context);
+            //service.spool(context);
 
             // stores metadata (async)
             service.beginStoreMetadata(context);

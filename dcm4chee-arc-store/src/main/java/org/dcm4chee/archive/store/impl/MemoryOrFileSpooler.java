@@ -1,6 +1,7 @@
 package org.dcm4chee.archive.store.impl;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
@@ -104,6 +105,8 @@ public class MemoryOrFileSpooler implements Spooler {
                 dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
                 Attributes data = dis.readDataset(-1, -1);
                 context.setAttributes(data);
+                context.setTransferSyntax(fmi != null ?
+                        fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
             } catch (IOException e) {
                 throw new DicomServiceException(StoreService.DATA_SET_NOT_PARSEABLE);
             } finally {

@@ -229,11 +229,11 @@ public class StowRS {
         final StoreSession session = storeService.createStoreSession(storeService);
         session.setSource(new HttpSource(request));
         ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
-        session.setRemoteAET(sourceAE != null ? sourceAE.getAETitle():null); //add AE for the web source
+        session.setRemoteAET(sourceAE != null ? sourceAE.getAETitle() : null); //add AE for the web source
         session.setArchiveAEExtension(arcAE);
         storeService.initBulkdataStorage(session);
-        storeService.initSpoolingStorage(session);
         storeService.initMetadataStorage(session);
+        storeService.initSpoolingStorage(session);
         try {
             new MultipartParser(boundary).parse(in, new MultipartParser.Handler() {
                 
@@ -379,8 +379,8 @@ public class StowRS {
         StoreContext context;
         try {
             context = storeService.createStoreContext(session);
-            storeService.writeSpoolFile(context, null, in);
-            storeService.parseSpoolFile(context);
+            context.setInputStream(in);
+            storeService.spool(context);
         } catch (DicomServiceException e) {
             if (e.getStatus() == StoreService.DATA_SET_NOT_PARSEABLE) {
                 storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
@@ -392,8 +392,7 @@ public class StowRS {
         Attributes attrs = context.getAttributes();
         try {
             checkStudyInstanceUID(attrs.getString(Tag.StudyInstanceUID));
-            checkTransferCapability(attrs.getString(Tag.SOPClassUID),
-                    context.getTransferSyntax());
+            checkTransferCapability(attrs.getString(Tag.SOPClassUID),context.getTransferSyntax());
             storeService.store(context);
             sopSequence.add(sopRef(context));
         } catch (DicomServiceException e) {
