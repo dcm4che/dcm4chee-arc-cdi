@@ -879,7 +879,8 @@ public class DefaultArchiveConfigurationFactory {
                 null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEG2000LosslessOnly,
-                "maxPixelValueError=0"
+                "maxPixelValueError=0",
+                "compressionType=JPEG2000"
         ));
 
         ArchivingRule archivingRule = new ArchivingRule();
@@ -1055,7 +1056,8 @@ public class DefaultArchiveConfigurationFactory {
                 null,                           // Image Types
                 null,                           // Body Parts
                 UID.JPEG2000LosslessOnly,
-                "maxPixelValueError=0"
+                "maxPixelValueError=0",
+                "compressionType=JPEG2000"
         ));
         addTCs(ae,
                 EnumSet.allOf(TCGroupConfigAEExtension.DefaultGroup.class),
