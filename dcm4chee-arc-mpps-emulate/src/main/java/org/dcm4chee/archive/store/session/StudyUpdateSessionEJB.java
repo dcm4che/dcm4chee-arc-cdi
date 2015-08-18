@@ -146,8 +146,7 @@ public class StudyUpdateSessionEJB {
         try {
             query.setParameter(1, studyUID);
             study = (Study) query.getSingleResult();
-        } catch (NoResultException e) {
-            LOG.error("Unable to find study {}, related to an already performed procedure", studyUID);
+        } catch (NoResultException ignored) {
         }
         return study;
     }

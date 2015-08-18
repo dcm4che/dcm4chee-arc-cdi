@@ -48,6 +48,7 @@ import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.store.StoreContext;
@@ -236,10 +237,15 @@ public class StudyUpdateSessionManager {
 
         // calc derived fields
         ApplicationEntity ae = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAETs().iterator().next());
-        queryService.recalculateDerivedFields(ejb.findStudyByUID(studyUpdatedEvent.getStudyInstanceUID()), ae);
+        Study studyByUID = ejb.findStudyByUID(studyUpdatedEvent.getStudyInstanceUID());
+        if (studyByUID != null) {
+            LOG.info("Recalculating derived fields for study {}", studyUpdatedEvent.getStudyInstanceUID());
+            queryService.recalculateDerivedFields(studyByUID, ae);
 
-        LOG.info("Study {} updated, triggering StudyUpdatedEvent", studyUpdatedEvent.getStudyInstanceUID());
-        studyUpdatedEventTrigger.fire(studyUpdatedEvent);
+            LOG.info("Triggering StudyUpdatedEvent for study {}", studyUpdatedEvent.getStudyInstanceUID());
+            studyUpdatedEventTrigger.fire(studyUpdatedEvent);
+        } else {
+            LOG.warn("StudyUpdatedEvent was scheduled to be fired for study {}, but the study cannot be found anymore => not triggering the event", studyUpdatedEvent.getStudyInstanceUID());
+        }
     }
-
 }
