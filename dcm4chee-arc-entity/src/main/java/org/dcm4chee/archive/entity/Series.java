@@ -42,7 +42,6 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 
-import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -64,7 +63,6 @@ import javax.persistence.Version;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
-import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 
 /**
@@ -208,6 +206,9 @@ public class Series implements Serializable {
 
     @Column(name = "src_aet")
     private String sourceAET;
+
+    @Column(name = "called_aets", nullable=true)
+    private String calledAETs;
 
     //@Basic(optional = false)
     @Column(name = "is_rejected")
@@ -359,7 +360,23 @@ public class Series implements Serializable {
         this.sourceAET = sourceAET;
     }
 
-    public Code getInstitutionCode() {
+    public String getEncodedCalledAETs() {
+        return calledAETs;
+    }
+
+    public String[] getCalledAETs() {
+        return calledAETs.split("\\");
+    }
+
+    public void addCalledAET(String calledAET) {
+        if(this.calledAETs == null)
+        this.calledAETs = calledAET;
+        else
+            if(!calledAETs.contains(calledAET))
+            this.calledAETs+=  "\\" + calledAET;
+    }
+
+	public Code getInstitutionCode() {
         return institutionCode;
     }
 

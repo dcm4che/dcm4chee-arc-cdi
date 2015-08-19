@@ -180,6 +180,7 @@ public class StoreServiceEJB {
                 data.getSequence(Tag.RequestAttributesSequence),
                 storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields(), series));
         series.setSourceAET(session.getRemoteAET());
+        series.addCalledAET(session.getLocalAET());
         series.setAttributes(data,
                 storeParam.getAttributeFilter(Entity.Series),
                 storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
@@ -371,6 +372,7 @@ public class StoreServiceEJB {
         AttributeFilter seriesFilter = storeParam
                 .getAttributeFilter(Entity.Series);
         Attributes modified = new Attributes();
+        series.addCalledAET(session.getLocalAET());
         // check if trashed
         if (isRejected(series)) {
             em.remove(series.getAttributesBlob());
