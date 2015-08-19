@@ -248,6 +248,36 @@ public class QCRestful {
 
         return aggregatePatientOpResponse(attrs,device.getApplicationEntity(aeTitle),command, patientOperation);
     }
+    /**
+     * Delete patient.
+     * 
+     * @param patientid
+     *            the patient id
+     * @param issuer
+     *            the issue string separated by colons
+     *            localID:universalID:universalIDtype
+     * @return the response
+     */
+    @DELETE
+    @Path("delete/patient/{PatientID}/issuer/{IssuerID}")
+    public Response deletePatient(
+            @PathParam("PatientID") String patientID,
+            @PathParam("IssuerID") String issuerID) {
+        RSP = "Deleted Patient with PID = ";
+        QCEvent event = null;
+        try{
+			event = qcManager.deletePatient(new IDWithIssuer(patientID, new Issuer(issuerID, ':')));
+        }
+        catch (Exception e)
+        {
+            RSP = "Failed to delete patient with ID = "+patientID + " issued by " + issuerID;
+            return Response.status(Status.CONFLICT).entity(RSP).build();
+        }
+        RSP += patientID + " Issuer = " + issuerID;
+        qcManager.notify(event);
+        return Response.ok(RSP).build();
+
+    }
 
     /**
      * Delete study.
@@ -374,6 +404,28 @@ public class QCRestful {
         RSP = "Study with UID = " + studyInstanceUID
                 + " was empty and Deleted = "
                 + qcManager.deleteStudyIfEmpty(studyInstanceUID);
+
+        return Response.ok(RSP).build();
+    }
+
+    /**
+     * Delete patient if empty.
+     * 
+     * @param patientid
+     *            the patient id
+     * @param issuer
+     *            the issue string separated by colons
+     * @return the response
+     */
+    @DELETE
+    @Path("purge/patient/{PatientID}/issuer/{IssuerID}")
+    public Response deletePatientIfEmpty(
+            @PathParam("PatientID") String patientID,
+            @PathParam("IssuerID") String issuerID) {
+        IDWithIssuer pid = new IDWithIssuer(patientID, new Issuer(issuerID, ':'));
+        RSP = "Patient with PID = " + pid.toString() 
+                + " was empty and Deleted = "
+                + qcManager.deletePatientIfEmpty(pid);
 
         return Response.ok(RSP).build();
     }

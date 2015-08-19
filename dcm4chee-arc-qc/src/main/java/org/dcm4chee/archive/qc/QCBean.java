@@ -309,6 +309,19 @@ public interface QCBean {
      * @throws Exception
      *             the exception
      */
+    public QCEvent deletePatient(IDWithIssuer pid) throws Exception;
+
+    /**
+     * Delete study.
+     * Deletes a study permanently
+     * The method will use the archives delete queue to perform asynchronously
+     * 
+     * @param studyInstanceUID
+     *            the study instance uid
+     * @return the QC event
+     * @throws Exception
+     *             the exception
+     */
     public QCEvent deleteStudy(String studyInstanceUID) throws Exception;
 
     /**
@@ -336,6 +349,16 @@ public interface QCBean {
      *             the exception
      */
     public QCEvent deleteInstance(String sopInstanceUID) throws Exception;
+
+    /**
+     * Delete patient if empty.
+     * Purges an empty patient.
+     * 
+     * @param pid
+     *            the patient id
+     * @return true, if successful
+     */
+    boolean deletePatientIfEmpty(IDWithIssuer pid);
 
     /**
      * Delete study if empty.

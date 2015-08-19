@@ -664,6 +664,34 @@ public class QCBeanImpl  implements QCBean{
         }
     }
 
+    @Override
+    public QCEvent deletePatient(IDWithIssuer pid) throws Exception {
+        ArrayList<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
+        ArrayList<Instance> rejectedInstances = new ArrayList<Instance>();
+        Patient patient = findPatient(pid);
+        Collection<Study> studies = patient.getStudies();
+        for(Study study : studies) {
+           Collection<Series> allSeries = study.getSeries();
+           for(Series series: allSeries) {
+               Collection<Instance> insts = series.getInstances();
+               for(Instance inst : insts) {
+                   eventUIDs.add(new QCEventInstance(inst.getSopInstanceUID(), series.getSeriesInstanceUID(), study.getStudyInstanceUID()));
+               }
+               rejectedInstances.addAll(insts);
+           }
+        }
+        LOG.info("{}:  QC info[Delete] info - Rejected patient instances {} "
+                + "- scheduled to delete",qcSource , pid.toString());
+        Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, rejectedInstances);
+
+        QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
+        deleteEvent.addRejectionNote(rejNote);
+        internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
+        rejectAndScheduleForDeletion(rejectedInstances);
+        changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
+        return deleteEvent;
+    }
+
     /* (non-Javadoc)
      * @see org.dcm4chee.archive.qc.QCBean#deleteStudy(java.lang.String)
      */
@@ -684,7 +712,8 @@ public class QCBeanImpl  implements QCBean{
             }
             rejectedInstances.addAll(insts);
         }
-        LOG.info("{}:  QC info[Delete] info - Removed study entity {}",qcSource , studyInstanceUID);
+        LOG.info("{}:  QC info[Delete] info - Rejected study instances {} "
+                + "- scheduled to delete",qcSource , studyInstanceUID);
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, rejectedInstances);
 
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
@@ -711,7 +740,8 @@ public class QCBeanImpl  implements QCBean{
             eventUIDs.add(new QCEventInstance(inst.getSopInstanceUID(),series.getSeriesInstanceUID(), study.getStudyInstanceUID()));
         }
         study.clearQueryAttributes();
-        LOG.info("{}:  QC info[Delete] info - Removed series entity {}",qcSource, seriesInstanceUID);
+        LOG.info("{}:  QC info[Delete] info - Rejected series instances {} "
+                + "- scheduled for delete",qcSource, seriesInstanceUID);
         Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, insts);
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
@@ -737,7 +767,7 @@ public class QCBeanImpl  implements QCBean{
         
         Series series = tmpList.iterator().next().getSeries();
         Study study = series.getStudy();
-        LOG.info("{}:  QC info[Delete] info - Removed instance entity {}", qcSource, sopInstanceUID);
+        LOG.info("{}:  QC info[Delete] info - Rejected instance {} - scheduled for delete", qcSource, sopInstanceUID);
         series.clearQueryAttributes();
         study.clearQueryAttributes();
         List<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
@@ -766,6 +796,24 @@ public class QCBeanImpl  implements QCBean{
         if(series.getInstances().isEmpty()) {
             em.remove(series);
             LOG.info("{}:  QC info[Delete] info - Removed series entity {}", qcSource, seriesInstanceUID);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see org.dcm4chee.archive.qc.QCBean#deletePatientIfEmpty(org.dcm4che3.data.IDWithIssuer)
+     */
+    @Override
+    public boolean deletePatientIfEmpty(IDWithIssuer pid) {
+        
+        Patient patient = findPatient(pid);
+        if(patient == null)
+            return false;
+        if (patient.getStudies().isEmpty()) {
+            em.remove(patient);
+            LOG.info("{}:  QC info[Delete] info - Removed patient entity {}", qcSource, pid);
             return true;
         }
         
