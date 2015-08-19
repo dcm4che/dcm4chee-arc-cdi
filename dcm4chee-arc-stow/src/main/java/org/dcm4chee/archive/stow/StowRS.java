@@ -380,7 +380,7 @@ public class StowRS {
         try {
             context = storeService.createStoreContext(session);
             context.setInputStream(in);
-            storeService.spool(context);
+            storeService.writeSpoolFile(context, null, in);
         } catch (DicomServiceException e) {
             if (e.getStatus() == StoreService.DATA_SET_NOT_PARSEABLE) {
                 storageFailed(NOT_PARSEABLE_IUID, NOT_PARSEABLE_CUID,
