@@ -13,7 +13,9 @@ public interface Spooler {
      * @param context StoreContext containing all the actual information about
      *                what and how to spool. It may contain already a Dataset
      *                (Attributes) or just an InputStream.
+     * @param parse If true, tries to parse the spooled object and saves the
+     *              parsed dataset in the context
      * @throws DicomServiceException
      */
-    public void spool(StoreContext context) throws DicomServiceException;
+    public void spool(StoreContext context, boolean parse) throws DicomServiceException;
 }

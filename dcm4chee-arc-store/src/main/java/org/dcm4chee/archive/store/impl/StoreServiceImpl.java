@@ -312,7 +312,7 @@ public class StoreServiceImpl implements StoreService {
         context.setInputStream(in);
         context.setAttributes(ds);
         try {
-            fileSpooler.spool(context);
+            fileSpooler.spool(context, true);
         } catch (IOException e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
@@ -340,14 +340,14 @@ public class StoreServiceImpl implements StoreService {
         StoreContext context = createStoreContext(session);
         context.setInputStream(in);
         context.setSpoolFileSuffix(suffix);
-        fileSpooler.spool(context);
+        fileSpooler.spool(context, false); //do not parse
         return context.getSpoolingContext().getFilePath();
     }
 
     @Override
     public void spool(StoreContext context) throws DicomServiceException {
         // spools either in memory or file
-        memoryOrfileSpooler.spool(context);
+        memoryOrfileSpooler.spool(context, true);
     }
 
     @Override

@@ -42,7 +42,7 @@ public class MemoryOrFileSpooler implements Spooler {
 
     private static final int DEFAULT_READ_SIZE = 1024 * 2;
 
-    public void spool(StoreContext context) throws DicomServiceException {
+    public void spool(StoreContext context, boolean parse) throws DicomServiceException {
 
         StoreSession session = context.getStoreSession();
 
@@ -96,22 +96,24 @@ public class MemoryOrFileSpooler implements Spooler {
         }
 
         if (spooToFile) {
-            fileSpooler.flushNspool(context, bufferOS.toByteArray());
+            fileSpooler.flushNspool(context, bufferOS.toByteArray(),parse);
             SafeClose.close(bufferOS);
         }
         else {
-            try {
-                DicomInputStream dis = new DicomInputStream(new ByteArrayInputStream(bufferOS.toByteArray()));
-                dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
-                Attributes data = dis.readDataset(-1, -1);
-                context.setAttributes(data);
-                context.setTransferSyntax(fmi != null ?
-                        fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
-            } catch (IOException e) {
-                throw new DicomServiceException(StoreService.DATA_SET_NOT_PARSEABLE);
-            } finally {
-                spoolingContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
-                context.setSpoolingContext(spoolingContext);
+            if (parse) {
+                try {
+                    DicomInputStream dis = new DicomInputStream(new ByteArrayInputStream(bufferOS.toByteArray()));
+                    dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
+                    Attributes data = dis.readDataset(-1, -1);
+                    context.setAttributes(data);
+                    context.setTransferSyntax(fmi != null ?
+                            fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
+                } catch (IOException e) {
+                    throw new DicomServiceException(StoreService.DATA_SET_NOT_PARSEABLE);
+                } finally {
+                    spoolingContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
+                    context.setSpoolingContext(spoolingContext);
+                }
             }
         }
     }

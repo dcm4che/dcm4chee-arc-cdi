@@ -46,15 +46,15 @@ public class FileSpooler implements Spooler {
     /**
      * Flushes to file the passed byte array, and then keeps spooling.
      */
-    public void flushNspool(StoreContext context, byte[] toFlush) throws DicomServiceException {
-        spool(context, toFlush);
+    public void flushNspool(StoreContext context, byte[] toFlush, boolean parse) throws DicomServiceException {
+        spool(context, toFlush, parse);
     }
 
-    public void spool(StoreContext context) throws DicomServiceException {
-        spool(context, null);
+    public void spool(StoreContext context, boolean parse) throws DicomServiceException {
+        spool(context, null, parse);
     }
 
-    private void spool(StoreContext context, byte[] toFlush) throws DicomServiceException {
+    private void spool(StoreContext context, byte[] toFlush, boolean parse) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
         if (session.getSpoolStorageSystem() == null)
@@ -110,15 +110,17 @@ public class FileSpooler implements Spooler {
 
                 DicomInputStream dis = null;
 
-                try {
-                    dis = new DicomInputStream(spoolingPath.toFile());
-                    dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.URI);
-                    Attributes data = dis.readDataset(-1, -1);
-                    context.setAttributes(data);
-                    context.setTransferSyntax(fmi != null ?
-                            fmi.getString(Tag.TransferSyntaxUID): UID.ImplicitVRLittleEndian);
-                } finally {
-                    SafeClose.close(dis);
+                if (parse) {
+                    try {
+                        dis = new DicomInputStream(spoolingPath.toFile());
+                        dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.URI);
+                        Attributes data = dis.readDataset(-1, -1);
+                        context.setAttributes(data);
+                        context.setTransferSyntax(fmi != null ?
+                                fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
+                    } finally {
+                        SafeClose.close(dis);
+                    }
                 }
             }
 
