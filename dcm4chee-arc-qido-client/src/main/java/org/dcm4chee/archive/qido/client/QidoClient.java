@@ -220,12 +220,9 @@ public class QidoClient {
             return connection;
     }
 
-
     private String adjustToQidoURL(String aeTitle, String remoteBaseURL) {
-     String qidoPath = "qido/"+aeTitle+"/studies";
-     return remoteBaseURL.endsWith("/") 
-             ? remoteBaseURL + qidoPath
-                     : remoteBaseURL + "/" + qidoPath;
+        String qidoPath = "qido/" + aeTitle + "/instances";
+        return remoteBaseURL.endsWith("/") ? remoteBaseURL + qidoPath : remoteBaseURL + "/" + qidoPath;
     }
 
     private String removeXMLHeader(String str) {
