@@ -506,7 +506,7 @@
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
             "dcmMPPSEmulationRules" : [ {
               "cn" : "Default EmulateAll Rule",
-              "dcmMPPSEmulationDelay" : -1
+              "dcmMPPSEmulationDelay" : 60
             } ],
             "dcmMppsEmulationPollInterval" : 60,
             "dcmPrivateDerivedFields" : {
@@ -910,7 +910,7 @@
                       "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
                       "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ]
                     },
-                    "dcmImageWriteParam" : [ "maxPixelValueError=0.0" ],
+                    "dcmImageWriteParam" : [ "maxPixelValueError=0.0", "compressionType=JPEG2000" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.90"
                   }, {
                     "cn" : "JPEG LS Lossless",
@@ -2860,7 +2860,7 @@
                       "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
                       "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ]
                     },
-                    "dcmImageWriteParam" : [ "maxPixelValueError=0.0" ],
+                    "dcmImageWriteParam" : [ "maxPixelValueError=0.0", "compressionType=JPEG2000" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.90"
                   }, {
                     "cn" : "JPEG LS Lossless",
