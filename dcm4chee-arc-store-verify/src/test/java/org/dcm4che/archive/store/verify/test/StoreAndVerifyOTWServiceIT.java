@@ -176,7 +176,7 @@ public class StoreAndVerifyOTWServiceIT {
             ArrayList<ArchiveInstanceLocator> locators = 
                     new ArrayList<ArchiveInstanceLocator>();
             locators.add(locateInstance(sopUID));
-            storeRememberService.store(ctx, locators);
+            storeRememberService.scheduleStore(ctx, locators);
             //test assertions in the observer
         }
 

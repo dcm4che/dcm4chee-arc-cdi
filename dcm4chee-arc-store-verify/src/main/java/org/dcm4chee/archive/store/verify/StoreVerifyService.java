@@ -54,12 +54,34 @@ import org.dcm4chee.archive.stow.client.StowResponse;
  *
  */
 public interface StoreVerifyService {
+    
+    /**
+     * Executes a 'store-and-verify' workflow using the STOW and QIDO services.
+     * @param context
+     * @param insts
+     */
+    void store(StowContext context, List<ArchiveInstanceLocator> insts);
+    
+    /**
+     * Schedules a 'store-and-verify' workflow using the STOW and QIDO services.
+     * @param context
+     * @param insts
+     */
+    void scheduleStore(StowContext context, List<ArchiveInstanceLocator> insts);
+    
+    /**
+     * Executes a 'store-and-verify' workflow using the C-Store-SCU and Storage-Commitment services.
+     * @param context
+     * @param insts
+     */
+    void store(CStoreSCUContext context, List<ArchiveInstanceLocator> insts);
 
-    void store(StowContext context
-            , List<ArchiveInstanceLocator> insts);
-
-    void store(CStoreSCUContext context
-           , List<ArchiveInstanceLocator> insts);
+    /**
+     * Schedules a 'store-and-verify' workflow using the C-Store-SCU and Storage-Commitment services.
+     * @param context
+     * @param insts
+     */
+    void scheduleStore(CStoreSCUContext context, List<ArchiveInstanceLocator> insts);
 
     String generateTransactionID(boolean dimse);
 

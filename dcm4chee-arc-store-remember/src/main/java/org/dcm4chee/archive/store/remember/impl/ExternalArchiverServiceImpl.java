@@ -50,6 +50,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
@@ -58,6 +59,7 @@ import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.verify.StoreVerifyService;
+import org.dcm4chee.archive.stow.client.StowContext;
 import org.dcm4chee.storage.ContainerEntry;
 import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext;
 import org.slf4j.Logger;
@@ -96,8 +98,23 @@ public class ExternalArchiverServiceImpl {
         }
 
         List<ArchiveInstanceLocator> insts = locate(instanceUIDs);
-        CStoreSCUContext cxt = new CStoreSCUContext(localAE, remoteAE, ServiceType.STOREREMEMBER);
-        storeVerifyService.store(cxt, insts);
+        
+        switch(context.getArchivingProtocol()) {
+        case CSTORE_PLUS_STGCMT:
+            CStoreSCUContext cxt = new CStoreSCUContext(localAE, remoteAE, ServiceType.STOREREMEMBER);
+            storeVerifyService.store(cxt, insts);
+            break;
+        case STOW_PLUS_QUIDO:
+            WebServiceAEExtension wsExt = remoteAE.getAEExtension(WebServiceAEExtension.class);
+            StowContext stowCtx = new StowContext(localAE, remoteAE, ServiceType.STOREREMEMBER);
+            stowCtx.setStowRemoteBaseURL(wsExt.getStowRSBaseURL());
+            stowCtx.setQidoRemoteBaseURL(wsExt.getQidoRSBaseURL());
+            storeVerifyService.store(stowCtx, insts);
+            break;
+        default:
+            throw new RuntimeException("Unknown archiving protocol " + context.getArchivingProtocol());
+        
+        }
     }
     
     private List<ArchiveInstanceLocator> locate(String... iuids) {

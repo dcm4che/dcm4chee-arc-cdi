@@ -50,6 +50,7 @@ import javax.inject.Inject;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.Service;
 import org.dcm4chee.archive.dto.ServiceQualifier;
@@ -102,7 +103,7 @@ public class StoreVerifyServiceImpl implements StoreVerifyService {
     private Event<QidoResponse> qidoEvent;
 
     @Override
-    public void store(StowContext context, List<ArchiveInstanceLocator> insts) {
+    public void scheduleStore(StowContext context, List<ArchiveInstanceLocator> insts) {
         // create entity and set to pending
         String transactionID = generateTransactionID(false);
         ejb.addWebEntry(transactionID, context.getQidoRemoteBaseURL(), 
@@ -112,9 +113,23 @@ public class StoreVerifyServiceImpl implements StoreVerifyService {
         context.setService(ServiceType.STOREVERIFY);
         stowService.scheduleStow(transactionID, context, insts, 1, 1, 0);
     }
+    
+    @Override
+    public void store(StowContext context, List<ArchiveInstanceLocator> insts) {
+        // create entity and set to pending
+        String transactionID = generateTransactionID(false);
+        ejb.addWebEntry(transactionID, context.getQidoRemoteBaseURL(), 
+                context.getRemoteAE().getAETitle()
+                , context.getLocalAE().getAETitle()
+                , context.getService());
+        context.setService(ServiceType.STOREVERIFY);
+        
+        StowResponse stowResp = stowService.createStowRSClient(stowService,context).storeOverWebService(transactionID, insts);
+        stowService.notify(context, stowResp);
+    }
 
     @Override
-    public void store(CStoreSCUContext context,
+    public void scheduleStore(CStoreSCUContext context,
             List<ArchiveInstanceLocator> insts) {
 
         String localAET = context.getLocalAE().getAETitle();
@@ -125,6 +140,23 @@ public class StoreVerifyServiceImpl implements StoreVerifyService {
         context.setService(ServiceType.STOREVERIFY);
         storeSCUService.scheduleStoreSCU(transactionID, context,
                 insts, 1, 1, 0);
+    }
+    
+    @Override
+    public void store(CStoreSCUContext context, List<ArchiveInstanceLocator> insts) {
+        String localAET = context.getLocalAE().getAETitle();
+        String remoteAET = context.getRemoteAE().getAETitle();
+        ServiceType service = context.getService();
+        String transactionID = generateTransactionID(true);
+        ejb.addDimseEntry(transactionID, remoteAET, localAET, service);
+        
+        context.setService(ServiceType.STOREVERIFY);
+        
+        try {
+            storeSCUService.cstore(transactionID, context, insts, 1);
+        } catch (DicomServiceException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

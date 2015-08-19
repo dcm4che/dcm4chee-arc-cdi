@@ -171,10 +171,10 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 				StowContext stowCtx = new StowContext(callingAE, targetAE, serviceType );
 				stowCtx.setStowRemoteBaseURL(wsExt.getStowRSBaseURL());
 				stowCtx.setQidoRemoteBaseURL(wsExt.getQidoRSBaseURL());
-				storeVerify.store(stowCtx, locators);
+				storeVerify.scheduleStore(stowCtx, locators);
 			} else {
 				LOG.info("Store objects to {}", targetAE.getAETitle());
-				storeVerify.store( new CStoreSCUContext(callingAE, targetAE, serviceType), 
+				storeVerify.scheduleStore( new CStoreSCUContext(callingAE, targetAE, serviceType), 
 		            locators );
 			}
 			LOG.info("Store finished");

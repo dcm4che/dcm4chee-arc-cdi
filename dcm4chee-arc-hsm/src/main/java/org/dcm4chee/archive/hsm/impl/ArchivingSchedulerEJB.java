@@ -69,6 +69,7 @@ import org.dcm4chee.storage.ContainerEntry;
 import org.dcm4chee.storage.archiver.service.ArchiverContext;
 import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext;
 import org.dcm4chee.storage.archiver.service.StorageSystemArchiverContext;
+import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext.ARCHIVING_PROTOCOL;
 import org.dcm4chee.storage.archiver.service.impl.ArchivingQueueScheduler;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
@@ -401,7 +402,7 @@ public class ArchivingSchedulerEJB {
         if(target instanceof ExternalDeviceArchiveTarget) {
             ExternalDeviceArchiveTarget extDeviceTarget = (ExternalDeviceArchiveTarget)target;
             ExternalDeviceArchiverContext extDeviceCxt = archivingQueueScheduler
-                    .createExternalDeviceArchiverContext(extDeviceTarget.getExternalDeviceName());
+                    .createExternalDeviceArchiverContext(extDeviceTarget.getExternalDeviceName(), ARCHIVING_PROTOCOL.STOW_PLUS_QUIDO);
             return extDeviceCxt;
         } else if(target instanceof StorageSystemArchiveTarget) {
             StorageSystemArchiveTarget storageSystemTarget = (StorageSystemArchiveTarget)target;
