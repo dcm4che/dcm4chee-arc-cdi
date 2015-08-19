@@ -64,6 +64,14 @@ import org.dcm4chee.storage.conf.Availability;
  */
 public class Utils {
 
+
+    public static String upper (String value) {
+        if (value == null)
+            return null;
+
+        return value.toUpperCase();
+    }
+
     public static byte[] encodeAttributes(Attributes attrs) {
         ByteArrayOutputStream out = new ByteArrayOutputStream(512);
         try {

@@ -266,7 +266,7 @@ public class MWLItem implements Serializable {
                     "Missing Scheduled Procedure Step Sequence (0040,0100) Item");
         }
         scheduledProcedureStepID = spsItem.getString(Tag.ScheduledProcedureStepID);
-        modality = nullValue == null ? null : spsItem.getString(Tag.Modality, nullValue).toUpperCase();
+        modality = Utils.upper(spsItem.getString(Tag.Modality, nullValue));
         Date dt = spsItem.getDate(Tag.ScheduledProcedureStepStartDateAndTime);
         if (dt != null) {
             scheduledStartDate = DateUtils.formatDA(null, dt);

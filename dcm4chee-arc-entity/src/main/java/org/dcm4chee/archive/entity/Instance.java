@@ -420,8 +420,8 @@ public class Instance implements Serializable {
 //            contentDate = nullValue;
 //            contentTime = nullValue;
 //        }
-        completionFlag = nullValue == null ? null : attrs.getString(Tag.CompletionFlag, nullValue).toUpperCase();
-        verificationFlag = nullValue == null ? null : attrs.getString(Tag.VerificationFlag, nullValue).toUpperCase();
+        completionFlag = Utils.upper(attrs.getString(Tag.CompletionFlag, nullValue));
+        verificationFlag = Utils.upper(attrs.getString(Tag.VerificationFlag, nullValue));
 
         instanceCustomAttribute1 = 
                 AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), nullValue);

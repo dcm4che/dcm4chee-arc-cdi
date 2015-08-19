@@ -343,7 +343,7 @@ public class Patient implements Serializable {
             FuzzyStr fuzzyStr, String nullValue) {
         patientName = PersonName.valueOf(attrs.getString(Tag.PatientName), fuzzyStr, nullValue, patientName);
         patientBirthDate = attrs.getString(Tag.PatientBirthDate, nullValue);
-        patientSex = nullValue == null ? null : attrs.getString(Tag.PatientSex, nullValue).toUpperCase();
+        patientSex = Utils.upper(attrs.getString(Tag.PatientSex, nullValue));
 
         patientCustomAttribute1 = AttributeFilter.selectStringValue(attrs,
                 filter.getCustomAttribute1(), nullValue);

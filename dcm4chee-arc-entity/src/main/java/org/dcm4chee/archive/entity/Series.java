@@ -427,10 +427,10 @@ public class Series implements Serializable {
         seriesDescription = attrs.getString(Tag.SeriesDescription, nullValue);
         institutionName = attrs.getString(Tag.InstitutionName, nullValue);
         institutionalDepartmentName = attrs.getString(Tag.InstitutionalDepartmentName, nullValue);
-        modality = attrs.getString(Tag.Modality, nullValue).toUpperCase();
+        modality = Utils.upper(attrs.getString(Tag.Modality, nullValue));
         stationName = attrs.getString(Tag.StationName, nullValue);
-        bodyPartExamined = nullValue == null ? null : attrs.getString(Tag.BodyPartExamined, nullValue).toUpperCase();
-        laterality = nullValue == null ? null : attrs.getString(Tag.Laterality, nullValue).toUpperCase();
+        bodyPartExamined = Utils.upper(attrs.getString(Tag.BodyPartExamined, nullValue));
+        laterality = Utils.upper(attrs.getString(Tag.Laterality, nullValue));
         Attributes refPPS = attrs.getNestedDataset(Tag.ReferencedPerformedProcedureStepSequence);
         if (refPPS != null) {
             performedProcedureStepInstanceUID = refPPS.getString(Tag.ReferencedSOPInstanceUID, nullValue);
