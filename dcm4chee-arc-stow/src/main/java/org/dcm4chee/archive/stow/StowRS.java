@@ -494,7 +494,7 @@ public class StowRS {
             checkTransferCapability(cuid, fmi.getString(Tag.TransferSyntaxUID));
             StoreContext context = storeService.createStoreContext(session);
             context.setAttributes(ds);
-            storeService.spool(context);
+            storeService.writeSpoolFile(context,fmi,ds);
             storeService.store(context);
             sopSequence.add(sopRef(context));
         } catch (DicomServiceException e) {
