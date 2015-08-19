@@ -131,6 +131,7 @@ public class StoreServiceEJB {
                     if (bulkdataContext != null) {
                         Location bulkdata = createBulkdataLocation(context);
                         locations.add(bulkdata);
+                        context.setFileRef(bulkdata);
 
                         updateRetrieveAETs(session, instance);
                         updateAvailability(session, instance);
