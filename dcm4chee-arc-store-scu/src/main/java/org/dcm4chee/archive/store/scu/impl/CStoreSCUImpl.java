@@ -187,8 +187,8 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
 
         service.coerceFileBeforeMerge(inst, attrs, context);
 
+        //here we merge file attributes with attributes in the blob
         attrs = Utils.mergeAndNormalize(attrs, (Attributes) inst.getObject());
-
 
         service.coerceAttributes(attrs, context);
         if (!tsuid.equals(inst.tsuid))

@@ -524,6 +524,7 @@ public class StowRS {
             Sequence origAttrsSeq = sopRef.ensureSequence(
                     Tag.OriginalAttributesSequence, 1);
             origAttrsSeq.add(item);
+            item.setString(Tag.ReasonForTheAttributeModification, VR.CS, "COERCE");
             item.setDate(Tag.AttributeModificationDateTime, VR.DT, new Date());
             item.setString(Tag.ModifyingSystem, VR.LO,
                     session.getStoreParam().getModifyingSystem());
@@ -531,7 +532,6 @@ public class StowRS {
                     session.getRemoteAET());
             item.newSequence(Tag.ModifiedAttributesSequence, 1).add(
                     coercedAttrs);
-
         }
         return sopRef;
     }
