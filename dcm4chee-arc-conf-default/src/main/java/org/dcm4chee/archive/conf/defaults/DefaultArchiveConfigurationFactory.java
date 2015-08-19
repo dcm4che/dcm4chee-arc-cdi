@@ -688,7 +688,7 @@ public class DefaultArchiveConfigurationFactory {
         ext.setUseWhitelistOfVisibleImageSRClasses(false);
         ext.setUseNullForEmptyQueryFields(true);
 
-        ext.addMppsEmulationRule(new MPPSEmulationAndStudyUpdateRule("Default EmulateAll Rule", new LinkedHashSet<ApplicationEntity>(), 60, MPPSCreationRule.ALWAYS));
+        ext.addMppsEmulationRule(new MPPSEmulationAndStudyUpdateRule("Default EmulateAll Rule", new LinkedHashSet<ApplicationEntity>(), 10, MPPSCreationRule.ALWAYS));
 
         DeletionRule deletionRule = new DeletionRule();
         deletionRule.setCommonName("Deletion Rule");
