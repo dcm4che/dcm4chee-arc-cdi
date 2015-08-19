@@ -2452,7 +2452,6 @@ public class QCBeanImpl  implements QCBean{
                 Attributes fmi = new Attributes();
                 fmi.setString(Tag.TransferSyntaxUID, VR.UI, UID.ImplicitVRLittleEndian);
                 storeService.writeSpoolFile(context, fmi, rejNote);
-                storeService.parseSpoolFile(context);
                 storeService.store(context);
                 LOG.debug("RejectionNote stored! instance:{}", context.getInstance());
                 return context.getInstance();

@@ -448,14 +448,17 @@ public class StoreServiceImpl implements StoreService {
     @Override
     @Monitored(name="processFile")
     public StorageContext processFile(StoreContext context) throws DicomServiceException {
-        StorageContext spoolingContext = context.getSpoolingContext();
+
+        StorageSystem bulkdataStorage = context.getStoreSession().getStorageSystem();
+        if (bulkdataStorage == null)
+            return null;
 
         Attributes fmi = context.getFileMetainfo();
         Attributes attributes = context.getAttributes();
-        StorageSystem bulkdataStorage = context.getStoreSession().getStorageSystem();
         StorageContext bulkdataContext = storageService.createStorageContext(bulkdataStorage);
         String bulkdataRoot = calculatePath(bulkdataStorage, attributes);
         String bulkdataPath = bulkdataRoot;
+        StorageContext spoolingContext = context.getSpoolingContext();
 
         int copies = 1;
         if (spoolingContext.getFilePath() != null) {
@@ -777,9 +780,11 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     public StorageContext storeMetaData(StoreContext context) throws DicomServiceException {
-        StoreSession session = context.getStoreSession();
+        StorageSystem metadataStorage = context.getStoreSession().getMetaDataStorageSystem();
+        if (metadataStorage==null)
+            return null;
+
         Attributes attributes = context.getAttributes();
-        StorageSystem metadataStorage = session.getMetaDataStorageSystem();
         StorageContext metadataContext = storageService.createStorageContext(metadataStorage);
         String metadataRoot = calculatePath(metadataStorage, attributes);
         String metadataPath = metadataRoot;

@@ -209,10 +209,9 @@ public class StoreServiceEJB {
 
     private Location createBulkdataLocation(StoreContext context) throws InterruptedException, ExecutionException {
 
-        Future<StorageContext> futureBulkdataContext = context.getBulkdataContext();
-        if (futureBulkdataContext == null) return null;
+        StorageContext bulkdataContext = context.getBulkdataContext().get();
+        if (bulkdataContext == null) return null;
 
-        StorageContext bulkdataContext = futureBulkdataContext.get();
         StorageSystem bulkdataSystem = bulkdataContext.getStorageSystem();
 
         Device source = context.getStoreSession().getSourceDevice();
@@ -238,10 +237,9 @@ public class StoreServiceEJB {
 
     private Location createMetadataLocation(StoreContext context) throws InterruptedException, ExecutionException  {
 
-        Future<StorageContext> futureMetadataContext = context.getMetadataContext();
-        if (futureMetadataContext == null) return null;
+        StorageContext metadataContext = context.getMetadataContext().get();
+        if (metadataContext == null) return null;
 
-        StorageContext metadataContext = futureMetadataContext.get();
         StorageSystem metadataSystem = metadataContext.getStorageSystem();
 
         Device source = context.getStoreSession().getSourceDevice();
