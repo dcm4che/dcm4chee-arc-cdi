@@ -125,8 +125,6 @@ import org.slf4j.LoggerFactory;
 @Stateless
 public class QCBeanImpl  implements QCBean{
 
-    private static final org.dcm4che3.data.Code CODE_REJECTED_PATIENT_SAFETY = new org.dcm4che3.data.Code("113037","DCM",null,"Rejected for Patient Safety Reasons");
-    
     private static final int[] PATIENT_AND_STUDY_ATTRS = {Tag.SpecificCharacterSet, Tag.StudyDate, Tag.StudyTime, Tag.AccessionNumber,
         Tag.IssuerOfAccessionNumberSequence, Tag.ReferringPhysicianName, Tag.PatientName, Tag.PatientID, Tag.IssuerOfPatientID,
         Tag.PatientBirthDate, Tag.PatientSex, Tag.StudyInstanceUID, Tag.StudyID };
@@ -665,7 +663,7 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public QCEvent deletePatient(IDWithIssuer pid) throws Exception {
+    public QCEvent deletePatient(IDWithIssuer pid, org.dcm4che3.data.Code qcRejectionCode) throws Exception {
         ArrayList<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
         ArrayList<Instance> rejectedInstances = new ArrayList<Instance>();
         Patient patient = findPatient(pid);
@@ -682,12 +680,12 @@ public class QCBeanImpl  implements QCBean{
         }
         LOG.info("{}:  QC info[Delete] info - Rejected patient instances {} "
                 + "- scheduled to delete",qcSource , pid.toString());
-        Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, rejectedInstances);
+        Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, rejectedInstances);
 
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
-        rejectAndScheduleForDeletion(rejectedInstances);
+        rejectAndScheduleForDeletion(rejectedInstances, qcRejectionCode);
         changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
         return deleteEvent;
     }
@@ -696,7 +694,7 @@ public class QCBeanImpl  implements QCBean{
      * @see org.dcm4chee.archive.qc.QCBean#deleteStudy(java.lang.String)
      */
     @Override
-    public QCEvent deleteStudy(String studyInstanceUID) throws Exception {
+    public QCEvent deleteStudy(String studyInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws Exception {
         ArrayList<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
         ArrayList<Instance> rejectedInstances = new ArrayList<Instance>();
         TypedQuery<Study> query = em.createNamedQuery(
@@ -714,12 +712,12 @@ public class QCBeanImpl  implements QCBean{
         }
         LOG.info("{}:  QC info[Delete] info - Rejected study instances {} "
                 + "- scheduled to delete",qcSource , studyInstanceUID);
-        Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, rejectedInstances);
+        Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, rejectedInstances);
 
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
-        rejectAndScheduleForDeletion(rejectedInstances);
+        rejectAndScheduleForDeletion(rejectedInstances, qcRejectionCode);
         changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
         return deleteEvent;
     }
@@ -728,7 +726,7 @@ public class QCBeanImpl  implements QCBean{
      * @see org.dcm4chee.archive.qc.QCBean#deleteSeries(java.lang.String)
      */
     @Override
-    public QCEvent deleteSeries(String seriesInstanceUID) throws Exception {
+    public QCEvent deleteSeries(String seriesInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws Exception {
         ArrayList<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
         TypedQuery<Series> query = em.createNamedQuery(
                 Series.FIND_BY_SERIES_INSTANCE_UID, Series.class)
@@ -742,11 +740,11 @@ public class QCBeanImpl  implements QCBean{
         study.clearQueryAttributes();
         LOG.info("{}:  QC info[Delete] info - Rejected series instances {} "
                 + "- scheduled for delete",qcSource, seriesInstanceUID);
-        Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, insts);
+        Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, insts);
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
-        rejectAndScheduleForDeletion(insts);
+        rejectAndScheduleForDeletion(insts, qcRejectionCode);
 
         changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
         return deleteEvent;
@@ -756,7 +754,7 @@ public class QCBeanImpl  implements QCBean{
      * @see org.dcm4chee.archive.qc.QCBean#deleteInstance(java.lang.String)
      */
     @Override
-    public QCEvent deleteInstance(String sopInstanceUID) throws Exception {
+    public QCEvent deleteInstance(String sopInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws Exception {
         Collection<Instance> tmpList = locateInstances(new String [] {sopInstanceUID});
         
         if(tmpList.isEmpty()) {
@@ -774,11 +772,11 @@ public class QCBeanImpl  implements QCBean{
         for(Instance inst : tmpList) {
             eventUIDs.add(new QCEventInstance(inst.getSopInstanceUID(),series.getSeriesInstanceUID(), study.getStudyInstanceUID()));
         }
-        Instance rejNote = createAndStoreRejectionNote(CODE_REJECTED_PATIENT_SAFETY, tmpList);
+        Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, tmpList);
         QCEvent deleteEvent = new QCEvent(QCOperation.DELETE, null, null, eventUIDs, null);
         deleteEvent.addRejectionNote(rejNote);
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
-        rejectAndScheduleForDeletion(tmpList);
+        rejectAndScheduleForDeletion(tmpList, qcRejectionCode);
         changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
         return deleteEvent;
     }
@@ -949,9 +947,8 @@ public class QCBeanImpl  implements QCBean{
         }
     }
 
-    private void rejectAndScheduleForDeletion(Collection<Instance> insts) {
-        rejectionService.reject(this, insts, codeService.findOrCreate(
-                CODE_REJECTED_PATIENT_SAFETY), null); 
+    private void rejectAndScheduleForDeletion(Collection<Instance> insts, org.dcm4che3.data.Code qcRejectionCode) {
+        rejectionService.reject(this, insts, codeService.findOrCreate(qcRejectionCode), null); 
         rejectionServiceDeleter.deleteRejected(this, insts);
     }
 

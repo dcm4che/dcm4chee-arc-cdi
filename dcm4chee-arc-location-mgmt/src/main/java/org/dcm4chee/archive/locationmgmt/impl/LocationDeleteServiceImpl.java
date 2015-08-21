@@ -420,7 +420,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
             }
             if(isUsableSystem(system)) {
                 try {
-                if(system.getMinFreeSpaceInBytes() == -1L)
+                if(system.getMinFreeSpace() != null && system.getMinFreeSpaceInBytes() == -1L)
                     system.setMinFreeSpaceInBytes(provider.getTotalSpace()
                             * Integer.parseInt(system.getMinFreeSpace()
                                     .replace("%", ""))/100);

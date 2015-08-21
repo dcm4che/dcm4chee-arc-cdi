@@ -511,7 +511,7 @@ public class LocationMgmtEJB implements LocationMgmt {
             StorageSystem system = group.getStorageSystem(systemID);
             StorageSystemProvider provider = system
                     .getStorageSystemProvider(storageSystemProviders);
-            if(system.getMinFreeSpaceInBytes() == -1L)
+            if(system.getMinFreeSpace() != null && system.getMinFreeSpaceInBytes() == -1L)
                 system.setMinFreeSpaceInBytes(provider.getTotalSpace()
                         * Integer.parseInt(system.getMinFreeSpace()
                                 .replace("%", ""))/100);

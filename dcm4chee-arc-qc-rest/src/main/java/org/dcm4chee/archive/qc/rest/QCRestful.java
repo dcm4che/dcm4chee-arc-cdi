@@ -51,6 +51,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -262,11 +263,12 @@ public class QCRestful {
     @Path("delete/patient/{PatientID}/issuer/{IssuerID}")
     public Response deletePatient(
             @PathParam("PatientID") String patientID,
-            @PathParam("IssuerID") String issuerID) {
+            @PathParam("IssuerID") String issuerID,
+            @QueryParam("qcRejectionCode") Code qcRejectionCode) {
         RSP = "Deleted Patient with PID = ";
         QCEvent event = null;
         try{
-			event = qcManager.deletePatient(new IDWithIssuer(patientID, new Issuer(issuerID, ':')));
+			event = qcManager.deletePatient(new IDWithIssuer(patientID, new Issuer(issuerID, ':')), checkRejectionCode(qcRejectionCode));
         }
         catch (Exception e)
         {
@@ -289,11 +291,12 @@ public class QCRestful {
     @DELETE
     @Path("delete/studies/{StudyInstanceUID}")
     public Response deleteStudy(
-            @PathParam("StudyInstanceUID") String studyInstanceUID) {
+            @PathParam("StudyInstanceUID") String studyInstanceUID,
+            @QueryParam("qcRejectionCode") Code qcRejectionCode) {
         RSP = "Deleted Study with UID = ";
         QCEvent event = null;
         try{
-            event = qcManager.deleteStudy(studyInstanceUID);
+            event = qcManager.deleteStudy(studyInstanceUID, checkRejectionCode(qcRejectionCode));
         }
         catch (Exception e)
         {
@@ -319,11 +322,12 @@ public class QCRestful {
     @Path("delete/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
     public Response deleteSeries(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID) {
+            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
+            @QueryParam("qcRejectionCode") Code qcRejectionCode) {
         RSP = "Deleted Series with UID = ";
         QCEvent event = null;
         try {
-            event = qcManager.deleteSeries(seriesInstanceUID);
+            event = qcManager.deleteSeries(seriesInstanceUID, checkRejectionCode(qcRejectionCode));
         }
         catch(Exception e)
         {
@@ -351,11 +355,12 @@ public class QCRestful {
     public Response deleteInstance(
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID) {
+            @PathParam("SOPInstanceUID") String sopInstanceUID,
+            @QueryParam("qcRejectionCode") Code qcRejectionCode) {
         RSP = "Deleted Instance with UID = ";
         QCEvent event = null;
         try{
-            event = qcManager.deleteInstance(sopInstanceUID);
+            event = qcManager.deleteInstance(sopInstanceUID, checkRejectionCode(qcRejectionCode));
         }
         catch(Exception e)
         {
@@ -367,7 +372,11 @@ public class QCRestful {
         return Response.ok(RSP).build();
     }
 
-    /**
+    private Code checkRejectionCode(Code qcRejectionCode) {
+		return qcRejectionCode == null ? new Code("113037", "DCM", null, "Rejected for Patient Safety Reasons") : qcRejectionCode;
+	}
+
+	/**
      * Delete series if empty.
      * 
      * @param studyInstanceUID

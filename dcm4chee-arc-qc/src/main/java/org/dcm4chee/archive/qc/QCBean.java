@@ -309,7 +309,7 @@ public interface QCBean {
      * @throws Exception
      *             the exception
      */
-    public QCEvent deletePatient(IDWithIssuer pid) throws Exception;
+    public QCEvent deletePatient(IDWithIssuer pid, Code qcRejectionCode) throws Exception;
 
     /**
      * Delete study.
@@ -322,7 +322,7 @@ public interface QCBean {
      * @throws Exception
      *             the exception
      */
-    public QCEvent deleteStudy(String studyInstanceUID) throws Exception;
+    public QCEvent deleteStudy(String studyInstanceUID, Code qcRejectionCode) throws Exception;
 
     /**
      * Delete series.
@@ -335,7 +335,7 @@ public interface QCBean {
      * @throws Exception
      *             the exception
      */
-    public QCEvent deleteSeries(String seriesInstanceUID) throws Exception;
+    public QCEvent deleteSeries(String seriesInstanceUID, Code qcRejectionCode) throws Exception;
 
     /**
      * Delete instance.
@@ -348,7 +348,7 @@ public interface QCBean {
      * @throws Exception
      *             the exception
      */
-    public QCEvent deleteInstance(String sopInstanceUID) throws Exception;
+    public QCEvent deleteInstance(String sopInstanceUID, Code qcRejectionCode) throws Exception;
 
     /**
      * Delete patient if empty.
