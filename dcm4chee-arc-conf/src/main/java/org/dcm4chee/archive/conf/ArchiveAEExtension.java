@@ -56,10 +56,7 @@ import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.io.TemplatesCache;
-import org.dcm4che3.net.AEExtension;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.QueryOption;
-import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.*;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
@@ -139,8 +136,8 @@ public class ArchiveAEExtension extends AEExtension {
     private int storageCommitmentRetryInterval = Integer
             .parseInt(DEF_RETRY_INTERVAL);
 
-    @ConfigurableProperty(name = "dcmFwdMppsDestination")
-    private String[] forwardMPPSDestinations = {};
+    @ConfigurableProperty(name = "dcmFwdMppsDestination", collectionOfReferences = true)
+    private List<ApplicationEntity> forwardMPPSDestinations = new ArrayList<>();
 
     @ConfigurableProperty(name = "dcmFwdMppsMaxRetries", defaultValue = "0")
     private int forwardMPPSMaxRetries;
@@ -436,12 +433,11 @@ public class ArchiveAEExtension extends AEExtension {
         this.storageCommitmentRetryInterval = storageCommitmentRetryInterval;
     }
 
-    public final String[] getForwardMPPSDestinations() {
+    public List<ApplicationEntity> getForwardMPPSDestinations() {
         return forwardMPPSDestinations;
     }
 
-    public final void setForwardMPPSDestinations(
-            String[] forwardMPPSDestinations) {
+    public void setForwardMPPSDestinations(List<ApplicationEntity> forwardMPPSDestinations) {
         this.forwardMPPSDestinations = forwardMPPSDestinations;
     }
 

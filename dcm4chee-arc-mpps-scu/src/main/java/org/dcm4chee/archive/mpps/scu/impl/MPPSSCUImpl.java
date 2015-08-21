@@ -90,8 +90,8 @@ public class MPPSSCUImpl implements MPPSSCU {
 
             String iuid = event.getMppsSopInstanceUID();
             Attributes attrs = event.getAttributes();
-            for (String remoteAET : arcAE.getForwardMPPSDestinations()) {
-                scheduleForwardMPPS(event.getDIMSE(), ae.getAETitle(), remoteAET,
+            for (ApplicationEntity remoteAE : arcAE.getForwardMPPSDestinations()) {
+                scheduleForwardMPPS(event.getDIMSE(), ae.getAETitle(), remoteAE.getAETitle(),
                         iuid, attrs, 0, 0);
             }
         } catch (Exception e) {
