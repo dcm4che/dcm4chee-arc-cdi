@@ -146,6 +146,8 @@ public class MPPSEmulatorEJB {
 
         // create MPPS
         Attributes mppsCreateAttributes = makeMPPSCreateAttributes(seriesList, mppsIUID);
+        if (mppsCreateAttributes == null)
+        	return null;
         MPPSContext mppsContext = new MPPSContext(studyUpdatedEvent.getSourceAET(), localAET);
         mppsService.createPerformedProcedureStep(
                 mppsIUID,
@@ -240,6 +242,8 @@ public class MPPSEmulatorEJB {
         Sequence perfSeriesSq = mppsAttrs.newSequence(Tag.PerformedSeriesSequence, seriesList.size());
         Date start_date = null, end_date = null;
         for (Series series : seriesList) {
+        	if (series.getInstances().isEmpty())
+        		continue;
             Attributes pssqItem = new Attributes();
             pssqItem.addSelected(series.getAttributes(), SERIES_Selection);
             Sequence refImgSq = pssqItem.newSequence(Tag.ReferencedImageSequence, series.getInstances().size());
@@ -253,7 +257,10 @@ public class MPPSEmulatorEJB {
             }
             perfSeriesSq.add(pssqItem);
         }
-
+        if (start_date == null) {
+        	LOG.info("No instances available! Skip MPPS emulation.");
+        	return null;
+        }
         // pps datetime
         mppsAttrs.setString(Tag.PerformedProcedureStepStartDate, VR.DA, DateUtils.formatDA(null, start_date));
         mppsAttrs.setString(Tag.PerformedProcedureStepStartTime, VR.TM, DateUtils.formatTM(null, start_date));
