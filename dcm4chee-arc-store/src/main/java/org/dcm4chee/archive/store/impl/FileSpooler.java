@@ -108,9 +108,9 @@ public class FileSpooler implements Spooler {
                     ((PDVInputStream) in).copyTo(out);
                 else StreamUtils.copy(in, out);
 
-                DicomInputStream dis = null;
-
                 if (parse) {
+                	out.flush();
+                    DicomInputStream dis = null;
                     try {
                         dis = new DicomInputStream(spoolingPath.toFile());
                         dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.URI);
