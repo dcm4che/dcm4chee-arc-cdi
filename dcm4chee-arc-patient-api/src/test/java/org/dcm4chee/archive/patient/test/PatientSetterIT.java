@@ -55,6 +55,7 @@ import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.soundex.ESoundex;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.entity.Issuer;
@@ -98,7 +99,7 @@ public class PatientSetterIT {
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        war.addClass(PatientSetterIT.class);
+        war.addClass(PatientSetterIT.class);//.addAsManifestResource("com.mysema.querydsl");
         JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
                 .importRuntimeAndTestDependencies().resolve()
                 .withoutTransitivity().as(JavaArchive.class);
@@ -162,7 +163,7 @@ public class PatientSetterIT {
         pid.setIssuer(issuer);
         pid.setID("123");
         
-        PersonName pn = new PersonName();
+        PersonName pn = new PersonName(new ESoundex(), null);
         pn.setFamilyName("Bunny");
         pn.setGivenName("Bugs");
         
