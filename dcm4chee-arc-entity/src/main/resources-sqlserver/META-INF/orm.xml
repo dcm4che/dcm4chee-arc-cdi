@@ -103,6 +103,16 @@
       </basic>
     </attributes>
   </entity>
+  
+  <entity class="StoreAndRemember">
+    <table name="store_and_remember" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="IDENTITY" />
+      </id>
+    </attributes>
+  </entity>
 
 
 </entity-mappings>

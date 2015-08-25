@@ -39,41 +39,44 @@
 
 package org.dcm4chee.archive.store.remember.impl;
 
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
-import org.dcm4chee.archive.store.remember.StoreAndRememberService;
+import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
+import org.dcm4chee.storage.ContainerEntry;
 import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext.ARCHIVING_PROTOCOL;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class StoreAndRememberMDB implements MessageListener {
-    private static final Logger LOG = LoggerFactory.getLogger(StoreAndRememberMDB.class);
+public class Helper {
     
-    @Inject
-    private StoreAndRememberService storeAndRememeberService;
-   
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            ExternalDeviceArchiverContext ctx = (ExternalDeviceArchiverContext) ((ObjectMessage) msg).getObject();
-            int retries = msg.getIntProperty("Retries");
-            long delay = msg.getLongProperty("delay");
-            StoreAndRememberContext storeRememberCtx = Helper.convert(ctx, retries, delay);
-            storeAndRememeberService.storeAndRemember(storeRememberCtx);
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
+    public static ExternalDeviceArchiverContext convert(StoreAndRememberContext ctx) {
+        ExternalDeviceArchiverContext extContext = new ExternalDeviceArchiverContext(ctx.getExternalDeviceName(), 
+                ARCHIVING_PROTOCOL.valueOf(ctx.getStoreVerifyProtocol().toString()));
+        List<ContainerEntry> containerEntries = new ArrayList<>();
+        for(String sopInstanceUID : ctx.getInstances()) {
+            ContainerEntry entry = new ContainerEntry.Builder(sopInstanceUID, null).build();
+            containerEntries.add(entry);
         }
+        extContext.setEntries(containerEntries);
+        
+        return extContext;
     }
-
+    
+    public static StoreAndRememberContext convert(ExternalDeviceArchiverContext ctx, int retries, long delay) {
+        String[] instanceUIDs = new String[ctx.getEntries().size()];
+        int i = 0;
+        for (ContainerEntry entry : ctx.getEntries()) {
+            instanceUIDs[i++] = entry.getName();
+        }
+        
+        StoreAndRememberContext storeRememberContext = new StoreAndRememberContext(ctx.getExternalDeviceName(), 
+                STORE_VERIFY_PROTOCOL.valueOf(ctx.getArchivingProtocol().toString()), instanceUIDs, retries, delay);
+        return storeRememberContext;
+    }
+    
 }

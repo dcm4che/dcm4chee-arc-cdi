@@ -388,5 +388,16 @@
       </id>
     </attributes>
   </entity>
+  
+  <entity class="StoreAndRemember">
+    <table name="store_and_remember" />
+    <sequence-generator name="seq" sequence-name="store_and_remember_pks" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
 
 </entity-mappings>

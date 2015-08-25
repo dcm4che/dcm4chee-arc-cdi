@@ -104,7 +104,7 @@ public class StoreVerifyRest {
         ArrayList<ArchiveInstanceLocator> locators = 
                 new ArrayList<ArchiveInstanceLocator>();
         locators.add(locateInstance(sopUID));
-        service.scheduleStore(ctx, locators);
+        service.scheduleStore(null, ctx, locators);
     }
 
     @GET
@@ -121,7 +121,7 @@ public class StoreVerifyRest {
         ArrayList<ArchiveInstanceLocator> locators = 
                 new ArrayList<ArchiveInstanceLocator>();
         locators.add(locateInstance(sopUID));
-        service.scheduleStore(ctx, locators);
+        service.scheduleStore(null, ctx, locators);
     }
 
     @GET
@@ -136,7 +136,7 @@ public class StoreVerifyRest {
         ArrayList<ArchiveInstanceLocator> locators = 
                 new ArrayList<ArchiveInstanceLocator>();
         locators.add(locateInstance(sopUID));
-        service.scheduleStore(ctx, locators);
+        service.scheduleStore(null, ctx, locators);
     }
 
     @GET
@@ -150,7 +150,7 @@ public class StoreVerifyRest {
         ArrayList<ArchiveInstanceLocator> locators = 
                 new ArrayList<ArchiveInstanceLocator>();
         locators.add(locateInstance(sopUID));
-        service.scheduleStore(ctx, locators);
+        service.scheduleStore(null, ctx, locators);
     }
 
     private Collection<Location> getFileAliasRefs(Instance instance) {

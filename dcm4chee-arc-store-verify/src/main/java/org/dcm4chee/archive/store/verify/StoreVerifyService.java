@@ -39,54 +39,81 @@ package org.dcm4chee.archive.store.verify;
 
 import java.util.List;
 
-import javax.enterprise.event.Observes;
-
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.dto.Service;
-import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.store.scu.CStoreSCUResponse;
 import org.dcm4chee.archive.stow.client.StowContext;
-import org.dcm4chee.archive.stow.client.StowResponse;
 
 /**
+ * Store-verify-service that allows the perform a reliable store by using a protocol that 
+ * first stores the data to a target and after that verifies that the storage operation on the target was successful. 
+ * The supported store-verify protocols are:
+ * <ul>
+ *   <li>DICOM C-Store plus Storage-Commitment: CStore is used to store the data on a DICOM target. After that a storage-commitment is requested
+ *   for all instances stored.
+ *   <li>STOW-RS and QIDO-RS: STOW is used to store the data on a DICOM target. After storage QIDO-requests are sent to the target 
+ *   to guarantee the target knows about every stored instance.
+ * </ul>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
 public interface StoreVerifyService {
     
+    public static enum STORE_VERIFY_PROTOCOL { CSTORE_PLUS_STGCMT, STOW_PLUS_QIDO }
+    
     /**
      * Executes a 'store-and-verify' workflow using the STOW and QIDO services.
+     * @param transactionUID Optional transaction UID that can be set by the caller for the purpose of matching 
+     * the {@link StoreVerifyResponse} received later with this request. The response will contain the same transaction UID. 
+     * </p>
+     * If the given transaction UID is <code>null</code> then the service will create a
+     * unique transaction UID.
      * @param context
      * @param insts
      */
-    void store(StowContext context, List<ArchiveInstanceLocator> insts);
+    void store(String transactionUID, StowContext context, List<ArchiveInstanceLocator> insts);
     
     /**
      * Schedules a 'store-and-verify' workflow using the STOW and QIDO services.
+     * @param transactionUID Optional transaction UID that can be set by the caller for the purpose of matching 
+     * the {@link StoreVerifyResponse} received later with this request. The response will contain the same transaction UID. 
+     * </p>
+     * If the given transaction UID is <code>null</code> then the service will create a
+     * unique transaction UID.
      * @param context
      * @param insts
      */
-    void scheduleStore(StowContext context, List<ArchiveInstanceLocator> insts);
+    void scheduleStore(String transactionUID, StowContext context, List<ArchiveInstanceLocator> insts);
     
     /**
      * Executes a 'store-and-verify' workflow using the C-Store-SCU and Storage-Commitment services.
+     * @param transactionUID Optional transaction UID that can be set by the caller for the purpose of matching 
+     * the {@link StoreVerifyResponse} received later with this request. The response will contain the same transaction UID. 
+     * </p>
+     * If the given transaction UID is <code>null</code> then the service will create a
+     * unique transaction UID.
      * @param context
      * @param insts
      */
-    void store(CStoreSCUContext context, List<ArchiveInstanceLocator> insts);
+    void store(String transactionUID, CStoreSCUContext context, List<ArchiveInstanceLocator> insts);
 
     /**
      * Schedules a 'store-and-verify' workflow using the C-Store-SCU and Storage-Commitment services.
+     * @param transactionUID Optional transaction UID that can be set by the caller for the purpose of matching 
+     * the {@link StoreVerifyResponse} received later with this request. The response will contain the same transaction UID. 
+     * </p>
+     * If the given transaction UID is <code>null</code> then the service will create a
+     * unique transaction UID.
      * @param context
      * @param insts
      */
-    void scheduleStore(CStoreSCUContext context, List<ArchiveInstanceLocator> insts);
+    void scheduleStore(String transactionUID, CStoreSCUContext context, List<ArchiveInstanceLocator> insts);
 
-    String generateTransactionID(boolean dimse);
-
-    void verifyStorage(@Observes @Service(ServiceType.STOREVERIFY) StowResponse storeResponse);
-
-    void verifyStorage(@Observes @Service(ServiceType.STOREVERIFY) CStoreSCUResponse storeResponse);
+    /**
+     * Generates a unique store-verify transaction UID that can be supplied to the store-methods.
+     * @param dimse
+     * @return
+     */
+    String generateTransactionUID(boolean dimse);
 
 }

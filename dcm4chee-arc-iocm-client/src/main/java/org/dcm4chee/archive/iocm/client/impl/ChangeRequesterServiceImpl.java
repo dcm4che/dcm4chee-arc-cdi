@@ -51,7 +51,6 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.servlet.jsp.jstl.core.Config;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.core.api.ConfigurationException;
@@ -171,10 +170,10 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 				StowContext stowCtx = new StowContext(callingAE, targetAE, serviceType );
 				stowCtx.setStowRemoteBaseURL(wsExt.getStowRSBaseURL());
 				stowCtx.setQidoRemoteBaseURL(wsExt.getQidoRSBaseURL());
-				storeVerify.scheduleStore(stowCtx, locators);
+				storeVerify.scheduleStore(null, stowCtx, locators);
 			} else {
 				LOG.info("Store objects to {}", targetAE.getAETitle());
-				storeVerify.scheduleStore( new CStoreSCUContext(callingAE, targetAE, serviceType), 
+				storeVerify.scheduleStore(null, new CStoreSCUContext(callingAE, targetAE, serviceType), 
 		            locators );
 			}
 			LOG.info("Store finished");

@@ -44,9 +44,7 @@ import java.util.List;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
@@ -54,10 +52,9 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.util.StringUtils;
-import org.dcm4chee.archive.entity.QLocation;
-import org.dcm4chee.archive.entity.StoreVerifyDimse;
-import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.entity.QLocation;
+import org.dcm4chee.archive.entity.Utils;
 import org.hibernate.Session;
 
 import com.mysema.query.BooleanBuilder;
@@ -95,30 +92,6 @@ public class StgCmtEJB  {
                 QLocation.location.storageSystemID,
                 QLocation.location.storageSystemGroupID);
         return list;
-    }
-
-    public boolean dimseEntryExists(String transactionID) {
-        Query query  = em.createNamedQuery(StoreVerifyDimse
-                .STORE_VERIFY_DIMSE_ENTRY_EXISTS);
-        query.setParameter(1, transactionID);
-        long count = (long) query.getSingleResult();
-        
-        return count > 0 ? true : false;
-    }
-
-    public StoreVerifyDimse getDimseEntry(String transactionID) {
-        Query query  = em.createNamedQuery(StoreVerifyDimse
-                .GET_STORE_VERIFY_DIMSE_ENTRY);
-        query.setParameter(1, transactionID);
-        StoreVerifyDimse dimseEntry = (StoreVerifyDimse) 
-                query.getSingleResult();
-        
-        if(dimseEntry == null) {
-            throw new EntityNotFoundException("Unable to find "
-                    + "StoreVerifyDimseEntry for transaction "+transactionID);
-        }
-        
-        return dimseEntry;
     }
 
     public Attributes calculateResult(List<Tuple> list, Attributes actionInfo) {

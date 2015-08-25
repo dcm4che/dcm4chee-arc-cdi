@@ -402,7 +402,7 @@ public class ArchivingSchedulerEJB {
         if(target instanceof ExternalDeviceArchiveTarget) {
             ExternalDeviceArchiveTarget extDeviceTarget = (ExternalDeviceArchiveTarget)target;
             ExternalDeviceArchiverContext extDeviceCxt = archivingQueueScheduler
-                    .createExternalDeviceArchiverContext(extDeviceTarget.getExternalDeviceName(), ARCHIVING_PROTOCOL.STOW_PLUS_QUIDO);
+                    .createExternalDeviceArchiverContext(extDeviceTarget.getExternalDeviceName(), ARCHIVING_PROTOCOL.CSTORE_PLUS_STGCMT);
             return extDeviceCxt;
         } else if(target instanceof StorageSystemArchiveTarget) {
             StorageSystemArchiveTarget storageSystemTarget = (StorageSystemArchiveTarget)target;

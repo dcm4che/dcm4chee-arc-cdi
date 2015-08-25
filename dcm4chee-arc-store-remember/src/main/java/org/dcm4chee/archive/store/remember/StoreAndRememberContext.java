@@ -37,43 +37,61 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.remember.impl;
+package org.dcm4chee.archive.store.remember;
 
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
+import java.io.Serializable;
 
-import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
-import org.dcm4chee.archive.store.remember.StoreAndRememberService;
-import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class StoreAndRememberMDB implements MessageListener {
-    private static final Logger LOG = LoggerFactory.getLogger(StoreAndRememberMDB.class);
+public class StoreAndRememberContext implements Serializable {
+    private static final long serialVersionUID = 7658929872168L;
     
-    @Inject
-    private StoreAndRememberService storeAndRememeberService;
-   
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            ExternalDeviceArchiverContext ctx = (ExternalDeviceArchiverContext) ((ObjectMessage) msg).getObject();
-            int retries = msg.getIntProperty("Retries");
-            long delay = msg.getLongProperty("delay");
-            StoreAndRememberContext storeRememberCtx = Helper.convert(ctx, retries, delay);
-            storeAndRememeberService.storeAndRemember(storeRememberCtx);
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
-        }
+    private final String transactionUID;
+    private final String externalDeviceName;
+    private final STORE_VERIFY_PROTOCOL storeVerifyProtocol;
+    private final String[] instances;
+    private final int retries;
+    private final long delay;
+    
+    public StoreAndRememberContext(String externalDeviceName, STORE_VERIFY_PROTOCOL storeVerifyProtocol, String[] instances, int retries, long delay) {
+        this(null, externalDeviceName, storeVerifyProtocol, instances, retries, delay);
     }
-
+    
+    public StoreAndRememberContext(String transactionUID, String externalDeviceName, STORE_VERIFY_PROTOCOL storeVerifyProtocol, String[] instances, int retries, long delay) {
+        this.transactionUID = transactionUID;
+        this.externalDeviceName = externalDeviceName;
+        this.storeVerifyProtocol = storeVerifyProtocol;
+        this.instances = instances;
+        this.retries = retries;
+        this.delay = delay;
+    }
+    
+    public String getTransactionUID() {
+        return transactionUID;
+    }
+    
+    public String getExternalDeviceName() {
+        return externalDeviceName;
+    }
+    
+    public STORE_VERIFY_PROTOCOL getStoreVerifyProtocol() {
+        return storeVerifyProtocol;
+    }
+    
+    public String[] getInstances() {
+        return instances;
+    }
+    
+    public int getRetries() {
+        return retries;
+    }
+    
+    public long getDelay() {
+        return delay;
+    }
+    
 }

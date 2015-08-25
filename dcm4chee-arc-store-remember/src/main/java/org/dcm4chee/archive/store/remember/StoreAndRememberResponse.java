@@ -37,43 +37,31 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.remember.impl;
+package org.dcm4chee.archive.store.remember;
 
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
+import java.util.Map;
 
-import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
-import org.dcm4chee.archive.store.remember.StoreAndRememberService;
-import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcm4chee.archive.store.verify.StoreVerifyResponse.VerifiedInstanceStatus;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class StoreAndRememberMDB implements MessageListener {
-    private static final Logger LOG = LoggerFactory.getLogger(StoreAndRememberMDB.class);
+public class StoreAndRememberResponse {
+    private final String transactionUID;
+    private final Map<String,VerifiedInstanceStatus> verifiedInstances;
     
-    @Inject
-    private StoreAndRememberService storeAndRememeberService;
-   
-    @Override
-    public void onMessage(Message msg) {
-        try {
-            ExternalDeviceArchiverContext ctx = (ExternalDeviceArchiverContext) ((ObjectMessage) msg).getObject();
-            int retries = msg.getIntProperty("Retries");
-            long delay = msg.getLongProperty("delay");
-            StoreAndRememberContext storeRememberCtx = Helper.convert(ctx, retries, delay);
-            storeAndRememeberService.storeAndRemember(storeRememberCtx);
-        } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
-        }
+    public StoreAndRememberResponse(String transactionUID, Map<String,VerifiedInstanceStatus> verifiedInstances) {
+        this.transactionUID = transactionUID;
+        this.verifiedInstances = verifiedInstances;
     }
 
+    public String getTransactionUID() {
+        return transactionUID;
+    }
+
+    public Map<String, VerifiedInstanceStatus> getVerifiedInstances() {
+        return verifiedInstances;
+    }
+  
 }
