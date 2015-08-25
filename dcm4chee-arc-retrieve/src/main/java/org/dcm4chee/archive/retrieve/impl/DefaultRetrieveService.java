@@ -172,11 +172,7 @@ public class DefaultRetrieveService implements RetrieveService {
             if (b == null) { // No Location
                 if (retrieveAETs == null) // No external location
                     continue;
-            } else if (b && !withoutBulkData) // metadata
-            {
-                continue;
             }
-
             long nextSeriesPk = tuple.get(QSeries.series.pk);
             long nextInstPk = tuple.get(QInstance.instance.pk);
 
@@ -267,7 +263,7 @@ public class DefaultRetrieveService implements RetrieveService {
 
     private static ArchiveInstanceLocator updateFallbackLocator(
             ArchiveInstanceLocator locator, ArchiveInstanceLocator newLocator) {
-        if (locator == null || newLocator.compareTo(locator) < 0) {
+        if (locator == null || locator.isWithoutBulkdata() || newLocator.compareTo(locator) < 0) {
             newLocator.setFallbackLocator(locator);
             return newLocator;
         }
