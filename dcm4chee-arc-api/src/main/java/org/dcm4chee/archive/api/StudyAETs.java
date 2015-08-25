@@ -39,6 +39,8 @@
 
 package org.dcm4chee.archive.api;
 
+import java.util.List;
+
 /**
  * API to retrieve AETs involved in study storage and possible retrieval.
  *
@@ -53,4 +55,6 @@ public interface StudyAETs {
     String[] getCalledAEtsForSeries(String seriesInstanceUID);
 
     String[] getRetrievesAEtForInstance(String sopInstanceUID);
+
+    String[] getSourceAETsForStudy(String studyInstanceUID);
 }

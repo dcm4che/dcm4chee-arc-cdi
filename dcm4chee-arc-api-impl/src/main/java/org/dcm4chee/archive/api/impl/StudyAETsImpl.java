@@ -119,4 +119,24 @@ public class StudyAETsImpl implements StudyAETs {
         }
     }
 
+    @Override
+    public String[] getSourceAETsForStudy(String studyInstanceUID) {
+        try {
+            Study study = em
+                    .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID_EAGER,
+                            Study.class)
+                    .setParameter(1, studyInstanceUID)
+                    .getSingleResult();
+            ArrayList<String> sourceAETs = new ArrayList<>();
+            for(Series series : study.getSeries())
+                    if(!sourceAETs.contains(series.getSourceAET()))
+                        sourceAETs.add(series.getSourceAET());
+            return sourceAETs.toArray(new String[]{});
+        } catch (NoResultException e) {
+            LOG.error("Unable to find study {} used to request "
+                    + "SourceAETs - reason {}", studyInstanceUID, e);
+            return null;
+        }
+    }
+
 }
