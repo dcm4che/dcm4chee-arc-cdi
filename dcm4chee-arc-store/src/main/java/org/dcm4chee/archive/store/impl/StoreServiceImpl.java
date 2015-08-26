@@ -539,8 +539,6 @@ public class StoreServiceImpl implements StoreService {
             }
         }
 
-        context.setBulkdataContext(null);
-        context.setMetadataContext(null);
         updateAttributes(context);
     }
 

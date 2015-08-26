@@ -112,10 +112,10 @@ public class WadoClientServiceImpl implements WadoClientService {
     public boolean store(StoreContext context) {
         context.setFetch(true);
         try {
-            storeService.parseSpoolFile(context);
+            //storeService.parseSpoolFile(context);
             try {
                 storeService.beginStoreMetadata(context);
-                storeService.beginStoreMetadata(context);
+                storeService.beginProcessFile(context);
                 storeService.updateDB(context);
             } catch (DicomServiceException e) {
                 context.setStoreAction(StoreAction.FAIL);
@@ -123,11 +123,19 @@ public class WadoClientServiceImpl implements WadoClientService {
                 throw e;
             } finally {
                 storeService.fireStoreEvent(context);
+
+                switch(context.getStoreAction()) {
+                    case IGNORE:
+                    case UPDATEDB:
+                        break;
+                    default:
+                        LOG.debug("Fetched and Stored instance from remote AE {}"
+                                , context.getStoreSession().getRemoteAET());
+                        getCallBack().onInstanceAvailable(createArchiveInstanceLocator(context));
+                }
+
                 storeService.cleanup(context);
             }
-            LOG.debug("Fetched and Stored instance from remote AE {}"
-                    , context.getStoreSession().getRemoteAET());
-            getCallBack().onInstanceAvailable(createArchiveInstanceLocator(context));
             return true;
         } catch (Exception x) {
             LOG.error("Failed to store RejectionNote!", x);
