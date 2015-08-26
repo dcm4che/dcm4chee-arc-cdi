@@ -163,7 +163,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         view.setViewID("IOCM");
         view.setHideNotRejectedInstances(false);
         queryParam.setQueryRetrieveView(view);
-        return retrieveService.calculateMatches(null, keys, queryParam, true);
+        return retrieveService.calculateMatches(null, keys, queryParam, false);
     }
     
     private ApplicationEntity getRemoteAE(StoreAndRememberContext cxt) {
