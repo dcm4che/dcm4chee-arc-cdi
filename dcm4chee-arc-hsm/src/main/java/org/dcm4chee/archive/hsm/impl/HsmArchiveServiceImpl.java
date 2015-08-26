@@ -36,25 +36,55 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.hsm;
+package org.dcm4chee.archive.hsm.impl;
 
 import java.io.IOException;
 
-import org.dcm4chee.archive.entity.ArchivingTask;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
+import javax.inject.Inject;
+
+import org.dcm4chee.archive.hsm.HsmArchiveService;
+import org.dcm4chee.storage.archiver.service.ArchiverContext;
+import org.dcm4chee.storage.archiver.service.ContainerEntriesStored;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Franz Willer <franz.willer@gmail.com>
  *
  */
-public interface ArchivingScheduler {
+@ApplicationScoped
+public class HsmArchiveServiceImpl implements HsmArchiveService {
 
-    int scheduleReadyArchivingTasks();
+    @Inject
+    private HsmArchiveServiceEJB ejb;
 
-    ArchivingTask scheduleNextArchivingTask() throws IOException;
-    
-    void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
-    void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
-    void copySeries(String seriesIUID, String sourceGroupID, String targetGroupID) throws IOException;
-    void moveSeries(String seriesIUID, String sourceGroupID, String targetGroupID) throws IOException;
+    public synchronized void onContainerEntriesStored(
+            @Observes @ContainerEntriesStored ArchiverContext archiverContext) {
+        ejb.onContainerEntriesStored(archiverContext);
+    }
 
+    @Override
+    public void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID)
+            throws IOException {
+        ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, false);
+    }
+
+    @Override
+    public void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID)
+            throws IOException {
+        ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, true);
+    }
+
+    @Override
+    public void copySeries(String seriesIUID, String sourceGroupID, String targetGroupID)
+            throws IOException {
+        ejb.scheduleSeries(seriesIUID, sourceGroupID, targetGroupID, false);
+    }
+
+    @Override
+    public void moveSeries(String seriesIUID, String sourceGroupID, String targetGroupID)
+            throws IOException {
+        ejb.scheduleSeries(seriesIUID, sourceGroupID, targetGroupID, true);
+    }
 }

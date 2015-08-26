@@ -39,6 +39,8 @@
 
 package org.dcm4chee.archive.store.remember.impl;
 
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.MessageDriven;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
@@ -48,7 +50,6 @@ import javax.jms.ObjectMessage;
 
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
 import org.dcm4chee.archive.store.remember.StoreAndRememberService;
-import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,21 +57,26 @@ import org.slf4j.LoggerFactory;
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/storeandremember"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 public class StoreAndRememberMDB implements MessageListener {
     private static final Logger LOG = LoggerFactory.getLogger(StoreAndRememberMDB.class);
-    
+
     @Inject
     private StoreAndRememberService storeAndRememeberService;
-   
+
     @Override
     public void onMessage(Message msg) {
         try {
-            ExternalDeviceArchiverContext ctx = (ExternalDeviceArchiverContext) ((ObjectMessage) msg).getObject();
+            StoreAndRememberContext ctx = (StoreAndRememberContext) ((ObjectMessage) msg)
+                    .getObject();
+            // TODO: handle retries and delay
             int retries = msg.getIntProperty("Retries");
             long delay = msg.getLongProperty("delay");
-            StoreAndRememberContext storeRememberCtx = Helper.convert(ctx, retries, delay);
-            storeAndRememeberService.storeAndRemember(storeRememberCtx);
+            storeAndRememeberService.storeAndRemember(ctx);
         } catch (Throwable th) {
             LOG.warn("Failed to process " + msg, th);
         }

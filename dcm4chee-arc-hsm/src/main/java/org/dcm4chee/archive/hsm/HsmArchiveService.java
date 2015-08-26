@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * Portions created by the Initial Developer are Copyright (C) 2011-2015
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,22 +35,25 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.store.remember;
 
-import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
+package org.dcm4chee.archive.hsm;
+
+import java.io.IOException;
 
 /**
- * @author Hesham Elbadawi <bsdreko@gmail.com>
- * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Franz Willer <franz.willer@gmail.com>
  *
  */
-public interface StoreAndRememberService {
+public interface HsmArchiveService {
 
-    void storeAndRemember(StoreAndRememberContext context);
+    void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
 
-    void storeStudy(String studyIUID, String externalDeviceName,
-            STORE_VERIFY_PROTOCOL storeVerifyProtocol);
+    void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
 
-    void storeSeries(String seriesIUID, String externalDeviceName,
-            STORE_VERIFY_PROTOCOL storeVerifyProtocol);
+    void copySeries(String seriesIUID, String sourceGroupID, String targetGroupID)
+            throws IOException;
+
+    void moveSeries(String seriesIUID, String sourceGroupID, String targetGroupID)
+            throws IOException;
 }

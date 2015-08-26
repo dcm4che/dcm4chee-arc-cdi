@@ -43,7 +43,6 @@ import java.util.List;
 
 import javax.annotation.Resource;
 import javax.ejb.Stateless;
-import javax.inject.Inject;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -62,8 +61,6 @@ import org.dcm4chee.archive.entity.StoreAndRememberStatus;
 import org.dcm4chee.archive.entity.StoreVerifyStatus;
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
 import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
-import org.dcm4chee.storage.archiver.service.ArchivingQueueProvider;
-import org.dcm4chee.storage.archiver.service.ExternalDeviceArchiverContext;
 import org.dcm4chee.storage.conf.Availability;
 
 /**
@@ -72,17 +69,16 @@ import org.dcm4chee.storage.conf.Availability;
  */
 @Stateless
 public class StoreAndRememberEJB {
-    private static final String ARCHIVING_MSG_TYPE_PROP = "archiving_msg_type";
-    
+
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
     
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
-    @Inject
-    private ArchivingQueueProvider queueProvider;
-    
+    @Resource(mappedName = "java:/queue/storeandremember")
+    private Queue storeAndRememberQueue;
+
     public StoreAndRememberContext createStoreAndRememberContext(String txUID, int retries) {
         List<StoreAndRemember> srs = getStoreRememberTxByUID(txUID);
         
@@ -130,26 +126,19 @@ public class StoreAndRememberEJB {
     }
     
     public void scheduleStoreAndRemember(StoreAndRememberContext ctx) {
-        ExternalDeviceArchiverContext extContext = Helper.convert(ctx);
-        
         try {
             Connection conn = connFactory.createConnection();
             try {
                 Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                Queue archivingQueue = queueProvider.getQueue(extContext);
-                if(archivingQueue != null) {
-                    MessageProducer producer = session.createProducer(archivingQueue);
-                    ObjectMessage msg = session.createObjectMessage(extContext);
-                    msg.setIntProperty("Retries", ctx.getRetries());
-                    // set message type -> Receiving MDBs might filter messages based on type
-                    msg.setStringProperty(ARCHIVING_MSG_TYPE_PROP, extContext.getClass().getName());
-                    long delay = ctx.getDelay();
-                    msg.setLongProperty("delay", delay);
-                    if (delay > 0) {
-                        msg.setLongProperty("_HQ_SCHED_DELIVERY", System.currentTimeMillis() + delay);
-                    }
-                    producer.send(msg);
+                MessageProducer producer = session.createProducer(storeAndRememberQueue);
+                ObjectMessage msg = session.createObjectMessage(ctx);
+                msg.setIntProperty("Retries", ctx.getRetries());
+                long delay = ctx.getDelay();
+                msg.setLongProperty("delay", delay);
+                if (delay > 0) {
+                    msg.setLongProperty("_HQ_SCHED_DELIVERY", System.currentTimeMillis() + delay);
                 }
+                producer.send(msg);
             } finally {
                 conn.close();
             }

@@ -353,9 +353,6 @@ public class DefaultArchiveConfigurationFactory {
 //        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyLastUpdateDateTime, "EXTENDED STUDY");
 //        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyStatus, "EXTENDED STUDY");
 //    }
-    
-    public static final String DEFAULT_STORAGE_SYSTEM_ARCHIVING_QUEUE_NAME = "queue/archiver_1";
-    public static final String DEFAULT_EXTERNAL_SYSTEM_ARCHIVING_QUEUE_NAME = "queue/archiver_2";
 
     public DefaultArchiveConfigurationFactory() {
         factoryParams = new FactoryParams();
@@ -514,7 +511,6 @@ public class DefaultArchiveConfigurationFactory {
         addStorageDeviceExtension(device, factoryParams.baseStoragePath);
         device.addDeviceExtension(new ImageReaderExtension(ImageReaderFactory.getDefault()));
         device.addDeviceExtension(new ImageWriterExtension(ImageWriterFactory.getDefault()));
-        addHsmServiceDeviceExtension(device);
 
         device.setManufacturer("dcm4che.org");
         device.setManufacturerModelName("dcm4chee-arc");
@@ -598,7 +594,7 @@ public class DefaultArchiveConfigurationFactory {
         nearline.setGroupID("ARCHIVE");
         nearline.addStorageSystem(arc);
         nearline.setBaseStorageAccessTime(2000);
-        nearline.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}");
+        nearline.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip");
         nearline.setActiveStorageSystemIDs(arc.getStorageSystemID());
         nearline.setContainer(container);
         nearline.setFileCache(fileCache);
@@ -611,7 +607,6 @@ public class DefaultArchiveConfigurationFactory {
         metadataG.setActiveStorageSystemIDs(metadata.getStorageSystemID());
 
         Archiver archiver = new Archiver();
-        archiver.setVerifyContainer(true);
         archiver.setObjectStatus("TO_ARCHIVE");
 
         StorageDeviceExtension ext = new StorageDeviceExtension();
@@ -1130,22 +1125,6 @@ public class DefaultArchiveConfigurationFactory {
                 DefaultTransferCapabilities.addTC(ae, null, role, UID.VerificationSOPClass, UID.ImplicitVRLittleEndian);
                 break;
         }
-    }
-    
-    private static void addHsmServiceDeviceExtension(Device device) {
-        HsmServiceDeviceExtension hsmServiceDeviceExtension = new HsmServiceDeviceExtension();
-        
-        hsmServiceDeviceExtension.getArchivingQueueMappings().setDefaultStorageSystemArchivingQueueName(DEFAULT_STORAGE_SYSTEM_ARCHIVING_QUEUE_NAME);
-        hsmServiceDeviceExtension.getArchivingQueueMappings().setDefaultExternalDeviceArchivingQueueName(DEFAULT_EXTERNAL_SYSTEM_ARCHIVING_QUEUE_NAME);
-        
-        ArchivingQueueMapping queueMapping1 = new ArchivingQueueMapping();
-        queueMapping1.setCommonName("Archiving Queue Mapping 1");
-        queueMapping1.setStorageSystemGroupID("ARCHIVE");
-        queueMapping1.setArchivingQueueName(DEFAULT_STORAGE_SYSTEM_ARCHIVING_QUEUE_NAME);
-        
-        hsmServiceDeviceExtension.addArchivingQueueMapping(queueMapping1);
-        
-        device.addDeviceExtension(hsmServiceDeviceExtension);
     }
 
 }

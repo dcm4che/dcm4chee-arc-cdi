@@ -261,6 +261,12 @@
       <type>ejb</type>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-copy-schedule</artifactId>
+      <version>${project.version}</version>
+     <type>ejb</type>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-conf</artifactId>
     </dependency>

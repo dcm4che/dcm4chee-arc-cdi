@@ -103,10 +103,6 @@ public class ArchivingTask implements Serializable {
     @Column(name = "source_stg_group_id", updatable = false)
     private String sourceStorageSystemGroupID;
 
-    @Basic(optional = true)
-    @Column(name = "target_name", updatable = false)
-    private String targetName;
-
     @Basic(optional = false)
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "archiving_time")
@@ -159,15 +155,6 @@ public class ArchivingTask implements Serializable {
     public void setSourceStorageSystemGroupID(String sourceStorageSystemGroupID) {
         this.sourceStorageSystemGroupID = sourceStorageSystemGroupID;
     }
-
-    public String getTargetName() {
-        return targetName;
-    }
-
-    public void setTargetName(String targetName) {
-        this.targetName = targetName;
-    }
-
     public String getTargetExternalDevice() {
         return targetExternalDevice;
     }
@@ -182,6 +169,7 @@ public class ArchivingTask implements Serializable {
                 + ", series=" + seriesInstanceUID
                 + ", sourceStorageGroupID=" + sourceStorageSystemGroupID
                 + ", targetStorageGroupID=" + targetStorageSystemGroupID
+                + ", targetExternalDevice=" + targetExternalDevice
                 + "]";
     }
 }

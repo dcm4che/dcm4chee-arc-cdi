@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.hsm.impl;
+package org.dcm4chee.archive.copy.schedule.impl;
 
 import java.io.IOException;
 import java.util.List;
@@ -51,17 +51,14 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
+import org.dcm4chee.archive.copy.schedule.ArchivingScheduler;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
-import org.dcm4chee.archive.hsm.ArchivingScheduler;
-import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.storage.archiver.service.ArchiverContext;
-import org.dcm4chee.storage.archiver.service.ContainerEntriesStored;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,17 +94,12 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
         StoreSession storeSession = storeContext.getStoreSession();
         ArchiveAEExtension arcAE = storeSession.getArchiveAEExtension();
         List<ArchivingRule> archivingRules = arcAE.getArchivingRules().findArchivingRule(
-                storeSession.getSourceDeviceName(), 
+                storeSession.getSourceDeviceName(),
                 storeSession.getRemoteAET(),
                 storeContext.getAttributes());
 
         for (ArchivingRule rule : archivingRules)
             ejb.onStoreInstance(storeContext, rule);
-    }
-
-    public synchronized void onContainerEntriesStored(
-            @Observes @ContainerEntriesStored ArchiverContext archiverContext) {
-        ejb.onContainerEntriesStored(archiverContext);
     }
 
     @Override
@@ -176,28 +168,5 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
             polling = null;
             LOG.info("Arching Scheduler: stop polling for scheduled Archiving tasks");
         }
-    }
-
-    @Override
-    public void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException {
-        ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, false);
-
-    }
-
-    @Override
-    public void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException {
-        ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, true);
-    }
-
-    @Override
-    public void copySeries(String seriesIUID, String sourceGroupID,
-            String targetGroupID) throws IOException {
-        ejb.scheduleSeries(seriesIUID, sourceGroupID, targetGroupID, false);
-    }
-
-    @Override
-    public void moveSeries(String seriesIUID, String sourceGroupID,
-            String targetGroupID) throws IOException {
-        ejb.scheduleSeries(seriesIUID, sourceGroupID, targetGroupID, true);
     }
 }

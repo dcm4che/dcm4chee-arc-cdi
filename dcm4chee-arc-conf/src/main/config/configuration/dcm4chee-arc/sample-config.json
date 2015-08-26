@@ -592,17 +592,6 @@
               }
             }
           },
-          "HsmServiceDeviceExtension" : {
-            "archivingQueueMappings" : {
-              "defaultExternalDeviceArchivingQueueName" : "queue/archiver_2",
-              "defaultStorageSystemArchivingQueueName" : "queue/archiver_1",
-              "list" : [ {
-                "cn" : "Archiving Queue Mapping 1",
-                "dcmArchivingQueueName" : "queue/archiver_1",
-                "dcmStorageSystemGroupID" : "ARCHIVE"
-              } ]
-            }
-          },
           "ImageReaderExtension" : {
             "Image Reader Factory" : {
               "dicomImageReaderMap" : {
@@ -745,7 +734,7 @@
                 "dcmBaseStorageAccessTime" : 2000,
                 "dcmNextStorageSystemID" : "nearline",
                 "dcmRetrieveAET" : [ "DCM4CHEE" ],
-                "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}",
+                "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{now,date,HHmmssSSS}.zip",
                 "dcmStorageSystemGroupID" : "ARCHIVE"
               },
               "DEFAULT" : {

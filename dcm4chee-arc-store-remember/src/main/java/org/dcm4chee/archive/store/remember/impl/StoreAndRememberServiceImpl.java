@@ -259,4 +259,19 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         return UUID.randomUUID().toString();
     }
 
+    @Override
+    public void storeStudy(String studyIUID, String externalDeviceName,
+            STORE_VERIFY_PROTOCOL storeVerifyProtocol) {
+        storeRememberEJB.scheduleStoreAndRememberOfStudy(studyIUID, externalDeviceName,
+                storeVerifyProtocol, 0, 0);
+
+    }
+
+    @Override
+    public void storeSeries(String seriesIUID, String externalDeviceName,
+            STORE_VERIFY_PROTOCOL storeVerifyProtocol) {
+        storeRememberEJB.scheduleStoreAndRememberOfSeries(seriesIUID, externalDeviceName,
+                storeVerifyProtocol, 0, 0);
+    }
+
 }
