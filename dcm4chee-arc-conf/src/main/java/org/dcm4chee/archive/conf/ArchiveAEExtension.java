@@ -624,9 +624,4 @@ public class ArchiveAEExtension extends AEExtension {
         this.defaultExternalRetrieveAETAvailability = defaultExternalRetrieveAETAvailability;
     }
 
-    public int getStoreAndRemememberRetryInterval() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
 }

@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
  */
 @MessageDriven(activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/storeandremember"),
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/storeremember"),
         @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 public class StoreAndRememberMDB implements MessageListener {

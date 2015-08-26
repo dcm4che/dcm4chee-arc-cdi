@@ -76,7 +76,7 @@ public class StoreAndRememberEJB {
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
-    @Resource(mappedName = "java:/queue/storeandremember")
+    @Resource(mappedName = "java:/queue/storeremember")
     private Queue storeAndRememberQueue;
 
     public StoreAndRememberContext createStoreAndRememberContext(String txUID, int retries) {
