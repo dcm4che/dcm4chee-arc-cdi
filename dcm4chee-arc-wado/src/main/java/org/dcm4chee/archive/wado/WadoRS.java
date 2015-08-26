@@ -748,6 +748,7 @@ public class WadoRS extends Wado {
             int... frameList) {
         DicomInputStream dis = null;
         try {
+            LOG.info("Add Pixel Data [file={}]",fileURI);
             dis = new DicomInputStream(new File(new URI(fileURI)));
             dis.setIncludeBulkData(IncludeBulkData.URI);
             Attributes fmi = dis.readFileMetaInformation();
