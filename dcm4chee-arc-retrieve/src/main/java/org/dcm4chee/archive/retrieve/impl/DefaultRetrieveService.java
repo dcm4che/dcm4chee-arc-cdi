@@ -167,11 +167,14 @@ public class DefaultRetrieveService implements RetrieveService {
         ArchiveInstanceLocator locator = null;
 
         for (Tuple tuple : tuples) {
-            Boolean b = tuple.get(QLocation.location.withoutBulkData);
+            Boolean locatorWithoutBulkData = tuple.get(QLocation.location.withoutBulkData);
             String retrieveAETs = tuple.get(QInstance.instance.retrieveAETs);
-            if (b == null) { // No Location
+            if (locatorWithoutBulkData == null) { // No Location
                 if (retrieveAETs == null) // No external location
                     continue;
+            } else if (locator != null && !locator.isWithoutBulkdata() && locatorWithoutBulkData && !withoutBulkData) {
+            	LOG.debug("Skip Locator withoutBulkData! We have already a locator with bulkData and request is also for 'with bulkdata'");
+            	continue;
             }
             long nextSeriesPk = tuple.get(QSeries.series.pk);
             long nextInstPk = tuple.get(QInstance.instance.pk);
@@ -196,11 +199,14 @@ public class DefaultRetrieveService implements RetrieveService {
                 locator = null;
             }
             instPk = nextInstPk;
-            if(tuple.get(QLocation.location.storageSystemGroupID) == null) //can only be null if instance has no location!
+            if(tuple.get(QLocation.location.storageSystemGroupID) == null) { //can only be null if instance has no location!
                 locator = augmentExternalLocations(updateLocator(storageConf, 
                         locator, seriesAttrs, tuple));
-            else
-                locator = updateLocator(storageConf, locator, seriesAttrs, tuple);
+            } else {
+            	if (locator != null && !withoutBulkData && !locatorWithoutBulkData && locator.isWithoutBulkdata())
+            		locator = null; //replace current locator (withoutBulkData) with locator with bulkdata 
+            	locator = updateLocator(storageConf, locator, seriesAttrs, tuple);
+            }
         }
         if (locator != null)
             locators.add(locator);
@@ -263,7 +269,7 @@ public class DefaultRetrieveService implements RetrieveService {
 
     private static ArchiveInstanceLocator updateFallbackLocator(
             ArchiveInstanceLocator locator, ArchiveInstanceLocator newLocator) {
-        if (locator == null || locator.isWithoutBulkdata() || newLocator.compareTo(locator) < 0) {
+        if (locator == null || newLocator.compareTo(locator) < 0) {
             newLocator.setFallbackLocator(locator);
             return newLocator;
         }
