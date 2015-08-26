@@ -462,8 +462,9 @@ public class WadoRS extends Wado {
         try {
             if (refs.isEmpty())
                 throw new WebApplicationException(Status.NOT_FOUND);
-            else
+            else {
                 insts.addAll(refs);
+            }
             // check for SOP classes elimination
             if (arcAE.getRetrieveSuppressionCriteria()
                     .isCheckTransferCapabilities())
@@ -676,30 +677,31 @@ public class WadoRS extends Wado {
 
         if (acceptDicomJSON) {
             ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(refs);
-
-            if(!external.isEmpty()) {
-                    ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
-                    failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, null,null);
-                    
-                    if(!failedToFetchForward.isEmpty()) {
-                        for(Iterator<ArchiveInstanceLocator> iter = external.iterator(); iter.hasNext();) {
-                            if(failedToFetchForward.contains(iter.next())) {
-                                iter.remove();
-                            }
+            // prefer local copies
+            if (!external.isEmpty() && refs.isEmpty()) {
+                ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
+                failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, null,null);
+                
+                if(!failedToFetchForward.isEmpty()) {
+                    for(Iterator<ArchiveInstanceLocator> iter = external.iterator(); iter.hasNext();) {
+                        if(failedToFetchForward.contains(iter.next())) {
+                            iter.remove();
                         }
                     }
-                    refs.addAll(external);
+                }
+                refs.addAll(external);
             }
                 streamingOutput = new DicomJSONOutput(aetitle, uriInfo, refs,
                         context, storescuService);
         } else {
             ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(refs);
-
-            if(!refs.isEmpty()) {
+            // prefer local copies
+            if ((!refs.isEmpty() && !external.isEmpty()) 
+                    || (!refs.isEmpty() && external.isEmpty())) {
                 for (ArchiveInstanceLocator ref : refs)
                     addMetadataTo(ref, multiPartOutput);
             }
-            if(!external.isEmpty()) {
+            else if (!external.isEmpty()) {
                 FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
                     @Override
                     public void onFetch(Collection<ArchiveInstanceLocator> instances,
