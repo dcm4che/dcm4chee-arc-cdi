@@ -575,31 +575,39 @@ public class FetchForwardServiceImpl implements FetchForwardService {
     }
 
     @Override
-    public Response redirectRequest(ApplicationEntity redirectAE, List<ArchiveInstanceLocator> ref, String queryString) {
-        String wadoUri = null;
-        try {
-            WebServiceAEExtension wsAEExt = redirectAE.getAEExtension(WebServiceAEExtension.class);
-            wadoUri = wsAEExt.getWadoURIBaseURL();
-            return Response.temporaryRedirect(new URI(wadoUri + "?" + queryString)).build();
-        } catch (URISyntaxException e) {
-            LOG.error("Unable to redirect request to {} - Exception {}", wadoUri, e.getMessage());
-            return Response.status(Status.CONFLICT).build();
-        }        
+    public Response redirectRequest(ApplicationEntity redirectAE, String queryString) {
+        WebServiceAEExtension wsAEExt = redirectAE.getAEExtension(WebServiceAEExtension.class);
+        if (wsAEExt != null) {
+            String wadoUri = wsAEExt.getWadoURIBaseURL();
+            if (wadoUri != null) {
+                wadoUri = wadoUri + "?" + queryString;
+                try {
+                    return Response.temporaryRedirect(new URI(wadoUri)).build();
+                } catch (URISyntaxException e) {
+                    LOG.error("Unable to redirect request to {} - Exception {}", wadoUri,
+                            e.getMessage());
+                    return Response.status(Status.CONFLICT).build();
+                }
+            } 
+        }
+            
+        return null;
     }
 
     @Override
-    public ApplicationEntity getprefersForwardingAE(String localAETitle,
-            List<ArchiveInstanceLocator> externalLocations) {
+    public ApplicationEntity getPrefersForwardingAE(String localAETitle, List<ArchiveInstanceLocator> externalLocations) {
         ApplicationEntity localAE = device.getApplicationEntity(localAETitle);
-        for(ArchiveInstanceLocator loc : externalLocations) {
-            ArrayList<ApplicationEntity> externalRetrieveAes = listBestExternalLocation(loc, localAE);
-            for(ApplicationEntity ae : externalRetrieveAes) {
-                if(ae.getAEExtension(ExternalArchiveAEExtension.class).isPrefersForwarding()) {
+        for (ArchiveInstanceLocator loc : externalLocations) {
+            List<ApplicationEntity> externalRetrieveAes = listBestExternalLocation(loc, localAE);
+            for (ApplicationEntity ae : externalRetrieveAes) {
+                ExternalArchiveAEExtension extArchiveAEExtension = ae
+                        .getAEExtension(ExternalArchiveAEExtension.class);
+                if (extArchiveAEExtension != null && extArchiveAEExtension.isPrefersForwarding()) {
                     return ae;
                 }
             }
         }
-        
+
         return null;
     }
 

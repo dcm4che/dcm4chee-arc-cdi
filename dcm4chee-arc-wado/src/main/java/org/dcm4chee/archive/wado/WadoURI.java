@@ -308,16 +308,15 @@ public class WadoURI extends Wado {
                 attrs = (Attributes) instance.getObject();
                 resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
             }
-            
             //external
             else {
-                //try to forwards
+                //try to forward by redirecting HTTP request
                 ApplicationEntity forwardingAE = null;
-                if ((forwardingAE = fetchForwardService.getprefersForwardingAE(
-                        aetitle, ref)) != null) {
-                    Response redirectResponse = fetchForwardService.redirectRequest(forwardingAE, ref, request.getQueryString());
-                    if(redirectResponse.getStatus() != Status.CONFLICT.getStatusCode())
+                if ((forwardingAE = fetchForwardService.getPrefersForwardingAE(aetitle, ref)) != null) {
+                    Response redirectResponse = fetchForwardService.redirectRequest(forwardingAE, request.getQueryString());
+                    if( redirectResponse != null && redirectResponse.getStatus() != Status.CONFLICT.getStatusCode()) {
                         return redirectResponse;
+                    }
                 }
                 //fetch
                 FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
@@ -334,14 +333,13 @@ public class WadoURI extends Wado {
                 instance = ref.get(0);
                 attrs = (Attributes) instance.getObject();
                 resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
-            
             }
-            
-
-            if (resp == null)
+           
+            if (resp == null) {
                 throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
-            else
+            } else {
                 return resp;
+            }
         } finally {
             // audit
             retrieveEvent.fire(new RetrieveAfterSendEvent(

@@ -79,8 +79,8 @@ public interface FetchForwardService {
     List<ArchiveInstanceLocator> fetchForwardUsingCmove(String localAETitle, List<ArchiveInstanceLocator> externallyAvailable, 
             FetchForwardCallBack callBack);
 
-    Response redirectRequest(ApplicationEntity redirectAE, List<ArchiveInstanceLocator> ref, String queryString);
+    Response redirectRequest(ApplicationEntity redirectAE, String queryString);
 
-    ApplicationEntity getprefersForwardingAE(String localAET, List<ArchiveInstanceLocator> ref);
+    ApplicationEntity getPrefersForwardingAE(String localAET, List<ArchiveInstanceLocator> ref);
 
 }
