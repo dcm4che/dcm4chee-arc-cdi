@@ -37,8 +37,10 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.wado;
 
+import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
+import java.awt.image.BandedSampleModel;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.io.BufferedOutputStream;
@@ -87,6 +89,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.image.PaletteColorModel;
 import org.dcm4che3.image.PixelAspectRatio;
+import org.dcm4che3.image.YBRColorSpace;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory.ImageWriterParam;
@@ -275,21 +278,16 @@ public class WadoURI extends Wado {
 
         try {
             
-            ApplicationEntity sourceAE = aeCache
-                    .findAE(new HttpSource(request));
+            ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
             if (sourceAE == null) {
-                LOG.info("Unable to find the mapped AE for this host or even"
-                        + " the fallback AE, coercion will not be applied");
+                LOG.info("Unable to find the mapped AE for this host or even" + " the fallback AE, coercion will not be applied");
             }
-            
-            context = new CStoreSCUContext(arcAE.getApplicationEntity()
-                    , sourceAE, ServiceType.WADOSERVICE);
+
+            context = new CStoreSCUContext(arcAE.getApplicationEntity(), sourceAE, ServiceType.WADOSERVICE);
 
             checkRequest();
 
-            final List<ArchiveInstanceLocator> ref = retrieveService
-                    .calculateMatches(studyUID, seriesUID, objectUID,
-                            queryParam, false);
+            final List<ArchiveInstanceLocator> ref = retrieveService.calculateMatches(studyUID, seriesUID, objectUID, queryParam, false);
 
             if (ref == null || ref.size() == 0)
                 throw new WebApplicationException(Status.NOT_FOUND);
@@ -305,10 +303,10 @@ public class WadoURI extends Wado {
             Attributes attrs = null;
             Response resp = null;
             
-            if(ref.get(0).getStorageSystem() != null) {
-            instance = ref.get(0);
-            attrs = (Attributes) instance.getObject();
-            resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
+            if (ref.get(0).getStorageSystem() != null) {
+                instance = ref.get(0);
+                attrs = (Attributes) instance.getObject();
+                resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
             }
             
             //external
@@ -326,22 +324,22 @@ public class WadoURI extends Wado {
                     
                     @Override
                     public void onFetch(Collection<ArchiveInstanceLocator> instances,
-                            BasicCStoreSCUResp resp) {
+                            BasicCStoreSCUResp basicCStoreSCUresp) {
                         ref.clear();
                         ref.addAll(instances);
                     }
                 };
 
-                    instsfailed = fetchForwardService.fetchForward(aetitle, ref, fetchCallBack, fetchCallBack);
-                    instance = ref.get(0);
-                    attrs = (Attributes) instance.getObject();
+                instsfailed = fetchForwardService.fetchForward(aetitle, ref, fetchCallBack, fetchCallBack);
+                instance = ref.get(0);
+                attrs = (Attributes) instance.getObject();
                 resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
             
             }
             
 
-            if(resp == null)
-            throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
+            if (resp == null)
+                throw new WebApplicationException(STATUS_NOT_IMPLEMENTED);
             else
                 return resp;
         } finally {
@@ -428,15 +426,15 @@ public class WadoURI extends Wado {
                     applicationDicom = true;
             }
         }
-        if (applicationDicom ? (annotation != null || rows != 0 || columns != 0
-                || region != null || windowCenter != 0 || windowWidth != 0
-                || frameNumber != 0 || imageQuality != 0
-                || presentationUID != null || presentationSeriesUID != null)
-                : (anonymize != null || !transferSyntax.isEmpty() || rows < 0
-                        || columns < 0 || imageQuality < 0
-                        || imageQuality > 100 || presentationUID != null
-                        && presentationSeriesUID == null))
-            throw new WebApplicationException(Status.BAD_REQUEST);
+        if (applicationDicom) {
+            if (annotation != null || rows != 0 || columns != 0 || region != null || windowCenter != 0 || windowWidth != 0 || frameNumber != 0 || imageQuality != 0 || presentationUID != null || presentationSeriesUID != null) {
+                throw new WebApplicationException(Status.BAD_REQUEST);
+            }
+        } else {
+            if (anonymize != null || !transferSyntax.isEmpty() || rows < 0 || columns < 0 || imageQuality < 0 || imageQuality > 100 || presentationUID != null && presentationSeriesUID == null) {
+                throw new WebApplicationException(Status.BAD_REQUEST);
+            }
+        }
     }
 
     private boolean isAccepted(MediaType mediaType) {
@@ -550,39 +548,6 @@ public class WadoURI extends Wado {
         }, mediaType).build();
     }
 
-    private void writeImage(MediaType mediaType, BufferedImage bi, ImageOutputStream ios)
-            throws IOException {
-        ColorModel cm = bi.getColorModel();
-        if (cm instanceof PaletteColorModel)
-            bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
-
-        ImageWriter imageWriter = ImageWriterFactory.getImageWriterForMimeType(mediaType.toString());
-
-        try {
-            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
-            imageWriter.setOutput(ios);
-            imageWriter.write(null, new IIOImage(bi, null, null), imageWriteParam);
-        } finally {
-            imageWriter.dispose();
-        }
-    }
-
-    private BufferedImage getBufferedImage(ArchiveInstanceLocator ref,
-            Attributes attrs) throws IOException {
-        for (;;)
-            try (ImageInputStream iis = createImageInputStream(ref)) {
-                return readImage(iis, attrs);
-            } catch (IOException e) {
-                LOG.info("Failed to read image with iuid={} from {}@{}",
-                        ref.iuid, ref.getFilePath(), ref.getStorageSystem(), e);
-                ref = ref.getFallbackLocator();
-                if (ref == null) {
-                    throw e;
-                }
-                LOG.info("Try read image from alternative location");
-            }
-    }
-
     private Response retrieveGIF(final ArchiveInstanceLocator ref,
             final Attributes attrs) {
 
@@ -594,24 +559,13 @@ public class WadoURI extends Wado {
                     WebApplicationException {
                 ImageOutputStream imageOut = new MemoryCacheImageOutputStream(out);
                 try {
-                    if (attrs.getInt(Tag.NumberOfFrames, 1) == 1)
-                    {
+                    if (attrs.getInt(Tag.NumberOfFrames, 1) == 1 || frameNumber != 0) {
                         BufferedImage bi = getBufferedImage(ref, attrs);
                         writeGIF(bi, imageOut);
-                    }
-                    else
-                    {
-                        if (frameNumber != 0)
-                        {
-                            BufferedImage bi = getBufferedImage(ref, attrs);
-                            writeGIF(bi, imageOut);
-                        }
-                        else
-                        {
-                            //return all frames as GIF sequence
-                            List<BufferedImage> bis = getBufferedImages(ref, attrs);
-                            writeGIFs(ref.tsuid, bis, imageOut);
-                        }
+                    } else {
+                        //return all frames as GIF sequence
+                        List<BufferedImage> bis = getBufferedImages(ref, attrs);
+                        writeGIFs(ref.tsuid, bis, imageOut);
                     }
                 } finally {
                     imageOut.close();
@@ -620,21 +574,30 @@ public class WadoURI extends Wado {
         }, mediaType).build();
     }
 
-    private List<BufferedImage> getBufferedImages(ArchiveInstanceLocator ref, Attributes attrs) throws IOException {
-        for (;;)
-            try {
-                return readImages(ref, attrs);
-            } catch (IOException e) {
-                LOG.info("Failed to read images with iuid={} from {}@{}",
-                        ref.iuid, ref.getFilePath(), ref.getStorageSystem(), e);
-                ref = ref.getFallbackLocator();
-                if (ref == null) {
-                    throw e;
-                }
-                LOG.info("Try read from alternative location");
-            }
+    private void writeImage(MediaType mediaType, BufferedImage bi, ImageOutputStream ios)
+            throws IOException {
+        ImageWriter imageWriter = ImageWriterFactory.getImageWriterForMimeType(mediaType.toString());
+        try {
+            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
+            imageWriter.setOutput(ios);
+            imageWriter.write(null, new IIOImage(bi, null, null), imageWriteParam);
+        } finally {
+            imageWriter.dispose();
+        }
     }
 
+    private void writeGIF(BufferedImage bi, ImageOutputStream ios)
+            throws IOException {
+        ImageWriter imageWriter = getGifImageWriter();
+        try {
+            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
+            imageWriter.setOutput(ios);
+            imageWriter.write(null, new IIOImage(bi, null, null), imageWriteParam);
+        } finally {
+            imageWriter.dispose();
+        }
+    }
+    
     private void writeGIFs(String tsuid, List<BufferedImage> bis, ImageOutputStream ios) throws IOException {
         ImageWriter imageWriter = getGifImageWriter();
         try {
@@ -642,22 +605,81 @@ public class WadoURI extends Wado {
             imageWriter.setOutput(ios);
             imageWriter.prepareWriteSequence(null);
             for (int i = 0; i < bis.size(); i++) {
-
                 BufferedImage bi = bis.get(i);
-                ColorModel cm = bi.getColorModel();
-                if (cm instanceof PaletteColorModel) {
-                    bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
-                }
 
                 IIOMetadata metadata = ImageWriterFactory.getImageWriterParam(tsuid) != null
                         ? getIIOMetadata(bi,imageWriter,imageWriteParam,ImageWriterFactory.getImageWriterParam(tsuid))
                         : imageWriter.getDefaultImageMetadata(new ImageTypeSpecifier(bi), imageWriteParam);
-                //setGIFMetadata(metadata);
-                imageWriter.writeToSequence(new IIOImage(bi, null, metadata),imageWriteParam);
+
+                imageWriter.writeToSequence(new IIOImage(bi, null, metadata), imageWriteParam);
             }
         } finally {
             imageWriter.dispose();
         }
+    }
+
+    private BufferedImage convertColor(BufferedImage image) {
+        ColorModel cm = image.getColorModel();
+        if (cm instanceof PaletteColorModel) {
+            image = ((PaletteColorModel) cm).convertToIntDiscrete(image.getData());
+        } else {
+            // we need to convert to RGB in the following cases:
+            //
+            // 1) convert YBR to RGB to workaround jai-imageio-core issue #173:
+            //    CLibJPEGImageWriter ignores CororSpace != sRGB
+            //
+            // 2) banded (PlanarConfiguration=1), otherwise
+            //    rescaling (AffineTransformOp) will throw
+            //    ImagingOpException("Unable to transform src image")
+
+            if(cm.getColorSpace() instanceof YBRColorSpace ||
+               image.getSampleModel() instanceof BandedSampleModel) {
+                image = convertToRGB(image);
+            }
+        }
+
+        return image;
+    }
+
+    private BufferedImage convertToRGB(BufferedImage image) {
+        BufferedImage rgbImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = rgbImage.createGraphics();
+        try {
+            g.drawImage(image, 0, 0, null);
+        } finally {
+            g.dispose();
+        }
+        return rgbImage;
+    }
+
+    private BufferedImage getBufferedImage(ArchiveInstanceLocator ref, Attributes attrs) throws IOException {
+        for (;;) {
+            try (ImageInputStream iis = createImageInputStream(ref)) {
+                return readImage(iis, attrs);
+            } catch (IOException e) {
+                ref = handleReadExceptionWithFallback(ref, e);
+            }
+        }
+    }
+
+    private List<BufferedImage> getBufferedImages(ArchiveInstanceLocator ref, Attributes attrs) throws IOException {
+        for (;;) {
+            try (ImageInputStream iis = createImageInputStream(ref)) {
+                return readImages(iis, attrs);
+            } catch (IOException e) {
+                ref = handleReadExceptionWithFallback(ref, e);
+            }
+        }
+    }
+
+    private ArchiveInstanceLocator handleReadExceptionWithFallback(ArchiveInstanceLocator ref, IOException e) throws IOException {
+        LOG.info("Failed to read image with iuid={} from {}@{}", ref.iuid, ref.getFilePath(), ref.getStorageSystem(), e);
+        ref = ref.getFallbackLocator();
+        if (ref == null) {
+            throw e;
+        }
+        LOG.info("Try read image from alternative location");
+        return ref;
     }
 
     private ImageWriter getGifImageWriter() {
@@ -685,46 +707,25 @@ public class WadoURI extends Wado {
 
     //returns a node in the Image Metadata
     private static IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
-          int nNodes = rootNode.getLength();
-          for (int i = 0; i < nNodes; i++) {
-            if (rootNode.item(i).getNodeName().compareToIgnoreCase(nodeName)== 0) {
-              return((IIOMetadataNode) rootNode.item(i));
+        int nNodes = rootNode.getLength();
+        for (int i = 0; i < nNodes; i++) {
+            if (rootNode.item(i).getNodeName().compareToIgnoreCase(nodeName) == 0) {
+                return ((IIOMetadataNode) rootNode.item(i));
             }
-          }
-          IIOMetadataNode node = new IIOMetadataNode(nodeName);
-          rootNode.appendChild(node);
-          return(node);
         }
-
-    private List<BufferedImage> readImages(
-            ArchiveInstanceLocator ref, Attributes attrs) throws IOException {
-        List<BufferedImage> imageList = new ArrayList<BufferedImage>();
-        ImageReader reader = getDicomImageReader();
-        try ( ImageInputStream iis = createImageInputStream(ref)) {
-            reader.setInput(iis);
-            DicomMetaData metaData = (DicomMetaData) reader.getStreamMetadata();
-            metaData.getAttributes().addAll(attrs);
-            DicomImageReadParam param = (DicomImageReadParam) reader.getDefaultReadParam();
-            init(param);
-            int numOfFrames = attrs.getInt(Tag.NumberOfFrames, 1);
-            for(int i=0;i<numOfFrames;i++) {
-                imageList.add(rescale(
-                        reader.read(i, param),
-                        metaData.getAttributes(),
-                        param.getPresentationState()));
-            }
-        } finally {
-            reader.dispose();
-        }
-        return imageList;
+        IIOMetadataNode node = new IIOMetadataNode(nodeName);
+        rootNode.appendChild(node);
+        return (node);
     }
 
     private ImageInputStream createImageInputStream(ArchiveInstanceLocator ref) throws IOException {
         return ImageIO.createImageInputStream(storescuService.getFile(ref).toFile());
     }
 
-    private BufferedImage readImage(ImageInputStream iis, Attributes attrs)
-            throws IOException {
+    private BufferedImage readImage(ImageInputStream iis, Attributes attrs) throws IOException {
+
+        // note: when changing this method readImage() also consider the very similar method readImages()
+
         ImageReader reader = getDicomImageReader();
         try {
             reader.setInput(iis);
@@ -732,12 +733,43 @@ public class WadoURI extends Wado {
             metaData.getAttributes().addAll(attrs);
             DicomImageReadParam param = (DicomImageReadParam) reader.getDefaultReadParam();
             init(param);
-            return rescale(
-                    reader.read(frameNumber > 0 ? frameNumber - 1 : 0, param),
-                    metaData.getAttributes(), param.getPresentationState());
+            int frameNumberZeroBased = frameNumber > 0 ? frameNumber - 1 : 0;
+
+            return readAndConvertFrame(reader, metaData, param, frameNumberZeroBased);
         } finally {
             reader.dispose();
         }
+    }
+
+    private List<BufferedImage> readImages(ImageInputStream iis, Attributes attrs) throws IOException {
+
+        // note: when changing this method readImages() also consider the very similar method readImage() 
+
+        List<BufferedImage> imageList = new ArrayList<BufferedImage>();
+        ImageReader reader = getDicomImageReader();
+        try {
+            reader.setInput(iis);
+            DicomMetaData metaData = (DicomMetaData) reader.getStreamMetadata();
+            metaData.getAttributes().addAll(attrs);
+            DicomImageReadParam param = (DicomImageReadParam) reader.getDefaultReadParam();
+            init(param);
+            int numOfFrames = attrs.getInt(Tag.NumberOfFrames, 1);
+            for (int i = 0; i < numOfFrames; i++) {
+                BufferedImage image = readAndConvertFrame(reader, metaData, param, i);
+                imageList.add(image);
+            }
+        } finally {
+            reader.dispose();
+        }
+        return imageList;
+    }
+
+    private BufferedImage readAndConvertFrame(ImageReader reader, DicomMetaData metaData, DicomImageReadParam param, int frameNumberZeroBased) throws IOException {
+        BufferedImage image = reader.read(frameNumberZeroBased, param);
+
+        image = convertColor(image);
+
+        return rescale(image, metaData.getAttributes(), param.getPresentationState());
     }
 
     private static ImageReader getDicomImageReader() {
@@ -756,6 +788,7 @@ public class WadoURI extends Wado {
         float sy = psAttrs != null ? PixelAspectRatio
                 .forPresentationState(psAttrs) : PixelAspectRatio
                 .forImage(imgAttrs);
+
         if (r == 0 && c == 0 && sy == 1f)
             return src;
 
@@ -795,22 +828,6 @@ public class WadoURI extends Wado {
                 throw new WebApplicationException(Status.BAD_REQUEST);
 
             param.setPresentationState(readAttributes(ref.get(0)));
-        }
-    }
-
-    private void writeGIF(BufferedImage bi, ImageOutputStream ios)
-            throws IOException {
-        ColorModel cm = bi.getColorModel();
-        if (cm instanceof PaletteColorModel)
-            bi = ((PaletteColorModel) cm).convertToIntDiscrete(bi.getData());
-        ImageWriter imageWriter = getGifImageWriter();
-        try {
-            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
-            imageWriter.setOutput(ios);
-            imageWriter.write(null, new IIOImage(bi, null, null),
-                    imageWriteParam);
-        } finally {
-            imageWriter.dispose();
         }
     }
 
