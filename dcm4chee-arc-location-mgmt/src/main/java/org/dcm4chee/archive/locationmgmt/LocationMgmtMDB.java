@@ -75,8 +75,16 @@ public class LocationMgmtMDB implements MessageListener{
             @SuppressWarnings("unchecked")
             Collection<Long> refPks = (Collection<Long>) ((ObjectMessage) message).getObject();
             LOG.info("Removing {} locations", refPks.size());
+            boolean fromDeleter = message.getBooleanProperty("checkStudyMarked");
+            if(fromDeleter) {
+                Collection<Long> adjustedPKs = locationManager.filterForMarkedForDeletionStudiesOnGroup(refPks);
+                LOG.info("{} Locations removed!",locationManager.doDelete(adjustedPKs, 
+                        fromDeleter));
+            }
+            else {
             LOG.info("{} Locations removed!",locationManager.doDelete(refPks, 
-                    message.getBooleanProperty("checkStudyMarked")));
+                    fromDeleter));
+            }
         } catch (Throwable th) {
             LOG.warn("Failed to process " + message, th);
         } 

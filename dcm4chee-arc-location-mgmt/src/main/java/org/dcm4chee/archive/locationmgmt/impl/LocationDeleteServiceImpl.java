@@ -44,6 +44,8 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,6 +67,7 @@ import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.DeletionRule;
+import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
@@ -73,6 +76,7 @@ import org.dcm4chee.archive.locationmgmt.DeleterService;
 import org.dcm4chee.archive.locationmgmt.LocationDeleteResult;
 import org.dcm4chee.archive.locationmgmt.LocationDeleteResult.DeletionStatus;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
+import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
@@ -101,6 +105,9 @@ public class LocationDeleteServiceImpl implements DeleterService {
 
     @Inject
     private javax.enterprise.inject.Instance<StorageSystemProvider> storageSystemProviders;
+
+    @Inject
+    private ActiveProcessingService activeProcessingService;
 
     private int lastPollInterval;
 
@@ -149,7 +156,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
         }
 
         for(DeletionRule rule : deletionRules) {
-            //check need to free up space
+            //check need to free up spacee
             try {
                 if (canDeleteNow(rule.getStorageSystemGroupID())
                         || emergencyReached(rule.getStorageSystemGroupID()))
@@ -159,8 +166,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
                         + "error calculating emergency for group "
                         + "{} - reason {}", rule.getStorageSystemGroupID(), e);
             }
-            catch (Throwable t) {
-                LOG.error("Exception occured while attempting to "
+            catch (Throwable t) {                LOG.error("Exception occured while attempting to "
                         + "freespace from group {} - reason {}", rule.getStorageSystemGroupID(), t);
             }
         }
@@ -245,7 +251,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
                     (ArrayList<Instance>) allInstancesDueDeleteOnGroup, rule);
             
             markCorrespondingStudyAndScheduleForDeletion(studyInstanceUID,
-                    rule, actualInstancesToDelete);
+                    rule, removePendingArchivingOrDeletion(studyInstanceUID, actualInstancesToDelete));
             
             handleFailedToDeleteLocations(rule.getStorageSystemGroupID());
             }
@@ -392,7 +398,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
 
     private void handleFailedToDeleteLocations(String groupID) {
         //handle failedToDeleteLocations
-        LOG.info("Finding locations that previously failed deletions");
+        LOG.debug("Finding locations that previously failed deletions");
         List<Location> failedToDeleteLocations = (ArrayList<Location>)
                 locationManager.findFailedToDeleteLocations(groupID);
         try {
@@ -528,7 +534,37 @@ public class LocationDeleteServiceImpl implements DeleterService {
                     instancesOnGroupPerStudyMap.get(studyUID).add(inst);
             }
         }
-        return instancesOnGroupPerStudyMap;
+        return removePendingArchivingOrDeletion(instancesOnGroupPerStudyMap);
+    }
+
+    private Map<String, List<Instance>> removePendingArchivingOrDeletion(
+            Map<String, List<Instance>> instancesOnGroupPerStudyMap) {
+        Map<String, List<Instance>> adjustedInstancesOnGroupPerStudyMap = 
+                new HashMap<String, List<Instance>>();
+        for(String studyUID : instancesOnGroupPerStudyMap.keySet()) {
+            List<ActiveService> services = new ArrayList<ActiveService>();
+            services.add(ActiveService.LOCAL_ARCHIVING);
+            services.add(ActiveService.DELETER_SERVICE);
+            services.add(ActiveService.STORE_REMEMBER_ARCHIVING);
+            if (!activeProcessingService.isStudyUnderProcessingByServices(studyUID, services)) {
+                adjustedInstancesOnGroupPerStudyMap.put(studyUID, 
+                        instancesOnGroupPerStudyMap.get(studyUID));
+            }
+        }
+        
+        return adjustedInstancesOnGroupPerStudyMap;
+    }
+
+    private List<Instance> removePendingArchivingOrDeletion(String studyIUID, List<Instance>instancesOnGroup) {
+            List<ActiveService> services = new ArrayList<ActiveService>();
+            services.add(ActiveService.LOCAL_ARCHIVING);
+            services.add(ActiveService.DELETER_SERVICE);
+            services.add(ActiveService.STORE_REMEMBER_ARCHIVING);
+            if (activeProcessingService.isStudyUnderProcessingByServices(studyIUID, services)) {
+                return Collections.emptyList();
+            }
+        
+        return instancesOnGroup;
     }
 
     private synchronized void startPolling(int pollInterval) {
@@ -562,22 +598,36 @@ public class LocationDeleteServiceImpl implements DeleterService {
             locationManager.markForDeletion(studyInstanceUID,
                     rule.getStorageSystemGroupID());
             List<Instance> tmpInstancesScheduled = new ArrayList<Instance>();
-            for(int i = 0; i<deletionRetries; i++) {
+            for(int i = -1; i<deletionRetries; i++) {
                 instancesDueDelete.removeAll(tmpInstancesScheduled);
                 tmpInstancesScheduled.clear();
             for (Instance inst : instancesDueDelete)
                 try {
                     locationManager.scheduleDelete(
-                            locationManager.detachInstanceOnGroup(inst.getPk(),
-                                    rule.getStorageSystemGroupID()), 1000, true);
+                            getLocationsOnGroup(inst, rule.getStorageSystemGroupID()), 1000, true);
                     tmpInstancesScheduled.add(inst);
+                    activeProcessingService.addActiveProcess(studyInstanceUID, 
+                            inst.getSeries().getSeriesInstanceUID(), 
+                            inst.getSopInstanceUID(), 
+                            ActiveService.DELETER_SERVICE);
                 } catch (JMSException e) {
                         LOG.error("Location Deleter Service: error scheduling "
                                 + "deletion, attemting retry no {} - reason {}"
                                 , i, e);
+                        activeProcessingService.deleteActiveProcessBySOPInstanceUIDandService( 
+                                inst.getSopInstanceUID(), 
+                                ActiveService.DELETER_SERVICE);
                     break;
                 }
             }
+    }
+
+    private Collection<Location> getLocationsOnGroup(Instance inst, String groupID) {
+        Collection<Location> locationsOnGroup = new ArrayList<Location>();
+        for(Location loc : inst.getLocations())
+            if(loc.getStorageSystemGroupID().compareTo(groupID) == 0)
+                locationsOnGroup.add(loc);
+        return locationsOnGroup;
     }
 
     private List<Instance> filterCopiesExist(
@@ -585,9 +635,11 @@ public class LocationDeleteServiceImpl implements DeleterService {
         List<String> hasToBeOnSystems = Arrays.asList(rule.getArchivedOnExternalSystems());
         List<String> hasToBeOnGroups = Arrays.asList(rule.getArchivedOnGroups());
         List<Instance> filteredOnMany = new ArrayList<Instance>();
-        boolean archivedAnyWhere = rule.isArchivedAnyWhere();
-        if(archivedAnyWhere) {
-            return filterOneCopyExists(instancesDueDeleteOnGroup, rule.getStorageSystemGroupID());
+        if((Integer.parseInt(rule.getNumberOfArchivedCopies()) == 0)) {
+            return instancesDueDeleteOnGroup;
+        }
+        else if(Integer.parseInt(rule.getNumberOfArchivedCopies()) > 0) {
+            return filterNCopiesExist(instancesDueDeleteOnGroup, rule);
         }
         else {
         if( hasToBeOnSystems != null && !hasToBeOnSystems.isEmpty()) {
@@ -631,23 +683,34 @@ public class LocationDeleteServiceImpl implements DeleterService {
         return foundOnConfiguredSystems;
     }
 
-    private List<Instance> filterOneCopyExists(
-            List<Instance> instancesDueDeleteOnGroup, String  groupID) {
-        List<Instance> foundOnAtleastOneGroup = new ArrayList<Instance>();
-        for(Instance inst : instancesDueDeleteOnGroup) {
-            if(inst.getExternalRetrieveLocations() != null 
+    private List<Instance> filterNCopiesExist(
+            List<Instance> instancesDueDeleteOnGroup, DeletionRule rule) {
+        String groupID = rule.getStorageSystemGroupID();
+        List<Instance> foundOnNSafeLocations = new ArrayList<Instance>();
+        int found = 0;
+        for (Instance inst : instancesDueDeleteOnGroup) {
+            if (inst.getExternalRetrieveLocations() != null 
                     && !inst.getExternalRetrieveLocations().isEmpty()) {
-                foundOnAtleastOneGroup.add(inst);
-                continue;
+                for(int i=0; i<inst.getExternalRetrieveLocations().size(); i++)
+                found++;
             }
             for(Location loc : inst.getLocations()) {
+                StorageSystemGroup locationGroup = device
+                        .getDeviceExtension(StorageDeviceExtension.class)
+                        .getStorageSystemGroup(loc.getStorageSystemGroupID());
                 if(!loc.isWithoutBulkData() 
-                        && loc.getStorageSystemGroupID().compareTo(groupID) != 0) {
-                    foundOnAtleastOneGroup.add(inst);
+                        && locationGroup.getGroupID().compareTo(groupID) != 0
+                        && (locationGroup.getStorageSystemGroupType() == null ||
+                                locationGroup.getStorageSystemGroupType()
+                                .compareTo(rule.getSafeArchivingType()) == 0
+                        || rule.getSafeArchivingType().compareTo("*") == 0)) {
+                    found++;
                 }
             }
+            if(found >= Integer.parseInt(rule.getNumberOfArchivedCopies()))
+                foundOnNSafeLocations.add(inst);
         }
-        return foundOnAtleastOneGroup;
+        return foundOnNSafeLocations;
     }
 
     private long toValueInBytes(long value, String unit, long dvdInBytes) {

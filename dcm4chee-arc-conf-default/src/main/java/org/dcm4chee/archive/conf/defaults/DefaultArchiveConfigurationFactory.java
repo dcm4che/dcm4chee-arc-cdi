@@ -669,6 +669,8 @@ public class DefaultArchiveConfigurationFactory {
         ext.setMppsEmulationPollInterval(MPPS_EMULATOR_POLL_INTERVAL);
         ext.setArchivingSchedulerPollInterval(ARCHIVING_POLL_INTERVAL);
         ext.setSyncLocationStatusPollInterval(SYNC_LOCATION_STATUS_POLL_INTERVAL);
+        ext.setDeletionServicePollInterval(60);
+        ext.setDeleteServiceAllowedInterval("0-23");
         ext.setSyncLocationStatusStorageSystemGroupIDs("ARCHIVE");
         ext.setAttributeFilter(Entity.Patient,
                 new AttributeFilter(PATIENT_ATTRS));
@@ -693,6 +695,8 @@ public class DefaultArchiveConfigurationFactory {
         deletionRule.setMinTimeStudyNotAccessed(30);
         deletionRule.setMinTimeStudyNotAccessedUnit("DAYS");
         deletionRule.setDeletionThreshold("7:1h;19:24h");
+        deletionRule.setNumberOfArchivedCopies("1");
+        deletionRule.setSafeArchivingType("*");
         ext.addDeletionRule(deletionRule);
     }
 

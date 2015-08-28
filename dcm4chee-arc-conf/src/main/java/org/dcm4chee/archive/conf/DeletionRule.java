@@ -60,6 +60,12 @@ public final class DeletionRule implements Serializable {
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
     private String storageSystemGroupID;
 
+    @ConfigurableProperty(name = "dcmNumberOfArchivedCopies")
+    private String numberOfArchivedCopies;
+
+    @ConfigurableProperty(name = "dcmSafeArchivingType")
+    private String safeArchivingType;
+
     @ConfigurableProperty(name = "dcmArchivedOnGroups")
     private String[] archivedOnGroups;
 
@@ -78,6 +84,9 @@ public final class DeletionRule implements Serializable {
     @ConfigurableProperty(name = "dcmDeletionThreshold")
     private String deletionThreshold;
 
+    
+
+    @Deprecated
     @ConfigurableProperty(name = "dcmArchivedAnyWhere", defaultValue = "false")
     private boolean archivedAnyWhere;
 
@@ -97,10 +106,12 @@ public final class DeletionRule implements Serializable {
         this.storageSystemGroupID = storageSystemGroupID;
     }
 
+    @Deprecated
     public boolean isArchivedAnyWhere() {
         return archivedAnyWhere;
     }
 
+    @Deprecated
     public void setArchivedAnyWhere(boolean archivedAnyWhere) {
         this.archivedAnyWhere = archivedAnyWhere;
     }
@@ -121,7 +132,23 @@ public final class DeletionRule implements Serializable {
         this.archivedOnExternalSystems = archivedOnExternalSystems;
     }
 
-    public int getMinTimeStudyNotAccessed() {
+    public String getNumberOfArchivedCopies() {
+		return numberOfArchivedCopies;
+	}
+
+	public void setNumberOfArchivedCopies(String numberOfArchivedCopies) {
+		this.numberOfArchivedCopies = numberOfArchivedCopies;
+	}
+
+	public String getSafeArchivingType() {
+		return safeArchivingType;
+	}
+
+	public void setSafeArchivingType(String safeArchivingType) {
+		this.safeArchivingType = safeArchivingType;
+	}
+
+	public int getMinTimeStudyNotAccessed() {
         return minTimeStudyNotAccessed;
     }
 
@@ -154,7 +181,7 @@ public final class DeletionRule implements Serializable {
     }
 
     public boolean validate() {
-        return (checkArchivingConstraints() && checkDeletionConstraints() && checkStudyRetentionContraints());
+        return (checkDeletionConstraints() && checkStudyRetentionContraints());
     }
 
     private boolean checkStudyRetentionContraints() {
@@ -164,11 +191,6 @@ public final class DeletionRule implements Serializable {
 
     private boolean checkDeletionConstraints() {
         return getDeletionThreshold() != null || isDeleteAsMuchAsPossible();
-    }
-
-    private boolean checkArchivingConstraints() {
-        return getArchivedOnExternalSystems() != null || getArchivedOnGroups() != null
-                || isArchivedAnyWhere();
     }
 
 }

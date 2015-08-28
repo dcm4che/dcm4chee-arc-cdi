@@ -120,7 +120,7 @@ public class StoreServiceEJB {
             default:
                 Collection<Location> locations = instance.getLocations(2);
                 try {
-
+                	findOrCreateStudyOnStorageGroup(context);
                     StorageContext metadataContext = context.getMetadataContext().get();
                     if (metadataContext != null) {
                         Location metadata = createMetadataLocation(context);

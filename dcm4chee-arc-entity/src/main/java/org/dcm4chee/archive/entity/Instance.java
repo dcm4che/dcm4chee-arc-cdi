@@ -52,6 +52,7 @@ import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.storage.conf.Availability;
+import org.dcm4chee.storage.conf.FileCache.Algorithm;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -198,7 +199,7 @@ public class Instance implements Serializable {
     @JoinColumn(name = "series_fk")
     private Series series;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(name="rel_instance_location",
     joinColumns={@JoinColumn(name="instance_fk", referencedColumnName="pk")},
     inverseJoinColumns={@JoinColumn(name="location_fk", referencedColumnName="pk")})

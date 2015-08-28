@@ -47,14 +47,19 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchivingRule;
+import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ArchivingTask;
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.hsm.HsmArchiveService;
+import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
 import org.dcm4chee.archive.store.remember.StoreAndRememberService;
@@ -82,6 +87,9 @@ public class ArchivingSchedulerEJB {
 
     @Inject
     private CodeService codeService;
+
+    @Inject
+    private ActiveProcessingService activeProcessingService;
 
     public void onStoreInstance(StoreContext storeContext, ArchivingRule archivingRule) {
         Attributes attrs = storeContext.getAttributes();
@@ -164,6 +172,7 @@ public class ArchivingSchedulerEJB {
         task.setTargetStorageSystemGroupID(targetStorageGroupID);
         if (delayReasonCode != null)
             task.setDelayReasonCode(codeService.findOrCreate(delayReasonCode));
+        flagOrUnflagSeriesAsActiveProcess(seriesInstanceUID, ActiveService.LOCAL_ARCHIVING, true);
         em.persist(task);
         LOG.info("Create {}", task);
     }
@@ -178,6 +187,7 @@ public class ArchivingSchedulerEJB {
         task.setTargetExternalDevice(targetExtDevice);
         if (delayReasonCode != null)
             task.setDelayReasonCode(codeService.findOrCreate(delayReasonCode));
+        flagOrUnflagSeriesAsActiveProcess(seriesInstanceUID, ActiveService.STORE_REMEMBER_ARCHIVING, true);
         em.persist(task);
         LOG.info("Create {}", task);
     }
@@ -208,7 +218,27 @@ public class ArchivingSchedulerEJB {
         }
 
         LOG.info("Scheduled {}", task);
+        flagOrUnflagSeriesAsActiveProcess(task.getSeriesInstanceUID(), 
+                task.getTargetStorageSystemGroupID() != null? ActiveService.LOCAL_ARCHIVING 
+                        : ActiveService.STORE_REMEMBER_ARCHIVING, false);
         em.remove(task);
         return task;
     }
+
+    private void flagOrUnflagSeriesAsActiveProcess(String seriesInstanceUID, ActiveService service, boolean flag) {
+        Query query = em.createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID_EAGER);
+        query.setParameter(1, seriesInstanceUID);
+        Series series = (Series) query.getSingleResult();
+        for(Instance inst : series.getInstances()) {
+            if(flag)
+                activeProcessingService.addActiveProcess(series.getStudy()
+                        .getStudyInstanceUID(), seriesInstanceUID,
+                        inst.getSopInstanceUID(), service);
+            else
+                activeProcessingService
+                .deleteActiveProcessBySOPInstanceUIDandService(
+                        inst.getSopInstanceUID(), service);
+        }
+    }
+
 }

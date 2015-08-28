@@ -56,6 +56,8 @@ import javax.annotation.Resource;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.ejb.TransactionManagement;
+import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -70,6 +72,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.QInstance;
@@ -78,6 +81,7 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyOnStorageSystemGroup;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
+import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.storage.ObjectNotFoundException;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
@@ -108,6 +112,9 @@ public class LocationMgmtEJB implements LocationMgmt {
 
     @Inject
     private StorageService storageService;
+
+    @Inject
+    private ActiveProcessingService activeProcessingService;
 
     @Inject
     private javax.enterprise.inject.Instance<StorageSystemProvider> storageSystemProviders;
@@ -169,6 +176,7 @@ public class LocationMgmtEJB implements LocationMgmt {
 
     @Override
     public boolean doDelete(Location ref) {
+        
         if (!ref.getInstances().isEmpty()) {
             LOG.warn(
                     "Deletion failed! Location {} is still referenced by instances:{}",
@@ -193,7 +201,7 @@ public class LocationMgmtEJB implements LocationMgmt {
             LOG.error("Error deleting location {} - reason {}", ref, e);
             return false;
         }
-        removeDeadFileRef(ref);
+        if(removeDeadFileRef(ref)) {
         try {
             unflagDirtySystemsCleaned(ext.getStorageSystemGroup(ref
                     .getStorageSystemGroupID()));
@@ -202,6 +210,11 @@ public class LocationMgmtEJB implements LocationMgmt {
                     , ref.getStorageSystemGroupID(), e);
         }
         return true;
+        }
+        else {
+            return false;
+        }
+        
     }
 
     @SuppressWarnings("unchecked")
@@ -215,13 +228,14 @@ public class LocationMgmtEJB implements LocationMgmt {
                 "SELECT l FROM Location l WHERE l.pk IN :pks", Location.class);
         query.setParameter("pks", refPks);
         List<Location> result = query.getResultList();
-        List<Location> locations = checkStudyMarked 
-                ? filterForMarkedStudies(result) : result;
+
         Map<String, Location> containerLocations = new HashMap<String, Location>();
         Set<Series> seriesToPurge = new HashSet<Series>();
         Location ref;
-        count += locations.size();
-        for (int i = 0, len = locations.size(); i < len; i++) {
+        count += result.size();
+        if(checkStudyMarked)
+        LOG.info("Attempting delete of locations marked by deleter service, locations to delete {}", result);
+        for (int i = 0, len = result.size(); i < len; i++) {
             ref = result.get(i);
             if (ref.getEntryName() == null) {
                 LOG.debug("Location is not in a container, we can delete stored object and entity!");
@@ -243,6 +257,7 @@ public class LocationMgmtEJB implements LocationMgmt {
                     count--;
                 }
             }
+
             for(Instance inst : ref.getInstances()) {
                 if(inst.getSeries().isRejected())
                     seriesToPurge.add(inst.getSeries());
@@ -304,10 +319,12 @@ public class LocationMgmtEJB implements LocationMgmt {
     public List<Instance> findInstancesDueDelete(int studyRetention, 
             String studyRetentionUnit, String groupID, String studyInstanceUID, String seriesInstanceUID) {
         Timestamp studyDueDate = getStudyDueDate(studyRetention, studyRetentionUnit);
+        
         JPAQuery query = new JPAQuery(em);
         
         query.from(QInstance.instance).from(QStudyOnStorageSystemGroup.studyOnStorageSystemGroup)
         .leftJoin(QInstance.instance.locations).fetch()
+        .leftJoin(QInstance.instance.externalRetrieveLocations)
         .join(QInstance.instance.series)
         .join(QInstance.instance.series.study);
         
@@ -326,6 +343,7 @@ public class LocationMgmtEJB implements LocationMgmt {
         List<Tuple> tuples = query.list(QInstance.instance, QStudyOnStorageSystemGroup.studyOnStorageSystemGroup);
         List<Instance> locationsToDelete = new ArrayList<>();
         for(Tuple tuple: tuples) {
+            tuple.get(QInstance.instance).getExternalRetrieveLocations().size();
             if(!locationsToDelete.contains(tuple.get(QInstance.instance)))
             locationsToDelete.add(tuple.get(QInstance.instance));
         }
@@ -389,7 +407,8 @@ public class LocationMgmtEJB implements LocationMgmt {
             if(loc.getStorageSystemGroupID().compareTo(groupID) == 0){
                 locationsOnGroup.add(loc);
                 for(Iterator<Instance> iterInst = loc.getInstances().iterator(); iterInst.hasNext();){
-                  iterInst.next();
+                  Instance tempInst = iterInst.next();
+                  if(tempInst.getSopInstanceUID().compareTo(inst.getSopInstanceUID()) == 0)
                   iterInst.remove();
                 }
                 iter.remove();
@@ -423,18 +442,20 @@ public class LocationMgmtEJB implements LocationMgmt {
               dueDate = new Timestamp(now - 60000 * studyRetention);
             break;
           default:
-              dueDate = new Timestamp(now - 86400000 * studyRetention);
+              dueDate = new Timestamp(now - 1000 * studyRetention);
             break;
         }
         return dueDate;
     }
 
-    private void removeDeadFileRef(Location ref) {
+    private boolean removeDeadFileRef(Location ref) {
 
         try {
             em.remove(ref);
+            return true;
         } catch (Exception e) {
             LOG.error("Failed to remove File Ref {} - reason {}", ref.toString(), e);
+            return false;
         }
     }
 
@@ -490,19 +511,46 @@ public class LocationMgmtEJB implements LocationMgmt {
         return count;
     }
 
-    private List<Location> filterForMarkedStudies(
-            List<Location> refs) {
-        List<Location> filteredLocations = new ArrayList<Location>();
-        for (Location loc : refs) {
+    @Override
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public Collection<Long> filterForMarkedForDeletionStudiesOnGroup(
+            Collection<Long> refPks) {
+        Query query = em.createQuery(
+                "SELECT l FROM Location l WHERE l.pk IN :pks", Location.class);
+        query.setParameter("pks", refPks);
+        List<Location> refs = query.getResultList();
+        Collection<Long> filteredLocations = new ArrayList<Long>();
+        for (Iterator<Location> iterLoc =refs.iterator();iterLoc.hasNext();) {
+            Location loc = iterLoc.next();
             int markedCnt = 0;
-            for (Instance inst : loc.getInstances())
+            for (Iterator<Instance> iterInst = loc.getInstances().iterator(); iterInst.hasNext();){
+                Instance inst = iterInst.next();
                 if (isMarkedForDelete(inst.getSeries().getStudy()
                         .getStudyInstanceUID(), loc.getStorageSystemGroupID())) {
                     markedCnt++;
+                    //detach here so that either loc is tied to only instance 
+                    //or loc is tied to many and won't be deleted then is kept
+//                          iterInst.remove();
+//                          iterLoc.remove();
+                          inst.getLocations().remove(loc);
+                    //remove active process
+                    activeProcessingService.deleteActiveProcessBySOPInstanceUIDandService(inst.getSopInstanceUID(), ActiveService.DELETER_SERVICE);
+                    //unset marked for deletion to compensate for other instances to be deleted when the current delete fails
+                    StudyOnStorageSystemGroup studyOnStgSysGrp = findStudyOnStorageGroup(inst.getSeries()
+                            .getStudy().getStudyInstanceUID(), loc.getStorageSystemGroupID());
+                    studyOnStgSysGrp
+                            .setAccessTime(new Date(System.currentTimeMillis()));
+                    studyOnStgSysGrp.setMarkedForDeletion(false);
+                    if(inst.getLocations().isEmpty()) 
+                        em.remove(inst);
+                    
                 }
-            if (markedCnt == loc.getInstances().size())
-                filteredLocations.add(loc);
         }
+            if (markedCnt == loc.getInstances().size() || loc.getInstances().isEmpty())
+                filteredLocations.add(loc.getPk());
+        }
+        em.flush();
+        
         return filteredLocations;
     }
 
@@ -516,7 +564,8 @@ public class LocationMgmtEJB implements LocationMgmt {
                         * Integer.parseInt(system.getMinFreeSpace()
                                 .replace("%", ""))/100);
             if(provider.getUsableSpace() 
-                    > system.getMinFreeSpaceInBytes()) {
+                    > system.getMinFreeSpaceInBytes() && (system.getStorageDeviceExtension().isDirty() 
+                    || system.getStorageSystemStatus() != StorageSystemStatus.OK )) {
                 system.setStorageSystemStatus(StorageSystemStatus.OK);
                 system.getStorageDeviceExtension().setDirty(false);
             LOG.info("System {} is now ready for use, emergency condition passed", system);

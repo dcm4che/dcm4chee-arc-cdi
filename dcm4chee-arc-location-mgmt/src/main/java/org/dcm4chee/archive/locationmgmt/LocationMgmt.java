@@ -47,7 +47,6 @@ import javax.persistence.NoResultException;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.storage.conf.StorageSystemGroup;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -90,5 +89,7 @@ public interface LocationMgmt {
             throws NoResultException;
 
     Collection<Location> detachInstanceOnGroup(long instancePK, String groupID);
+
+    Collection<Long> filterForMarkedForDeletionStudiesOnGroup(Collection<Long> refPKs);
 
 }

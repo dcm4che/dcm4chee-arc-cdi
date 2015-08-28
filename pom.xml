@@ -627,6 +627,7 @@
     <module>dcm4chee-arc-api-impl</module>
     <module>dcm4chee-arc-jboss-modules</module>
     <module>dcm4chee-arc-copy-schedule</module>
+	<module>dcm4chee-arc-processing</module>
   </modules>
   <profiles>
     <profile>

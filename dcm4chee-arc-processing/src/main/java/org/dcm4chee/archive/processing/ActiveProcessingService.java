@@ -1,3 +1,5 @@
+package org.dcm4chee.archive.processing;
+
 //
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -37,22 +39,30 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.api;
+
+import java.util.List;
+
+import org.dcm4chee.archive.dto.ActiveService;
 
 /**
- * API to retrieve AETs involved in study storage and possible retrieval.
+ * Add, Remove and Query ActiveProcesses. 
  *
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 
-public interface StudyAETs {
-    public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.api.StudyAETs";
+public interface ActiveProcessingService {
 
-    String[] getCalledAETsForStudy(String studyInstanceUID);
+    public boolean addActiveProcess(String studyIUID, String seriesIUID, String sopIUID, ActiveService service);
 
-    String[] getCalledAEtsForSeries(String seriesInstanceUID);
+    public boolean isStudyUnderProcessingByServices(String study, List<ActiveService> services);
 
-    String[] getRetrievesAEtForInstance(String sopInstanceUID);
+    public List<?> getActiveProcessesByStudy(String studyIUID);
 
-    String[] getSourceAETsForStudy(String studyInstanceUID);
+    public List<?> getActiveProcessesBySeries(String seriesIUID);
+
+    public Object getActiveProcessesBySOPInstanceUID(String sopIUID);
+
+    public List<?> getActiveProcessesBySOPInstanceUIDs(List<String> sopIUIDs);
+
+    public boolean deleteActiveProcessBySOPInstanceUIDandService(String sopIUID, ActiveService service);
 }

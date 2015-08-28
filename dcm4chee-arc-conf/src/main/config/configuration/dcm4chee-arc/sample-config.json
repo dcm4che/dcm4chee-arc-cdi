@@ -491,6 +491,7 @@
             },
             "dcmConfigurationStaleTimeout" : 60,
             "dcmDefaultAETitle" : "DCM4CHEE",
+            "dcmDeleteServiceAllowedInterval" : "0-23",
             "dcmDeletionRules" : {
               "list" : [ {
                 "cn" : "Deletion Rule",
@@ -498,9 +499,12 @@
                 "dcmDeletionThreshold" : "7:1h;19:24h",
                 "dcmMinTimeStudyNotAccessed" : 30,
                 "dcmMinTimeStudyNotAccessedUnit" : "DAYS",
+                "dcmNumberOfArchivedCopies" : "1",
+                "dcmSafeArchivingType" : "*",
                 "dcmStorageSystemGroupID" : "DEFAULT"
               } ]
             },
+            "dcmDeletionServicePollInterval" : 60,
             "dcmFetchAETitle" : "DCM4CHEE_FETCH",
             "dcmFuzzyAlgorithmClass" : "org.dcm4che3.soundex.ESoundex",
             "dcmIncorrectWorklistEntrySelectedCode" : "(110514, DCM, \"Incorrect worklist entry selected\")",
