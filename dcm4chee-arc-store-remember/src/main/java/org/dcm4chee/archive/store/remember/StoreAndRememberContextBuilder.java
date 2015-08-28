@@ -39,28 +39,30 @@
 
 package org.dcm4chee.archive.store.remember;
 
-import java.io.Serializable;
-
 import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-public interface StoreAndRememberContext extends Serializable {
+public interface StoreAndRememberContextBuilder {
     
-    public String getTransactionUID();
-     
-    public String getLocalAE();
+    StoreAndRememberContextBuilder instances(String... instances);
     
-    public String getExternalDeviceName();
-        
-    public STORE_VERIFY_PROTOCOL getStoreVerifyProtocol();
+    StoreAndRememberContextBuilder seriesUID(String seriesIUID);
     
-    public String[] getInstances();
-       
-    public int getRetries();
-      
-    public long getDelay();
-      
+    StoreAndRememberContextBuilder studyUID(String studyIUID);
+    
+    StoreAndRememberContextBuilder localAE(String localAE);
+    
+    StoreAndRememberContextBuilder externalDeviceName(String externalDeviceName);
+    
+    StoreAndRememberContextBuilder storeVerifyProtocol(STORE_VERIFY_PROTOCOL storeVerifyProtocol);
+
+    StoreAndRememberContextBuilder retries(int retries);
+    
+    StoreAndRememberContextBuilder delayMs(long delay);
+    
+    StoreAndRememberContext build();
+    
 }

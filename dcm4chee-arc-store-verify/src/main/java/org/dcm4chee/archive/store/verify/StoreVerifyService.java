@@ -59,7 +59,7 @@ import org.dcm4chee.archive.stow.client.StowContext;
  */
 public interface StoreVerifyService {
     
-    public static enum STORE_VERIFY_PROTOCOL { CSTORE_PLUS_STGCMT, STOW_PLUS_QIDO }
+    public static enum STORE_VERIFY_PROTOCOL { CSTORE_PLUS_STGCMT, STOW_PLUS_QIDO, AUTO }
     
     /**
      * Executes a 'store-and-verify' workflow using the STOW and QIDO services.

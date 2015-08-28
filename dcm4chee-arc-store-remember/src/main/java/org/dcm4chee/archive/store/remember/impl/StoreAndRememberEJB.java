@@ -60,6 +60,7 @@ import org.dcm4chee.archive.entity.StoreAndRemember;
 import org.dcm4chee.archive.entity.StoreAndRememberStatus;
 import org.dcm4chee.archive.entity.StoreVerifyStatus;
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
+import org.dcm4chee.archive.store.remember.StoreAndRememberContextBuilder;
 import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
 import org.dcm4chee.storage.conf.Availability;
 
@@ -79,14 +80,16 @@ public class StoreAndRememberEJB {
     @Resource(mappedName = "java:/queue/storeremember")
     private Queue storeAndRememberQueue;
 
-    public StoreAndRememberContext createStoreAndRememberContext(String txUID, int retries) {
+    public StoreAndRememberContextBuilder augmentStoreAndRememberContext(String txUID, StoreAndRememberContextBuilder ctxBuilder) {
         List<StoreAndRemember> srs = getStoreRememberTxByUID(txUID);
         
         List<String> failedSopInstanceUIDs = new ArrayList<>();
+        String localAE = null;
         String extDeviceName = null;
         long delay = 0;
         STORE_VERIFY_PROTOCOL storeVerifyProtocol = null;
         for (StoreAndRemember sr : srs) {
+            localAE = sr.getLocalAE();
             extDeviceName = sr.getExternalDeviceName();
             storeVerifyProtocol = STORE_VERIFY_PROTOCOL.valueOf(sr.getStoreVerifyProtocol());
             delay = sr.getDelay();
@@ -96,33 +99,33 @@ public class StoreAndRememberEJB {
             }
         }
         
-        return new StoreAndRememberContext(txUID, extDeviceName, storeVerifyProtocol, 
-                failedSopInstanceUIDs.toArray(new String[failedSopInstanceUIDs.size()]), retries, delay);
+        return ctxBuilder.localAE(localAE)
+                .externalDeviceName(extDeviceName)
+                .storeVerifyProtocol(storeVerifyProtocol).delayMs(delay)
+                .instances(failedSopInstanceUIDs.toArray(new String[failedSopInstanceUIDs.size()]));
     }
     
-    public void scheduleStoreAndRememberOfStudy(String studyIUID, String externalDeviceName, STORE_VERIFY_PROTOCOL storeVerifyProtocol, int retry, long delay) {
-        List<String> seriesUIDs = em.createQuery("SELECT se.seriesInstanceUID FROM Series se JOIN se.study st WHERE st.studyInstanceUID = ?1",
+    public String[] getStudyInstances(String studyIUID) {
+        List<String> sopInstanceUIDs = em.createQuery(
+                "SELECT inst.sopInstanceUID FROM Series se "
+                + "JOIN se.study st "
+                + "JOIN se.instances insts"        
+                + "JOIN WHERE st.studyInstanceUID = ?1",
                 String.class)
                 .setParameter(1, studyIUID)
                 .getResultList();
-        for (String seriesUID : seriesUIDs) {
-            scheduleStoreAndRememberOfSeries(seriesUID, externalDeviceName, storeVerifyProtocol, retry, delay);
-        }
+        
+        return sopInstanceUIDs.toArray(new String[sopInstanceUIDs.size()]);
     }
     
-    public void scheduleStoreAndRememberOfSeries(String seriesIUID, String externalDeviceName, STORE_VERIFY_PROTOCOL storeVerifyProtocol, int retry, long delay) {
-        List<Instance> insts = em.createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID, Instance.class)
+    public String[] getSeriesInstances(String seriesIUID) {
+        List<String> sopInstanceUIDs =  em.createQuery(
+                "SELECT i.sopInstanceUID FROM Instance i "
+                + "WHERE i.series.seriesInstanceUID = ?1",
+                String.class)
                 .setParameter(1, seriesIUID)
                 .getResultList();
-        if (insts.size() > 0) {
-            String[] instanceUIDs = new String[insts.size()];
-            int i = 0;
-            for(Instance inst : insts) {
-                instanceUIDs[i++] = inst.getSopInstanceUID();
-            }
-            StoreAndRememberContext ctx = new StoreAndRememberContext(externalDeviceName, storeVerifyProtocol, instanceUIDs, retry, delay);
-            scheduleStoreAndRemember(ctx);
-        }       
+        return sopInstanceUIDs.toArray(new String[sopInstanceUIDs.size()]);
     }
     
     public void scheduleStoreAndRemember(StoreAndRememberContext ctx) {
@@ -163,17 +166,23 @@ public class StoreAndRememberEJB {
         return sr;
     }
     
-    public void addStoreRememberTx(String txUID, String storeVerifyTxUID, String externalDeviceName, 
-            STORE_VERIFY_PROTOCOL protocol, String[] sopInstanceUIDs, int retries, long delay) {
-        for (String sopInstanceUID : sopInstanceUIDs) {
+    public void createOrUpdateStoreRememberTx(StoreAndRememberContext cxt, String storeVerifyTxUID) {
+        if(!updateStoreVerifyUIDOfStoreRemembers(cxt.getTransactionUID(), storeVerifyTxUID)) {
+            addStoreRememberTx(cxt, storeVerifyTxUID);
+        }
+    }
+    
+    private void addStoreRememberTx(StoreAndRememberContext cxt, String storeVerifyTxUID) {
+        for (String sopInstanceUID : cxt.getInstances()) {
             StoreAndRemember sr = new StoreAndRemember();
-            sr.setTransactionUID(txUID);
+            sr.setTransactionUID(cxt.getTransactionUID());
             sr.setStoreVerifyTransactionUID(storeVerifyTxUID);
             sr.setStatus(StoreAndRememberStatus.PENDING);
-            sr.setExternalDeviceName(externalDeviceName);
-            sr.setStoreVerifyProtocol(protocol.toString());
-            sr.setRetriesLeft(retries);
-            sr.setDelay(delay);
+            sr.setLocalAE(cxt.getLocalAE());
+            sr.setExternalDeviceName(cxt.getExternalDeviceName());
+            sr.setStoreVerifyProtocol(cxt.getStoreVerifyProtocol().toString());
+            sr.setRetriesLeft(cxt.getRetries());
+            sr.setDelay(cxt.getDelay());
             
             sr.setSopInstanceUID(sopInstanceUID);
             sr.setInstanceStatus(StoreVerifyStatus.PENDING);
@@ -210,12 +219,14 @@ public class StoreAndRememberEJB {
         }
     }
     
-    public void updateStoreVerifyUIDOfStoreRemembers(String txUID, String storeVerifyTxUID) {
+    private boolean updateStoreVerifyUIDOfStoreRemembers(String txUID, String storeVerifyTxUID) {
         List<StoreAndRemember> srs = getStoreRememberTxByUID(txUID);
         for(StoreAndRemember sr : srs) {
             sr.setStoreVerifyTransactionUID(storeVerifyTxUID);
             em.merge(sr);
         }
+        
+        return srs.size() > 0;
     }
     
     public void updateStoreRemember(String txUID, String sopInstanceUID, StoreVerifyStatus status) {

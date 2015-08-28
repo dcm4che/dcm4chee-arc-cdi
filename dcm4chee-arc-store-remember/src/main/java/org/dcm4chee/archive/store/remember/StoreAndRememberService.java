@@ -37,7 +37,6 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.store.remember;
 
-import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -46,11 +45,10 @@ import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCO
  */
 public interface StoreAndRememberService {
 
+    StoreAndRememberContextBuilder createContextBuilder();
+    
+    void scheduleStoreAndRemember(StoreAndRememberContext context);
+    
     void storeAndRemember(StoreAndRememberContext context);
-
-    void storeStudy(String studyIUID, String externalDeviceName,
-            STORE_VERIFY_PROTOCOL storeVerifyProtocol);
-
-    void storeSeries(String seriesIUID, String externalDeviceName,
-            STORE_VERIFY_PROTOCOL storeVerifyProtocol);
+    
 }

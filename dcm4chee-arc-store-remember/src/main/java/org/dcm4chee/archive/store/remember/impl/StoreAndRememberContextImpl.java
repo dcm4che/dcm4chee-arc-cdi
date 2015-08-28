@@ -37,30 +37,87 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.store.remember;
+package org.dcm4chee.archive.store.remember.impl;
 
-import java.io.Serializable;
-
+import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
 import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-public interface StoreAndRememberContext extends Serializable {
+public class StoreAndRememberContextImpl implements StoreAndRememberContext {
+    private static final long serialVersionUID = 7658929872168L;
     
-    public String getTransactionUID();
-     
-    public String getLocalAE();
+    private String transactionUID;
+    private String localAE;
+    private String externalDeviceName;
+    private STORE_VERIFY_PROTOCOL storeVerifyProtocol;
+    private String[] instances;
+    private int retries;
+    private long delay;
     
-    public String getExternalDeviceName();
-        
-    public STORE_VERIFY_PROTOCOL getStoreVerifyProtocol();
+    public void setTransactionUID(String transactionUID) {
+        this.transactionUID = transactionUID;
+    }
+
+    public void setLocalAE(String localAE) {
+        this.localAE = localAE;
+    }
+
+    public void setExternalDeviceName(String externalDeviceName) {
+        this.externalDeviceName = externalDeviceName;
+    }
+
+    public void setStoreVerifyProtocol(STORE_VERIFY_PROTOCOL storeVerifyProtocol) {
+        this.storeVerifyProtocol = storeVerifyProtocol;
+    }
+
+    public void setInstances(String[] instances) {
+        this.instances = instances;
+    }
+
+    public void setRetries(int retries) {
+        this.retries = retries;
+    }
+
+    public void setDelay(long delay) {
+        this.delay = delay;
+    }
+
+    @Override
+    public String getTransactionUID() {
+        return transactionUID;
+    }
     
-    public String[] getInstances();
-       
-    public int getRetries();
-      
-    public long getDelay();
-      
+    @Override
+    public String getLocalAE() {
+        return localAE;
+    }
+    
+    @Override
+    public String getExternalDeviceName() {
+        return externalDeviceName;
+    }
+    
+    @Override
+    public STORE_VERIFY_PROTOCOL getStoreVerifyProtocol() {
+        return storeVerifyProtocol;
+    }
+    
+    @Override
+    public String[] getInstances() {
+        return instances;
+    }
+    
+    @Override
+    public int getRetries() {
+        return retries;
+    }
+    
+    @Override
+    public long getDelay() {
+        return delay;
+    } 
+    
 }

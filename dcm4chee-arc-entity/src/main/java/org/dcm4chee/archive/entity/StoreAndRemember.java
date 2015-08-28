@@ -90,6 +90,9 @@ public class StoreAndRemember {
     @Column(name="delay")
     private long delay;
     
+    @Column(name="local_ae")
+    private String localAE;
+    
     @Column(name="ext_device_name")
     private String externalDeviceName;
     
@@ -144,6 +147,14 @@ public class StoreAndRemember {
 
     public void setRetriesLeft(int retriesLeft) {
         this.retriesLeft = retriesLeft;
+    }
+
+    public String getLocalAE() {
+        return localAE;
+    }
+
+    public void setLocalAE(String localAE) {
+        this.localAE = localAE;
     }
 
     public String getExternalDeviceName() {

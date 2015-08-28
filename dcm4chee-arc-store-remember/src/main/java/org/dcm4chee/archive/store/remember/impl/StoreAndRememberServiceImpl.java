@@ -67,6 +67,7 @@ import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.StoreVerifyStatus;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
+import org.dcm4chee.archive.store.remember.StoreAndRememberContextBuilder;
 import org.dcm4chee.archive.store.remember.StoreAndRememberResponse;
 import org.dcm4chee.archive.store.remember.StoreAndRememberService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
@@ -111,7 +112,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
    
     public void storeAndRemember(StoreAndRememberContext ctx) {
         ApplicationEntity remoteAE = getRemoteAE(ctx);
-        ApplicationEntity localAE = getLocalAE();
+        ApplicationEntity localAE = getLocalAE(ctx);
         if (localAE == null || remoteAE == null) {
             return;
         }
@@ -120,13 +121,17 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         
         boolean isDimseStoreVerify = STORE_VERIFY_PROTOCOL.CSTORE_PLUS_STGCMT.equals(ctx.getStoreVerifyProtocol());
         String storeVerifyTxUID = storeVerifyService.generateTransactionUID(isDimseStoreVerify);
-        if(ctx.getTransactionUID() == null) {
-            createStoreRememberTransaction(ctx, storeVerifyTxUID);
-        } else {
-            updateStoreRememberTransaction(ctx, storeVerifyTxUID);
+        createOrUpdateStoreRememberTransaction(ctx, storeVerifyTxUID);
+      
+        STORE_VERIFY_PROTOCOL storeVerifyProtocol = ctx.getStoreVerifyProtocol();
+        if (STORE_VERIFY_PROTOCOL.AUTO.equals(storeVerifyProtocol)) {
+            WebServiceAEExtension webAEExt = remoteAE.getAEExtension(WebServiceAEExtension.class);
+            if (webAEExt != null && webAEExt.getQidoRSBaseURL() != null && webAEExt.getStowRSBaseURL() != null) {
+                storeVerifyProtocol = STORE_VERIFY_PROTOCOL.STOW_PLUS_QIDO;
+            }
         }
         
-        switch(ctx.getStoreVerifyProtocol()) {
+        switch(storeVerifyProtocol) {
         case CSTORE_PLUS_STGCMT:
             CStoreSCUContext cxt = new CStoreSCUContext(localAE, remoteAE, ServiceType.STOREREMEMBER);
             storeVerifyService.store(storeVerifyTxUID, cxt, insts);
@@ -138,20 +143,18 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             stowCtx.setQidoRemoteBaseURL(wsExt.getQidoRSBaseURL());
             storeVerifyService.store(storeVerifyTxUID, stowCtx, insts);
             break;
+        case AUTO:
+            WebServiceAEExtension webAEExt = remoteAE.getAEExtension(WebServiceAEExtension.class);
+            if(webAEExt != null && webAEExt.getWadoRSBaseURL()!=null) {
+                
+            }
         default:
             throw new RuntimeException("Unknown store-verify protocol " + ctx.getStoreVerifyProtocol());
         }
     }
     
-    private void createStoreRememberTransaction(StoreAndRememberContext ctx, String storeVerifyTxUID) {
-        String storeRememberTransactionUID = generateTransactionUID();
-        // create db entries
-        storeRememberEJB.addStoreRememberTx(storeRememberTransactionUID, storeVerifyTxUID, ctx.getExternalDeviceName(), 
-                ctx.getStoreVerifyProtocol(), ctx.getInstances(), ctx.getRetries(), ctx.getDelay());
-    }
-    
-    private void updateStoreRememberTransaction(StoreAndRememberContext ctx, String storeVerifyTxUID) {
-        storeRememberEJB.updateStoreVerifyUIDOfStoreRemembers(ctx.getTransactionUID(), storeVerifyTxUID);
+    private void createOrUpdateStoreRememberTransaction(StoreAndRememberContext ctx, String storeVerifyTxUID) {
+        storeRememberEJB.createOrUpdateStoreRememberTx(ctx, storeVerifyTxUID);
     }
     
     private List<ArchiveInstanceLocator> locate(String... iuids) {
@@ -181,9 +184,8 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         }
     }
     
-    private ApplicationEntity getLocalAE() {
-       //TODO: make used AE for store-verify configurable
-       ApplicationEntity localAE = device.getApplicationEntity("DCM4CHEE");
+    private ApplicationEntity getLocalAE(StoreAndRememberContext ctx) {
+       ApplicationEntity localAE = device.getApplicationEntity(ctx.getLocalAE());
        return localAE;
     }
   
@@ -238,7 +240,11 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             int retriesLeft = storeRememberEJB.updatePartialStoreRemembersAndCheckForRetry(storeAndRememberTxUID);
             if(retriesLeft > 0) {
                 // schedule retry
-                StoreAndRememberContext retryContext = storeRememberEJB.createStoreAndRememberContext(storeAndRememberTxUID, retriesLeft - 1);
+                StoreAndRememberContextBuilderImpl ctxBuilder = createContextBuilder()
+                        .transactionUID(storeAndRememberTxUID)
+                        .retries(retriesLeft -1);
+                StoreAndRememberContext retryContext = storeRememberEJB.augmentStoreAndRememberContext(storeAndRememberTxUID, ctxBuilder)
+                        .build();
                 storeRememberEJB.scheduleStoreAndRemember(retryContext);
             } else {
                 // send 'failed' response
@@ -258,20 +264,107 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
     private String generateTransactionUID() {
         return UUID.randomUUID().toString();
     }
-
+    
     @Override
-    public void storeStudy(String studyIUID, String externalDeviceName,
-            STORE_VERIFY_PROTOCOL storeVerifyProtocol) {
-        storeRememberEJB.scheduleStoreAndRememberOfStudy(studyIUID, externalDeviceName,
-                storeVerifyProtocol, 0, 0);
-
+    public StoreAndRememberContextBuilderImpl createContextBuilder() {
+        return new StoreAndRememberContextBuilderImpl();
+    }
+    
+    @Override
+    public void scheduleStoreAndRemember(StoreAndRememberContext ctx) {
+        storeRememberEJB.scheduleStoreAndRemember(ctx);
     }
 
-    @Override
-    public void storeSeries(String seriesIUID, String externalDeviceName,
-            STORE_VERIFY_PROTOCOL storeVerifyProtocol) {
-        storeRememberEJB.scheduleStoreAndRememberOfSeries(seriesIUID, externalDeviceName,
-                storeVerifyProtocol, 0, 0);
+    public class StoreAndRememberContextBuilderImpl implements StoreAndRememberContextBuilder {
+        private StoreAndRememberContextImpl cxt = new StoreAndRememberContextImpl();
+        private String[] instances;
+        private String studyIUID;
+        private String seriesIUID;
+        
+        public StoreAndRememberContextBuilderImpl transactionUID(String txUID) {
+            cxt.setTransactionUID(txUID);
+            return this;
+        }
+        
+        @Override
+        public StoreAndRememberContextBuilderImpl instances(String... instances) {
+            this.instances = instances;
+            return this;
+        }
+        
+        @Override
+        public StoreAndRememberContextBuilderImpl seriesUID(String seriesIUID) {
+            this.seriesIUID = seriesIUID;
+            return this;
+        }
+        
+        @Override
+        public StoreAndRememberContextBuilderImpl studyUID(String studyIUID) {
+            this.studyIUID = studyIUID;
+            return this;
+        }
+        
+        @Override
+        public StoreAndRememberContextBuilderImpl localAE(String localAE) {
+            cxt.setLocalAE(localAE);
+            return this;
+        }
+        
+        @Override
+        public StoreAndRememberContextBuilderImpl externalDeviceName(String externalDeviceName) {
+            cxt.setExternalDeviceName(externalDeviceName);
+            return this;
+        }
+        
+        @Override
+        public StoreAndRememberContextBuilderImpl retries(int retries) {
+            cxt.setRetries(retries);
+            return this;
+        }
+        
+        @Override
+        public StoreAndRememberContextBuilderImpl delayMs(long delay) {
+            cxt.setDelay(delay);
+            return this;
+        }
+        
+        @Override
+        public StoreAndRememberContextBuilderImpl storeVerifyProtocol(STORE_VERIFY_PROTOCOL storeVerifyProtocol) {
+            cxt.setStoreVerifyProtocol(storeVerifyProtocol);
+            return this;
+        }
+        
+        @Override
+        public StoreAndRememberContext build() {
+            if(cxt.getExternalDeviceName() == null) {
+                throw new RuntimeException("Invalid store-and-remember request: no external device name set");
+            }
+            if(cxt.getLocalAE() == null) {
+                throw new RuntimeException("Invalid store-and-remember request: no local AE title set");
+            }
+            if(cxt.getStoreVerifyProtocol() == null) {
+                throw new RuntimeException("Invalid store-and-remember request: no store-verify protocol set");
+            }
+            
+            if(cxt.getTransactionUID() == null) {
+                cxt.setTransactionUID(generateTransactionUID());
+            }
+            
+            if (instances == null) {
+                if (seriesIUID != null) {
+                    instances = storeRememberEJB.getSeriesInstances(seriesIUID);
+                } else if (studyIUID != null) {
+                    instances = storeRememberEJB.getStudyInstances(studyIUID);
+                } else {
+                    throw new RuntimeException("Invalid store-and-remember request: no series or study UID set");
+                }
+            }
+            
+            cxt.setInstances(instances);
+            
+            return cxt;
+        }
+
     }
 
 }

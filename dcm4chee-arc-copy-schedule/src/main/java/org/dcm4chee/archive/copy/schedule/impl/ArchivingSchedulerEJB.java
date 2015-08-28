@@ -56,6 +56,7 @@ import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.hsm.HsmArchiveService;
 import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
 import org.dcm4chee.archive.store.remember.StoreAndRememberService;
 import org.dcm4chee.archive.store.verify.StoreVerifyService;
 import org.slf4j.Logger;
@@ -195,9 +196,13 @@ public class ArchivingSchedulerEJB {
             hsmArchiveService.copySeries(task.getSeriesInstanceUID(),
                     task.getSourceStorageSystemGroupID(), task.getTargetStorageSystemGroupID());
         } else if (task.getTargetExternalDevice() != null) {
-            storeAndRemeberService.storeSeries(task.getSeriesInstanceUID(),
-                    task.getTargetExternalDevice(),
-                    StoreVerifyService.STORE_VERIFY_PROTOCOL.CSTORE_PLUS_STGCMT);
+            StoreAndRememberContext storeRememberCxt = storeAndRemeberService.createContextBuilder()
+                    .seriesUID(task.getSeriesInstanceUID())
+                    .localAE("DCM4CHEE")
+                    .externalDeviceName(task.getTargetExternalDevice())
+                    .storeVerifyProtocol(StoreVerifyService.STORE_VERIFY_PROTOCOL.AUTO)
+                    .build();
+            storeAndRemeberService.scheduleStoreAndRemember(storeRememberCxt);
         } else {
             throw new IllegalStateException();
         }
