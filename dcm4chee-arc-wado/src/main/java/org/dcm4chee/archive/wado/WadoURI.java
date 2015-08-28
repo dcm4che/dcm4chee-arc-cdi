@@ -37,12 +37,9 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.wado;
 
-import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
-import java.awt.image.BandedSampleModel;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -87,9 +84,8 @@ import javax.xml.transform.stream.StreamResult;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
-import org.dcm4che3.image.PaletteColorModel;
+import org.dcm4che3.image.BufferedImageUtils;
 import org.dcm4che3.image.PixelAspectRatio;
-import org.dcm4che3.image.YBRColorSpace;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory.ImageWriterParam;
@@ -630,40 +626,6 @@ public class WadoURI extends Wado {
         }
     }
 
-    private BufferedImage convertColor(BufferedImage image) {
-        ColorModel cm = image.getColorModel();
-        if (cm instanceof PaletteColorModel) {
-            image = ((PaletteColorModel) cm).convertToIntDiscrete(image.getData());
-        } else {
-            // we need to convert to RGB in the following cases:
-            //
-            // 1) convert YBR to RGB to workaround jai-imageio-core issue #173:
-            //    CLibJPEGImageWriter ignores CororSpace != sRGB
-            //
-            // 2) banded (PlanarConfiguration=1), otherwise
-            //    rescaling (AffineTransformOp) will throw
-            //    ImagingOpException("Unable to transform src image")
-
-            if(cm.getColorSpace() instanceof YBRColorSpace ||
-               image.getSampleModel() instanceof BandedSampleModel) {
-                image = convertToRGB(image);
-            }
-        }
-
-        return image;
-    }
-
-    private BufferedImage convertToRGB(BufferedImage image) {
-        BufferedImage rgbImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = rgbImage.createGraphics();
-        try {
-            g.drawImage(image, 0, 0, null);
-        } finally {
-            g.dispose();
-        }
-        return rgbImage;
-    }
-
     private BufferedImage getBufferedImage(ArchiveInstanceLocator ref, Attributes attrs) throws IOException {
         for (;;) {
             try (ImageInputStream iis = createImageInputStream(ref)) {
@@ -779,7 +741,7 @@ public class WadoURI extends Wado {
     private BufferedImage readAndConvertFrame(ImageReader reader, DicomMetaData metaData, DicomImageReadParam param, int frameNumberZeroBased) throws IOException {
         BufferedImage image = reader.read(frameNumberZeroBased, param);
 
-        image = convertColor(image);
+        image = BufferedImageUtils.convertToIntRGB(image);
 
         return rescale(image, metaData.getAttributes(), param.getPresentationState());
     }
