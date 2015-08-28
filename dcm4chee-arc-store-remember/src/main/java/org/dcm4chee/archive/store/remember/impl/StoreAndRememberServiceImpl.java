@@ -118,18 +118,21 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         }
 
         List<ArchiveInstanceLocator> insts = locate(ctx.getInstances());
-        
-        boolean isDimseStoreVerify = STORE_VERIFY_PROTOCOL.CSTORE_PLUS_STGCMT.equals(ctx.getStoreVerifyProtocol());
-        String storeVerifyTxUID = storeVerifyService.generateTransactionUID(isDimseStoreVerify);
-        createOrUpdateStoreRememberTransaction(ctx, storeVerifyTxUID);
       
         STORE_VERIFY_PROTOCOL storeVerifyProtocol = ctx.getStoreVerifyProtocol();
+        // resolve automatic configuration of store-verify protocol
         if (STORE_VERIFY_PROTOCOL.AUTO.equals(storeVerifyProtocol)) {
             WebServiceAEExtension webAEExt = remoteAE.getAEExtension(WebServiceAEExtension.class);
             if (webAEExt != null && webAEExt.getQidoRSBaseURL() != null && webAEExt.getStowRSBaseURL() != null) {
                 storeVerifyProtocol = STORE_VERIFY_PROTOCOL.STOW_PLUS_QIDO;
+            } else {
+                storeVerifyProtocol = STORE_VERIFY_PROTOCOL.CSTORE_PLUS_STGCMT;
             }
         }
+        
+        boolean isDimseStoreVerify = STORE_VERIFY_PROTOCOL.CSTORE_PLUS_STGCMT.equals(ctx.getStoreVerifyProtocol());
+        String storeVerifyTxUID = storeVerifyService.generateTransactionUID(isDimseStoreVerify);
+        createOrUpdateStoreRememberTransaction(ctx, storeVerifyTxUID);
         
         switch(storeVerifyProtocol) {
         case CSTORE_PLUS_STGCMT:
@@ -143,11 +146,6 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             stowCtx.setQidoRemoteBaseURL(wsExt.getQidoRSBaseURL());
             storeVerifyService.store(storeVerifyTxUID, stowCtx, insts);
             break;
-        case AUTO:
-            WebServiceAEExtension webAEExt = remoteAE.getAEExtension(WebServiceAEExtension.class);
-            if(webAEExt != null && webAEExt.getWadoRSBaseURL()!=null) {
-                
-            }
         default:
             throw new RuntimeException("Unknown store-verify protocol " + ctx.getStoreVerifyProtocol());
         }

@@ -52,7 +52,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import org.dcm4chee.archive.entity.ExternalRetrieveLocation;
 import org.dcm4chee.archive.entity.Instance;
@@ -108,9 +108,8 @@ public class StoreAndRememberEJB {
     public String[] getStudyInstances(String studyIUID) {
         List<String> sopInstanceUIDs = em.createQuery(
                 "SELECT inst.sopInstanceUID FROM Series se "
-                + "JOIN se.study st "
-                + "JOIN se.instances insts"        
-                + "JOIN WHERE st.studyInstanceUID = ?1",
+                + "JOIN se.instances inst "        
+                + "WHERE se.study.studyInstanceUID = ?1",
                 String.class)
                 .setParameter(1, studyIUID)
                 .getResultList();
@@ -151,18 +150,17 @@ public class StoreAndRememberEJB {
     }
 
     private List<StoreAndRemember> getStoreRememberTxByUID(String txUID) {
-        Query query  = em.createNamedQuery(StoreAndRemember.GET_STORE_REMEMBER_BY_UID);
+        TypedQuery<StoreAndRemember> query  = em.createNamedQuery(StoreAndRemember.GET_STORE_REMEMBER_BY_UID, StoreAndRemember.class);
         query.setParameter(1, txUID);
-        @SuppressWarnings("unchecked")
         List<StoreAndRemember> srs = query.getResultList();
         return srs;
     }
     
     private StoreAndRemember getStoreRememberTxByUIDs(String txUID, String sopInstanceUID) {
-        Query query  = em.createNamedQuery(StoreAndRemember.GET_STORE_REMEMBER_BY_UIDS);
+        TypedQuery<StoreAndRemember> query  = em.createNamedQuery(StoreAndRemember.GET_STORE_REMEMBER_BY_UIDS, StoreAndRemember.class);
         query.setParameter(1, txUID);
         query.setParameter(2, sopInstanceUID);
-        StoreAndRemember sr = (StoreAndRemember)query.getSingleResult();
+        StoreAndRemember sr = query.getSingleResult();
         return sr;
     }
     
@@ -251,16 +249,16 @@ public class StoreAndRememberEJB {
     }
     
     private Instance getInstanceByUID(String iuid) {
-        Query query = em.createQuery("select i from Instance i where i.sopInstanceUID = ?1");
+        TypedQuery<Instance> query = em.createQuery("select i from Instance i where i.sopInstanceUID = ?1", Instance.class);
         query.setParameter(1, iuid);
-        Instance instance = (Instance) query.getSingleResult();
+        Instance instance = query.getSingleResult();
         return instance;
     }
     
     public String getStoreRememberUIDByStoreVerifyUID(String storeVerifyTxUID) {
-        Query query  = em.createNamedQuery(StoreAndRemember.GET_STORE_REMEMBER_BY_STORE_VERIFY_UID);
+        TypedQuery<StoreAndRemember> query  = em.createNamedQuery(StoreAndRemember.GET_STORE_REMEMBER_BY_STORE_VERIFY_UID, 
+                StoreAndRemember.class);
         query.setParameter(1, storeVerifyTxUID);
-        @SuppressWarnings("unchecked")
         List<StoreAndRemember> srs = query.getResultList();
         return (srs.isEmpty()) ? null : srs.iterator().next().getTransactionUID();
     }

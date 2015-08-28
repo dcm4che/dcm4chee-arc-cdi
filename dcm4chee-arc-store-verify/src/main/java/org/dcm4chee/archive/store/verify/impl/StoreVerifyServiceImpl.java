@@ -240,6 +240,9 @@ public class StoreVerifyServiceImpl implements StoreVerifyService {
         StoreVerifyStatus status = determineAndPersistStoreVerifyStatus(transactionUID, verifiedInstances);
         StoreVerifyResponse storeVerifyResponse = new StoreVerifyResponse(status, STORE_VERIFY_PROTOCOL.STOW_PLUS_QIDO, transactionUID, localAET, 
                 remoteAET, retrieveAET, verifiedInstances);
+        
+        ejb.removeWebEntry(transactionUID);
+        
         storeVerifyResponseEvent.select(new ServiceQualifier(ServiceType.valueOf(webEntry.getService()))).fire(storeVerifyResponse);
     }
     
@@ -323,6 +326,9 @@ public class StoreVerifyServiceImpl implements StoreVerifyService {
         StoreVerifyStatus status = determineAndPersistStoreVerifyStatus(transactionUID, verifiedInstances);
         StoreVerifyResponse storeVerifyResponse = new StoreVerifyResponse(status, STORE_VERIFY_PROTOCOL.CSTORE_PLUS_STGCMT, transactionUID, localAET, 
                 remoteAET, retrieveAET, verifiedInstances);
+        
+        ejb.removeDimseEntry(transactionUID);
+        
         storeVerifyResponseEvent.select(new ServiceQualifier(ServiceType.valueOf(dimseEntry.getService()))).fire(storeVerifyResponse);
     }
     
