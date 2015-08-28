@@ -93,6 +93,7 @@ import org.dcm4che3.image.YBRColorSpace;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory.ImageWriterParam;
+import org.dcm4che3.imageio.codec.TransferSyntaxType;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
 import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
 import org.dcm4che3.io.DicomInputStream;
@@ -523,9 +524,22 @@ public class WadoURI extends Wado {
     }
 
     private String selectTransferSyntax(String tsuid) {
-        return transferSyntax.contains("*") || transferSyntax.contains(tsuid)
-                || !ImageReaderFactory.canDecompress(tsuid) ? tsuid
-                : UID.ExplicitVRLittleEndian;
+
+        // no need of decompression
+        if (transferSyntax.contains("*") || transferSyntax.contains(tsuid))
+            return tsuid;
+
+        // cannot decompress to required ts
+        if (!ImageReaderFactory.canDecompress(tsuid))
+            return tsuid;
+
+        // select first requested uncompressed ts
+        for (String singleTransferSyntax : transferSyntax)
+            if (TransferSyntaxType.forUID(singleTransferSyntax).equals(TransferSyntaxType.NATIVE))
+                return singleTransferSyntax;
+
+        //default
+        return UID.ImplicitVRLittleEndian;
     }
 
     private Response retrieveImage(final ArchiveInstanceLocator ref, final Attributes attrs, final MediaType mediaType) {
