@@ -486,40 +486,36 @@ public class FetchForwardServiceImpl implements FetchForwardService {
         }
         return studyUIDs;
     }
+
     private ArrayList<ApplicationEntity> listBestExternalLocation(ArchiveInstanceLocator externalLoc, ApplicationEntity localAE) {
-        ArrayList<Device> externalDevices = new ArrayList<Device>();
         ArrayList<ApplicationEntity> externalAEs = new ArrayList<ApplicationEntity>();
-      //for ordering based on availability
-        ArrayList<ExternalLocationTuple> extLocTuples = (ArrayList<ExternalLocationTuple>) externalLoc
-                .getExternalLocators();
-        if(extLocTuples.size() > 1)
+        
+        // for ordering based on availability
+        List<ExternalLocationTuple> extLocTuples = externalLoc.getExternalLocators();
         Collections.sort(extLocTuples, fetchAvailabilityComparator());
-                        //for ordering based on priority
-        for(ExternalLocationTuple externalTuple : extLocTuples) {
-                try {
-                    externalDevices.add(config
-                            .findDevice(externalTuple.getRetrieveDeviceName()));
-                } catch (ConfigurationException e) {
-                    LOG.error("Unable to find external archive {} in configuration",
-                            externalTuple.getRetrieveDeviceName());
-                }
+        
+        List<Device> extDevices = new ArrayList<Device>();
+        // for ordering based on priority
+        for (ExternalLocationTuple extLocTuple : extLocTuples) {
+            String extRetrieveDeviceName = extLocTuple.getRetrieveDeviceName();
+            try {
+                extDevices.add(config.findDevice(extRetrieveDeviceName));
+            } catch (ConfigurationException e) {
+                LOG.error("Unable to find external archive {} in configuration", extRetrieveDeviceName);
+            }
         }
-        if(externalDevices.size() > 1)
-        Collections.sort(externalDevices, fetchDevicePriorityComparator(localAE) );
-        for(Device dev : externalDevices) {
-            TransferCapability tc = new TransferCapability("",
-                    externalLoc.cuid, Role.SCP, new String[]{
-                    UID.ImplicitVRLittleEndian, UID.ExplicitVRLittleEndian});
-            ArrayList<ApplicationEntity> deviceAEs = (ArrayList<ApplicationEntity>) 
-                    dev.getAEsSupportingTransferCapability(tc, true); 
-                    Collections.sort(deviceAEs,fetchAEPriorityComparator());
-            externalAEs.addAll(deviceAEs);
+        Collections.sort(extDevices, fetchDevicePriorityComparator(localAE));
+        
+        for (Device extDevice : extDevices) {
+            TransferCapability tc = new TransferCapability("", externalLoc.cuid, Role.SCP,
+                    new String[] { UID.ImplicitVRLittleEndian, UID.ExplicitVRLittleEndian });
+            List<ApplicationEntity> extDeviceAEs = (List<ApplicationEntity>) extDevice.getAEsSupportingTransferCapability(tc, true);
+            Collections.sort(extDeviceAEs, fetchAEPriorityComparator());
+            externalAEs.addAll(extDeviceAEs);
         }
-            
+
         return externalAEs;
     }
-
-
 
     private Comparator<? super ExternalLocationTuple> fetchAvailabilityComparator() {
         return new Comparator<ExternalLocationTuple>() {
@@ -538,7 +534,7 @@ public class FetchForwardServiceImpl implements FetchForwardService {
                         .getDeviceExtension(ArchiveDeviceExtension.class);
                 int priority1 = Integer.parseInt(archDevExt.getExternalArchivesMap().get(dev1.getDeviceName()));
                 int priority2 = Integer.parseInt(archDevExt.getExternalArchivesMap().get(dev2.getDeviceName()));
-                return priority1 < priority2 ? -1:priority1 == priority2 ? 0 : 1;
+                return priority1 - priority2;
             }
         };
     }
@@ -549,7 +545,7 @@ public class FetchForwardServiceImpl implements FetchForwardService {
             public int compare(ApplicationEntity ae1, ApplicationEntity ae2) {
                 int priority1 = ae1.getAEExtension(ExternalArchiveAEExtension.class).getAeFetchPriority();
                 int priority2 = ae2.getAEExtension(ExternalArchiveAEExtension.class).getAeFetchPriority();
-                return priority1 < priority2 ? -1:priority1 == priority2 ? 0 : 1;
+                return priority1 - priority2;
             }
         };
     }
