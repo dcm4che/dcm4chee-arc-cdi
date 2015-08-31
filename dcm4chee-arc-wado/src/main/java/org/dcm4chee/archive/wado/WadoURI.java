@@ -40,6 +40,7 @@ package org.dcm4chee.archive.wado;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -741,9 +742,14 @@ public class WadoURI extends Wado {
     private BufferedImage readAndConvertFrame(ImageReader reader, DicomMetaData metaData, DicomImageReadParam param, int frameNumberZeroBased) throws IOException {
         BufferedImage image = reader.read(frameNumberZeroBased, param);
 
-        image = BufferedImageUtils.convertToIntRGB(image);
+        image = convertColor(image);
 
         return rescale(image, metaData.getAttributes(), param.getPresentationState());
+    }
+
+    private BufferedImage convertColor(BufferedImage bi) {
+        ColorModel cm = bi.getColorModel();
+        return cm.getNumComponents() == 3 ? BufferedImageUtils.convertToIntRGB(bi) : bi;
     }
 
     private static ImageReader getDicomImageReader() {
