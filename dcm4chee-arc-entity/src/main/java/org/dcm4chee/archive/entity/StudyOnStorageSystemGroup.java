@@ -52,6 +52,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -71,7 +72,8 @@ import javax.persistence.Table;
             )
 })
 @Entity
-@Table(name = "study_on_stg_sys")
+@Table(name = "study_on_stg_sys", uniqueConstraints = 
+	@UniqueConstraint(columnNames={"study_fk","storage_system_group_id"}))
 public class StudyOnStorageSystemGroup implements Serializable {
 
     private static final long serialVersionUID = -370822446832524107L;

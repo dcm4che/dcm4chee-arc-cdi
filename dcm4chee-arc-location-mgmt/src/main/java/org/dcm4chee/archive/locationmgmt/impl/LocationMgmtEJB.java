@@ -107,6 +107,8 @@ public class LocationMgmtEJB implements LocationMgmt {
     private static final Logger LOG = LoggerFactory
             .getLogger(LocationMgmtEJB.class);
 
+    private static Object syncObj = new Object();
+    
     @Inject
     private Device device;
 
@@ -296,23 +298,32 @@ public class LocationMgmtEJB implements LocationMgmt {
 
     @Override
     public void findOrCreateStudyOnStorageGroup(Study study, String groupID) {
+        String studyUID = study.getStudyInstanceUID();
+        StudyOnStorageSystemGroup studyOnStgSysGrp;
         try {
-            String studyUID = study.getStudyInstanceUID();
-            StudyOnStorageSystemGroup studyOnStgSysGrp = findStudyOnStorageGroup(studyUID, groupID);
-            studyOnStgSysGrp
-                    .setAccessTime(new Date(System.currentTimeMillis()));
-            studyOnStgSysGrp.setMarkedForDeletion(false);
+            studyOnStgSysGrp = findStudyOnStorageGroup(studyUID, groupID);
         } catch (NoResultException e) {
-            LOG.debug("Error retrieving StudyOnStorageGroup entry - "
-                    + "reason {}, creating new entry", e);
-            StudyOnStorageSystemGroup studyOnStgSysGrp = new StudyOnStorageSystemGroup();
-            studyOnStgSysGrp.setStudy(study);
-            studyOnStgSysGrp.setStorageSystemGroupID(groupID);
-            studyOnStgSysGrp.setMarkedForDeletion(false);
-            studyOnStgSysGrp
-                    .setAccessTime(new Date(System.currentTimeMillis()));
-            em.persist(studyOnStgSysGrp);
-        }
+            LOG.debug("StudyOnStorageGroup entry does not exist! Study:{}, groupID:{}", studyUID, groupID);
+            synchronized (syncObj) {
+                try {
+                    studyOnStgSysGrp = findStudyOnStorageGroup(studyUID, groupID);
+                    LOG.debug("StudyOnStorageGroup entry already created in other thread! Study:{}, groupID:{}", studyUID, groupID);
+                } catch (NoResultException e1) {
+		            LOG.debug("Error retrieving StudyOnStorageGroup entry - "
+		                    + "reason {}, creating new entry", e1);
+		            studyOnStgSysGrp = new StudyOnStorageSystemGroup();
+		            studyOnStgSysGrp.setStudy(study);
+		            studyOnStgSysGrp.setStorageSystemGroupID(groupID);
+		            studyOnStgSysGrp.setMarkedForDeletion(false);
+		            studyOnStgSysGrp
+		                    .setAccessTime(new Date(System.currentTimeMillis()));
+		            em.persist(studyOnStgSysGrp);
+		            return;
+                }
+	        }
+    	}
+        studyOnStgSysGrp.setAccessTime(new Date(System.currentTimeMillis()));
+        studyOnStgSysGrp.setMarkedForDeletion(false);
     }
 
     @Override
