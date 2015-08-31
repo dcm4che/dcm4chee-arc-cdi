@@ -52,7 +52,9 @@ import javax.persistence.Query;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.code.CodeService;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ArchivingTask;
@@ -90,6 +92,9 @@ public class ArchivingSchedulerEJB {
 
     @Inject
     private ActiveProcessingService activeProcessingService;
+    
+    @Inject
+    private Device device;
 
     public void onStoreInstance(StoreContext storeContext, ArchivingRule archivingRule) {
         Attributes attrs = storeContext.getAttributes();
@@ -206,9 +211,12 @@ public class ArchivingSchedulerEJB {
             hsmArchiveService.copySeries(task.getSeriesInstanceUID(),
                     task.getSourceStorageSystemGroupID(), task.getTargetStorageSystemGroupID());
         } else if (task.getTargetExternalDevice() != null) {
+            ArchiveDeviceExtension archiveDeviceExtension = device.getDeviceExtension(ArchiveDeviceExtension.class);
+            String forwardingAEtitle = archiveDeviceExtension.getFetchAETitle();
+            
             StoreAndRememberContext storeRememberCxt = storeAndRemeberService.createContextBuilder()
                     .seriesUID(task.getSeriesInstanceUID())
-                    .localAE("DCM4CHEE")
+                    .localAE(forwardingAEtitle)
                     .externalDeviceName(task.getTargetExternalDevice())
                     .storeVerifyProtocol(StoreVerifyService.STORE_VERIFY_PROTOCOL.AUTO)
                     .build();

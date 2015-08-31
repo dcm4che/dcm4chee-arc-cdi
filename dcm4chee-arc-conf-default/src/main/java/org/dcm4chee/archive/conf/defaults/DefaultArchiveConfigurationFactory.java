@@ -347,6 +347,8 @@ public class DefaultArchiveConfigurationFactory {
             HIDE_REJECTED_VIEW,
             REGULAR_USE_VIEW,
             TRASH_VIEW};
+    
+    private static final String RETRIEVER_CACHE_STORAGE_SYSTEM_GROUP_TYPE = "RETRIEVER_CACHE";
 
     //ASK BEA: SHE REALLY WANTS TO KICK THIS 2 TAGS IN THEIR PRIVATE ASS :-)
 //    static {
@@ -492,12 +494,14 @@ public class DefaultArchiveConfigurationFactory {
         device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
         Connection dicom = new Connection("dicom", "localhost", 11112, TIMEOUT);
         dicom.setBindAddress("0.0.0.0");
+        dicom.setClientBindAddress("0.0.0.0");
         dicom.setMaxOpsInvoked(0);
         dicom.setMaxOpsPerformed(0);
         device.addConnection(dicom);
 
         Connection dicomTLS = new Connection("dicom-tls", "localhost", 2762, TIMEOUT);
         dicomTLS.setBindAddress("0.0.0.0");
+        dicomTLS.setClientBindAddress("0.0.0.0");
         dicomTLS.setMaxOpsInvoked(0);
         dicomTLS.setMaxOpsPerformed(0);
         dicomTLS.setTlsCipherSuites(
@@ -529,12 +533,12 @@ public class DefaultArchiveConfigurationFactory {
 //                    (X509Certificate) keystore.getCertificate(other));
 
         device.addApplicationEntity(createAE("DCM4CHEE", dicom, dicomTLS,
-                HIDE_REJECTED_VIEW, null, PIX_MANAGER));
+                HIDE_REJECTED_VIEW, null, PIX_MANAGER, null, "DEFAULT"));
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_ADMIN", dicom, dicomTLS,
                         REGULAR_USE_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(createAE("DCM4CHEE_FETCH", dicom, dicomTLS,
-                HIDE_REJECTED_VIEW, null, PIX_MANAGER));
+                HIDE_REJECTED_VIEW, null, PIX_MANAGER, RETRIEVER_CACHE_STORAGE_SYSTEM_GROUP_TYPE, null));
         device.addApplicationEntity(
                 createQRAE("DCM4CHEE_TRASH", dicom, dicomTLS,
                         TRASH_VIEW, null, PIX_MANAGER));
@@ -605,6 +609,22 @@ public class DefaultArchiveConfigurationFactory {
         metadataG.setBaseStorageAccessTime(0);
         metadataG.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         metadataG.setActiveStorageSystemIDs(metadata.getStorageSystemID());
+        
+        StorageSystem retrieveFs1 = new StorageSystem();
+        retrieveFs1.setStorageSystemID("retrieve_fs1");
+        retrieveFs1.setProviderName("org.dcm4chee.storage.filesystem");
+        retrieveFs1.setStorageSystemPath(baseStoragePath + "retrieve_fs1");
+        retrieveFs1.setAvailability(Availability.ONLINE);
+        
+        StorageSystemGroup retrieverCache = new StorageSystemGroup();
+        retrieverCache.setGroupID("RETRIEVER_CACHE");
+        retrieverCache.setStorageSystemGroupType(RETRIEVER_CACHE_STORAGE_SYSTEM_GROUP_TYPE);
+        retrieverCache.setRetrieveAETs(new String[]{"DCM4CHEE_RETRIEVE"});
+        retrieverCache.setDigestAlgorithm("MD5");
+        retrieverCache.addStorageSystem(retrieveFs1);
+        retrieverCache.setBaseStorageAccessTime(1000);
+        retrieverCache.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
+        retrieverCache.setActiveStorageSystemIDs(retrieveFs1.getStorageSystemID());
 
         Archiver archiver = new Archiver();
         archiver.setObjectStatus("TO_ARCHIVE");
@@ -614,6 +634,7 @@ public class DefaultArchiveConfigurationFactory {
         ext.addStorageSystemGroup(online);
         ext.addStorageSystemGroup(nearline);
         ext.addStorageSystemGroup(metadataG);
+        ext.addStorageSystemGroup(retrieverCache);
         device.addDeviceExtension(ext);
     }
 
@@ -737,7 +758,9 @@ public class DefaultArchiveConfigurationFactory {
     private ApplicationEntity createAE(String aet,
                                        Connection dicom, Connection dicomTLS,
                                        QueryRetrieveView queryRetrieveView,
-                                       String pixConsumer, String pixManager) {
+                                       String pixConsumer, String pixManager,
+                                       String storageSystemGroupType,
+                                       String storageSystemGroupID) {
         ApplicationEntity ae = new ApplicationEntity(aet);
 
         if (factoryParams.generateUUIDsBasedOnName)
@@ -750,7 +773,14 @@ public class DefaultArchiveConfigurationFactory {
         ae.addAEExtension(aeExt);
         ae.setAssociationAcceptor(true);
         ae.setAssociationInitiator(true);
-        aeExt.setStorageSystemGroupID("DEFAULT");
+        
+        if(storageSystemGroupID != null) {
+            aeExt.setStorageSystemGroupID(storageSystemGroupID);
+        }
+        if(storageSystemGroupType != null) {
+            aeExt.setStorageSystemGroupType(storageSystemGroupType);
+        }
+       
         aeExt.setMetaDataStorageSystemGroupID("METADATA");
         aeExt.setSpoolDirectoryPath("spool");
         aeExt.setPreserveSpoolFileOnFailure(true);
