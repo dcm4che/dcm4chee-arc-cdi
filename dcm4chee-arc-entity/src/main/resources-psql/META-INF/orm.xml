@@ -398,5 +398,16 @@
       </id>
     </attributes>
   </entity>
+  
+  <entity class="ActiveProcessing">
+    <table name="active_processing" />
+    <sequence-generator name="seq" sequence-name="active_processing_pks" allocation-size="1" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="SEQUENCE" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
 
 </entity-mappings>

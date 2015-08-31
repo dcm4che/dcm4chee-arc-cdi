@@ -113,6 +113,16 @@
       </id>
     </attributes>
   </entity>
+  
+  <entity class="ActiveProcessing">
+    <table name="active_processing" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="IDENTITY" />
+      </id>
+    </attributes>
+  </entity>
 
 
 </entity-mappings>
