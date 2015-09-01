@@ -81,7 +81,7 @@ public class StgCmtEJB  {
         builder.and(QLocation.location.digest.isNotNull());
         List<Tuple> list = new HibernateQuery(em.unwrap(Session.class))
             .from(QInstance.instance)
-            .from(QLocation.location)
+            .innerJoin(QInstance.instance.locations,QLocation.location)
             .where(builder)
             .list(
                 QInstance.instance.sopClassUID,
