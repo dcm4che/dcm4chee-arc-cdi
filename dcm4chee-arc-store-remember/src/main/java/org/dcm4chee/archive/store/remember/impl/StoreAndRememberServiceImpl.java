@@ -37,7 +37,6 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.store.remember.impl;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -73,8 +72,8 @@ import org.dcm4chee.archive.store.remember.StoreAndRememberService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.verify.StoreVerifyResponse;
 import org.dcm4chee.archive.store.verify.StoreVerifyResponse.VerifiedInstanceStatus;
-import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
 import org.dcm4chee.archive.store.verify.StoreVerifyService;
+import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCOL;
 import org.dcm4chee.archive.stow.client.StowContext;
 import org.dcm4chee.storage.conf.Availability;
 import org.slf4j.Logger;
@@ -168,22 +167,31 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
     }
     
     private ApplicationEntity getRemoteAE(StoreAndRememberContext cxt) {
+        String extDeviceName = cxt.getExternalDeviceName();
+        String remoteAeTitle = cxt.getRemoteAE();
+        ApplicationEntity remoteAE = null;
+        boolean error = false;
         try {
-            Device extDeviceTarget = conf.findDevice(cxt.getExternalDeviceName());
-            Collection<ApplicationEntity> aes = extDeviceTarget.getApplicationEntities();
-            if(aes.isEmpty()) {
-                LOG.warn("Did not find suitable AE for archiving on device {}", extDeviceTarget);
-                return null;
-            }
-            
-            return aes.iterator().next();
+            Device extDeviceTarget = conf.findDevice(extDeviceName);
+            remoteAE = extDeviceTarget.getApplicationEntity(remoteAeTitle);
         } catch(Exception e) {
-            return null;
+           error = true;
         }
+        
+        if(error || remoteAE == null) {
+            LOG.error(String.format("Could not resolve remote AE '%s' of external device '%s' for Store-and-Remember task", 
+                    remoteAeTitle, extDeviceName));
+        }
+        
+        return remoteAE;
     }
     
     private ApplicationEntity getLocalAE(StoreAndRememberContext ctx) {
        ApplicationEntity localAE = device.getApplicationEntity(ctx.getLocalAE());
+       if(localAE == null) {
+           LOG.error(String.format("Could not resolve local AE '%s' for Store-and-Remember task", 
+                   localAE));
+       }
        return localAE;
     }
   
@@ -315,6 +323,12 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         }
         
         @Override
+        public StoreAndRememberContextBuilderImpl remoteAE(String remoteAE) {
+            cxt.setRemoteAE(remoteAE);
+            return this;
+        }
+        
+        @Override
         public StoreAndRememberContextBuilderImpl retries(int retries) {
             cxt.setRetries(retries);
             return this;
@@ -336,6 +350,9 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         public StoreAndRememberContext build() {
             if(cxt.getExternalDeviceName() == null) {
                 throw new RuntimeException("Invalid store-and-remember request: no external device name set");
+            }
+            if(cxt.getRemoteAE() == null) {
+                throw new RuntimeException("Invalid store-and-remember request: no remote AE title set");
             }
             if(cxt.getLocalAE() == null) {
                 throw new RuntimeException("Invalid store-and-remember request: no local AE title set");

@@ -93,6 +93,9 @@ public class StoreAndRemember {
     @Column(name="local_ae")
     private String localAE;
     
+    @Column(name="remote_ae")
+    private String remoteAE;
+    
     @Column(name="ext_device_name")
     private String externalDeviceName;
     
@@ -155,6 +158,14 @@ public class StoreAndRemember {
 
     public void setLocalAE(String localAE) {
         this.localAE = localAE;
+    }
+    
+    public String getRemoteAE() {
+        return remoteAE;
+    }
+
+    public void setRemoteAE(String remoteAE) {
+        this.remoteAE = remoteAE;
     }
 
     public String getExternalDeviceName() {

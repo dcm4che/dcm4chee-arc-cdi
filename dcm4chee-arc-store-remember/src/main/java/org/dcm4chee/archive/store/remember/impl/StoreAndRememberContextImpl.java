@@ -51,6 +51,7 @@ public class StoreAndRememberContextImpl implements StoreAndRememberContext {
     
     private String transactionUID;
     private String localAE;
+    private String remoteAE;
     private String externalDeviceName;
     private STORE_VERIFY_PROTOCOL storeVerifyProtocol;
     private String[] instances;
@@ -63,6 +64,10 @@ public class StoreAndRememberContextImpl implements StoreAndRememberContext {
 
     public void setLocalAE(String localAE) {
         this.localAE = localAE;
+    }
+    
+    public void setRemoteAE(String remoteAE) {
+        this.remoteAE = remoteAE;
     }
 
     public void setExternalDeviceName(String externalDeviceName) {
@@ -93,6 +98,11 @@ public class StoreAndRememberContextImpl implements StoreAndRememberContext {
     @Override
     public String getLocalAE() {
         return localAE;
+    }
+    
+    @Override
+    public String getRemoteAE() {
+        return remoteAE;
     }
     
     @Override

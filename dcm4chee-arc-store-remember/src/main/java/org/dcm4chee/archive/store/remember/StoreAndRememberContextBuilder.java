@@ -57,6 +57,8 @@ public interface StoreAndRememberContextBuilder {
     
     StoreAndRememberContextBuilder externalDeviceName(String externalDeviceName);
     
+    StoreAndRememberContextBuilder remoteAE(String remoteAE);
+    
     StoreAndRememberContextBuilder storeVerifyProtocol(STORE_VERIFY_PROTOCOL storeVerifyProtocol);
 
     StoreAndRememberContextBuilder retries(int retries);

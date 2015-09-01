@@ -40,6 +40,7 @@ package org.dcm4chee.archive.copy.schedule.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -49,9 +50,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
@@ -95,6 +98,9 @@ public class ArchivingSchedulerEJB {
     
     @Inject
     private Device device;
+    
+    @Inject
+    private DicomConfiguration conf;
 
     public void onStoreInstance(StoreContext storeContext, ArchivingRule archivingRule) {
         Attributes attrs = storeContext.getAttributes();
@@ -211,18 +217,29 @@ public class ArchivingSchedulerEJB {
             hsmArchiveService.copySeries(task.getSeriesInstanceUID(),
                     task.getSourceStorageSystemGroupID(), task.getTargetStorageSystemGroupID());
         } else if (task.getTargetExternalDevice() != null) {
-            ArchiveDeviceExtension archiveDeviceExtension = device.getDeviceExtension(ArchiveDeviceExtension.class);
-            String forwardingAEtitle = archiveDeviceExtension.getFetchAETitle();
+            String extDevice = task.getTargetExternalDevice();
+            String localAE = determineLocalAETitle();
+            if(localAE == null) {
+                throw new IOException("Could not determine local AE title for Store-and-Remember "
+                        + "task to external device " + extDevice);
+            }
+            
+            String remoteAE = determineRemoteAETitle(extDevice);
+            if(remoteAE == null) {
+                throw new IOException("Could not determine remote AE title for Store-and-Remember "
+                        + "task to external device " + extDevice);
+            }
             
             StoreAndRememberContext storeRememberCxt = storeAndRemeberService.createContextBuilder()
                     .seriesUID(task.getSeriesInstanceUID())
-                    .localAE(forwardingAEtitle)
-                    .externalDeviceName(task.getTargetExternalDevice())
+                    .localAE(localAE)
+                    .externalDeviceName(extDevice)
+                    .remoteAE(remoteAE)
                     .storeVerifyProtocol(StoreVerifyService.STORE_VERIFY_PROTOCOL.AUTO)
                     .build();
             storeAndRemeberService.scheduleStoreAndRemember(storeRememberCxt);
         } else {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Invalid archiving task");
         }
 
         LOG.info("Scheduled {}", task);
@@ -231,6 +248,30 @@ public class ArchivingSchedulerEJB {
                         : ActiveService.STORE_REMEMBER_ARCHIVING, false);
         em.remove(task);
         return task;
+    }
+    
+    private String determineLocalAETitle() {
+        String localAE = null;
+        try {
+            ArchiveDeviceExtension archiveDeviceExtension = device.getDeviceExtension(ArchiveDeviceExtension.class);
+            localAE = archiveDeviceExtension.getFetchAETitle();
+        } catch(Exception e) {
+        }
+        
+        return localAE;
+    }
+    
+    private String determineRemoteAETitle(String extDeviceName) {
+        String remoteAE = null;
+        try {
+            //TODO: find smarter way which AE of external device should be used for Store&Remember
+            Device extDevice = conf.findDevice(extDeviceName);
+            Collection<ApplicationEntity> aes = extDevice.getApplicationEntities();
+            remoteAE = aes.iterator().next().getAETitle();
+        } catch(Exception e) {
+        }
+        
+        return remoteAE;
     }
 
     private void flagOrUnflagSeriesAsActiveProcess(String seriesInstanceUID, ActiveService service, boolean flag) {

@@ -74,8 +74,6 @@ public class StoreAndRememberMDB implements MessageListener {
             StoreAndRememberContext ctx = (StoreAndRememberContext) ((ObjectMessage) msg)
                     .getObject();
             // TODO: handle retries and delay
-            int retries = msg.getIntProperty("Retries");
-            long delay = msg.getLongProperty("delay");
             storeAndRememeberService.storeAndRemember(ctx);
         } catch (Throwable th) {
             LOG.warn("Failed to process " + msg, th);

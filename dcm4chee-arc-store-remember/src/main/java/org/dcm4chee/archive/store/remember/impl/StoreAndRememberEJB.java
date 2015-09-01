@@ -85,11 +85,13 @@ public class StoreAndRememberEJB {
         
         List<String> failedSopInstanceUIDs = new ArrayList<>();
         String localAE = null;
+        String remoteAE = null;
         String extDeviceName = null;
         long delay = 0;
         STORE_VERIFY_PROTOCOL storeVerifyProtocol = null;
         for (StoreAndRemember sr : srs) {
             localAE = sr.getLocalAE();
+            remoteAE = sr.getRemoteAE();
             extDeviceName = sr.getExternalDeviceName();
             storeVerifyProtocol = STORE_VERIFY_PROTOCOL.valueOf(sr.getStoreVerifyProtocol());
             delay = sr.getDelay();
@@ -101,6 +103,7 @@ public class StoreAndRememberEJB {
         
         return ctxBuilder.localAE(localAE)
                 .externalDeviceName(extDeviceName)
+                .remoteAE(remoteAE)
                 .storeVerifyProtocol(storeVerifyProtocol).delayMs(delay)
                 .instances(failedSopInstanceUIDs.toArray(new String[failedSopInstanceUIDs.size()]));
     }
@@ -134,9 +137,7 @@ public class StoreAndRememberEJB {
                 Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 MessageProducer producer = session.createProducer(storeAndRememberQueue);
                 ObjectMessage msg = session.createObjectMessage(ctx);
-                msg.setIntProperty("Retries", ctx.getRetries());
                 long delay = ctx.getDelay();
-                msg.setLongProperty("delay", delay);
                 if (delay > 0) {
                     msg.setLongProperty("_HQ_SCHED_DELIVERY", System.currentTimeMillis() + delay);
                 }

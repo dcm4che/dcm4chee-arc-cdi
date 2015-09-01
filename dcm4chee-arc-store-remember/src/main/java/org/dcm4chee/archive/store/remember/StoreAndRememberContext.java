@@ -53,6 +53,8 @@ public interface StoreAndRememberContext extends Serializable {
      
     public String getLocalAE();
     
+    public String getRemoteAE();
+    
     public String getExternalDeviceName();
         
     public STORE_VERIFY_PROTOCOL getStoreVerifyProtocol();
