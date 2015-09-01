@@ -129,9 +129,13 @@ public class CMoveSCP extends BasicCMoveSCP {
         boolean relational = queryOpts.contains(QueryOption.RELATIONAL);
         level.validateRetrieveKeys(keys, rootLevel, relational);
         String dest = rq.getString(Tag.MoveDestination);
+        ApplicationEntity destAE;
         try {
-            final ApplicationEntity destAE =
-                    aeCache.findApplicationEntity(dest);
+            destAE = aeCache.findApplicationEntity(dest);
+        } catch (ConfigurationException e) {
+            throw new DicomServiceException(Status.MoveDestinationUnknown, "Unknown Move Destination: " + dest);
+        }
+        try {
             ApplicationEntity ae = as.getApplicationEntity();
             ArchiveAEExtension arcAE = ae.getAEExtension(
                     ArchiveAEExtension.class);
@@ -180,12 +184,8 @@ public class CMoveSCP extends BasicCMoveSCP {
                     matches));
             
             return retrieveTask;
-        } catch (ConfigurationNotFoundException e) {
-            throw new DicomServiceException(Status.MoveDestinationUnknown,
-                    "Unknown Move Destination: " + dest);
         } catch (Exception e) {
-            throw new DicomServiceException(Status
-                    .UnableToCalculateNumberOfMatches, e);
+            throw new DicomServiceException(Status.UnableToCalculateNumberOfMatches, e);
         }
     }
 
