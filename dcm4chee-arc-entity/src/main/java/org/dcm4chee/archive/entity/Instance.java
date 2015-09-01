@@ -137,7 +137,7 @@ public class Instance implements Serializable {
     private String instanceNumber;
 
     //@Basic(optional = false)
-    @Column(name = "content_date_time", nullable=true)
+    @Column(name = "content_datetime", nullable=true)
     private Date contentDateTime;
 
     //@Basic(optional = false)

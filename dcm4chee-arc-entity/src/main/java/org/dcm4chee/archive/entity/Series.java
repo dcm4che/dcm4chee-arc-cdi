@@ -177,7 +177,7 @@ public class Series implements Serializable {
     private String laterality;
 
     //@Basic(optional = false)
-    @Column(name = "pps_start_date_time", nullable=true)
+    @Column(name = "pps_start", nullable=true)
     private Date performedProcedureStepStartDateTime;
 //
 //    //@Basic(optional = false)

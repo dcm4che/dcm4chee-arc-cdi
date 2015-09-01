@@ -133,7 +133,7 @@ public class MPPS implements Serializable {
     private String sopInstanceUID;
 
     //@Basic(optional = false)
-    @Column(name = "pps_start_date_time", nullable=true)
+    @Column(name = "pps_start", nullable=true)
     private Date startDateTime;
 
     //@Basic(optional = false)

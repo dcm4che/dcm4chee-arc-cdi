@@ -123,7 +123,7 @@ public class Study implements Serializable {
     @Column(name = "study_id")
     private String studyID;
 
-    @Column(name = "study_date_time", nullable = true)
+    @Column(name = "study_datetime", nullable = true)
     private Date studyDateTime;
     
     //@Basic(optional = false)
