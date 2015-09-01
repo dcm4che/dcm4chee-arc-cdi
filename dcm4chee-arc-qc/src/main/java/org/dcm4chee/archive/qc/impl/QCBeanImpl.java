@@ -460,8 +460,6 @@ public class QCBeanImpl  implements QCBean{
             movedSourceUIDs.add(new QCEventInstance(instance.getSopInstanceUID(), instance.getSeries().getSeriesInstanceUID(), sourceStudy.getStudyInstanceUID()));
             }
         
-        Instance rejNote = createAndStoreRejectionNote(
-                codeService.findOrCreate(new Code(qcRejectionCode)), toMove);
         //clone
         for(Instance instance: toClone) {
             if(!oldToNewSeries.keySet().contains(
@@ -497,6 +495,8 @@ public class QCBeanImpl  implements QCBean{
         movedSourceUIDs.addAll(clonedSourceUIDs);
         movedTargetUIDs.addAll(clonedTargetUIDs);
         recordHistoryEntry(instancesHistory);
+        Instance rejNote = createAndStoreRejectionNote(
+                codeService.findOrCreate(new Code(qcRejectionCode)), toMove);
         QCEvent segmentEvent = new QCEvent(QCOperation.SEGMENT,null,null,movedSourceUIDs,movedTargetUIDs);
         segmentEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(movedSourceUIDs, movedTargetUIDs, rejNote);

@@ -52,7 +52,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
-import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -107,7 +107,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     private EntityManager em;
     
     @Inject
-    private DicomConfiguration config;
+    private IApplicationEntityCache aeCache;
 
     private transient ArchiveDeviceExtension archDeviceExt;
     
@@ -158,7 +158,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 		for (String target : targets) {
 			ApplicationEntity targetAE;
 			try {
-				targetAE = config.findApplicationEntity(target);
+				targetAE = aeCache.findApplicationEntity(target);
 			} catch (ConfigurationException e) {
 				LOG.error("Target AE Title {} not found in configuration! skipped.");
 				continue;

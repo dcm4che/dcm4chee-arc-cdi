@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -79,6 +80,7 @@ import org.slf4j.LoggerFactory;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 
+@Stateless
 public class QCRetrieveBeanImpl implements QCRetrieveBean{
 
     private static Logger LOG = LoggerFactory.getLogger(QCRetrieveBeanImpl.class);
