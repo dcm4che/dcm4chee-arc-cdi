@@ -48,11 +48,9 @@ import javax.persistence.*;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
-import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.storage.conf.Availability;
-import org.dcm4chee.storage.conf.FileCache.Algorithm;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -169,10 +167,6 @@ public class Instance implements Serializable {
     //@Basic(optional = false)
     @Column(name = "availability")
     private Availability availability;
-
-    //@Basic(optional = false)
-    @Column(name = "archived")
-    private boolean archived;
 
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional = false)
     @JoinColumn(name = "dicomattrs_fk")
@@ -315,14 +309,6 @@ public class Instance implements Serializable {
 
     public void setAvailability(Availability availability) {
         this.availability = availability;
-    }
-
-    public boolean isArchived() {
-        return archived;
-    }
-
-    public void setArchived(boolean archived) {
-        this.archived = archived;
     }
 
     public Code getConceptNameCode() {
