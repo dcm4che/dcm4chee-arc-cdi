@@ -45,13 +45,14 @@ import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.dto.ServiceType;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
 public interface StgCmtService {
+    
+    static enum N_ACTION_REQ_STATE { INVALID_REQ, SEND_REQ_FAILED, SEND_REQ_OK }
 
     Attributes calculateResult(Attributes actionInfo);
 
@@ -61,9 +62,20 @@ public interface StgCmtService {
     void sendNEventReport(String localAET, String remoteAET,
             Attributes eventInfo, int retries);
 
-    void sendNActionRequest(String localAET, String remoteAET,
-            List<ArchiveInstanceLocator> insts, String TransactionUID,
-            int retries);
+    /**
+     * Sends a Storage-Commitment N-Action request to the given remote AE.
+     * 
+     * @param localAET Calling AE for the N-Action request
+     * @param remoteAET Receiving AE for the N-Action request
+     * @param insts Instances for which a Storage-Commitment is requested
+     * @param transactionUID UID which allows to later match a received N-Event report
+     * with the request.
+     * @return State defining if sending of the request has been successful. 
+     * IMPORTANT: The state does NOT indicate anything about the response of the N-Action request, 
+     * it just indicates if the request was sent successfully to the remote AE.
+     */
+    N_ACTION_REQ_STATE sendNActionRequest(String localAET, String remoteAET,
+            List<ArchiveInstanceLocator> insts, String transactionUID);
 
     void coerceAttributes(Attributes attrs, String remoteAET,
             ArchiveAEExtension arcAE, Role role) throws DicomServiceException;

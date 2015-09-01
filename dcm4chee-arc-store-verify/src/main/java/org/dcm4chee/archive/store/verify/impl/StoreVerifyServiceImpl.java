@@ -272,16 +272,37 @@ public class StoreVerifyServiceImpl implements StoreVerifyService {
      * @param storeResponse
      */
     public void doStorageCmtVerify(@Observes @Service(ServiceType.STOREVERIFY) CStoreSCUResponse storeResponse) {
-        String transactionID = storeResponse.getMessageID();
+        String transactionUID = storeResponse.getMessageID();
+        String localAET = storeResponse.getLocalAET();
+        String remoteAET = storeResponse.getRemoteAET();
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Observed StoreScu with ID:" + transactionID);
-        }
-
+        /*
+         * Contains also the instances whose storage has failed
+         */
         List<ArchiveInstanceLocator> insts = storeResponse.getInstances();
 
-        stgCmtService.sendNActionRequest(storeResponse.getLocalAET(),
-                storeResponse.getRemoteAET(), insts, transactionID, 1);
+        StgCmtService.N_ACTION_REQ_STATE stgCmtReqState = stgCmtService.sendNActionRequest(
+                localAET, remoteAET, insts, transactionUID);
+        
+        // sending of the N-Action request has failed 
+        if(!StgCmtService.N_ACTION_REQ_STATE.SEND_REQ_OK.equals(stgCmtReqState)) {
+            Map<String,VerifiedInstanceStatus> verifiedInstances = new HashMap<>();
+            for(ArchiveInstanceLocator inst : insts) {
+                verifiedInstances.put(inst.iuid, new VerifiedInstanceStatus(Availability.UNAVAILABLE, null));
+            }
+            
+            StoreVerifyStatus status = determineAndPersistStoreVerifyStatus(transactionUID, verifiedInstances);
+            StoreVerifyResponse storeVerifyResponse = new StoreVerifyResponse(status, 
+                    STORE_VERIFY_PROTOCOL.CSTORE_PLUS_STGCMT, 
+                    transactionUID, localAET, 
+                    remoteAET, null, verifiedInstances);
+            
+            String service = ejb.getDimseEntry(transactionUID).getService();
+            ejb.removeDimseEntry(transactionUID);
+            
+            storeVerifyResponseEvent.select(new ServiceQualifier(ServiceType.valueOf(service))).fire(storeVerifyResponse);
+        }
+        
     }
     
     /**

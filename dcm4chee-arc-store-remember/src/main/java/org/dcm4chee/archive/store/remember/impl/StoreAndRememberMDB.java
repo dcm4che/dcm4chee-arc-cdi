@@ -76,7 +76,7 @@ public class StoreAndRememberMDB implements MessageListener {
             // TODO: handle retries and delay
             storeAndRememeberService.storeAndRemember(ctx);
         } catch (Throwable th) {
-            LOG.warn("Failed to process " + msg, th);
+            LOG.error("Failed to process Store-and-Remember JMS message " + msg, th);
         }
     }
 

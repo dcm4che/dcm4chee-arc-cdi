@@ -128,6 +128,20 @@ public class StoreAndRememberContextImpl implements StoreAndRememberContext {
     @Override
     public long getDelay() {
         return delay;
-    } 
+    }
+    
+    @Override
+    public String toString() {
+        return "StoreAndRememberContext[" +
+                "transactionUID=" + transactionUID +
+                ", localAE=" + localAE +
+                ", externalDeviceName=" + externalDeviceName +
+                ", remoteAE=" + remoteAE + 
+                ", storeVerifyProtocol="+ storeVerifyProtocol +
+                ", #instances=" + instances.length +
+                ", delay=" + delay +
+                ", retries=" + retries
+                +"]";
+    }
     
 }

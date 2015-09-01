@@ -169,6 +169,7 @@ public class StgCmtServiceImpl implements StgCmtService {
 
     }
 
+    @Override
     public void scheduleNEventReport(String localAET, String remoteAET,
             Attributes eventInfo, int retries, long delay) {
         try {
@@ -258,35 +259,32 @@ public class StgCmtServiceImpl implements StgCmtService {
     }
 
     @Override
-    public void sendNActionRequest(String localAET, String remoteAET,
-            List<ArchiveInstanceLocator> insts, String clientID, int retries) {
+    public N_ACTION_REQ_STATE sendNActionRequest(String localAET, String remoteAET,
+            List<ArchiveInstanceLocator> insts, String transactionUID) {
 
         ApplicationEntity localAE = device.getApplicationEntity(localAET);
-
         if (localAE == null) {
-            LOG.warn(
-                    "Failed to send Storage Commitment Request to {} - no such local AE: {}",
-                    remoteAET, localAET);
-            return;
+            LOG.error("Invalid Storage Commitment Request [{} -> {}]: no such local AE: '{}'",
+                    localAET, remoteAET, localAET);
+            return N_ACTION_REQ_STATE.INVALID_REQ;
         }
+        
         TransferCapability tc = localAE.getTransferCapabilityFor(
                 UID.StorageCommitmentPushModelSOPClass,
                 TransferCapability.Role.SCU);
         if (tc == null) {
-            LOG.warn(
-                    "Failed to send Storage Commitment Request to {} - "
-                            + "local AE: {} does not support Storage Commitment Push Model in SCU Role",
-                    remoteAET, localAET);
-            return;
+            LOG.error("Invalid Storage Commitment Request [{}->{}]: "
+                    + "local AE '{}' does not support Storage Commitment Push Model in SCU Role",
+                    localAET, remoteAET, localAE);
+            return N_ACTION_REQ_STATE.INVALID_REQ;
         }
+        
         AAssociateRQ aarq = new AAssociateRQ();
         aarq.addPresentationContext(new PresentationContext(1,
                 UID.StorageCommitmentPushModelSOPClass, tc
                         .getTransferSyntaxes()));
         aarq.addRoleSelection(new RoleSelection(
                 UID.StorageCommitmentPushModelSOPClass, true, false));
-
-        String transactionUID = clientID;
 
         Attributes action = createAction(insts, transactionUID);
 
@@ -309,21 +307,11 @@ public class StgCmtServiceImpl implements StgCmtService {
                 }
             }
         } catch (Exception e) {
-            ArchiveAEExtension aeExt = localAE
-                    .getAEExtension(ArchiveAEExtension.class);
-            if (aeExt != null
-                    && retries < aeExt.getStorageCommitmentMaxRetries()) {
-                int delay = aeExt.getStorageCommitmentRetryInterval();
-                LOG.info(
-                        "Failed to send Storage Commitment Request to {} - retry in {}s: {}",
-                        remoteAET, delay, e);
-                scheduleNEventReport(localAET, remoteAET, action, retries + 1,
-                        delay * 1000L);
-            } else {
-                LOG.warn("Failed to send Storage Commitment Request to {}: {}",
-                        remoteAET, e);
-            }
+            LOG.error("Failed to send Storage Commitment Request [{}->{}]: {}", localAET, remoteAET, e.getMessage());
+            return N_ACTION_REQ_STATE.SEND_REQ_FAILED;
         }
+        
+        return N_ACTION_REQ_STATE.SEND_REQ_OK;
     }
 
     private Attributes createAction(List<ArchiveInstanceLocator> insts,
