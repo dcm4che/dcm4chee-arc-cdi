@@ -130,7 +130,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             }
         }
         
-        boolean isDimseStoreVerify = STORE_VERIFY_PROTOCOL.CSTORE_PLUS_STGCMT.equals(ctx.getStoreVerifyProtocol());
+        boolean isDimseStoreVerify = STORE_VERIFY_PROTOCOL.CSTORE_PLUS_STGCMT.equals(storeVerifyProtocol);
         String storeVerifyTxUID = storeVerifyService.generateTransactionUID(isDimseStoreVerify);
         createOrUpdateStoreRememberTransaction(ctx, storeVerifyTxUID);
         
