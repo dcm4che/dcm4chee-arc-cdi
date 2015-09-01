@@ -68,13 +68,13 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Franz Willer <franz.willer@gmail.com>
+ * @author Steve Kroetsch <stevekroetsch@hotmail.com>
  *
  */
 @Stateless
 public class HsmArchiveServiceEJB {
 
-    private static final Logger LOG =
-            LoggerFactory.getLogger(HsmArchiveServiceEJB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HsmArchiveServiceEJB.class);
 
     private static final String INSTANCE_PK = "instance_pk";
     private static final String DIGEST = "digest";
@@ -86,7 +86,7 @@ public class HsmArchiveServiceEJB {
     private static final String LOCATION = "location";
     private static final String SOURCE_LOCATION_PKS_TO_DELETE = "srcLocationPksToDelete";
 
-    @PersistenceContext(unitName="dcm4chee-arc")
+    @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
 
     @Inject
@@ -98,69 +98,61 @@ public class HsmArchiveServiceEJB {
     @Inject
     private LocationMgmt locationMgmt;
 
-    public void scheduleStudy(String studyIUID, String sourceGroupID, String targetGroupID, boolean deleteSource) throws IOException {
-        LOG.info("Scheduling archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}", 
+    public void scheduleStudy(String studyIUID, String sourceGroupID, String targetGroupID,
+            boolean deleteSource) throws IOException {
+        LOG.info(
+                "Scheduling archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
                 studyIUID, sourceGroupID, targetGroupID, deleteSource);
-        List<String> seriesUIDs = em.createQuery("SELECT se.seriesInstanceUID FROM Series se JOIN se.study st WHERE st.studyInstanceUID = ?1",
-                String.class)
-                .setParameter(1, studyIUID)
-                .getResultList();
+        List<String> seriesUIDs = em
+                .createQuery(
+                        "SELECT se.seriesInstanceUID FROM Series se JOIN se.study st WHERE st.studyInstanceUID = ?1",
+                        String.class).setParameter(1, studyIUID).getResultList();
         for (String uid : seriesUIDs) {
             scheduleSeries(uid, sourceGroupID, targetGroupID, deleteSource);
         }
-        LOG.info("Scheduled archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
-                new Object[] {studyIUID, sourceGroupID, targetGroupID, deleteSource});
+        LOG.info(
+                "Scheduled archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
+                new Object[] { studyIUID, sourceGroupID, targetGroupID, deleteSource });
 
     }
 
-    public void scheduleSeries(String seriesIUID, String sourceGroupID, String targetGroupID, boolean deleteSource) throws IOException {
-        LOG.info("Scheduling archiving series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
-                new Object[] {seriesIUID, sourceGroupID, targetGroupID, deleteSource});
+    public void scheduleSeries(String seriesIUID, String sourceGroupID, String targetGroupID,
+            boolean deleteSource) throws IOException {
+        LOG.info(
+                "Scheduling archiving series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
+                new Object[] { seriesIUID, sourceGroupID, targetGroupID, deleteSource });
         List<Instance> insts = em
-                .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID,
-                        Instance.class)
-                        .setParameter(1, seriesIUID)
-                        .getResultList();
+                .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID, Instance.class)
+                .setParameter(1, seriesIUID).getResultList();
         if (insts.size() > 0) {
-            Instance instance = insts.get(0);
-            Attributes attrs = Utils.mergeAndNormalize(instance.getSeries().getStudy().getAttributes(),instance.getSeries().getAttributes(),instance.getAttributes());
-            scheduleInstances(insts, sourceGroupID, targetGroupID, getTargetName(attrs, targetGroupID), deleteSource);
-            LOG.info("Scheduled archiving {} instances of series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
-                    new Object[] {insts.size(), seriesIUID, sourceGroupID, targetGroupID, deleteSource});
+            scheduleInstances(insts, sourceGroupID, targetGroupID, deleteSource);
+            LOG.info(
+                    "Scheduled archiving {} instances of series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
+                    new Object[] { insts.size(), seriesIUID, sourceGroupID, targetGroupID,
+                            deleteSource });
         }
     }
 
-    public void scheduleInstances(List<Instance> insts, String sourceGroupID, String targetStorageSystemGroupID, String targetName, boolean deleteSource) throws IOException {
-        Location selected;
-        String storageSystemGroupID;
+    public void scheduleInstances(List<Instance> insts, String sourceGroupID, String targetGroupID,
+            boolean deleteSource) throws IOException {
+        Instance instance = insts.get(0);
+        Attributes attrs = Utils.mergeAndNormalize(instance.getSeries().getStudy().getAttributes(),
+                instance.getSeries().getAttributes(), instance.getAttributes());
+        String targetName = getTargetName(attrs, targetGroupID);
+        scheduleInstances(insts, sourceGroupID, targetGroupID, targetName, deleteSource);
+    }
+
+    public void scheduleInstances(List<Instance> insts, String sourceGroupID, String targetGroupID,
+            String targetName, boolean deleteSource) throws IOException {
         List<ContainerEntry> entries = new ArrayList<ContainerEntry>(insts.size());
-        LocationDeleteContext srcLocationToDeleteCtx = deleteSource ? new LocationDeleteContext(insts.size()) : null;
-        boolean instOnTarget;
-        inst: for (Instance inst : insts) {
-            selected = null;
-            instOnTarget = false;
-            for (Location location : inst.getLocations()) {
-                storageSystemGroupID = location.getStorageSystemGroupID();
-                if (storageSystemGroupID.equals(targetStorageSystemGroupID)) {
-                    LOG.info("{} already archived to Storage System Group {} - skip from archiving",
-                            inst, storageSystemGroupID);
-                    if (!deleteSource) {
-                        continue inst;
-                    } else {
-                        instOnTarget = true;
-                    }
-                } else if (storageSystemGroupID.equals(sourceGroupID)) {
-                    selected = location;
-                }
-            }
-            if (selected == null) {
-                LOG.info("{} not available at Storage System Group {} - skip from archiving", inst, sourceGroupID);
-            } else {
-                if (deleteSource)
-                    srcLocationToDeleteCtx.add(selected.getPk(), inst.getPk());
-                if (!instOnTarget) {
-                    ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),
-                            selected.getDigest())
+        LocationDeleteContext deleteCtx = deleteSource ? new LocationDeleteContext(insts.size())
+                : null;
+        for (Instance inst : filterInstancesAlreadyArchived(insts, targetGroupID, deleteSource)) {
+            Location selected = (sourceGroupID == null) ? selectBestLocation(inst)
+                    : selectLocationFromStorageGroup(inst, sourceGroupID);
+
+            ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),
+                    selected.getDigest())
                     .setSourceStorageSystemGroupID(selected.getStorageSystemGroupID())
                     .setSourceStorageSystemID(selected.getStorageSystemID())
                     .setSourceName(selected.getStoragePath())
@@ -170,26 +162,81 @@ public class HsmArchiveServiceEJB {
                     .setProperty(OTHER_ATTRS_DIGEST, selected.getOtherAttsDigest())
                     .setProperty(FILE_SIZE, selected.getSize())
                     .setProperty(TRANSFER_SYNTAX, selected.getTransferSyntaxUID())
-                    .setProperty(TIME_ZONE, selected.getTimeZone())
-                    .setProperty(LOCATION, selected).build();
-                    entries.add(entry);
-                }
+                    .setProperty(TIME_ZONE, selected.getTimeZone()).setProperty(LOCATION, selected)
+                    .build();
+            entries.add(entry);
+
+            if (deleteCtx != null) {
+                deleteCtx.add(selected.getPk(), inst.getPk());
             }
         }
+
         if (entries.size() > 0) {
-            ArchiverContext ctx = archiverService.createContext(targetStorageSystemGroupID, targetName);
+            ArchiverContext ctx = archiverService.createContext(targetGroupID, targetName);
             ctx.setEntries(entries);
             ctx.setProperty(DELETE_SOURCE, new Boolean(deleteSource));
-            if (deleteSource)
-                ctx.setProperty(SOURCE_LOCATION_PKS_TO_DELETE, srcLocationToDeleteCtx);
+            if (deleteCtx != null) {
+                ctx.setProperty(SOURCE_LOCATION_PKS_TO_DELETE, deleteCtx);
+            }
             archiverService.scheduleStore(ctx);
-        } else {
-            LOG.info("No source Locations found! Skip copy/move of {} instances from {} to {}.", insts.size(), sourceGroupID, targetStorageSystemGroupID);
-            if (deleteSource && srcLocationToDeleteCtx.size() > 0) {
-                LOG.debug("Deletion of source Locations:{}",srcLocationToDeleteCtx.getLocationPks());
-                deleteLocations(srcLocationToDeleteCtx);
+        }
+    }
+
+    public List<Instance> filterInstancesAlreadyArchived(List<Instance> insts,
+            String targetGroupID, boolean deleteSource) {
+        LocationDeleteContext deleteCtx = deleteSource ? new LocationDeleteContext() : null;
+        List<Instance> filtered = new ArrayList<Instance>();
+        inst: for (Instance inst : insts) {
+            for (Location location : inst.getLocations()) {
+                if (location.getStorageSystemGroupID().equals(targetGroupID)) {
+                    LOG.info(
+                            "{} already archived to Storage System Group {} - skip from archiving",
+                            inst, targetGroupID);
+                    if (deleteCtx != null) {
+                        deleteCtx.add(location.getPk(), inst.getPk());
+                    }
+                    continue inst;
+                }
+            }
+            filtered.add(inst);
+        }
+        if (deleteCtx != null && deleteCtx.size() > 0) {
+            LOG.debug("Deleting source locations for instances already archived:{}",
+                    deleteCtx.getLocationPks());
+            deleteLocations(deleteCtx);
+        }
+        return insts;
+    }
+
+    private Location selectLocationFromStorageGroup(Instance inst, String sourceGroupID) {
+        for (Location location : inst.getLocations()) {
+            String groupID = location.getStorageSystemGroupID();
+            if (groupID.equals(sourceGroupID)) {
+                return location;
             }
         }
+        LOG.info("{} not available at Storage System Group {} - skip from archiving", inst,
+                sourceGroupID);
+        return null;
+    }
+
+    private Location selectBestLocation(Instance inst) {
+        Location selected = null;
+        for (Location location : inst.getLocations()) {
+            StorageSystemGroup bestGroup = null;
+            String groupID = location.getStorageSystemGroupID();
+            StorageDeviceExtension stgExt = storageDeviceExtension();
+            StorageSystemGroup group = stgExt.getStorageSystemGroup(groupID);
+            if (bestGroup == null
+                    || bestGroup.getStorageAccessTime() > group.getStorageAccessTime()) {
+                bestGroup = group;
+                selected = location;
+            }
+        }
+        if (selected == null) {
+            LOG.info("Location could not be selected for {} - skip from archiving", inst);
+        }
+        return selected;
     }
 
     private StorageDeviceExtension storageDeviceExtension() {
@@ -210,24 +257,25 @@ public class HsmArchiveServiceEJB {
             Instance inst = em.find(Instance.class, entry.getProperty(INSTANCE_PK));
             updateStudyAccessTime(inst, ctx.getStorageSystemGroupID());
             Location location = new Location.Builder()
-            .storageSystemGroupID(ctx.getStorageSystemGroupID())
-            .storageSystemID(ctx.getStorageSystemID())
-            .storagePath(notInContainer ? entry.getNotInContainerName() : ctx.getName())
-            .entryName(notInContainer ? null : entry.getName())
-            .digest((String) entry.getProperty(DIGEST))
-            .otherAttsDigest((String) entry.getProperty(OTHER_ATTRS_DIGEST))
-            .size((Long) entry.getProperty(FILE_SIZE))
-            .transferSyntaxUID((String) entry.getProperty(TRANSFER_SYNTAX))
-            .timeZone((String) entry.getProperty(TIME_ZONE))
-            .status(ctx.getObjectStatus() != null ? Status.valueOf(ctx.getObjectStatus()) : Status.ARCHIVED)
-            .build();
+                    .storageSystemGroupID(ctx.getStorageSystemGroupID())
+                    .storageSystemID(ctx.getStorageSystemID())
+                    .storagePath(notInContainer ? entry.getNotInContainerName() : ctx.getName())
+                    .entryName(notInContainer ? null : entry.getName())
+                    .digest((String) entry.getProperty(DIGEST))
+                    .otherAttsDigest((String) entry.getProperty(OTHER_ATTRS_DIGEST))
+                    .size((Long) entry.getProperty(FILE_SIZE))
+                    .transferSyntaxUID((String) entry.getProperty(TRANSFER_SYNTAX))
+                    .timeZone((String) entry.getProperty(TIME_ZONE))
+                    .status(ctx.getObjectStatus() != null ? Status.valueOf(ctx.getObjectStatus())
+                            : Status.ARCHIVED).build();
             inst.getLocations().add(location);
             LOG.info("Create {}", location);
             em.persist(location);
             em.merge(inst);
         }
         em.flush();
-        LocationDeleteContext srcLocationPksToDelete = (LocationDeleteContext) ctx.getProperty(SOURCE_LOCATION_PKS_TO_DELETE);
+        LocationDeleteContext srcLocationPksToDelete = (LocationDeleteContext) ctx
+                .getProperty(SOURCE_LOCATION_PKS_TO_DELETE);
         if (srcLocationPksToDelete != null) {
             LOG.info("Source Locations to delete:{}", srcLocationPksToDelete.getLocationPks());
             deleteLocations(srcLocationPksToDelete);
@@ -235,25 +283,26 @@ public class HsmArchiveServiceEJB {
         LOG.debug("onContainerEntriesStored for {} finished", ctx.getStorageSystemGroupID());
     }
 
-    private void updateStudyAccessTime(Instance inst,
-            String storageSystemGroupID) {
+    private void updateStudyAccessTime(Instance inst, String storageSystemGroupID) {
         Study study = inst.getSeries().getStudy();
         locationMgmt.findOrCreateStudyOnStorageGroup(study, storageSystemGroupID);
     }
 
     private void deleteLocations(LocationDeleteContext srcLocationToDeleteCtx) {
-        List<Location> locations = em.createQuery("SELECT l FROM Location l JOIN FETCH l.instances WHERE l.pk IN :locationPks",
-                Location.class)
+        List<Location> locations = em
+                .createQuery(
+                        "SELECT l FROM Location l JOIN FETCH l.instances WHERE l.pk IN :locationPks",
+                        Location.class)
                 .setParameter("locationPks", srcLocationToDeleteCtx.getLocationPks())
                 .getResultList();
         ArrayList<Location> locationToDeletePks = new ArrayList<Location>(locations.size());
         for (Location l : locations) {
             long instPk = srcLocationToDeleteCtx.getInstancePk(l.getPk());
             Instance inst;
-            for (Iterator<Instance> it = l.getInstances().iterator() ; it.hasNext() ;) {
+            for (Iterator<Instance> it = l.getInstances().iterator(); it.hasNext();) {
                 inst = it.next();
                 if (inst.getPk() == instPk) {
-                    for (Iterator<Location> itL = inst.getLocations().iterator() ; itL.hasNext() ;) {
+                    for (Iterator<Location> itL = inst.getLocations().iterator(); itL.hasNext();) {
                         if (itL.next().getPk() == l.getPk()) {
                             itL.remove();
                             break;
@@ -272,11 +321,12 @@ public class HsmArchiveServiceEJB {
         if (locationToDeletePks.isEmpty()) {
             LOG.info("No unreferenced Location to delete!");
         } else {
-            LOG.debug("Schedule deletion of source Locations:{}",locations);
+            LOG.debug("Schedule deletion of source Locations:{}", locations);
             try {
                 locationMgmt.scheduleDelete(locationToDeletePks, 100, false);
             } catch (Exception x) {
-                LOG.error("Schedule deletion of source Locations failed! locations:{}", locations, x);
+                LOG.error("Schedule deletion of source Locations failed! locations:{}", locations,
+                        x);
             }
         }
     }

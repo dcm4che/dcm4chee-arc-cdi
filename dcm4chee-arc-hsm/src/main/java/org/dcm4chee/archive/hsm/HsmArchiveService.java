@@ -49,10 +49,14 @@ public interface HsmArchiveService {
 
     void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
 
+    void copyStudy(String studyIUID, String targetGroupID) throws IOException;
+
     void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
 
     void copySeries(String seriesIUID, String sourceGroupID, String targetGroupID)
             throws IOException;
+
+    void copySeries(String seriesIUID, String targetGroupID) throws IOException;
 
     void moveSeries(String seriesIUID, String sourceGroupID, String targetGroupID)
             throws IOException;

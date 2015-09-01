@@ -51,6 +51,7 @@ import org.dcm4chee.storage.archiver.service.ContainerEntriesStored;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Franz Willer <franz.willer@gmail.com>
+ * @author Steve Kroetsch <stevekroetsch@hotmail.com>
  *
  */
 @ApplicationScoped
@@ -71,6 +72,11 @@ public class HsmArchiveServiceImpl implements HsmArchiveService {
     }
 
     @Override
+    public void copyStudy(String studyIUID, String targetGroupID) throws IOException {
+        ejb.scheduleStudy(studyIUID, null, targetGroupID, false);
+    }
+
+    @Override
     public void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID)
             throws IOException {
         ejb.scheduleStudy(studyIUID, sourceGroupID, targetGroupID, true);
@@ -83,8 +89,14 @@ public class HsmArchiveServiceImpl implements HsmArchiveService {
     }
 
     @Override
+    public void copySeries(String seriesIUID, String targetGroupID) throws IOException {
+        ejb.scheduleSeries(seriesIUID, null, targetGroupID, false);
+    }
+
+    @Override
     public void moveSeries(String seriesIUID, String sourceGroupID, String targetGroupID)
             throws IOException {
         ejb.scheduleSeries(seriesIUID, sourceGroupID, targetGroupID, true);
     }
+
 }
