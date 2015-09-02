@@ -222,8 +222,8 @@ public class HsmArchiveServiceEJB {
 
     private Location selectBestLocation(Instance inst) {
         Location selected = null;
+        StorageSystemGroup bestGroup = null;
         for (Location location : inst.getLocations()) {
-            StorageSystemGroup bestGroup = null;
             String groupID = location.getStorageSystemGroupID();
             StorageDeviceExtension stgExt = storageDeviceExtension();
             StorageSystemGroup group = stgExt.getStorageSystemGroup(groupID);
