@@ -254,9 +254,13 @@ public class StoreServiceImpl implements StoreService {
             Path metadataPath = null;
             try {
                 StorageContext metadataContext = futureMetadataContext.get();
-                metadataPath = metadataContext.getFilePath();
-                if (metadataPath != null) {
-                    storageService.deleteObject(metadataContext, metadataPath.toString());
+                if (metadataContext != null) {
+	                metadataPath = metadataContext.getFilePath();
+	                if (metadataPath != null) {
+	                    storageService.deleteObject(metadataContext, metadataPath.toString());
+	                }
+                } else {
+                	LOG.info("Skip cleanMetaData. Missing StoreContext for metadata!");
                 }
             } catch (Exception e) {
                 LOG.warn("{} failed to clean metadata path {}",

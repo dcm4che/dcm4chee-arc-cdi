@@ -344,31 +344,42 @@ public class QCBeanImpl  implements QCBean{
             sopUIDs.add(inst.getSopInstanceUID());
         
         toMove = locateInstances(sopUIDs.toArray(new String[sopUIDs.size()]));
-        Series newSeries;
-        for(Instance instance: toMove) {
-            if(!oldToNewSeries.keySet().contains(
-                    instance.getSeries().getSeriesInstanceUID())) {
-                newSeries= createSeries(instance.getSeries(), targetStudy, targetSeriesAttrs);
+        Series newSeries = null;
+        for (Instance instance : toMove) {
+            if (!oldToNewSeries.keySet().contains(instance.getSeries().getSeriesInstanceUID())) {
+                try {
+                    Query q = em.createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID);
+                    q.setParameter(1, targetSeriesAttrs.getString(Tag.SeriesInstanceUID));
+                    newSeries = (Series) q.getSingleResult();
+                } catch (NoResultException x) {
+                    newSeries = createSeries(instance.getSeries(), targetStudy, targetSeriesAttrs);
+                }
                 Series series = instance.getSeries();
                 QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(), 
                         series.getAttributes(), studyHistory);
-                oldToNewSeries.put(instance.getSeries().getSeriesInstanceUID(), 
-                        new NewSeriesTuple(newSeries.getPk(),seriesHistory));
-                
-            }
-            else {
+                oldToNewSeries.put(instance.getSeries().getSeriesInstanceUID(),
+                        new NewSeriesTuple(newSeries.getPk(), seriesHistory));
+
+            } else {
                 long newSeriesPK = oldToNewSeries.get(instance.getSeries().getSeriesInstanceUID()).getPK();
-                newSeries = em.find(Series.class, newSeriesPK);
+                if (newSeries.getPk() != newSeriesPK)
+                    newSeries = em.find(Series.class, newSeriesPK);
             }
-            Instance newInstance = move(instance,newSeries,qcRejectionCode);
-            QCInstanceHistory instanceHistory = new QCInstanceHistory(targetStudyUID,
-                    newSeries.getSeriesInstanceUID(), instance.getSopInstanceUID(),
-                    newInstance.getSopInstanceUID(), newInstance.getSopInstanceUID(), false);
+            Instance newInstance = move(instance, newSeries, qcRejectionCode);
+            QCInstanceHistory instanceHistory = new QCInstanceHistory(
+                    targetStudyUID, newSeries.getSeriesInstanceUID(),
+                    instance.getSopInstanceUID(),
+                    newInstance.getSopInstanceUID(),
+                    newInstance.getSopInstanceUID(), false);
             instanceHistory.setSeries(oldToNewSeries.get(
-                    instance.getSeries().getSeriesInstanceUID()).getSeriesHistory());
+                    instance.getSeries().getSeriesInstanceUID())
+                    .getSeriesHistory());
             instancesHistory.add(instanceHistory);
-            targetUIDs.add(new QCEventInstance(newInstance.getSopInstanceUID(), newSeries.getSeriesInstanceUID(), targetStudyUID));
-            sourceUIDs.add(new QCEventInstance(instance.getSopInstanceUID(),instance.getSeries().getSeriesInstanceUID(), sourceStudy.getStudyInstanceUID()));
+            targetUIDs.add(new QCEventInstance(newInstance.getSopInstanceUID(),
+                    newSeries.getSeriesInstanceUID(), targetStudyUID));
+            sourceUIDs.add(new QCEventInstance(instance.getSopInstanceUID(),
+                    instance.getSeries().getSeriesInstanceUID(), sourceStudy
+                            .getStudyInstanceUID()));
         }
 
         instancesHistory.addAll(handleKOPRSR(targetSeriesAttrs, qcRejectionCode, 
@@ -2562,7 +2573,7 @@ public class QCBeanImpl  implements QCBean{
         kos.setDate(Tag.ContentDateAndTime, new Date());
         kos.setString(Tag.Modality, VR.CS, "KO");
         kos.setNull(Tag.ReferencedPerformedProcedureStepSequence, VR.SQ);
-        kos.setString(Tag.SeriesInstanceUID, VR.UI, UIDUtils.createUID());
+        kos.setString(Tag.SeriesInstanceUID, VR.UI, getRejectionNoteSeriesUID(kos.getString(Tag.StudyInstanceUID)));
         kos.setString(Tag.SeriesNumber, VR.IS, "999");
         kos.setString(Tag.SeriesDescription, VR.LO, "Rejection Note");
         kos.setString(Tag.InstanceNumber, VR.IS, "1");
@@ -2576,6 +2587,15 @@ public class QCBeanImpl  implements QCBean{
         return kos;
     }
  
+    private String getRejectionNoteSeriesUID(String studyIUID) {
+        Query q = em.createQuery("SELECT s.seriesInstanceUID from Series s WHERE s.study.studyInstanceUID = ?1 AND s.seriesDescription = ?2");
+        q.setParameter(1, studyIUID);
+        q.setParameter(2, "Rejection Note");
+        @SuppressWarnings("unchecked")
+        List<String> uids = q.getResultList();
+        return uids.isEmpty() ? UIDUtils.createUID() : uids.get(0);
+    }
+
     private static String getValueType(String sopClassUID) {
         RecordType rt = recordFactory.getRecordType(sopClassUID);
         return (rt == RecordType.IMAGE || rt == RecordType.WAVEFORM) ? rt.name() : "COMPOSITE";
