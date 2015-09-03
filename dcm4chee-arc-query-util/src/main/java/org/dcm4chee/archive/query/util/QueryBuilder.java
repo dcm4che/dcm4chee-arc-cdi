@@ -71,6 +71,7 @@ import org.dcm4chee.archive.entity.QVerifyingObserver;
 import com.mysema.query.BooleanBuilder;
 import com.mysema.query.jpa.hibernate.HibernateQuery;
 import com.mysema.query.jpa.hibernate.HibernateSubQuery;
+import com.mysema.query.types.CollectionExpression;
 import com.mysema.query.types.EntityPath;
 import com.mysema.query.types.ExpressionUtils;
 import com.mysema.query.types.Path;
@@ -424,16 +425,54 @@ public class QueryBuilder {
     public static Predicate hideRejectedInstance(QueryParam queryParam) {
         QueryRetrieveView queryRetrieveView = queryParam.getQueryRetrieveView();
         org.dcm4che3.data.Code[] codes = queryRetrieveView.getShowInstancesRejectedByCodes();
-        if (codes.length == 0)
+        
+        if (codes.length == 0) {
             return queryRetrieveView.isHideNotRejectedInstances()
                     ? QInstance.instance.rejectionNoteCode.isNotNull()
                     : QInstance.instance.rejectionNoteCode.isNull();
-
+        }
+                    
+//        BooleanExpression showRejected =
+//                QInstance.instance.rejectionNoteCode.in(toCodes(codes));
+        CollectionExpression<List<Code>,Code> matchingCodes = getMatchingCodesSubQuery(codes);
         BooleanExpression showRejected =
-                QInstance.instance.rejectionNoteCode.in(toCodes(codes));
+                QInstance.instance.rejectionNoteCode.in(matchingCodes);
+        
         return queryRetrieveView.isHideNotRejectedInstances()
                 ? showRejected
                 : QInstance.instance.rejectionNoteCode.isNull().or(showRejected);
+    }
+    
+    // TODO: QUICK-FIX: This produces a possibly very slow subquery for Codes: TRY TO FIND OTHER SOLUTION THAT
+    // DOES NOT INVOLVE QUERY
+    private static CollectionExpression<List<Code>, Code> getMatchingCodesSubQuery(org.dcm4che3.data.Code[] codes) {
+        HibernateSubQuery codesSubQuery = new HibernateSubQuery().from(QCode.code);
+        
+        if(codes.length == 0) {
+            throw new IllegalArgumentException("Matching codes subquery not implemented for empty codes");
+        } else if(codes.length == 1) {
+            return codesSubQuery.where(QCode.code.codeValue.eq(codes[0].getCodeValue())
+                    .and(QCode.code.codingSchemeDesignator.eq(codes[0].getCodingSchemeDesignator()))).list(QCode.code);
+        } else {
+            Predicate matchingCodesPredicate = null;
+            BooleanExpression firstExp = null;
+            for (org.dcm4che3.data.Code c : codes) {
+                BooleanExpression exp = QCode.code.codeValue.eq(c.getCodeValue()).and(
+                        QCode.code.codingSchemeDesignator.eq(c.getCodingSchemeDesignator()));
+
+                if (matchingCodesPredicate == null && firstExp != null) {
+                    matchingCodesPredicate = ExpressionUtils.or(firstExp, exp);
+                } else if (matchingCodesPredicate != null) {
+                    matchingCodesPredicate = ExpressionUtils.or(matchingCodesPredicate, exp);
+                }
+
+                if (firstExp == null) {
+                    firstExp = exp;
+                }
+            }
+
+            return codesSubQuery.where(matchingCodesPredicate).list(QCode.code);
+        }
     }
 
     public static Predicate hideRejectionNote(QueryParam queryParam) {
@@ -441,18 +480,21 @@ public class QueryBuilder {
         org.dcm4che3.data.Code[] codes = queryRetrieveView.getHideRejectionNotesWithCodes();
         if (codes.length == 0)
             return null;
-
+        
+//        return QInstance.instance.conceptNameCode.isNull().or(
+//                QInstance.instance.conceptNameCode.notIn(toCodes(codes)));
+        CollectionExpression<List<Code>,Code> matchingCodes = getMatchingCodesSubQuery(codes);
         return QInstance.instance.conceptNameCode.isNull().or(
-                QInstance.instance.conceptNameCode.notIn(toCodes(codes)));
+                QInstance.instance.conceptNameCode.notIn(matchingCodes));
     }
 
-    private static Code[] toCodes(org.dcm4che3.data.Code[] in) {
-        Code[] out = new Code[in.length];
-        for (int i = 0; i < out.length; i++) {
-            out[i] = (Code) in[i];
-        }
-        return out;
-    }
+//    private static Code[] toCodes(org.dcm4che3.data.Code[] in) {
+//        Code[] out = new Code[in.length];
+//        for (int i = 0; i < out.length; i++) {
+//            out[i] = (Code) in[i];
+//        }
+//        return out;
+//    }
 
     public static Predicate pids(IDWithIssuer[] pids,
             boolean matchLinkedPatientIDs, boolean matchUnknown) {
