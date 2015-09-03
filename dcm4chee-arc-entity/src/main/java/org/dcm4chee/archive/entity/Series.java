@@ -73,6 +73,9 @@ import org.dcm4chee.archive.conf.AttributeFilter;
  */
 @NamedQueries({
 @NamedQuery(
+        name=Series.FIND_REJECTED,
+        query="SELECT se FROM Series se WHERE se.isRejected = TRUE"),
+@NamedQuery(
     name=Series.FIND_BY_SERIES_INSTANCE_UID,
     query="SELECT s FROM Series s WHERE s.seriesInstanceUID = ?1"),
 @NamedQuery(
@@ -117,10 +120,16 @@ public class Series implements Serializable {
 
     private static final long serialVersionUID = -8317105475421750944L;
 
+    public static final String FIND_REJECTED = "Series.findRejected";
+
     public static final String FIND_BY_SERIES_INSTANCE_UID = "Series.findBySeriesInstanceUID";
+
     public static final String FIND_BY_SERIES_INSTANCE_UID_EAGER = "Series.findBySeriesInstanceUID.eager";
+
     public static final String PATIENT_STUDY_SERIES_ATTRIBUTES = "Series.patientStudySeriesAttributes";
+
     public static final String FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET = "Series.findByStudyInstanceUIDAndSourceAET";
+
     public static final String FIND_BY_SERIES_INSTANCE_UID_FETCH_REQ_ATTRS = "Series.findBySeriesInstanceUIDFetchReqAttrs";
 
     @Id

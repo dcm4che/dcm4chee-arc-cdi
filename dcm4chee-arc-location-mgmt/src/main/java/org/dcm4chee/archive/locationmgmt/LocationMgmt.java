@@ -92,4 +92,6 @@ public interface LocationMgmt {
 
     Collection<Long> filterForMarkedForDeletionStudiesOnGroup(Collection<Long> refPKs);
 
+	void purgeStudiesRejectedOrDeletedOnAllGroups();
+
 }

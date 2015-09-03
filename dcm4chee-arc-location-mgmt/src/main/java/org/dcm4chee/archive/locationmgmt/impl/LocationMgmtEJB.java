@@ -232,7 +232,7 @@ public class LocationMgmtEJB implements LocationMgmt {
         List<Location> result = query.getResultList();
 
         Map<String, Location> containerLocations = new HashMap<String, Location>();
-        Set<Series> seriesToPurge = new HashSet<Series>();
+
         Location ref;
         count += result.size();
         if(checkStudyMarked)
@@ -259,24 +259,11 @@ public class LocationMgmtEJB implements LocationMgmt {
                     count--;
                 }
             }
-
-            for(Instance inst : ref.getInstances()) {
-                if(inst.getSeries().isRejected())
-                    seriesToPurge.add(inst.getSeries());
-            }
         }
         if (containerLocations.isEmpty()) {
             count += deleteContainer(containerLocations);
         }
         
-        for(Series series : seriesToPurge) {
-            try{
-            em.remove(series);
-            }
-            catch(Exception e) {
-                LOG.error("Unable to remove purged series {} - reason {}", series, e);
-            }
-        }
         return count;
     }
 
@@ -309,16 +296,14 @@ public class LocationMgmtEJB implements LocationMgmt {
                     studyOnStgSysGrp = findStudyOnStorageGroup(studyUID, groupID);
                     LOG.debug("StudyOnStorageGroup entry already created in other thread! Study:{}, groupID:{}", studyUID, groupID);
                 } catch (NoResultException e1) {
-		            LOG.debug("Error retrieving StudyOnStorageGroup entry - "
-		                    + "reason {}, creating new entry", e1);
-		            studyOnStgSysGrp = new StudyOnStorageSystemGroup();
-		            studyOnStgSysGrp.setStudy(study);
-		            studyOnStgSysGrp.setStorageSystemGroupID(groupID);
-		            studyOnStgSysGrp.setMarkedForDeletion(false);
-		            studyOnStgSysGrp
-		                    .setAccessTime(new Date(System.currentTimeMillis()));
-		            em.persist(studyOnStgSysGrp);
-		            return;
+                    LOG.debug("Error retrieving StudyOnStorageGroup entry - " + "reason {}, creating new entry", e1);
+                    studyOnStgSysGrp = new StudyOnStorageSystemGroup();
+                    studyOnStgSysGrp.setStudy(study);
+                    studyOnStgSysGrp.setStorageSystemGroupID(groupID);
+                    studyOnStgSysGrp.setMarkedForDeletion(false);
+                    studyOnStgSysGrp.setAccessTime(new Date(System.currentTimeMillis()));
+                    em.persist(studyOnStgSysGrp);
+                    return;
                 }
 	        }
     	}
@@ -549,9 +534,10 @@ public class LocationMgmtEJB implements LocationMgmt {
                     //unset marked for deletion to compensate for other instances to be deleted when the current delete fails
                     StudyOnStorageSystemGroup studyOnStgSysGrp = findStudyOnStorageGroup(inst.getSeries()
                             .getStudy().getStudyInstanceUID(), loc.getStorageSystemGroupID());
-                    studyOnStgSysGrp
-                            .setAccessTime(new Date(System.currentTimeMillis()));
-                    studyOnStgSysGrp.setMarkedForDeletion(false);
+                    em.remove(studyOnStgSysGrp);
+//                    studyOnStgSysGrp
+//                            .setAccessTime(new Date(System.currentTimeMillis()));
+//                    studyOnStgSysGrp.setMarkedForDeletion(false);
                     if(inst.getLocations().isEmpty()) 
                         em.remove(inst);
                     
@@ -584,4 +570,53 @@ public class LocationMgmtEJB implements LocationMgmt {
         }
     }
 
+    @Override
+    public void purgeStudiesRejectedOrDeletedOnAllGroups() {
+        purgeRejectedSeries();
+        List<Study> toPurge = findStudiesNoStorageGroup();
+        if(toPurge != null)
+        for(Study studyNoStgGrp : toPurge) {
+            if(!toPurge.contains(studyNoStgGrp))
+            toPurge.add(studyNoStgGrp);
+        }
+        try{
+        for(Study studyToPurge : toPurge) {
+            LOG.info("Purged study rejected or completely deleted {}",
+                    studyToPurge);
+            em.remove(studyToPurge);
+        }
+        }
+        catch(Exception e) {
+            LOG.error("Problem occured while purging rejected or deleted "
+                    + "studies - reason {}", e);
+        }
+    }
+
+    private void purgeRejectedSeries() {
+        List<Series> seriesToPurge = findRejectedSeries();
+        for(Series series : seriesToPurge) {
+            try{
+            em.remove(series);
+            }
+            catch(Exception e) {
+                LOG.error("Unable to remove purged series {} - reason {}", series, e);
+            }
+            LOG.info("Removed rejected series {}", series);
+        }
+    }
+
+    private List<Series> findRejectedSeries() {
+        List<Series> result = em.createNamedQuery(
+                Series.FIND_REJECTED,
+                Series.class).getResultList();
+        return result == null ? new ArrayList<Series>() : result;
+    }
+
+
+    private List<Study> findStudiesNoStorageGroup() {
+        return em.createNamedQuery(
+                        StudyOnStorageSystemGroup.FIND_STUDIES_NO_STG_GROUP,
+                        Study.class)
+                .getResultList();
+    }
 }

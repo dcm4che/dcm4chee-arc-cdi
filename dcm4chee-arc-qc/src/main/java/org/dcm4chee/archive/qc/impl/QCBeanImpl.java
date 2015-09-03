@@ -719,6 +719,7 @@ public class QCBeanImpl  implements QCBean{
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(deleteEvent);
         rejectAndScheduleForDeletion(rejectedInstances, qcRejectionCode);
         changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
+        study.setRejected(true);
         return deleteEvent;
     }
 
@@ -747,6 +748,7 @@ public class QCBeanImpl  implements QCBean{
         rejectAndScheduleForDeletion(insts, qcRejectionCode);
 
         changeRequester.scheduleChangeRequest(eventUIDs, null, rejNote);
+        series.setRejected(true);
         return deleteEvent;
     }
 

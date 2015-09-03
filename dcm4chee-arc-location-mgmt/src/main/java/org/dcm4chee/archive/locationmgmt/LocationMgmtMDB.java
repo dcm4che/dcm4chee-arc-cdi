@@ -85,6 +85,7 @@ public class LocationMgmtMDB implements MessageListener{
             LOG.info("{} Locations removed!",locationManager.doDelete(refPks, 
                     fromDeleter));
             }
+            locationManager.purgeStudiesRejectedOrDeletedOnAllGroups();
         } catch (Throwable th) {
             LOG.warn("Failed to process " + message, th);
         } 

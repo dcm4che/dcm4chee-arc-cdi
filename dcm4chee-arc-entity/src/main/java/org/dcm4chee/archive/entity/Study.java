@@ -65,7 +65,6 @@ import javax.persistence.Version;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
-import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 
 
@@ -96,6 +95,7 @@ public class Study implements Serializable {
     private static final long serialVersionUID = -6358525535057418771L;
 
     public static final String FIND_BY_STUDY_INSTANCE_UID = "Study.findByStudyInstanceUID";
+
     public static final String FIND_BY_STUDY_INSTANCE_UID_EAGER = "Study.findByStudyInstanceUID.eager";
 
     @Id

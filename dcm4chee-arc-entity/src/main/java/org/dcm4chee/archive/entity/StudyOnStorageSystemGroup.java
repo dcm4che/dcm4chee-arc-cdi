@@ -59,6 +59,11 @@ import javax.persistence.UniqueConstraint;
  */
 @NamedQueries({
 @NamedQuery(
+        name=StudyOnStorageSystemGroup.FIND_STUDIES_NO_STG_GROUP,
+        query="SELECT s FROM Study s WHERE NOT EXISTS "
+                + "(SELECT stg from StudyOnStorageSystemGroup stg "
+                + "WHERE stg.study = s)"),
+@NamedQuery(
     name=StudyOnStorageSystemGroup.FIND_BY_STUDY_INSTANCE_UID_AND_GRP_UID,
     query="SELECT s FROM StudyOnStorageSystemGroup s "
             + "WHERE s.study.studyInstanceUID = ?1 "
@@ -80,6 +85,9 @@ public class StudyOnStorageSystemGroup implements Serializable {
 
     public static final String FIND_BY_STUDY_INSTANCE_UID_AND_GRP_UID = 
             "StudyOnStorageSystemGroup.findByStudyInstanceUIDAndGrpUID";
+
+    public static final String FIND_STUDIES_NO_STG_GROUP =
+            "StudyOnStorageSystemGroup.findStudiesNoStgGroup";
 
     public static final String FIND_BY_STUDY_INSTANCE_UID_AND_GRP_UID_MARKED =
             "StudyOnStorageSystemGroup.findByStudyInstanceUIDAndGrpUIDMarked";
