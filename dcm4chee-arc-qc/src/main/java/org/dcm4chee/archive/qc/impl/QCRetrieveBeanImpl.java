@@ -63,11 +63,14 @@ import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.QCUpdateHistory;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
+import org.dcm4chee.archive.qc.QCEvent.QCOperation;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.slf4j.Logger;
@@ -241,6 +244,25 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
                 .getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
         QueryParam param = new QueryParam();
         param.setQueryRetrieveView(view);
+        
+        if (event.getOperation() == QCOperation.UPDATE) {
+            String updateScope = event.getUpdateScope();
+            try {
+                if (updateScope.compareTo(QCUpdateScope.STUDY.toString()) == 0) {
+                    Study study = findStudyByUID(event.getUpdateAttributes().getString(Tag.StudyInstanceUID));
+                    queryService.createStudyView(study.getPk(), param);
+                }
+                if (updateScope.compareTo(QCUpdateScope.SERIES.toString()) == 0) {
+                    Series series = findSeriesByUID(event.getUpdateAttributes().getString(Tag.SeriesInstanceUID));
+                    queryService.createSeriesView(series.getPk(), param);
+                }
+            } catch (Exception e) {
+                LOG.error("Error processing updated object event with scope={}"
+                        + ", Unable to recalculate query attributes - reason {}", event.getUpdateScope(), e);
+            }
+
+        }
+        else {
         HashMap<String, ArrayList<String>> studiesMap = findReferencedStudiesInQCEvent(event);
         //now for each study
         try {
@@ -256,7 +278,7 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
                     + "Can not re-calculate derived fields on QC");
             return;
         }
-        
+        }
     }
 
     private HashMap<String, ArrayList<String>> findReferencedStudiesInQCEvent(QCEvent event) {
@@ -302,5 +324,21 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
                         + " an already performed procedure",studyUID);
             }
             return study;
+    }
+
+    private Series findSeriesByUID(String seriesUID) {
+        String queryStr = "SELECT se FROM Series se WHERE se.seriesInstanceUID = ?1";
+            Query query = em.createQuery(queryStr);
+            Series series = null;
+            try {
+                query.setParameter(1, seriesUID);
+             series = (Series) query.getSingleResult();
+            }
+            catch(NoResultException e) {
+                LOG.error(
+                        "Unable to find serties {}, related to"
+                        + " an already performed procedure",seriesUID);
+            }
+            return series;
     }
 }
