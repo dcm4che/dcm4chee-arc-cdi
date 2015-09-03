@@ -239,7 +239,7 @@ public class PersonName implements Serializable {
 
     public void setMiddleName(String middleName, FuzzyStr fuzzy, String nullValue) {
         this.middleName = middleName;
-        createOrUpdateSoundexCode(Component.MiddleName, middleName, fuzzy, null);
+        createOrUpdateSoundexCode(Component.MiddleName, middleName, fuzzy, nullValue);
     }
 
     public String getNamePrefix() {
