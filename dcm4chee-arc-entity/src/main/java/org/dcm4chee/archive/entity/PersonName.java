@@ -38,9 +38,6 @@
 
 package org.dcm4chee.archive.entity;
 
-import static org.dcm4che3.data.PersonName.Group;
-import static org.dcm4che3.data.PersonName.Component;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,8 +45,9 @@ import java.util.Iterator;
 
 import javax.persistence.*;
 
+import org.dcm4che3.data.PersonName.Component;
+import org.dcm4che3.data.PersonName.Group;
 import org.dcm4che3.soundex.FuzzyStr;
-import org.hibernate.sql.Update;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -115,16 +113,12 @@ public class PersonName implements Serializable {
     private Collection<SoundexCode> soundexCodes;
 
     @Transient
-    private FuzzyStr fuzzy = null;
-
-    @Transient
     private String nullValue = null;
 
     public PersonName() {
     }
 
-    public PersonName(FuzzyStr fuzzyStr, String nullValueStr) {
-        fuzzy = fuzzyStr;
+    public PersonName(String nullValueStr) {
         nullValue = nullValueStr;
     }
 
@@ -133,7 +127,6 @@ public class PersonName implements Serializable {
     }
 
     private void fromDicom(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr, String nullValueStr) {
-        fuzzy = fuzzyStr;
         nullValue = nullValueStr;
         familyName = pn.get(Group.Alphabetic, Component.FamilyName);
         givenName = pn.get(Group.Alphabetic, Component.GivenName);
@@ -150,18 +143,18 @@ public class PersonName implements Serializable {
         phoneticMiddleName = pn.get(Group.Phonetic, Component.MiddleName);
         phoneticNamePrefix = pn.get(Group.Phonetic, Component.NamePrefix);
         phoneticNameSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
-        createOrUpdateSoundexCodes(familyName, givenName, middleName);
+        createOrUpdateSoundexCodes(fuzzyStr, familyName, givenName, middleName);
     }
 
-    private void createOrUpdateSoundexCodes(String familyName,
+    private void createOrUpdateSoundexCodes(FuzzyStr fuzzy, String familyName,
             String givenName, String middleName) {
-        createOrUpdateSoundexCode(Component.FamilyName, familyName);
-        createOrUpdateSoundexCode(Component.GivenName, givenName);
-        createOrUpdateSoundexCode(Component.MiddleName, middleName);
+        createOrUpdateSoundexCode(Component.FamilyName, familyName, fuzzy);
+        createOrUpdateSoundexCode(Component.GivenName, givenName, fuzzy);
+        createOrUpdateSoundexCode(Component.MiddleName, middleName, fuzzy);
     }
 
-    private void createOrUpdateSoundexCode(Component component, String name) {
-        if (name == null || component == null || this.fuzzy == null)
+    private void createOrUpdateSoundexCode(Component component, String name, FuzzyStr fuzzy) {
+        if (name == null || component == null || fuzzy == null)
             return;
 
         if (soundexCodes == null)
@@ -234,27 +227,27 @@ public class PersonName implements Serializable {
         return familyName;
     }
 
-    public void setFamilyName(String familyName) {
+    public void setFamilyName(String familyName, FuzzyStr fuzzy) {
         this.familyName = familyName;
-        createOrUpdateSoundexCode(Component.FamilyName, familyName);
+        createOrUpdateSoundexCode(Component.FamilyName, familyName, fuzzy);
     }
 
     public String getGivenName() {
         return givenName;
     }
 
-    public void setGivenName(String givenName) {
+    public void setGivenName(String givenName, FuzzyStr fuzzy) {
         this.givenName = givenName;
-        createOrUpdateSoundexCode(Component.GivenName, givenName);
+        createOrUpdateSoundexCode(Component.GivenName, givenName, fuzzy);
     }
 
     public String getMiddleName() {
         return middleName;
     }
 
-    public void setMiddleName(String middleName) {
+    public void setMiddleName(String middleName, FuzzyStr fuzzy) {
         this.middleName = middleName;
-        createOrUpdateSoundexCode(Component.MiddleName, middleName);
+        createOrUpdateSoundexCode(Component.MiddleName, middleName, fuzzy);
     }
 
     public String getNamePrefix() {
