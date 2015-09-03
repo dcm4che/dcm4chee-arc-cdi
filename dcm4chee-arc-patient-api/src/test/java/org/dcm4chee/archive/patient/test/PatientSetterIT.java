@@ -163,9 +163,9 @@ public class PatientSetterIT {
         pid.setIssuer(issuer);
         pid.setID("123");
         
-        PersonName pn = new PersonName(null);
-        pn.setFamilyName("Bunny", new ESoundex());
-        pn.setGivenName("Bugs", new ESoundex());
+        PersonName pn = new PersonName();
+        pn.setFamilyName("Bunny", new ESoundex(), null);
+        pn.setGivenName("Bugs", new ESoundex(), null);
         
         Patient p = new Patient();        
         p.setPatientIDs(new ArrayList<PatientID>(Arrays.asList(pid)));

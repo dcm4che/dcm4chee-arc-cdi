@@ -112,14 +112,7 @@ public class PersonName implements Serializable {
     @OneToMany(mappedBy = "personName", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<SoundexCode> soundexCodes;
 
-    @Transient
-    private String nullValue = null;
-
     public PersonName() {
-    }
-
-    public PersonName(String nullValueStr) {
-        nullValue = nullValueStr;
     }
 
     public PersonName(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr, String nullValueStr) {
@@ -127,7 +120,6 @@ public class PersonName implements Serializable {
     }
 
     private void fromDicom(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr, String nullValueStr) {
-        nullValue = nullValueStr;
         familyName = pn.get(Group.Alphabetic, Component.FamilyName);
         givenName = pn.get(Group.Alphabetic, Component.GivenName);
         middleName = pn.get(Group.Alphabetic, Component.MiddleName);
@@ -143,17 +135,17 @@ public class PersonName implements Serializable {
         phoneticMiddleName = pn.get(Group.Phonetic, Component.MiddleName);
         phoneticNamePrefix = pn.get(Group.Phonetic, Component.NamePrefix);
         phoneticNameSuffix = pn.get(Group.Phonetic, Component.NameSuffix);
-        createOrUpdateSoundexCodes(fuzzyStr, familyName, givenName, middleName);
+        createOrUpdateSoundexCodes(fuzzyStr, nullValueStr, familyName, givenName, middleName);
     }
 
-    private void createOrUpdateSoundexCodes(FuzzyStr fuzzy, String familyName,
+    private void createOrUpdateSoundexCodes(FuzzyStr fuzzy, String nullValueStr, String familyName,
             String givenName, String middleName) {
-        createOrUpdateSoundexCode(Component.FamilyName, familyName, fuzzy);
-        createOrUpdateSoundexCode(Component.GivenName, givenName, fuzzy);
-        createOrUpdateSoundexCode(Component.MiddleName, middleName, fuzzy);
+        createOrUpdateSoundexCode(Component.FamilyName, familyName, fuzzy, nullValueStr);
+        createOrUpdateSoundexCode(Component.GivenName, givenName, fuzzy, nullValueStr);
+        createOrUpdateSoundexCode(Component.MiddleName, middleName, fuzzy, nullValueStr);
     }
 
-    private void createOrUpdateSoundexCode(Component component, String name, FuzzyStr fuzzy) {
+    private void createOrUpdateSoundexCode(Component component, String name, FuzzyStr fuzzy, String nullValue) {
         if (name == null || component == null || fuzzy == null)
             return;
 
@@ -227,27 +219,27 @@ public class PersonName implements Serializable {
         return familyName;
     }
 
-    public void setFamilyName(String familyName, FuzzyStr fuzzy) {
+    public void setFamilyName(String familyName, FuzzyStr fuzzy, String nullValue) {
         this.familyName = familyName;
-        createOrUpdateSoundexCode(Component.FamilyName, familyName, fuzzy);
+        createOrUpdateSoundexCode(Component.FamilyName, familyName, fuzzy, nullValue);
     }
 
     public String getGivenName() {
         return givenName;
     }
 
-    public void setGivenName(String givenName, FuzzyStr fuzzy) {
+    public void setGivenName(String givenName, FuzzyStr fuzzy, String nullValue) {
         this.givenName = givenName;
-        createOrUpdateSoundexCode(Component.GivenName, givenName, fuzzy);
+        createOrUpdateSoundexCode(Component.GivenName, givenName, fuzzy, nullValue);
     }
 
     public String getMiddleName() {
         return middleName;
     }
 
-    public void setMiddleName(String middleName, FuzzyStr fuzzy) {
+    public void setMiddleName(String middleName, FuzzyStr fuzzy, String nullValue) {
         this.middleName = middleName;
-        createOrUpdateSoundexCode(Component.MiddleName, middleName, fuzzy);
+        createOrUpdateSoundexCode(Component.MiddleName, middleName, fuzzy, null);
     }
 
     public String getNamePrefix() {
