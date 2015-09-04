@@ -454,24 +454,14 @@ public class QueryBuilder {
             return codesSubQuery.where(QCode.code.codeValue.eq(codes[0].getCodeValue())
                     .and(QCode.code.codingSchemeDesignator.eq(codes[0].getCodingSchemeDesignator()))).list(QCode.code);
         } else {
-            Predicate matchingCodesPredicate = null;
-            BooleanExpression firstExp = null;
+            BooleanBuilder booleanBuilder = new BooleanBuilder();
             for (org.dcm4che3.data.Code c : codes) {
                 BooleanExpression exp = QCode.code.codeValue.eq(c.getCodeValue()).and(
                         QCode.code.codingSchemeDesignator.eq(c.getCodingSchemeDesignator()));
-
-                if (matchingCodesPredicate == null && firstExp != null) {
-                    matchingCodesPredicate = ExpressionUtils.or(firstExp, exp);
-                } else if (matchingCodesPredicate != null) {
-                    matchingCodesPredicate = ExpressionUtils.or(matchingCodesPredicate, exp);
-                }
-
-                if (firstExp == null) {
-                    firstExp = exp;
-                }
+                booleanBuilder.or(exp);
             }
 
-            return codesSubQuery.where(matchingCodesPredicate).list(QCode.code);
+            return codesSubQuery.where(booleanBuilder).list(QCode.code);
         }
     }
 
