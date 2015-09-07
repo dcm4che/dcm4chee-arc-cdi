@@ -38,14 +38,26 @@
 
 package org.dcm4chee.archive.rs;
 
-
-/**
- * @author Hesham Elbadawi <bsdreko@gmail.com>
- */
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.net.ApplicationEntity;
 
+/**
+ * Used to map {@link HttpSource}s to AEs.
+ * 
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ */
 public interface HostAECache {
 
-    ApplicationEntity findAE(HttpSource source);
+    /**
+     * Find a Application Entity for the given http source.
+     * 
+     * @param source
+     *            http source
+     * @return Application Entity
+     * @throws ConfigurationException
+     *             Thrown if no Application Entity for the given http source is
+     *             available and also no default fallback is configured.
+     */
+    ApplicationEntity findAE(HttpSource source) throws ConfigurationException;
 
 }

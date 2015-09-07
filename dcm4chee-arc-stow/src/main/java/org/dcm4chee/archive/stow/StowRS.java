@@ -70,6 +70,7 @@ import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.transform.stream.StreamResult;
 
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Attributes.Visitor;
 import org.dcm4che3.data.BulkData;
@@ -218,7 +219,10 @@ public class StowRS {
         List<String> list = headerParams.get(key);
         return list != null && !list.isEmpty() ? list.get(0) : null;
     }
-@Context Request req;
+    
+    @Context
+    Request req;
+
     @POST
     @Path("/studies")
     @Consumes({"multipart/related","multipart/form-data"})
@@ -228,8 +232,13 @@ public class StowRS {
         init();
         final StoreSession session = storeService.createStoreSession(storeService);
         session.setSource(new HttpSource(request));
-        ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
-        session.setRemoteAET(sourceAE != null ? sourceAE.getAETitle() : null); //add AE for the web source
+        ApplicationEntity sourceAE;
+        try {
+            sourceAE = aeCache.findAE(new HttpSource(request));
+        } catch (ConfigurationException e) {
+            throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
+        }
+        session.setRemoteAET(sourceAE.getAETitle());
         session.setArchiveAEExtension(arcAE);
         storeService.initBulkdataStorage(session);
         storeService.initMetadataStorage(session);

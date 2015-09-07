@@ -43,10 +43,10 @@ import java.util.*;
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 
+import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 import org.dcm4che3.conf.core.api.LDAP;
-import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.ApplicationEntity;
@@ -104,14 +104,15 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     @LDAP(noContainerNode = true)
     @ConfigurableProperty(name = "dcmPrivateDerivedFields")
-    private PrivateDerivedFields privateDerivedFields = new PrivateDerivedFields();
+    private final PrivateDerivedFields privateDerivedFields = new PrivateDerivedFields();
 
     @LDAP(
             distinguishingField = "dicomHostName",
             mapValueAttribute = "dicomAETitle",
             mapEntryObjectClass= "dcmHostNameAEEntry"
     )
-    @ConfigurableProperty(name = "HostNameAETitleMap")
+    @ConfigurableProperty(name = "HostNameAETitleMap",
+        description = "Maps remote hostnames/IP addresses to AE titles. Used for determining the source AE within Web services (STOW/QIDO/...). \"*\" can be used for a default/fallback mapping.")
     private final Map<String, String> hostNameToAETitleMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 
     @LDAP(
@@ -183,7 +184,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     @LDAP(noContainerNode=true)
     @ConfigurableProperty(name = "dcmDeletionRules")
-    private DeletionRules deletionRules = new DeletionRules();
+    private final DeletionRules deletionRules = new DeletionRules();
 
     @ConfigurableProperty(name = "dcmMaxDeleteServiceRetries", defaultValue = "0")
     private int maxDeleteServiceRetries;
@@ -201,7 +202,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(
             label = "MPPS emulation and Study update rules",
             name = "dcmMPPSEmulationRules")
-    private List<MPPSEmulationAndStudyUpdateRule> mppsEmulationAndStudyUpdateRules = new ArrayList<MPPSEmulationAndStudyUpdateRule>();
+    private final List<MPPSEmulationAndStudyUpdateRule> mppsEmulationAndStudyUpdateRules = new ArrayList<MPPSEmulationAndStudyUpdateRule>();
 
     @ConfigurableProperty(name = "dcmIgnoreSeriesStudyMissmatchErrorsAETs",
     		description="List of Application Entities which will not get a C-STORE rejected, if a Series/Study mismatch is detected",
@@ -216,7 +217,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         return mppsEmulationAndStudyUpdateRules;
     }
 
-    private Map<String, MPPSEmulationAndStudyUpdateRule> mppsEmulationRuleMap =
+    private final Map<String, MPPSEmulationAndStudyUpdateRule> mppsEmulationRuleMap =
             new HashMap<String, MPPSEmulationAndStudyUpdateRule>();
 
     public void setMppsEmulationAndStudyUpdateRules(List<MPPSEmulationAndStudyUpdateRule> rules) {

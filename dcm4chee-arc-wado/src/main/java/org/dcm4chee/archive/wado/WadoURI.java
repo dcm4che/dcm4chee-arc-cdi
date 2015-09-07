@@ -82,6 +82,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -136,7 +137,7 @@ public class WadoURI extends Wado {
     private Event<RetrieveAfterSendEvent> retrieveEvent;
 
     @Inject
-    private HostAECache aeCache;
+    private HostAECache hostAECache;
 
     private CStoreSCUContext context;
 
@@ -276,9 +277,11 @@ public class WadoURI extends Wado {
 
         try {
             
-            ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
-            if (sourceAE == null) {
-                LOG.info("Unable to find the mapped AE for this host or even" + " the fallback AE, coercion will not be applied");
+            ApplicationEntity sourceAE;
+            try {
+                sourceAE = hostAECache.findAE(new HttpSource(request));
+            } catch (ConfigurationException e) {
+                throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
             }
 
             context = new CStoreSCUContext(arcAE.getApplicationEntity(), sourceAE, ServiceType.WADOSERVICE);

@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.ctrl;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.core.Response.Status;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -47,6 +46,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.net.ApplicationEntity;
@@ -64,7 +64,7 @@ import org.dcm4chee.archive.rs.HttpSource;
 public class ArchiveCtrl {
 
     @Inject
-    private HostAECache cache;
+    private HostAECache hostAECache;
 
     @Inject
     private ArchiveService service;
@@ -107,20 +107,15 @@ public class ArchiveCtrl {
     public Response whoami() throws ConfigurationException {
         
         HttpSource source = new HttpSource(request);
-        ApplicationEntity ae = cache.findAE(source);
-        if(ae!=null){
+        ApplicationEntity ae = hostAECache.findAE(source);
+
         Device callerDevice = ae.getDevice();
-        
+
         return Response.ok(
-                "<div>Calling Device: <br>Host:" + request.getRemoteHost()
-                        + "<br>AETitle: " + ae.getAETitle()
-                        + "<br>Device Name: " + callerDevice.getDeviceName()
-                        + "</div>").build();
-        }
-        return Response.ok("<div>Calling Device: <br>Host:" + request.getRemoteHost() +
-                         "<br>AETitle: Not configured" + 
-                         "<br>Device Name: Not configured" +
-                         "</div>").build();
+            "<div>Calling Device: <br>Host:" + request.getRemoteHost()
+                    + "<br>AETitle: " + ae.getAETitle()
+                    + "<br>Device Name: " + callerDevice.getDeviceName()
+                    + "</div>").build();
     }
 
 }

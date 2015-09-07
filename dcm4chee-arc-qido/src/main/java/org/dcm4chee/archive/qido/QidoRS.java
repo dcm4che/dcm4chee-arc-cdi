@@ -62,6 +62,7 @@ import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.transform.stream.StreamResult;
 
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.ElementDictionary;
 import org.dcm4che3.data.Sequence;
@@ -159,7 +160,7 @@ public class QidoRS {
     protected QueryService queryService;
 
     @Inject
-    private HostAECache aeCache;
+    private HostAECache hostAECache;
 
     @Context
     private HttpServletRequest request;
@@ -391,9 +392,11 @@ public class QidoRS {
             String seriesInstanceUID, int[] defIncludefields) throws DicomServiceException {
         this.method = method;
 
-        ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
-        if (sourceAE == null) {
-            LOG.info("Unable to find the mapped AE for host {} or even the fallback AE, elimination/coercion will not be applied", request.getRemoteHost());
+        ApplicationEntity sourceAE;
+        try {
+            sourceAE = hostAECache.findAE(new HttpSource(request));
+        } catch (ConfigurationException e) {
+            throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
         }
 
         TransferCapability tc = ae.getTransferCapabilityFor(
@@ -446,7 +449,7 @@ public class QidoRS {
 
         queryContext = queryService.createQueryContext(queryService);
 
-        queryContext.setRemoteAET(sourceAE != null ? sourceAE.getAETitle() : request.getRemoteHost()); //TODO use hostname as AET, may be needed to change
+        queryContext.setRemoteAET(sourceAE.getAETitle());
         queryContext.setServiceSOPClassUID(UID.StudyRootQueryRetrieveInformationModelFIND);
         queryContext.setArchiveAEExtension(arcAE);
         QueryParam queryParam = queryService.getQueryParam(

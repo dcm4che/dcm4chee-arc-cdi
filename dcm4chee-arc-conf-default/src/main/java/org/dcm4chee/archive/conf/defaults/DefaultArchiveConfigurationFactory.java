@@ -38,6 +38,14 @@
 
 package org.dcm4chee.archive.conf.defaults;
 
+import static org.dcm4che3.net.TransferCapability.Role.SCP;
+import static org.dcm4che3.net.TransferCapability.Role.SCU;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Issuer;
@@ -57,16 +65,10 @@ import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.storage.conf.*;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static org.dcm4che3.net.TransferCapability.Role.SCP;
-import static org.dcm4che3.net.TransferCapability.Role.SCU;
-
 public class DefaultArchiveConfigurationFactory {
 
+    private static final String AET_FALLBACK_WEB_CLIENT = "FALLBACK-WEBC";
+    
     public static final String PIX_MANAGER = "HL7RCV^DCM4CHEE";
     public static final String[] OTHER_DEVICES = {
             "dcmqrscp",
@@ -78,6 +80,7 @@ public class DefaultArchiveConfigurationFactory {
             "mppsscu",
             "findscu",
             "getscu",
+            "fallbackWebClient",
             "movescu",
             "hl7snd"
     };
@@ -90,7 +93,8 @@ public class DefaultArchiveConfigurationFactory {
             "STORESCU",
             "MPPSSCU",
             "FINDSCU",
-            "GETSCU"
+            "GETSCU",
+            AET_FALLBACK_WEB_CLIENT
     };
     protected static final Issuer SITE_A =
             new Issuer("Site A", "1.2.40.0.13.1.1.999.111.1111", "ISO");
@@ -106,6 +110,7 @@ public class DefaultArchiveConfigurationFactory {
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // MPPSSCU
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // FINDSCU
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // GETSCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // AET_FALLBACK_WEB_CLIENT
     };
     private static final Issuer SITE_B =
             new Issuer("Site B", "1.2.40.0.13.1.1.999.222.2222", "ISO");
@@ -119,6 +124,7 @@ public class DefaultArchiveConfigurationFactory {
             SITE_A, // MPPSSCU
             SITE_A, // FINDSCU
             SITE_A, // GETSCU
+            SITE_A, // AET_FALLBACK_WEB_CLIENT
     };
     private static final Code INST_B =
             new Code("222.2222", "99DCM4CHEE", null, "Site B");
@@ -132,6 +138,7 @@ public class DefaultArchiveConfigurationFactory {
             null, // MPPSSCU
             null, // FINDSCU
             null, // GETSCU
+            null, // AET_FALLBACK_WEB_CLIENT
     };
     private static final int PENDING_CMOVE_INTERVAL = 5000;
     private static final int CONFIGURATION_STALE_TIMEOUT = 60;
@@ -719,6 +726,11 @@ public class DefaultArchiveConfigurationFactory {
         deletionRule.setNumberOfArchivedCopies("1");
         deletionRule.setSafeArchivingType("*");
         ext.addDeletionRule(deletionRule);
+
+        // default fallback for web client source AETs
+        Map<String, String> hostNameToAETitleMap = new HashMap<>();
+        hostNameToAETitleMap.put("*", AET_FALLBACK_WEB_CLIENT);
+        ext.setHostNameToAETitleMap(hostNameToAETitleMap);
     }
 
     private static RejectionParam[] createRejectionNotes() {

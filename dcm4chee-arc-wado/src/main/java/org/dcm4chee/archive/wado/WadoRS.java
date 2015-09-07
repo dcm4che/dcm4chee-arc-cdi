@@ -52,23 +52,12 @@ import java.util.Map;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.core.UriInfo;
 
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Fragments;
@@ -117,7 +106,7 @@ public class WadoRS extends Wado {
     private Event<RetrieveAfterSendEvent> retrieveEvent;
 
     @Inject
-    private HostAECache aeCache;
+    private HostAECache hostAECache;
 
     @Inject
     private FetchForwardService fetchForwardService;
@@ -187,9 +176,11 @@ public class WadoRS extends Wado {
 
     private void init(String method) {
 
-        ApplicationEntity sourceAE = aeCache.findAE(new HttpSource(request));
-        if (sourceAE == null) {
-            LOG.info("Unable to find the mapped AE for host {} or even the fallback AE, elimination/coercion will not be applied", request.getRemoteHost());
+        ApplicationEntity sourceAE;
+        try {
+            sourceAE = hostAECache.findAE(new HttpSource(request));
+        } catch (ConfigurationException e) {
+            throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
         }
 
         context = new CStoreSCUContext(arcAE.getApplicationEntity(), sourceAE, ServiceType.WADOSERVICE);

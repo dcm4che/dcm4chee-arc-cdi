@@ -38,85 +38,58 @@
 
 package org.dcm4chee.archive.rs;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
-/**
- * @author Hesham Elbadawi <bsdreko@gmail.com>
- */
-
-import org.dcm4che3.conf.core.api.ConfigurationException;
+import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.dto.Participant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+/**
+ * Implementation of {@link HostAECache}.
+ * 
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
+ */
 @ApplicationScoped
-public class HostAECacheImpl implements HostAECache{
+public class HostAECacheImpl implements HostAECache {
 
-    private static final String IPADDRESS_PATTERN = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
+    private static final Logger log = LoggerFactory.getLogger(HostAECacheImpl.class);
 
+    private static final String DEFAULT_MAPPING = "*";
+    
     @Inject
-    IApplicationEntityCache aeCache;
+    private IApplicationEntityCache aeCache;
 
     @Inject
     Device device;
 
-    private ArchiveDeviceExtension arcDevExt;
+    @Override
+    public ApplicationEntity findAE(HttpSource source) throws ConfigurationException {
+        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
 
-    private boolean resolve() {
-        return arcDevExt.isHostnameAEResolution();
-    }
+        String hostNameOrIP = arcDevExt.isHostnameAEResolution() ? source.getHost() : source.getIP();
 
-    public ApplicationEntity findAE(HttpSource source){
-        arcDevExt = device
-                .getDeviceExtension(ArchiveDeviceExtension.class);
-        ApplicationEntity ae = getAE(source);
-            return ae;
-        
-    }
+        String aeTitle = arcDevExt.getHostNameToAETitleMap().get(hostNameOrIP);
 
-    private ApplicationEntity getAE(HttpSource source) {
-
-        // check if resoultion is enabled
-        if (resolve()) {
-            // check if it can get a host
-            if (source.getHost() != Participant.UNKNOWN) {
-                return lookupAE(source.getHost());
-            } else {
-                return lookupAE("*");
-            }
-        } else {
-            // no resolution expect ip
-            if (source.getIP() != Participant.UNKNOWN) {
-                return lookupAE(source.getIP());
-            } else {
-                return lookupAE("*");
+        if (aeTitle != null) {
+            try {
+                return aeCache.findApplicationEntity(aeTitle);
+            } catch (ConfigurationException e) {
+                log.warn("AET {} (hostname/ip: {}) is not correctly configured. Will use default fallback AET instead.", aeTitle, hostNameOrIP);
             }
         }
-    }
 
-    private boolean isIP(String str) {
-        Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
-        Matcher matcher = pattern.matcher(str);
-        return matcher.matches();
-    }
-
-    private ApplicationEntity lookupAE(String host) {
-        try {
-            final String aeTitle = arcDevExt.getHostNameToAETitleMap().get(host);
-            if (aeTitle == null) throw new ConfigurationException();
-            return aeCache.findApplicationEntity(aeTitle);
-        } catch (ConfigurationException e) {
-            return null;
-        }
+        // fallback to default mapping
+        String fallbackAETitle = arcDevExt.getHostNameToAETitleMap().get(DEFAULT_MAPPING);
+        if (fallbackAETitle == null)
+            throw new ConfigurationNotFoundException("AE for hostname/ip " + hostNameOrIP + " not found. No default/fallback configured.");
+        return aeCache.findApplicationEntity(fallbackAETitle);
     }
 
 }
