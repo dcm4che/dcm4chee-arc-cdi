@@ -374,7 +374,7 @@ public class Series implements Serializable {
     }
 
     public String[] getCalledAETs() {
-        return calledAETs.split("\\");
+        return calledAETs.split("\\\\");
     }
 
     public void addCalledAET(String calledAET) {
