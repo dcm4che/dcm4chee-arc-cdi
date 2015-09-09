@@ -434,8 +434,11 @@ Setup JBoss
         > cd $JBOSS_HOME/standalone/configuration/
         > cp standalone-full.xml dcm4chee-arc.xml
     
-3.  To configure the Archive to use LDAP, put the following into JBoss's configuration/dcm4chee-arc.xml, and adjust the
-    parameters according to the LDAP server installed:
+3.  To configure the Archive to use LDAP, put the following into JBoss's configuration/dcm4chee-arc.xml, and adjust
+    the parameters according to the LDAP server installed.
+
+    *Note*: The `<system-properties>` section, should be put just below the `<extensions>` section or else JBoss will
+    complain.
 
         <system-properties>
             <property name="org.dcm4che.conf.storage" value="ldap" />
