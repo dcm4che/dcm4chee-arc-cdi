@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.hsm.impl;
+package org.dcm4chee.archive.hsm.status.impl;
 
 import java.io.IOException;
 import java.sql.Timestamp;

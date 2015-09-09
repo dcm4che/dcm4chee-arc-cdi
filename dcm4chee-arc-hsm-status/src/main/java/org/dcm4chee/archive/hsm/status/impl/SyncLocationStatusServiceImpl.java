@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.hsm.impl;
+package org.dcm4chee.archive.hsm.status.impl;
 
 import java.io.IOException;
 import java.util.concurrent.ScheduledFuture;
@@ -50,7 +50,7 @@ import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
-import org.dcm4chee.archive.hsm.SyncLocationStatusService;
+import org.dcm4chee.archive.hsm.status.SyncLocationStatusService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

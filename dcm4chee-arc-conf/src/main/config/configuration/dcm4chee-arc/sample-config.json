@@ -383,6 +383,46 @@
           }
         }
       },
+      "fallbackWebClient" : {
+        "dcmLimitOpenAssociations" : 0,
+        "dicomConnection" : [ {
+          "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
+          "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
+          "dicomHostname" : "localhost"
+        }, {
+          "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
+          "dcmTLSProtocol" : [ "TLSv1", "SSLv3" ],
+          "dicomHostname" : "localhost",
+          "dicomTLSCipherSuite" : [ "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" ]
+        } ],
+        "dicomDeviceName" : "fallbackWebClient",
+        "dicomInstalled" : true,
+        "dicomIssuerOfAccessionNumber" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
+        "dicomIssuerOfPatientID" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
+        "dicomNetworkAE" : {
+          "FALLBACK-WEBC" : {
+            "dcmUUID" : "0A4F65F542FF517A4DDC716C423C14D755EA10B7",
+            "dicomAETitle" : "FALLBACK-WEBC",
+            "dicomAssociationAcceptor" : true,
+            "dicomAssociationInitiator" : true,
+            "dicomNetworkConnectionReference" : [ "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='fallbackWebClient']/dicomConnection[cn='dicom']", "/dicomConfigurationRoot/dicomDevicesRoot/*[dicomDeviceName='fallbackWebClient']/dicomConnection[cn='dicom-tls']" ]
+          }
+        }
+      },
       "movescu" : {
         "dcmLimitOpenAssociations" : 0,
         "dicomDeviceName" : "movescu",
@@ -474,6 +514,9 @@
         "dcmTrustStoreURL" : "${jboss.server.config.url}/dcm4chee-arc/key.jks",
         "deviceExtensions" : {
           "ArchiveDeviceExtension" : {
+            "HostNameAETitleMap" : {
+              "*" : "FALLBACK-WEBC"
+            },
             "dcmArchivingSchedulerPollInterval" : 60,
             "dcmAttributeFilter" : {
               "Instance" : {
@@ -768,6 +811,22 @@
                 "dcmNextStorageSystemID" : "metadata",
                 "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
                 "dcmStorageSystemGroupID" : "METADATA"
+              },
+              "RETRIEVER_CACHE" : {
+                "Storage Systems" : {
+                  "retrieve_fs1" : {
+                    "dcmProviderName" : "org.dcm4chee.storage.filesystem",
+                    "dcmStorageSystemID" : "retrieve_fs1",
+                    "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/retrieve_fs1"
+                  }
+                },
+                "dcmActiveStorageSystemID" : [ "retrieve_fs1" ],
+                "dcmBaseStorageAccessTime" : 1000,
+                "dcmNextStorageSystemID" : "retrieve_fs1",
+                "dcmRetrieveAET" : [ "DCM4CHEE_RETRIEVE" ],
+                "dcmStorageFilePathFormat" : "{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}",
+                "dcmStorageSystemGroupID" : "RETRIEVER_CACHE",
+                "dcmStorageSystemGroupType" : "RETRIEVER_CACHE"
               }
             }
           }
@@ -778,6 +837,7 @@
           "dcmAARQTimeout" : 5000,
           "dcmARRPTimeout" : 5000,
           "dcmBindAddress" : "0.0.0.0",
+          "dcmClientBindAddress" : "0.0.0.0",
           "dcmIdleTimeout" : 5000,
           "dcmMaxOpsInvoked" : 0,
           "dcmMaxOpsPerformed" : 0,
@@ -793,6 +853,7 @@
           "dcmAARQTimeout" : 5000,
           "dcmARRPTimeout" : 5000,
           "dcmBindAddress" : "0.0.0.0",
+          "dcmClientBindAddress" : "0.0.0.0",
           "dcmIdleTimeout" : 5000,
           "dcmMaxOpsInvoked" : 0,
           "dcmMaxOpsPerformed" : 0,
@@ -2902,7 +2963,7 @@
                 "dcmSendPendingCGet" : true,
                 "dcmSendPendingCMoveInterval" : 5000,
                 "dcmSpoolDirectoryPath" : "spool",
-                "dcmStorageSystemGroupID" : "DEFAULT",
+                "dcmStorageSystemGroupType" : "RETRIEVER_CACHE",
                 "dcmWadoOverlayRendering" : false,
                 "dcmWadoSRTemplateURI" : "${jboss.server.config.url}/dcm4chee-arc/sr-report-html-dicom-native.xsl",
                 "dcmWadoSupportedSRClasses" : [ "1.2.840.10008.5.1.4.1.1.88.11", "1.2.840.10008.5.1.4.1.1.88.22", "1.2.840.10008.5.1.4.1.1.88.33", "1.2.840.10008.5.1.4.1.1.88.34", "1.2.840.10008.5.1.4.1.1.88.40", "1.2.840.10008.5.1.4.1.1.88.50", "1.2.840.10008.5.1.4.1.1.88.59", "1.2.840.10008.5.1.4.1.1.88.65", "1.2.840.10008.5.1.4.1.1.88.67", "1.2.840.10008.5.1.4.1.1.88.68", "1.2.840.10008.5.1.4.1.1.88.69", "1.2.840.10008.5.1.4.1.1.88.70" ],
