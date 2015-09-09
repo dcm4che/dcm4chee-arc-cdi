@@ -56,7 +56,17 @@ be migration tools to upgrade existing installations of 2.x to 4.x.
 
 Build
 -----
-After installation of [Maven 3](http://maven.apache.org):
+
+* Make sure you have [Maven 3](http://maven.apache.org) installed.
+
+* Build dependent projects (only necessary if unreleased SNAPSHOT versions are used, that are not available in the Maven repository):
+
+    * [dcm4che 3 Library](https://github.com/dcm4che/dcm4che)
+    * [Configuration layer](https://github.com/dcm4che/dcm4chee-conf)
+    * [Monitoring framework](https://github.com/dcm4che/dcm4chee-monitoring)
+    * [Storage layer](https://github.com/dcm4che/dcm4chee-storage2)
+
+* Build the Archive for a specific database:
 
     > mvn install -D db={db2|firebird|h2|mysql|oracle|psql|sqlserver}
 
