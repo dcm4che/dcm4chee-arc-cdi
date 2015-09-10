@@ -231,7 +231,7 @@ public class QCBeanImpl  implements QCBean{
             Attributes targetStudyAttrs, Attributes targetSeriesAttrs,
             org.dcm4che3.data.Code qcRejectionCode) {
         
-        QCActionHistory mergeAction = generateQCAction(QCOperation.MERGE);
+        QCActionHistory mergeAction = generateQCAction(QCOperation.MERGE, false, null);
         List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
         List<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
         List<Instance> rejectedInstances = new ArrayList<Instance>();
@@ -299,7 +299,20 @@ public class QCBeanImpl  implements QCBean{
         changeRequester.scheduleChangeRequest(sourceUIDs, targetUIDs, rejNote);
         return mergeEvent;
     }
-
+    /* (non-Javadoc)
+     * @see org.dcm4chee.archive.qc.QCBean#splitNoneIOCM(java.util.Collection,
+     *  org.dcm4che3.data.IDWithIssuer, java.lang.String,
+     *   org.dcm4che3.data.Attributes, org.dcm4che3.data.Attributes, org.dcm4che3.data.Code
+     *   , java.lang.String)
+     */
+    @Override
+    public QCEvent splitNoneIOCM(Collection<String> toMoveUIDs, IDWithIssuer pid,
+            String targetStudyUID, Attributes createdStudyAttrs,
+            Attributes targetSeriesAttrs, org.dcm4che3.data.Code qcRejectionCode, String noneIOCMAET) {
+        
+        return null;
+    }
+    
     /* (non-Javadoc)
      * @see org.dcm4chee.archive.qc.QCBean#split(java.util.Collection,
      *  org.dcm4che3.data.IDWithIssuer, java.lang.String,
@@ -310,7 +323,7 @@ public class QCBeanImpl  implements QCBean{
             String targetStudyUID, Attributes createdStudyAttrs,
             Attributes targetSeriesAttrs, org.dcm4che3.data.Code qcRejectionCode) {
         
-        QCActionHistory splitAction = generateQCAction(QCOperation.SPLIT);
+        QCActionHistory splitAction = generateQCAction(QCOperation.SPLIT, false, null);
         List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
         List<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
         List<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
@@ -406,7 +419,7 @@ public class QCBeanImpl  implements QCBean{
             IDWithIssuer pid, String targetStudyUID, 
             Attributes createdStudyAttrs,Attributes targetSeriesAttrs,
             org.dcm4che3.data.Code qcRejectionCode) {
-        QCActionHistory segmentAction = generateQCAction(QCOperation.SEGMENT);
+        QCActionHistory segmentAction = generateQCAction(QCOperation.SEGMENT, false, null);
         List<QCEventInstance> movedSourceUIDs = new ArrayList<QCEventInstance>();
         List<QCEventInstance> movedTargetUIDs = new ArrayList<QCEventInstance>();
         List<QCEventInstance> clonedSourceUIDs = new ArrayList<QCEventInstance>();
@@ -588,7 +601,7 @@ public class QCBeanImpl  implements QCBean{
     public QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt,
             QCUpdateScope scope, Attributes attrs)
             throws EntityNotFoundException {
-        QCActionHistory updateAction = generateQCAction(QCOperation.UPDATE);
+        QCActionHistory updateAction = generateQCAction(QCOperation.UPDATE, false, null);
         LOG.info("{}:  QC info[Update] info - Performing QC update DICOM header on {} scope : ", qcSource, scope);
         Attributes unmodified;
         PatientAttrsPKTuple unmodifiedAndPK = null;
@@ -868,8 +881,6 @@ public class QCBeanImpl  implements QCBean{
         
         return list;
     }
-
-
 
     /* (non-Javadoc)
      * @see org.dcm4chee.archive.qc.QCBean#move(org.dcm4chee.archive.entity.Instance,
@@ -1271,7 +1282,14 @@ public class QCBeanImpl  implements QCBean{
     private Series findSeries(String seriesInstanceUID) {
         Query query = em.createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID_EAGER);
         query.setParameter(1, seriesInstanceUID);
-        Series series = (Series) query.getSingleResult();
+        Series series = null;
+        try{
+        series = (Series) query.getSingleResult();
+        }
+        catch(NoResultException e)  {
+            LOG.error("{} : QC info[findSeries] error - Failed to find series "
+                    + "- reason {}", qcSource, e);
+        }
         if (LOG.isDebugEnabled()) {
             LOG.debug("{} : QC info[findSeries] info - "
                     + "Found series {}", qcSource, series.toString());
@@ -2224,10 +2242,12 @@ public class QCBeanImpl  implements QCBean{
      *            the operation
      * @return the QC action history
      */
-    private QCActionHistory generateQCAction(QCOperation operation) {
+    private QCActionHistory generateQCAction(QCOperation operation, boolean noneIOCM, String noneIOCMSourceAET) {
         QCActionHistory action = new QCActionHistory();
         action.setCreatedTime(new Date());
         action.setAction(operation.toString());
+        action.setNoneIOCM(noneIOCM);
+        action.setNoneIOCMSourceAET(noneIOCMSourceAET);
         em.persist(action);
         return action;
     }
@@ -2684,4 +2704,5 @@ public class QCBeanImpl  implements QCBean{
             return this.unmodified;
         }
     }
+
 }

@@ -66,50 +66,54 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
 
     static Logger LOG = LoggerFactory.getLogger(StoreServiceNoneIOCMDecorator.class);
 
-    @Inject Device device;
-    
-    @Inject NoneIOCMChangeRequestorService noneIocmService;
+    @Inject
+    Device device;
 
-    /* 
-     * Extends default instanceExists method. The first part of the method throws 
-     * an exception in case a duplicate rejection note is received. The second part
-     * manages received objects previously rejected, according to the IOCM standard. 
+    @Inject
+    NoneIOCMChangeRequestorService noneIocmService;
+
+    /*
+     * Extends default instanceExists method. The first part of the method
+     * throws an exception in case a duplicate rejection note is received. The
+     * second part manages received objects previously rejected, according to
+     * the IOCM standard.
      */
     @Override
-    public StoreAction instanceExists(EntityManager em, StoreContext context,
-            Instance inst) throws DicomServiceException {
-    	LOG.info("######### handle instanceExists(). context:{}",context);
-    	NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
-		LOG.info("###### NoneIOCMChangeRequestorExtension:{}",ext);
-		if (ext != null) {
-			LOG.info("###### NoneIOCMChangeRequestorDevices:{}", ext.getNoneIOCMChangeRequestorDevices());
-		}
-    	if (ext != null && ext.getNoneIOCMChangeRequestorDevices().size() > 0) {
-    		String callingAET = context.getStoreSession().getRemoteAET();
-    		LOG.info("###### check if requestor is NoneIOCM requestor! callingAE:{}, NoneIOCM AEs:{}",callingAET, ext.getNoneIOCMChangeRequestorDevices());;
-    		for (Device d : ext.getNoneIOCMChangeRequestorDevices()) {
-    			if (d.getApplicationAETitles().contains(callingAET)) {
-    				LOG.info("###### {} is a None IOCM Change Requestor! check for changes.", callingAET);
-    				NoneIOCMChangeType chgType = noneIocmService.performChange(inst, context);
-    				LOG.info("###### NoneIOCM changeType:{}", chgType);
-    				break;
-    			}
-    		}
-    	}
-    	LOG.info("####### call next decorator");
+    public StoreAction instanceExists(EntityManager em, StoreContext context, Instance inst)
+            throws DicomServiceException {
+        LOG.info("######### handle instanceExists(). context:{}", context);
+        NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
+        LOG.info("###### NoneIOCMChangeRequestorExtension:{}", ext);
+        if (ext != null) {
+            LOG.info("###### NoneIOCMChangeRequestorDevices:{}", ext.getNoneIOCMChangeRequestorDevices());
+        }
+        if (ext != null && ext.getNoneIOCMChangeRequestorDevices().size() > 0) {
+            String callingAET = context.getStoreSession().getRemoteAET();
+            LOG.info("###### check if requestor is NoneIOCM requestor! callingAE:{}, NoneIOCM AEs:{}", callingAET,
+                    ext.getNoneIOCMChangeRequestorDevices());
+            ;
+            for (Device d : ext.getNoneIOCMChangeRequestorDevices()) {
+                if (d.getApplicationAETitles().contains(callingAET)) {
+                    LOG.info("###### {} is a None IOCM Change Requestor! check for changes.", callingAET);
+                    NoneIOCMChangeType chgType = noneIocmService.performChange(inst, context);
+                    LOG.info("###### NoneIOCM changeType:{}", chgType);
+                    break;
+                }
+            }
+        }
+        LOG.info("####### call next decorator");
         return getNextDecorator().instanceExists(em, context, inst);
     }
 
     @Override
-    public Instance findOrCreateInstance(EntityManager em, StoreContext context)
-            throws DicomServiceException {
-    	LOG.info("######### handle findOrCreateInstance(). context:{}",context);
+    public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
+        LOG.info("######### handle findOrCreateInstance(). context:{}", context);
         Instance inst = getNextDecorator().findOrCreateInstance(em, context);
         return inst;
     }
 
     public void store(StoreContext context) throws DicomServiceException {
-    	LOG.info("######### handle store(). context:{}",context);
+        LOG.info("######### handle store(). context:{}", context);
         getNextDecorator().store(context);
     }
 
