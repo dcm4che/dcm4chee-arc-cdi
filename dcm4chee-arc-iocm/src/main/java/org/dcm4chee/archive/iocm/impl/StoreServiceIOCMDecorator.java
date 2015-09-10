@@ -195,7 +195,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
                 rejectionService.reject(context.getStoreSession(), rejectedInstances,
                         rejectionCode,
                         rejectionParam.getOverwritePreviousRejection());
-                updateRejectionStatus(rejectionNote.getSeries().getStudy());
+                updateRejectionStatus(rejectionNote.getSeries().getStudy(), rejectionNote);
             }
         } catch (InstanceAlreadyRejectedException e) {
             Instance inst = e.getInstance();
@@ -207,15 +207,16 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
         }
     }
 
-    private void updateRejectionStatus(Study study) {
-        if(isRejected(study)) {
+    private void updateRejectionStatus(Study study, Instance rejectionNote) {
+        if(isRejected(study, rejectionNote)) {
             study.setRejected(true);
         }
     }
-    private boolean isRejected(Study study) {
+    private boolean isRejected(Study study, Instance rejectionNote) {
         boolean studyisRejected = true;
         if(study.getSeries()!=null)
         for (Series series : study.getSeries()) {
+        if(series.getSeriesInstanceUID().compareTo(rejectionNote.getSeries().getSeriesInstanceUID()) != 0)
             if (!isRejected(series))
                 studyisRejected = false;
         }
