@@ -95,7 +95,8 @@ public class ArchiveDeviceProducer {
         return device;
     }
 
-    public void reloadConfiguration() throws Exception {
+    // synchronized to prevent concurrent reconfigure
+    public synchronized void reloadConfiguration() throws Exception {
         Device deviceLoaded = findDevice();
         findOrCreateRejectionCodes(deviceLoaded);
         initImageReaderFactory(deviceLoaded);
