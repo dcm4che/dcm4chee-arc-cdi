@@ -390,7 +390,7 @@ public class WadoURI extends Wado {
         if (mediaType == MediaType.TEXT_HTML_TYPE) {
             try {
                 instscompleted.addAll(ref);
-                return retrieveSRHTML(instance);
+                return retrieveSRHTML(instance, attrs);
             } catch (TransformerConfigurationException e) {
                 return retrieveNativeDicomObject(instance, attrs);
             }
@@ -443,7 +443,7 @@ public class WadoURI extends Wado {
         return false;
     }
 
-    private Response retrieveSRHTML(final ArchiveInstanceLocator ref)
+    private Response retrieveSRHTML(final ArchiveInstanceLocator ref, final Attributes attrs)
             throws TransformerConfigurationException {
         return Response.ok(new StreamingOutput() {
             @Override
@@ -473,6 +473,7 @@ public class WadoURI extends Wado {
                 th.setResult(new StreamResult(bout));
                 w = new SAXWriter(th);
                 Attributes data = readAttributes(ref);
+                data.addAll(attrs);
                 try {
                     w.write(data);
                 } catch (SAXException e) {
