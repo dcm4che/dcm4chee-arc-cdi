@@ -156,7 +156,7 @@ public class StudyUpdateSessionManager {
     public void onStoreSessionClosed(@Observes @StoreSessionClosed StoreSession storeSession) {
         StudyUpdatedEvent pendingStudyUpdatedEvent = (StudyUpdatedEvent) storeSession.getProperty("pendingStudyUpdatedEvent");
 
-        // ... just in case
+        // in case of multiple associations/cluster nodes
         if (pendingStudyUpdatedEvent == null) return;
 
         fireStudyUpdatedEventAsync(pendingStudyUpdatedEvent);
