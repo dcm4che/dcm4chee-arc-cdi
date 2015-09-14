@@ -83,6 +83,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
+
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -362,10 +363,23 @@ public class StoreServiceImpl implements StoreService {
 
             // stores metadata (async)
             service.beginStoreMetadata(context);
-
+            
             // stores complete file meta+bulkdata (async)
             service.beginProcessFile(context);
-
+            
+            try {
+                context.getBulkdataContext().get();
+                context.getMetadataContext().get();
+            } catch (ExecutionException x) {
+                LOG.warn("Store Bulkdata failed!", x);
+                for ( Throwable cause = x.getCause() ; cause != null ; cause = cause.getCause()) {
+                    if (cause instanceof DicomServiceException)
+                        throw (DicomServiceException) cause;
+                }
+                throw new DicomServiceException(Status.ProcessingFailure, x);
+            } catch (InterruptedException e) {
+                LOG.warn("Waiting for storage completed was interrupted!", e);
+            }
             // coerce attrs
             service.coerceAttributes(context);
 
@@ -487,11 +501,9 @@ public class StoreServiceImpl implements StoreService {
                         bulkdataPath = bulkdataRoot + '.' + copies++;
                     }
                 }
-
                 out = new BufferedOutputStream(out, bufferLength);
                 out = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
                 ((DicomOutputStream) out).writeDataset(fmi, attributes);
-
             } catch (Exception e) {
                 throw new DicomServiceException(Status.UnableToProcess, e);
             } finally {
@@ -804,7 +816,6 @@ public class StoreServiceImpl implements StoreService {
 
             Attributes metadata = new Attributes(attributes.bigEndian(), attributes.size());
             metadata.addWithoutBulkData(attributes, BulkDataDescriptor.DEFAULT);
-
             if (digest != null) {
                 digest.reset();
                 out = new DigestOutputStream(out, digest);

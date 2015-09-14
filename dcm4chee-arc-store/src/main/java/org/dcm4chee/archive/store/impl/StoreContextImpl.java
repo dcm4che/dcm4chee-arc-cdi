@@ -60,7 +60,6 @@ public class StoreContextImpl implements StoreContext {
     private final StoreSession session;
     private String spoolFileSuffix;
     private String noDBAttsDigest;
-    private String metaDataStoragePath;
     private String transferSyntax;
     private Attributes attributes;
     private Attributes coercedAttributes = new Attributes();
