@@ -50,6 +50,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
@@ -107,7 +109,7 @@ public class LocationMgmtEJB implements LocationMgmt {
     private static final Logger LOG = LoggerFactory
             .getLogger(LocationMgmtEJB.class);
 
-    private static Object syncObj = new Object();
+    private static ConcurrentHashMap<String, SyncLatch> syncLatch = new ConcurrentHashMap<String, SyncLatch>();
     
     @Inject
     private Device device;
@@ -286,29 +288,52 @@ public class LocationMgmtEJB implements LocationMgmt {
     @Override
     public void findOrCreateStudyOnStorageGroup(Study study, String groupID) {
         String studyUID = study.getStudyInstanceUID();
-        StudyOnStorageSystemGroup studyOnStgSysGrp;
+        StudyOnStorageSystemGroup studyOnStgSysGrp = null;
         try {
             studyOnStgSysGrp = findStudyOnStorageGroup(studyUID, groupID);
+            studyOnStgSysGrp.setAccessTime(new Date(System.currentTimeMillis()));
+            studyOnStgSysGrp.setMarkedForDeletion(false);
+            LOG.debug("##### StudyOnStorageGroup updated! study:{} groupID:{}", studyOnStgSysGrp.getStudy(), studyOnStgSysGrp.getStorageSystemGroupID());
         } catch (NoResultException e) {
-            LOG.debug("StudyOnStorageGroup entry does not exist! Study:{}, groupID:{}", studyUID, groupID);
-            synchronized (syncObj) {
+            String key = study.getStudyInstanceUID()+"@"+groupID;
+            LOG.debug("##### Create StudyOnStorageGroup entry! {}, study:{}", key, study);
+            if (syncLatch.putIfAbsent(key, new SyncLatch(1)) == null) {
+                LOG.debug("##### Creating new entry {} study:{}", key, study);
                 try {
-                    studyOnStgSysGrp = findStudyOnStorageGroup(studyUID, groupID);
-                    LOG.debug("StudyOnStorageGroup entry already created in other thread! Study:{}, groupID:{}", studyUID, groupID);
-                } catch (NoResultException e1) {
-                    LOG.debug("Error retrieving StudyOnStorageGroup entry - " + "reason {}, creating new entry", e1);
                     studyOnStgSysGrp = new StudyOnStorageSystemGroup();
                     studyOnStgSysGrp.setStudy(study);
                     studyOnStgSysGrp.setStorageSystemGroupID(groupID);
                     studyOnStgSysGrp.setMarkedForDeletion(false);
                     studyOnStgSysGrp.setAccessTime(new Date(System.currentTimeMillis()));
                     em.persist(studyOnStgSysGrp);
-                    return;
+                    LOG.debug("##### New StudyOnStorageGroup entry persisted! {} study:{}", key, studyOnStgSysGrp.getStudy());
+                } catch (Exception x) {
+                    LOG.warn("##### Creating new entry {} study:{} failed! Try find.", key, study);   
+                    try {
+                        studyOnStgSysGrp = findStudyOnStorageGroup(studyUID, groupID);
+                    } catch (NoResultException nre) {
+                        LOG.error("##### StudyOnStorageGroup still not found!");
+                    }
+                } finally {
+                    SyncLatch latch = syncLatch.remove(key);
+                    latch.studyOnStgSysGrp = studyOnStgSysGrp;
+                    LOG.debug("##### StudyOnStorageGroup entry {} created. {} threads are waiting.", studyOnStgSysGrp, latch.countAwaiting);
+                    latch.countDown();
                 }
-	        }
-    	}
-        studyOnStgSysGrp.setAccessTime(new Date(System.currentTimeMillis()));
-        studyOnStgSysGrp.setMarkedForDeletion(false);
+            } else {
+                LOG.info("##### Another thread is creating the StudyOnStorageGroup entry! Let us wait. {}", key);
+                SyncLatch latch = syncLatch.get(key);
+                if (latch != null) {
+                    try {
+                        latch.await();
+                    } catch (InterruptedException x) {
+                        LOG.info("##### Waiting thread interrupted!");
+                    }
+                    studyOnStgSysGrp = latch.studyOnStgSysGrp;
+                    LOG.info("##### StudyOnStorageGroup created:{}", studyOnStgSysGrp);
+                }
+            }
+        }
     }
 
     @Override
@@ -618,5 +643,33 @@ public class LocationMgmtEJB implements LocationMgmt {
                         StudyOnStorageSystemGroup.FIND_STUDIES_NO_STG_GROUP,
                         Study.class)
                 .getResultList();
+    }
+    
+    private class SyncLatch extends CountDownLatch {
+
+        private int countAwaiting;
+        private StudyOnStorageSystemGroup studyOnStgSysGrp;
+        
+        public SyncLatch(int count) {
+            super(count);
+        }
+        
+        @Override
+        public void await() throws InterruptedException {
+            countAwaiting++;
+            super.await();
+        }
+
+        public StudyOnStorageSystemGroup getStudyOnStgSysGrp() {
+            return studyOnStgSysGrp;
+        }
+
+        public void setStudyOnStgSysGrp(StudyOnStorageSystemGroup studyOnStgSysGrp) {
+            this.studyOnStgSysGrp = studyOnStgSysGrp;
+        }
+
+        public int getCountAwaiting() {
+            return countAwaiting;
+        }
     }
 }
