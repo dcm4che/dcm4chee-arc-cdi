@@ -200,6 +200,7 @@ public class OptimisticLockForIT extends BaseStoreIT {
         StoreSession session = storeService.createStoreSession(storeService);
         session.setStoreParam(storeParam);
         StorageSystem storageSystem = new StorageSystem();
+        storageSystem.setStorageSystemID("test_storage_system");
         StorageSystemGroup grp = new StorageSystemGroup();
         grp.setGroupID("test_grp");
         grp.addStorageSystem(storageSystem);
