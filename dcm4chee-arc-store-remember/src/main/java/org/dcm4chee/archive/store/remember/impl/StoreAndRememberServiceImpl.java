@@ -189,8 +189,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
     private ApplicationEntity getLocalAE(StoreAndRememberContext ctx) {
        ApplicationEntity localAE = device.getApplicationEntity(ctx.getLocalAE());
        if(localAE == null) {
-           LOG.error(String.format("Could not resolve local AE '%s' for Store-and-Remember task", 
-                   localAE));
+           LOG.error(String.format("Could not resolve local AE '%s' for Store-and-Remember task", ctx.getLocalAE()));
        }
        return localAE;
     }

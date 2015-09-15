@@ -315,11 +315,7 @@ public class StoreVerifyServiceImpl implements StoreVerifyService {
         String remoteAET = commitEvent.getRemoteAET();
         
         StoreVerifyDimse dimseEntry = ejb.getDimseEntry(transactionUID);
-        if(dimseEntry == null) {
-            LOG.error("Received storage commitment response for unknown transaction, transaction UID: {}", transactionUID);
-            return;
-        }
-        
+      
         Attributes eventInfo = commitEvent.getEventInfo();
         String retrieveAET = eventInfo.getString(Tag.RetrieveAETitle);
        
