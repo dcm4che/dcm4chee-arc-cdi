@@ -49,69 +49,52 @@ public class DynamicDecoratorProducer {
 
 
 	@Inject
-	private ServiceDecorator<StoreService> storeDecorators;
+	private DynamicDecoratorManager decoratorManager;
 	
-	@Inject
-	private ServiceDecorator<MPPSService> mppsDecorators;
-	
-	@Inject
-	private ServiceDecorator<QueryService> queryDecorators;
-	
-	@Inject
-	private ServiceDecorator<RetrieveService> retrieveDecorators;
-	
-	@Inject
-	private ServiceDecorator<CStoreSCUService> cstoreSCUDecorators;
 
-	@Inject
-	private ServiceDecorator<DerivedStudyFields> derivedStudyDecorators;
-
-	@Inject
-	private ServiceDecorator<DerivedSeriesFields> derivedSeriesDecorators;
-	
 	@Produces
 	@ConfiguredDynamicDecorators
 	public Collection<DelegatingServiceImpl<StoreService>> getConfiguredStoreServiceDynamicDecorators() {
-		return storeDecorators.getOrderedDecorators(dynamicStoreDecorators, StoreService.class.getName());
+		return decoratorManager.getOrderedDecorators(dynamicStoreDecorators, StoreService.class);
 	}
 	
 	@Produces
 	@ConfiguredDynamicDecorators
 	public Collection<DelegatingServiceImpl<MPPSService>> getConfiguredMPPSServiceDynamicDecorators() {
-		return mppsDecorators.getOrderedDecorators(dynamicMPPSDecorators, MPPSService.class.getName());
+		return decoratorManager.getOrderedDecorators(dynamicMPPSDecorators, MPPSService.class);
 	}
 	
 	@Produces
 	@ConfiguredDynamicDecorators
 	public Collection<DelegatingServiceImpl<QueryService>> getConfiguredQueryServiceDynamicDecorators() {
-		return queryDecorators.getOrderedDecorators(dynamicQueryDecorators, QueryService.class.getName());
+		return decoratorManager.getOrderedDecorators(dynamicQueryDecorators, QueryService.class);
 	}
 	
 	@Produces
 	@ConfiguredDynamicDecorators
 	public Collection<DelegatingServiceImpl<RetrieveService>> getConfiguredRetrieveServiceDynamicDecorators() {
-		return retrieveDecorators.getOrderedDecorators(dynamicRetrieveDecorators, RetrieveService.class.getName());
+		return decoratorManager.getOrderedDecorators(dynamicRetrieveDecorators, RetrieveService.class);
 	}
 	
 	@Produces
 	@ConfiguredDynamicDecorators
 	public Collection<DelegatingServiceImpl<CStoreSCUService>> getConfiguredCStoreSCUServiceDynamicDecorators() {
-		return cstoreSCUDecorators.getOrderedDecorators(dynamicCStoreSCUDecorators, CStoreSCUService.class.getName());
+		return decoratorManager.getOrderedDecorators(dynamicCStoreSCUDecorators, CStoreSCUService.class);
 	}
 
 	@Produces @RequestScoped
 	@ConfiguredDynamicDecorators
 	public Collection<DelegatingServiceImpl<DerivedStudyFields>> getConfiguredDerivedStudyFieldsDynamicDecorators() {
-		return derivedStudyDecorators.getOrderedDecorators(dynamicDerivedStudyFieldsDecorators,
-				DerivedStudyFields.class.getName(), false); //false => not using cache
+		return decoratorManager.getOrderedDecorators(dynamicDerivedStudyFieldsDecorators,
+				DerivedStudyFields.class, false); //false => not using cache
 	}
 
 	@Produces @RequestScoped
 	@ConfiguredDynamicDecorators
 	public Collection<DelegatingServiceImpl<DerivedSeriesFields>> getConfiguredDerivedSeriesFieldsDynamicDecorators() {
-		return derivedSeriesDecorators.getOrderedDecorators
+		return decoratorManager.getOrderedDecorators
 				(dynamicDerivedSeriesFieldsDecorators,
-				DerivedSeriesFields.class.getName(), false); //false => not using cache
+				DerivedSeriesFields.class, false); //false => not using cache
 	}
 
 }
