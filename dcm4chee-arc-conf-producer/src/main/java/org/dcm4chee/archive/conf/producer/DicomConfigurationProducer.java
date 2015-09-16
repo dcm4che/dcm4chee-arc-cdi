@@ -59,8 +59,7 @@ import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.ArchiveHL7ApplicationExtension;
-import org.dcm4chee.conf.decorators.ConfiguredDynamicDecorators;
-import org.dcm4chee.conf.decorators.DynamicDecoratorsConfig;
+import org.dcm4chee.conf.decorators.DynamicDecoratorManager;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,8 +85,7 @@ public class DicomConfigurationProducer {
 
 
     @Inject
-    @ConfiguredDynamicDecorators
-    DynamicDecoratorsConfig decoratorsConfig;
+    DynamicDecoratorManager decoratorManager;
 
     @Produces
     @ApplicationScoped
@@ -95,21 +93,21 @@ public class DicomConfigurationProducer {
             throws ConfigurationException {
 
         // this just touched and thus init'ed here to improve init log output, TBD where to move it
-        decoratorsConfig.getDecoratedServices();
+        decoratorManager.getDecoratorsConfig();
 
-        if(!configFactory.isUnsatisfied()) {
+        if (!configFactory.isUnsatisfied()) {
             LOG.info("Using shared DICOM Configuration Factory to retrieve / create configuration instance for archive");
             DicomConfigurationManagerFactory factory = configFactory.get();
             return factory.createDicomConfigurationManager();
         } else {
             LOG.warn("Could not retrieve shared DICOM Configuration Factory: Falling back to building application-scoped configuration");
 
-        DicomConfigurationBuilder builder;
+            DicomConfigurationBuilder builder;
 
-        if (!builderInstance.isUnsatisfied())
-            builder = builderInstance.get();
-        else
-            builder = new DicomConfigurationBuilder(System.getProperties());
+            if (!builderInstance.isUnsatisfied())
+                builder = builderInstance.get();
+            else
+                builder = new DicomConfigurationBuilder(System.getProperties());
 
 
             builder.registerDeviceExtension(ArchiveDeviceExtension.class);
