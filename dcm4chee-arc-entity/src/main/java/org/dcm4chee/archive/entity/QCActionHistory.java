@@ -75,7 +75,7 @@ public class QCActionHistory implements Serializable{
     @Column(name = "none_iocm", updatable = false)
     private boolean noneIOCM;
 
-    @Basic(optional = false)
+    @Basic(optional = true)
     @Column(name = "none_iocm_src_aet", updatable = false)
     private String noneIOCMSourceAET;
 
