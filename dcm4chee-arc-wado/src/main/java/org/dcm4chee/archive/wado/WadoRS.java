@@ -852,19 +852,6 @@ public class WadoRS extends Wado {
         headerParams.add(CONTENT_ID, ContentIDUtils.generateContentID());
         if (contentLocation != null)
             headerParams.add(CONTENT_LOCATION, contentLocation);
-
-        // TODO LOGGGING
-        // if (iuid != null)
-        // LOG.info("{}: Add Part #{} [uid={}]{}", new Object[] {
-        // method,
-        // output.getParts().size(),
-        // iuid,
-        // LogInterceptor.toString(headerParams) });
-        // else
-        // LOG.info("{}: Add Part #{}{}", new Object[] {
-        // method,
-        // output.getParts().size(),
-        // LogInterceptor.toString(headerParams) });
     }
 
     private void addCompressedPixelDataTo(Fragments fragments, int frames,
