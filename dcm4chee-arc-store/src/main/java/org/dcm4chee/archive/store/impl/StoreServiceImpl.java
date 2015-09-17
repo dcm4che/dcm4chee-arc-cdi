@@ -697,7 +697,7 @@ public class StoreServiceImpl implements StoreService {
         } catch (Exception e) {
             LOG.error("StoreService : Error deleting replaced location - {}", e);
         }
-        return newInst;
+        return adjustForNoneIOCM(newInst, context);
     }
 
     @Override
@@ -929,6 +929,13 @@ public class StoreServiceImpl implements StoreService {
                     }
                 });
         context.setMetadataContext(futureMetadataContext);
+    }
+
+    @Override
+    public Instance adjustForNoneIOCM(Instance instanceToStore,  StoreContext context) {
+        //here decorators can set the action depending if the instance
+        //was previously deleted or not
+        return instanceToStore;
     }
 
 }

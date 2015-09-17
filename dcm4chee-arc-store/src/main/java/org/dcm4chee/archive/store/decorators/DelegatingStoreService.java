@@ -121,4 +121,8 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
     public void beginStoreMetadata(StoreContext context) {
         getNextDecorator().beginStoreMetadata(context);
     }
+
+    public Instance adjustForNoneIOCM(Instance instanceToStore, StoreContext context) {
+       return getNextDecorator().adjustForNoneIOCM(instanceToStore, context);
+    }
 }

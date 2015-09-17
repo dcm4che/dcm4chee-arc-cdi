@@ -53,11 +53,16 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.util.UIDUtils;
+import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.QCActionHistory;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
+import org.dcm4chee.archive.qc.QCEvent.QCOperation;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.slf4j.Logger;
@@ -66,7 +71,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Franz Willer <franz.willer@gmail.com>
- *
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @Stateless
 public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequestorService {
@@ -118,13 +123,63 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         switch (chgType) {
         case STUDY_IUID_CHANGE:
             split(inst, context);
+            LOG.info("{}: Performed study UID change for non iocm request");
+            break;
+        case INSTANCE_CHANGE:
+
             break;
         default:
 
             break;
         }
-        LOG.info("######## performChange completed");
+        
         return chgType;
+    }
+
+    @Override
+    public void handleModalityChange(Instance inst, StoreContext context, int gracePeriodInSeconds) {
+        
+        if(withinGracePeriod(inst, gracePeriodInSeconds)) {
+            context.setOldNONEIOCMChangeUID(inst.getSopInstanceUID());
+            Attributes attrs = context.getAttributes();
+            attrs.setString(null, Tag.SOPInstanceUID, VR.UI, 
+                    UIDUtils.createUID());
+            inst.setAttributes(attrs, context.getStoreSession().getStoreParam().getAttributeFilter(Entity.Instance),
+                    context.getStoreSession().getStoreParam().getFuzzyStr(), context.getStoreSession().getStoreParam().getNullValueForQueryFields());
+            em.merge(inst);
+            context.setAttributes(attrs);
+            context.setInstance(inst);
+            context.setOldNONEIOCMChangeUID(inst.getSopInstanceUID());
+        }
+        else {
+            context.setStoreAction(StoreAction.IGNORE);
+        }
+    }
+
+    @Override
+    public void onStoreInstance(StoreContext context) {
+        //check here if the stored instance was received by NoneIOCM
+        //Source modality within grace period
+        
+        if(context.getOldNONEIOCMChangeUID() != null) {
+            //create Split QC history for none IOCM                     
+        }
+    }
+    private boolean withinGracePeriod(Instance inst, int gracePeriodInSeconds) {
+        Query query = em.createNamedQuery(QCInstanceHistory
+                .FIND_BY_CURRENT_UID_FOR_ACTION, QCInstanceHistory.class);
+        query.setParameter(1, inst.getSopInstanceUID());
+        query.setParameter(2, QCOperation.DELETE.toString());
+        QCInstanceHistory foundQCInstanceHistory = (QCInstanceHistory) query.getSingleResult();
+        
+        if(foundQCInstanceHistory == null)
+            return false;
+        
+        long createdTime = foundQCInstanceHistory.getSeries()
+                .getStudy().getAction().getCreatedTime().getTime();
+        long now = System.currentTimeMillis();
+        
+        return (now - createdTime) < gracePeriodInSeconds; 
     }
     private QCEvent split(Instance inst, StoreContext context) {
         LOG.info("######## Start Split instance to new Study");

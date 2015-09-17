@@ -42,7 +42,6 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.NoneIOCMChangeRequestorExtension;
 import org.dcm4chee.archive.conf.StoreAction;
@@ -56,10 +55,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Decorator to apply IOCM specifications to the Store Service.
+ * Decorator to accommodate none-IOCM changes.
  * 
- * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * @author Franz Willer <franz.willer@gmail.com>
+ * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 @DynamicDecorator
 public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
@@ -90,8 +89,7 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
         if (ext != null && ext.getNoneIOCMChangeRequestorDevices().size() > 0) {
             String callingAET = context.getStoreSession().getRemoteAET();
             LOG.info("###### check if requestor is NoneIOCM requestor! callingAE:{}, NoneIOCM AEs:{}", callingAET,
-                    ext.getNoneIOCMChangeRequestorDevices());
-            ;
+                    ext.getNoneIOCMChangeRequestorDevices());;
             for (Device d : ext.getNoneIOCMChangeRequestorDevices()) {
                 if (d.getApplicationAETitles().contains(callingAET)) {
                     LOG.info("###### {} is a None IOCM Change Requestor! check for changes.", callingAET);
@@ -104,7 +102,22 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
         LOG.info("####### call next decorator");
         return getNextDecorator().instanceExists(em, context, inst);
     }
-
+    @Override
+    public Instance adjustForNoneIOCM(Instance instanceToStore, StoreContext context) {
+        NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
+        String callingAET = context.getStoreSession().getRemoteAET();
+        int gracePeriodInSeconds = ext.getGracePeriod();
+        for (Device d : ext.getNoneIOCMModalityDevices()) {
+            if (d.getApplicationAETitles().contains(callingAET)) {
+                LOG.info("{}: {} is a None IOCM Change Requestor Modality! "
+                        + "check for non structural changes.",
+                        context.getStoreSession(), callingAET);
+                noneIocmService.handleModalityChange(instanceToStore, context, gracePeriodInSeconds);
+                break;
+            }
+        }
+        return getNextDecorator().adjustForNoneIOCM(instanceToStore, context);
+    }
     @Override
     public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
         LOG.info("######### handle findOrCreateInstance(). context:{}", context);

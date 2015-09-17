@@ -76,6 +76,7 @@ public class StoreContextImpl implements StoreContext {
     private StorageContext spoolingContext;
     private Future<StorageContext> bulkdataContext;
     private Future<StorageContext> metadataContext;
+    private String oldNONEIOCMChangeUID;
 
     public StoreContextImpl(StoreSession session) {
         this.session = session;
@@ -265,5 +266,15 @@ public class StoreContextImpl implements StoreContext {
     @Override
     public void setMetadataContext(Future<StorageContext> metadataContext) {
         this.metadataContext = metadataContext;
+    }
+
+    @Override
+    public String getOldNONEIOCMChangeUID() {
+        return oldNONEIOCMChangeUID;
+    }
+
+    @Override
+    public void setOldNONEIOCMChangeUID(String oldNONEIOCMChangeUID) {
+        this.oldNONEIOCMChangeUID = oldNONEIOCMChangeUID;
     }
 }

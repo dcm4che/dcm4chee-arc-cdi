@@ -53,12 +53,20 @@ import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
  *
  */
 public interface NoneIOCMChangeRequestorService {
-	
-	public enum NoneIOCMChangeType {PAT_ID_CHANGE, STUDY_IUID_CHANGE, SERIES_IUID_CHANGE, INSTANCE_CHANGE, NO_CHANGE, ILLEGAL_CHANGE}
-	
-	NoneIOCMChangeType getChangeType(Instance inst, StoreContext context);
-	NoneIOCMChangeType performChange(Instance inst, StoreContext context);
-	List<QCInstanceHistory> findInstanceHistory(String sopInstanceUID);
-	
-	void onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent);
+
+    public enum NoneIOCMChangeType {
+        PAT_ID_CHANGE, STUDY_IUID_CHANGE, SERIES_IUID_CHANGE, INSTANCE_CHANGE, NO_CHANGE, ILLEGAL_CHANGE
+    }
+
+    NoneIOCMChangeType getChangeType(Instance inst, StoreContext context);
+
+    NoneIOCMChangeType performChange(Instance inst, StoreContext context);
+
+    List<QCInstanceHistory> findInstanceHistory(String sopInstanceUID);
+
+    void onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent);
+
+    public void onStoreInstance(@Observes StoreContext context);
+
+    void handleModalityChange(Instance inst, StoreContext context, int gracePeriodInSeconds);
 }
