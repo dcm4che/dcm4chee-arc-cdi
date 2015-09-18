@@ -178,6 +178,7 @@ public class StoreAndRememberEJB {
             sr.setStoreVerifyTransactionUID(storeVerifyTxUID);
             sr.setStatus(StoreAndRememberStatus.PENDING);
             sr.setLocalAE(cxt.getLocalAE());
+            sr.setRemoteAE(cxt.getRemoteAE());
             sr.setExternalDeviceName(cxt.getExternalDeviceName());
             sr.setStoreVerifyProtocol(cxt.getStoreVerifyProtocol().toString());
             sr.setRetriesLeft(cxt.getRetries());
