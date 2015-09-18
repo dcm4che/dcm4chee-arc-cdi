@@ -379,6 +379,7 @@ public class StoreServiceImpl implements StoreService {
                 throw new DicomServiceException(Status.ProcessingFailure, x);
             } catch (InterruptedException e) {
                 LOG.warn("Waiting for storage completed was interrupted!", e);
+                throw new DicomServiceException(Status.ProcessingFailure, e);
             }
             // coerce attrs
             service.coerceAttributes(context);
