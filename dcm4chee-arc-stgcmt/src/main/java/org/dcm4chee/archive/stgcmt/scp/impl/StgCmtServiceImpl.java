@@ -70,6 +70,7 @@ import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.DimseRSP;
+import org.dcm4che3.net.DimseRSPHandler;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
@@ -288,16 +289,16 @@ public class StgCmtServiceImpl implements StgCmtService {
 
         Attributes action = createAction(insts, transactionUID);
 
+        N_ACTION_REQ_STATE requestState;
         try {
-            ApplicationEntity remoteAE = aeCache
-                    .findApplicationEntity(remoteAET);
+            ApplicationEntity remoteAE = aeCache.findApplicationEntity(remoteAET);
             Association as = localAE.connect(remoteAE, aarq);
             try {
-                DimseRSP rsp = as.naction(
-                        UID.StorageCommitmentPushModelSOPClass,
+                NActionRequestRSPHandler rspHandler = new NActionRequestRSPHandler(as.nextMessageID());
+                as.naction(UID.StorageCommitmentPushModelSOPClass,
                         UID.StorageCommitmentPushModelSOPInstance, 1, action,
-                        null);
-                rsp.next();
+                        null, rspHandler);
+                requestState = rspHandler.waitForResponse();
             } finally {
                 try {
                     as.release();
@@ -308,10 +309,35 @@ public class StgCmtServiceImpl implements StgCmtService {
             }
         } catch (Exception e) {
             LOG.error("Failed to send Storage Commitment Request [{}->{}]: {}", localAET, remoteAET, e.getMessage());
-            return N_ACTION_REQ_STATE.SEND_REQ_FAILED;
+            requestState = N_ACTION_REQ_STATE.SEND_REQ_FAILED;
         }
         
-        return N_ACTION_REQ_STATE.SEND_REQ_OK;
+        return requestState;
+    }
+    
+    private static class NActionRequestRSPHandler extends DimseRSPHandler {
+        N_ACTION_REQ_STATE requestState = null;
+        
+        private NActionRequestRSPHandler(int msgId) {
+            super(msgId);
+        }
+        
+        @Override
+        public void onDimseRSP(Association as, Attributes cmd, Attributes data) {
+            requestState = (cmd.getInt(Tag.Status, -1) == Status.Success) ? N_ACTION_REQ_STATE.SEND_REQ_OK : N_ACTION_REQ_STATE.SEND_REQ_FAILED;
+            super.onDimseRSP(as, cmd, data);
+            synchronized(this) {
+                notifyAll();
+            }
+        }
+        
+        private synchronized N_ACTION_REQ_STATE waitForResponse() throws InterruptedException {
+            while (requestState == null) {
+                wait();
+            }
+            return requestState;
+        }
+        
     }
 
     private Attributes createAction(List<ArchiveInstanceLocator> insts,
