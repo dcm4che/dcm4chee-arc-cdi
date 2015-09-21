@@ -2,7 +2,6 @@
 -- create unique index code_idx on code (code_value, code_designator, code_version);
 
 create index content_item_rel_type_idx on content_item (rel_type);
-create index content_item_text_value_idx on content_item (text_value);
 
 -- handled by JPA anno
 -- create unique index issuer_entity_id_idx on id_issuer (entity_id);
@@ -95,7 +94,7 @@ create index sps_station_aet_idx on sps_station_aet (station_aet);
 create index study_view_id_idx on study_query_attrs(view_id);
 create index series_view_id_idx on series_query_attrs(view_id);
 
-create index study_update_session_emu_time_idx on study_update_session(emulation_time);
+create index study_update_emu_time_idx on study_update_session(emulation_time);
 
 create index qc_inst_hist_old_uid_idx on qc_instance_history (old_uid);
 create index qc_inst_hist_next_uid_idx on qc_instance_history (next_uid);
