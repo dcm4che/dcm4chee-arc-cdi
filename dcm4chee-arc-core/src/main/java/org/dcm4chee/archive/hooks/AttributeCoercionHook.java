@@ -38,46 +38,16 @@
  *  ***** END LICENSE BLOCK *****
  */
 
-package org.dcm4chee.archive.mpps.emulate;
-
-import org.dcm4che3.net.Device;
+package org.dcm4chee.archive.hooks;
+import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
+import org.dcm4chee.archive.ServiceContext;
 
 /**
- * @author Roman K
+ * Plugins should consider this interface if they need to modify dicom attributes during some operation.
+ * To simplify backward-compatible changes in future - do not directly implement this interface - see service-specific interfaces, e.g. MPPSAttributeCoercionHook
+ *
  */
-@ApplicationScoped
-public class MPPSEmulator {
-
-    private static Logger LOG = LoggerFactory.getLogger(MPPSEmulator.class);
-
-    @Inject
-    private MPPSEmulatorEJB ejb;
-
-    @Inject
-    private Device device;
-
-    public MPPS onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
-
-        if (studyUpdatedEvent.getLocalAETs()== null || studyUpdatedEvent.getLocalAETs().isEmpty()) {
-            LOG.info("No local AETs are referenced for a study update, will not emulate MPPS");
-            return null;
-        }
-
-        try {
-            return ejb.emulateMPPS(studyUpdatedEvent);
-        } catch (DicomServiceException e) {
-            LOG.error("Cannot emulate MPPS",e);
-            return null;
-        }
-    }
+public interface AttributeCoercionHook<C extends ServiceContext> {
+    void coerceAttributes(C context, Attributes attributes) throws DicomServiceException;
 }

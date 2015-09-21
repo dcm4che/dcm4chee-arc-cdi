@@ -45,7 +45,9 @@ import org.dcm4che3.net.*;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.hooks.AttributeCoercionHook;
 import org.dcm4chee.archive.mpps.MPPSContext;
+import org.dcm4chee.archive.mpps.MPPSHook;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.MPPSServiceEJB;
 import org.dcm4chee.archive.mpps.event.MPPSCreate;
@@ -55,10 +57,12 @@ import org.dcm4chee.archive.mpps.event.MPPSUpdate;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.util.TransactionSynchronization;
+import org.dcm4chee.hooks.Hooks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.xml.transform.Templates;
@@ -68,7 +72,7 @@ import javax.xml.transform.Templates;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 
-@ApplicationScoped
+@Stateless
 public class DefaultMPPSService implements MPPSService {
 
     private static Logger LOG = LoggerFactory
@@ -76,12 +80,6 @@ public class DefaultMPPSService implements MPPSService {
 
     @Inject
     private MPPSServiceEJB ejb;
-
-    @Inject
-    private PatientService patientService;
-
-    @Inject
-    private QueryService queryService;
 
     @Inject
     @MPPSCreate
@@ -104,86 +102,89 @@ public class DefaultMPPSService implements MPPSService {
     /**
      * We need to move coercion out of the interface to remove this 'self' injection
      */
-    @Inject
+    @EJB
     MPPSService mppsService;
 
+    @Inject
+    Hooks<MPPSHook> mppsHooks;
 
-    @Deprecated
-    @Override
-    public MPPS createPerformedProcedureStep(
-            ArchiveAEExtension arcAE,
-            String iuid,
-            Attributes attrs,
-            Patient patient,
-            MPPSService service) throws DicomServiceException {
-
-        createPerformedProcedureStep(iuid, attrs, new MPPSContext(null, arcAE.getApplicationEntity().getAETitle()));
-        return null;
-    }
-
-    @Deprecated
-    @Override
-    public MPPS updatePerformedProcedureStep(ArchiveAEExtension arcAE, String iuid, Attributes modified, MPPSService service)
-            throws DicomServiceException {
-        updatePerformedProcedureStep(iuid, modified, new MPPSContext(null, arcAE.getApplicationEntity().getAETitle()));
-        return null;
-    }
 
     @Override
-    public void createPerformedProcedureStep(final String mppsSopInstanceUID, final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
+    public void createPerformedProcedureStep(final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
+        coerceAttributes(mppsContext, attrs);
+
         ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
-        mppsService.coerceAttributes(mppsContext, Dimse.N_CREATE_RQ, attrs);
-        ejb.createPerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
+        ejb.createPerformedProcedureStep(ae, mppsContext.getMppsSopInstanceUID(), attrs);
+
+        for (MPPSHook mppsHook : mppsHooks) mppsHook.processMPPS(mppsContext, attrs);
 
         transaction.afterSuccessfulCommit(new Runnable() {
             @Override
             public void run() {
-                createMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_CREATE_RQ, attrs, mppsContext));
+                createMPPSEvent.fire(new MPPSEvent(attrs, mppsContext));
             }
         });
+
     }
 
     @Override
-    public void updatePerformedProcedureStep(final String mppsSopInstanceUID, final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
+    public void updatePerformedProcedureStep(final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
+        coerceAttributes(mppsContext, attrs);
 
         ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
-        mppsService.coerceAttributes(mppsContext, Dimse.N_SET_RQ, attrs);
-        final MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsSopInstanceUID, attrs);
+        final MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsContext.getMppsSopInstanceUID(), attrs);
+
+        for (MPPSHook mppsHook : mppsHooks) mppsHook.processMPPS(mppsContext, attrs);
 
         transaction.afterSuccessfulCommit(new Runnable() {
             @Override
             public void run() {
                 if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
-                    updateMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_SET_RQ, attrs, mppsContext));
+                    updateMPPSEvent.fire(new MPPSEvent(attrs, mppsContext));
                 else
-                    finalMPPSEvent.fire(new MPPSEvent(mppsSopInstanceUID, Dimse.N_SET_RQ, attrs, mppsContext));
+                    finalMPPSEvent.fire(new MPPSEvent(attrs, mppsContext));
             }
         });
-
     }
 
-    @Override
-    public void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs) throws DicomServiceException {
+    private void coerceAttributes(MPPSContext context, Attributes attrs) throws DicomServiceException {
+        // call coercers
+        for (AttributeCoercionHook<MPPSContext> attributeCoercionHook : mppsHooks) {
+            attributeCoercionHook.coerceAttributes(context, attrs);
+        }
+
+        // XSLT
         try {
             ApplicationEntity ae = device.getApplicationEntityNotNull(context.getReceivingAET());
             ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
             Templates tpl = arcAE.getAttributeCoercionTemplates(
                     UID.ModalityPerformedProcedureStepSOPClass,
-                    dimse, TransferCapability.Role.SCP,
+                    context.getDimse(), TransferCapability.Role.SCP,
                     context.getSendingAET());
             if (tpl != null) {
                 Attributes modified = new Attributes();
-                attrs.update(SAXTransformer.transform(attrs, tpl, false, false),
-                        modified);
+                attrs.update(SAXTransformer.transform(attrs, tpl, false, false), modified);
             }
         } catch (Exception e) {
             throw new DicomServiceException(Status.ProcessingFailure, e);
         }
     }
 
+    @Deprecated
     @Override
-    public void coerceAttributes(Association as, Dimse dimse, Attributes attrs) throws DicomServiceException {
+    public void createPerformedProcedureStep(final String mppsSopInstanceUID, final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
+        mppsService.createPerformedProcedureStep(attrs, mppsContext);
+    }
 
+    @Deprecated
+    @Override
+    public void updatePerformedProcedureStep(final String mppsSopInstanceUID, final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
+        mppsService.updatePerformedProcedureStep(attrs, mppsContext);
+    }
+
+    @Deprecated
+    public void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs) throws DicomServiceException {
+        //noop - this is not called anymore
     }
 
 

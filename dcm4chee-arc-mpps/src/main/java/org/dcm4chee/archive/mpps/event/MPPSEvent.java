@@ -51,15 +51,11 @@ import org.dcm4chee.archive.mpps.MPPSContext;
 public class MPPSEvent {
 
     private final Attributes attrs;
-    private final Dimse dimse;
-    private final String mppsSopInstanceUID;
     private MPPSContext context;
 
-    public MPPSEvent(String mppsSopInstanceUID, Dimse dimse, Attributes attrs, MPPSContext context) {
+    public MPPSEvent(Attributes attrs, MPPSContext context) {
         this.context = context;
-        this.dimse = dimse;
         this.attrs = attrs;
-        this.mppsSopInstanceUID = mppsSopInstanceUID;
     }
 
 
@@ -67,12 +63,22 @@ public class MPPSEvent {
         return context;
     }
 
+    /**
+     * Please use the context directly
+     * @return
+     */
+    @Deprecated
     public Dimse getDIMSE() {
-        return dimse;
+        return context.getDimse();
     }
 
+    /**
+     * Please use the context directly
+     * @return
+     */
+    @Deprecated
     public String getMppsSopInstanceUID() {
-        return mppsSopInstanceUID;
+        return context.getMppsSopInstanceUID();
     }
 
     public Attributes getAttributes() {

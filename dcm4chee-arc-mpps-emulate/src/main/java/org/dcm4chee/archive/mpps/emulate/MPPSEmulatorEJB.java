@@ -43,6 +43,7 @@ package org.dcm4chee.archive.mpps.emulate;
 import org.dcm4che3.data.*;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.UIDUtils;
@@ -144,24 +145,18 @@ public class MPPSEmulatorEJB {
 
         updateMPPSReferences(mppsIUID, seriesList, arcAE.getStoreParam());
 
-        // create MPPS
+        // prepare attrs
         Attributes mppsCreateAttributes = makeMPPSCreateAttributes(seriesList, mppsIUID);
+        Attributes completedAttributes = makeMPPSUpdateCompletedAttributes(mppsCreateAttributes);
+
+        // create MPPS
         if (mppsCreateAttributes == null)
         	return null;
-        MPPSContext mppsContext = new MPPSContext(studyUpdatedEvent.getSourceAET(), localAET);
-        mppsService.createPerformedProcedureStep(
-                mppsIUID,
-                mppsCreateAttributes,
-                mppsContext
-        );
+        MPPSContext mppsContext = new MPPSContext(studyUpdatedEvent.getSourceAET(), localAET, mppsIUID, Dimse.N_CREATE_RQ);
+        mppsService.createPerformedProcedureStep(mppsCreateAttributes, mppsContext);
 
         // update MPPS with status COMPLETED
-        Attributes completedAttributes = makeMPPSUpdateCompletedAttributes(mppsCreateAttributes);
-        mppsService.updatePerformedProcedureStep(
-                mppsIUID,
-                completedAttributes,
-                mppsContext
-        );
+        mppsService.updatePerformedProcedureStep(completedAttributes,mppsContext);
 
         ArrayList<String> refMppsList = new ArrayList<>();
         refMppsList.add(mppsIUID);

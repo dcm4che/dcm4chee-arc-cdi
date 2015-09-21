@@ -23,6 +23,7 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.io.SAXReader;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.AttributeFilter;
@@ -35,6 +36,7 @@ import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.emulate.MPPSEmulator;
 import org.dcm4chee.archive.mpps.emulate.MPPSEmulatorEJB;
@@ -182,20 +184,17 @@ public class MppsEmulationGeneral {
     protected void mpps_create(String name) throws Exception {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         Attributes dicom = SAXReader.parse(cl.getResource(name).toString());
-        mppsService.createPerformedProcedureStep(
-                device.getApplicationEntity(LOCAL_AET).getAEExtension(
-                        ArchiveAEExtension.class), MPPS_IUID, dicom, null,
-                mppsService);
+        MPPSContext mppsContext = new MPPSContext(SOURCE_AET, LOCAL_AET, MPPS_IUID, Dimse.N_CREATE_RQ);
+        mppsService.createPerformedProcedureStep(dicom, mppsContext);
         log.info("N-CREATE:" + MPPS_IUID);
     }
 
     protected void mpps_set(String name) throws Exception {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         Attributes dicom = SAXReader.parse(cl.getResource(name).toString());
-        mppsService.updatePerformedProcedureStep(
-                device.getApplicationEntity(LOCAL_AET).getAEExtension(
-                        ArchiveAEExtension.class), MPPS_IUID, dicom,
-                mppsService);
+        MPPSContext mppsContext = new MPPSContext(SOURCE_AET, LOCAL_AET, MPPS_IUID, Dimse.N_CREATE_RQ);
+        mppsService.updatePerformedProcedureStep(dicom, mppsContext);
+
         log.info("N-SET:" + MPPS_IUID);
     }
 

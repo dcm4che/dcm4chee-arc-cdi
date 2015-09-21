@@ -38,46 +38,15 @@
  *  ***** END LICENSE BLOCK *****
  */
 
-package org.dcm4chee.archive.mpps.emulate;
-
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
+package org.dcm4chee.archive;
 
 /**
- * @author Roman K
+ * A base class for all contexts (e.g. StoreContext, MPPSContext, QueryContext etc)
  */
-@ApplicationScoped
-public class MPPSEmulator {
+public class ServiceContext {
 
-    private static Logger LOG = LoggerFactory.getLogger(MPPSEmulator.class);
 
-    @Inject
-    private MPPSEmulatorEJB ejb;
 
-    @Inject
-    private Device device;
 
-    public MPPS onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
 
-        if (studyUpdatedEvent.getLocalAETs()== null || studyUpdatedEvent.getLocalAETs().isEmpty()) {
-            LOG.info("No local AETs are referenced for a study update, will not emulate MPPS");
-            return null;
-        }
-
-        try {
-            return ejb.emulateMPPS(studyUpdatedEvent);
-        } catch (DicomServiceException e) {
-            LOG.error("Cannot emulate MPPS",e);
-            return null;
-        }
-    }
 }
