@@ -116,8 +116,9 @@ public class FileSpooler implements Spooler {
                         dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.URI);
                         Attributes data = dis.readDataset(-1, -1);
                         context.setAttributes(data);
-                        context.setTransferSyntax(fmi != null ?
-                                fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
+                        Attributes dsFMI = dis.readFileMetaInformation();
+                        context.setTransferSyntax(dsFMI != null ? dsFMI.getString(Tag.TransferSyntaxUID) : 
+                                fmi != null ? fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
                     } finally {
                         SafeClose.close(dis);
                     }

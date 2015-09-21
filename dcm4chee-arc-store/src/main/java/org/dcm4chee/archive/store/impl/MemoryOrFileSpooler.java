@@ -106,8 +106,9 @@ public class MemoryOrFileSpooler implements Spooler {
                     dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
                     Attributes data = dis.readDataset(-1, -1);
                     context.setAttributes(data);
-                    context.setTransferSyntax(fmi != null ?
-                            fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
+                    Attributes dsFMI = dis.readFileMetaInformation();
+                    context.setTransferSyntax(dsFMI != null ? dsFMI.getString(Tag.TransferSyntaxUID) : 
+                            fmi != null ? fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
                 } catch (IOException e) {
                     throw new DicomServiceException(StoreService.DATA_SET_NOT_PARSEABLE);
                 } finally {
