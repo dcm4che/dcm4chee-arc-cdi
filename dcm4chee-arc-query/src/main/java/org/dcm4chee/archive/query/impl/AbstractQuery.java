@@ -102,7 +102,7 @@ public abstract class AbstractQuery<E> implements Query {
 
     @Override
     public void executeQuery() {
-        results = query.scroll(ScrollMode.FORWARD_ONLY, select());
+        results = query.scroll(ScrollMode.SCROLL_SENSITIVE, select());
         hasMoreMatches = results.next();
     }
 

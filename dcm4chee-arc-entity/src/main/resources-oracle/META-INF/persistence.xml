@@ -7,6 +7,7 @@
     <jta-data-source>${ds}</jta-data-source>
     <jar-file>dcm4chee-arc-entity-ext-${project.version}-${db}.jar</jar-file>
     <properties>
+      <!-- <property name="hibernate.jdbc.use_scrollable_resultset" value="false" />-->
       <property name="hibernate.dialect" value="org.hibernate.dialect.Oracle10gDialect" />
       <property name="hibernate.hbm2ddl.auto" value="${hbm2ddl.auto}" />
       <property name="hibernate.show_sql" value="${show_sql}" />
