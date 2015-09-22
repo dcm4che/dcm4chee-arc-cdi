@@ -54,6 +54,7 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
@@ -105,13 +106,13 @@ public class DicomXMLOutput implements StreamingOutput {
             } while (dataset == null);
 
             if (context.getRemoteAE() != null) {
-                service.coerceFileBeforeMerge((ArchiveInstanceLocator) ref,
-                        dataset, context);
-
+                service.coerceFileBeforeMerge(ref, dataset, context);
+            }
+            dataset = Utils.mergeAndNormalize(dataset, attrs);
+            if (context.getRemoteAE() != null) {
                 service.coerceAttributes(dataset, context);
             }
-            
-            dataset.addAll(attrs);
+
             Object pixelData = dataset.getValue(Tag.PixelData);
             if (pixelData instanceof Fragments) {
                 Fragments frags = (Fragments) pixelData;

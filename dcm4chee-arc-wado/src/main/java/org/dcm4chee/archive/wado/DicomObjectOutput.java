@@ -50,6 +50,7 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.slf4j.Logger;
@@ -94,10 +95,10 @@ class DicomObjectOutput implements StreamingOutput {
 
     public void write(OutputStream out) throws IOException {
         ArchiveInstanceLocator inst = fileRef;
-        Attributes attrs = null;
+        Attributes dataset = null;
         do {
             try {
-                attrs = readFrom(inst);
+                dataset = readFrom(inst);
             } catch (IOException e) {
                 LOG.info("Failed to read Data Set with iuid={} from {}@{}",
                         inst.iuid, inst.getFilePath(), inst.getStorageSystem(), e);
@@ -106,21 +107,24 @@ class DicomObjectOutput implements StreamingOutput {
                     throw e;
                 LOG.info("Try read Data Set from alternative location");
             }
-        } while (attrs == null);
+        } while (dataset == null);
 
-        if(context.getRemoteAE()!=null){
-            service.coerceFileBeforeMerge(inst, attrs, context);
-            service.coerceAttributes(attrs, context);
+        if (context.getRemoteAE() != null) {
+            service.coerceFileBeforeMerge(inst, dataset, context);
         }
-        attrs.addAll(attrs);
-        if (tsuid != inst.tsuid) {
-            Decompressor.decompress(attrs, inst.tsuid);
+        dataset = Utils.mergeAndNormalize(dataset, attrs);
+        if (context.getRemoteAE() != null) {
+            service.coerceAttributes(dataset, context);
         }
-        Attributes fmi = attrs.createFileMetaInformation(tsuid);
+
+        if (!tsuid.equals(inst.tsuid)) {
+            Decompressor.decompress(dataset, inst.tsuid);
+        }
+        Attributes fmi = dataset.createFileMetaInformation(tsuid);
         @SuppressWarnings("resource")
         DicomOutputStream dos = new DicomOutputStream(out,
                 UID.ExplicitVRLittleEndian);
-        dos.writeDataset(fmi, attrs);
+        dos.writeDataset(fmi, dataset);
     }
 
     private Attributes readFrom(ArchiveInstanceLocator inst) throws IOException {
