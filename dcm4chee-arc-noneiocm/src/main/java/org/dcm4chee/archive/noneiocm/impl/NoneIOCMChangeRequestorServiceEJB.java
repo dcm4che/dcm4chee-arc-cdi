@@ -40,6 +40,7 @@ package org.dcm4chee.archive.noneiocm.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Stateless;
@@ -56,9 +57,12 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreAction;
+import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCActionHistory;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.QCSeriesHistory;
+import org.dcm4chee.archive.entity.QCStudyHistory;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
@@ -139,7 +143,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
     @Override
     public void handleModalityChange(Instance inst, StoreContext context, int gracePeriodInSeconds) {
         
-        if(withinGracePeriod(inst, gracePeriodInSeconds)) {
+        if(withinGracePeriodAndNoneIOCMSource(inst, gracePeriodInSeconds)) {
             context.setOldNONEIOCMChangeUID(inst.getSopInstanceUID());
             Attributes attrs = context.getAttributes();
             attrs.setString(null, Tag.SOPInstanceUID, VR.UI, 
@@ -162,10 +166,33 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         //Source modality within grace period
         
         if(context.getOldNONEIOCMChangeUID() != null) {
-            //create Split QC history for none IOCM                     
+            //create Split QC history for none IOCM
+            QCActionHistory action = new QCActionHistory();
+            action.setAction(QCOperation.SPLIT.toString());
+            action.setCreatedTime(new Date(System.currentTimeMillis()));
+            em.persist(action);
+            QCStudyHistory studyHistory = new QCStudyHistory();
+            studyHistory.setAction(action);
+            studyHistory.setUpdatedAttributesBlob(null); //no change (expect same attrs in study)
+            studyHistory.setOldStudyUID(context.getAttributes().getString(Tag.StudyInstanceUID));
+            studyHistory.setNextStudyUID(context.getAttributes().getString(Tag.StudyInstanceUID));
+            em.persist(studyHistory);
+            QCSeriesHistory seriesHistory = new QCSeriesHistory();
+            seriesHistory.setStudy(studyHistory);
+              seriesHistory.setUpdatedAttributesBlob(null); //no change (expect same attrs in series)
+            seriesHistory.setOldSeriesUID(context.getAttributes().getString(Tag.SeriesInstanceUID));
+            em.persist(seriesHistory);
+            QCInstanceHistory instanceHistory = new QCInstanceHistory(
+                    context.getAttributes().getString(Tag.StudyInstanceUID),
+                    context.getAttributes().getString(Tag.SeriesInstanceUID),
+                    context.getOldNONEIOCMChangeUID(),
+                    context.getInstance().getSopInstanceUID(),
+                    context.getInstance().getSopInstanceUID(), false);
+            instanceHistory.setSeries(seriesHistory);
+            em.persist(instanceHistory);
         }
     }
-    private boolean withinGracePeriod(Instance inst, int gracePeriodInSeconds) {
+    private boolean withinGracePeriodAndNoneIOCMSource(Instance inst, int gracePeriodInSeconds) {
         Query query = em.createNamedQuery(QCInstanceHistory
                 .FIND_BY_CURRENT_UID_FOR_ACTION, QCInstanceHistory.class);
         query.setParameter(1, inst.getSopInstanceUID());
@@ -173,6 +200,9 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         QCInstanceHistory foundQCInstanceHistory = (QCInstanceHistory) query.getSingleResult();
         
         if(foundQCInstanceHistory == null)
+            return false;
+        
+        if(foundQCInstanceHistory.getSeries().getNoneIOCMSourceAET() == null)
             return false;
         
         long createdTime = foundQCInstanceHistory.getSeries()

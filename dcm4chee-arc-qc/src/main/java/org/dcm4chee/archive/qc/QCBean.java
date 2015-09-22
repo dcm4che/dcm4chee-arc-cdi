@@ -442,8 +442,8 @@ public interface QCBean {
      *            the none iocm compliant AET
      * @return the QC event
      */
-    public QCEvent splitNoneIOCM(Collection<String> toMove, IDWithIssuer pid,
+/*    public QCEvent splitNoneIOCM(Collection<String> toMove, IDWithIssuer pid,
             String targetStudyUID, Attributes createdStudyattributes,
-            Attributes targetSeriesattributes, Code qcRejectionCode, String noneIOCMAET);
+            Attributes targetSeriesattributes, Code qcRejectionCode, String noneIOCMAET);*/
 
 }

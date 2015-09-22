@@ -71,14 +71,6 @@ public class QCActionHistory implements Serializable{
     @Column(name = "action", updatable = false)
     private String action;
 
-    @Basic(optional = false)
-    @Column(name = "none_iocm", updatable = false)
-    private boolean noneIOCM;
-
-    @Basic(optional = true)
-    @Column(name = "none_iocm_src_aet", updatable = false)
-    private String noneIOCMSourceAET;
-
     public long getPk() {
         return pk;
     }
@@ -89,22 +81,6 @@ public class QCActionHistory implements Serializable{
 
     public void setCreatedTime(Date createdTime) {
         this.createdTime = createdTime;
-    }
-
-    public boolean isNoneIOCM() {
-        return noneIOCM;
-    }
-
-    public void setNoneIOCM(boolean noneIOCM) {
-        this.noneIOCM = noneIOCM;
-    }
-
-    public String getNoneIOCMSourceAET() {
-        return noneIOCMSourceAET;
-    }
-
-    public void setNoneIOCMSourceAET(String noneIOCMSourceAET) {
-        this.noneIOCMSourceAET = noneIOCMSourceAET;
     }
 
     public String getAction() {

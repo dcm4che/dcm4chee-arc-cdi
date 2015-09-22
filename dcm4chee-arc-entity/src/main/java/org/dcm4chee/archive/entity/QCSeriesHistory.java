@@ -40,7 +40,12 @@ public class QCSeriesHistory implements Serializable{
     @JoinColumn(name="qc_study_history_fk")
     private QCStudyHistory study;
 
+    @Basic(optional = true)
+    @Column(name = "none_iocm_src_aet", updatable = false)
+    private String noneIOCMSourceAET;
+
     public QCSeriesHistory(){}
+
     public QCSeriesHistory(Attributes attrs , QCStudyHistory study) {
         this.study = study;
         if(attrs != null)
@@ -69,6 +74,14 @@ public class QCSeriesHistory implements Serializable{
 
     public void setStudy(QCStudyHistory study) {
         this.study = study;
+    }
+
+    public String getNoneIOCMSourceAET() {
+        return noneIOCMSourceAET;
+    }
+
+    public void setNoneIOCMSourceAET(String noneIOCMSourceAET) {
+        this.noneIOCMSourceAET = noneIOCMSourceAET;
     }
 
     public long getPk() {
