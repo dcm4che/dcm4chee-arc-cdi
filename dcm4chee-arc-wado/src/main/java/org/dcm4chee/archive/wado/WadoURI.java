@@ -540,7 +540,7 @@ public class WadoURI extends Wado {
                 return singleTransferSyntax;
 
         //default
-        return UID.ImplicitVRLittleEndian;
+        return UID.ExplicitVRLittleEndian;
     }
 
     private Response retrieveImage(final ArchiveInstanceLocator ref, final Attributes attrs, final MediaType mediaType) {
