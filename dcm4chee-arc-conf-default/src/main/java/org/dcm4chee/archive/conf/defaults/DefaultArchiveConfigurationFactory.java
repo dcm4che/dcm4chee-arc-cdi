@@ -520,6 +520,7 @@ public class DefaultArchiveConfigurationFactory {
         addHL7DeviceExtension(device);
         addAuditLogger(device,arrDevice);
         addStorageDeviceExtension(device, factoryParams.baseStoragePath);
+        addNoneIOCMDeviceExtension(device);
         device.addDeviceExtension(new ImageReaderExtension(ImageReaderFactory.getDefault()));
         device.addDeviceExtension(new ImageWriterExtension(ImageWriterFactory.getDefault()));
 
@@ -553,7 +554,15 @@ public class DefaultArchiveConfigurationFactory {
         return device;
     }
 
-    private static void addStorageDeviceExtension(Device device, String baseStoragePath) {
+    private void addNoneIOCMDeviceExtension(Device device) {
+        NoneIOCMChangeRequestorExtension ext = new NoneIOCMChangeRequestorExtension();
+        ext.setGracePeriod(3600);
+        ext.setNoneIOCMChangeRequestorDevices(new ArrayList<Device>());
+        ext.setNoneIOCMModalityDevices(new ArrayList<Device>());
+        device.addDeviceExtension(ext);
+	}
+
+	private static void addStorageDeviceExtension(Device device, String baseStoragePath) {
         StorageSystem fs1 = new StorageSystem();
         fs1.setStorageSystemID("fs1");
         fs1.setProviderName("org.dcm4chee.storage.filesystem");

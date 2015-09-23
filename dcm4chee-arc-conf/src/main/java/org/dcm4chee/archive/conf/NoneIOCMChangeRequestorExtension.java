@@ -69,7 +69,7 @@ public class NoneIOCMChangeRequestorExtension extends DeviceExtension {
     		collectionOfReferences=true)
     private Collection<Device> noneIOCMModalityDevices = new ArrayList<Device>();
 
-    @ConfigurableProperty(name = "dcmGracePeriod", description="Grace Period in seconds within Instance updates are allowed. Period starts with QC Deletion of instance")
+    @ConfigurableProperty(name = "dcmGracePeriod", description="Grace Period in seconds within Instance updates are allowed. Period starts with QC Deletion of instance", defaultValue="0")
     private int gracePeriod = 0;
 
 	public Collection<Device> getNoneIOCMChangeRequestorDevices() {
