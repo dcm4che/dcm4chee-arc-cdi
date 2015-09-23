@@ -3,6 +3,7 @@ package org.dcm4chee.archive.store.decorators;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.StoreAction;
+import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
@@ -131,5 +132,8 @@ public abstract class StoreServiceDynamicDecorator extends DynamicDecoratorWrapp
         wrapWithDynamicDecorators(delegate).beginStoreMetadata(context);
     }
 
+    public Instance adjustForNoneIOCM(Instance instanceToStore, StoreContext context) {
+        return wrapWithDynamicDecorators(delegate).adjustForNoneIOCM(instanceToStore, context);
+     }
 
 }

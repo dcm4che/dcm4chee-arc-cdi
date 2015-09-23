@@ -120,4 +120,6 @@ public interface StoreService {
     void beginProcessFile(StoreContext context);
 
     void beginStoreMetadata(StoreContext context);
+
+    Instance adjustForNoneIOCM(Instance instanceToStore, StoreContext context);
 }

@@ -255,9 +255,13 @@ public class StoreServiceImpl implements StoreService {
             Path metadataPath = null;
             try {
                 StorageContext metadataContext = futureMetadataContext.get();
-                metadataPath = metadataContext.getFilePath();
-                if (metadataPath != null) {
-                    storageService.deleteObject(metadataContext, metadataPath.toString());
+                if (metadataContext != null) {
+	                metadataPath = metadataContext.getFilePath();
+	                if (metadataPath != null) {
+	                    storageService.deleteObject(metadataContext, metadataPath.toString());
+	                }
+                } else {
+                	LOG.info("Skip cleanMetaData. Missing StoreContext for metadata!");
                 }
             } catch (Exception e) {
                 LOG.warn("{} failed to clean metadata path {}",
@@ -706,7 +710,7 @@ public class StoreServiceImpl implements StoreService {
         } catch (Exception e) {
             LOG.error("StoreService : Error deleting replaced location - {}", e);
         }
-        return newInst;
+        return adjustForNoneIOCM(newInst, context);
     }
 
     @Override
@@ -937,6 +941,13 @@ public class StoreServiceImpl implements StoreService {
                     }
                 });
         context.setMetadataContext(futureMetadataContext);
+    }
+
+    @Override
+    public Instance adjustForNoneIOCM(Instance instanceToStore,  StoreContext context) {
+        //here decorators can set the action depending if the instance
+        //was previously deleted or not
+        return instanceToStore;
     }
 
 }

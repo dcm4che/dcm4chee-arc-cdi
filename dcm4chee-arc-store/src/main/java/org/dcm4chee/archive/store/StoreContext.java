@@ -133,4 +133,9 @@ public interface StoreContext {
     Future<StorageContext> getMetadataContext();
 
     void setMetadataContext(Future<StorageContext> metadataContext);
+
+    void setOldNONEIOCMChangeUID(String oldNONEIOCMChangeUID);
+
+    String getOldNONEIOCMChangeUID();
+    
 }

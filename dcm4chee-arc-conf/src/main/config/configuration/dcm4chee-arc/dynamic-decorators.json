@@ -12,6 +12,9 @@
           "decoratorClassName": "org.dcm4chee.archive.iocm.impl.StoreServiceIOCMDecorator"
         },
         {
+          "decoratorClassName": "org.dcm4chee.archive.noneiocm.impl.StoreServiceNoneIOCMDecorator"
+        },
+        {
           "decoratorClassName": "org.dcm4chee.archive.mima.impl.StoreServiceMIMADecorator"
         },
         {

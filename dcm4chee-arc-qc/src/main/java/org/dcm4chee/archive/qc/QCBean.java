@@ -415,4 +415,35 @@ public interface QCBean {
      */
     public Patient findPatient(Attributes attrs);
 
+    /**
+     * Split.
+     * Split study is a combined operation that uses the move basic operation.
+     * Given a set of instances to move the method will create a study in case
+     * the old study doesn't exist, using the provided createStudyAttributes
+     * to enrich the created study. The method will also enrich the created
+     * series with the targetSeriesAttributes (if provided).
+     * Throws an EJBException if the patient is different for any of the
+     * source study or the target study. Throws an EJB Exception if any
+     * of the instances are not found or do not belong to the same study.
+     * 
+     * @param toMove
+     *            the to move
+     * @param pid
+     *            the patient id
+     * @param targetStudyUID
+     *            the target study uid
+     * @param createdStudyattributes
+     *            the created study attributes
+     * @param targetSeriesattributes
+     *            the target series attributes
+     * @param qcRejectionCode
+     *            the QC rejection code
+     * @param noneIOCMAET
+     *            the none iocm compliant AET
+     * @return the QC event
+     */
+/*    public QCEvent splitNoneIOCM(Collection<String> toMove, IDWithIssuer pid,
+            String targetStudyUID, Attributes createdStudyattributes,
+            Attributes targetSeriesattributes, Code qcRejectionCode, String noneIOCMAET);*/
+
 }
