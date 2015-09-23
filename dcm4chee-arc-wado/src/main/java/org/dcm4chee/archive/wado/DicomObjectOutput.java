@@ -122,7 +122,7 @@ class DicomObjectOutput implements StreamingOutput {
         }
         Attributes fmi = dataset.createFileMetaInformation(tsuid);
         @SuppressWarnings("resource")
-        DicomOutputStream dos = new DicomOutputStream(out, tsuid);
+        DicomOutputStream dos = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
         dos.writeDataset(fmi, dataset);
     }
 
