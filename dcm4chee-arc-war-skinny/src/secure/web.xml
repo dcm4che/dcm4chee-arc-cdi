@@ -11,17 +11,32 @@
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>DICOM-RS</web-resource-name>
-      <url-pattern>/*</url-pattern>
+      <url-pattern>/stow/*</url-pattern>
+      <url-pattern>/qido/*</url-pattern>
+      <url-pattern>/wado/*</url-pattern>
+      <url-pattern>/ctrl/*</url-pattern>
     </web-resource-collection>
     <auth-constraint>
       <role-name>user</role-name>
     </auth-constraint>
   </security-constraint>
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>DICOM-RS</web-resource-name>
+      <url-pattern>/qc/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>qc</role-name>
+    </auth-constraint>
+  </security-constraint>
   <login-config>
-    <auth-method>KEYCLOAK</auth-method>
-    <realm-name>dcm4che</realm-name>
+    <auth-method>BASIC</auth-method>
+    <realm-name>ApplicationRealm</realm-name>
   </login-config>
   <security-role>
     <role-name>user</role-name>
+  </security-role>
+  <security-role>
+    <role-name>qc</role-name>
   </security-role>
 </web-app>
