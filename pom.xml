@@ -652,7 +652,7 @@
       <id>secure</id>
       <properties>
           <!-- replaces default which is -unsecure -->
-          <conf-web-classifier/>
+          <conf-web-classifier>arc</conf-web-classifier>
       </properties>
     </profile>
     <profile>
