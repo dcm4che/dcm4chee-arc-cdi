@@ -67,7 +67,7 @@ public class HsmCopyIT extends HsmITBase {
         store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
         List<Location> locations = getLocations(FIRST_INSTANCE_STUDY_2);
         assertEquals("#Locations for "+FIRST_INSTANCE_STUDY_2, 1, locations.size());
-        service.copyStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        copyStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 2), true, TEST_ONLINE, TEST_NEARLINE_ZIP);
     }
@@ -75,7 +75,7 @@ public class HsmCopyIT extends HsmITBase {
     @Test
     public void testCopyStudyTwoSeries() throws Exception {
         store(RESOURCES_STUDY_1_2SERIES, arcAEExt);
-        service.copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkLocationsOfStudy(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1_2SERIES.length, 2);
     }
@@ -83,11 +83,11 @@ public class HsmCopyIT extends HsmITBase {
     @Test
     public void testCopyStudyTwoSeriesAfterEachSeries() throws Exception {
         store(Arrays.copyOfRange(RESOURCES_STUDY_1_2SERIES, 0, 3), arcAEExt);
-        service.copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkLocationsOfStudy(STUDY_INSTANCE_UID_1, 3, 2);
         store(Arrays.copyOfRange(RESOURCES_STUDY_1_2SERIES, 3, 5), arcAEExt);
-        service.copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkLocationsOfStudy(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1_2SERIES.length, 2);
     }
@@ -95,7 +95,7 @@ public class HsmCopyIT extends HsmITBase {
     @Test
     public void testCopyStudyTwoSeriesToTar() throws Exception {
         store(RESOURCES_STUDY_1_2SERIES, arcAEExt);
-        service.copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_TAR);
+        copyStudy(STUDY_INSTANCE_UID_1, TEST_ONLINE, TEST_NEARLINE_TAR);
         waitForFinishedTasks(2, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_1, RESOURCES_STUDY_1_2SERIES.length, 2), true, TEST_ONLINE, TEST_NEARLINE_TAR);
     }
@@ -103,7 +103,7 @@ public class HsmCopyIT extends HsmITBase {
     @Test
     public void testCopyStudyOneSeriesToFlat() throws Exception {
         store(RESOURCES_STUDY_2_1SERIES, arcAEExt);
-        service.copyStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_FLAT);
+        copyStudy(STUDY_INSTANCE_UID_2, TEST_ONLINE, TEST_NEARLINE_FLAT);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfStudy(STUDY_INSTANCE_UID_2, RESOURCES_STUDY_2_1SERIES.length, 2), true, TEST_ONLINE, TEST_NEARLINE_FLAT);
     }
@@ -111,7 +111,7 @@ public class HsmCopyIT extends HsmITBase {
     @Test
     public void testCopyOneOfTwoSeries() throws Exception {
         store(RESOURCES_STUDY_1_2SERIES, arcAEExt);
-        service.copySeries(SERIES_INSTANCE_UID_1_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
+        copySeries(SERIES_INSTANCE_UID_1_1, TEST_ONLINE, TEST_NEARLINE_ZIP);
         waitForFinishedTasks(1, DEFAULT_TASK_TIMEOUT, 5, DEFAULT_WAIT_AFTER);
         checkStorageSystemGroups(checkLocationsOfSeries(SERIES_INSTANCE_UID_1_1, 3, 2), true, TEST_ONLINE, TEST_NEARLINE_ZIP);
         checkStorageSystemGroups(checkLocationsOfSeries(SERIES_INSTANCE_UID_1_2, 2, 1), true, TEST_ONLINE);

@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.ejb.Stateless;
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -56,6 +57,8 @@ import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Location.Status;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.hsm.LocationCopyContext;
+import org.dcm4chee.archive.hsm.LocationsCopied;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.storage.ContainerEntry;
 import org.dcm4chee.storage.archiver.service.ArchiverContext;
@@ -72,9 +75,9 @@ import org.slf4j.LoggerFactory;
  *
  */
 @Stateless
-public class HsmArchiveServiceEJB {
+public class LocationCopyServiceEJB {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HsmArchiveServiceEJB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LocationCopyServiceEJB.class);
 
     private static final String INSTANCE_PK = "instance_pk";
     private static final String DIGEST = "digest";
@@ -85,6 +88,7 @@ public class HsmArchiveServiceEJB {
     private static final String DELETE_SOURCE = "deleteSource";
     private static final String LOCATION = "location";
     private static final String SOURCE_LOCATION_PKS_TO_DELETE = "srcLocationPksToDelete";
+    private static final String LOCATION_COPY_CONTEXT = "locationCopyContext";
 
     @PersistenceContext(unitName = "dcm4chee-arc")
     private EntityManager em;
@@ -98,58 +102,66 @@ public class HsmArchiveServiceEJB {
     @Inject
     private LocationMgmt locationMgmt;
 
-    public void scheduleStudy(String studyIUID, String sourceGroupID, String targetGroupID,
-            boolean deleteSource) throws IOException {
+    @LocationsCopied
+    @Inject
+    private Event<LocationCopyContext> locationsCopied;
+
+    public void scheduleStudy(LocationCopyContext ctx, String studyIUID, long delay)
+            throws IOException {
         LOG.info(
                 "Scheduling archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
-                studyIUID, sourceGroupID, targetGroupID, deleteSource);
+                studyIUID, ctx.getSourceStorageSystemGroupID(),
+                ctx.getTargetStorageSystemGroupID(), ctx.getDeleteSourceLocaton());
         List<String> seriesUIDs = em
                 .createQuery(
                         "SELECT se.seriesInstanceUID FROM Series se JOIN se.study st WHERE st.studyInstanceUID = ?1",
                         String.class).setParameter(1, studyIUID).getResultList();
         for (String uid : seriesUIDs) {
-            scheduleSeries(uid, sourceGroupID, targetGroupID, deleteSource);
+            scheduleSeries(ctx, uid, delay);
         }
         LOG.info(
                 "Scheduled archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
-                new Object[] { studyIUID, sourceGroupID, targetGroupID, deleteSource });
+                new Object[] { studyIUID, ctx.getSourceStorageSystemGroupID(),
+                        ctx.getTargetStorageSystemGroupID(), ctx.getDeleteSourceLocaton() });
 
     }
 
-    public void scheduleSeries(String seriesIUID, String sourceGroupID, String targetGroupID,
-            boolean deleteSource) throws IOException {
+    public void scheduleSeries(LocationCopyContext ctx, String seriesIUID, long delay)
+            throws IOException {
         LOG.info(
                 "Scheduling archiving series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
-                new Object[] { seriesIUID, sourceGroupID, targetGroupID, deleteSource });
+                new Object[] { seriesIUID, ctx.getSourceStorageSystemGroupID(),
+                        ctx.getTargetStorageSystemGroupID(), ctx.getDeleteSourceLocaton() });
         List<Instance> insts = em
                 .createNamedQuery(Instance.FIND_BY_SERIES_INSTANCE_UID, Instance.class)
                 .setParameter(1, seriesIUID).getResultList();
         if (insts.size() > 0) {
-            scheduleInstances(insts, sourceGroupID, targetGroupID, deleteSource);
+            scheduleInstances(ctx, insts, delay);
             LOG.info(
                     "Scheduled archiving {} instances of series={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
-                    new Object[] { insts.size(), seriesIUID, sourceGroupID, targetGroupID,
-                            deleteSource });
+                    new Object[] { seriesIUID, ctx.getSourceStorageSystemGroupID(),
+                            ctx.getTargetStorageSystemGroupID(), ctx.getDeleteSourceLocaton() });
         }
     }
 
-    public void scheduleInstances(List<Instance> insts, String sourceGroupID, String targetGroupID,
-            boolean deleteSource) throws IOException {
+    public void scheduleInstances(LocationCopyContext ctx, List<Instance> insts, long delay)
+            throws IOException {
         Instance instance = insts.get(0);
         Attributes attrs = Utils.mergeAndNormalize(instance.getSeries().getStudy().getAttributes(),
                 instance.getSeries().getAttributes(), instance.getAttributes());
-        String targetName = getTargetName(attrs, targetGroupID);
-        scheduleInstances(insts, sourceGroupID, targetGroupID, targetName, deleteSource);
+        String targetName = getTargetName(attrs, ctx.getTargetStorageSystemGroupID());
+        scheduleInstances(ctx, insts, targetName, delay);
     }
 
-    public void scheduleInstances(List<Instance> insts, String sourceGroupID, String targetGroupID,
-            String targetName, boolean deleteSource) throws IOException {
+    public void scheduleInstances(LocationCopyContext ctx, List<Instance> insts, String targetName,
+            long delay) throws IOException {
         List<ContainerEntry> entries = new ArrayList<ContainerEntry>(insts.size());
-        LocationDeleteContext deleteCtx = deleteSource ? new LocationDeleteContext(insts.size())
-                : null;
-        for (Instance inst : filterInstancesAlreadyArchived(insts, targetGroupID, deleteSource)) {
-            Location selected = (sourceGroupID == null) ? selectBestLocation(inst)
-                    : selectLocationFromStorageGroup(inst, sourceGroupID);
+        LocationDeleteContext deleteCtx = ctx.getDeleteSourceLocaton() ? new LocationDeleteContext(
+                insts.size()) : null;
+        for (Instance inst : filterInstancesAlreadyArchived(insts,
+                ctx.getTargetStorageSystemGroupID(), ctx.getDeleteSourceLocaton())) {
+            Location selected = (ctx.getSourceStorageSystemGroupID() == null) ? selectBestAvailableLocation(inst)
+                    : selectLocationFromStorageGroup(inst, ctx.getSourceStorageSystemGroupID());
 
             ContainerEntry entry = new ContainerEntry.Builder(inst.getSopInstanceUID(),
                     selected.getDigest())
@@ -172,13 +184,16 @@ public class HsmArchiveServiceEJB {
         }
 
         if (entries.size() > 0) {
-            ArchiverContext ctx = archiverService.createContext(targetGroupID, targetName);
-            ctx.setEntries(entries);
-            ctx.setProperty(DELETE_SOURCE, new Boolean(deleteSource));
+            ArchiverContext archiverCtx = archiverService.createContext(
+                    ctx.getTargetStorageSystemGroupID(), targetName);
+            archiverCtx.setEntries(entries);
+            archiverCtx.setProperty(DELETE_SOURCE, new Boolean(ctx.getDeleteSourceLocaton()));
             if (deleteCtx != null) {
                 ctx.setProperty(SOURCE_LOCATION_PKS_TO_DELETE, deleteCtx);
             }
-            archiverService.scheduleStore(ctx);
+            archiverCtx.setProperty(LOCATION_COPY_CONTEXT, ctx);
+            archiverService.scheduleStore(archiverCtx, delay);
+            ctx.setJMSMessageID(archiverCtx.getJMSMessageID());
         }
     }
 
@@ -220,7 +235,7 @@ public class HsmArchiveServiceEJB {
         return null;
     }
 
-    private Location selectBestLocation(Instance inst) {
+    private Location selectBestAvailableLocation(Instance inst) {
         Location selected = null;
         StorageSystemGroup bestGroup = null;
         for (Location location : inst.getLocations()) {
@@ -251,6 +266,10 @@ public class HsmArchiveServiceEJB {
 
     public void onContainerEntriesStored(ArchiverContext ctx) {
         LOG.debug("onContainerEntriesStored for {} called", ctx.getStorageSystemGroupID());
+
+        LocationCopyContext event = (LocationCopyContext) ctx.getProperty(LOCATION_COPY_CONTEXT);
+        event.setJMSMessageID(ctx.getJMSMessageID());
+
         List<ContainerEntry> entries = ctx.getEntries();
         boolean notInContainer = ctx.isNotInContainer();
         for (ContainerEntry entry : entries) {
@@ -272,14 +291,19 @@ public class HsmArchiveServiceEJB {
             LOG.info("Create {}", location);
             em.persist(location);
             em.merge(inst);
+            event.addCopy(location);
         }
         em.flush();
+
         LocationDeleteContext srcLocationPksToDelete = (LocationDeleteContext) ctx
                 .getProperty(SOURCE_LOCATION_PKS_TO_DELETE);
         if (srcLocationPksToDelete != null) {
             LOG.info("Source Locations to delete:{}", srcLocationPksToDelete.getLocationPks());
             deleteLocations(srcLocationPksToDelete);
         }
+
+        locationsCopied.fire(event);
+
         LOG.debug("onContainerEntriesStored for {} finished", ctx.getStorageSystemGroupID());
     }
 
