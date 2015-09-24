@@ -63,7 +63,8 @@ import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.hsm.HsmArchiveService;
+import org.dcm4chee.archive.hsm.LocationCopyContext;
+import org.dcm4chee.archive.hsm.LocationCopyService;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
@@ -85,7 +86,7 @@ public class ArchivingSchedulerEJB {
     private EntityManager em;
 
     @Inject
-    private HsmArchiveService hsmArchiveService;
+    private LocationCopyService locationCopyService;
 
     @Inject
     private StoreAndRememberService storeAndRemeberService;
@@ -207,37 +208,16 @@ public class ArchivingSchedulerEJB {
         List<ArchivingTask> results = em
                 .createNamedQuery(ArchivingTask.FIND_READY_TO_ARCHIVE, ArchivingTask.class)
                 .setMaxResults(1).getResultList();
-
-        if (results.isEmpty())
+        if (results.isEmpty()) {
             return null;
+        }
 
         ArchivingTask task = results.get(0);
         LOG.info("Scheduling {}", task);
         if (task.getTargetStorageSystemGroupID() != null) {
-            hsmArchiveService.copySeries(task.getSeriesInstanceUID(),
-                    task.getSourceStorageSystemGroupID(), task.getTargetStorageSystemGroupID());
+            scheduleCopyToHsm(task);
         } else if (task.getTargetExternalDevice() != null) {
-            String extDevice = task.getTargetExternalDevice();
-            String localAE = determineLocalAETitle();
-            if(localAE == null) {
-                throw new IOException("Could not determine local AE title for Store-and-Remember "
-                        + "task to external device " + extDevice);
-            }
-            
-            String remoteAE = determineRemoteAETitle(extDevice);
-            if(remoteAE == null) {
-                throw new IOException("Could not determine remote AE title for Store-and-Remember "
-                        + "task to external device " + extDevice);
-            }
-            
-            StoreAndRememberContext storeRememberCxt = storeAndRemeberService.createContextBuilder()
-                    .seriesUID(task.getSeriesInstanceUID())
-                    .localAE(localAE)
-                    .externalDeviceName(extDevice)
-                    .remoteAE(remoteAE)
-                    .storeVerifyProtocol(StoreVerifyService.STORE_VERIFY_PROTOCOL.AUTO)
-                    .build();
-            storeAndRemeberService.scheduleStoreAndRemember(storeRememberCxt);
+            scheduleStoreAndRemember(task);
         } else {
             throw new IllegalStateException("Invalid archiving task");
         }
@@ -249,7 +229,35 @@ public class ArchivingSchedulerEJB {
         em.remove(task);
         return task;
     }
-    
+
+    private void scheduleCopyToHsm(ArchivingTask task) throws IOException {
+        LocationCopyContext ctx = locationCopyService.createContext(task
+                .getTargetStorageSystemGroupID());
+        ctx.setSourceStorageSystemGroupID(task.getSourceStorageSystemGroupID());
+        locationCopyService.copySeries(ctx, task.getSeriesInstanceUID(), 0);
+    }
+
+    private void scheduleStoreAndRemember(ArchivingTask task) throws IOException {
+        String extDevice = task.getTargetExternalDevice();
+        String localAE = determineLocalAETitle();
+        if (localAE == null) {
+            throw new IOException("Could not determine local AE title for Store-and-Remember "
+                    + "task to external device " + extDevice);
+        }
+
+        String remoteAE = determineRemoteAETitle(extDevice);
+        if (remoteAE == null) {
+            throw new IOException("Could not determine remote AE title for Store-and-Remember "
+                    + "task to external device " + extDevice);
+        }
+
+        StoreAndRememberContext storeRememberCxt = storeAndRemeberService.createContextBuilder()
+                .seriesUID(task.getSeriesInstanceUID()).localAE(localAE)
+                .externalDeviceName(extDevice).remoteAE(remoteAE)
+                .storeVerifyProtocol(StoreVerifyService.STORE_VERIFY_PROTOCOL.AUTO).build();
+        storeAndRemeberService.scheduleStoreAndRemember(storeRememberCxt);
+    }
+
     private String determineLocalAETitle() {
         String localAE = null;
         try {

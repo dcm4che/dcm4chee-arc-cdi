@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2015
+ * Portions created by the Initial Developer are Copyright (C) 2012-2015
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,26 +38,16 @@
 
 package org.dcm4chee.archive.hsm;
 
-import java.io.IOException;
+import static java.lang.annotation.ElementType.*;
 
-/**
- * @author Gunter Zeilinger <gunterze@gmail.com>
- * @author Franz Willer <franz.willer@gmail.com>
- *
- */
-public interface HsmArchiveService {
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    void copyStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
+import javax.inject.Qualifier;
 
-    void copyStudy(String studyIUID, String targetGroupID) throws IOException;
-
-    void moveStudy(String studyIUID, String sourceGroupID, String targetGroupID) throws IOException;
-
-    void copySeries(String seriesIUID, String sourceGroupID, String targetGroupID)
-            throws IOException;
-
-    void copySeries(String seriesIUID, String targetGroupID) throws IOException;
-
-    void moveSeries(String seriesIUID, String sourceGroupID, String targetGroupID)
-            throws IOException;
+@Qualifier
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ METHOD, FIELD, PARAMETER, TYPE })
+public @interface LocationsCopied {
 }

@@ -153,7 +153,7 @@ public class HsmITBase {
     UserTransaction utx;
 
     @Inject
-    protected HsmArchiveService service;
+    protected LocationCopyService service;
 
     @Inject @ArchiveServiceReloaded
     protected Event<StartStopReloadEvent> archiveServiceReloaded;
@@ -592,4 +592,35 @@ public class HsmITBase {
         return devExt.getStorageSystem(ref.getStorageSystemGroupID(), ref.getStorageSystemID());
     }
 
+    protected void copyStudy(String studyIUID, String sourceStorageSystemGroupID,
+            String targetStorageSystemGroupID) throws IOException {
+        LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
+        ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
+        ctx.setDeleteSourceLocation(false);
+        service.copyStudy(ctx, studyIUID, 0);
+    }
+
+    protected void copySeries(String seriesIUID, String sourceStorageSystemGroupID,
+            String targetStorageSystemGroupID) throws IOException {
+        LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
+        ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
+        ctx.setDeleteSourceLocation(false);
+        service.copySeries(ctx, seriesIUID, 0);
+    }
+
+    protected void moveStudy(String studyIUID, String sourceStorageSystemGroupID,
+            String targetStorageSystemGroupID) throws IOException {
+        LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
+        ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
+        ctx.setDeleteSourceLocation(true);
+        service.copyStudy(ctx, studyIUID, 0);
+    }
+
+    protected void moveSeries(String seriesIUID, String sourceStorageSystemGroupID,
+            String targetStorageSystemGroupID) throws IOException {
+        LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
+        ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
+        ctx.setDeleteSourceLocation(true);
+        service.copySeries(ctx, seriesIUID, 0);
+    }
 }
