@@ -41,9 +41,7 @@ package org.dcm4chee.archive.noneiocm.impl;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 
-import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.NoneIOCMChangeRequestorExtension;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
@@ -66,9 +64,6 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
     static Logger LOG = LoggerFactory.getLogger(StoreServiceNoneIOCMDecorator.class);
 
     @Inject
-    Device device;
-
-    @Inject
     NoneIOCMChangeRequestorService noneIocmService;
 
     /*
@@ -81,43 +76,27 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
     public StoreAction instanceExists(EntityManager em, StoreContext context, Instance inst)
             throws DicomServiceException {
         LOG.info("######### handle instanceExists(). context:{}", context);
-        NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
-        LOG.info("###### NoneIOCMChangeRequestorExtension:{}", ext);
-        if (ext != null) {
-            LOG.info("###### NoneIOCMChangeRequestorDevices:{}", ext.getNoneIOCMChangeRequestorDevices());
-        }
-        if (ext != null && ext.getNoneIOCMChangeRequestorDevices().size() > 0) {
-            String callingAET = context.getStoreSession().getRemoteAET();
-            LOG.info("###### check if requestor is NoneIOCM requestor! callingAE:{}, NoneIOCM AEs:{}", callingAET,
-                    ext.getNoneIOCMChangeRequestorDevices());;
-            for (Device d : ext.getNoneIOCMChangeRequestorDevices()) {
-                if (d.getApplicationAETitles().contains(callingAET)) {
-                    LOG.info("###### {} is a None IOCM Change Requestor! check for changes.", callingAET);
-                    NoneIOCMChangeType chgType = noneIocmService.performChange(inst, context);
-                    LOG.info("###### NoneIOCM changeType:{}", chgType);
-                    break;
-                }
-            }
+        if (noneIocmService.isNoneIOCMChangeRequestor(context.getStoreSession().getRemoteAET())) {
+            LOG.info("###### {} is a None IOCM Change Requestor! check for changes.", context.getStoreSession().getRemoteAET());
+            NoneIOCMChangeType chgType = noneIocmService.performChange(inst, context);
+            LOG.info("###### NoneIOCM changeType:{}", chgType);
         }
         LOG.info("####### call next decorator");
         return getNextDecorator().instanceExists(em, context, inst);
     }
+    
     @Override
     public Instance adjustForNoneIOCM(Instance instanceToStore, StoreContext context) {
-        NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
         String callingAET = context.getStoreSession().getRemoteAET();
-        int gracePeriodInSeconds = ext.getGracePeriod();
-        for (Device d : ext.getNoneIOCMModalityDevices()) {
-            if (d.getApplicationAETitles().contains(callingAET)) {
-                LOG.info("{}: {} is a None IOCM Change Requestor Modality! "
-                        + "check for non structural changes.",
-                        context.getStoreSession(), callingAET);
-                noneIocmService.handleModalityChange(instanceToStore, context, gracePeriodInSeconds);
-                break;
-            }
+        int gracePeriodInSeconds = noneIocmService.getNoneIOCMModalityGracePeriod(callingAET);
+        if (gracePeriodInSeconds > 0) {
+            LOG.info("{}: {} is a None IOCM Change Requestor Modality! check for non structural changes.",
+                    context.getStoreSession(), callingAET);
+            noneIocmService.handleModalityChange(instanceToStore, context, gracePeriodInSeconds);
         }
         return getNextDecorator().adjustForNoneIOCM(instanceToStore, context);
     }
+    
     @Override
     public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
         LOG.info("######### handle findOrCreateInstance(). context:{}", context);

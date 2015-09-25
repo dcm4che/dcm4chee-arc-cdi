@@ -42,7 +42,9 @@ package org.dcm4chee.archive.processing;
 
 import java.util.List;
 
+import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.dto.ActiveService;
+import org.dcm4chee.archive.entity.ActiveProcessing;
 
 /**
  * Add, Remove and Query ActiveProcesses. 
@@ -52,17 +54,19 @@ import org.dcm4chee.archive.dto.ActiveService;
 
 public interface ActiveProcessingService {
 
-    public boolean addActiveProcess(String studyIUID, String seriesIUID, String sopIUID, ActiveService service);
+    boolean addActiveProcess(String studyIUID, String seriesIUID, String sopIUID, ActiveService service);
+    boolean addActiveProcess(String studyIUID, String seriesIUID, String sopIUID, ActiveService service, Attributes attrs);
+    
+    boolean isStudyUnderProcessingByServices(String studyIUID, List<ActiveService> services);
 
-    public boolean isStudyUnderProcessingByServices(String study, List<ActiveService> services);
+    List<ActiveProcessing> getActiveProcessesByStudy(String studyIUID, ActiveService activeService);
 
-    public List<?> getActiveProcessesByStudy(String studyIUID);
+    List<ActiveProcessing> getActiveProcessesBySeries(String seriesIUID, ActiveService activeService);
 
-    public List<?> getActiveProcessesBySeries(String seriesIUID);
+    List<ActiveProcessing> getActiveProcessesBySOPInstanceUID(String sopIUID, ActiveService activeService);
 
-    public Object getActiveProcessesBySOPInstanceUID(String sopIUID);
+    List<ActiveProcessing> getActiveProcessesBySOPInstanceUIDs(List<String> sopIUIDs, ActiveService activeService);
 
-    public List<?> getActiveProcessesBySOPInstanceUIDs(List<String> sopIUIDs);
-
-    public boolean deleteActiveProcessBySOPInstanceUIDandService(String sopIUID, ActiveService service);
+    boolean deleteActiveProcessBySOPInstanceUIDandService(String sopIUID, ActiveService service);
+    boolean deleteActiveProcessBySOPInstanceUIDsAndService(List<String> sopIUIDs, ActiveService service);
 }

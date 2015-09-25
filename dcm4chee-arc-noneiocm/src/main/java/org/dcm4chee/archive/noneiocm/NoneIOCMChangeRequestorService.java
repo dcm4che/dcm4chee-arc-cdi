@@ -42,6 +42,7 @@ import java.util.List;
 
 import javax.enterprise.event.Observes;
 
+import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.store.StoreContext;
@@ -58,8 +59,10 @@ public interface NoneIOCMChangeRequestorService {
         PAT_ID_CHANGE, STUDY_IUID_CHANGE, SERIES_IUID_CHANGE, INSTANCE_CHANGE, NO_CHANGE, ILLEGAL_CHANGE
     }
 
-    NoneIOCMChangeType getChangeType(Instance inst, StoreContext context);
-
+    boolean isNoneIOCMChangeRequestor(String callingAET);
+    int getNoneIOCMModalityGracePeriod(String callingAET);
+    
+    NoneIOCMChangeType getChangeType(Instance inst, Attributes attrs);
     NoneIOCMChangeType performChange(Instance inst, StoreContext context);
 
     List<QCInstanceHistory> findInstanceHistory(String sopInstanceUID);

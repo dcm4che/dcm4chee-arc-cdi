@@ -41,16 +41,21 @@ package org.dcm4chee.archive.entity;
 import java.io.Serializable;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.dto.ActiveService;
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -60,23 +65,38 @@ import org.dcm4chee.archive.dto.ActiveService;
     @NamedQuery(
             name=ActiveProcessing.IS_STUDY_BEING_PROCESSED,
             query="SELECT count(ap) FROM ActiveProcessing ap"
-                    + " WHERE ap.studyInstanceUID = ?1 AND ap.activeService IN :serviceList"
+                    + " WHERE ap.studyInstanceUID = :uid AND ap.activeService IN :serviceList"
             ),
     @NamedQuery(
             name=ActiveProcessing.FIND_BY_SOP_IUID,
-            query="SELECT ap FROM ActiveProcessing ap WHERE ap.sopInstanceUID = ?1"),
+            query="SELECT ap FROM ActiveProcessing ap WHERE ap.sopInstanceUID = :uid"),
+    @NamedQuery(
+            name=ActiveProcessing.FIND_BY_SOP_IUID_AND_SERVICE,
+            query="SELECT ap FROM ActiveProcessing ap WHERE ap.sopInstanceUID = :uid AND ap.activeService = :service"),
     @NamedQuery(
             name=ActiveProcessing.FIND_BY_SOP_IUIDs,
             query="SELECT ap FROM ActiveProcessing ap WHERE ap.sopInstanceUID IN :uidList"),
     @NamedQuery(
+            name=ActiveProcessing.FIND_BY_SOP_IUIDs_AND_SERVICE,
+            query="SELECT ap FROM ActiveProcessing ap WHERE ap.activeService = :service AND ap.sopInstanceUID IN :uidList"),
+    @NamedQuery(
             name=ActiveProcessing.FIND_BY_SERIES_IUID,
-            query="SELECT ap FROM ActiveProcessing ap WHERE ap.seriesInstanceUID = ?1"),
+            query="SELECT ap FROM ActiveProcessing ap WHERE ap.seriesInstanceUID = :uid"),
+    @NamedQuery(
+            name=ActiveProcessing.FIND_BY_SERIES_IUID_AND_SERVICE,
+            query="SELECT ap FROM ActiveProcessing ap WHERE ap.seriesInstanceUID = :uid AND ap.activeService = :service"),
     @NamedQuery(
             name=ActiveProcessing.FIND_BY_STUDY_IUID,
-            query="SELECT ap FROM ActiveProcessing ap WHERE ap.studyInstanceUID = ?1"),
+            query="SELECT ap FROM ActiveProcessing ap WHERE ap.studyInstanceUID = :uid"),
     @NamedQuery(
-            name=ActiveProcessing.DELETE_BY_SOP_IUID_AND_PROCESS,
-            query="DELETE FROM ActiveProcessing ap WHERE ap.sopInstanceUID = ?1 AND ap.activeService = ?2 "),
+            name=ActiveProcessing.FIND_BY_STUDY_IUID_AND_SERVICE,
+            query="SELECT ap FROM ActiveProcessing ap WHERE ap.studyInstanceUID = :uid AND ap.activeService = :service"),
+    @NamedQuery(
+            name=ActiveProcessing.DELETE_BY_SOP_IUID_AND_SERVICE,
+            query="DELETE FROM ActiveProcessing ap WHERE ap.sopInstanceUID = :uid AND ap.activeService = :service"),
+    @NamedQuery(
+            name=ActiveProcessing.DELETE_BY_SOP_IUIDs_AND_SERVICE,
+            query="DELETE FROM ActiveProcessing ap WHERE ap.sopInstanceUID IN :uidList AND ap.activeService = :service"),
 })
 @Entity
 @Table(name = "active_processing", uniqueConstraints = 
@@ -87,16 +107,22 @@ public class ActiveProcessing implements Serializable {
     private static final long serialVersionUID = 8938116804951734177L;
 
     public static final String FIND_BY_SOP_IUID = "ActiveProcessing.findBySOPInstanceUID";
+    public static final String FIND_BY_SOP_IUID_AND_SERVICE = "ActiveProcessing.findBySOPInstanceUIDAndService";
 
     public static final String FIND_BY_SOP_IUIDs = "ActiveProcessing.findBySOPInstanceUIDs";
+    public static final String FIND_BY_SOP_IUIDs_AND_SERVICE = "ActiveProcessing.findBySOPInstanceUIDsAndServcice";
 
     public static final String FIND_BY_SERIES_IUID = "ActiveProcessing.findBySeriesInstanceUID";
+    public static final String FIND_BY_SERIES_IUID_AND_SERVICE = "ActiveProcessing.findBySeriesInstanceUIDAndService";
 
     public static final String FIND_BY_STUDY_IUID = "ActiveProcessing.findByStudyInstanceUID";
+    public static final String FIND_BY_STUDY_IUID_AND_SERVICE = "ActiveProcessing.findByStudyInstanceUIDAndService";
 
-    public static final String DELETE_BY_SOP_IUID_AND_PROCESS = "ActiveProcessing.deleteBySOPInstanceUIDAndProcess";
+    public static final String DELETE_BY_SOP_IUID_AND_SERVICE = "ActiveProcessing.deleteBySOPInstanceUIDAndService";
+    public static final String DELETE_BY_SOP_IUIDs_AND_SERVICE = "ActiveProcessing.deleteBySOPInstanceUIDsAndService";
 
     public static final String IS_STUDY_BEING_PROCESSED = "ActiveProcessing.isStudyBeingProcessed";
+    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")
@@ -117,6 +143,10 @@ public class ActiveProcessing implements Serializable {
     @Basic(optional = true)
     @Column(name = "active_service", updatable = false)
     private ActiveService activeService;
+
+    @OneToOne(fetch=FetchType.EAGER, cascade=CascadeType.ALL, orphanRemoval = true, optional = true)
+    @JoinColumn(name = "dicomattrs_fk")
+    private AttributesBlob attributesBlob;
 
     public final long getPk() {
         return pk;
@@ -154,6 +184,23 @@ public class ActiveProcessing implements Serializable {
         this.activeService = activeService;
     }
 
+    public AttributesBlob getAttributesBlob() {
+        return attributesBlob;
+    }
+    
+    public Attributes getAttributes() throws BlobCorruptedException {
+        return attributesBlob == null ? null : attributesBlob.getAttributes();
+    }
+
+    public void setAttributes(Attributes attrs) {
+        if (attrs == null) 
+            attributesBlob = null;
+        else if (attributesBlob == null)
+            attributesBlob = new AttributesBlob(attrs);
+        else
+            attributesBlob.setAttributes(attrs);
+    }
+    
     @Override
     public String toString() {
         return "ActiveProcessing Entry [pk=" + pk 

@@ -22,7 +22,11 @@
       <classifier>${db}</classifier>      
       <version>${project.version}</version>
     </dependency>
-          <dependency>
+    <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-core</artifactId>
+    </dependency>
+    <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <scope>provided</scope>

@@ -38,32 +38,50 @@
 
 package org.dcm4chee.archive.noneiocm.impl;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.annotation.Resource;
 import javax.ejb.Stateless;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
+import javax.jms.Queue;
+import javax.jms.Session;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
+import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.NoneIOCMChangeRequestorExtension;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.AttributesBlob;
+import org.dcm4chee.archive.dto.ActiveService;
+import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCActionHistory;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.QCSeriesHistory;
 import org.dcm4chee.archive.entity.QCStudyHistory;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
+import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCEvent.QCOperation;
@@ -80,26 +98,67 @@ import org.slf4j.LoggerFactory;
 @Stateless
 public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequestorService {
 
+    //Array must be sorted!
+    private static final int[] BASIC_CHG_ATTRIBUTES = new int[]{Tag.SOPInstanceUID, Tag.PatientID,Tag.IssuerOfPatientID, Tag.IssuerOfPatientIDQualifiersSequence, Tag.StudyInstanceUID, Tag.SeriesInstanceUID};
+
+    private static final List<ActiveService> NONE_IOCM_ACTIVE_SERVICES = Arrays.asList(ActiveService.NONE_IOCM_UPDATE);
+
     private Logger LOG = LoggerFactory.getLogger(NoneIOCMChangeRequestorServiceEJB.class);
 
-    private final org.dcm4che3.data.Code REJ_CODE_QUALITY_REASON = new org.dcm4che3.data.Code("(113001, DCM, \"Rejected for Quality Reasons\")");
+    @Inject
+    private ActiveProcessingService activeProcessingService;
+
+    @Resource(mappedName = "java:/ConnectionFactory")
+    private ConnectionFactory connFactory;
+
+    @Resource(mappedName = "java:/queue/noneiocm")
+    private Queue noneiocmQueue;
 
     @Inject
-    private QCBean qcBean;
+    Device device;
 
     @PersistenceContext(name="dcm4chee-arc")
     EntityManager em;
 
-    public NoneIOCMChangeType getChangeType(Instance inst, StoreContext context) {
-        Attributes attrs = context.getAttributes();
-        if (!inst.getSopInstanceUID().equals(attrs.getString(Tag.SOPInstanceUID)))
-            throw new IllegalArgumentException();
-        boolean seriesChg = !inst.getSeries().getSeriesInstanceUID().equals(attrs.getString(Tag.SeriesInstanceUID));
-        boolean studyChg = !inst.getSeries().getStudy().getStudyInstanceUID().equals(attrs.getString(Tag.StudyInstanceUID));
+    @Override
+    public boolean isNoneIOCMChangeRequestor(String callingAET) {
+        NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
+        if (ext == null || ext.getNoneIOCMChangeRequestorDevices().isEmpty()) {
+            LOG.debug("No NoneIOCMChangeRequestorDevices configured!");
+            return false;
+        }
+        for (Device d : ext.getNoneIOCMChangeRequestorDevices()) {
+            if (d.getApplicationAETitles().contains(callingAET)) 
+                return true;
+        }
+        return false;
+    }
+    @Override
+    public int getNoneIOCMModalityGracePeriod(String callingAET) {
+        NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
+        if (ext == null || ext.getNoneIOCMModalityDevices().isEmpty()) {
+            LOG.debug("No NoneIOCMModalityDevices configured!");
+            return Integer.MIN_VALUE;
+        }
+        for (Device d : ext.getNoneIOCMModalityDevices()) {
+            if (d.getApplicationAETitles().contains(callingAET)) 
+                return ext.getGracePeriod();
+        }
+        return -1;
+    }
+    
+    @Override
+    public NoneIOCMChangeType getChangeType(Instance inst, Attributes attrs) {
         Attributes patAttrs = inst.getSeries().getStudy().getPatient().getAttributes();
         IDWithIssuer currentPID = IDWithIssuer.pidOf(patAttrs);
-        IDWithIssuer newPID = IDWithIssuer.pidOf(attrs);
-        boolean patIDChg = !currentPID.equals(newPID);
+        return getChangeType(currentPID, inst.getSeries().getStudy().getStudyInstanceUID(), inst.getSeries().getSeriesInstanceUID(), inst.getSopInstanceUID(), attrs);
+    }
+    private NoneIOCMChangeType getChangeType(IDWithIssuer currentPID, String studyIUID, String seriesIUID, String sopIUID, Attributes attrs) {
+        if (!sopIUID.equals(attrs.getString(Tag.SOPInstanceUID)))
+            throw new IllegalArgumentException("Current and new Instance must have the same SOP Instance UID!");
+        boolean seriesChg = !seriesIUID.equals(attrs.getString(Tag.SeriesInstanceUID));
+        boolean studyChg = !studyIUID.equals(attrs.getString(Tag.StudyInstanceUID));
+        boolean patIDChg = !currentPID.equals(IDWithIssuer.pidOf(attrs));
         if (patIDChg) {
             if (studyChg || seriesChg) {
                 LOG.warn("Illegal NoneICOM PatID change request! Study IUID and Series IUID must not be changed!");
@@ -117,20 +176,29 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         }
         return NoneIOCMChangeType.INSTANCE_CHANGE;
     }
+    
     public List<QCInstanceHistory> findInstanceHistory(String sopInstanceUID) {
         return new ArrayList<QCInstanceHistory>();
     }
+    
     @Override
     public NoneIOCMChangeType performChange(Instance inst, StoreContext context) {
-        NoneIOCMChangeType chgType = getChangeType(inst, context);
+        Attributes chgAttrs = new Attributes(context.getAttributes(), BASIC_CHG_ATTRIBUTES);
+        Attributes origAttrs = new Attributes();
+        Sequence origSQ = chgAttrs.ensureSequence(Tag.ModifiedAttributesSequence, 1);
+        origSQ.add(origAttrs);
+        NoneIOCMChangeType chgType = getChangeType(inst, context.getAttributes());
         LOG.info("######## performChange start for changeType:{}", chgType);
         switch (chgType) {
         case STUDY_IUID_CHANGE:
-            split(inst, context);
-            LOG.info("{}: Performed study UID change for non iocm request");
+            origAttrs.setString(Tag.StudyInstanceUID, VR.UI, inst.getSeries().getStudy().getStudyInstanceUID());
+            activeProcessingService.addActiveProcess(inst.getSeries().getStudy().getStudyInstanceUID(), 
+                    inst.getSeries().getSeriesInstanceUID(), inst.getSopInstanceUID(), ActiveService.NONE_IOCM_UPDATE, chgAttrs);
             break;
-        case INSTANCE_CHANGE:
-
+        case SERIES_IUID_CHANGE:
+            origAttrs.setString(Tag.SeriesInstanceUID, VR.UI, inst.getSeries().getSeriesInstanceUID());
+            activeProcessingService.addActiveProcess(inst.getSeries().getStudy().getStudyInstanceUID(), 
+                    inst.getSeries().getSeriesInstanceUID(), inst.getSopInstanceUID(), ActiveService.NONE_IOCM_UPDATE, chgAttrs);
             break;
         default:
 
@@ -211,38 +279,38 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         
         return (now - createdTime) < gracePeriodInSeconds; 
     }
-    private QCEvent split(Instance inst, StoreContext context) {
-        LOG.info("######## Start Split instance to new Study");
-        Attributes newAttrs = context.getAttributes();
-        IDWithIssuer pid = new IDWithIssuer(newAttrs.getString(Tag.PatientID), new org.dcm4che3.data.Issuer(
-                newAttrs.getString(Tag.IssuerOfPatientID), null, null));
-        String newStudyIUID = newAttrs.getString(Tag.StudyInstanceUID);
-        Attributes studyAttrs = new Attributes();
-        studyAttrs.addAll(inst.getSeries().getStudy().getAttributes());
-        studyAttrs.setString(Tag.StudyInstanceUID, VR.UI, newStudyIUID);
-        Attributes seriesAttrs = new Attributes();
-        seriesAttrs.addAll(inst.getSeries().getAttributes());
-        String newSeriesIUID = getNewSeriesIuidFromHistory(seriesAttrs.getString(Tag.SeriesInstanceUID), newStudyIUID);
-        LOG.info("Found new SeriesInstanceUID from history:{}", newSeriesIUID);
-        if (newSeriesIUID == null) {
-            seriesAttrs.remove(Tag.SeriesInstanceUID);
-        } else {
-            seriesAttrs.setString(Tag.SeriesInstanceUID, VR.UI, newSeriesIUID);
-        }
-        return qcBean.split(Arrays.asList(inst.getSopInstanceUID()), pid, newStudyIUID, studyAttrs, seriesAttrs, REJ_CODE_QUALITY_REASON);
-    }
-
-    private String getNewSeriesIuidFromHistory(String oldSeriesIUID, String newStudyIUID) {
-        Query query = em.createQuery("SELECT h FROM QCInstanceHistory h WHERE h.currentStudyUID = ?1 AND h.series.oldSeriesUID = ?2 ORDER BY h.pk DESC");
-        query.setParameter(1, newStudyIUID);
-        query.setParameter(2, oldSeriesIUID);
-        @SuppressWarnings("unchecked")
-        List<QCInstanceHistory> result = query.getResultList();
-        return result.isEmpty() ? null : result.get(0).getCurrentSeriesUID();
-    }
 
     public void onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
         LOG.info("###### onStudyUpdated:{}", studyUpdatedEvent);
+        if (isNoneIOCMChangeRequestor(studyUpdatedEvent.getSourceAET())) {
+            LOG.info("###### Is NoneIOCM source");
+            if ( activeProcessingService.isStudyUnderProcessingByServices(studyUpdatedEvent.getStudyInstanceUID(), NONE_IOCM_ACTIVE_SERVICES)) {
+                LOG.debug("Schedule NoneIOCM change request for study {}", studyUpdatedEvent.getStudyInstanceUID());
+                try {
+                    scheduleNoneIocmChangeRequest(studyUpdatedEvent.getStudyInstanceUID(), 0);
+                } catch (JMSException e) {
+                    LOG.error("Schedule NoneIOCMChangeRequest for study "+studyUpdatedEvent.getStudyInstanceUID()+" failed!", e);
+                }
+            } else {
+                LOG.debug("No active NoneIOCM service found for study {}", studyUpdatedEvent.getStudyInstanceUID());
+            }
+        }
     }
-
+    
+    public void scheduleNoneIocmChangeRequest(String studyIUID, int delay) throws JMSException {
+        Connection conn = connFactory.createConnection();
+        try {
+            Session session = conn.createSession(false,
+                    Session.AUTO_ACKNOWLEDGE);
+            MessageProducer producer = session.createProducer(noneiocmQueue);
+            Message msg = session.createMessage();
+            if (delay > 0)
+                msg.setLongProperty("_HQ_SCHED_DELIVERY",
+                        System.currentTimeMillis() + delay);
+            msg.setStringProperty("studyIUID", studyIUID);
+            producer.send(msg);
+        } finally {
+            conn.close();
+        }
+    }
 }

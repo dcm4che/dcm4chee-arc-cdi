@@ -1,14 +1,13 @@
 package org.dcm4chee.archive.processing.impl;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
@@ -30,15 +29,20 @@ public class ActiveProcessingServiceImpl implements ActiveProcessingService {
 
     @Override
     public boolean addActiveProcess(String studyIUID, String seriesIUID, String sopIUID, ActiveService service) {
+        return addActiveProcess(sopIUID, sopIUID, sopIUID, service, null);
+    }
+    @Override
+    public boolean addActiveProcess(String studyIUID, String seriesIUID, String sopIUID, ActiveService service, Attributes attrs) {
         ActiveProcessing activeProcess = new ActiveProcessing();
         activeProcess.setStudyInstanceUID(studyIUID);
         activeProcess.setSeriesInstanceUID(seriesIUID);
         activeProcess.setSopInstanceUID(sopIUID);
         activeProcess.setActiveService(service);
+        activeProcess.setAttributes(attrs);
         boolean persisted = false;
         try{
-        em.persist(activeProcess);
-        persisted = true;
+            em.persist(activeProcess);
+            persisted = true;
         }
         catch(Exception e) {
             LOG.error("Unable to persist Active Process with studyIUID = {}, "
@@ -48,105 +52,98 @@ public class ActiveProcessingServiceImpl implements ActiveProcessingService {
         return persisted;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean isStudyUnderProcessingByServices(String studyIUID, List<ActiveService> services) {
         Query query = em.createNamedQuery(ActiveProcessing.IS_STUDY_BEING_PROCESSED);
-        query.setParameter(1, studyIUID);
+        query.setParameter("uid", studyIUID);
         query.setParameter("serviceList", services);
-        Long result = 0l ;
         try{
-        result = (Long) query.getSingleResult();
+            return (Long) query.getSingleResult() > 0;
         }
         catch (Exception e)
         {
             LOG.error("Unable to check active processing status for the provided"
                     + " study {} - reason {}", studyIUID, e);
+            return false;
         }
-        return result == 0l ? false : true;
+    }
+
+
+    @Override
+    public List<ActiveProcessing> getActiveProcessesByStudy(String studyIUID, ActiveService activeService) {
+        return queryActiveProcesses(studyIUID, activeService, ActiveProcessing.FIND_BY_STUDY_IUID_AND_SERVICE, ActiveProcessing.FIND_BY_STUDY_IUID);
+    }
+
+    @Override
+    public List<ActiveProcessing> getActiveProcessesBySeries(String seriesIUID, ActiveService activeService) {
+        return queryActiveProcesses(seriesIUID, activeService, ActiveProcessing.FIND_BY_SERIES_IUID_AND_SERVICE, ActiveProcessing.FIND_BY_SERIES_IUID);
+    }
+
+    @Override
+    public List<ActiveProcessing> getActiveProcessesBySOPInstanceUID(String sopIUID, ActiveService activeService) {
+        return queryActiveProcesses(sopIUID, activeService, ActiveProcessing.FIND_BY_SOP_IUID_AND_SERVICE, ActiveProcessing.FIND_BY_SOP_IUID);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<ActiveProcessing> getActiveProcessesByStudy(String studyIUID) {
-        Query query = em.createNamedQuery(ActiveProcessing.FIND_BY_STUDY_IUID);
-        query.setParameter(1, studyIUID);
-        List<ActiveProcessing> result = new ArrayList<ActiveProcessing>();
-        try{
-        result = query.getResultList();
-        }
-        catch (Exception e)
-        {
-            LOG.error("Unable to get active processes for the provided study "
-                    + "{} - reason {}, empty result returned", studyIUID, e);
-        }
-        return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public List<ActiveProcessing> getActiveProcessesBySeries(String seriesIUID) {
-        Query query = em.createNamedQuery(ActiveProcessing.FIND_BY_SERIES_IUID);
-        query.setParameter(1, seriesIUID);
-        List<ActiveProcessing> result = new ArrayList<ActiveProcessing>();
-        try{
-        result = query.getResultList();
-        }
-        catch (Exception e)
-        {
-            LOG.error("Unable to get active processes for the provided series "
-                    + "{} - reason {}, empty result returned", seriesIUID, e);
-        }
-        return result;
-    }
-
-    @Override
-    public ActiveProcessing getActiveProcessesBySOPInstanceUID(String sopIUID) {
-        Query query = em.createNamedQuery(ActiveProcessing.FIND_BY_SOP_IUID);
-        query.setParameter(1, sopIUID);
-        ActiveProcessing result = null;
-        try{ 
-        result = (ActiveProcessing) query.getSingleResult();
-        }
-        catch (Exception e)
-        {
-            LOG.error("Unable to get active process for the provided sopIUID"
-                    + " {} - reason {}, null value returned", sopIUID, e);
-        }
-        return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public List<ActiveProcessing> getActiveProcessesBySOPInstanceUIDs(List<String> sopIUIDs) {
-        Query query = em.createNamedQuery(ActiveProcessing.FIND_BY_SOP_IUIDs);
+    public List<ActiveProcessing> getActiveProcessesBySOPInstanceUIDs(List<String> sopIUIDs, ActiveService activeService) {
+        Query query = em.createNamedQuery(activeService == null ? ActiveProcessing.FIND_BY_SOP_IUIDs : ActiveProcessing.FIND_BY_SOP_IUIDs_AND_SERVICE);
         query.setParameter("uidList", sopIUIDs);
-        List<ActiveProcessing> result = new ArrayList<ActiveProcessing>();
+        if (activeService != null)
+            query.setParameter("service", activeService);
         try{
-        result = query.getResultList();
+            return query.getResultList();
+        } catch (Exception e) {
+            LOG.error("Unable to get active processes for {} and the provided SOPIUIDs! reason {}, return null", activeService, e);
+            return null;
         }
-        catch (Exception e)
-        {
-            LOG.error("Unable to get active processes for the provided SOPIUIDs "
-                    + "- reason {}, empty result returned", e);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ActiveProcessing> queryActiveProcesses(String uid, ActiveService activeService, String queryNameWithService, String queryNameWithoutService) {
+        String queryName = activeService == null ? queryNameWithoutService : queryNameWithService;
+        Query query = em.createNamedQuery(queryName);
+        query.setParameter("uid", uid);
+        if (activeService != null)
+            query.setParameter("service", activeService);
+        try{
+            return query.getResultList();
+        } catch (Exception e) {
+            LOG.error("Unable to get active processes for {}! service: {} uid: {}  reason {}, return null", queryName, activeService, uid, e);
+            return null;
         }
-        return result;
     }
 
     @Override
     public boolean deleteActiveProcessBySOPInstanceUIDandService(String sopIUID, ActiveService service) {
-        Query query = em.createNamedQuery(ActiveProcessing.DELETE_BY_SOP_IUID_AND_PROCESS);
-        query.setParameter(1, sopIUID);
-        query.setParameter(2, service);
+        Query query = em.createNamedQuery(ActiveProcessing.DELETE_BY_SOP_IUID_AND_SERVICE);
+        query.setParameter("uid", sopIUID);
+        query.setParameter("service", service);
         int result = 0;
         try{
-        result = query.executeUpdate();
+            result = query.executeUpdate();
         }
         catch(Exception e){
             LOG.error("Unable to delete provided Active Process with SOPIUID "
                     + "= {} for service {} - reason {}", sopIUID, service, e);
         }
-        return result == 0? false : true;
+        return result == 0 ? false : true;
+    }
+
+    @Override
+    public boolean deleteActiveProcessBySOPInstanceUIDsAndService(List<String> sopIUIDs, ActiveService service) {
+        Query query = em.createNamedQuery(ActiveProcessing.DELETE_BY_SOP_IUIDs_AND_SERVICE);
+        query.setParameter("uidList", sopIUIDs);
+        query.setParameter("service", service);
+        int result = 0;
+        try{
+            result = query.executeUpdate();
+        }
+        catch(Exception e){
+            LOG.error("Unable to delete provided Active Process with SOP IUIDs "
+                    + "= {} for service {} - reason {}", sopIUIDs, service, e);
+        }
+        return result == 0 ? false : true;
     }
 
 }

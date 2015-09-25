@@ -11,4 +11,5 @@ jms-queue add --queue-address=archiver_2 --entries=queue/archiver_2
 jms-queue add --queue-address=storeremember --entries=queue/storeremember
 jms-queue add --queue-address=storescu --entries=queue/storescu
 jms-queue add --queue-address=stowclient --entries=queue/stowclient
+jms-queue add --queue-address=noneiocm --entries=queue/noneiocm
 jms-topic add --topic-address=DicomConfigurationChangeTopic --entries=/topic/DicomConfigurationChangeTopic

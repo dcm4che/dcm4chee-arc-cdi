@@ -118,6 +118,9 @@ public class LocationDeleteServiceImpl implements DeleterService {
     private Map<String, Date> lastDVDCalculationDateMap;
 
     private Map<String, Long> lastCalculatedDVDInBytesMap;
+    
+    private static final List<ActiveService> ACTIVE_ARCHIVE_OR_DELETER_SERVICES = Arrays.asList(ActiveService.LOCAL_ARCHIVING, 
+            ActiveService.DELETER_SERVICE, ActiveService.STORE_REMEMBER_ARCHIVING);
 
     @PostConstruct
     public void init() {
@@ -542,11 +545,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
         Map<String, List<Instance>> adjustedInstancesOnGroupPerStudyMap = 
                 new HashMap<String, List<Instance>>();
         for(String studyUID : instancesOnGroupPerStudyMap.keySet()) {
-            List<ActiveService> services = new ArrayList<ActiveService>();
-            services.add(ActiveService.LOCAL_ARCHIVING);
-            services.add(ActiveService.DELETER_SERVICE);
-            services.add(ActiveService.STORE_REMEMBER_ARCHIVING);
-            if (!activeProcessingService.isStudyUnderProcessingByServices(studyUID, services)) {
+            if (!activeProcessingService.isStudyUnderProcessingByServices(studyUID, ACTIVE_ARCHIVE_OR_DELETER_SERVICES)) {
                 adjustedInstancesOnGroupPerStudyMap.put(studyUID, 
                         instancesOnGroupPerStudyMap.get(studyUID));
             }
@@ -556,11 +555,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
     }
 
     private List<Instance> removePendingArchivingOrDeletion(String studyIUID, List<Instance>instancesOnGroup) {
-            List<ActiveService> services = new ArrayList<ActiveService>();
-            services.add(ActiveService.LOCAL_ARCHIVING);
-            services.add(ActiveService.DELETER_SERVICE);
-            services.add(ActiveService.STORE_REMEMBER_ARCHIVING);
-            if (activeProcessingService.isStudyUnderProcessingByServices(studyIUID, services)) {
+            if (activeProcessingService.isStudyUnderProcessingByServices(studyIUID, ACTIVE_ARCHIVE_OR_DELETER_SERVICES)) {
                 return Collections.emptyList();
             }
         
