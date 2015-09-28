@@ -81,6 +81,9 @@ public class AttributeFilter implements Serializable {
     @ConfigurableProperty(name = "dcmCustomAttribute3")
     private ValueSelector customAttribute3;
 
+    @ConfigurableProperty(name = "dcmmetadataUpdateStrategy")
+    private MetadataUpdateStrategy metadataUpdateStrategy;
+
     // cached complete selection
     private int[] completeselection = null;
 
@@ -94,6 +97,13 @@ public class AttributeFilter implements Serializable {
     public AttributeFilter(int[] selection, Map<Integer, String> privateSelection) {
         Arrays.sort(this.selection = selection);
         setPrivateSelection(privateSelection);
+    }
+
+    public AttributeFilter(int[] selection, Map<Integer, String> privateSelection,
+            MetadataUpdateStrategy strategy) {
+        Arrays.sort(this.selection = selection);
+        setPrivateSelection(privateSelection);
+        setMetadataUpdateStrategy(strategy);
     }
     
     /**
@@ -181,6 +191,12 @@ public class AttributeFilter implements Serializable {
         this.privateSelection.put(tag, creator);
         return this.privateSelection;
     }
-    
 
+    public MetadataUpdateStrategy getMetadataUpdateStrategy() {
+        return metadataUpdateStrategy;
+    }
+
+    public void setMetadataUpdateStrategy(MetadataUpdateStrategy metadataUpdateStrategy) {
+        this.metadataUpdateStrategy = metadataUpdateStrategy;
+    }
 }

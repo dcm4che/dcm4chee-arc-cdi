@@ -55,17 +55,9 @@ import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.MetadataUpdateStrategy;
 import org.dcm4chee.archive.conf.StoreParam;
-import org.dcm4chee.archive.entity.Issuer;
-import org.dcm4chee.archive.entity.MPPS;
-import org.dcm4chee.archive.entity.MWLItem;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.PatientID;
-import org.dcm4chee.archive.entity.QAttributesBlob;
-import org.dcm4chee.archive.entity.QIssuer;
-import org.dcm4chee.archive.entity.QPatient;
-import org.dcm4chee.archive.entity.QPatientID;
-import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.NonUniquePatientException;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
@@ -234,8 +226,8 @@ public class PatientServiceEJB implements PatientService {
 
     private Predicate eqOrNoUniversalEntityID(String uid, String uidType) {
         return ExpressionUtils.or(ExpressionUtils.and(
-                QIssuer.issuer.universalEntityID.eq(uid),
-                QIssuer.issuer.universalEntityIDType.eq(uidType)),
+                        QIssuer.issuer.universalEntityID.eq(uid),
+                        QIssuer.issuer.universalEntityIDType.eq(uidType)),
                 QIssuer.issuer.universalEntityID.isNull());
     }
 
@@ -311,7 +303,7 @@ public class PatientServiceEJB implements PatientService {
         }
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (patientAttrs.mergeSelected(attrs, filter.getCompleteSelection(attrs)))
+        if (Utils.updateAttributes(patientAttrs, attrs, null , filter, MetadataUpdateStrategy.COERCE_MERGE))
             patient.setAttributes(patientAttrs, filter,storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
     }
 
@@ -374,7 +366,7 @@ public class PatientServiceEJB implements PatientService {
         }
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (patientAttrs.updateSelected(attrs, null, filter.getCompleteSelection(attrs)))
+        if (Utils.updateAttributes(patientAttrs, attrs, null, filter, MetadataUpdateStrategy.COERCE_MERGE))
             patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
     }
 
@@ -667,8 +659,7 @@ public class PatientServiceEJB implements PatientService {
         // set blob data
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (patientAttrs.updateSelected(otherPatientAttrs, null,
-                filter.getCompleteSelection(otherPatientAttrs))) {
+        if (Utils.updateAttributes(patientAttrs, otherPatientAttrs, null, filter, MetadataUpdateStrategy.COERCE_MERGE)) {
             patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
             em.flush();
             LOG.info("Update ID {} with {} ", pids, otherPids);
