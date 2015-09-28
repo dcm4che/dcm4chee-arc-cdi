@@ -58,7 +58,7 @@ public class LocationCopyContext implements Serializable {
     private boolean deleteSourceLocation = false;
     private HashMap<String, Serializable> properties = new HashMap<String, Serializable>();
     private ArrayList<Location> copies = new ArrayList<Location>();
-    private String jmsMessageID;
+    private String jmsCorrelationID;
 
     public void setSourceStorageSystemGroupID(String sourceStorageSystemGroupID) {
         this.sourceStorageSystemGroupID = sourceStorageSystemGroupID;
@@ -92,16 +92,20 @@ public class LocationCopyContext implements Serializable {
         return Collections.unmodifiableCollection(copies);
     }
 
-    public void setJMSMessageID(String jmsMessageID) {
-        this.jmsMessageID = jmsMessageID;
+    public void setJMSCorrelationID(String jmsCorrelationID) {
+        this.jmsCorrelationID = jmsCorrelationID;
     }
 
-    public String getJMSMessageID() {
-        return jmsMessageID;
+    public String getJMSCorrelationID() {
+        return jmsCorrelationID;
     }
 
     public Serializable getProperty(String key) {
         return properties.get(key);
+    }
+
+    public Serializable removeProperty(String key) {
+        return properties.remove(key);
     }
 
     public void setProperty(String key, Serializable value) {

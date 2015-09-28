@@ -234,7 +234,7 @@ public class ArchivingSchedulerEJB {
         LocationCopyContext ctx = locationCopyService.createContext(task
                 .getTargetStorageSystemGroupID());
         ctx.setSourceStorageSystemGroupID(task.getSourceStorageSystemGroupID());
-        locationCopyService.copySeries(ctx, task.getSeriesInstanceUID(), 0);
+        locationCopyService.scheduleCopySeries(ctx, task.getSeriesInstanceUID(), 0);
     }
 
     private void scheduleStoreAndRemember(ArchivingTask task) throws IOException {

@@ -193,7 +193,6 @@ public class LocationCopyServiceEJB {
             }
             archiverCtx.setProperty(LOCATION_COPY_CONTEXT, ctx);
             archiverService.scheduleStore(archiverCtx, delay);
-            ctx.setJMSMessageID(archiverCtx.getJMSMessageID());
         }
     }
 
@@ -268,7 +267,6 @@ public class LocationCopyServiceEJB {
         LOG.debug("onContainerEntriesStored for {} called", ctx.getStorageSystemGroupID());
 
         LocationCopyContext event = (LocationCopyContext) ctx.getProperty(LOCATION_COPY_CONTEXT);
-        event.setJMSMessageID(ctx.getJMSMessageID());
 
         List<ContainerEntry> entries = ctx.getEntries();
         boolean notInContainer = ctx.isNotInContainer();

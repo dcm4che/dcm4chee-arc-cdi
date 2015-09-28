@@ -50,7 +50,9 @@ public interface LocationCopyService {
 
     LocationCopyContext createContext(String targetStorageSystemGroupID);
 
-    void copyStudy(LocationCopyContext context, String studyIUID, long delay) throws IOException;
+    void scheduleCopyStudy(LocationCopyContext context, String studyIUID, long delay)
+            throws IOException;
 
-    void copySeries(LocationCopyContext context, String seriesIUID, long delay) throws IOException;
+    void scheduleCopySeries(LocationCopyContext context, String seriesIUID, long delay)
+            throws IOException;
 }

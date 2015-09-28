@@ -597,7 +597,7 @@ public class HsmITBase {
         LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
         ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
         ctx.setDeleteSourceLocation(false);
-        service.copyStudy(ctx, studyIUID, 0);
+        service.scheduleCopyStudy(ctx, studyIUID, 0);
     }
 
     protected void copySeries(String seriesIUID, String sourceStorageSystemGroupID,
@@ -605,7 +605,7 @@ public class HsmITBase {
         LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
         ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
         ctx.setDeleteSourceLocation(false);
-        service.copySeries(ctx, seriesIUID, 0);
+        service.scheduleCopySeries(ctx, seriesIUID, 0);
     }
 
     protected void moveStudy(String studyIUID, String sourceStorageSystemGroupID,
@@ -613,7 +613,7 @@ public class HsmITBase {
         LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
         ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
         ctx.setDeleteSourceLocation(true);
-        service.copyStudy(ctx, studyIUID, 0);
+        service.scheduleCopyStudy(ctx, studyIUID, 0);
     }
 
     protected void moveSeries(String seriesIUID, String sourceStorageSystemGroupID,
@@ -621,6 +621,6 @@ public class HsmITBase {
         LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
         ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
         ctx.setDeleteSourceLocation(true);
-        service.copySeries(ctx, seriesIUID, 0);
+        service.scheduleCopySeries(ctx, seriesIUID, 0);
     }
 }
