@@ -74,12 +74,13 @@ public class LocationCopyServiceImpl implements LocationCopyService {
     }
 
     @Override
-    public void copyStudy(LocationCopyContext ctx, String studyIUID, long delay) throws IOException {
+    public void scheduleCopyStudy(LocationCopyContext ctx, String studyIUID, long delay)
+            throws IOException {
         ejb.scheduleStudy(ctx, studyIUID, delay);
     }
 
     @Override
-    public void copySeries(LocationCopyContext ctx, String seriesIUID, long delay)
+    public void scheduleCopySeries(LocationCopyContext ctx, String seriesIUID, long delay)
             throws IOException {
         ejb.scheduleSeries(ctx, seriesIUID, delay);
     }
