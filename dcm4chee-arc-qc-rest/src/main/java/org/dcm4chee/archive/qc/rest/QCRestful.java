@@ -74,6 +74,7 @@ import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.rest.IssuerObject;
 import org.dcm4chee.archive.qc.PatientCommands;
 import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.QCOperationNotPermittedException;
 import org.dcm4chee.archive.qc.rest.QCObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -228,9 +229,9 @@ public class QCRestful {
                     .entity("Unable to decide patient command - supported commands {merge, link, unlink, updateids}")
                     .build()
                     );
-        ArrayList<Attributes> attrs = null;
+
         try {
-            attrs = parseJSONAttributesToList(in);
+            ArrayList<Attributes> attrs = parseJSONAttributesToList(in);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Received Attributes for patient operation - "+patientOperation);
                 for(int i=0; i< attrs.size();i++){
@@ -238,6 +239,8 @@ public class QCRestful {
                     LOG.debug(attrs.get(i).toString(0, attrs.get(i).size()));
                 }
             }
+            
+            return aggregatePatientOpResponse(attrs,device.getApplicationEntity(aeTitle),command, patientOperation);
         }
         catch(Exception e)
         {
@@ -247,7 +250,7 @@ public class QCRestful {
                     );
         }
 
-        return aggregatePatientOpResponse(attrs,device.getApplicationEntity(aeTitle),command, patientOperation);
+        
     }
     /**
      * Delete patient.
@@ -451,18 +454,22 @@ public class QCRestful {
      * @param patientOperation
      *            the patient operation
      * @return the response
+     * @throws QCOperationNotPermittedException 
      */
     private Response aggregatePatientOpResponse(ArrayList<Attributes> attrs,
-            ApplicationEntity applicationEntity, PatientCommands command, String patientOperation) {
+            ApplicationEntity applicationEntity, PatientCommands command, String patientOperation) throws QCOperationNotPermittedException {
         ArrayList<Boolean> listRSP = new ArrayList<Boolean>();
-        for(int i=0;i<attrs.size();i++)
-        listRSP.add(qcManager.patientOperation(attrs.get(i), attrs.get(++i),
-                arcAEExt, command));
+        for (int i = 0; i < attrs.size(); i++) {
+            listRSP.add(qcManager.patientOperation(attrs.get(i), attrs.get(++i), arcAEExt, command));
+        }
         int trueCount=0;
         
-        for(boolean rsp: listRSP)
-        if(rsp)
-        trueCount++;
+        for (boolean rsp : listRSP) {
+            if (rsp) {
+                trueCount++;
+            }
+        }
+    
         return trueCount==listRSP.size()?
                 Response.status(Status.OK).entity
                 ("Patient operation successful - "+patientOperation).build():

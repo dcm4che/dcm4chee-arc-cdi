@@ -59,6 +59,7 @@ import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.QCOperationNotPermittedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -143,6 +144,8 @@ public class NoneIocmChangeRequestorMDB implements MessageListener{
                     activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(e.getValue(), ActiveService.NONE_IOCM_UPDATE);
                 }
             }
+        } catch(QCOperationNotPermittedException e) {
+            LOG.warn("QC operation not permitted", e);
         } catch (Throwable th) {
             LOG.warn("Failed to process " + message, th);
         } 

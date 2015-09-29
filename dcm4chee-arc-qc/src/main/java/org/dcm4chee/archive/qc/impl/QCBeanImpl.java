@@ -108,10 +108,13 @@ import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.qc.PatientCommands;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
+import org.dcm4chee.archive.qc.QCOperationNotPermittedException;
 import org.dcm4chee.archive.qc.QCEvent.QCOperation;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.studyprotection.StudyProtectionHook;
+import org.dcm4chee.hooks.Hooks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,7 +128,7 @@ import org.slf4j.LoggerFactory;
  */
 
 @Stateless
-public class QCBeanImpl  implements QCBean{
+public class QCBeanImpl implements QCBean {
 
     private static final int[] PATIENT_AND_STUDY_ATTRS = {Tag.SpecificCharacterSet, Tag.StudyDate, Tag.StudyTime, Tag.AccessionNumber,
         Tag.IssuerOfAccessionNumberSequence, Tag.ReferringPhysicianName, Tag.PatientName, Tag.PatientID, Tag.IssuerOfPatientID,
@@ -172,10 +175,13 @@ public class QCBeanImpl  implements QCBean{
 
     @Inject
     @Any
-    Event<QCEvent> internalNotification;
+    private Event<QCEvent> internalNotification;
+    
+    @Inject
+    private Hooks<StudyProtectionHook> studyProtectionHooks;
 
     @PersistenceContext(name="dcm4chee-arc")
-    EntityManager em;
+    private EntityManager em;
 
     private String qcSource="Quality Control";
 
@@ -189,49 +195,49 @@ public class QCBeanImpl  implements QCBean{
         archiveDeviceExtension = device.getDeviceExtension(ArchiveDeviceExtension.class);
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#mergeStudies(java.lang.String[], 
-     * java.lang.String, org.dcm4che3.data.Attributes,
-     *  org.dcm4che3.data.Attributes, org.dcm4che3.data.Code)
-     */
     @Override
     public QCEvent mergeStudies(String[] sourceStudyUids, String targetStudyUId, 
             Attributes targetStudyAttrs, Attributes targetSeriesAttrs, 
-            org.dcm4che3.data.Code qcRejectionCode) {
+            org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
 
         Collection<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
         Collection<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
         QCEvent mergeEvent = new QCEvent(QCOperation.MERGE, null,
                 null, sourceUIDs, targetUIDs);
 
-        try{
-            
-        for(String sourceStudyUID : sourceStudyUids) {
-            QCEvent singleMergeEvent = merge(sourceStudyUID, targetStudyUId,
-                    targetStudyAttrs, targetSeriesAttrs,qcRejectionCode);
-            sourceUIDs.addAll(singleMergeEvent.getSource());
-            targetUIDs.addAll(singleMergeEvent.getTarget());
-            mergeEvent.addRejectionNote(singleMergeEvent.getRejectionNotes().iterator().next());
+        Study targetStudy = findStudy(targetStudyUId);
+        if(targetStudy != null) {
+            checkIfQCPermittedForStudy(targetStudy);
         }
         
+        for(String sourceStudyUID : sourceStudyUids) {
+            Study sourceStudy = findStudy(sourceStudyUID);
+            if(sourceStudy != null) {
+                checkIfQCPermittedForStudy(sourceStudy);
+            }
         }
-        catch(Exception e) {
-            LOG.error("{}: QC info[Merge] - Failure, reason {}",e);
+        
+        try {
+            for (String sourceStudyUID : sourceStudyUids) {
+                QCEvent singleMergeEvent = merge(sourceStudyUID, targetStudyUId, targetStudyAttrs,
+                        targetSeriesAttrs, qcRejectionCode);
+                sourceUIDs.addAll(singleMergeEvent.getSource());
+                targetUIDs.addAll(singleMergeEvent.getTarget());
+                mergeEvent.addRejectionNote(singleMergeEvent.getRejectionNotes().iterator().next());
+            }
+
+        } catch (Exception e) {
+            LOG.error("{}: QC info[Merge] - Failure, reason {}", e);
             throw new EJBException();
         }
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(mergeEvent);
         return mergeEvent;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#merge(java.lang.String, 
-     * java.lang.String, org.dcm4che3.data.Attributes, 
-     * org.dcm4che3.data.Attributes, boolean, org.dcm4che3.data.Code)
-     */
     @Override
     public QCEvent merge(String sourceStudyUid, String targetStudyUID, 
             Attributes targetStudyAttrs, Attributes targetSeriesAttrs,
-            org.dcm4che3.data.Code qcRejectionCode) {
+            org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         
         QCActionHistory mergeAction = generateQCAction(QCOperation.MERGE);
         List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
@@ -255,6 +261,9 @@ public class QCBeanImpl  implements QCBean{
                     targetStudyUID);
             throw new EJBException();
         }
+        
+        checkIfQCPermittedForStudy(source);
+        checkIfQCPermittedForStudy(target);
         
         QCStudyHistory studyHistory = createQCStudyHistory(source.getStudyInstanceUID(),
                 targetStudyUID, target.getAttributes(), mergeAction);
@@ -302,16 +311,10 @@ public class QCBeanImpl  implements QCBean{
         return mergeEvent;
     }
 
-    
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#split(java.util.Collection,
-     *  org.dcm4che3.data.IDWithIssuer, java.lang.String,
-     *   org.dcm4che3.data.Attributes, org.dcm4che3.data.Attributes, org.dcm4che3.data.Code)
-     */
     @Override
     public QCEvent split(Collection<String> toMoveUIDs, IDWithIssuer pid,
             String targetStudyUID, Attributes createdStudyAttrs,
-            Attributes targetSeriesAttrs, org.dcm4che3.data.Code qcRejectionCode) {
+            Attributes targetSeriesAttrs, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         
         QCActionHistory splitAction = generateQCAction(QCOperation.SPLIT);
         List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
@@ -324,6 +327,9 @@ public class QCBeanImpl  implements QCBean{
             LOG.error("{} : QC info[Split] - Failure, Different studie used as source", qcSource);
             throw new EJBException();
         }
+        
+        checkIfQCPermittedForStudy(sourceStudy);
+        
         Study targetStudy = findStudy(targetStudyUID);
 
         if (targetStudy == null) {
@@ -331,6 +337,9 @@ public class QCBeanImpl  implements QCBean{
                     + " didn't exist, creating target study",qcSource);
             targetStudy = createStudy(pid, sourceStudy, targetStudyUID, createdStudyAttrs);
         } else if (createdStudyAttrs != null && createdStudyAttrs.size() > 0) {
+            
+            checkIfQCPermittedForStudy(targetStudy);
+            
             updateStudy(archiveDeviceExtension, targetStudy, createdStudyAttrs);
         }
 
@@ -393,16 +402,11 @@ public class QCBeanImpl  implements QCBean{
         return splitEvent;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#segment(java.util.Collection, 
-     * java.util.Collection, org.dcm4che3.data.IDWithIssuer, java.lang.String, 
-     * org.dcm4che3.data.Attributes, org.dcm4che3.data.Attributes, org.dcm4che3.data.Code)
-     */
     @Override
     public QCEvent segment(Collection<String> toMoveUIDs, Collection<String> toCloneUIDs,
             IDWithIssuer pid, String targetStudyUID, 
             Attributes createdStudyAttrs,Attributes targetSeriesAttrs,
-            org.dcm4che3.data.Code qcRejectionCode) {
+            org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         QCActionHistory segmentAction = generateQCAction(QCOperation.SEGMENT);
         List<QCEventInstance> movedSourceUIDs = new ArrayList<QCEventInstance>();
         List<QCEventInstance> movedTargetUIDs = new ArrayList<QCEventInstance>();
@@ -420,7 +424,15 @@ public class QCBeanImpl  implements QCBean{
             LOG.error("{} : QC info[Segment] Failure, Different studies used as source", qcSource);
             throw new EJBException();
         }
+        
+        checkIfQCPermittedForStudy(sourceStudy);
+        
         Study targetStudy = findStudy(targetStudyUID);
+        
+        if(targetStudy != null) {
+            checkIfQCPermittedForStudy(targetStudy);
+        }
+        
         if(targetStudy == null) {
             LOG.debug("{} :  QC info[Segment] info - Target study didn't exist, creating target study",qcSource);
             targetStudy = createStudy(pid, sourceStudy, targetStudyUID, createdStudyAttrs);
@@ -510,11 +522,6 @@ public class QCBeanImpl  implements QCBean{
         return segmentEvent;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#segmentFrame(org.dcm4chee.archive.entity.Instance, 
-     * org.dcm4chee.archive.entity.Instance, int, org.dcm4chee.archive.entity.PatientID,
-     *  java.lang.String, org.dcm4che3.data.Attributes, org.dcm4che3.data.Attributes)
-     */
     @Override
     public void segmentFrame(Instance toMove, Instance toClone, int frame,
             PatientID pid, String targetStudyUID,
@@ -522,18 +529,22 @@ public class QCBeanImpl  implements QCBean{
         LOG.info("{} :  QC info[Segment] info - Segmenting frame is not yet supported",qcSource);
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#reject(java.lang.String[], org.dcm4che3.data.Code)
-     */
     @Override
-    public QCEvent reject(String[] sopInstanceUIDs, org.dcm4che3.data.Code qcRejectionCode) {
-        Collection<Instance> src = locateInstances(sopInstanceUIDs);
-        rejectionService.reject(qcSource, src, findOrCreateCode(qcRejectionCode), null);
+    public QCEvent reject(String[] sopInstanceUIDs, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
+        Collection<Instance> instances = locateInstances(sopInstanceUIDs);
+        
+        //TODO: Check assumption: All instances to be rejected belong to same study?
+        if(!instances.isEmpty()) {
+            Instance inst = instances.iterator().next();
+            checkIfQCPermittedForStudy(inst.getSeries().getStudy());
+        }
+        
+        rejectionService.reject(qcSource, instances, findOrCreateCode(qcRejectionCode), null);
         ArrayList<QCEventInstance> iuids = new ArrayList<QCEventInstance>();
-        for(Instance inst : src) {
+        for(Instance inst : instances) {
             iuids.add(new QCEventInstance(inst.getSopInstanceUID(), inst.getSeries().getSeriesInstanceUID(), inst.getSeries().getStudy().getStudyInstanceUID()));
         }
-        Instance rejNote =createAndStoreRejectionNote(qcRejectionCode, src);
+        Instance rejNote =createAndStoreRejectionNote(qcRejectionCode, instances);
         QCEvent rejectEvent = new QCEvent(QCOperation.REJECT, null, null, iuids, null);
         rejectEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(iuids, null, rejNote);
@@ -541,12 +552,13 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public QCEvent replaced(String oldIUID, String newIUID, org.dcm4che3.data.Code qcRejectionCode) {
+    public QCEvent replaced(String oldIUID, String newIUID, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         Collection<Instance> instances = locateInstances(new String[]{newIUID});
         if (instances.size() != 1) {
             LOG.warn("Ignore QC replace operation! new Instance not found!");
             return null;
         }
+        
         Instance newInstance = instances.iterator().next();
         Instance oldInstance = new Instance();
         Attributes attrs = new Attributes(newInstance.getAttributes());
@@ -555,6 +567,9 @@ public class QCBeanImpl  implements QCBean{
                 archiveDeviceExtension.getFuzzyStr(), archiveDeviceExtension.getNullValueForQueryFields());
         oldInstance.setSeries(newInstance.getSeries());
         Study study = newInstance.getSeries().getStudy();
+        
+        checkIfQCPermittedForStudy(study);
+        
         String seriesIUID = newInstance.getSeries().getSeriesInstanceUID();
         String studyIUID = study.getStudyInstanceUID();
         QCActionHistory action = generateQCAction(QCOperation.UPDATE);
@@ -582,12 +597,16 @@ public class QCBeanImpl  implements QCBean{
         return replaceEvent;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#restore(java.lang.String[])
-     */
     @Override
-    public QCEvent restore(String[] sopInstanceUIDs) {
+    public QCEvent restore(String[] sopInstanceUIDs) throws QCOperationNotPermittedException {
         Collection<Instance> instances = locateInstances(sopInstanceUIDs);
+        
+        //TODO: Check assumption: All instances to be rejected belong to same study?
+        if(!instances.isEmpty()) {
+            Instance inst = instances.iterator().next();
+            checkIfQCPermittedForStudy(inst.getSeries().getStudy());
+        }
+        
         ArrayList<QCEventInstance> filteredIUIDs = new ArrayList<QCEventInstance>();
         instances = filterQCed(instances);
         rejectionService.restore(qcSource, instances, null);
@@ -599,17 +618,11 @@ public class QCBeanImpl  implements QCBean{
         return restoreEvent;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#canApplyQC(org.dcm4chee.archive.entity.Instance)
-     */
     @Override
     public boolean canApplyQC(Instance instance) {
         return instance.getRejectionNoteCode()!=null? false : true;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#notify(org.dcm4chee.archive.qc.QCEvent)
-     */
     @Override
     public void notify(QCEvent event) {
         LOG.debug("{} :  QC info[Notify] - Operation successfull,"
@@ -617,14 +630,10 @@ public class QCBeanImpl  implements QCBean{
         internalNotification.select(new ServiceQualifier(ServiceType.QCPOSTPROCESSING)).fire(event);
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#updateDicomObject(org.dcm4chee.archive.conf.ArchiveDeviceExtension,
-     *  org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope, org.dcm4che3.data.Attributes)
-     */
     @Override
     public QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt,
             QCUpdateScope scope, Attributes attrs)
-            throws EntityNotFoundException {
+            throws QCOperationNotPermittedException, EntityNotFoundException {
         QCActionHistory updateAction = generateQCAction(QCOperation.UPDATE);
         LOG.info("{}:  QC info[Update] info - Performing QC update DICOM header on {} scope : ", qcSource, scope);
         Attributes unmodified;
@@ -675,11 +684,6 @@ public class QCBeanImpl  implements QCBean{
         return updateEvent;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#patientOperation(org.dcm4che3.data.Attributes, 
-     * org.dcm4che3.data.Attributes, org.dcm4chee.archive.conf.ArchiveAEExtension,
-     *  org.dcm4chee.archive.qc.PatientCommands)
-     */
     public boolean patientOperation(Attributes srcPatientAttrs,
             Attributes targetPatientAttrs, ArchiveAEExtension arcAEExt, 
             PatientCommands command) {
@@ -711,11 +715,16 @@ public class QCBeanImpl  implements QCBean{
     }
 
     @Override
-    public QCEvent deletePatient(IDWithIssuer pid, org.dcm4che3.data.Code qcRejectionCode) throws Exception {
+    public QCEvent deletePatient(IDWithIssuer pid, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         List<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
         Collection<Instance> rejectedInstances = new ArrayList<Instance>();
         Patient patient = findPatient(pid);
         Collection<Study> studies = patient.getStudies();
+        
+        for(Study study : studies) {
+            checkIfQCPermittedForStudy(study);
+        }
+        
         for(Study study : studies) {
            Collection<Series> allSeries = study.getSeries();
            for(Series series: allSeries) {
@@ -739,17 +748,16 @@ public class QCBeanImpl  implements QCBean{
         return deleteEvent;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#deleteStudy(java.lang.String)
-     */
     @Override
-    public QCEvent deleteStudy(String studyInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws Exception {
+    public QCEvent deleteStudy(String studyInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         List<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
         Collection<Instance> rejectedInstances = new ArrayList<Instance>();
         TypedQuery<Study> query = em.createNamedQuery(
                 Study.FIND_BY_STUDY_INSTANCE_UID, Study.class).setParameter(1,
                 studyInstanceUID);
         Study study = query.getSingleResult();
+        
+        checkIfQCPermittedForStudy(study);
         
         Collection<Series> allSeries = study.getSeries();
         for(Series series: allSeries) {
@@ -773,11 +781,8 @@ public class QCBeanImpl  implements QCBean{
         return deleteEvent;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#deleteSeries(java.lang.String)
-     */
     @Override
-    public QCEvent deleteSeries(String seriesInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws Exception {
+    public QCEvent deleteSeries(String seriesInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         List<QCEventInstance> eventUIDs = new ArrayList<QCEventInstance>();
         TypedQuery<Series> query = em.createNamedQuery(
                 Series.FIND_BY_SERIES_INSTANCE_UID, Series.class)
@@ -785,6 +790,9 @@ public class QCBeanImpl  implements QCBean{
         Series series = query.getSingleResult();
         Collection<Instance> insts = series.getInstances();
         Study study = series.getStudy();
+        
+        checkIfQCPermittedForStudy(study);
+        
         for(Instance inst : insts) {
             eventUIDs.add(new QCEventInstance(inst.getSopInstanceUID(),series.getSeriesInstanceUID(), study.getStudyInstanceUID()));
         }
@@ -803,11 +811,8 @@ public class QCBeanImpl  implements QCBean{
         return deleteEvent;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#deleteInstance(java.lang.String)
-     */
     @Override
-    public QCEvent deleteInstance(String sopInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws Exception {
+    public QCEvent deleteInstance(String sopInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         Collection<Instance> tmpList = locateInstances(new String [] {sopInstanceUID});
         if(tmpList.isEmpty()) {
             LOG.debug("{}:  QC info[Delete] Failure - Error finding "
@@ -817,6 +822,9 @@ public class QCBeanImpl  implements QCBean{
         
         Series series = tmpList.iterator().next().getSeries();
         Study study = series.getStudy();
+        
+        checkIfQCPermittedForStudy(study);
+        
         LOG.info("{}:  QC info[Delete] info - Rejected instance {} - scheduled for delete", qcSource, sopInstanceUID);
         series.clearQueryAttributes();
         study.clearQueryAttributes();
@@ -852,9 +860,6 @@ public class QCBeanImpl  implements QCBean{
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#deleteSeriesIfEmpty(java.lang.String, java.lang.String)
-     */
     @Override
     public boolean deleteSeriesIfEmpty(String seriesInstanceUID,
             String studyInstanceUID) {
@@ -871,12 +876,8 @@ public class QCBeanImpl  implements QCBean{
         return false;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#deletePatientIfEmpty(org.dcm4che3.data.IDWithIssuer)
-     */
     @Override
     public boolean deletePatientIfEmpty(IDWithIssuer pid) {
-        
         Patient patient = findPatient(pid);
         if(patient == null)
             return false;
@@ -889,9 +890,6 @@ public class QCBeanImpl  implements QCBean{
         return false;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#deleteStudyIfEmpty(java.lang.String)
-     */
     @Override
     public boolean deleteStudyIfEmpty(String studyInstanceUID) {
         TypedQuery<Study> query = em.createNamedQuery(
@@ -908,9 +906,6 @@ public class QCBeanImpl  implements QCBean{
         return false;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#locateInstances(java.lang.String[])
-     */
     @SuppressWarnings("unchecked")
     @Override
     public Collection<Instance> locateInstances(String[] sopInstanceUIDs) {
@@ -1154,7 +1149,7 @@ public class QCBeanImpl  implements QCBean{
      */
     private Attributes updateStudy(ArchiveDeviceExtension arcDevExt,
             String studyInstanceUID, Attributes attrs)
-            throws EntityNotFoundException {
+            throws QCOperationNotPermittedException, EntityNotFoundException {
         Study study = findStudy(studyInstanceUID);
         if (study == null)
             throw new EntityNotFoundException(
@@ -1215,13 +1210,15 @@ public class QCBeanImpl  implements QCBean{
      */
     private Attributes updateSeries(ArchiveDeviceExtension arcDevExt, 
             String seriesInstanceUID, Attributes attrs)
-            throws EntityNotFoundException {
+            throws QCOperationNotPermittedException, EntityNotFoundException {
         
         Series series = findSeries(seriesInstanceUID);
+        if (series == null) {
+            throw new EntityNotFoundException("Unable to find series " + seriesInstanceUID);
+        }
         
-        if (series == null)
-            throw new EntityNotFoundException("Unable to find series "
-                    + seriesInstanceUID);
+        checkIfQCPermittedForStudy(series.getStudy());
+        
         Attributes original = series.getAttributes();
         Attributes unmodified = new Attributes();
         unmodified.addAll(series.getAttributes());
@@ -1270,13 +1267,14 @@ public class QCBeanImpl  implements QCBean{
      */
     private Attributes updateInstance(ArchiveDeviceExtension arcDevExt,
             String sopInstanceUID, Attributes attrs)
-            throws EntityNotFoundException {
+            throws QCOperationNotPermittedException, EntityNotFoundException {
         
         Instance instance = findInstance(sopInstanceUID);
+        if (instance == null) {
+            throw new EntityNotFoundException("Unable to find instance " + sopInstanceUID);
+        }
         
-        if (instance == null)
-            throw new EntityNotFoundException("Unable to find instance "
-                    + sopInstanceUID);
+        checkIfQCPermittedForStudy(instance.getSeries().getStudy());
         
         Attributes original = instance.getAttributes();
         Attributes unmodified = new Attributes();
@@ -1311,9 +1309,6 @@ public class QCBeanImpl  implements QCBean{
         return unmodified;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4chee.archive.qc.QCBean#findPatient(org.dcm4che3.data.Attributes)
-     */
     @Override
     public Patient findPatient(Attributes attrs) {
         Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
@@ -2608,7 +2603,7 @@ public class QCBeanImpl  implements QCBean{
     }
 
     
-    public Instance createAndStoreRejectionNote(org.dcm4che3.data.Code rejectionCode, Collection<Instance> instances) {
+    private Instance createAndStoreRejectionNote(org.dcm4che3.data.Code rejectionCode, Collection<Instance> instances) {
         if (instances != null && instances.size() > 0) {
             Attributes rejNote = createRejectionNote(rejectionCode, instances);
             ArchiveAEExtension arcAEExt = null;
@@ -2648,7 +2643,7 @@ public class QCBeanImpl  implements QCBean{
         return null;
     }
 
-    public Attributes createRejectionNote(org.dcm4che3.data.Code rejectionCode, Collection<Instance> instances) {
+    private Attributes createRejectionNote(org.dcm4che3.data.Code rejectionCode, Collection<Instance> instances) {
         Attributes kos = createKOS(rejectionCode, instances.iterator().next());
         Sequence evidenceSeq = kos.newSequence(Tag.CurrentRequestedProcedureEvidenceSequence, 1);
         Sequence contentSeq = kos.newSequence(Tag.ContentSequence, 1);
@@ -2799,6 +2794,7 @@ public class QCBeanImpl  implements QCBean{
         }
         
     }
+    
     class PatientAttrsPKTuple{
         long pk;
         Attributes unmodified;
@@ -2811,6 +2807,21 @@ public class QCBeanImpl  implements QCBean{
         }
         public Attributes getUnModifiedAttrs() {
             return this.unmodified;
+        }
+    }
+    
+    private boolean isQCPermittedForStudy(Study study) {
+        for(StudyProtectionHook studyProtectionHook : studyProtectionHooks) {
+            if(studyProtectionHook.isProtected(study.getStudyInstanceUID())) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private void checkIfQCPermittedForStudy(Study study) throws QCOperationNotPermittedException {
+        if(!isQCPermittedForStudy(study)) {
+            throw new QCOperationNotPermittedException("QC operation is not allowed for protected study with UID " + study.getStudyInstanceUID());
         }
     }
 
