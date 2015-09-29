@@ -37,17 +37,38 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.wado;
 
-import java.awt.geom.AffineTransform;
-import java.awt.image.AffineTransformOp;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import org.dcm4che3.conf.core.api.ConfigurationException;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.image.BufferedImageUtils;
+import org.dcm4che3.image.PixelAspectRatio;
+import org.dcm4che3.imageio.codec.ImageReaderFactory;
+import org.dcm4che3.imageio.codec.ImageWriterFactory;
+import org.dcm4che3.imageio.codec.ImageWriterFactory.ImageWriterParam;
+import org.dcm4che3.imageio.codec.TransferSyntaxType;
+import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
+import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.SAXWriter;
+import org.dcm4che3.io.TemplatesCache;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.service.BasicCStoreSCUResp;
+import org.dcm4che3.util.Property;
+import org.dcm4che3.util.StringUtils;
+import org.dcm4che3.ws.rs.MediaTypes;
+import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
+import org.dcm4chee.archive.dto.GenericParticipant;
+import org.dcm4chee.archive.dto.ServiceType;
+import org.dcm4chee.archive.fetch.forward.FetchForwardCallBack;
+import org.dcm4chee.archive.fetch.forward.FetchForwardService;
+import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
+import org.dcm4chee.archive.rs.HostAECache;
+import org.dcm4chee.archive.rs.HttpSource;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Event;
@@ -81,39 +102,17 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-
-import org.dcm4che3.conf.core.api.ConfigurationException;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
-import org.dcm4che3.image.BufferedImageUtils;
-import org.dcm4che3.image.PixelAspectRatio;
-import org.dcm4che3.imageio.codec.ImageReaderFactory;
-import org.dcm4che3.imageio.codec.ImageWriterFactory;
-import org.dcm4che3.imageio.codec.ImageWriterFactory.ImageWriterParam;
-import org.dcm4che3.imageio.codec.TransferSyntaxType;
-import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
-import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
-import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.io.SAXWriter;
-import org.dcm4che3.io.TemplatesCache;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.service.BasicCStoreSCUResp;
-import org.dcm4che3.util.Property;
-import org.dcm4che3.util.StringUtils;
-import org.dcm4che3.ws.rs.MediaTypes;
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.dto.GenericParticipant;
-import org.dcm4chee.archive.dto.ServiceType;
-import org.dcm4chee.archive.fetch.forward.FetchForwardCallBack;
-import org.dcm4chee.archive.fetch.forward.FetchForwardService;
-import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
-import org.dcm4chee.archive.rs.HostAECache;
-import org.dcm4chee.archive.rs.HttpSource;
-import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.
@@ -574,7 +573,7 @@ public class WadoURI extends Wado {
                 try {
                     if (attrs.getInt(Tag.NumberOfFrames, 1) == 1 || frameNumber != 0) {
                         BufferedImage bi = getBufferedImage(ref, attrs);
-                        writeGIF(bi, imageOut);
+                        writeImage(MediaTypes.IMAGE_GIF_TYPE, bi, imageOut);
                     } else {
                         //return all frames as GIF sequence
                         List<BufferedImage> bis = getBufferedImages(ref, attrs);
@@ -599,18 +598,6 @@ public class WadoURI extends Wado {
         }
     }
 
-    private void writeGIF(BufferedImage bi, ImageOutputStream ios)
-            throws IOException {
-        ImageWriter imageWriter = getGifImageWriter();
-        try {
-            ImageWriteParam imageWriteParam = getImageWriterParam(imageWriter);
-            imageWriter.setOutput(ios);
-            imageWriter.write(null, new IIOImage(bi, null, null), imageWriteParam);
-        } finally {
-            imageWriter.dispose();
-        }
-    }
-    
     private void writeGIFs(String tsuid, List<BufferedImage> bis, ImageOutputStream ios) throws IOException {
         ImageWriter imageWriter = getGifImageWriter();
         try {
