@@ -34,6 +34,10 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee</groupId>
+      <artifactId>dcm4chee-ee-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-net</artifactId>
     </dependency>

@@ -45,6 +45,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <dcm4che.version>3.3.8-SNAPSHOT</dcm4che.version>
+    <!-- for now it's the same as conf since they are co-localed -->
+    <dcm4chee-ee.version>1.1.0-SNAPSHOT</dcm4chee-ee.version>
     <dcm4chee-storage.version>2.1.0-SNAPSHOT</dcm4chee-storage.version>
     <dcm4chee-conf.version>1.1.0-SNAPSHOT</dcm4chee-conf.version>
     <dcm4chee-monitoring.version>0.3.0-SNAPSHOT</dcm4chee-monitoring.version>
@@ -300,6 +302,13 @@
         <groupId>org.dcm4che.dcm4chee-storage</groupId>
         <artifactId>dcm4chee-storage-sftp</artifactId>
         <version>${dcm4chee-storage.version}</version>
+      </dependency>
+
+      <!-- dcm4chee EE dependencies -->
+      <dependency>
+        <groupId>org.dcm4che.dcm4chee</groupId>
+        <artifactId>dcm4chee-ee-core</artifactId>
+        <version>${dcm4chee-ee.version}</version>
       </dependency>
 
       <!-- Config EE dependencies -->
