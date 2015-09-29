@@ -357,7 +357,6 @@ public class QCBeanImpl  implements QCBean{
                         series.getAttributes(), studyHistory);
                 oldToNewSeries.put(instance.getSeries().getSeriesInstanceUID(),
                         new NewSeriesTuple(newSeries.getPk(), seriesHistory));
-
             } else {
                 long newSeriesPK = oldToNewSeries.get(instance.getSeries().getSeriesInstanceUID()).getPK();
                 if (newSeries.getPk() != newSeriesPK)
@@ -539,6 +538,48 @@ public class QCBeanImpl  implements QCBean{
         rejectEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(iuids, null, rejNote);
         return rejectEvent;
+    }
+
+    @Override
+    public QCEvent replaced(String oldIUID, String newIUID, org.dcm4che3.data.Code qcRejectionCode) {
+        Collection<Instance> instances = locateInstances(new String[]{newIUID});
+        if (instances.size() != 1) {
+            LOG.warn("Ignore QC replace operation! new Instance not found!");
+            return null;
+        }
+        Instance newInstance = instances.iterator().next();
+        Instance oldInstance = new Instance();
+        Attributes attrs = new Attributes(newInstance.getAttributes());
+        attrs.setString(Tag.SOPInstanceUID, VR.UI, oldIUID);
+        oldInstance.setAttributes(attrs, archiveDeviceExtension.getAttributeFilter(Entity.Instance),
+                archiveDeviceExtension.getFuzzyStr(), archiveDeviceExtension.getNullValueForQueryFields());
+        oldInstance.setSeries(newInstance.getSeries());
+        Study study = newInstance.getSeries().getStudy();
+        String seriesIUID = newInstance.getSeries().getSeriesInstanceUID();
+        String studyIUID = study.getStudyInstanceUID();
+        QCActionHistory action = generateQCAction(QCOperation.UPDATE);
+        QCStudyHistory studyHistory = createQCStudyHistory(studyIUID, studyIUID, null, action);
+        QCSeriesHistory seriesHistory = createQCSeriesHistory(seriesIUID, null, studyHistory);
+        QCInstanceHistory instanceHistory = new QCInstanceHistory(
+                studyIUID, seriesIUID, oldIUID, newIUID, newIUID, false);
+        instanceHistory.setSeries(seriesHistory);
+        List<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
+        instancesHistory.add(instanceHistory);
+        List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
+        List<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
+        targetUIDs.add(new QCEventInstance(newIUID, seriesIUID, studyIUID));
+        sourceUIDs.add(new QCEventInstance(oldIUID, seriesIUID, studyIUID));
+        HashMap<String,NewSeriesTuple> oldToNewSeries = new HashMap<String, NewSeriesTuple>();
+        instancesHistory.addAll(handleKOPRSR(qcRejectionCode, 
+                studyHistory, sourceUIDs,
+                targetUIDs, study, study, oldToNewSeries));
+
+        recordHistoryEntry(instancesHistory);
+        Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, Arrays.asList(oldInstance));
+        QCEvent replaceEvent = new QCEvent(QCOperation.SPLIT,null,null,sourceUIDs,targetUIDs);
+        replaceEvent.addRejectionNote(rejNote);
+        changeRequester.scheduleChangeRequest(sourceUIDs, targetUIDs, rejNote);
+        return replaceEvent;
     }
 
     /* (non-Javadoc)
@@ -1027,7 +1068,7 @@ public class QCBeanImpl  implements QCBean{
             Attributes oldAttributes, QCStudyHistory studyHistory) {
         QCSeriesHistory seriesHistory = new QCSeriesHistory();
         seriesHistory.setStudy(studyHistory);
-        if(!oldAttributes.isEmpty())
+        if(oldAttributes != null && !oldAttributes.isEmpty())
           seriesHistory.setUpdatedAttributesBlob(new AttributesBlob(oldAttributes));
         seriesHistory.setOldSeriesUID(seriesInstanceUID);
         em.persist(seriesHistory);
@@ -1051,7 +1092,7 @@ public class QCBeanImpl  implements QCBean{
             String targetStudyUID, Attributes oldAttributes, QCActionHistory qcActionHistory) {
         QCStudyHistory studyHistory = new QCStudyHistory();
         studyHistory.setAction(qcActionHistory);
-        if(!oldAttributes.isEmpty())
+        if(oldAttributes != null && !oldAttributes.isEmpty())
           studyHistory.setUpdatedAttributesBlob(new AttributesBlob(oldAttributes));
         studyHistory.setOldStudyUID(studyInstanceUID);
         studyHistory.setNextStudyUID(targetStudyUID);

@@ -446,4 +446,6 @@ public interface QCBean {
             String targetStudyUID, Attributes createdStudyattributes,
             Attributes targetSeriesattributes, Code qcRejectionCode, String noneIOCMAET);*/
 
+    QCEvent replaced(String oldIUID, String newIUID, Code qcRejectionCode);
+
 }

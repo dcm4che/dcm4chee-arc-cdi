@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.noneiocm;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,10 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
@@ -84,52 +88,74 @@ public class NoneIocmChangeRequestorMDB implements MessageListener{
 
     @Override
     public void onMessage(Message message) {
-        LOG.info("##### onMessage called");
         try {
             String apsStudyIUID = message.getStringProperty("studyIUID");
             List<ActiveProcessing> aps = activeProcessingService.getActiveProcessesByStudy(apsStudyIUID, ActiveService.NONE_IOCM_UPDATE);
-            LOG.info("###### NONE IOCM ActiveProcessing for study {}: {}", apsStudyIUID, aps);
+            LOG.debug("NONE IOCM ActiveProcessing for study {}: {}", apsStudyIUID, aps);
             Attributes attrs, item;
+            HashMap<String, String> sopUIDchanged = new HashMap<String, String>();
             HashMap<String, List<String>> studyUIDchanged = new HashMap<String, List<String>>();
-            List<String> iuidsForNewStudy = null;
-            String studyIUID = null, studyIUID1;
             HashMap<String, List<String>> seriesUIDchanged = new HashMap<String, List<String>>();
-            List<String> iuidsForNewSeries = null;
-            String seriesIUID = null, seriesIUID1;
+            HashMap<String, List<String>> patIDchanged = new HashMap<String, List<String>>();
+            HashMap<String, Attributes> patAttrChanged = new HashMap<String, Attributes>();
             for (ActiveProcessing p : aps) {
                 attrs = p.getAttributes();
                 item = attrs.getNestedDataset(Tag.ModifiedAttributesSequence);
                 if (item.contains(Tag.StudyInstanceUID)) {
-                    studyIUID1 = attrs.getString(Tag.StudyInstanceUID);
-                    if (!studyIUID1.equals(studyIUID)) {
-                        studyIUID = studyIUID1;
-                        iuidsForNewStudy = new ArrayList<String>(aps.size());
-                        studyUIDchanged.put(studyIUID, iuidsForNewStudy);
-                    }
-                    iuidsForNewStudy.add(attrs.getString(Tag.SOPInstanceUID));
+                    addChgdIUID(studyUIDchanged, attrs.getString(Tag.StudyInstanceUID), attrs.getString(Tag.SOPInstanceUID));
                 } else if (item.contains(Tag.SeriesInstanceUID)) {
-                    seriesIUID1 = attrs.getString(Tag.SeriesInstanceUID);
-                    if (!seriesIUID1.equals(seriesIUID)) {
-                        seriesIUID = seriesIUID1;
-                        iuidsForNewSeries = new ArrayList<String>(aps.size());
-                        seriesUIDchanged.put(seriesIUID, iuidsForNewSeries);
-                    }
-                    iuidsForNewSeries.add(attrs.getString(Tag.SOPInstanceUID));
-                    
+                    addChgdIUID(seriesUIDchanged, attrs.getString(Tag.SeriesInstanceUID), attrs.getString(Tag.SOPInstanceUID));
+                } else if (item.contains(Tag.SOPInstanceUID)) {
+                    sopUIDchanged.put(attrs.getString(Tag.SOPInstanceUID), item.getString(Tag.SOPInstanceUID));
+                } else if (item.contains(Tag.PatientID)) {
+                    String pid = attrs.getString(Tag.PatientID)+"^^^"+attrs.getString(Tag.IssuerOfPatientID);
+                    addChgdIUID(patIDchanged, pid, attrs.getString(Tag.SOPInstanceUID));
+                    patAttrChanged.put(pid,  attrs);
                 } else {
                     LOG.warn("Cannot determine NoneIOCM change! Ignore this active process ({})", p);
                 }
             }
-            if (studyUIDchanged.size() > 0) {
-              for ( Map.Entry<String, List<String>> e : studyUIDchanged.entrySet()) {
-                  qcBean.split(e.getValue(), null, e.getKey(), null, null, REJ_CODE_QUALITY_REASON);
-                  activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(e.getValue(), ActiveService.NONE_IOCM_UPDATE);
+            if (sopUIDchanged.size() > 0) {
+              for ( Map.Entry<String, String> e : sopUIDchanged.entrySet()) {
+                  qcBean.replaced(e.getValue(), e.getKey(), REJ_CODE_QUALITY_REASON);
+                  activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(Arrays.asList(e.getKey()), ActiveService.NONE_IOCM_UPDATE);
               }
+            }
+            if (seriesUIDchanged.size() > 0) {
+                Attributes seriesAttrs = new Attributes();
+                for ( Map.Entry<String, List<String>> e : seriesUIDchanged.entrySet()) {
+                    seriesAttrs.setString(Tag.SeriesInstanceUID, VR.UI, e.getKey());
+                    qcBean.split(e.getValue(), null, apsStudyIUID, null, seriesAttrs, REJ_CODE_QUALITY_REASON);
+                    activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(e.getValue(), ActiveService.NONE_IOCM_UPDATE);
+                }
+            }
+            if (studyUIDchanged.size() > 0) {
+                for ( Map.Entry<String, List<String>> e : studyUIDchanged.entrySet()) {
+                    qcBean.split(e.getValue(), null, e.getKey(), null, null, REJ_CODE_QUALITY_REASON);
+                    activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(e.getValue(), ActiveService.NONE_IOCM_UPDATE);
+                }
+            }
+            if (patIDchanged.size() > 0) {
+                for ( Map.Entry<String, List<String>> e : patIDchanged.entrySet()) {
+                    IDWithIssuer pid = IDWithIssuer.pidOf(patAttrChanged.get(e.getKey()));
+                    String studyUID = UIDUtils.createUID();
+                    qcBean.split(e.getValue(), pid, studyUID, null, null, REJ_CODE_QUALITY_REASON);
+                    activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(e.getValue(), ActiveService.NONE_IOCM_UPDATE);
+                }
             }
         } catch (Throwable th) {
             LOG.warn("Failed to process " + message, th);
         } 
     }
     
+    private List<String> addChgdIUID(Map<String, List<String>> map, String key, String iuid) {
+        List<String> chgdIUIDs = map.get(key);
+        if (chgdIUIDs == null) {
+            chgdIUIDs = new ArrayList<String>();
+            map.put(key, chgdIUIDs);
+        }
+        chgdIUIDs.add(iuid);
+        return chgdIUIDs;
+    }
 
 }

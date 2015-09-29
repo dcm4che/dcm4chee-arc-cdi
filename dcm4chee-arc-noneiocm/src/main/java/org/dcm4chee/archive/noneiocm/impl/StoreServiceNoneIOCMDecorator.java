@@ -61,27 +61,20 @@ import org.slf4j.LoggerFactory;
 @DynamicDecorator
 public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
 
-    static Logger LOG = LoggerFactory.getLogger(StoreServiceNoneIOCMDecorator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StoreServiceNoneIOCMDecorator.class);
 
     @Inject
     NoneIOCMChangeRequestorService noneIocmService;
 
-    /*
-     * Extends default instanceExists method. The first part of the method
-     * throws an exception in case a duplicate rejection note is received. The
-     * second part manages received objects previously rejected, according to
-     * the IOCM standard.
-     */
     @Override
     public StoreAction instanceExists(EntityManager em, StoreContext context, Instance inst)
             throws DicomServiceException {
-        LOG.info("######### handle instanceExists(). context:{}", context);
         if (noneIocmService.isNoneIOCMChangeRequestor(context.getStoreSession().getRemoteAET())) {
-            LOG.info("###### {} is a None IOCM Change Requestor! check for changes.", context.getStoreSession().getRemoteAET());
+            LOG.debug("{} is a None IOCM Change Requestor! check for changes.", context.getStoreSession().getRemoteAET());
             NoneIOCMChangeType chgType = noneIocmService.performChange(inst, context);
-            LOG.info("###### NoneIOCM changeType:{}", chgType);
+            if (chgType == NoneIOCMChangeType.INSTANCE_CHANGE)
+                return StoreAction.REPLACE; 
         }
-        LOG.info("####### call next decorator");
         return getNextDecorator().instanceExists(em, context, inst);
     }
     
@@ -99,13 +92,11 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
     
     @Override
     public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
-        LOG.info("######### handle findOrCreateInstance(). context:{}", context);
         Instance inst = getNextDecorator().findOrCreateInstance(em, context);
         return inst;
     }
 
     public void store(StoreContext context) throws DicomServiceException {
-        LOG.info("######### handle store(). context:{}", context);
         getNextDecorator().store(context);
     }
 

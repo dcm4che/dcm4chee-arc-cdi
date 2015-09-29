@@ -38,13 +38,10 @@
 
 package org.dcm4chee.archive.noneiocm.impl;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.ejb.Stateless;
@@ -55,7 +52,6 @@ import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.persistence.EntityManager;
@@ -72,20 +68,20 @@ import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.NoneIOCMChangeRequestorExtension;
 import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.dto.ActiveService;
-import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCActionHistory;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.QCSeriesHistory;
 import org.dcm4chee.archive.entity.QCStudyHistory;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
+import org.dcm4chee.archive.patient.PatientCircularMergedException;
+import org.dcm4chee.archive.patient.PatientSelectorFactory;
+import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
-import org.dcm4chee.archive.qc.QCBean;
-import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCEvent.QCOperation;
 import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,6 +103,9 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
 
     @Inject
     private ActiveProcessingService activeProcessingService;
+
+    @Inject
+    private PatientService patientService;
 
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
@@ -188,8 +187,21 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         Sequence origSQ = chgAttrs.ensureSequence(Tag.ModifiedAttributesSequence, 1);
         origSQ.add(origAttrs);
         NoneIOCMChangeType chgType = getChangeType(inst, context.getAttributes());
-        LOG.info("######## performChange start for changeType:{}", chgType);
+        LOG.debug("performChange start for changeType:{}", chgType);
         switch (chgType) {
+        case PAT_ID_CHANGE:
+            origAttrs.addSelected(inst.getSeries().getStudy().getPatient().getAttributes(), 
+                    context.getStoreSession().getStoreParam().getAttributeFilter(Entity.Patient).getSelection());
+            StoreSession session = context.getStoreSession();
+            try {
+                patientService.updateOrCreatePatientOnCStore(context.getAttributes(), 
+                        PatientSelectorFactory.createSelector(session.getStoreParam()), session.getStoreParam());
+            } catch (PatientCircularMergedException e) {
+                LOG.error("Patient for received Instance is merged circular!", e);
+            }
+            activeProcessingService.addActiveProcess(inst.getSeries().getStudy().getStudyInstanceUID(), 
+                    inst.getSeries().getSeriesInstanceUID(), inst.getSopInstanceUID(), ActiveService.NONE_IOCM_UPDATE, chgAttrs);
+            break;
         case STUDY_IUID_CHANGE:
             origAttrs.setString(Tag.StudyInstanceUID, VR.UI, inst.getSeries().getStudy().getStudyInstanceUID());
             activeProcessingService.addActiveProcess(inst.getSeries().getStudy().getStudyInstanceUID(), 
@@ -200,11 +212,16 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
             activeProcessingService.addActiveProcess(inst.getSeries().getStudy().getStudyInstanceUID(), 
                     inst.getSeries().getSeriesInstanceUID(), inst.getSopInstanceUID(), ActiveService.NONE_IOCM_UPDATE, chgAttrs);
             break;
-        default:
-
+        case INSTANCE_CHANGE:
+            origAttrs.setString(Tag.SOPInstanceUID, VR.UI, inst.getSopInstanceUID());
+            String newUID = UIDUtils.createUID();
+            context.getAttributes().setString(Tag.SOPInstanceUID, VR.UI, newUID);
+            chgAttrs.setString(Tag.SOPInstanceUID, VR.UI, newUID);
+            activeProcessingService.addActiveProcess(inst.getSeries().getStudy().getStudyInstanceUID(), 
+                    inst.getSeries().getSeriesInstanceUID(), newUID, ActiveService.NONE_IOCM_UPDATE, chgAttrs);
             break;
+        default:
         }
-        
         return chgType;
     }
 
@@ -219,7 +236,6 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
             inst.setAttributes(attrs, context.getStoreSession().getStoreParam().getAttributeFilter(Entity.Instance),
                     context.getStoreSession().getStoreParam().getFuzzyStr(), context.getStoreSession().getStoreParam().getNullValueForQueryFields());
             em.merge(inst);
-            context.setAttributes(attrs);
             context.setInstance(inst);
             context.setOldNONEIOCMChangeUID(inst.getSopInstanceUID());
         }
@@ -281,9 +297,9 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
     }
 
     public void onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
-        LOG.info("###### onStudyUpdated:{}", studyUpdatedEvent);
+        LOG.debug("onStudyUpdated:{}", studyUpdatedEvent);
         if (isNoneIOCMChangeRequestor(studyUpdatedEvent.getSourceAET())) {
-            LOG.info("###### Is NoneIOCM source");
+            LOG.debug("Is NoneIOCM source");
             if ( activeProcessingService.isStudyUnderProcessingByServices(studyUpdatedEvent.getStudyInstanceUID(), NONE_IOCM_ACTIVE_SERVICES)) {
                 LOG.debug("Schedule NoneIOCM change request for study {}", studyUpdatedEvent.getStudyInstanceUID());
                 try {
