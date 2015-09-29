@@ -279,6 +279,10 @@
      <type>ejb</type>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee</groupId>
+      <artifactId>dcm4chee-ee-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-storage</groupId>
       <artifactId>dcm4chee-storage-conf</artifactId>
     </dependency>
