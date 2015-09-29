@@ -335,7 +335,7 @@ public class StoreServiceEJB {
                     storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         } else {
             if (!context.isFetch()
-                    && !session.getLocalAET().equalsIgnoreCase(
+                    && !session.getLocalAET().equals(
                        device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle())
                     && Utils.updateAttributes(studyAttrs, data, modified, studyFilter,
                        MetadataUpdateStrategy.COERCE_MERGE)) {
@@ -346,7 +346,7 @@ public class StoreServiceEJB {
             }
         }
         if (!context.isFetch()
-                && !session.getLocalAET().equalsIgnoreCase(
+                && !session.getLocalAET().equals(
                 device.getDeviceExtension(
                         ArchiveDeviceExtension.class)
                         .getFetchAETitle()))
@@ -376,7 +376,7 @@ public class StoreServiceEJB {
                     storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         } else {
             if (!context.isFetch()
-                    && !session.getLocalAET().equalsIgnoreCase(
+                    && !session.getLocalAET().equals(
                        device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle())
                     && Utils.updateAttributes(seriesAttrs, data, modified, seriesFilter,
                        MetadataUpdateStrategy.COERCE_MERGE)) {
@@ -398,7 +398,7 @@ public class StoreServiceEJB {
                 .getAttributeFilter(Entity.Instance);
         Attributes modified = new Attributes();
         if (!context.isFetch()
-                && !session.getLocalAET().equalsIgnoreCase(
+                && !session.getLocalAET().equals(
                     device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle())
                 && Utils.updateAttributes(instAttrs, data, modified, instFilter,
                    MetadataUpdateStrategy.OVERWRITE)) {

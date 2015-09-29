@@ -279,8 +279,8 @@ public class QCBeanImpl  implements QCBean{
                 targetUIDs.add(new QCEventInstance(newInstance.getSopInstanceUID(),newSeries.getSeriesInstanceUID(), targetStudyUID));
                 sourceUIDs.add(new QCEventInstance(inst.getSopInstanceUID(), series.getSeriesInstanceUID(), sourceStudyUid));
                 //update identical document sequence
-                if(series.getModality().equalsIgnoreCase("KO")
-                        || series.getModality().equalsIgnoreCase("SR"))
+                if(series.getModality().equals("KO")
+                        || series.getModality().equals("SR"))
                 for(Instance ident: findIdenticalDocumentReferences(newInstance)) {
                     removeIdenticalDocumentSequence(ident, inst);
                     removeIdenticalDocumentSequence(inst,ident);
@@ -288,7 +288,7 @@ public class QCBeanImpl  implements QCBean{
                     addIdenticalDocumentSequence(newInstance, ident);
                     if(!identicalDocumentSequenceHistoryExists(ident, mergeAction) 
                             && !ident.getSeries().getStudy().getStudyInstanceUID()
-                            .equalsIgnoreCase(sourceStudyUid))
+                            .equals(sourceStudyUid))
                     addIdenticalDocumentSequenceHistory(ident, mergeAction);
                 }
             }
@@ -1708,7 +1708,7 @@ public class QCBeanImpl  implements QCBean{
                 study=instance.getSeries().getStudy();
             Study currentStudy = instance.getSeries().getStudy();
             if(!currentStudy.getStudyInstanceUID()
-                    .equalsIgnoreCase(study.getStudyInstanceUID()))
+                    .equals(study.getStudyInstanceUID()))
                 return false;
         }
         return true;
@@ -2048,7 +2048,7 @@ public class QCBeanImpl  implements QCBean{
                         sopIter.hasNext();) {
                     Attributes identSopItems = sopIter.next();
                     if (identSopItems.getString(Tag.ReferencedSOPInstanceUID)
-                            .equalsIgnoreCase(oldInstance.getSopInstanceUID())) {
+                            .equals(oldInstance.getSopInstanceUID())) {
                         iter.remove();
                         
                     }
@@ -2113,7 +2113,7 @@ public class QCBeanImpl  implements QCBean{
                     .getSequence(Tag.CurrentRequestedProcedureEvidenceSequence);
             Sequence referencedSeriesSeq = inst.getAttributes()
             .getSequence(Tag.ReferencedSeriesSequence);
-            Collection<String> allReferencedSopUIDs = seriesType.equalsIgnoreCase("PR")? findAggregatedReferencedSopInstancesForSeries(referencedSeriesSeq): findAggregatedReferencedSopInstancesForStudy(
+            Collection<String> allReferencedSopUIDs = seriesType.equals("PR")? findAggregatedReferencedSopInstancesForSeries(referencedSeriesSeq): findAggregatedReferencedSopInstancesForStudy(
                     studyInstanceUID, currentEvidenceSequence);
             int allReferencesCount=allReferencedSopUIDs.size();
             if(allReferencesCount==0)
@@ -2148,7 +2148,7 @@ public class QCBeanImpl  implements QCBean{
             String studyInstanceUID, Sequence currentEvidenceSequence) {
         Collection<String> aggregatedSopUIDs = new ArrayList<String>();
         for(Attributes studyItems : currentEvidenceSequence) {
-            if(studyItems.getString(Tag.StudyInstanceUID).equalsIgnoreCase(studyInstanceUID)) {
+            if(studyItems.getString(Tag.StudyInstanceUID).equals(studyInstanceUID)) {
                 for(Attributes seriesItems : studyItems.getSequence(Tag.ReferencedSeriesSequence)) {
                     for(Attributes sopItems : seriesItems.getSequence(Tag.ReferencedSOPSequence)) {
                         aggregatedSopUIDs.add(sopItems.getString(Tag.ReferencedSOPInstanceUID));
@@ -2182,9 +2182,9 @@ public class QCBeanImpl  implements QCBean{
     private Collection<Series> findSeriesKOPRSR(Study parentStudy) {
         Collection<Series> seriesColl = new ArrayList<Series>(); 
         for(Series series: parentStudy.getSeries()) {
-            if(series.getModality().equalsIgnoreCase("KO")
-                    || series.getModality().equalsIgnoreCase("SR")
-                    || series.getModality().equalsIgnoreCase("PR")) {
+            if(series.getModality().equals("KO")
+                    || series.getModality().equals("SR")
+                    || series.getModality().equals("PR")) {
                 seriesColl.add(series);
             }
         }
@@ -2228,7 +2228,7 @@ public class QCBeanImpl  implements QCBean{
          for(Series series: seriesKOPRSR) {
              for(Instance inst:series.getInstances()) {
                  ReferenceState referenceState = null;
-                 if(series.getModality().equalsIgnoreCase("PR")) {
+                 if(series.getModality().equals("PR")) {
                      referenceState = findReferenceState(
                              sourceStudy.getStudyInstanceUID(),inst,sourceUIDs, "PR"); 
                  }
@@ -2269,8 +2269,8 @@ public class QCBeanImpl  implements QCBean{
                     instancesHistory.add(instanceHistory);
                     targetUIDs.add(new QCEventInstance(newInstance.getSopInstanceUID(), newSeries.getSeriesInstanceUID(), targetStudy.getStudyInstanceUID()));
                     sourceUIDs.add(new QCEventInstance(inst.getSopInstanceUID(), series.getSeriesInstanceUID(), sourceStudy.getStudyInstanceUID()));
-                    if(series.getModality().equalsIgnoreCase("KO") ||
-                            series.getModality().equalsIgnoreCase("SR")) {
+                    if(series.getModality().equals("KO") ||
+                            series.getModality().equals("SR")) {
                     for(Instance ident: findIdenticalDocumentReferences(newInstance)) {
                         removeIdenticalDocumentSequence(ident, inst);
                         removeIdenticalDocumentSequence(inst,ident);
@@ -2278,7 +2278,7 @@ public class QCBeanImpl  implements QCBean{
                         //addIdenticalDocumentSequence(newInstance, ident); already there
                         if(!identicalDocumentSequenceHistoryExists(ident, studyHistory.getAction())
                                 && !ident.getSeries().getStudy().getStudyInstanceUID()
-                                .equalsIgnoreCase(sourceStudy.getStudyInstanceUID()))
+                                .equals(sourceStudy.getStudyInstanceUID()))
                             addIdenticalDocumentSequenceHistory(ident, studyHistory.getAction());
                     }
                     }
@@ -2313,8 +2313,8 @@ public class QCBeanImpl  implements QCBean{
                     instancesHistory.add(instanceHistory);
                     targetUIDs.add(new QCEventInstance(newInstance.getSopInstanceUID(), newSeries.getSeriesInstanceUID(), targetStudy.getStudyInstanceUID()));
                     sourceUIDs.add(new QCEventInstance(inst.getSopInstanceUID(), series.getSeriesInstanceUID(), sourceStudy.getStudyInstanceUID()));
-                    if(series.getModality().equalsIgnoreCase("KO") ||
-                            series.getModality().equalsIgnoreCase("SR")) {
+                    if(series.getModality().equals("KO") ||
+                            series.getModality().equals("SR")) {
                     addIdenticalDocumentSequence(newInstance, inst);
                     addIdenticalDocumentSequence(inst, newInstance);
                     
@@ -2324,7 +2324,7 @@ public class QCBeanImpl  implements QCBean{
 //                        addIdenticalDocumentSequence(newInstance, ident); already exists
                         if(!identicalDocumentSequenceHistoryExists(ident, studyHistory.getAction())
                                 && !ident.getSeries().getStudy().getStudyInstanceUID()
-                                .equalsIgnoreCase(sourceStudy.getStudyInstanceUID()))
+                                .equals(sourceStudy.getStudyInstanceUID()))
                             addIdenticalDocumentSequenceHistory(ident, studyHistory.getAction());
                         }
                     }
@@ -2393,7 +2393,7 @@ public class QCBeanImpl  implements QCBean{
                 if(!newInstanceRecord.getSeries().getStudy().getAction().getAction().equalsIgnoreCase(QCOperation.REJECT.name())) {
                     associatedRecords = findInstanceHistoryByCurrentUID(newInstanceRecord.getOldUID());
                     for(QCInstanceHistory associatedRecord : associatedRecords) {
-                        if(associatedRecord.getNextUID().equalsIgnoreCase(associatedRecord.getCurrentUID())) {
+                        if(associatedRecord.getNextUID().equals(associatedRecord.getCurrentUID())) {
                             associatedRecord.setNextUID(newInstanceRecord.getOldUID());
                 }
                         associatedRecord.setCurrentUID(newInstanceRecord.getCurrentUID());

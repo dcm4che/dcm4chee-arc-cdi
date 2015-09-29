@@ -305,11 +305,11 @@ public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
         ArrayList<QCInstanceHistory> filteredByOldSopUID = new ArrayList<QCInstanceHistory>();
         for (QCInstanceHistory inst : referencesHistory) {
             boolean sameStudy = oldStudyUID != null ? inst.getSeries()
-                    .getStudy().getOldStudyUID().equalsIgnoreCase(oldStudyUID)
+                    .getStudy().getOldStudyUID().equals(oldStudyUID)
                     : true;
-            if (inst.getOldUID().equalsIgnoreCase(oldSopUID) && sameStudy) {
+            if (inst.getOldUID().equals(oldSopUID) && sameStudy) {
                 if (inst.getCurrentStudyUID()
-                        .equalsIgnoreCase(studyInstanceUID))
+                        .equals(studyInstanceUID))
                     matchesToSameStudy++;
                 filteredByOldSopUID.add(inst);
             }

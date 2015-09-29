@@ -555,11 +555,11 @@ public class FetchForwardServiceImpl implements FetchForwardService {
             String studyUID) {
         ArrayList<ApplicationEntity> preferedStudyAEs = new ArrayList<ApplicationEntity>();
         for(ArchiveInstanceLocator loc : instanceRetrieveMap.keySet()) {
-            if(loc.getStudyInstanceUID().equalsIgnoreCase(studyUID)) {
+            if(loc.getStudyInstanceUID().equals(studyUID)) {
                 for(ApplicationEntity ae : instanceRetrieveMap.get(loc)) {
                     boolean skip = false;
                     for(ApplicationEntity currentAE : preferedStudyAEs) {
-                        if(currentAE.getAETitle().equalsIgnoreCase(ae.getAETitle()))
+                        if(currentAE.getAETitle().equals(ae.getAETitle()))
                             skip = true;
                     }
                     if(!skip)

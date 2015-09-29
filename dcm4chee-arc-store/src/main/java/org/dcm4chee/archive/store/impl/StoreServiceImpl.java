@@ -415,7 +415,7 @@ public class StoreServiceImpl implements StoreService {
                 .getFetchAETitle();
 
         String localAET = session.getLocalAET();
-        if (fetchAET.equalsIgnoreCase(localAET)) {
+        if (fetchAET.equals(localAET)) {
             context.setFetch(true);
         }
     }
