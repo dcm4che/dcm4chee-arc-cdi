@@ -14,6 +14,10 @@
   </properties>
   <dependencies>
     <dependency>
+      <groupId>org.dcm4che.dcm4chee</groupId>
+      <artifactId>dcm4chee-ee-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-rs-common</artifactId>
       <version>${project.version}</version>
