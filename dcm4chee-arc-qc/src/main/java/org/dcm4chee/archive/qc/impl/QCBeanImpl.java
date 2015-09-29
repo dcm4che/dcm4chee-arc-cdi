@@ -1465,7 +1465,13 @@ public class QCBeanImpl  implements QCBean{
      * @return the issuer of accession number
      */
     private Issuer findIssuerOfAccessionNumber(Attributes attrs) {
-        Attributes issuerAttrs = attrs.getSequence(Tag.IssuerOfAccessionNumberSequence).get(0);
+        Attributes issuerAttrs = null;
+        if(attrs.contains(Tag.IssuerOfAccessionNumberSequence))
+        issuerAttrs= attrs.getSequence(Tag.IssuerOfAccessionNumberSequence).get(0);
+        
+        if(issuerAttrs == null)
+            return null;
+        
         Issuer issuer = issuerService.findOrCreate(new Issuer(issuerAttrs));
 
         return issuer;
@@ -1499,12 +1505,19 @@ public class QCBeanImpl  implements QCBean{
                 .getSequence(Tag.RequestAttributesSequence);
         Sequence updateSequence = attrs
                 .getSequence(Tag.RequestAttributesSequence);
+        //avoid null pointer on series with no request attributes
+        if(updateSequence == null) {
+            return series.getRequestAttributes();
+        }
         // remove deprecated items
         if (oldSequence != null)
             for (Attributes oldItem : oldSequence) {
                 if (!updateSequence.contains(oldItem)) {
                     RequestAttributes tmp = findRequestAttr(oldItem, series);
+                    
+                    if(tmp!=null)
                     oldRequests.remove(tmp);
+                    
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("{} : QC info[findRequestAttributes] info - "
                                 + "Removing Deprecated request attribute"
@@ -1545,14 +1558,17 @@ public class QCBeanImpl  implements QCBean{
      */
     private RequestAttributes findRequestAttr(Attributes attrs, Series series) {
         Query query = em.createQuery("SELECT r FROM RequestAttributes r "
-                + "WHERE r.studyInstanceUID = ?1  and "
-                + "r.scheduledProcedureStepID = ?2 and "
-                + "r.requestedProcedureID = ?3 and " + "r.series = ?4");
-        query.setParameter(1, attrs.getString(Tag.StudyInstanceUID));
-        query.setParameter(2, attrs.getString(Tag.ScheduledProcedureStepID));
-        query.setParameter(3, attrs.getString(Tag.RequestedProcedureID));
-        query.setParameter(4, series);
-        RequestAttributes request = (RequestAttributes) query.getSingleResult();
+                + "WHERE r.scheduledProcedureStepID = ?1 and "
+                + "r.requestedProcedureID = ?2 and " + "r.series = ?3");
+        query.setParameter(1, attrs.getString(Tag.ScheduledProcedureStepID));
+        query.setParameter(2, attrs.getString(Tag.RequestedProcedureID));
+        query.setParameter(3, series);
+        RequestAttributes request = null;
+        try {
+            request = (RequestAttributes) query.getSingleResult();
+        } catch (NoResultException e) {
+            LOG.debug("No old request attributes found! new attributes {} will be used  - reason {}", attrs, e);
+        }
         return request;
     }
 
@@ -1868,6 +1884,10 @@ public class QCBeanImpl  implements QCBean{
      */
     private Collection<RequestAttributes> copyReqAttrs(
             Sequence requestedAttrsSeq, Series newSeries) {
+        //avoid null pointer on series with no request attributes
+        if(requestedAttrsSeq == null)
+            return new ArrayList<RequestAttributes>();
+        
         Collection<RequestAttributes> reqAttrs = new ArrayList<RequestAttributes>();
         for(Attributes attrs : requestedAttrsSeq) {
             RequestAttributes newReqAttr = new RequestAttributes(

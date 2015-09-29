@@ -48,10 +48,7 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.code.CodeService;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.AttributeFilter;
-import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
@@ -339,11 +336,9 @@ public class StoreServiceEJB {
         } else {
             if (!context.isFetch()
                     && !session.getLocalAET().equalsIgnoreCase(
-                    device.getDeviceExtension(
-                            ArchiveDeviceExtension.class)
-                            .getFetchAETitle())
-                    && studyAttrs.updateSelected(data, modified,
-                    studyFilter.getCompleteSelection(data))) {
+                       device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle())
+                    && Utils.updateAttributes(studyAttrs, data, modified, studyFilter,
+                       MetadataUpdateStrategy.COERCE_MERGE)) {
                 study.setAttributes(studyAttrs, studyFilter,
                         storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
@@ -382,11 +377,9 @@ public class StoreServiceEJB {
         } else {
             if (!context.isFetch()
                     && !session.getLocalAET().equalsIgnoreCase(
-                    device.getDeviceExtension(
-                            ArchiveDeviceExtension.class)
-                            .getFetchAETitle())
-                    && seriesAttrs.updateSelected(data, modified,
-                    seriesFilter.getCompleteSelection(data))) {
+                       device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle())
+                    && Utils.updateAttributes(seriesAttrs, data, modified, seriesFilter,
+                       MetadataUpdateStrategy.COERCE_MERGE)) {
                 series.setAttributes(seriesAttrs, seriesFilter,
                         storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
@@ -406,11 +399,9 @@ public class StoreServiceEJB {
         Attributes modified = new Attributes();
         if (!context.isFetch()
                 && !session.getLocalAET().equalsIgnoreCase(
-                device.getDeviceExtension(
-                        ArchiveDeviceExtension.class)
-                        .getFetchAETitle())
-                && instAttrs.updateSelected(data, modified,
-                instFilter.getCompleteSelection(data))) {
+                    device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle())
+                && Utils.updateAttributes(instAttrs, data, modified, instFilter,
+                   MetadataUpdateStrategy.OVERWRITE)) {
             inst.setAttributes(data, instFilter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
             LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
                     modified);

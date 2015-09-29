@@ -709,11 +709,10 @@ public class DefaultArchiveConfigurationFactory {
         ext.setDeletionServicePollInterval(60);
         ext.setDeleteServiceAllowedInterval("0-23");
         ext.setSyncLocationStatusStorageSystemGroupIDs("ARCHIVE");
-        ext.setAttributeFilter(Entity.Patient,
-                new AttributeFilter(PATIENT_ATTRS));
-        ext.setAttributeFilter(Entity.Study, new AttributeFilter(STUDY_ATTRS, STUDY_PRIVATE_ATTRS));
-        ext.setAttributeFilter(Entity.Series, new AttributeFilter(SERIES_ATTRS));
-        ext.setAttributeFilter(Entity.Instance, new AttributeFilter(INSTANCE_ATTRS));
+        ext.setAttributeFilter(Entity.Patient, new AttributeFilter(PATIENT_ATTRS, new TreeMap(),MetadataUpdateStrategy.COERCE_MERGE));
+        ext.setAttributeFilter(Entity.Study, new AttributeFilter(STUDY_ATTRS, STUDY_PRIVATE_ATTRS, MetadataUpdateStrategy.COERCE_MERGE));
+        ext.setAttributeFilter(Entity.Series, new AttributeFilter(SERIES_ATTRS, new TreeMap(), MetadataUpdateStrategy.COERCE_MERGE));
+        ext.setAttributeFilter(Entity.Instance, new AttributeFilter(INSTANCE_ATTRS, new TreeMap(), MetadataUpdateStrategy.OVERWRITE));
         ext.setFetchAETitle("DCM4CHEE_FETCH");
         ext.addPrivateDerivedField(new PrivateTag(PrivateDerivedFields.NAMES
                 .StudyUpdateTimeDerivedField.name(), "7FD91060",
