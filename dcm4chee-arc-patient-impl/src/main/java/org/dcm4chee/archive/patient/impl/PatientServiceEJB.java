@@ -38,11 +38,7 @@
 
 package org.dcm4chee.archive.patient.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -53,6 +49,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.PersonName;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.MetadataUpdateStrategy;
@@ -109,7 +106,7 @@ public class PatientServiceEJB implements PatientService {
     private Patient updateOrCreatePatientByDICOM(Attributes attrs,
             PatientSelector selector, StoreParam storeParam)
             throws PatientCircularMergedException {
-        Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
+        Set<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         Patient patient = null;
         try {
             patient = findPatientByDICOM(pids, attrs, selector);
@@ -249,12 +246,18 @@ public class PatientServiceEJB implements PatientService {
         return patient;
     }
 
-    private Patient createPatient(Collection<IDWithIssuer> pids,
+    private Patient createPatient(Set<IDWithIssuer> pids,
             Attributes attrs, StoreParam storeParam) {
         Patient patient = new Patient();
         patient.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Patient),
                 storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+
+        if (pids.isEmpty() && storeParam.getIssuerOfPatientID()!=null) {
+            pids= new HashSet<IDWithIssuer>();
+            pids.add(new IDWithIssuer(UIDUtils.createUID(),storeParam.getIssuerOfPatientID()));
+        }
+
         patient.setNoPatientID(pids.isEmpty());
         patient.setPatientIDs(createPatientIDs(pids, patient,
                 storeParam.isDeIdentifyLogs()));
@@ -377,13 +380,13 @@ public class PatientServiceEJB implements PatientService {
         // TODO make PatientSelector configurable
         PatientSelector selector = PatientSelectorFactory
                 .createSelector(storeParam);
-        Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
+        Set<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
         return updateOrCreatePatientByHL7(attrs, storeParam, selector, pids);
     }
 
     private Patient updateOrCreatePatientByHL7(Attributes attrs,
             StoreParam storeParam, PatientSelector selector,
-            Collection<IDWithIssuer> pids) throws NonUniquePatientException,
+            Set<IDWithIssuer> pids) throws NonUniquePatientException,
             PatientMergedException {
         Patient patient = selector.select(findPatientByIDs(pids), attrs, pids);
         if (patient == null)
@@ -402,8 +405,8 @@ public class PatientServiceEJB implements PatientService {
             PatientMergedException {
         PatientSelector selector = PatientSelectorFactory
                 .createSelector(storeParam);
-        Collection<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
-        Collection<IDWithIssuer> priorPIDs = IDWithIssuer.pidsOf(priorAttrs);
+        Set<IDWithIssuer> pids = IDWithIssuer.pidsOf(attrs);
+        Set<IDWithIssuer>  priorPIDs = IDWithIssuer.pidsOf(priorAttrs);
         Patient prior = updateOrCreatePatientByHL7(priorAttrs, storeParam,
                 selector, priorPIDs);
         Patient pat = updateOrCreatePatientByHL7(attrs, storeParam, selector,

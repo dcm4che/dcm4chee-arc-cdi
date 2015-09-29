@@ -504,6 +504,7 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         storeParam.setAttributeFilters(attributeFilters);
         storeParam.setDeIdentifyLogs(isDeIdentifyLogs());
         storeParam.setNullValueForQueryFields(getNullValueForQueryFields());
+        storeParam.setIssuerOfPatientID(getDevice().getIssuerOfPatientID());
         return storeParam;
         
     }
