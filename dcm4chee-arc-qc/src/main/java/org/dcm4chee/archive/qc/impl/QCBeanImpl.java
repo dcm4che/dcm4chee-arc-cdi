@@ -180,7 +180,7 @@ public class QCBeanImpl implements QCBean {
     @Inject
     private Hooks<StudyProtectionHook> studyProtectionHooks;
 
-    @PersistenceContext(name="dcm4chee-arc")
+    @PersistenceContext(name="dcm4chee-arc", unitName ="dcm4chee-arc")
     private EntityManager em;
 
     private String qcSource="Quality Control";

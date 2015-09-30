@@ -64,7 +64,7 @@ public class StudyAETsImpl implements StudyAETs {
  
     private static final Logger LOG = LoggerFactory.getLogger(StudyAETsImpl.class);
 
-    @PersistenceContext(name = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName="dcm4chee-arc")
     EntityManager em;
 
     @Override

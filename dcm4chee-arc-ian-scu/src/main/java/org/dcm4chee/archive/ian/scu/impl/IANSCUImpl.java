@@ -85,7 +85,7 @@ public class IANSCUImpl implements IANSCU {
 
     private static final Logger LOG = LoggerFactory.getLogger(IANSCUImpl.class);
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
 
     @Resource(mappedName = "java:/ConnectionFactory")

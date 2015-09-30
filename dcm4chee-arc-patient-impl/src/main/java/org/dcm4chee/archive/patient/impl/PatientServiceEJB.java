@@ -83,7 +83,7 @@ public class PatientServiceEJB implements PatientService {
     private static Logger LOG = LoggerFactory
             .getLogger(PatientServiceEJB.class);
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
 
     @Inject

@@ -54,7 +54,7 @@ import org.dcm4chee.archive.entity.Code;
 @Stateless
 public class CodeServiceEJB implements CodeService {
 
-    @PersistenceContext(unitName="dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName="dcm4chee-arc")
     private EntityManager em;
 
     @Override

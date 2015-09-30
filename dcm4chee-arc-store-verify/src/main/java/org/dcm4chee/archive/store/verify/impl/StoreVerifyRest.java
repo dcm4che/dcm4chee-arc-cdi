@@ -72,7 +72,7 @@ import org.dcm4chee.storage.conf.StorageSystem;
 @RequestScoped
 public class StoreVerifyRest {
 
-    @PersistenceContext(name = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName="dcm4chee-arc")
     EntityManager em;
 
     private static StorageDeviceExtension archStorageDevExt;

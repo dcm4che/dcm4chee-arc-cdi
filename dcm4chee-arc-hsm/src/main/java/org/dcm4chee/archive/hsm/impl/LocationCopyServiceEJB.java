@@ -90,7 +90,7 @@ public class LocationCopyServiceEJB {
     private static final String SOURCE_LOCATION_PKS_TO_DELETE = "srcLocationPksToDelete";
     private static final String LOCATION_COPY_CONTEXT = "locationCopyContext";
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
 
     @Inject

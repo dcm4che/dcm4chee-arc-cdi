@@ -70,7 +70,7 @@ import com.mysema.query.types.Expression;
 @Stateless
 public class RetrieveServiceEJB {
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
 
     public List<Tuple> query(Expression<?>[] select,

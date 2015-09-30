@@ -79,7 +79,7 @@ public class SyncLocationStatusServiceEJB {
     @Inject
     private RetrieveService retrieveService;
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
 
     public int checkStatus() throws IOException {

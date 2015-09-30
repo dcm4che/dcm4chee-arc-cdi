@@ -69,7 +69,7 @@ import org.slf4j.LoggerFactory;
 public class StoreVerifyEJB {
 
     private static final Logger LOG = LoggerFactory.getLogger(StoreVerifyEJB.class);
-    @PersistenceContext(unitName = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     EntityManager em;
 
     @Inject

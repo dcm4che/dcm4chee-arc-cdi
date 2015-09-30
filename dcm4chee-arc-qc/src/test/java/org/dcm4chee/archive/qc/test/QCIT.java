@@ -136,7 +136,7 @@ public class QCIT {
     @Inject
     private Device device;
 
-    @PersistenceContext(name = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName="dcm4chee-arc")
     EntityManager em;
 
     @Inject

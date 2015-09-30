@@ -67,7 +67,7 @@ import com.mysema.query.jpa.hibernate.HibernateQuery;
 @Stateless
 public class StgCmtEJB  {
 
-    @PersistenceContext(unitName="dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName="dcm4chee-arc")
     private EntityManager em;
 
     public List<Tuple> lookupMatches(Attributes actionInfo) {

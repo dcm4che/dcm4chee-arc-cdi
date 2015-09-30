@@ -103,7 +103,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     @Inject
     private FetchForwardService fetchForwardService;
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
     
     @Inject

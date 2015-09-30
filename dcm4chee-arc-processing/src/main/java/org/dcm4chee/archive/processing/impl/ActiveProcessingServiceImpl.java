@@ -24,7 +24,7 @@ public class ActiveProcessingServiceImpl implements ActiveProcessingService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ActiveProcessingServiceImpl.class);
 
-    @PersistenceContext(name = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName="dcm4chee-arc")
     private EntityManager em;
 
     @Override
