@@ -546,7 +546,6 @@
                 "dcmDeletionThreshold" : "7:1h;19:24h",
                 "dcmMinTimeStudyNotAccessed" : 30,
                 "dcmMinTimeStudyNotAccessedUnit" : "DAYS",
-                "dcmNumberOfArchivedCopies" : "1",
                 "dcmSafeArchivingType" : "*",
                 "dcmStorageSystemGroupID" : "DEFAULT"
               } ]

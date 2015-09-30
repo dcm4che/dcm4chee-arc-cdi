@@ -533,7 +533,6 @@ public class LocationMgmtEJB implements LocationMgmt {
     }
 
     @Override
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public Collection<Long> filterForMarkedForDeletionStudiesOnGroup(
             Collection<Long> refPks) {
         Query query = em.createQuery(
