@@ -250,7 +250,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
             List<Instance> actualInstancesToDelete = (ArrayList<Instance>) filterCopiesExist(
                     (ArrayList<Instance>) allInstancesDueDeleteOnGroup, rule);
             
-            markCorrespondingStudyAndScheduleForDeletion(studyInstanceUID,
+            markCorrespondingStudyAndDoDeletion(studyInstanceUID,
                     rule, removePendingArchivingOrDeletion(studyInstanceUID, actualInstancesToDelete));
             
             handleFailedToDeleteLocations(rule.getStorageSystemGroupID());
@@ -622,12 +622,39 @@ public class LocationDeleteServiceImpl implements DeleterService {
             }
     }
 
+    private void markCorrespondingStudyAndDoDeletion(
+            String studyInstanceUID, DeletionRule rule,
+            List<Instance> instancesDueDelete) {
+        if (!instancesDueDelete.isEmpty()) {
+            locationManager.markForDeletion(studyInstanceUID, rule.getStorageSystemGroupID());
+            for (Instance inst : instancesDueDelete) {
+                Collection<Long> pks = getLocationPksOnGroup(inst, rule.getStorageSystemGroupID());
+                activeProcessingService.addActiveProcess(studyInstanceUID,
+                        inst.getSeries().getSeriesInstanceUID(),
+                        inst.getSopInstanceUID(),
+                        ActiveService.DELETER_SERVICE);
+                locationManager.doDelete(locationManager.filterForMarkedForDeletionStudiesOnGroup(pks), true);
+            }
+            locationManager.purgeStudiesRejectedOrDeletedOnAllGroups();
+        }
+    }
+
     private Collection<Location> getLocationsOnGroup(Instance inst, String groupID) {
         Collection<Location> locationsOnGroup = new ArrayList<Location>();
         for(Location loc : inst.getLocations())
             if(loc.getStorageSystemGroupID().compareTo(groupID) == 0)
                 locationsOnGroup.add(loc);
         return locationsOnGroup;
+    }
+
+    private Collection<Long> getLocationPksOnGroup(Instance inst, String groupID) {
+        Collection<Long> locationPksOnGroup = new ArrayList<Long>();
+        for (Location loc : inst.getLocations()) {
+            if (loc.getStorageSystemGroupID().compareTo(groupID) == 0) {
+                locationPksOnGroup.add(loc.getPk());
+            }
+        }
+        return locationPksOnGroup;
     }
 
     private List<Instance> filterCopiesExist(

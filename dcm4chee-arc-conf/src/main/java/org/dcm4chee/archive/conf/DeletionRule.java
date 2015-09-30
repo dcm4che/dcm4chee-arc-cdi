@@ -60,7 +60,7 @@ public final class DeletionRule implements Serializable {
     @ConfigurableProperty(name = "dcmStorageSystemGroupID")
     private String storageSystemGroupID;
 
-    @ConfigurableProperty(name = "dcmNumberOfArchivedCopies")
+    @ConfigurableProperty(name = "dcmNumberOfArchivedCopies", defaultValue = "1")
     private String numberOfArchivedCopies;
 
     @ConfigurableProperty(name = "dcmSafeArchivingType")
