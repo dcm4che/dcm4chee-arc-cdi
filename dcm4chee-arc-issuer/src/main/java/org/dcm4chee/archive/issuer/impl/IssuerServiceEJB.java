@@ -54,7 +54,7 @@ import org.dcm4chee.archive.issuer.IssuerService;
 @Stateless
 public class IssuerServiceEJB implements IssuerService {
 
-    @PersistenceContext(unitName="dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName="dcm4chee-arc")
     private EntityManager em;
 
     @Override

@@ -71,7 +71,7 @@ import javax.persistence.PersistenceContext;
 public class MPPSServiceEJB {
     private static final Logger LOG = LoggerFactory.getLogger(MPPSServiceEJB.class);
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
 
     @Inject

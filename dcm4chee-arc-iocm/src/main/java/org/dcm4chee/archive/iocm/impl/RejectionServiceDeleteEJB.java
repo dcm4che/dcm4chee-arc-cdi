@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
 public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
     static Logger LOG = LoggerFactory.getLogger(RejectionServiceDeleteEJB.class);
 
-    @PersistenceContext(unitName = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     public EntityManager em;
     
     @Override

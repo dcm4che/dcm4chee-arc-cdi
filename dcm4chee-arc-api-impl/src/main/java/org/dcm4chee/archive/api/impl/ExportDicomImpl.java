@@ -85,7 +85,7 @@ public class ExportDicomImpl implements ExportDicom {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExportDicomImpl.class);
 
-    @PersistenceContext(name = "dcm4chee-arc")
+    @PersistenceContext(name = "dcm4chee-arc", unitName="dcm4chee-arc")
     EntityManager em;
 
     @Inject
