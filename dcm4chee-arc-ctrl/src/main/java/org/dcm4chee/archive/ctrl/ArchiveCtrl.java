@@ -37,11 +37,15 @@
  * ***** END LICENSE BLOCK ***** */
 
 package org.dcm4chee.archive.ctrl;
+import java.io.IOException;
+
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -54,6 +58,11 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
+import org.dcm4chee.storage.StorageDevice;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
+import org.dcm4chee.storage.spi.StorageSystemProvider;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -71,6 +80,9 @@ public class ArchiveCtrl {
 
     @Context
     private HttpServletRequest request;
+
+    @Inject
+    private javax.enterprise.inject.Instance<StorageSystemProvider> storageSystemProviders;
 
     @GET
     @Path("running")
@@ -118,4 +130,38 @@ public class ArchiveCtrl {
                     + "</div>").build();
     }
 
+    @POST
+    @Path("/storageinfo/{GroupID}")
+    @Produces(MediaType.TEXT_HTML)
+    public Response storageInfo(@PathParam("GroupID") String groupID)
+            throws ConfigurationException {
+        
+        HttpSource source = new HttpSource(request);
+        ApplicationEntity ae = hostAECache.findAE(source);
+
+        Device callerDevice = ae.getDevice();
+
+        Device arcDevice = service.getDevice();
+
+        String resp= "<div>Storage Info: <br>requesting Host:" + request.getRemoteHost()
+        + "<br>Device Name: " + arcDevice.getDeviceName()
+        + "<br>Storage Group: " + groupID;
+        
+        StorageDeviceExtension stgExt = arcDevice.getDeviceExtension(StorageDeviceExtension.class);
+
+        StorageSystemGroup group = stgExt.getStorageSystemGroup(groupID);
+        for(StorageSystem sys :group.getStorageSystems().values()) {
+            try {
+                resp+="<div><br>Storage System: " + sys.getStorageSystemID()
+                + "<br>Total Space  in Bytes: "+ sys.getStorageSystemProvider(storageSystemProviders).getTotalSpace()
+                + "<br>Available Space in Bytes: "+ sys.getStorageSystemProvider(storageSystemProviders).getUsableSpace()
+                + "<br>Used Space in Bytes: "+ (sys.getStorageSystemProvider(storageSystemProviders).getTotalSpace() - sys.getStorageSystemProvider(storageSystemProviders).getUsableSpace())
+                + "</div>";
+            } catch (IOException e) {
+                resp = "<div>"+e.getStackTrace().toString();
+            }
+        }
+        return Response.ok(resp
+                    + "</div>").build();
+    }
 }

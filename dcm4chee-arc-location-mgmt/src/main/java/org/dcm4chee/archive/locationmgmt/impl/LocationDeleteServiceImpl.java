@@ -303,7 +303,14 @@ public class LocationDeleteServiceImpl implements DeleterService {
                 }
             }
         }
-        return tmpFlaggedsystems.isEmpty() ?  false : true;
+
+        if(tmpFlaggedsystems.isEmpty()) {
+            stgExt.setDirty(false);
+            return false;
+        }
+        else {
+            return true;
+        }
     }
 
     private boolean canDeleteNow(String groupID) {
@@ -710,17 +717,17 @@ public class LocationDeleteServiceImpl implements DeleterService {
 
     private long toValueInBytes(long value, String unit, long dvdInBytes) {
         if ("GB".equalsIgnoreCase(unit))
-            return value * 1000000000;
+            return value * 1073741824;
         if("GIB".equalsIgnoreCase(unit))
-            return value * 125000000;
+            return value * 134217728;
         else if ("MB".equalsIgnoreCase(unit))
-            return value * 1000000;
+            return value * 1048576;
         else if ("MIB".equalsIgnoreCase(unit))
-            return value * 125000;
+            return value * 131072;
         else if ("KB".equalsIgnoreCase(unit))
-            return value * 1000;
+            return value * 1024;
         else if ("KIB".equalsIgnoreCase(unit))
-            return value * 125;
+            return value * 128;
         else if ("H".equalsIgnoreCase(unit))
             return (dvdInBytes * value)/24;
         else if ("D".equalsIgnoreCase(unit))
