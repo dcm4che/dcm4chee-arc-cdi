@@ -102,6 +102,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmUpdateDbRetries", defaultValue = "1")
     private int updateDbRetries = 1;
 
+    @ConfigurableProperty(name = "dcmUpdateDbDelay", defaultValue = "1000")
+    private int updateDbDelay = 1000;
+
     @LDAP(noContainerNode = true)
     @ConfigurableProperty(name = "dcmPrivateDerivedFields")
     private final PrivateDerivedFields privateDerivedFields = new PrivateDerivedFields();
@@ -317,6 +320,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     public void setUpdateDbRetries(int updateDbRetries) {
         this.updateDbRetries = updateDbRetries;
+    }
+
+    public int getUpdateDbDelay() {
+        return updateDbDelay;
+    }
+
+    public void setUpdateDbDelay(int updateDbDelay) {
+        this.updateDbDelay = updateDbDelay;
     }
 
     public FuzzyStr getFuzzyStr() {

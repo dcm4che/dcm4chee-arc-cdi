@@ -599,6 +599,11 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.117 NAME 'dcmmetadataUpdateStrategy'
   EQUALITY caseExactIA5Match
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
   SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.118 NAME 'dcmUpdateDbDelay'
+  DESC 'Specifies the delay between retries in case of exceptions on DB updates'
+  EQUALITY integerMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  SINGLE-VALUE )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -610,6 +615,7 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmConfigurationStaleTimeout $
     dcmDeIdentifyLogs $
     dcmUpdateDbRetries $
+    dcmUpdateDbDelay $
     dcmWadoAttributesStaleTimeout $
     dcmRejectedObjectsCleanUpPollInterval $
     dcmRejectedObjectsCleanUpMaxNumberOfDeletes $

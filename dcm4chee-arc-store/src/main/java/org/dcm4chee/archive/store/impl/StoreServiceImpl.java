@@ -66,6 +66,8 @@ import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
+import org.dcm4chee.archive.util.RetryBean;
+import org.dcm4chee.archive.util.RetryTask;
 import org.dcm4chee.storage.ObjectAlreadyExistsException;
 import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.StorageContext;
@@ -139,6 +141,8 @@ public class StoreServiceImpl implements StoreService {
 
     @Inject
     private Device device;
+
+    @Inject RetryBean<Void,DicomServiceException> retry;
 
     private int[] storeFilters = null;
 
@@ -527,7 +531,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void updateDB(StoreContext context) throws DicomServiceException {
+    public void updateDB(final StoreContext context) throws DicomServiceException {
 
         ArchiveDeviceExtension dE = context.getStoreSession().getDevice()
                 .getDeviceExtension(ArchiveDeviceExtension.class);
@@ -540,21 +544,14 @@ public class StoreServiceImpl implements StoreService {
             throw new DicomServiceException(Status.UnableToProcess, e1);
         }
 
-        for (int i = 0; i <= dE.getUpdateDbRetries(); i++) {
-
-            try {
-                LOG.info("{}: try to updateDB, try nr. {}",
-                        context.getStoreSession(), i);
+        // try to call updateDB, eventually retries
+        retry.retry(new Callable<Void>() {
+            @Override
+            public Void call() throws DicomServiceException {
                 storeServiceEJB.updateDB(context);
-                break;
-            } catch (RuntimeException e) {
-                if (i >= dE.getUpdateDbRetries()) // last try failed
-                    throw new DicomServiceException(Status.UnableToProcess, e);
-                else
-                    LOG.warn("{}: Failed to updateDB, try nr. {}",
-                            context.getStoreSession(), i, e);
+                return null;
             }
-        }
+        });
 
         updateAttributes(context);
     }
