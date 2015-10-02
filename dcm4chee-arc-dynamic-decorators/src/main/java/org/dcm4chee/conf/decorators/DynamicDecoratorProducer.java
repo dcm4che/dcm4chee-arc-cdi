@@ -7,6 +7,8 @@ import org.dcm4chee.archive.query.QueryService;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.storage.service.StorageService;
+import org.dcm4chee.storage.archiver.service.ArchiverService;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
@@ -47,6 +49,17 @@ public class DynamicDecoratorProducer {
 	@DynamicDecorator
 	Instance<DelegatingServiceImpl<DerivedSeriesFields>> dynamicDerivedSeriesFieldsDecorators;
 
+    @Inject
+    @DynamicDecorator
+    Instance<DelegatingServiceImpl<StorageService>> dynamicStorageDecorators;
+
+    @Inject
+    @DynamicDecorator
+    Instance<DelegatingServiceImpl<org.dcm4chee.storage.service.RetrieveService>> dynamicStorageRetrieveDecorators;
+
+    @Inject
+    @DynamicDecorator
+    Instance<DelegatingServiceImpl<ArchiverService>> dynamicArchiverDecorators;
 
 	@Inject
 	private DynamicDecoratorManager decoratorManager;
@@ -96,5 +109,26 @@ public class DynamicDecoratorProducer {
 				(dynamicDerivedSeriesFieldsDecorators,
 				DerivedSeriesFields.class, false); //false => not using cache
 	}
+
+    @Produces
+    @ConfiguredDynamicDecorators
+    public Collection<DelegatingServiceImpl<StorageService>> getConfiguredStorageServiceDecorators() {
+        return decoratorManager.getOrderedDecorators(dynamicStorageDecorators,
+                StorageService.class);
+    }
+
+    @Produces
+    @ConfiguredDynamicDecorators
+    public Collection<DelegatingServiceImpl<org.dcm4chee.storage.service.RetrieveService>> getConfiguredStorageRetrieveServiceDecorators() {
+        return decoratorManager.getOrderedDecorators(dynamicStorageRetrieveDecorators,
+                org.dcm4chee.storage.service.RetrieveService.class);
+    }
+
+    @Produces
+    @ConfiguredDynamicDecorators
+    public Collection<DelegatingServiceImpl<ArchiverService>> getConfiguredArchiverServiceDecorators() {
+        return decoratorManager.getOrderedDecorators(dynamicArchiverDecorators,
+                ArchiverService.class);
+    }
 
 }
