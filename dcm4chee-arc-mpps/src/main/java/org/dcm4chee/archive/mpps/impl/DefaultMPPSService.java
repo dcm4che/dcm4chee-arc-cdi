@@ -54,7 +54,7 @@ import org.dcm4chee.archive.mpps.event.MPPSCreate;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.mpps.event.MPPSUpdate;
-import org.dcm4chee.archive.util.TransactionSynchronization;
+import org.dcm4chee.util.TransactionSynchronization;
 import org.dcm4chee.hooks.Hooks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -54,6 +54,8 @@ import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.event.ConnectionEventSource;
 import org.dcm4chee.archive.event.LocalSource;
 import org.dcm4chee.archive.event.StartStopReloadEvent;
+import org.dcm4chee.conf.decorators.ConfiguredDynamicDecorators;
+import org.dcm4chee.conf.decorators.DynamicDecoratorsConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,6 +122,10 @@ public class ArchiveServiceImpl implements ArchiveService {
     @Inject
     private Device device;
 
+    @Inject
+    @ConfiguredDynamicDecorators
+    DynamicDecoratorsConfig decoratorsConfig;
+
     private boolean running;
 
     private final DicomService echoscp = new BasicCEchoSCP();
@@ -128,7 +134,7 @@ public class ArchiveServiceImpl implements ArchiveService {
 
     private final HL7ServiceRegistry hl7ServiceRegistry = new HL7ServiceRegistry();
 
-    private static void addJBossDirURLSystemProperties() {
+    private void addJBossDirURLSystemProperties() {
         for (String key : JBOSS_PROPERITIES) {
             String url = new File(System.getProperty(key + ".dir"))
                 .toURI().toString();
@@ -153,7 +159,7 @@ public class ArchiveServiceImpl implements ArchiveService {
                 hl7ServiceRegistry.addHL7Service(service);
             }
             device.setDimseRQHandler(serviceRegistry);
-            HL7DeviceExtension hl7Extension = 
+            HL7DeviceExtension hl7Extension =
                     device.getDeviceExtension(HL7DeviceExtension.class);
             if (hl7Extension != null) {
                 hl7Extension.setHL7MessageListener(hl7ServiceRegistry);
@@ -166,6 +172,10 @@ public class ArchiveServiceImpl implements ArchiveService {
             destroy();
             throw new RuntimeException(e);
         }
+
+        // this just touched and thus init'ed here to improve init log output, TBD where to move it
+        decoratorsConfig.getDecoratedServices();
+
     }
 
     private void shutdown(ExecutorService executor) {

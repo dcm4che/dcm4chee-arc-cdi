@@ -37,18 +37,21 @@
  *
  *  ***** END LICENSE BLOCK *****
  */
-package org.dcm4chee.archive;
+package org.dcm4chee.archive.conf.producer;
 
 /**
  * @author Roman K
  */
 
 import org.dcm4che3.net.DeviceExtension;
+import org.dcm4che3.net.ExternalArchiveAEExtension;
+import org.dcm4che3.net.TCGroupConfigAEExtension;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 
 import javax.enterprise.inject.Produces;
@@ -56,35 +59,43 @@ import javax.enterprise.inject.Produces;
 /**
  * Library modules do not support CDI so we need these explicit producers for device extensions that come from the library.
  */
-public class DeviceExtensionsProducer {
+public class LibraryConfigExtensionsProducer {
 
     @Produces
-    DeviceExtension getAuditLogger() {
+    AuditLogger getAuditLogger() {
         return new AuditLogger();
     }
 
     @Produces
-    DeviceExtension getAuditRecordRepository() {
+    AuditRecordRepository getAuditRecordRepository() {
         return new AuditRecordRepository();
     }
 
     @Produces
-    DeviceExtension getImageWriterExtension() {
+    ImageWriterExtension getImageWriterExtension() {
         return new ImageWriterExtension();
     }
 
     @Produces
-    DeviceExtension getImageReaderExtension() {
+    ImageReaderExtension getImageReaderExtension() {
         return new ImageReaderExtension();
     }
 
     @Produces
-    DeviceExtension getHL7DeviceExtension() {
+    HL7DeviceExtension getHL7DeviceExtension() {
         return new HL7DeviceExtension();
     }
 
     @Produces
-    DeviceExtension getStorageDeviceExtension() {
-        return new StorageDeviceExtension();
+    WebServiceAEExtension getWebServiceAEExtension() {
+        return new WebServiceAEExtension();
     }
+
+    @Produces
+    ExternalArchiveAEExtension getExternalArchiveAEExtension() {
+        return new ExternalArchiveAEExtension();
+    }
+
+    @Produces
+    TCGroupConfigAEExtension getTcGroupConfigAEExtension() {return new TCGroupConfigAEExtension();}
 }
