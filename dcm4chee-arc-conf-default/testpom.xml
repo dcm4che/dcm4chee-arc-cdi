@@ -23,6 +23,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.dcm4che.dcm4chee-arc</groupId>
+            <artifactId>dcm4chee-arc-conf-producer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.dcm4che.dcm4chee-conf</groupId>
             <artifactId>dcm4chee-conf-db</artifactId>
             <version>${dcm4chee-conf.version}</version>
@@ -33,7 +39,11 @@
             <version>${dcm4chee-conf.version}</version>
         </dependency>
 
-
+        <dependency>
+            <groupId>org.dcm4che.dcm4chee</groupId>
+            <artifactId>dcm4chee-ee-core</artifactId>
+            <version>${dcm4chee-ee.version}</version>
+        </dependency>
     </dependencies>
 
 

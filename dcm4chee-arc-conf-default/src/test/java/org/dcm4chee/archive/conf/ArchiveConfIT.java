@@ -39,6 +39,7 @@
  */
 package org.dcm4chee.archive.conf;
 
+import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
 import org.dcm4che3.conf.core.api.Configuration;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
@@ -77,6 +78,7 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
 import java.io.File;
+import java.util.HashMap;
 
 /**
  * @author Roman K
@@ -85,9 +87,9 @@ import java.io.File;
 public class ArchiveConfIT extends ArchiveDeviceTest {
 
 	CommonDicomConfigurationWithHL7 configWithHL7;
-	
-    @Inject @Any
-    Instance<Configuration> dbConfigStorage;
+
+    @Inject
+    DicomConfigurationManager dicomConfigurationManager;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -121,41 +123,20 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
 
     @Override
     public void setUp() throws Exception {
-        DicomConfigurationBuilder builder = new DicomConfigurationBuilder();
 
-        for (Configuration configuration : dbConfigStorage) {
-            String storageClassName = configuration.getClass().getName();
-            System.out.println(storageClassName);
+        System.getProperties().remove("org.dcm4che.conf.upgrade.settingsFile");
+        System.setProperty("org.dcm4che.conf.notifications", "false");
 
-
-            if (storageClassName.startsWith("org.dcm4chee.conf.storage.SemiSerialized"))
-                builder.registerCustomConfigurationStorage(configuration);
-
-        }
-
-        builder.registerDeviceExtension(ArchiveDeviceExtension.class);
-        builder.registerDeviceExtension(StorageDeviceExtension.class);
-        builder.registerDeviceExtension(HL7DeviceExtension.class);
-        builder.registerDeviceExtension(ImageReaderExtension.class);
-        builder.registerDeviceExtension(ImageWriterExtension.class);
-        builder.registerDeviceExtension(AuditRecordRepository.class);
-        builder.registerDeviceExtension(AuditLogger.class);
-        builder.registerAEExtension(ArchiveAEExtension.class);
-        builder.registerAEExtension(ExternalArchiveAEExtension.class);
-        builder.registerAEExtension(WebServiceAEExtension.class);
-        builder.registerAEExtension(TCGroupConfigAEExtension.class);
-        builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
-
-        configWithHL7 = builder.build();
-        config = configWithHL7;
-        hl7Config = configWithHL7;
+        config = dicomConfigurationManager;
+        hl7Config = dicomConfigurationManager.getDicomConfigurationExtension(HL7Configuration.class);
 
         cleanUp();
     }
 
-
-
-
+    @Override
+    protected void cleanUp() throws Exception {
+        dicomConfigurationManager.getConfigurationStorage().persistNode("/dicomConfigurationRoot", new HashMap<String, Object>(), null);
+    }
 
     @Test
     public void performanceTest() throws Exception {
@@ -165,7 +146,7 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
         Device arrDevice = configurationFactory.createARRDevice("syslog", Connection.Protocol.SYSLOG_UDP, 514);
         config.persist(arrDevice);
 
-        int numofdevices = 10;
+        int numofdevices = 100;
 
         System.out.println("removing devices");
         for (int i = 0; i < numofdevices; i++) {
@@ -213,9 +194,6 @@ public class ArchiveConfIT extends ArchiveDeviceTest {
 
     }
 
-    @Produces
-    public DicomConfigurationManager getDicomConfiguration() {
-    	return configWithHL7;
-    }
+
 
 }

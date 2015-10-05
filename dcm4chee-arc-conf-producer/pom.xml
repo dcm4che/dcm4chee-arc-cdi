@@ -41,7 +41,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.conf.dicom, org.dcm4che.net-audit, org.dcm4che.net-imageio, org.dcm4che.dcm4chee-conf.cdi-producer meta-inf export</Dependencies>
+              <Dependencies>org.dcm4che.conf.dicom, org.dcm4che.net-audit, org.dcm4che.net-imageio</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

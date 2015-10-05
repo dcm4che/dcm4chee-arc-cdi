@@ -91,7 +91,6 @@
       <outputDirectory>jboss-module</outputDirectory>
       <includes>
         <include>org.dcm4che:dcm4che-jboss-modules</include>
-        <include>org.dcm4che.dcm4chee-conf:dcm4chee-conf-jboss-modules</include>
         <include>org.dcm4che:querydsl-jboss-modules</include>
         <include>org.dcm4che:jdbc-jboss-modules</include>
         <include>org.dcm4che:jai_imageio-jboss-modules</include>
