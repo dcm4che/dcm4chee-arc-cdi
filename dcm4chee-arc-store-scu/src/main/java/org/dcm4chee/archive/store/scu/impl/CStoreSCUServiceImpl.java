@@ -89,6 +89,7 @@ import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUJMSMessage;
 import org.dcm4chee.archive.store.scu.CStoreSCUResponse;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
+import org.dcm4chee.archive.task.WeightWatcher;
 import org.dcm4chee.storage.service.RetrieveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,14 +97,14 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- * 
+ *
  */
 @ApplicationScoped
 public class CStoreSCUServiceImpl implements CStoreSCUService {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(CStoreSCUServiceImpl.class);
-    
+
     @Inject
     private FetchForwardService fetchForwardService;
 
@@ -122,9 +123,12 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
 
     @Inject
     private RetrieveService storageRetrieveService;
-    
+
+    @Inject
+    private WeightWatcher weightWatcher;
+
     @Override
-    public void cstore(String messageID, CStoreSCUContext context, 
+    public void cstore(String messageID, CStoreSCUContext context,
             List<ArchiveInstanceLocator> insts, int priority)
             throws DicomServiceException {
         try {
@@ -139,18 +143,15 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                     remoteAE.getAETitle(), insts);
             Association storeas = localAE.connect(remoteAE, aarq);
 
-            CStoreSCUImpl cstorescu = new CStoreSCUImpl(localAE, remoteAE
-                    , context.getService(), this);
-            BasicCStoreSCUResp storeRsp = cstorescu.cstore(insts, storeas
-                    ,priority);
+            CStoreSCUImpl cstorescu = new CStoreSCUImpl(localAE, remoteAE, context.getService(), this, weightWatcher);
+            BasicCStoreSCUResp storeRsp = cstorescu.cstore(insts, storeas, priority);
 
             storeSCUEvent.select(new ServiceQualifier(context.getService()))
-            .fire(new CStoreSCUResponse(storeRsp, insts,
-                    messageID, localAE.getAETitle(), remoteAE.getAETitle()));
+                    .fire(new CStoreSCUResponse(storeRsp, insts,
+                            messageID, localAE.getAETitle(), remoteAE.getAETitle()));
 
         } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, "Error: "
-                    + e.getMessage());
+            throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
 

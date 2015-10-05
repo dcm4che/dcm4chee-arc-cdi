@@ -44,6 +44,8 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.image.BufferedImageUtils;
 import org.dcm4che3.image.PixelAspectRatio;
+import org.dcm4che3.imageio.codec.ImageParams;
+import org.dcm4che3.imageio.codec.TransferSyntaxType;
 import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
 import org.dcm4che3.imageio.plugins.dcm.DicomMetaData;
 
@@ -59,18 +61,17 @@ import javax.imageio.stream.MemoryCacheImageOutputStream;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * Streams a rendered image (e.g. jpeg/png/gif, including animated GIF sequence).
- * <p>
- * Note: Taken from dcm4chee-arc-light. Do not modify if not really necessary, so that we can merge in bug fixes from
- * dcm4chee-arc-light.
+ * Streams a rendered image (e.g. JPEG/PNG/GIF) or a sequence of rendered images (animated GIF).
  *
  * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  * @since Aug 2015
  */
 public class RenderedImageOutput implements StreamingOutput {
@@ -98,15 +99,17 @@ public class RenderedImageOutput implements StreamingOutput {
 
     @Override
     public void write(OutputStream out) throws IOException, WebApplicationException {
+        // Note: when changing the logic here, please also consider the getEstimatedNeededMemory() method
+
         ImageOutputStream imageOut = null;
         try {
             imageOut = new MemoryCacheImageOutputStream(out);
             writer.setOutput(imageOut);
-            BufferedImage bi = null;
             if (imageIndex < 0) {
                 IIOMetadata metadata = null;
                 int numImages = reader.getNumImages(false);
                 writer.prepareWriteSequence(null);
+                BufferedImage bi = null;
                 for (int i = 0; i < numImages; i++) {
                     readParam.setDestination(bi);
                     bi = reader.read(i, readParam);
@@ -120,9 +123,9 @@ public class RenderedImageOutput implements StreamingOutput {
                 }
                 writer.endWriteSequence();
             } else {
-                bi = reader.read(imageIndex, readParam);
-                BufferedImage adjustedBi = adjust(bi);
-                writer.write(null, new IIOImage(adjustedBi, null, null), writeParam);
+                BufferedImage bi = reader.read(imageIndex, readParam);
+                bi = adjust(bi);
+                writer.write(null, new IIOImage(bi, null, null), writeParam);
             }
         } finally {
             writer.dispose();
@@ -133,9 +136,13 @@ public class RenderedImageOutput implements StreamingOutput {
     }
 
     private float frameTime() throws IOException {
-        DicomMetaData metaData = (DicomMetaData) reader.getStreamMetadata();
+        DicomMetaData metaData = getStreamMetadata();
         Attributes attrs = metaData.getAttributes();
         return attrs.getFloat(Tag.FrameTime, DEF_FRAME_TIME);
+    }
+
+    private DicomMetaData getStreamMetadata() throws IOException {
+        return (DicomMetaData) reader.getStreamMetadata();
     }
 
     private IIOMetadata createAnimatedGIFMetadata(BufferedImage bi, ImageWriteParam param, float frameTime)
@@ -165,26 +172,38 @@ public class RenderedImageOutput implements StreamingOutput {
     }
 
     private BufferedImage rescale(BufferedImage bi) throws IOException {
+        if (!needsRescaling())
+            return bi;
+
+        Point2D.Double scalingFactors = getScalingFactors(bi.getHeight(), bi.getWidth());
+
+        AffineTransformOp op = new AffineTransformOp(
+                AffineTransform.getScaleInstance(scalingFactors.getX(), scalingFactors.getY()),
+                AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+        return op.filter(bi, null);
+    }
+
+    private Point2D.Double getScalingFactors(int origRows, int origColumns) throws IOException {
         int r = rows;
         int c = columns;
         float sy = getPixelAspectRatio();
-        if (r == 0 && c == 0 && sy == 1f)
-            return bi;
 
         float sx = 1f;
         if (r != 0 || c != 0) {
             if (r != 0 && c != 0)
-                if (r * bi.getWidth() > c * bi.getHeight() * sy)
+                if (r * origColumns > c * origRows * sy)
                     r = 0;
                 else
                     c = 0;
-            sx = r != 0 ? r / (bi.getHeight() * sy) : c / (float) bi.getWidth();
+            sx = r != 0 ? r / (origRows * sy) : c / (float) origColumns;
             sy *= sx;
         }
-        AffineTransformOp op = new AffineTransformOp(
-                AffineTransform.getScaleInstance(sx, sy),
-                AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-        return op.filter(bi, null);
+
+        return new Point2D.Double(sx, sy);
+    }
+
+    private boolean needsRescaling() throws IOException {
+        return rows != 0 || columns != 0 || getPixelAspectRatio() != 1f;
     }
 
     private float getPixelAspectRatio() throws IOException {
@@ -194,6 +213,99 @@ public class RenderedImageOutput implements StreamingOutput {
     }
 
     private Attributes getAttributes() throws IOException {
-        return ((DicomMetaData) reader.getStreamMetadata()).getAttributes();
+        return getStreamMetadata().getAttributes();
+    }
+
+    /**
+     * @return (Pessimistic) estimation of the heap memory (in bytes) that will be needed at any moment in time during
+     * decompression, rendering and compression.
+     */
+    public long getEstimatedNeededMemory() throws IOException {
+        DicomMetaData dicomMetaData = getStreamMetadata();
+        Attributes attributes = dicomMetaData.getAttributes();
+        ImageParams imageParams = new ImageParams(attributes);
+
+        long uncompressedFrameLength = imageParams.getFrameLength();
+
+        long memoryNeededForDecompression = 0;
+
+        Attributes fmi = dicomMetaData.getFileMetaInformation();
+        if (fmi != null && TransferSyntaxType.forUID(fmi.getString(Tag.TransferSyntaxUID)) != TransferSyntaxType.NATIVE) {
+            // Memory needed for reading one compressed frame
+            // (For now: pessimistic assumption that same memory as for the uncompressed frame is needed. This very much
+            // depends on the compression algorithm and properties.)
+            // Actually it might be much less, if the decompressor supports streaming in the compressed data.
+            long sourceCompressedFrameLength = uncompressedFrameLength;
+
+            memoryNeededForDecompression += sourceCompressedFrameLength;
+        }
+
+        // size for intermediate un/decompressed buffered image
+        memoryNeededForDecompression += uncompressedFrameLength;
+
+        long memoryNeededForApplyingLUT = 0;
+
+        memoryNeededForApplyingLUT += uncompressedFrameLength;
+
+        long readImageLength;
+
+        // in most cases (if it is a monochrome image) the DicomImageReader will apply a LUT
+        if (imageParams.getPhotometricInterpretation().isMonochrome()) {
+            // the resulting buffered image has one byte per sample (see DicomImageReader.read)
+            long uncompressedFrameAppliedLUTLength = imageParams.getRows() * imageParams.getColumns();
+
+            // Note: in some cases (if it is already 8-bit) the raster of the original uncompressed image will also be
+            // re-used for the version with the applied LUT. This is not (yet) considered here.
+            memoryNeededForApplyingLUT += uncompressedFrameAppliedLUTLength;
+
+            // the final read image is the one is the applied lut
+            readImageLength = uncompressedFrameAppliedLUTLength;
+        } else {
+            readImageLength = uncompressedFrameLength; // no LUT to apply
+        }
+        // Note: additional memory needed for applying overlays is currently not considered
+
+        long memoryNeededForReading = Math.max(memoryNeededForDecompression, memoryNeededForApplyingLUT);
+
+        long memoryNeededForAdjustingAndCompression = 0;
+
+        memoryNeededForAdjustingAndCompression += readImageLength;
+
+        long sizeOfColorAdjustedImage;
+
+        // for color images in some cases a new INT-RGB buffered image is allocated (BufferedImageUtils.convertToIntRGB())
+        boolean needsColorConversion = attributes.getInt(Tag.SamplesPerPixel, 0) == 3;
+        if (needsColorConversion) {
+            sizeOfColorAdjustedImage = imageParams.getRows() * imageParams.getColumns() * 4; // int has 4 bytes
+
+            memoryNeededForAdjustingAndCompression += sizeOfColorAdjustedImage;
+        } else {
+            sizeOfColorAdjustedImage = readImageLength; // no color conversion
+        }
+
+        long rescaledImageSize;
+
+        // rescaling is sometimes required
+        if (needsRescaling()) {
+            Point2D.Double scalingFactors = getScalingFactors(imageParams.getRows(), imageParams.getColumns());
+
+            rescaledImageSize = Math.round(Math.ceil(sizeOfColorAdjustedImage * scalingFactors.getX() * scalingFactors.getY()));
+
+            memoryNeededForAdjustingAndCompression += rescaledImageSize;
+        } else {
+            rescaledImageSize = sizeOfColorAdjustedImage; // no rescaling
+        }
+
+        // memory for a resulting compressed frame
+        // (For now: pessimistic assumption that same memory as for the uncompressed frame is needed. This very much
+        // depends on the compression algorithm and properties.)
+        // Actually it might be much less, if the decompressor supports streaming out the compressed data.
+        long compressedFrameLength = rescaledImageSize;
+
+        memoryNeededForAdjustingAndCompression += compressedFrameLength;
+
+        // reading and adjusting/compression happen sequentially (in between GC can run),
+        // therefore we have to consider the maximum of the two
+        return Math.max(memoryNeededForReading, memoryNeededForAdjustingAndCompression);
     }
 }

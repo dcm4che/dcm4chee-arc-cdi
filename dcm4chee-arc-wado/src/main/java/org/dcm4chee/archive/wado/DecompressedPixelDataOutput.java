@@ -37,43 +37,93 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.wado;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.imageio.codec.Decompressor;
+import org.dcm4chee.archive.task.ImageProcessingTaskTypes;
+import org.dcm4chee.archive.task.MemoryConsumingTask;
+import org.dcm4chee.archive.task.TaskType;
+import org.dcm4chee.archive.task.WeightWatcher;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.StreamingOutput;
-
-import org.dcm4che3.imageio.codec.Decompressor;
-import org.dcm4che3.util.SafeClose;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * Streams decompressed pixel data.
  *
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
 public class DecompressedPixelDataOutput implements StreamingOutput {
 
-    private final Decompressor decompressor;
+    private final Attributes dataset;
+    private final String tsuid;
     private final int frameIndex;
+    private final WeightWatcher weightWatcher;
 
-    public DecompressedPixelDataOutput(Decompressor decompressor, int frameIndex) {
-        this.decompressor = decompressor;
+    public DecompressedPixelDataOutput(Attributes dataset, String tsuid, int frameIndex, WeightWatcher weightWatcher) {
+        this.dataset = dataset;
+        this.tsuid = tsuid;
         this.frameIndex = frameIndex;
+        this.weightWatcher = weightWatcher;
     }
 
     @Override
-    public void write(OutputStream output) throws IOException,
-            WebApplicationException {
-        if (frameIndex == -1)
-            decompressor.writeTo(output);
-        else {
-            ImageInputStream iis = decompressor.createImageInputStream();
-            try {
-                decompressor.writeFrameTo(iis, frameIndex, output);
-            } finally {
-                SafeClose.close(iis);
-            }
+    public void write(OutputStream output) throws IOException, WebApplicationException {
+        try {
+            weightWatcher.execute(new WriteDecompressedPixelDataTask(dataset, tsuid, frameIndex, output));
+        } catch (Exception e) {
+            if (e instanceof IOException)
+                throw (IOException) e;
+            else if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            else
+                throw new RuntimeException(e); // should not happen
         }
     }
 
+    private static class WriteDecompressedPixelDataTask implements MemoryConsumingTask<Void> {
+        private final int frameIndex;
+        private OutputStream output;
+        private Decompressor decompressor;
+
+        public WriteDecompressedPixelDataTask(Attributes dataset, String tsuid, int frameIndex, OutputStream output) {
+            this.frameIndex = frameIndex;
+            this.output = output;
+
+            decompressor = new Decompressor(dataset, tsuid);
+        }
+
+        @Override
+        public TaskType getTaskType() {
+            return ImageProcessingTaskTypes.TRANSCODE_OUTGOING;
+        }
+
+        @Override
+        public long getEstimatedWeight() {
+            return decompressor.getEstimatedNeededMemory();
+        }
+
+        public Void call() throws IOException {
+            try {
+                if (frameIndex == -1) {
+                    // all frames
+                    decompressor.writeTo(output);
+                } else {
+                    // a specific frame
+                    try (ImageInputStream iis = decompressor.createImageInputStream()) {
+                        decompressor.writeFrameTo(iis, frameIndex, output);
+                    }
+                }
+            } finally {
+                decompressor.dispose();
+
+                // remove reference to decompressor, to be able to free the memory
+                decompressor = null;
+            }
+            return null;
+        }
+    }
 }

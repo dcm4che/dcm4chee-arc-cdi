@@ -37,22 +37,22 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.wado;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Iterator;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.StreamingOutput;
-
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Fragments;
 import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.StreamUtils;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Iterator;
+
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * Streams compressed pixel data.
  *
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  */
 public class CompressedPixelDataOutput implements StreamingOutput {
 

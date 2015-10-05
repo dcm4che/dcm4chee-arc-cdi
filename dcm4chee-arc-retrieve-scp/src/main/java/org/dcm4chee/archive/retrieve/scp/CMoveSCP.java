@@ -84,6 +84,7 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.dcm4chee.archive.store.scu.impl.CStoreSCUImpl;
+import org.dcm4chee.archive.task.WeightWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,6 +111,9 @@ public class CMoveSCP extends BasicCMoveSCP {
     
     @Inject
     private Event<RetrieveAfterSendEvent> retrieveAfterEvent;
+
+    @Inject
+    private WeightWatcher weightWatcher;
     
     public CMoveSCP(String sopClass, String... qrLevels) {
         super(sopClass);
@@ -162,7 +166,7 @@ public class CMoveSCP extends BasicCMoveSCP {
                 return null;
             
             CStoreSCU<ArchiveInstanceLocator> cstorescu = new CStoreSCUImpl (
-                    ae, destAE, ServiceType.MOVESERVICE, storescuService);
+                    ae, destAE, ServiceType.MOVESERVICE, storescuService, weightWatcher);
             AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), dest, matches);
             Association storeas = openStoreAssociation(as, destAE, aarq);
             BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = 

@@ -387,8 +387,7 @@ public class FetchForwardServiceImpl implements FetchForwardService {
         ApplicationEntity localAE = device.getApplicationEntity(storeas.getLocalAET());
         for(int current = 0; current < externallyAvailable.size(); current++) {
             if(storeas.isReadyForDataTransfer()) {
-            final ArchiveInstanceLocator externalLoc = externallyAvailable
-                    .get(current);
+            final ArchiveInstanceLocator externalLoc = externallyAvailable.get(current);
             
             if(sentInstances.contains(externalLoc.iuid))
                 continue;
@@ -414,8 +413,7 @@ public class FetchForwardServiceImpl implements FetchForwardService {
                             @Override
                             public void onInstanceAvailable(
                                     ArchiveInstanceLocator inst) {
-                                ArrayList<ArchiveInstanceLocator> matches
-                                = new ArrayList<ArchiveInstanceLocator>();
+                                ArrayList<ArchiveInstanceLocator> matches = new ArrayList<ArchiveInstanceLocator>();
                                 matches.add(inst);
                                 wadoFetchCallBack.onFetch(matches, finalResponse);
                             }
@@ -451,9 +449,9 @@ public class FetchForwardServiceImpl implements FetchForwardService {
                     }
                     //send fetched instances
                     moveFetchCallBack.onFetch(updatedLocators, finalResponse);
-                    
-                    for(ArchiveInstanceLocator loc : updatedLocators)
-                    sentInstances.add(loc.iuid);
+
+                    for (ArchiveInstanceLocator loc : updatedLocators)
+                        sentInstances.add(loc.iuid);
                     break;
                 }
             }

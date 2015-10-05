@@ -37,33 +37,12 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.wado;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
-
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Fragments;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
-import org.dcm4che3.imageio.codec.Decompressor;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
@@ -85,11 +64,43 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.task.WeightWatcher;
 import org.jboss.resteasy.plugins.providers.multipart.ContentIDUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.jboss.resteasy.plugins.providers.multipart.OutputPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Service implementing DICOM Supplement 161: WADO by RESTful Services
@@ -110,6 +121,9 @@ public class WadoRS extends Wado {
 
     @Inject
     private FetchForwardService fetchForwardService;
+
+    @Inject
+    private WeightWatcher weightWatcher;
 
     private static final int STATUS_OK = 200;
     private static final int STATUS_PARTIAL_CONTENT = 206;
@@ -573,7 +587,7 @@ public class WadoRS extends Wado {
         for (ArchiveInstanceLocator ref : refs) {
             try{
             output.addEntry(new DicomObjectOutput(ref, (Attributes) ref
-                    .getObject(), ref.tsuid, context, storescuService));
+                    .getObject(), ref.tsuid, context, storescuService, weightWatcher));
             instscompleted.add(ref);
             }
             catch(Exception e) {
@@ -729,7 +743,7 @@ public class WadoRS extends Wado {
         }
         Attributes attrs = (Attributes) ref.getObject();
         addPart(output,
-                new DicomObjectOutput(ref, attrs, tsuid, context, storescuService),
+                new DicomObjectOutput(ref, attrs, tsuid, context, storescuService, weightWatcher),
                 MediaType.valueOf("application/dicom;transfer-syntax=" + tsuid),
                 null, ref.iuid);
         return true;
@@ -776,9 +790,7 @@ public class WadoRS extends Wado {
             if (pixeldata instanceof Fragments) {
                 Fragments bulkData = (Fragments) pixeldata;
                 if (mediaType == MediaType.APPLICATION_OCTET_STREAM_TYPE) {
-                    addDecompressedPixelDataTo(
-                            new Decompressor(ds, dis.getTransferSyntax()),
-                            adjustedFrameList, output, bulkDataURI, iuid);
+                    addDecompressedPixelDataTo(ds, dis.getTransferSyntax(), adjustedFrameList, output, bulkDataURI, iuid);
                 } else {
                     addCompressedPixelDataTo(bulkData, frames,
                             adjustedFrameList, output, mediaType, bulkDataURI,
@@ -830,17 +842,16 @@ public class WadoRS extends Wado {
         }
     }
 
-    private void addDecompressedPixelDataTo(Decompressor decompressor,
+    private void addDecompressedPixelDataTo(Attributes dataset, String tsuid,
             int[] frameList, MultipartRelatedOutput output, String bulkDataURI,
             String iuid) {
         if (frameList.length == 0) {
-            addPart(output, new DecompressedPixelDataOutput(decompressor, -1),
+            addPart(output, new DecompressedPixelDataOutput(dataset, tsuid, -1, weightWatcher),
                     MediaType.APPLICATION_OCTET_STREAM_TYPE, bulkDataURI, iuid);
         } else
             for (int frame : frameList) {
-                addPart(output, new DecompressedPixelDataOutput(decompressor,
-                        frame - 1), MediaType.APPLICATION_OCTET_STREAM_TYPE,
-                        bulkDataURI + "/frames/" + frame, iuid);
+                addPart(output, new DecompressedPixelDataOutput(dataset, tsuid, frame - 1, weightWatcher),
+                        MediaType.APPLICATION_OCTET_STREAM_TYPE, bulkDataURI + "/frames/" + frame, iuid);
             }
     }
 

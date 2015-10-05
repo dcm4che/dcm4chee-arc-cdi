@@ -63,6 +63,10 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.task.ImageProcessingTaskTypes;
+import org.dcm4chee.archive.task.MemoryConsumingTask;
+import org.dcm4chee.archive.task.TaskType;
+import org.dcm4chee.archive.task.WeightWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -124,6 +128,9 @@ public class WadoURI extends Wado {
 
     @Inject
     private HostAECache hostAECache;
+
+    @Inject
+    private WeightWatcher weightWatcher;
 
     private CStoreSCUContext context;
 
@@ -503,7 +510,7 @@ public class WadoURI extends Wado {
         String tsuid = selectTransferSyntax(ref.tsuid);
         MediaType mediaType = MediaType
                 .valueOf("application/dicom;transfer-syntax=" + tsuid);
-        return Response.ok(new DicomObjectOutput(ref, attrs, tsuid, context, storescuService), mediaType)
+        return Response.ok(new DicomObjectOutput(ref, attrs, tsuid, context, storescuService, weightWatcher), mediaType)
                 .build();
     }
 
@@ -576,7 +583,6 @@ public class WadoURI extends Wado {
 
             RenderedImageOutput renderedImageOutput = new RenderedImageOutput(reader, param, rows, columns, frameNumberZeroBased, imageWriter, imageWriteParam);
 
-            // wrap, just so we are able to close iis again
             StreamingOutputWrapper wrapper = new StreamingOutputWrapper(renderedImageOutput, iis);
 
             // make sure the stream/reader/writer is not closed early, but later on when doing the streaming
@@ -620,23 +626,65 @@ public class WadoURI extends Wado {
         return iis;
     }
 
-    private static class StreamingOutputWrapper implements StreamingOutput {
+    private class StreamingOutputWrapper implements StreamingOutput {
 
-        private final StreamingOutput otherStreamingOutput;
+        private final RenderedImageOutput renderedImageOutput;
         private final ImageInputStream inputStream;
 
-        public StreamingOutputWrapper(StreamingOutput otherStreamingOutput, ImageInputStream inputStream) {
-            this.otherStreamingOutput = otherStreamingOutput;
+        public StreamingOutputWrapper(RenderedImageOutput renderedImageOutput, ImageInputStream inputStream) {
+            this.renderedImageOutput = renderedImageOutput;
             this.inputStream = inputStream;
         }
 
         @Override
-        public void write(OutputStream output) throws IOException, WebApplicationException {
+        public void write(OutputStream output) throws IOException {
+            // we wrap the RenderedImageOutput for two reasons:
+            // 1) we need to close the input stream in a finally
+            // 2) we want to run it through the WeightWatcher
+
             try {
-                otherStreamingOutput.write(output);
+                weightWatcher.execute(new RenditionTask(renderedImageOutput, output));
+            } catch (Exception e) {
+                if (e instanceof IOException)
+                    throw (IOException) e;
+                else if (e instanceof RuntimeException)
+                    throw (RuntimeException) e;
+                else
+                    throw new RuntimeException(e); // should not happen
             } finally {
                 inputStream.close();
             }
+        }
+    }
+
+    private static class RenditionTask implements MemoryConsumingTask<Void> {
+        private final RenderedImageOutput renderedImageOutput;
+        private final OutputStream output;
+
+        public RenditionTask(RenderedImageOutput renderedImageOutput, OutputStream output) {
+            this.renderedImageOutput = renderedImageOutput;
+            this.output = output;
+        }
+
+        @Override
+        public TaskType getTaskType() {
+            return ImageProcessingTaskTypes.TRANSCODE_OUTGOING;
+        }
+
+        @Override
+        public long getEstimatedWeight() {
+            try {
+                return renderedImageOutput.getEstimatedNeededMemory();
+            } catch (IOException e) {
+                // shouldn't happen in this case, as the dicom stream metadata was already read before
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public Void call() throws IOException {
+            renderedImageOutput.write(output);
+            return null;
         }
     }
 

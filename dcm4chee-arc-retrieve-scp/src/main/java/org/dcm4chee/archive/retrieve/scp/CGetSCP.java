@@ -75,6 +75,7 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.dcm4chee.archive.store.scu.impl.CStoreSCUImpl;
+import org.dcm4chee.archive.task.WeightWatcher;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -99,6 +100,9 @@ public class CGetSCP extends BasicCGetSCP {
 
     @Inject
     private IApplicationEntityCache aeCache;
+
+    @Inject
+    private WeightWatcher weightWatcher;
 
     public CGetSCP(String sopClass, String... qrLevels) {
         super(sopClass);
@@ -137,7 +141,7 @@ public class CGetSCP extends BasicCGetSCP {
                 return null;
 
             CStoreSCU<ArchiveInstanceLocator> cstorescu = new CStoreSCUImpl(ae,
-                    remoteAE, ServiceType.GETSERVICE, storescuService);
+                    remoteAE, ServiceType.GETSERVICE, storescuService, weightWatcher);
             BasicRetrieveTask<ArchiveInstanceLocator> retrieveTask = new 
                     BasicRetrieveTask<ArchiveInstanceLocator>(
                     Dimse.C_GET_RQ, as, pc, rq, matches, as, cstorescu);
