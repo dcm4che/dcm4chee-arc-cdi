@@ -37,22 +37,8 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.impl;
 
-import java.io.File;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.enterprise.event.Event;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-
-import org.dcm4che3.conf.core.api.ConfigChangeEvent;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
+import org.dcm4che3.conf.core.api.InternalConfigChangeEvent;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.hl7.service.HL7Service;
@@ -71,9 +57,21 @@ import org.dcm4chee.archive.event.StartStopReloadEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.enterprise.event.Event;
+import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
+import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
  */
 @Singleton
 @Startup
@@ -207,7 +205,7 @@ public class ArchiveServiceImpl implements ArchiveService {
     }
 
     @Override
-    public void onConfigChange(@Observes ConfigChangeEvent configChange) {
+    public void onConfigChange(@Observes InternalConfigChangeEvent configChange) {
         try {
             reload(null);
         } catch (Exception e) {

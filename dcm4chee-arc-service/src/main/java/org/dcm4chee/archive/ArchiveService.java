@@ -37,13 +37,13 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive;
 
-import org.dcm4che3.conf.core.api.ConfigChangeEvent;
+import org.dcm4che3.conf.core.api.InternalConfigChangeEvent;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.dto.Participant;
+
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
- *
  */
 public interface ArchiveService {
 
@@ -56,7 +56,7 @@ public interface ArchiveService {
     void start(Participant source) throws Exception;
 
     void stop(Participant source);
-    
-    void onConfigChange(ConfigChangeEvent configChange);
+
+    void onConfigChange(InternalConfigChangeEvent configChange);
     
 }
