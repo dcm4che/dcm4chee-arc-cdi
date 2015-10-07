@@ -38,12 +38,6 @@
 
 package org.dcm4chee.archive.retrieve.scp;
 
-import java.util.EnumSet;
-import java.util.List;
-
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;
@@ -75,7 +69,12 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.retrieve.impl.RetrieveBeforeSendEvent;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.dcm4chee.archive.store.scu.impl.CStoreSCUImpl;
-import org.dcm4chee.archive.task.WeightWatcher;
+import org.dcm4chee.task.WeightWatcher;
+
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import java.util.EnumSet;
+import java.util.List;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>

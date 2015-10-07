@@ -50,10 +50,10 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
-import org.dcm4chee.archive.task.WeightWatcher;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.service.StorageService;
+import org.dcm4chee.task.WeightWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +81,9 @@ public class StoreServiceCompressDecorator extends DelegatingStoreService {
         // if possible, compress the file, store on file system and
         // update store context. Otherwise call the standard processFile.
         StorageContext bulkdataContext = compress(context);
-        if (bulkdataContext == null) { // compression wasn't needed/failed
+
+        // compression wasn't needed/failed -> standard processFile
+        if (bulkdataContext == null) {
             bulkdataContext = getNextDecorator().processFile(context);
         }
 

@@ -50,10 +50,10 @@ import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUService;
-import org.dcm4chee.archive.task.ImageProcessingTaskTypes;
-import org.dcm4chee.archive.task.MemoryConsumingTask;
-import org.dcm4chee.archive.task.TaskType;
-import org.dcm4chee.archive.task.WeightWatcher;
+import org.dcm4chee.task.ImageProcessingTaskTypes;
+import org.dcm4chee.task.MemoryConsumingTask;
+import org.dcm4chee.task.TaskType;
+import org.dcm4chee.task.WeightWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

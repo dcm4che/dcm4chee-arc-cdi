@@ -39,10 +39,10 @@ package org.dcm4chee.archive.wado;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.imageio.codec.Decompressor;
-import org.dcm4chee.archive.task.ImageProcessingTaskTypes;
-import org.dcm4chee.archive.task.MemoryConsumingTask;
-import org.dcm4chee.archive.task.TaskType;
-import org.dcm4chee.archive.task.WeightWatcher;
+import org.dcm4chee.task.ImageProcessingTaskTypes;
+import org.dcm4chee.task.MemoryConsumingTask;
+import org.dcm4chee.task.TaskType;
+import org.dcm4chee.task.WeightWatcher;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.ws.rs.WebApplicationException;

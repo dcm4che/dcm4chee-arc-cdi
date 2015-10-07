@@ -38,11 +38,6 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.util.*;
-
-import javax.xml.transform.Templates;
-import javax.xml.transform.TransformerConfigurationException;
-
 import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
@@ -53,6 +48,17 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.DeviceExtension;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.StringUtils;
+
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerConfigurationException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 /**
@@ -211,7 +217,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     		description="List of Application Entities which will not get a C-STORE rejected, if a Series/Study mismatch is detected",
     		collectionOfReferences=true)
     private Collection<ApplicationEntity> ignoreSeriesStudyMissmatchErrorsAETs = new ArrayList<ApplicationEntity>();
-    
+
+    @ConfigurableProperty
+    private WeightWatcherConfiguration weightWatcherConfiguration = new WeightWatcherConfiguration();
 
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
@@ -714,5 +722,12 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 	public boolean removeIgnoreSeriesStudyMissmatchErrorsAET(ApplicationEntity ae) {
 		return this.ignoreSeriesStudyMissmatchErrorsAETs.remove(ae);
 	}
-	
+
+    public WeightWatcherConfiguration getWeightWatcherConfiguration() {
+        return weightWatcherConfiguration;
+    }
+
+    public void setWeightWatcherConfiguration(WeightWatcherConfiguration weightWatcherConfiguration) {
+        this.weightWatcherConfiguration = weightWatcherConfiguration;
+    }
 }

@@ -52,13 +52,13 @@ import org.dcm4che3.util.SafeClose;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.archive.task.ImageProcessingTaskTypes;
-import org.dcm4chee.archive.task.MemoryConsumingTask;
-import org.dcm4chee.archive.task.TaskType;
 import org.dcm4chee.storage.ObjectAlreadyExistsException;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.service.StorageService;
+import org.dcm4chee.task.ImageProcessingTaskTypes;
+import org.dcm4chee.task.MemoryConsumingTask;
+import org.dcm4chee.task.TaskType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
