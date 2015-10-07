@@ -48,12 +48,6 @@
           "decoratorClassName": "org.dcm4chee.archive.mima.impl.StoreSCUServiceMIMADecorator"
         }
       ]
-    }, "org.dcm4chee.archive.mpps.MPPSService": {
-      "decorators": [
-        {
-          "decoratorClassName": "org.dcm4chee.archive.mima.impl.MPPSServiceMIMADecorator"
-        }
-      ]
     }, "org.dcm4chee.archive.query.DerivedStudyFields": {
       "decorators": [
         {

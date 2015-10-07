@@ -45,6 +45,7 @@ import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.mpps.MPPSContext;
+import org.dcm4chee.archive.mpps.MPPSHook;
 import org.dcm4chee.archive.mpps.decorators.DelegatingMPPSService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 
@@ -52,32 +53,29 @@ import javax.inject.Inject;
 
 /**
  * Decorator to apply MIMA specifications to the MPPS Service.
- * In case of MPPS, we apply a Configurable Mapping to 
- * Default Assigning Authorities, supplementing (when available) 
+ * In case of MPPS, we apply a Configurable Mapping to
+ * Default Assigning Authorities, supplementing (when available)
  * Issuer information into the dataset.
- * 
- * @author Gunter Zeilinger <gunterze@gmail.com>
  *
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Roman K
  */
-@DynamicDecorator
-public class MPPSServiceMIMADecorator extends DelegatingMPPSService {
+public class MIMASupplementMPPSHook extends MPPSHook {
 
     @Inject
     private IApplicationEntityCache aeCache;
 
     @Override
-    public void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs)
-            throws DicomServiceException {
-        getNextDecorator().coerceAttributes(context, dimse, attrs);
-        if (dimse == Dimse.N_CREATE_RQ)
-        try {
-            ApplicationEntity remoteAE = aeCache.get(context.getSendingAET());
-            if (remoteAE != null) {
-                Supplements.supplementMPPS(context, attrs, remoteAE.getDevice());
+    public void coerceAttributes(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        if (context.getDimse() == Dimse.N_CREATE_RQ)
+            try {
+                ApplicationEntity remoteAE = aeCache.get(context.getSendingAET());
+                if (remoteAE != null)
+                    Supplements.supplementMPPS(context, attributes, remoteAE.getDevice());
+
+            } catch (Exception e) {
+                throw new DicomServiceException(Status.ProcessingFailure, e);
             }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.ProcessingFailure, e);
-        }
-   }
+    }
 
 }
