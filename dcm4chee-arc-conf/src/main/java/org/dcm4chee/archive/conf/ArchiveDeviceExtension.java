@@ -45,6 +45,7 @@ import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.io.TemplatesCache;
 import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.DeviceExtension;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.StringUtils;
@@ -175,9 +176,6 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     @ConfigurableProperty(name = "dcmFetchAETitle")
     private String fetchAETitle = "DCM4CHEE_FETCH";
-
-    @ConfigurableProperty(name = "dcmDefaultAETitle")
-    private String defaultAETitle = "DCM4CHEE";
 
     @ConfigurableProperty(name = "dcmPriorsCacheMaxResolvedPathEntries", defaultValue = "100")
     private int priorsCacheMaxResolvedPathEntries = 100;
@@ -563,12 +561,12 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         return privateDerivedFields.remove(tag);
     }
 
+    /**
+     * The property was moved to device level and converted to AE reference. Please access it directly through {@link Device#getDefaultAE()}
+     */
+    @Deprecated
     public String getDefaultAETitle() {
-        return defaultAETitle;
-    }
-
-    public void setDefaultAETitle(String defaultAETitle) {
-        this.defaultAETitle = defaultAETitle;
+        return getDevice().getDefaultAE() == null ? "" : getDevice().getDefaultAE().getAETitle();
     }
 
     public int getPriorsCacheMaxResolvedPathEntries() {
