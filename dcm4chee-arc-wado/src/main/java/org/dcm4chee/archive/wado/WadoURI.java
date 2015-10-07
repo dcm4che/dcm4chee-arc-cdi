@@ -101,6 +101,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -736,8 +737,8 @@ public class WadoURI extends Wado {
     }
 
     /**
-     * Returns the media type specified in the contentType request parameter if
-     * supported, otherwise returns the first of the supported media types.
+     * Returns the first media type that is supported and compatible with the contentType
+     * request parameter. If none is compatible an exception is thrown.
      */
     private MediaType selectMediaType(String transferSyntaxUID,
             String sopClassUID, Attributes attrs) {
@@ -745,12 +746,15 @@ public class WadoURI extends Wado {
         List<MediaType> supportedMediaTypes = supportedMediaTypesOf(
                 transferSyntaxUID, sopClassUID, attrs);
 
-        if (contentType != null)
+        if (contentType != null) {
             for (MediaType requestedType : contentType.values)
                 for (MediaType supportedType : supportedMediaTypes)
                     if (requestedType.isCompatible(supportedType))
                         return supportedType;
-        return supportedMediaTypes.get(0);
+            throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+        } else {
+            return supportedMediaTypes.get(0);
+        }
     }
 
     public List<MediaType> supportedMediaTypesOf(String transferSyntaxUID,
@@ -759,26 +763,20 @@ public class WadoURI extends Wado {
         if (attrs.contains(Tag.BitsAllocated)) {
             if (attrs.getInt(Tag.NumberOfFrames, 1) > 1) {
                 list.add(MediaTypes.APPLICATION_DICOM_TYPE);
-                MediaType mediaType;
                 if (UID.MPEG2.equals(transferSyntaxUID)
                         || UID.MPEG2MainProfileHighLevel
                                 .equals(transferSyntaxUID))
-                    mediaType = MediaTypes.VIDEO_MPEG_TYPE;
+                    list.add(MediaTypes.VIDEO_MPEG_TYPE);
                 else if (UID.MPEG4AVCH264HighProfileLevel41
                         .equals(transferSyntaxUID)
                         || UID.MPEG4AVCH264BDCompatibleHighProfileLevel41
                                 .equals(transferSyntaxUID))
-                    mediaType = MediaTypes.VIDEO_MP4_TYPE;
+                    list.add(MediaTypes.VIDEO_MP4_TYPE);
                 else{
-                    mediaType = MediaTypes.IMAGE_JPEG_TYPE;
-                    list.add(mediaType);
-                    mediaType = MediaTypes.IMAGE_GIF_TYPE;
+                    list.addAll(getRenderedImageMediaTypes());
                 }
-                list.add(mediaType);
             } else {
-                list.add(MediaTypes.IMAGE_JPEG_TYPE);
-                list.add(MediaTypes.IMAGE_GIF_TYPE);
-                list.add(MediaTypes.IMAGE_PNG_TYPE);
+                list.addAll(getRenderedImageMediaTypes());
                 list.add(MediaTypes.APPLICATION_DICOM_TYPE);
             }
         } else if (isSupportedSR(sopClassUID)) {
@@ -792,12 +790,18 @@ public class WadoURI extends Wado {
             else if (UID.EncapsulatedCDAStorage.equals(sopClassUID))
                 list.add(MediaType.TEXT_XML_TYPE);
             else{
-                MediaType mimeType = MediaType.valueOf(attrs.getString(Tag.MIMETypeOfEncapsulatedDocument));
-                if(mimeType !=null)
-                list.add(mimeType);
+                String encapsulatedMimeType = attrs.getString(Tag.MIMETypeOfEncapsulatedDocument);
+                if (encapsulatedMimeType != null) {
+                    MediaType mimeType = MediaType.valueOf(encapsulatedMimeType);
+                    list.add(mimeType);
+                }
             }
         }
         return list;
+    }
+
+    public List<MediaType> getRenderedImageMediaTypes() {
+        return Arrays.asList(MediaTypes.IMAGE_JPEG_TYPE, MediaTypes.IMAGE_GIF_TYPE, MediaTypes.IMAGE_PNG_TYPE);
     }
 
 }
