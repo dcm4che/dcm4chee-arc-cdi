@@ -41,8 +41,10 @@ package org.dcm4chee.archive.fetch.forward.impl;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -54,22 +56,27 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Association;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.ExternalArchiveAEExtension;
+import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.web.WebServiceAEExtension;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.ExternalLocationTuple;
 import org.dcm4chee.archive.fetch.forward.FetchForwardCallBack;
 import org.dcm4chee.archive.fetch.forward.FetchForwardEJB;
 import org.dcm4chee.archive.fetch.forward.FetchForwardService;
+import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.retrieve.scu.CMoveSCUService;
 import org.dcm4chee.archive.wado.client.InstanceAvailableCallback;
 import org.dcm4chee.archive.wado.client.WadoClientService;
@@ -86,6 +93,12 @@ public class FetchForwardServiceImpl implements FetchForwardService {
     private static final Logger LOG  = LoggerFactory.getLogger(FetchForwardServiceImpl.class);
     @Inject
     private CMoveSCUService cmoveSCUService;
+
+    @Inject
+    private RetrieveService retrieveService;
+
+    @Inject
+    private IApplicationEntityCache aeCache;
 
     @Inject
     private Device device;
@@ -463,6 +476,90 @@ public class FetchForwardServiceImpl implements FetchForwardService {
         return finalResponse;
     }
 
+    @Override
+    public List<ArchiveInstanceLocator> fetchForwardFromExternalSystem(
+            String localAETitle, String srcAETitle, List<String> studyUIDs,
+            FetchForwardCallBack callBack) {
+        ApplicationEntity localAE = device.getApplicationEntity(localAETitle);
+        ApplicationEntity fetchAE;
+        try {
+            fetchAE = getFetchAE(localAE);
+        } catch (ConfigurationException e) {
+            LOG.error("Unable to get fetch AE from configuration for device {}", device);
+            return null;
+        }
+        ApplicationEntity srcAE;
+        try {
+            srcAE = aeCache.findApplicationEntity(srcAETitle);
+        } catch (ConfigurationException e) {
+            LOG.error("Unable to find source AE {} in configuration", srcAETitle);
+            return null;
+        }
+
+        for (String studyUID : studyUIDs) {
+            cmoveSCUService.moveStudy(
+                    fetchAE,
+                    studyUID,
+                    -1,
+                    null,
+                    Arrays.asList(srcAE),
+                    fetchAE.getAETitle());
+        }
+        List<ArchiveInstanceLocator> instanceLocators = toInstanceLocators(studyUIDs, localAE);
+        //send fetched instances
+        callBack.onFetch(instanceLocators, null);
+
+        return instanceLocators;
+    }
+
+    @Override
+    public BasicCStoreSCUResp fetchForwardFromExternalSystem(int allInstances,
+            BasicCStoreSCUResp finalResponse, List<String> studyUIDs,
+            Association storeas, int priority, FetchForwardCallBack callBack) {
+        ApplicationEntity localAE = device.getApplicationEntity(storeas.getLocalAET());
+        ApplicationEntity fetchAE;
+        try {
+            fetchAE = getFetchAE(localAE);
+        } catch (ConfigurationException e) {
+            LOG.error("Unable to get fetchAE from configuration for device {}", device);
+            return finalResponse;
+        }
+        ApplicationEntity srcAE;
+        try {
+            srcAE = aeCache.findApplicationEntity(storeas.getCalledAET());
+        } catch (ConfigurationException e) {
+            LOG.error("Unable to find src AE {} in configuration", storeas.getCalledAET());
+            return null;
+        }
+
+        for (String studyUID : studyUIDs) {
+            cmoveSCUService.moveStudy(
+                    fetchAE,
+                    studyUID,
+                    -1,
+                    null,
+                    Arrays.asList(srcAE),
+                    fetchAE.getAETitle());
+        }
+        List<ArchiveInstanceLocator> instanceLocators = toInstanceLocators(studyUIDs, localAE);
+        //send fetched instances
+        callBack.onFetch(instanceLocators, finalResponse);
+
+        return finalResponse;
+    }
+
+    private List<ArchiveInstanceLocator> toInstanceLocators(
+            List<String> studyUIDs, ApplicationEntity localAE) {
+        ArchiveAEExtension arcAE = localAE.getAEExtension(ArchiveAEExtension.class);
+        ArrayList<ArchiveInstanceLocator> matches = new ArrayList<>();
+        QueryParam queryParam = arcAE.getQueryParam(EnumSet.noneOf(QueryOption.class), new String[0]);
+        if (studyUIDs != null) {
+            for (String studyUID : studyUIDs) {
+                matches.addAll(retrieveService.calculateMatches(studyUID, null, null, queryParam, false));
+            }
+        }
+        return matches;
+    }
 
     private ApplicationEntity getFetchAE(ApplicationEntity localAE) throws ConfigurationException {
         return localAE
