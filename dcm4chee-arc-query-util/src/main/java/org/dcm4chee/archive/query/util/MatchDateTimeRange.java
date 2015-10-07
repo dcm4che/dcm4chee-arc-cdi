@@ -58,13 +58,13 @@ import com.mysema.query.types.path.StringPath;
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-class MatchDateTimeRange {
+public class MatchDateTimeRange {
     
     static enum ComparisonOperator {
         GT, GE, EQ, LT, LTE;
     }
     
-    static enum FormatDate {
+    public static enum FormatDate {
         DA {
             @Override
             String format(Date date) {
