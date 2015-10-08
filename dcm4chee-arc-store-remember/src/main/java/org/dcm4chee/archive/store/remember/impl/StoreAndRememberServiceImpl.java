@@ -42,10 +42,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
+import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
+import javax.jms.Queue;
+import javax.jms.Session;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
@@ -108,6 +116,12 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
     
     @Inject
     private Event<StoreAndRememberResponse> storeRememberResponse;
+    
+    @Resource(mappedName = "java:/ConnectionFactory")
+    private ConnectionFactory connFactory;
+
+    @Resource(mappedName = "java:/queue/storeremember")
+    private Queue storeAndRememberQueue;
    
     public void storeAndRemember(StoreAndRememberContext ctx) {
         ApplicationEntity remoteAE = getRemoteAE(ctx);
@@ -250,7 +264,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
                         .retries(retriesLeft -1);
                 StoreAndRememberContext retryContext = storeRememberEJB.augmentStoreAndRememberContext(storeAndRememberTxUID, ctxBuilder)
                         .build();
-                storeRememberEJB.scheduleStoreAndRemember(retryContext);
+                scheduleStoreAndRemember(retryContext);
             } else {
                 // send 'failed' response
                 storeRememberResponse.fire(new StoreAndRememberResponse(storeAndRememberTxUID, verifiedSopInstances));
@@ -277,7 +291,24 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
     
     @Override
     public void scheduleStoreAndRemember(StoreAndRememberContext ctx) {
-        storeRememberEJB.scheduleStoreAndRemember(ctx);
+        try {
+            Connection conn = connFactory.createConnection();
+            try {
+                Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                MessageProducer producer = session.createProducer(storeAndRememberQueue);
+                ObjectMessage msg = session.createObjectMessage(ctx);
+                long delay = ctx.getDelay();
+                if (delay > 0) {
+                    msg.setLongProperty("_HQ_SCHED_DELIVERY", System.currentTimeMillis() + delay);
+                }
+                msg.setJMSCorrelationID(ctx.getTransactionUID());
+                producer.send(msg);
+            } finally {
+                conn.close();
+            }
+        } catch (JMSException e) {
+            throw new RuntimeException("Error while scheduling archiving JMS message", e);
+        }
     }
 
     public class StoreAndRememberContextBuilderImpl implements StoreAndRememberContextBuilder {
@@ -286,6 +317,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         private String studyIUID;
         private String seriesIUID;
         
+        @Override
         public StoreAndRememberContextBuilderImpl transactionUID(String txUID) {
             cxt.setTransactionUID(txUID);
             return this;
