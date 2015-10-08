@@ -47,6 +47,8 @@ import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCO
  */
 public interface StoreAndRememberContextBuilder {
     
+    StoreAndRememberContextBuilder transactionUID(String txUID);
+    
     StoreAndRememberContextBuilder instances(String... instances);
     
     StoreAndRememberContextBuilder seriesUID(String seriesIUID);

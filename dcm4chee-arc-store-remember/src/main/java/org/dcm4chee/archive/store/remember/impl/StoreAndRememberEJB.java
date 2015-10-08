@@ -41,15 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.annotation.Resource;
 import javax.ejb.Stateless;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.Session;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
@@ -74,12 +66,6 @@ public class StoreAndRememberEJB {
     @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
     
-    @Resource(mappedName = "java:/ConnectionFactory")
-    private ConnectionFactory connFactory;
-
-    @Resource(mappedName = "java:/queue/storeremember")
-    private Queue storeAndRememberQueue;
-
     public StoreAndRememberContextBuilder augmentStoreAndRememberContext(String txUID, StoreAndRememberContextBuilder ctxBuilder) {
         List<StoreAndRemember> srs = getStoreRememberTxByUID(txUID);
         
@@ -130,26 +116,6 @@ public class StoreAndRememberEJB {
         return sopInstanceUIDs.toArray(new String[sopInstanceUIDs.size()]);
     }
     
-    public void scheduleStoreAndRemember(StoreAndRememberContext ctx) {
-        try {
-            Connection conn = connFactory.createConnection();
-            try {
-                Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                MessageProducer producer = session.createProducer(storeAndRememberQueue);
-                ObjectMessage msg = session.createObjectMessage(ctx);
-                long delay = ctx.getDelay();
-                if (delay > 0) {
-                    msg.setLongProperty("_HQ_SCHED_DELIVERY", System.currentTimeMillis() + delay);
-                }
-                producer.send(msg);
-            } finally {
-                conn.close();
-            }
-        } catch (JMSException e) {
-            throw new RuntimeException("Error while scheduling archiving JMS message", e);
-        }
-    }
-
     private List<StoreAndRemember> getStoreRememberTxByUID(String txUID) {
         TypedQuery<StoreAndRemember> query  = em.createNamedQuery(StoreAndRemember.GET_STORE_REMEMBER_BY_UID, StoreAndRemember.class);
         query.setParameter(1, txUID);
