@@ -119,9 +119,7 @@ public class WeightWatcherImpl implements WeightWatcher {
             // if the task says that it doesn't need any memory, we do not apply any limits (also no concurrency limits)
             // this is to simplify code where the task decides that it does not actually need to consume a lot of memory
             // in a particular case (e.g. rendition not required, because rendered image loaded from cache)
-
-            LOG.info(formatLogMessage("Bypassing", task, estimatedNeededMemory));
-
+            LOG.info("Bypassing zero memory task {}", getTaskLogId(task));
             return runTask(task);
         }
 
@@ -211,7 +209,8 @@ public class WeightWatcherImpl implements WeightWatcher {
     }
 
     private <V> String formatLogMessage(String msg, MemoryConsumingTask<V> task, long estimatedNeededMemory) {
-        String state = String.format("estimated: %.1fm, managed: %.1fm, used: %.1fm, running: %d", toMebibyte(estimatedNeededMemory), toMebibyte(totalManagedMemory), toMebibyte(usedMemory), runningTasks);
+        String enabled = config.isWeightWatcherEnabled() ? "" : "DISABLED, ";
+        String state = String.format(enabled + "estimated: %.1fm, managed: %.1fm, used: %.1fm, running: %d", toMebibyte(estimatedNeededMemory), toMebibyte(totalManagedMemory), toMebibyte(usedMemory), runningTasks);
         return String.format("%s %s [%s]", msg, getTaskLogId(task), state);
     }
 
@@ -286,6 +285,9 @@ public class WeightWatcherImpl implements WeightWatcher {
     }
 
     private boolean canTaskProceed(MemoryConsumingTask<?> task, TaskTypeInformation taskTypeInfo, long estimatedNeededMemory) {
+
+        if (!config.isWeightWatcherEnabled())
+            return true; // WeightWatcher disabled
 
         // others are already queued -> don't let this one proceed to avoid starvation of older tasks (unless it is the oldest task of course)
         if (tasksQueued() && !isFirstQueuedTask(task))
