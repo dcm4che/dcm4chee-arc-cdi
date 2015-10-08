@@ -282,7 +282,7 @@ public class WeightWatcherTest {
         task3.mayProceed();
         task3.expectFinished();
 
-        task2.expectNotStarted();
+        task2.expectNotStartedAndNotBlocked();
     }
 
     private TestTask submitTestTask(TestTaskTypes taskType, long weight) {
@@ -387,11 +387,12 @@ public class WeightWatcherTest {
             Assert.assertFalse("Expecting task not started", started.isDone());
         }
 
-        public void expectNotStarted() throws InterruptedException, ExecutionException, TimeoutException {
+        public void expectNotStartedAndNotBlocked() throws InterruptedException, ExecutionException, TimeoutException {
 
             // this is ugly, but its hard to find out otherwise on whether a task has been "not" started
             uglyPause();
 
+            Assert.assertFalse("Expecting task not blocked", weightWatcher.isTaskQueued(watchedTask));
             Assert.assertFalse("Expecting task not started", started.isDone());
         }
     }
