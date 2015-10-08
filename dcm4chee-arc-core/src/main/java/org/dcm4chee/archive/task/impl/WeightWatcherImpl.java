@@ -150,9 +150,10 @@ public class WeightWatcherImpl implements WeightWatcher {
             }
 
             LOG.info(formatLogMessage("Starting", task, estimatedNeededMemory));
-            warnIfOverAvailableMemory(task, estimatedNeededMemory);
 
             updateStateForTaskStart(estimatedNeededMemory, taskTypeInfo);
+
+            warnIfOverAvailableMemory(task, estimatedNeededMemory);
 
             if (queuedTask != null) {
                 QueuedTask removedQueuedTask = nextTaskType.queuedTasks.removeFirst();
@@ -226,7 +227,7 @@ public class WeightWatcherImpl implements WeightWatcher {
 
     private void warnIfOverAvailableMemory(MemoryConsumingTask<?> task, long estimatedNeededMemory) {
         if (usedMemory > totalManagedMemory) {
-            LOG.info(formatLogMessage("OVER MEMORY LIMIT", task, estimatedNeededMemory));
+            LOG.warn(formatLogMessage("OVER MEMORY LIMIT", task, estimatedNeededMemory));
         }
     }
 
