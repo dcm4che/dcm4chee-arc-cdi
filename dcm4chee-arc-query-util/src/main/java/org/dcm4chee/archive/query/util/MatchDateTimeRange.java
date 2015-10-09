@@ -237,8 +237,7 @@ public class MatchDateTimeRange {
     private static boolean timeEquals(Calendar time1, Calendar time2) {
         return time1.get(Calendar.HOUR_OF_DAY) == time2.get(Calendar.HOUR_OF_DAY)
                 && time1.get(Calendar.MINUTE) == time2.get(Calendar.MINUTE)
-                && time1.get(Calendar.HOUR_OF_DAY) == time2.get(Calendar.HOUR_OF_DAY)
-                && time1.get(Calendar.MILLISECOND) == time2.get(Calendar.MILLISECOND);
+                && time1.get(Calendar.SECOND) == time2.get(Calendar.SECOND);
     }
 
     private static Predicate rangeInterval(StringPath field, Date startDate, Date endDate, FormatDate dt,
@@ -334,11 +333,7 @@ public class MatchDateTimeRange {
                         .and(dateTimeField.minute().gt(startDateTimeCal.get(Calendar.MINUTE))))
                 .or(dateTimeField.hour().eq(startDateTimeCal.get(Calendar.HOUR_OF_DAY))
                         .and(dateTimeField.minute().eq(startDateTimeCal.get(Calendar.MINUTE))
-                                .and(dateTimeField.second().gt(startDateTimeCal.get(Calendar.SECOND)))))
-                .or(dateTimeField.hour().eq(startDateTimeCal.get(Calendar.HOUR_OF_DAY))
-                        .and(dateTimeField.minute().eq(startDateTimeCal.get(Calendar.MINUTE))
-                                .and(dateTimeField.second().eq(startDateTimeCal.get(Calendar.SECOND)).and(
-                                        dateTimeField.milliSecond().gt(startDateTimeCal.get(Calendar.MILLISECOND))))));
+                                .and(dateTimeField.second().gt(startDateTimeCal.get(Calendar.SECOND)))));
     }
 
     private static BooleanExpression timeLessThan(DateTimePath<java.util.Date> dateTimeField,
@@ -348,11 +343,7 @@ public class MatchDateTimeRange {
                         .and(dateTimeField.minute().lt(endDateTimeCal.get(Calendar.MINUTE))))
                 .or(dateTimeField.hour().eq(endDateTimeCal.get(Calendar.HOUR_OF_DAY))
                         .and(dateTimeField.minute().eq(endDateTimeCal.get(Calendar.MINUTE))
-                                .and(dateTimeField.second().lt(endDateTimeCal.get(Calendar.SECOND)))))
-                .or(dateTimeField.hour().eq(endDateTimeCal.get(Calendar.HOUR_OF_DAY))
-                        .and(dateTimeField.minute().eq(endDateTimeCal.get(Calendar.MINUTE))
-                                .and(dateTimeField.second().eq(endDateTimeCal.get(Calendar.SECOND)).and(
-                                        dateTimeField.milliSecond().lt(endDateTimeCal.get(Calendar.MILLISECOND))))));
+                                .and(dateTimeField.second().lt(endDateTimeCal.get(Calendar.SECOND)))));
     }
 
     private static BooleanExpression dateEqual(DateTimePath<java.util.Date> dateTimeField, Calendar dateCal) {
@@ -382,8 +373,7 @@ public class MatchDateTimeRange {
         default:
             exp = dateTimeField.hour().eq(timeCal.get(Calendar.HOUR_OF_DAY))
                     .and(dateTimeField.minute().eq(timeCal.get(Calendar.MINUTE)))
-                    .and(dateTimeField.second().eq(timeCal.get(Calendar.SECOND)))
-                    .and(dateTimeField.milliSecond().eq(timeCal.get(Calendar.MILLISECOND)));
+                    .and(dateTimeField.second().eq(timeCal.get(Calendar.SECOND)));
             break;
         }
         return exp;

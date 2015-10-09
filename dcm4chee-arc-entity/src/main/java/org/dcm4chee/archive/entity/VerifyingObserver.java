@@ -39,7 +39,9 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -89,7 +91,12 @@ public class VerifyingObserver implements Serializable {
 
     public VerifyingObserver(Attributes attrs, FuzzyStr fuzzyStr, String nullValue) {
         Date dt = attrs.getDate(Tag.VerificationDateTime);
-        verificationDateTime = dt;
+        if (dt != null) {
+            Calendar adjustedDateTimeCal = new GregorianCalendar();
+            adjustedDateTimeCal.setTime(dt);
+            adjustedDateTimeCal.set(Calendar.MILLISECOND, 0);
+            verificationDateTime = adjustedDateTimeCal.getTime();
+        }
         verifyingObserverName = PersonName.valueOf(
                 attrs.getString(Tag.VerifyingObserverName), fuzzyStr, nullValue, null);
     }

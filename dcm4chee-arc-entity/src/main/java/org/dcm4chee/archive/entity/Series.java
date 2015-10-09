@@ -39,8 +39,10 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -61,6 +63,7 @@ import javax.persistence.Table;
 import javax.persistence.Version;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatePrecision;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.AttributeFilter;
@@ -465,18 +468,13 @@ public class Series implements Serializable {
             performedProcedureStepInstanceUID = nullValue;
             performedProcedureStepClassUID = nullValue;
         }
-        Date dt = attrs.getDate(Tag.PerformedProcedureStepStartDateAndTime);
-        performedProcedureStepStartDateTime = dt;
-//        if (dt != null) {
-//            performedProcedureStepStartDate = DateUtils.formatDA(null, dt);
-//            performedProcedureStepStartTime = 
-//                attrs.containsValue(Tag.PerformedProcedureStepStartDate)
-//                    ? DateUtils.formatTM(null, dt)
-//                    : nullValue;
-//        } else {
-//            performedProcedureStepStartDate = nullValue;
-//            performedProcedureStepStartTime = nullValue;
-//        }
+        Date dt = attrs.getDate(Tag.PerformedProcedureStepStartDateAndTime, new DatePrecision(Calendar.SECOND));
+        if(dt!=null) {
+            Calendar adjustedDateTimeCal = new GregorianCalendar();
+            adjustedDateTimeCal.setTime(dt);
+            adjustedDateTimeCal.set(Calendar.MILLISECOND, 0);
+        performedProcedureStepStartDateTime = adjustedDateTimeCal.getTime();
+        }
         performingPhysicianName = PersonName.valueOf(
                 attrs.getString(Tag.PerformingPhysicianName), fuzzyStr, null, performingPhysicianName);
         seriesCustomAttribute1 = 

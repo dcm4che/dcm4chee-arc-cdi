@@ -39,8 +39,10 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -63,6 +65,8 @@ import javax.persistence.Table;
 import javax.persistence.Version;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatePrecision;
+import org.dcm4che3.data.DatePrecisions;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.AttributeFilter;
@@ -318,17 +322,13 @@ public class Study implements Serializable {
         studyInstanceUID = attrs.getString(Tag.StudyInstanceUID);
         studyID = attrs.getString(Tag.StudyID, nullValue);
         studyDescription = attrs.getString(Tag.StudyDescription, nullValue);
-        Date dt = attrs.getDate(Tag.StudyDateAndTime);
-//        if (dt != null) {
-        	studyDateTime = dt;
-//            studyDate = DateUtils.formatDA(null, dt);
-//            studyTime = attrs.containsValue(Tag.StudyTime)
-//                    ? DateUtils.formatTM(null, dt)
-//                    : nullValue;
-//        } else {
-//            studyDate = nullValue;
-//            studyTime = nullValue;
-//        }
+        Date dt = attrs.getDate(Tag.StudyDateAndTime,new DatePrecision(Calendar.SECOND));
+        if (dt != null) {
+            Calendar adjustedDateTimeCal = new GregorianCalendar();
+            adjustedDateTimeCal.setTime(dt);
+            adjustedDateTimeCal.set(Calendar.MILLISECOND, 0);
+            studyDateTime = adjustedDateTimeCal.getTime();
+        }
         accessionNumber = attrs.getString(Tag.AccessionNumber, nullValue);
         referringPhysicianName = PersonName.valueOf(
                 attrs.getString(Tag.ReferringPhysicianName), fuzzyStr, nullValue, referringPhysicianName);

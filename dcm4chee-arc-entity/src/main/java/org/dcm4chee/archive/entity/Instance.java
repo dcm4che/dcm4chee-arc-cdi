@@ -40,12 +40,15 @@ package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 import javax.persistence.*;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatePrecision;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.StringUtils;
@@ -395,18 +398,13 @@ public class Instance implements Serializable {
         sopInstanceUID = attrs.getString(Tag.SOPInstanceUID);
         sopClassUID = attrs.getString(Tag.SOPClassUID);
         instanceNumber = attrs.getString(Tag.InstanceNumber, nullValue);
-        Date dt = attrs.getDate(Tag.ContentDateAndTime);
-        contentDateTime = dt;
-//        if (dt != null) {
-//            contentDate = DateUtils.formatDA(null, dt);
-//            contentTime = 
-//                attrs.containsValue(Tag.ContentTime)
-//                    ? DateUtils.formatTM(null, dt)
-//                    : nullValue;
-//        } else {
-//            contentDate = nullValue;
-//            contentTime = nullValue;
-//        }
+        Date dt = attrs.getDate(Tag.ContentDateAndTime, new DatePrecision(Calendar.SECOND));
+        if (dt != null) {
+            Calendar adjustedDateTimeCal = new GregorianCalendar();
+            adjustedDateTimeCal.setTime(dt);
+            adjustedDateTimeCal.set(Calendar.MILLISECOND, 0);
+            contentDateTime = adjustedDateTimeCal.getTime();
+        }
         completionFlag = Utils.upper(attrs.getString(Tag.CompletionFlag, nullValue));
         verificationFlag = Utils.upper(attrs.getString(Tag.VerificationFlag, nullValue));
 

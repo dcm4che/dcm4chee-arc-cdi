@@ -38,7 +38,9 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -58,6 +60,7 @@ import javax.persistence.Table;
 import javax.persistence.Version;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatePrecision;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.util.DateUtils;
 
@@ -261,18 +264,13 @@ public class MPPS implements Serializable {
 
     public void setAttributes(Attributes attrs, String nullValue) {
         
-        Date dt = attrs.getDate(Tag.PerformedProcedureStepStartDateAndTime);
-        startDateTime = dt;
-//        if (dt != null) {
-//            startDate = DateUtils.formatDA(null, dt);
-//            startTime = 
-//                attrs.containsValue(Tag.PerformedProcedureStepStartDate)
-//                    ? DateUtils.formatTM(null, dt)
-//                    : nullValue;
-//        } else {
-//            startDate = nullValue;
-//            startTime = nullValue;
-//        }
+        Date dt = attrs.getDate(Tag.PerformedProcedureStepStartDateAndTime, new DatePrecision(Calendar.SECOND));
+        if (dt != null) {
+            Calendar adjustedDateTimeCal = new GregorianCalendar();
+            adjustedDateTimeCal.setTime(dt);
+            adjustedDateTimeCal.set(Calendar.MILLISECOND, 0);
+            startDateTime = adjustedDateTimeCal.getTime();
+        }
         this.performedStationAET = attrs.getString(Tag.PerformedStationAETitle);
         this.modality = attrs.getString(Tag.Modality);
         Attributes ssa = attrs.getNestedDataset(

@@ -38,10 +38,12 @@
 
 package org.dcm4chee.archive.timezone;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatePrecision;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Status;
@@ -140,7 +142,7 @@ public class StoreSCUServiceTimeZoneDecorator extends DelegatingCStoreSCUService
     }
 
     private Date dateOf(Attributes attrs) {
-        Date date = attrs.getDate(Tag.ContentDateAndTime);
-        return date != null ? date : attrs.getDate(Tag.StudyDateAndTime);
+        Date date = attrs.getDate(Tag.ContentDateAndTime, new DatePrecision(Calendar.SECOND));
+        return date != null ? date : attrs.getDate(Tag.StudyDateAndTime, new DatePrecision(Calendar.SECOND));
     }
 }

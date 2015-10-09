@@ -247,7 +247,7 @@ public class QueryUtilsTest {
     @Test
     public void matchDateTimeTestClosedEndedIntervalNoCombined() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         Attributes testAttrs = new Attributes();
-        String tmString = "121210.000-121212.001";
+        String tmString = "121210-121212";
         String daString = "20151007-20151009";
         List<Study> studies = createDateTimeRangeQuery(testAttrs, tmString, daString, false);
         assertThat(studies.size(), is(1));

@@ -38,6 +38,7 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 
@@ -60,6 +61,7 @@ import javax.persistence.Transient;
 import javax.persistence.Version;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatePrecision;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.DateUtils;
@@ -268,6 +270,7 @@ public class MWLItem implements Serializable {
         scheduledProcedureStepID = spsItem.getString(Tag.ScheduledProcedureStepID);
         modality = Utils.upper(spsItem.getString(Tag.Modality, nullValue));
         Date dt = spsItem.getDate(Tag.ScheduledProcedureStepStartDateAndTime);
+        
         if (dt != null) {
             scheduledStartDate = DateUtils.formatDA(null, dt);
             scheduledStartTime = spsItem.containsValue(Tag.ScheduledProcedureStepStartTime)
