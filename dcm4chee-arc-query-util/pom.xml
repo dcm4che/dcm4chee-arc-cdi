@@ -6,10 +6,6 @@
     <version>4.5.0-SNAPSHOT</version>
   </parent>
   <artifactId>dcm4chee-arc-query-util</artifactId>
-    <properties>
-    <show_sql>false</show_sql>
-    <hbm2ddl.auto>verify</hbm2ddl.auto>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>

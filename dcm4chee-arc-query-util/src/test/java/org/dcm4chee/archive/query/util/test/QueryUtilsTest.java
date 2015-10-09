@@ -114,9 +114,12 @@ public class QueryUtilsTest {
         DatabaseOperation.CLEAN_INSERT.execute(iDatabaseConnection, iDataSet);
     }
 
+    /***********************
+     * Date Only Test Cases
+     **********************/
+
     @Test
     public void matchDateOnlyTestExactDateMatch() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        //query with exact DA
         Attributes testAttrs = new Attributes();
         String daString = "20151007";
         List<Study> studies = createDateRangeQuery(testAttrs, daString);
@@ -125,7 +128,6 @@ public class QueryUtilsTest {
 
     @Test
     public void matchDateOnlyTestOpenEndedIntervalOutOfRange() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        //query with exact DA
         Attributes testAttrs = new Attributes();
         String daString = "20151008-";
         List<Study> studies = createDateRangeQuery(testAttrs, daString);
@@ -135,7 +137,6 @@ public class QueryUtilsTest {
 
     @Test
     public void matchDateOnlyTestOpenEndedIntervalRangeBefore() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        //query with exact DA
         Attributes testAttrs = new Attributes();
         String daString = "20151006-";
         List<Study> studies = createDateRangeQuery(testAttrs, daString);
@@ -144,10 +145,111 @@ public class QueryUtilsTest {
 
     @Test
     public void matchDateOnlyTestOpenEndedIntervalRangeInclusive() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        //query with exact DA
         Attributes testAttrs = new Attributes();
         String daString = "20151007-";
         List<Study> studies = createDateRangeQuery(testAttrs, daString);
+        assertThat(studies.size(), is(1));
+    }
+
+    @Test
+    public void matchDateOnlyTestClosedEndedIntervalRangeInclusive() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String daString = "20151006-20151008";
+        List<Study> studies = createDateRangeQuery(testAttrs, daString);
+        assertThat(studies.size(), is(1));
+    }
+
+
+    @Test
+    public void matchDateOnlyTestClosedEndedIntervalOutOfRange() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String daString = "20151008-20151009";
+        List<Study> studies = createDateRangeQuery(testAttrs, daString);
+        assertThat(studies.size(), is(0));
+    }
+
+    /***********************
+     * Time Only Test Cases
+     **********************/
+
+    @Test
+    public void matchTimeOnlyTestExactTimeMatch() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String tmString = "121212.000";
+        List<Study> studies = createTimeRangeQuery(testAttrs, tmString);
+        assertThat(studies.size(), is(1));
+    }
+
+    @Test
+    public void matchTimeOnlyTestOpenEndedIntervalOutOfRange() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String tmString = "121213.000-";
+        List<Study> studies = createTimeRangeQuery(testAttrs, tmString);
+        assertThat(studies.size(), is(0));
+        
+    }
+
+    @Test
+    public void matchTimeOnlyTestOpenEndedIntervalRangeBefore() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String tmString = "121211.000-";
+        List<Study> studies = createTimeRangeQuery(testAttrs, tmString);
+        assertThat(studies.size(), is(1));
+    }
+
+    @Test
+    public void matchTimeOnlyTestOpenEndedIntervalRangeInclusive() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String tmString = "121212.000-";
+        List<Study> studies = createTimeRangeQuery(testAttrs, tmString);
+        assertThat(studies.size(), is(1));
+    }
+
+    @Test
+    public void matchTimeOnlyTestClosedEndedIntervalRangeInclusive() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String tmString = "121212.000-121212.999";
+        List<Study> studies = createTimeRangeQuery(testAttrs, tmString);
+        assertThat(studies.size(), is(1));
+    }
+
+
+    @Test
+    public void matchTimeOnlyTestClosedEndedIntervalOutOfRange() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String tmString = "121210.000-121211.000";
+        List<Study> studies = createTimeRangeQuery(testAttrs, tmString);
+        assertThat(studies.size(), is(0));
+    }
+
+    /***********************
+     * Date Time Test Cases
+     **********************/
+
+    @Test
+    public void matchDateTimeTestClosedEndedIntervalOutOfRangeNoCombined() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String tmString = "121213.000-121213.999";
+        String daString = "20151007-20151009";
+        List<Study> studies = createDateTimeRangeQuery(testAttrs, tmString, daString, false);
+        assertThat(studies.size(), is(0));
+    }
+
+    @Test
+    public void matchDateTimeTestClosedEndedIntervalOutOfRangeCombined() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String tmString = "121213.000-121213.999";
+        String daString = "20151006-20151009";
+        List<Study> studies = createDateTimeRangeQuery(testAttrs, tmString, daString, true);
+        assertThat(studies.size(), is(1));
+    }
+
+    @Test
+    public void matchDateTimeTestClosedEndedIntervalNoCombined() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Attributes testAttrs = new Attributes();
+        String tmString = "121210.000-121212.001";
+        String daString = "20151007-20151009";
+        List<Study> studies = createDateTimeRangeQuery(testAttrs, tmString, daString, false);
         assertThat(studies.size(), is(1));
     }
 
@@ -158,8 +260,37 @@ public class QueryUtilsTest {
                 int.class, int.class, long.class, Attributes.class, boolean.class, boolean.class);
         rangeMatchMethod.setAccessible(true);
         testAttrs.setString(Tag.StudyDate, VR.DA, daString );
+        List<Study> studies = applyRangedMatch(testAttrs, builder, rangeMatchMethod, false);
+        return studies;
+    }
+
+    private List<Study> createTimeRangeQuery(Attributes testAttrs,
+            String tmString) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, SecurityException {
+        BooleanBuilder builder = new BooleanBuilder();
+        Method rangeMatchMethod = MatchDateTimeRange.class.getDeclaredMethod("rangeMatch", DateTimePath.class,
+                int.class, int.class, long.class, Attributes.class, boolean.class, boolean.class);
+        rangeMatchMethod.setAccessible(true);
+        testAttrs.setString(Tag.StudyTime, VR.TM, tmString );
+        List<Study> studies = applyRangedMatch(testAttrs, builder, rangeMatchMethod, false);
+        return studies;
+    }
+
+    private List<Study> createDateTimeRangeQuery(Attributes testAttrs,
+            String tmString, String daString, boolean combinedDateTime) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, SecurityException {
+        BooleanBuilder builder = new BooleanBuilder();
+        Method rangeMatchMethod = MatchDateTimeRange.class.getDeclaredMethod("rangeMatch", DateTimePath.class,
+                int.class, int.class, long.class, Attributes.class, boolean.class, boolean.class);
+        rangeMatchMethod.setAccessible(true);
+        testAttrs.setString(Tag.StudyDate, VR.DA, daString );
+        testAttrs.setString(Tag.StudyTime, VR.TM, tmString );
+        List<Study> studies = applyRangedMatch(testAttrs, builder, rangeMatchMethod, combinedDateTime);
+        return studies;
+    }
+
+    private List<Study> applyRangedMatch(Attributes testAttrs, BooleanBuilder builder, Method rangeMatchMethod, boolean combined)
+            throws IllegalAccessException, InvocationTargetException {
         builder.and((Predicate) rangeMatchMethod.invoke(null, QStudy.study.studyDateTime, Tag.StudyDate, Tag.StudyTime,
-                Tag.StudyDateAndTime, testAttrs, false, false));
+                Tag.StudyDateAndTime, testAttrs, combined, false));
         JPAQuery queryWillMatchExact = new JPAQuery(entityManager).from(QStudy.study);
 
         queryWillMatchExact = queryWillMatchExact.innerJoin(QStudy.study.patient, QPatient.patient);
