@@ -102,6 +102,8 @@ public class WeightWatcherImpl implements WeightWatcher {
      */
     private TaskTypeInformation nextTaskType = null;
 
+    private ThreadLocal<Boolean> nestedExecution = new ThreadLocal<>();
+
     public WeightWatcherImpl(WeightWatcherConfiguration config, long totalSystemMemory) {
         this.totalSystemMemory = totalSystemMemory;
         reconfigure(config);
@@ -109,7 +111,19 @@ public class WeightWatcherImpl implements WeightWatcher {
 
     @Override
     public <V> V execute(MemoryConsumingTask<V> task) throws InterruptedException, Exception {
+        // prevent nested execution (starting a task within a task), because it is likely to lead to
+        // deadlocks, if memory/concurrency limits are reached
+        if (nestedExecution.get() != null)
+            throw new IllegalStateException("Nested execution is forbidden");
+        try {
+            nestedExecution.set(Boolean.TRUE);
+            return executeInternal(task);
+        } finally {
+            nestedExecution.remove();
+        }
+    }
 
+    private <V> V executeInternal(MemoryConsumingTask<V> task) throws Exception {
         long estimatedNeededMemory = task.getEstimatedWeight();
 
         if (estimatedNeededMemory < 0)

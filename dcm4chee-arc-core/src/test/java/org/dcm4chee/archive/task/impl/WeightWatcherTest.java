@@ -285,6 +285,54 @@ public class WeightWatcherTest {
         task2.expectNotStartedAndNotBlocked();
     }
 
+    @Test
+    public void testForbidNestedExecution() throws Exception {
+
+        // check that WeightWatcher doesn't allow any nested execution (starting a task within a task), because it is
+        // likely to lead to deadlocks, if memory/concurrency limits are reached
+
+        try {
+            weightWatcher.execute(new MemoryConsumingTask<Void>() {
+                @Override
+                public TaskType getTaskType() {
+                    return TestTaskTypes.TEST_TASK_TYPE1;
+                }
+
+                @Override
+                public long getEstimatedWeight() {
+                    return 10;
+                }
+
+                @Override
+                public Void call() throws Exception {
+
+                    // nested call
+                    return weightWatcher.execute(new MemoryConsumingTask<Void>() {
+                        @Override
+                        public TaskType getTaskType() {
+                            return TestTaskTypes.TEST_TASK_TYPE2;
+                        }
+
+                        @Override
+                        public long getEstimatedWeight() {
+                            return 10;
+                        }
+
+                        @Override
+                        public Void call() throws Exception {
+                            return null;
+                        }
+                    });
+                }
+            });
+        } catch (IllegalStateException e) {
+            if (e.getMessage().equals("Nested execution is forbidden")) {
+                return; // // expected exception
+            }
+        }
+        Assert.fail("Expecting IllegalStateException with specific message");
+    }
+
     private TestTask submitTestTask(TestTaskTypes taskType, long weight) {
         return new TestTask(taskType, weightWatcher, weight).submit(executor);
     }
