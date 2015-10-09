@@ -327,7 +327,7 @@ public class WeightWatcherTest {
             });
         } catch (IllegalStateException e) {
             if (e.getMessage().equals("Nested execution is forbidden")) {
-                return; // // expected exception
+                return; // expected exception
             }
         }
         Assert.fail("Expecting IllegalStateException with specific message");
