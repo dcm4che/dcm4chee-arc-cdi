@@ -68,7 +68,7 @@ import org.dcm4chee.storage.conf.*;
 public class DefaultArchiveConfigurationFactory {
 
     private static final String AET_FALLBACK_WEB_CLIENT = "FALLBACK-WEBC";
-    
+
     public static final String PIX_MANAGER = "HL7RCV^DCM4CHEE";
     public static final String[] OTHER_DEVICES = {
             "dcmqrscp",
@@ -354,7 +354,7 @@ public class DefaultArchiveConfigurationFactory {
             HIDE_REJECTED_VIEW,
             REGULAR_USE_VIEW,
             TRASH_VIEW};
-    
+
     private static final String RETRIEVER_CACHE_STORAGE_SYSTEM_GROUP_TYPE = "RETRIEVER_CACHE";
 
     //ASK BEA: SHE REALLY WANTS TO KICK THIS 2 TAGS IN THEIR PRIVATE ASS :-)
@@ -518,7 +518,7 @@ public class DefaultArchiveConfigurationFactory {
 
         addArchiveDeviceExtension(device);
         addHL7DeviceExtension(device);
-        addAuditLogger(device,arrDevice);
+        addAuditLogger(device, arrDevice);
         addStorageDeviceExtension(device, factoryParams.baseStoragePath);
         addNoneIOCMDeviceExtension(device);
         device.addDeviceExtension(new ImageReaderExtension(ImageReaderFactory.getDefault()));
@@ -540,16 +540,18 @@ public class DefaultArchiveConfigurationFactory {
 //            device.setAuthorizedNodeCertificates(config.deviceRef(other),
 //                    (X509Certificate) keystore.getCertificate(other));
 
-        device.addApplicationEntity(createAE("DCM4CHEE", dicom, dicomTLS,
-                HIDE_REJECTED_VIEW, null, PIX_MANAGER, null, "DEFAULT"));
+        ApplicationEntity DCM4CHEE_AE =
+                createAE("DCM4CHEE", dicom, dicomTLS, HIDE_REJECTED_VIEW, null, PIX_MANAGER, null, "DEFAULT");
+
+        device.addApplicationEntity(DCM4CHEE_AE);
+        device.setDefaultAE(DCM4CHEE_AE);
+
         device.addApplicationEntity(
-                createQRAE("DCM4CHEE_ADMIN", dicom, dicomTLS,
-                        REGULAR_USE_VIEW, null, PIX_MANAGER));
-        device.addApplicationEntity(createAE("DCM4CHEE_FETCH", dicom, dicomTLS,
-                HIDE_REJECTED_VIEW, null, PIX_MANAGER, RETRIEVER_CACHE_STORAGE_SYSTEM_GROUP_TYPE, null));
+                createQRAE("DCM4CHEE_ADMIN", dicom, dicomTLS, REGULAR_USE_VIEW, null, PIX_MANAGER));
         device.addApplicationEntity(
-                createQRAE("DCM4CHEE_TRASH", dicom, dicomTLS,
-                        TRASH_VIEW, null, PIX_MANAGER));
+                createAE("DCM4CHEE_FETCH", dicom, dicomTLS, HIDE_REJECTED_VIEW, null, PIX_MANAGER, RETRIEVER_CACHE_STORAGE_SYSTEM_GROUP_TYPE, null));
+        device.addApplicationEntity(
+                createQRAE("DCM4CHEE_TRASH", dicom, dicomTLS, TRASH_VIEW, null, PIX_MANAGER));
 
         return device;
     }
@@ -560,9 +562,9 @@ public class DefaultArchiveConfigurationFactory {
         ext.setNoneIOCMChangeRequestorDevices(new ArrayList<Device>());
         ext.setNoneIOCMModalityDevices(new ArrayList<Device>());
         device.addDeviceExtension(ext);
-	}
+    }
 
-	private static void addStorageDeviceExtension(Device device, String baseStoragePath) {
+    private static void addStorageDeviceExtension(Device device, String baseStoragePath) {
         StorageSystem fs1 = new StorageSystem();
         fs1.setStorageSystemID("fs1");
         fs1.setProviderName("org.dcm4chee.storage.filesystem");
@@ -625,13 +627,13 @@ public class DefaultArchiveConfigurationFactory {
         metadataG.setBaseStorageAccessTime(0);
         metadataG.setStorageFilePathFormat("{now,date,yyyy/MM/dd}/{0020000D,hash}/{0020000E,hash}/{00080018,hash}");
         metadataG.setActiveStorageSystemIDs(metadata.getStorageSystemID());
-        
+
         StorageSystem retrieveFs1 = new StorageSystem();
         retrieveFs1.setStorageSystemID("retrieve_fs1");
         retrieveFs1.setProviderName("org.dcm4chee.storage.filesystem");
         retrieveFs1.setStorageSystemPath(baseStoragePath + "retrieve_fs1");
         retrieveFs1.setAvailability(Availability.ONLINE);
-        
+
         StorageSystemGroup retrieverCache = new StorageSystemGroup();
         retrieverCache.setGroupID("RETRIEVER_CACHE");
         retrieverCache.setStorageSystemGroupType(RETRIEVER_CACHE_STORAGE_SYSTEM_GROUP_TYPE);
@@ -709,7 +711,7 @@ public class DefaultArchiveConfigurationFactory {
         ext.setDeletionServicePollInterval(60);
         ext.setDeleteServiceAllowedInterval("0-23");
         ext.setSyncLocationStatusStorageSystemGroupIDs("ARCHIVE");
-        ext.setAttributeFilter(Entity.Patient, new AttributeFilter(PATIENT_ATTRS, new TreeMap(),MetadataUpdateStrategy.COERCE_MERGE));
+        ext.setAttributeFilter(Entity.Patient, new AttributeFilter(PATIENT_ATTRS, new TreeMap(), MetadataUpdateStrategy.COERCE_MERGE));
         ext.setAttributeFilter(Entity.Study, new AttributeFilter(STUDY_ATTRS, STUDY_PRIVATE_ATTRS, MetadataUpdateStrategy.COERCE_MERGE));
         ext.setAttributeFilter(Entity.Series, new AttributeFilter(SERIES_ATTRS, new TreeMap(), MetadataUpdateStrategy.COERCE_MERGE));
         ext.setAttributeFilter(Entity.Instance, new AttributeFilter(INSTANCE_ATTRS, new TreeMap(), MetadataUpdateStrategy.OVERWRITE));
@@ -793,14 +795,14 @@ public class DefaultArchiveConfigurationFactory {
         ae.addAEExtension(aeExt);
         ae.setAssociationAcceptor(true);
         ae.setAssociationInitiator(true);
-        
-        if(storageSystemGroupID != null) {
+
+        if (storageSystemGroupID != null) {
             aeExt.setStorageSystemGroupID(storageSystemGroupID);
         }
-        if(storageSystemGroupType != null) {
+        if (storageSystemGroupType != null) {
             aeExt.setStorageSystemGroupType(storageSystemGroupType);
         }
-       
+
         aeExt.setMetaDataStorageSystemGroupID("METADATA");
         aeExt.setSpoolDirectoryPath("spool");
         aeExt.setPreserveSpoolFileOnFailure(true);

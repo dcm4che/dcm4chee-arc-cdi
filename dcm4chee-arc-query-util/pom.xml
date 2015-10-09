@@ -57,13 +57,6 @@
       <artifactId>hsqldb</artifactId>
       <scope>test</scope>
     </dependency>
-        <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-entity</artifactId>
-      <classifier>oracle</classifier>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
   <build>
     <plugins>

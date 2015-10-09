@@ -49,6 +49,9 @@ import org.dcm4che3.conf.core.api.ConfigurableProperty;
 @ConfigurableClass
 public class WeightWatcherConfiguration {
 
+    @ConfigurableProperty(defaultValue = "true", description = "")
+    private boolean weightWatcherEnabled = true;
+
     @ConfigurableProperty(defaultValue = "0", description = "Total number of tasks that are allowed to run concurrently. The default (0) means no concurrency limit.")
     private int totalConcurrentTasksLimit = 0;
 
@@ -73,9 +76,18 @@ public class WeightWatcherConfiguration {
      * @param configToCopy config to copy
      */
     public WeightWatcherConfiguration(WeightWatcherConfiguration configToCopy) {
+        this.weightWatcherEnabled = configToCopy.isWeightWatcherEnabled();
         this.totalConcurrentTasksLimit = configToCopy.getTotalConcurrentTasksLimit();
         this.memoryUsageFactor = configToCopy.getMemoryUsageFactor();
         this.blockedWarnTimeMillis = configToCopy.getBlockedWarnTimeMillis();
+    }
+
+    public boolean isWeightWatcherEnabled() {
+        return weightWatcherEnabled;
+    }
+
+    public void setWeightWatcherEnabled(boolean weightWatcherEnabled) {
+        this.weightWatcherEnabled = weightWatcherEnabled;
     }
 
     public int getTotalConcurrentTasksLimit() {

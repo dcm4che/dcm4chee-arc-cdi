@@ -102,6 +102,8 @@ public class WeightWatcherImpl implements WeightWatcher {
      */
     private TaskTypeInformation nextTaskType = null;
 
+    private ThreadLocal<Boolean> nestedExecution = new ThreadLocal<>();
+
     public WeightWatcherImpl(WeightWatcherConfiguration config, long totalSystemMemory) {
         this.totalSystemMemory = totalSystemMemory;
         reconfigure(config);
@@ -109,7 +111,19 @@ public class WeightWatcherImpl implements WeightWatcher {
 
     @Override
     public <V> V execute(MemoryConsumingTask<V> task) throws InterruptedException, Exception {
+        // prevent nested execution (starting a task within a task), because it is likely to lead to
+        // deadlocks, if memory/concurrency limits are reached
+        if (nestedExecution.get() != null)
+            throw new IllegalStateException("Nested execution is forbidden");
+        try {
+            nestedExecution.set(Boolean.TRUE);
+            return executeInternal(task);
+        } finally {
+            nestedExecution.remove();
+        }
+    }
 
+    private <V> V executeInternal(MemoryConsumingTask<V> task) throws Exception {
         long estimatedNeededMemory = task.getEstimatedWeight();
 
         if (estimatedNeededMemory < 0)
@@ -119,9 +133,7 @@ public class WeightWatcherImpl implements WeightWatcher {
             // if the task says that it doesn't need any memory, we do not apply any limits (also no concurrency limits)
             // this is to simplify code where the task decides that it does not actually need to consume a lot of memory
             // in a particular case (e.g. rendition not required, because rendered image loaded from cache)
-
-            LOG.info(formatLogMessage("Bypassing", task, estimatedNeededMemory));
-
+            LOG.info("Bypassing zero memory task {}", getTaskLogId(task));
             return runTask(task);
         }
 
@@ -150,9 +162,10 @@ public class WeightWatcherImpl implements WeightWatcher {
             }
 
             LOG.info(formatLogMessage("Starting", task, estimatedNeededMemory));
-            warnIfOverAvailableMemory(task, estimatedNeededMemory);
 
             updateStateForTaskStart(estimatedNeededMemory, taskTypeInfo);
+
+            warnIfOverAvailableMemory(task, estimatedNeededMemory);
 
             if (queuedTask != null) {
                 QueuedTask removedQueuedTask = nextTaskType.queuedTasks.removeFirst();
@@ -210,7 +223,8 @@ public class WeightWatcherImpl implements WeightWatcher {
     }
 
     private <V> String formatLogMessage(String msg, MemoryConsumingTask<V> task, long estimatedNeededMemory) {
-        String state = String.format("estimated: %.1fm, managed: %.1fm, used: %.1fm, running: %d", toMebibyte(estimatedNeededMemory), toMebibyte(totalManagedMemory), toMebibyte(usedMemory), runningTasks);
+        String enabled = config.isWeightWatcherEnabled() ? "" : "DISABLED, ";
+        String state = String.format(enabled + "estimated: %.1fm, managed: %.1fm, used: %.1fm, running: %d", toMebibyte(estimatedNeededMemory), toMebibyte(totalManagedMemory), toMebibyte(usedMemory), runningTasks);
         return String.format("%s %s [%s]", msg, getTaskLogId(task), state);
     }
 
@@ -226,7 +240,7 @@ public class WeightWatcherImpl implements WeightWatcher {
 
     private void warnIfOverAvailableMemory(MemoryConsumingTask<?> task, long estimatedNeededMemory) {
         if (usedMemory > totalManagedMemory) {
-            LOG.info(formatLogMessage("OVER MEMORY LIMIT", task, estimatedNeededMemory));
+            LOG.warn(formatLogMessage("OVER MEMORY LIMIT", task, estimatedNeededMemory));
         }
     }
 
@@ -285,6 +299,9 @@ public class WeightWatcherImpl implements WeightWatcher {
     }
 
     private boolean canTaskProceed(MemoryConsumingTask<?> task, TaskTypeInformation taskTypeInfo, long estimatedNeededMemory) {
+
+        if (!config.isWeightWatcherEnabled())
+            return true; // WeightWatcher disabled
 
         // others are already queued -> don't let this one proceed to avoid starvation of older tasks (unless it is the oldest task of course)
         if (tasksQueued() && !isFirstQueuedTask(task))
