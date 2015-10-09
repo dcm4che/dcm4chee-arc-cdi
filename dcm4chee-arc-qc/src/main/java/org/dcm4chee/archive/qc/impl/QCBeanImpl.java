@@ -67,7 +67,6 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.media.RecordFactory;
 import org.dcm4che3.media.RecordType;
-import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.DicomServiceException;
@@ -2602,23 +2601,22 @@ public class QCBeanImpl implements QCBean {
         return result;
     }
 
+    private ArchiveAEExtension getAEExtensionForRejectionNoteStorage() {
+        ArchiveDeviceExtension archiveDeviceExtension = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        String defaultAE = archiveDeviceExtension.getDefaultAETitle();
+        ArchiveAEExtension arcAEExt = device.getApplicationEntity(defaultAE).getAEExtension(ArchiveAEExtension.class);
+        if (arcAEExt == null) {
+            LOG.error("Could not resolve Application Entity to use for storing Rejection-Note");
+            throw new EJBException("Can not store Rejection-Note after QC operation! Could not resolve Application Entity to use for storing Rejection-Note locally, device: " + device.getDeviceName());
+        }
+        
+        return arcAEExt;
+    }
     
     private Instance createAndStoreRejectionNote(org.dcm4che3.data.Code rejectionCode, Collection<Instance> instances) {
         if (instances != null && instances.size() > 0) {
             Attributes rejNote = createRejectionNote(rejectionCode, instances);
-            ArchiveAEExtension arcAEExt = null;
-            for (ApplicationEntity ae : device.getApplicationEntities()) {
-                if (ae.isInstalled()) {
-                    arcAEExt = ae.getAEExtension(ArchiveAEExtension.class);
-                    if (arcAEExt != null && arcAEExt.getStorageSystemGroupID() != null)
-                        break;
-                    arcAEExt = null;
-                }
-            }
-            if (arcAEExt == null) {
-                LOG.error("No ApplicationEntity found for this service to store RejectionNote locally (must be installed and StorageSystemGroup)");
-                throw new EJBException("Can not store RejectionNote after QC operation! No Application Entity found in device "+device.getDeviceName());
-            }
+            ArchiveAEExtension arcAEExt = getAEExtensionForRejectionNoteStorage();
             try {
                 List<Connection> conns = arcAEExt.getApplicationEntity().getConnections();
                 String hostname = conns.isEmpty() ? "UNKNOWN" : conns.get(0).getHostname();
