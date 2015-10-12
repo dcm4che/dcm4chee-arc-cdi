@@ -69,7 +69,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- *
  */
 public class WadoClientServiceImpl implements WadoClientService {
 
@@ -147,24 +146,23 @@ public class WadoClientServiceImpl implements WadoClientService {
             InputStream in, InstanceAvailableCallback callback) throws Exception {
         StoreContext context;
         ApplicationEntity localAE = aeCache.findApplicationEntity(localAETitle);
-            StoreSession session = storeService.createStoreSession(storeService); 
+        StoreSession session = storeService.createStoreSession(storeService);
         session.setSource(new GenericParticipant(localAE.getConnections()
                 .get(0).getHostname(), "WadoRS Fetch"));
-            session.setRemoteAET(remoteAETitle);
-            ArchiveAEExtension arcAEExt = aeCache.get(localAETitle)
-                    .getAEExtension(ArchiveAEExtension.class); 
-            session.setArchiveAEExtension(arcAEExt);
-            storeService.initBulkdataStorage(session);
-            storeService.initSpoolingStorage(session);
-            storeService.initMetadataStorage(session);
-            context = storeService.createStoreContext(session);
-            try {
+        session.setRemoteAET(remoteAETitle);
+        ArchiveAEExtension arcAEExt = aeCache.get(localAETitle)
+                .getAEExtension(ArchiveAEExtension.class);
+        session.setArchiveAEExtension(arcAEExt);
+        storeService.initBulkdataStorage(session);
+        storeService.initSpoolingStorage(session);
+        storeService.initMetadataStorage(session);
+        context = storeService.createStoreContext(session);
+        try {
             DicomInputStream din = new DicomInputStream(in);
             Attributes fmi = din.getFileMetaInformation();
             storeService.writeSpoolFile(context, fmi, din);
-        }
-        catch (Exception e) {
-            throw new Exception("Failed to spool WadoRS response from AE "+
+        } catch (Exception e) {
+            throw new Exception("Failed to spool WadoRS response from AE " +
                     remoteAETitle);
         }
         return context;
