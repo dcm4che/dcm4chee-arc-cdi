@@ -324,7 +324,7 @@ public class WeightWatcherImpl implements WeightWatcher {
 
     // checks if the given task is the first of the queued ones
     private boolean isFirstQueuedTask(MemoryConsumingTask<?> task) {
-        return nextTaskType != null && nextTaskType.queuedTasks.getFirst().task == task;
+        return nextTaskType != null && !nextTaskType.queuedTasks.isEmpty() && nextTaskType.queuedTasks.getFirst().task == task;
     }
 
     private boolean tasksQueued() {
