@@ -571,6 +571,7 @@ public class DefaultArchiveConfigurationFactory {
         fs1.setStorageSystemPath(baseStoragePath +
                 "fs1");
         fs1.setAvailability(Availability.ONLINE);
+        fs1.setSyncPolicy(SyncPolicy.ON_ASSOCIATION_CLOSE);
 
         StorageSystem arc = new StorageSystem();
         arc.setStorageSystemID("nearline");

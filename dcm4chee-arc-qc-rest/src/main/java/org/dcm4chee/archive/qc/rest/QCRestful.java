@@ -155,8 +155,8 @@ public class QCRestful {
         case "merge":
             
             event = qcManager.mergeStudies(
-                    object.getMoveSOPUIDs(), object.getTargetStudyUID(), 
-                    object.getTargetStudyData(), object.getTargetSeriesData(), 
+                    object.getMoveSOPUIDs(), object.getTargetStudyUID(),
+                    object.getTargetStudyData(), object.getTargetSeriesData(),
                     code);
             break;
             

@@ -47,6 +47,7 @@ import org.dcm4chee.storage.conf.StorageSystem;
 
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.util.List;
 import java.util.TimeZone;
 
 /**
@@ -114,4 +115,7 @@ public interface StoreSession {
 
     TimeZone getSourceDeviceTimeZone();
 
+    List<String> getStoredFiles();
+
+    void addStoredFile(String storedFile);
 }

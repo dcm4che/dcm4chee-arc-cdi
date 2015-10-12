@@ -505,6 +505,7 @@
         "dicomInstalled" : true
       },
       "dcm4chee-arc" : {
+        "dcmDefaultAE" : "/dicomConfigurationRoot/dicomDevicesRoot/*/dicomNetworkAE[dicomAETitle='DCM4CHEE']",
         "dcmKeyStorePin" : "secret",
         "dcmKeyStoreType" : "JKS",
         "dcmKeyStoreURL" : "${jboss.server.config.url}/dcm4chee-arc/key.jks",
@@ -537,7 +538,6 @@
               }
             },
             "dcmConfigurationStaleTimeout" : 60,
-            "dcmDefaultAETitle" : "DCM4CHEE",
             "dcmDeleteServiceAllowedInterval" : "0-23",
             "dcmDeletionRules" : {
               "list" : [ {
@@ -619,7 +619,8 @@
               "dcmRejectedObjectRetentionTimeUnit" : "DAYS",
               "dcmRejectionNoteTitle" : "(REVOKE_REJECTION, 99DCM4CHEE, \"Restore rejected Instances\")",
               "dcmRevokeRejection" : true
-            } ]
+            } ],
+            "weightWatcherConfiguration" : { }
           },
           "AuditLogger" : {
             "dcmAuditIncludeInstanceUID" : false,
@@ -795,7 +796,8 @@
                   "fs1" : {
                     "dcmProviderName" : "org.dcm4chee.storage.filesystem",
                     "dcmStorageSystemID" : "fs1",
-                    "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/fs1"
+                    "dcmStorageSystemPath" : "/var/local/dcm4chee-arc/fs1",
+                    "dcmSyncPolicy" : "ON_ASSOCIATION_CLOSE"
                   }
                 },
                 "dcmActiveStorageSystemID" : [ "fs1" ],

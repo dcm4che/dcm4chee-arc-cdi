@@ -38,35 +38,6 @@
 
 package org.dcm4chee.archive.store.impl;
 
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -76,11 +47,7 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Device;
-import org.dcm4che3.net.Dimse;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.*;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.DateUtils;
@@ -90,12 +57,7 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.Location;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.monitoring.api.Monitored;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
@@ -114,6 +76,26 @@ import org.dcm4chee.storage.service.RetrieveService;
 import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -257,6 +239,8 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     public void onClose(StoreSession session) {
+        StorageSystem system = session.getStorageSystem();
+        syncFilesOnAssociationClose(session);
         deleteSpoolDirectory(session);
         storeSessionClosed.fire(session);
     }
@@ -418,6 +402,7 @@ public class StoreServiceImpl implements StoreService {
             context.setThrowable(e);
             throw e;
         } finally {
+            syncFilesOnStore(session);
             service.fireStoreEvent(context);
             service.cleanup(context);
         }
@@ -490,14 +475,14 @@ public class StoreServiceImpl implements StoreService {
     @Monitored(name="processFile")
     public StorageContext processFile(StoreContext context) throws DicomServiceException {
 
-        StorageSystem bulkdataStorage = context.getStoreSession().getStorageSystem();
-        if (bulkdataStorage == null)
+        StorageSystem bulkdataStorageSystem = context.getStoreSession().getStorageSystem();
+        if (bulkdataStorageSystem == null)
             return null;
 
         Attributes fmi = context.getFileMetainfo();
         Attributes attributes = context.getAttributes();
-        StorageContext bulkdataContext = storageService.createStorageContext(bulkdataStorage);
-        String bulkdataRoot = calculatePath(bulkdataStorage, attributes);
+        StorageContext bulkdataContext = storageService.createStorageContext(bulkdataStorageSystem);
+        String bulkdataRoot = calculatePath(bulkdataStorageSystem, attributes);
         String bulkdataPath = bulkdataRoot;
         StorageContext spoolingContext = context.getSpoolingContext();
 
@@ -517,7 +502,7 @@ public class StoreServiceImpl implements StoreService {
             }
         } else {
             //spool in memory
-            int bufferLength = bulkdataStorage.getBufferedOutputLength();
+            int bufferLength = bulkdataStorageSystem.getBufferedOutputLength();
             OutputStream out = null;
 
             try {
@@ -537,8 +522,9 @@ public class StoreServiceImpl implements StoreService {
                 try {
                     SafeClose.close(out);
                     bulkdataContext.setFilePath(Paths.get(bulkdataPath));
-                    bulkdataContext.setFileSize(Files.size(Paths.get(bulkdataStorage.getStorageSystemPath(), bulkdataPath)));
+                    bulkdataContext.setFileSize(Files.size(Paths.get(bulkdataStorageSystem.getStorageSystemPath(), bulkdataPath)));
                     bulkdataContext.setFileDigest(spoolingContext.getFileDigest());
+                    context.getStoreSession().addStoredFile(bulkdataPath);
                 } catch (IOException e) {
                     throw new DicomServiceException(Status.UnableToProcess, e);
                 }
@@ -965,4 +951,52 @@ public class StoreServiceImpl implements StoreService {
         return instanceToStore;
     }
 
+    private void syncFilesOnAssociationClose (StoreSession session) {
+        syncFiles(session, true);
+    }
+
+    private void syncFilesOnStore (StoreSession session) {
+        syncFiles(session, false);
+    }
+
+    private void syncFiles(StoreSession session, boolean onClose) {
+        final List<String> storedFiles = session.getStoredFiles();
+        final StorageSystem system = session.getStorageSystem();
+
+        if (storedFiles.size() == 0)
+            return;
+
+        try {
+            switch (session.getStorageSystem().getSyncPolicy()) {
+                case ALWAYS:
+                    storageService.syncFiles(system, storedFiles);
+                    break;
+                case AFTER_STORE_RSP:
+                    Executors.newSingleThreadExecutor().execute(new Runnable() {
+                        public void run() {
+                            try {
+                                storageService.syncFiles(system,storedFiles);
+                            } catch (IOException e) {
+                                LOG.error("File syncing failed:", e);
+                            }
+                        }
+                    });
+                    break;
+                case EVERY_5_STORE:
+                    if (storedFiles.size()>=5)
+                        storageService.syncFiles(system, storedFiles);
+                    break;
+                case EVERY_25_STORE:
+                    if (storedFiles.size()>=25)
+                        storageService.syncFiles(system, storedFiles);
+                    break;
+                case ON_ASSOCIATION_CLOSE:
+                    if (onClose)
+                        storageService.syncFiles(system,storedFiles);
+                    break;
+            }
+        } catch (IOException e) {
+            LOG.error("File syncing failed:", e);
+        }
+    }
 }

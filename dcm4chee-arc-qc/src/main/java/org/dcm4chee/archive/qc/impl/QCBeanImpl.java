@@ -195,8 +195,8 @@ public class QCBeanImpl implements QCBean {
     }
 
     @Override
-    public QCEvent mergeStudies(String[] sourceStudyUids, String targetStudyUId, 
-            Attributes targetStudyAttrs, Attributes targetSeriesAttrs, 
+    public QCEvent mergeStudies(String[] sourceStudyUids, String targetStudyUId,
+            Attributes targetStudyAttrs, Attributes targetSeriesAttrs,
             org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
 
         Collection<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
