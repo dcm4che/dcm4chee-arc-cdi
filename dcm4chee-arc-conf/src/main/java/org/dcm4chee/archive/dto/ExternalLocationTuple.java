@@ -40,25 +40,29 @@ package org.dcm4chee.archive.dto;
 
 import org.dcm4chee.storage.conf.Availability;
 
+import java.io.Serializable;
+
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
- * 
  */
-public class ExternalLocationTuple {
-    private String retrieveDeviceName;
+public class ExternalLocationTuple implements Serializable {
+    private static final long serialVersionUID = -6743508568902421121L;
 
-    private Availability availability;
+    private final String retrieveDeviceName;
+
+    private final Availability availability;
 
     public ExternalLocationTuple(String retrieveDeviceName, Availability availability) {
         super();
         this.retrieveDeviceName = retrieveDeviceName;
         this.availability = availability;
     }
+
     public Availability getAvailability() {
         return availability;
     }
+
     public String getRetrieveDeviceName() {
         return retrieveDeviceName;
     }
-    
 }
