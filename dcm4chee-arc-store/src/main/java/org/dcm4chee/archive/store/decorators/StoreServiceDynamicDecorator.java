@@ -1,5 +1,14 @@
 package org.dcm4chee.archive.store.decorators;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+
+import javax.decorator.Decorator;
+import javax.decorator.Delegate;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.StoreAction;
@@ -12,14 +21,6 @@ import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.conf.decorators.DynamicDecoratorWrapper;
 import org.dcm4chee.storage.StorageContext;
-
-import javax.decorator.Decorator;
-import javax.decorator.Delegate;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
 
 /**
  * We have to be careful with scopes here. Currently the assumption is that all
@@ -40,16 +41,8 @@ public abstract class StoreServiceDynamicDecorator extends DynamicDecoratorWrapp
         return wrapWithDynamicDecorators(delegate).createStoreContext(session);
     }
 
-    public void initBulkdataStorage(StoreSession session) throws DicomServiceException {
-        wrapWithDynamicDecorators(delegate).initBulkdataStorage(session);
-    }
-
-    public void initMetadataStorage(StoreSession session) throws DicomServiceException {
-        wrapWithDynamicDecorators(delegate).initMetadataStorage(session);
-    }
-
-    public void initSpoolingStorage(StoreSession session) throws DicomServiceException {
-        wrapWithDynamicDecorators(delegate).initSpoolingStorage(session);
+    public void init(StoreSession session) throws DicomServiceException {
+        wrapWithDynamicDecorators(delegate).init(session);
     }
 
     public void writeSpoolFile(StoreContext session, Attributes fmi, Attributes attrs) throws DicomServiceException {

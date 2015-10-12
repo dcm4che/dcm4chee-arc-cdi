@@ -229,8 +229,7 @@ public class StoreAndVerifyOTWServiceIT {
                 session.setSource(new GenericParticipant("", "storeandremembertest"));
                 session.setRemoteAET("none");
                 session.setArchiveAEExtension(arcAEExt);
-                storeService.initBulkdataStorage(session);
-                storeService.initSpoolingStorage(session);
+                storeService.init(session);
                 StoreContext context = storeService.createStoreContext(session);
                 Attributes fmi = new Attributes();
                 fmi.setString(Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2");

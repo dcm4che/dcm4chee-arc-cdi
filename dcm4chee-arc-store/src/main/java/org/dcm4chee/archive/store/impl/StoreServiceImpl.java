@@ -38,54 +38,6 @@
 
 package org.dcm4chee.archive.store.impl;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
-import org.dcm4che3.io.BulkDataDescriptor;
-import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
-import org.dcm4che3.io.DicomOutputStream;
-import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.io.SAXTransformer.SetupTransformer;
-import org.dcm4che3.net.*;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.util.AttributesFormat;
-import org.dcm4che3.util.DateUtils;
-import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.TagUtils;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.entity.*;
-import org.dcm4chee.archive.locationmgmt.LocationMgmt;
-import org.dcm4chee.archive.monitoring.api.Monitored;
-import org.dcm4chee.archive.patient.PatientSelectorFactory;
-import org.dcm4chee.archive.patient.PatientService;
-import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.StoreService;
-import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.archive.store.StoreSessionClosed;
-import org.dcm4chee.archive.util.RetryBean;
-import org.dcm4chee.archive.util.RetryTask;
-import org.dcm4chee.storage.ObjectAlreadyExistsException;
-import org.dcm4chee.storage.RetrieveContext;
-import org.dcm4chee.storage.StorageContext;
-import org.dcm4chee.storage.conf.StorageSystem;
-import org.dcm4chee.storage.conf.StorageSystemGroup;
-import org.dcm4chee.storage.service.RetrieveService;
-import org.dcm4chee.storage.service.StorageService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,8 +48,72 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.io.BulkDataDescriptor;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
+import org.dcm4che3.io.DicomOutputStream;
+import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.io.SAXTransformer.SetupTransformer;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.util.AttributesFormat;
+import org.dcm4che3.util.DateUtils;
+import org.dcm4che3.util.SafeClose;
+import org.dcm4che3.util.TagUtils;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.StoreAction;
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.locationmgmt.LocationMgmt;
+import org.dcm4chee.archive.monitoring.api.Monitored;
+import org.dcm4chee.archive.patient.PatientSelectorFactory;
+import org.dcm4chee.archive.patient.PatientService;
+import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreService;
+import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.store.StoreSessionClosed;
+import org.dcm4chee.archive.util.RetryBean;
+import org.dcm4chee.storage.ObjectAlreadyExistsException;
+import org.dcm4chee.storage.RetrieveContext;
+import org.dcm4chee.storage.StorageContext;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
+import org.dcm4chee.storage.service.RetrieveService;
+import org.dcm4chee.storage.service.StorageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -152,7 +168,13 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
-    public void initBulkdataStorage(StoreSession session)
+    public void init(StoreSession session) throws DicomServiceException {
+        initBulkdataStorage(session);
+        initMetadataStorage(session);
+        initSpoolingStorage(session);
+    }
+
+    private void initBulkdataStorage(StoreSession session)
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         String groupID = arcAE.getStorageSystemGroupID();
@@ -174,8 +196,7 @@ public class StoreServiceImpl implements StoreService {
         session.setStorageSystem(storageSystem);
     }
 
-    @Override
-    public void initMetadataStorage(StoreSession session)
+    private void initMetadataStorage(StoreSession session)
             throws DicomServiceException {
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
         String groupID = arcAE.getMetaDataStorageSystemGroupID();
@@ -190,8 +211,7 @@ public class StoreServiceImpl implements StoreService {
         }
     }
 
-    @Override
-    public void initSpoolingStorage(StoreSession session)
+    private void initSpoolingStorage(StoreSession session)
             throws DicomServiceException {
 
         StorageSystem system = session.getStorageSystem();
@@ -200,9 +220,7 @@ public class StoreServiceImpl implements StoreService {
                     "No writeable storage group conifugred");
         }
 
-        //spool is in the same dir of the destination, to ease the
-        //move operation
-        //TODO check consequences with compression
+        //spool is in the same dir of the destination, to ease the move operation
         Path spoolingPath = Paths.get(system.getStorageSystemPath(), "spool");
 
         try {

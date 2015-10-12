@@ -1,5 +1,11 @@
 package org.dcm4chee.archive.store.decorators;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+
+import javax.persistence.EntityManager;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.StoreAction;
@@ -14,11 +20,6 @@ import org.dcm4chee.conf.decorators.DelegatingService;
 import org.dcm4chee.conf.decorators.DelegatingServiceImpl;
 import org.dcm4chee.storage.StorageContext;
 
-import javax.persistence.EntityManager;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-
 @DelegatingService
 public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> implements StoreService {
 
@@ -30,16 +31,8 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
         return getNextDecorator().createStoreContext(session);
     }
 
-    public void initBulkdataStorage(StoreSession session) throws DicomServiceException {
-        getNextDecorator().initBulkdataStorage(session);
-    }
-
-    public void initMetadataStorage(StoreSession session) throws DicomServiceException {
-        getNextDecorator().initMetadataStorage(session);
-    }
-
-    public void initSpoolingStorage(StoreSession session) throws DicomServiceException {
-        getNextDecorator().initSpoolingStorage(session);
+    public void init(StoreSession session) throws DicomServiceException {
+        getNextDecorator().init(session);
     }
 
     public void writeSpoolFile(StoreContext session, Attributes fmi, Attributes attrs) throws DicomServiceException {

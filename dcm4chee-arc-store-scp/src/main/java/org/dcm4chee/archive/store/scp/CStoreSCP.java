@@ -99,9 +99,7 @@ public class CStoreSCP extends BasicCStoreSCP {
                 session.setRemoteAET(as.getRemoteAET());
                 session.setRemoteApplicationEntity(aeCache.get(as.getRemoteAET()));
                 session.setArchiveAEExtension(arcAE);
-                storeService.initBulkdataStorage(session);
-                storeService.initMetadataStorage(session);
-                storeService.initSpoolingStorage(session);
+                storeService.init(session);
                 as.setProperty(StoreSession.class.getName(), session);
             }
             Attributes fmi = as.createFileMetaInformation(

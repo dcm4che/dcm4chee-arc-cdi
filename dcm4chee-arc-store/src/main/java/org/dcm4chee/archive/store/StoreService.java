@@ -38,6 +38,12 @@
 
 package org.dcm4chee.archive.store;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+
+import javax.persistence.EntityManager;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.StoreAction;
@@ -47,14 +53,11 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.storage.StorageContext;
 
-import javax.persistence.EntityManager;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * The Store Service stores instances to the Archive. This involves writing files to a Storage System and updating the
+ * database.
  *
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  */
 public interface StoreService {
 
@@ -65,13 +68,7 @@ public interface StoreService {
 
     StoreContext createStoreContext(StoreSession session);
 
-    void initBulkdataStorage(StoreSession session)
-            throws DicomServiceException;
-
-    void initMetadataStorage(StoreSession session)
-            throws DicomServiceException;
-
-    void initSpoolingStorage(StoreSession session) throws DicomServiceException;
+    void init(StoreSession session) throws DicomServiceException;
 
     void writeSpoolFile(StoreContext session, Attributes fmi, Attributes attrs)
             throws DicomServiceException;

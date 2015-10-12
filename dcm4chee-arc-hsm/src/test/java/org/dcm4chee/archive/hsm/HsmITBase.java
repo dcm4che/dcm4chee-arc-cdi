@@ -38,10 +38,6 @@
 
 package org.dcm4chee.archive.hsm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -114,6 +110,10 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Franz Willer <franz.willer@gmail.com>
@@ -400,8 +400,7 @@ public class HsmITBase {
             session.setSource(new GenericParticipant("", "hsmTest"));
             session.setRemoteAET(SOURCE_AET);
             session.setArchiveAEExtension(arcAEExt);
-            storeService.initBulkdataStorage(session);
-            storeService.initSpoolingStorage(session);
+            storeService.init(session);
             StoreContext context = storeService.createStoreContext(session);
             Attributes fmi = new Attributes();
             fmi.setString(Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2");

@@ -63,7 +63,6 @@ import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.junit.Assert;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.SAXReader;
@@ -90,6 +89,7 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -323,8 +323,7 @@ public class PriorsFileCacheProviderIT {
         session.setSource(new GenericParticipant("", "priorsFileCacheTest"));
         session.setRemoteAET("none");
         session.setArchiveAEExtension(arcAEExt);
-        storeService.initBulkdataStorage(session);
-        storeService.initSpoolingStorage(session);
+        storeService.init(session);
         StoreContext context = storeService.createStoreContext(session);
         Attributes attrs = loadAttributes(resourceName);
         Attributes fmi = attrs.createFileMetaInformation(UID.ImplicitVRLittleEndian);

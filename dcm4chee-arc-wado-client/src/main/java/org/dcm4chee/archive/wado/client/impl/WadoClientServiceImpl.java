@@ -153,9 +153,7 @@ public class WadoClientServiceImpl implements WadoClientService {
         ArchiveAEExtension arcAEExt = aeCache.get(localAETitle)
                 .getAEExtension(ArchiveAEExtension.class);
         session.setArchiveAEExtension(arcAEExt);
-        storeService.initBulkdataStorage(session);
-        storeService.initSpoolingStorage(session);
-        storeService.initMetadataStorage(session);
+        storeService.init(session);
         context = storeService.createStoreContext(session);
         try {
             DicomInputStream din = new DicomInputStream(in);

@@ -240,9 +240,7 @@ public class StowRS {
         }
         session.setRemoteAET(sourceAE.getAETitle());
         session.setArchiveAEExtension(arcAE);
-        storeService.initBulkdataStorage(session);
-        storeService.initMetadataStorage(session);
-        storeService.initSpoolingStorage(session);
+        storeService.init(session);
         try {
             new MultipartParser(boundary).parse(in, new MultipartParser.Handler() {
                 

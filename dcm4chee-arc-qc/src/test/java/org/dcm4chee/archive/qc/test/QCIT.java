@@ -38,9 +38,6 @@
 
 package org.dcm4chee.archive.qc.test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,7 +70,6 @@ import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.dto.QCEventInstance;
-import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.entity.AttributesBlob;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
@@ -91,6 +87,7 @@ import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
@@ -107,10 +104,12 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -1199,8 +1198,7 @@ public class QCIT {
             session.setSource(new GenericParticipant("", "qcTest"));
             session.setRemoteAET("none");
             session.setArchiveAEExtension(arcAEExt);
-            storeService.initBulkdataStorage(session);
-            storeService.initSpoolingStorage(session);
+            storeService.init(session);
             StoreContext context = storeService.createStoreContext(session);
             Attributes fmi = new Attributes();
             fmi.setString(Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2");
