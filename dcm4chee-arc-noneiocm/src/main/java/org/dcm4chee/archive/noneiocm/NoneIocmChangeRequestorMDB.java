@@ -51,14 +51,17 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Code;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.dto.ActiveService;
+import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCOperationNotPermittedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,8 +81,6 @@ import org.slf4j.LoggerFactory;
 public class NoneIocmChangeRequestorMDB implements MessageListener{
 
     private static final Logger LOG = LoggerFactory.getLogger(NoneIocmChangeRequestorMDB.class);
-
-    private final org.dcm4che3.data.Code REJ_CODE_QUALITY_REASON = new org.dcm4che3.data.Code("(113001, DCM, \"Rejected for Quality Reasons\")");
 
     @Inject
     private ActiveProcessingService activeProcessingService;
@@ -116,23 +117,26 @@ public class NoneIocmChangeRequestorMDB implements MessageListener{
                     LOG.warn("Cannot determine NoneIOCM change! Ignore this active process ({})", p);
                 }
             }
+            Code rejNoteCode = NoneIOCMChangeRequestorService.REJ_CODE_QUALITY_REASON;
             if (sopUIDchanged.size() > 0) {
-              for ( Map.Entry<String, String> e : sopUIDchanged.entrySet()) {
-                  qcBean.replaced(e.getValue(), e.getKey(), REJ_CODE_QUALITY_REASON);
-                  activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(Arrays.asList(e.getKey()), ActiveService.NONE_IOCM_UPDATE);
-              }
+            	QCEvent event = qcBean.replaced(sopUIDchanged, rejNoteCode);
+            	ArrayList<String> targets = new ArrayList<String>(event.getTarget().size());
+            	for ( QCEventInstance qcI : event.getTarget()) {
+            		targets.add(qcI.getSopInstanceUID());
+            	}
+        		activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(targets, ActiveService.NONE_IOCM_UPDATE);
             }
             if (seriesUIDchanged.size() > 0) {
                 Attributes seriesAttrs = new Attributes();
                 for ( Map.Entry<String, List<String>> e : seriesUIDchanged.entrySet()) {
                     seriesAttrs.setString(Tag.SeriesInstanceUID, VR.UI, e.getKey());
-                    qcBean.split(e.getValue(), null, apsStudyIUID, null, seriesAttrs, REJ_CODE_QUALITY_REASON);
+                    qcBean.split(e.getValue(), null, apsStudyIUID, null, seriesAttrs, rejNoteCode);
                     activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(e.getValue(), ActiveService.NONE_IOCM_UPDATE);
                 }
             }
             if (studyUIDchanged.size() > 0) {
                 for ( Map.Entry<String, List<String>> e : studyUIDchanged.entrySet()) {
-                    qcBean.split(e.getValue(), null, e.getKey(), null, null, REJ_CODE_QUALITY_REASON);
+                    qcBean.split(e.getValue(), null, e.getKey(), null, null, rejNoteCode);
                     activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(e.getValue(), ActiveService.NONE_IOCM_UPDATE);
                 }
             }
@@ -140,7 +144,7 @@ public class NoneIocmChangeRequestorMDB implements MessageListener{
                 for ( Map.Entry<String, List<String>> e : patIDchanged.entrySet()) {
                     IDWithIssuer pid = IDWithIssuer.pidOf(patAttrChanged.get(e.getKey()));
                     String studyUID = UIDUtils.createUID();
-                    qcBean.split(e.getValue(), pid, studyUID, null, null, REJ_CODE_QUALITY_REASON);
+                    qcBean.split(e.getValue(), pid, studyUID, null, null, rejNoteCode);
                     activeProcessingService.deleteActiveProcessBySOPInstanceUIDsAndService(e.getValue(), ActiveService.NONE_IOCM_UPDATE);
                 }
             }

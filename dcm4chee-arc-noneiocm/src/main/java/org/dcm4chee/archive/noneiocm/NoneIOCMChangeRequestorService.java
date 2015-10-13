@@ -45,6 +45,7 @@ import javax.enterprise.event.Observes;
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 
@@ -58,8 +59,10 @@ public interface NoneIOCMChangeRequestorService {
     public enum NoneIOCMChangeType {
         PAT_ID_CHANGE, STUDY_IUID_CHANGE, SERIES_IUID_CHANGE, INSTANCE_CHANGE, NO_CHANGE, ILLEGAL_CHANGE
     }
+    public final org.dcm4che3.data.Code REJ_CODE_QUALITY_REASON = new org.dcm4che3.data.Code("(113001, DCM, \"Rejected for Quality Reasons\")");
 
     boolean isNoneIOCMChangeRequestor(String callingAET);
+    boolean isNoneIOCMChangeRequest(String callingAET, String sourceAET);
     int getNoneIOCMModalityGracePeriod(String callingAET);
     
     NoneIOCMChangeType getChangeType(Instance inst, Attributes attrs);
@@ -72,4 +75,8 @@ public interface NoneIOCMChangeRequestorService {
     public void onStoreInstance(@Observes StoreContext context);
 
     void handleModalityChange(Instance inst, StoreContext context, int gracePeriodInSeconds);
+    
+    void hideOrUnhideInstance(Instance instance, org.dcm4che3.data.Code rejNoteCode);
+	QCInstanceHistory getLastQCInstanceHistory(String sopIUID);
+
 }

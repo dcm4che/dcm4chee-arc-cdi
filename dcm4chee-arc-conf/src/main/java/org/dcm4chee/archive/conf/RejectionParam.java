@@ -121,6 +121,10 @@ public class RejectionParam implements Serializable{
 
     public static RejectionParam forRejectionNoteTitle(Code title,
             RejectionParam... from) {
+    	if (title == null)
+    		return null;
+    	if (title.getCodeValue() == null) // If Code is not persisted, the final getter methods return null!
+    		title = new Code(title.toString());
         for (RejectionParam rejectionParam : from) {
             if (rejectionParam.getRejectionNoteTitle().equalsIgnoreMeaning(title))
                 return rejectionParam;

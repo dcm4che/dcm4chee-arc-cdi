@@ -90,6 +90,7 @@ import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
 import org.dcm4chee.archive.entity.QCActionHistory;
+import org.dcm4chee.archive.entity.QCActionHistory.QCLevel;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.QCSeriesHistory;
 import org.dcm4chee.archive.entity.QCStudyHistory;
@@ -102,6 +103,7 @@ import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.iocm.RejectionDeleteService;
 import org.dcm4chee.archive.iocm.RejectionService;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
+import org.dcm4chee.archive.iocm.impl.StoreServiceIOCMDecorator;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.qc.PatientCommands;
@@ -238,7 +240,7 @@ public class QCBeanImpl implements QCBean {
             Attributes targetStudyAttrs, Attributes targetSeriesAttrs,
             org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         
-        QCActionHistory mergeAction = generateQCAction(QCOperation.MERGE);
+        QCActionHistory mergeAction = generateQCAction(QCOperation.MERGE, QCLevel.STUDY);
         List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
         List<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
         List<Instance> rejectedInstances = new ArrayList<Instance>();
@@ -275,7 +277,7 @@ public class QCBeanImpl implements QCBean {
             Series newSeries = createSeries(series, target, targetSeriesAttrs);
 
             QCSeriesHistory seriesHistory = createQCSeriesHistory(
-                    series.getSeriesInstanceUID(), series.getAttributes(), studyHistory);
+                    series.getSeriesInstanceUID(), series.getAttributes(), studyHistory, null);
 
             for(Instance inst: series.getInstances()) {
                 Instance newInstance = move(inst, newSeries, qcRejectionCode);
@@ -315,33 +317,39 @@ public class QCBeanImpl implements QCBean {
             String targetStudyUID, Attributes createdStudyAttrs,
             Attributes targetSeriesAttrs, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         
-        QCActionHistory splitAction = generateQCAction(QCOperation.SPLIT);
         List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
         List<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
         List<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
-        Collection<Instance> toMove = locateInstances( toMoveUIDs.toArray(new String[toMoveUIDs.size()]));
-        Study sourceStudy= toMove.iterator().next().getSeries().getStudy();
+        Collection<Instance> toMove = locateInstances(toMoveUIDs);
+        if (toMove.size() != toMoveUIDs.size()) {
+            throw new EJBException("QC Split failed! Not all Instances to move are found!");
+        }
 
         if(!allInstancesFromSameStudy(toMove)) {
-            LOG.error("{} : QC info[Split] - Failure, Different studie used as source", qcSource);
+            LOG.error("{} : QC info[Split] - Failure, Different studies used as source", qcSource);
             throw new EJBException();
         }
+        Study sourceStudy= toMove.iterator().next().getSeries().getStudy();
         
         checkIfQCPermittedForStudy(sourceStudy);
         
         Study targetStudy = findStudy(targetStudyUID);
-
+        QCLevel qcLevel;
         if (targetStudy == null) {
             LOG.debug("{} : QC info[Split] - Target study"
                     + " didn't exist, creating target study",qcSource);
             targetStudy = createStudy(pid, sourceStudy, targetStudyUID, createdStudyAttrs);
-        } else if (createdStudyAttrs != null && createdStudyAttrs.size() > 0) {
-            
-            checkIfQCPermittedForStudy(targetStudy);
-            
-            updateStudy(archiveDeviceExtension, targetStudy, createdStudyAttrs);
+            qcLevel = pid == null ? QCLevel.STUDY : QCLevel.PATIENT;
+        } else {
+        	if (createdStudyAttrs != null && createdStudyAttrs.size() > 0) {
+        		checkIfQCPermittedForStudy(targetStudy);
+        		updateStudy(archiveDeviceExtension, targetStudy, createdStudyAttrs);
+        	}
+        	qcLevel = targetSeriesAttrs != null && !toMove.iterator().next().getSeries().getSeriesInstanceUID()
+        			.equals(targetSeriesAttrs.getString(Tag.SeriesInstanceUID)) ? QCLevel.SERIES : QCLevel.STUDY;
         }
 
+        QCActionHistory splitAction = generateQCAction(QCOperation.SPLIT, qcLevel);
         QCStudyHistory studyHistory = createQCStudyHistory(
                 sourceStudy.getStudyInstanceUID(), targetStudy.getStudyInstanceUID(),
                 sourceStudy.getAttributes(), splitAction);
@@ -351,7 +359,7 @@ public class QCBeanImpl implements QCBean {
         Series newSeries = null;
         for (Instance instance : toMove) {
             if (!oldToNewSeries.containsKey(instance.getSeries().getSeriesInstanceUID())) {
-                if (targetSeriesAttrs != null && targetSeriesAttrs.containsValue(Tag.SeriesInstanceUID)) {
+                if (qcLevel == QCLevel.SERIES) {
                     try {
                         Query q = em.createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID);
                         q.setParameter(1, targetSeriesAttrs.getString(Tag.SeriesInstanceUID));
@@ -362,7 +370,8 @@ public class QCBeanImpl implements QCBean {
                     newSeries = createSeries(instance.getSeries(), targetStudy, targetSeriesAttrs);
                 Series series = instance.getSeries();
                 QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(), 
-                        series.getAttributes(), studyHistory);
+                        series.getAttributes(), studyHistory, checkNoneIOCMSource(instance));
+                seriesHistory.setNoneIOCMSourceAET(checkNoneIOCMSource(instance));
                 oldToNewSeries.put(instance.getSeries().getSeriesInstanceUID(),
                         new NewSeriesTuple(newSeries.getPk(), seriesHistory));
             } else {
@@ -406,7 +415,7 @@ public class QCBeanImpl implements QCBean {
             IDWithIssuer pid, String targetStudyUID, 
             Attributes createdStudyAttrs,Attributes targetSeriesAttrs,
             org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
-        QCActionHistory segmentAction = generateQCAction(QCOperation.SEGMENT);
+        QCActionHistory segmentAction = generateQCAction(QCOperation.SEGMENT, QCLevel.STUDY);
         List<QCEventInstance> movedSourceUIDs = new ArrayList<QCEventInstance>();
         List<QCEventInstance> movedTargetUIDs = new ArrayList<QCEventInstance>();
         List<QCEventInstance> clonedSourceUIDs = new ArrayList<QCEventInstance>();
@@ -414,8 +423,8 @@ public class QCBeanImpl implements QCBean {
         List<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
         //check move and clone belong to same study
         ArrayList<Instance> tmpAllInstancesInvolved = new ArrayList<Instance>();
-        Collection<Instance> toMove = locateInstances(toMoveUIDs.isEmpty()?new String[]{}:toMoveUIDs.toArray(new String[toMoveUIDs.size()]));
-        Collection<Instance> toClone = locateInstances(toCloneUIDs.isEmpty()?new String[]{}:toCloneUIDs.toArray(new String[toCloneUIDs.size()]));
+        Collection<Instance> toMove = locateInstances(toMoveUIDs);
+        Collection<Instance> toClone = locateInstances(toCloneUIDs);
         tmpAllInstancesInvolved.addAll(toMove);
         tmpAllInstancesInvolved.addAll(toClone);
         Study sourceStudy = tmpAllInstancesInvolved.get(0).getSeries().getStudy();
@@ -457,7 +466,7 @@ public class QCBeanImpl implements QCBean {
                         targetStudy, targetSeriesAttrs);
                 Series series = instance.getSeries();
                 QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
-                        series.getAttributes(), studyHistory);
+                        series.getAttributes(), studyHistory, null);
                 oldToNewSeries.put(instance.getSeries().getSeriesInstanceUID(), 
                         new NewSeriesTuple(newSeries.getPk(),seriesHistory));
             }
@@ -485,7 +494,7 @@ public class QCBeanImpl implements QCBean {
                         targetStudy, targetSeriesAttrs);
                 Series series = instance.getSeries();
                 QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
-                        series.getAttributes(), studyHistory);
+                        series.getAttributes(), studyHistory, null);
                 oldToNewSeries.put(instance.getSeries().getSeriesInstanceUID(), 
                         new NewSeriesTuple(newSeries.getPk(),seriesHistory));
             }
@@ -551,46 +560,53 @@ public class QCBeanImpl implements QCBean {
     }
 
     @Override
-    public QCEvent replaced(String oldIUID, String newIUID, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
-        Collection<Instance> instances = locateInstances(new String[]{newIUID});
-        if (instances.size() != 1) {
-            LOG.warn("Ignore QC replace operation! new Instance not found!");
-            return null;
-        }
-        
-        Instance newInstance = instances.iterator().next();
-        Instance oldInstance = new Instance();
-        Attributes attrs = new Attributes(newInstance.getAttributes());
-        attrs.setString(Tag.SOPInstanceUID, VR.UI, oldIUID);
-        oldInstance.setAttributes(attrs, archiveDeviceExtension.getAttributeFilter(Entity.Instance),
-                archiveDeviceExtension.getFuzzyStr(), archiveDeviceExtension.getNullValueForQueryFields());
-        oldInstance.setSeries(newInstance.getSeries());
-        Study study = newInstance.getSeries().getStudy();
-        
-        checkIfQCPermittedForStudy(study);
-        
-        String seriesIUID = newInstance.getSeries().getSeriesInstanceUID();
-        String studyIUID = study.getStudyInstanceUID();
-        QCActionHistory action = generateQCAction(QCOperation.UPDATE);
-        QCStudyHistory studyHistory = createQCStudyHistory(studyIUID, studyIUID, null, action);
-        QCSeriesHistory seriesHistory = createQCSeriesHistory(seriesIUID, null, studyHistory);
-        QCInstanceHistory instanceHistory = new QCInstanceHistory(
-                studyIUID, seriesIUID, oldIUID, newIUID, newIUID, false);
-        instanceHistory.setSeries(seriesHistory);
+    public QCEvent replaced(Map<String, String> newToOldIUIDs, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
+    	String oldIUID, newIUID;
+        List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>(newToOldIUIDs.size());
+        List<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>(newToOldIUIDs.size());
+        List<Instance> oldInstances = new ArrayList<Instance>(newToOldIUIDs.size());
+        Collection<Instance> newInstances = locateInstances(newToOldIUIDs.keySet());
+        Study study = null;
         List<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
-        instancesHistory.add(instanceHistory);
-        List<QCEventInstance> sourceUIDs = new ArrayList<QCEventInstance>();
-        List<QCEventInstance> targetUIDs = new ArrayList<QCEventInstance>();
-        targetUIDs.add(new QCEventInstance(newIUID, seriesIUID, studyIUID));
-        sourceUIDs.add(new QCEventInstance(oldIUID, seriesIUID, studyIUID));
+        QCStudyHistory studyHistory = null;
+    	for (Instance newInstance : newInstances) {
+	        if (study == null) {
+	        	study = newInstance.getSeries().getStudy();
+	        	checkIfQCPermittedForStudy(study);
+	        }
+    		newIUID = newInstance.getSopInstanceUID();
+    		oldIUID = newToOldIUIDs.remove(newIUID);
+	        newInstance.setRejectionNoteCode(null);//unhide new Instance
+	        em.merge(newInstance);
+	        Instance oldInstance = new Instance();
+	        Attributes attrs = new Attributes(newInstance.getAttributes());
+	        attrs.setString(Tag.SOPInstanceUID, VR.UI, oldIUID);
+	        oldInstance.setAttributes(attrs, archiveDeviceExtension.getAttributeFilter(Entity.Instance),
+	                archiveDeviceExtension.getFuzzyStr(), archiveDeviceExtension.getNullValueForQueryFields());
+	        oldInstance.setSeries(newInstance.getSeries());
+	        oldInstances.add(oldInstance);
+	        String seriesIUID = newInstance.getSeries().getSeriesInstanceUID();
+	        String studyIUID = study.getStudyInstanceUID();
+	        QCActionHistory action = generateQCAction(QCOperation.UPDATE, QCLevel.INSTANCE);
+	        studyHistory = createQCStudyHistory(studyIUID, studyIUID, null, action);
+	        QCSeriesHistory seriesHistory = createQCSeriesHistory(seriesIUID, null, studyHistory, newInstance.getSeries().getSourceAET());
+	        QCInstanceHistory instanceHistory = new QCInstanceHistory(
+	                studyIUID, seriesIUID, oldIUID, newIUID, newIUID, false);
+	        instanceHistory.setSeries(seriesHistory);
+	        instancesHistory.add(instanceHistory);
+	        targetUIDs.add(new QCEventInstance(newIUID, seriesIUID, studyIUID));
+	        sourceUIDs.add(new QCEventInstance(oldIUID, seriesIUID, studyIUID));
+        }
+    	if (newToOldIUIDs.size() != 0) {
+    		LOG.warn("Not all instances are replaced! -> Remaining active service entries for retry/debug!");
+    	}
         HashMap<String,NewSeriesTuple> oldToNewSeries = new HashMap<String, NewSeriesTuple>();
-        instancesHistory.addAll(handleKOPRSR(qcRejectionCode, 
-                studyHistory, sourceUIDs,
+        instancesHistory.addAll(handleKOPRSR(qcRejectionCode, studyHistory, sourceUIDs,
                 targetUIDs, study, study, oldToNewSeries));
 
         recordHistoryEntry(instancesHistory);
-        Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, Arrays.asList(oldInstance));
-        QCEvent replaceEvent = new QCEvent(QCOperation.SPLIT,null,null,sourceUIDs,targetUIDs);
+        Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, oldInstances);
+        QCEvent replaceEvent = new QCEvent(QCOperation.UPDATE, null, null, sourceUIDs, targetUIDs);
         replaceEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(sourceUIDs, targetUIDs, rejNote);
         return replaceEvent;
@@ -633,7 +649,7 @@ public class QCBeanImpl implements QCBean {
     public QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt,
             QCUpdateScope scope, Attributes attrs)
             throws QCOperationNotPermittedException, EntityNotFoundException {
-        QCActionHistory updateAction = generateQCAction(QCOperation.UPDATE);
+        QCActionHistory updateAction = generateQCAction(QCOperation.UPDATE, QCLevel.INSTANCE);
         LOG.info("{}:  QC info[Update] info - Performing QC update DICOM header on {} scope : ", qcSource, scope);
         Attributes unmodified;
         PatientAttrsPKTuple unmodifiedAndPK = null;
@@ -812,10 +828,10 @@ public class QCBeanImpl implements QCBean {
 
     @Override
     public QCEvent deleteInstance(String sopInstanceUID, org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
-        Collection<Instance> tmpList = locateInstances(new String [] {sopInstanceUID});
+        Collection<Instance> tmpList = locateInstances(sopInstanceUID);
         if(tmpList.isEmpty()) {
             LOG.debug("{}:  QC info[Delete] Failure - Error finding "
-                    + "instance to delete with SOPInstanceUID={}",qcSource,sopInstanceUID);
+                    + "instance to delete with SOPInstanceUID={}", qcSource,sopInstanceUID);
             throw new EJBException();
         }
         
@@ -905,26 +921,27 @@ public class QCBeanImpl implements QCBean {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Collection<Instance> locateInstances(String[] sopInstanceUIDs) {
-        ArrayList<Instance> list = new ArrayList<Instance>();
-        if(sopInstanceUIDs == null || sopInstanceUIDs.length == 0) {
+    public Collection<Instance> locateInstances(String... sopInstanceUIDs) {
+        if(sopInstanceUIDs == null) {
             LOG.error("{} : QC info[locateInstance] - Unable to locate instances with null UIDs"
                     + " , returning an empty list", qcSource);
-            return list;
+            return new ArrayList<Instance>();
         }
-        ArrayList<String> uids = new ArrayList<String>();
-        uids.addAll(Arrays.asList(sopInstanceUIDs));
+        return locateInstances(new ArrayList<String>(Arrays.asList(sopInstanceUIDs)));
+    }
+    
+    @SuppressWarnings("unchecked")
+	private Collection<Instance> locateInstances(Collection<String> sopIUIDs) {
+    	if (sopIUIDs.isEmpty())
+    		return new ArrayList<Instance>();
         Query query  = em.createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER_MANY);
-        query.setParameter("uids", uids);
-        list = (ArrayList<Instance>) query.getResultList();
-        
-        return list;
+        query.setParameter("uids", sopIUIDs);
+        return (ArrayList<Instance>) query.getResultList();
     }
 
     private void createQCDeleteHistory(Collection<Instance> rejectedInstances) {
-        QCActionHistory deleteAction = generateQCAction(QCOperation.DELETE);
+        QCActionHistory deleteAction = generateQCAction(QCOperation.DELETE, QCLevel.INSTANCE);
         Map<String, QCStudyHistory> studiesInHistory = new HashMap<String, QCStudyHistory>();
         Map<String, QCSeriesHistory> seriesInHistory = new HashMap<String, QCSeriesHistory>();
         Collection<QCInstanceHistory> instancesInHistory = new ArrayList<QCInstanceHistory>();
@@ -941,8 +958,7 @@ public class QCBeanImpl implements QCBean {
             QCSeriesHistory seriesHistory = seriesInHistory.get(seriesIUID);
             if(seriesHistory == null) {
                 seriesHistory = createQCSeriesHistory(
-                        seriesIUID, inst.getSeries().getAttributes(), studiesInHistory.get(studyIUID));
-                seriesHistory.setNoneIOCMSourceAET(checkNoneIOCMSource(inst));
+                        seriesIUID, inst.getSeries().getAttributes(), studiesInHistory.get(studyIUID), checkNoneIOCMSource(inst));
                 seriesInHistory.put(seriesIUID, seriesHistory);
             }
             QCInstanceHistory instanceHistory = new QCInstanceHistory(
@@ -979,9 +995,7 @@ public class QCBeanImpl implements QCBean {
                 locations = new ArrayList<Location>();
                 newInstance.setLocations(locations);
             };
-            
-            locations.add(getFirstFileRef(source.getLocations(), newInstance));
-            
+            locations.addAll(source.getLocations());
         } catch (Exception e) {
             LOG.error("{} : QC info[move] Failure - Unable to"
                     + " create replacement instance for {},"
@@ -1011,7 +1025,8 @@ public class QCBeanImpl implements QCBean {
                 newInstance.setLocations(locations);
             };
             
-            locations.add(getFirstFileRef(source.getLocations(), newInstance));
+            locations.addAll(source.getLocations());
+
             
         } catch (Exception e) {
             LOG.error("{} : QC info[clone] Unable to create cloned instance for {},"
@@ -1059,12 +1074,13 @@ public class QCBeanImpl implements QCBean {
      * @return the QC series history
      */
     private QCSeriesHistory createQCSeriesHistory(String seriesInstanceUID,
-            Attributes oldAttributes, QCStudyHistory studyHistory) {
+            Attributes oldAttributes, QCStudyHistory studyHistory, String noneIocmSourceAET) {
         QCSeriesHistory seriesHistory = new QCSeriesHistory();
         seriesHistory.setStudy(studyHistory);
         if(oldAttributes != null && !oldAttributes.isEmpty())
           seriesHistory.setUpdatedAttributesBlob(new AttributesBlob(oldAttributes));
         seriesHistory.setOldSeriesUID(seriesInstanceUID);
+        seriesHistory.setNoneIOCMSourceAET(noneIocmSourceAET);
         em.persist(seriesHistory);
         return seriesHistory;
     }
@@ -1945,33 +1961,6 @@ public class QCBeanImpl implements QCBean {
     }
 
     /**
-     * Gets the first file found in the provided collection.
-     * Helper method used by the
-     * {@link #move(Instance, Series, org.dcm4che3.data.Code)}
-     * method to retrieve file reference from either the
-     * file alias table or via the file reference relation.
-     *  
-     * @param refs
-     *            the file references
-     * @param inst
-     *            the instance
-     * @return the first file reference found
-     * @throws IllegalArgumentException
-     *             the illegal argument exception
-     */
-    private Location getFirstFileRef(Collection<Location> refs, Instance inst)
-            throws IllegalArgumentException{
-        if(refs.isEmpty()){
-            LOG.error("{} : QC info[getFirstFileRef] Failure - Invalid "
-                    + "instance {}, must have a referenced file "
-                    + "either via fileref or file alias",qcSource, inst);
-            throw new IllegalArgumentException();
-        } else {
-            return refs.iterator().next();
-        }
-    }
-
-    /**
      * Adds the identical document sequence.
      * Adds an instance reference in the identical document sequence
      * of a KO/SR object.
@@ -2149,7 +2138,7 @@ public class QCBeanImpl implements QCBean {
                     }
                 }
             }
-    }
+        }
         return aggregatedSopUIDs;
     }
 
@@ -2245,7 +2234,7 @@ public class QCBeanImpl implements QCBean {
                             inst.getSeries().getSeriesInstanceUID())) {
                         newSeries= createSeries(inst.getSeries(), targetStudy, null);
                         QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
-                                series.getAttributes(), studyHistory);
+                                series.getAttributes(), studyHistory, null);
                         oldToNewSeries.put(inst.getSeries().getSeriesInstanceUID(), 
                                 new NewSeriesTuple(newSeries.getPk(),seriesHistory));
                     }
@@ -2287,7 +2276,7 @@ public class QCBeanImpl implements QCBean {
                             inst.getSeries().getSeriesInstanceUID())) {
                         newSeries= createSeries(inst.getSeries(), targetStudy, null);
                         QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
-                                series.getAttributes(), studyHistory);
+                                series.getAttributes(), studyHistory, null);
                         oldToNewSeries.put(inst.getSeries().getSeriesInstanceUID(), 
                                 new NewSeriesTuple(newSeries.getPk(),seriesHistory));
                     }
@@ -2347,10 +2336,11 @@ public class QCBeanImpl implements QCBean {
      *            the operation
      * @return the QC action history
      */
-    private QCActionHistory generateQCAction(QCOperation operation) {
+    private QCActionHistory generateQCAction(QCOperation operation, QCLevel level) {
         QCActionHistory action = new QCActionHistory();
         action.setCreatedTime(new Date());
         action.setAction(operation.toString());
+        action.setLevel(level);
         em.persist(action);
         return action;
     }
@@ -2499,12 +2489,16 @@ public class QCBeanImpl implements QCBean {
      * @return true, if is q ced
      */
     private boolean isQCed(String sopInstanceUID) {
-        Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_OLD_UID);
-        query.setParameter(1, sopInstanceUID);
-        return query.getResultList().size()==1?false:true;
+        return getQCInstanceHistory(sopInstanceUID).size()!=1;//TODO Check if != 1 is correct condition!
     }
-
-
+    
+    @SuppressWarnings("unchecked")
+	private List<QCInstanceHistory> getQCInstanceHistory(String sopIUID) {
+        Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_OLD_UID);
+        query.setParameter(1, sopIUID);
+        return (List<QCInstanceHistory>) query.getResultList();
+    }
+    
     /**
      * Gets the previous history node.
      * Used to set the next pk in a chain of updates.
@@ -2542,7 +2536,7 @@ public class QCBeanImpl implements QCBean {
                 new Attributes(), identHistoryAction);
         QCSeriesHistory identSeriesHistory = createQCSeriesHistory(
                 ident.getSeries().getSeriesInstanceUID(), 
-                new Attributes(), identStudyHistory);
+                new Attributes(), identStudyHistory, null);
         QCInstanceHistory identInstanceHistory = new QCInstanceHistory(
                 ident.getSopInstanceUID(), identSeriesHistory.getOldSeriesUID(),
                 ident.getSopInstanceUID(), ident.getSopInstanceUID(),

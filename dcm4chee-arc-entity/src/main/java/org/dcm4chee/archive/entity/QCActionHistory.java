@@ -58,6 +58,8 @@ public class QCActionHistory implements Serializable{
 
     private static final long serialVersionUID = 87307281912599202L;
     
+    public enum QCLevel {PATIENT, STUDY, SERIES, INSTANCE}
+    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "pk")
@@ -70,6 +72,10 @@ public class QCActionHistory implements Serializable{
     @Basic(optional = false)
     @Column(name = "action", updatable = false)
     private String action;
+
+    @Basic(optional = true)
+    @Column(name = "level", updatable = false)
+    private QCLevel level;
 
     public long getPk() {
         return pk;
@@ -91,7 +97,15 @@ public class QCActionHistory implements Serializable{
         this.action = action;
     }
 
-    @Override
+    public QCLevel getLevel() {
+		return level;
+	}
+
+	public void setLevel(QCLevel level) {
+		this.level = level;
+	}
+
+	@Override
     public String toString() {
         return "QCActionHistory[pk=" + pk+ "]";
     }

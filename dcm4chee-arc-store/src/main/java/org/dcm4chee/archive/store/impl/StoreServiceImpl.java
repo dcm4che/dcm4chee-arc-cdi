@@ -734,7 +734,7 @@ public class StoreServiceImpl implements StoreService {
         } catch (Exception e) {
             LOG.error("StoreService : Error deleting replaced location - {}", e);
         }
-        return adjustForNoneIOCM(newInst, context);
+        return service.adjustForNoneIOCM(newInst, context);
     }
 
     @Override

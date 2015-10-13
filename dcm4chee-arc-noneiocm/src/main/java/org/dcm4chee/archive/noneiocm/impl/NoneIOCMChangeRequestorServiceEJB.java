@@ -65,10 +65,12 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.util.UIDUtils;
+import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.NoneIOCMChangeRequestorExtension;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.dto.ActiveService;
+import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCActionHistory;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
@@ -107,6 +109,9 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
     @Inject
     private PatientService patientService;
 
+    @Inject
+    private CodeService codeService;
+    
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
@@ -121,17 +126,15 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
 
     @Override
     public boolean isNoneIOCMChangeRequestor(String callingAET) {
-        NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
-        if (ext == null || ext.getNoneIOCMChangeRequestorDevices().isEmpty()) {
-            LOG.debug("No NoneIOCMChangeRequestorDevices configured!");
-            return false;
-        }
-        for (Device d : ext.getNoneIOCMChangeRequestorDevices()) {
-            if (d.getApplicationAETitles().contains(callingAET)) 
-                return true;
-        }
-        return false;
+    	return getNoneIOCMDevice(callingAET) != null;
     }
+    
+    @Override
+    public boolean isNoneIOCMChangeRequest(String callingAET, String sourceAET) {
+    	Device d = getNoneIOCMDevice(callingAET);
+       	return d == null ? false : callingAET.equals(sourceAET) ? true : d.getApplicationAETitles().contains(sourceAET);
+    }
+
     @Override
     public int getNoneIOCMModalityGracePeriod(String callingAET) {
         NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
@@ -144,6 +147,20 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
                 return ext.getGracePeriod();
         }
         return -1;
+    }
+    
+    private Device getNoneIOCMDevice(String callingAET) {
+        NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
+        if (ext == null || ext.getNoneIOCMChangeRequestorDevices().isEmpty()) {
+            LOG.debug("No NoneIOCMChangeRequestorDevices configured!");
+            return null;
+        }
+        for (Device d : ext.getNoneIOCMChangeRequestorDevices()) {
+            if (d.getApplicationAETitles().contains(callingAET)) {
+            	return d;
+            }
+        }
+    	return null;
     }
     
     @Override
@@ -216,6 +233,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
             origAttrs.setString(Tag.SOPInstanceUID, VR.UI, inst.getSopInstanceUID());
             String newUID = UIDUtils.createUID();
             context.getAttributes().setString(Tag.SOPInstanceUID, VR.UI, newUID);
+            context.setProperty(StoreServiceNoneIOCMDecorator.NONE_IOCM_HIDE_NEW_INSTANCE, newUID);
             chgAttrs.setString(Tag.SOPInstanceUID, VR.UI, newUID);
             activeProcessingService.addActiveProcess(inst.getSeries().getStudy().getStudyInstanceUID(), 
                     inst.getSeries().getSeriesInstanceUID(), newUID, ActiveService.NONE_IOCM_UPDATE, chgAttrs);
@@ -225,6 +243,24 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         return chgType;
     }
 
+    @Override
+    public QCInstanceHistory getLastQCInstanceHistory(String sopIUID) {
+        Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_OLD_UID);
+        query.setParameter(1, sopIUID);
+        @SuppressWarnings("unchecked")
+		List<QCInstanceHistory> tmp = (List<QCInstanceHistory>) query.getResultList();
+        return tmp.size() == 0 ? null : tmp.get(0);
+    }
+
+
+
+    @Override
+    public void hideOrUnhideInstance(Instance instance, org.dcm4che3.data.Code rejNoteCode) {
+    	Code code = rejNoteCode == null ? null : codeService.findOrCreate(new Code(NoneIOCMChangeRequestorService.REJ_CODE_QUALITY_REASON));
+    	instance.setRejectionNoteCode(code);
+    	em.merge(instance);
+    }
+    
     @Override
     public void handleModalityChange(Instance inst, StoreContext context, int gracePeriodInSeconds) {
         
@@ -296,6 +332,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         return (now - createdTime) < gracePeriodInSeconds; 
     }
 
+    @Override
     public void onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
         LOG.debug("onStudyUpdated:{}", studyUpdatedEvent);
         if (isNoneIOCMChangeRequestor(studyUpdatedEvent.getSourceAET())) {
@@ -312,7 +349,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
             }
         }
     }
-    
+
     public void scheduleNoneIocmChangeRequest(String studyIUID, int delay) throws JMSException {
         Connection conn = connFactory.createConnection();
         try {

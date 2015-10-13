@@ -38,6 +38,7 @@
 package org.dcm4chee.archive.qc;
 
 import java.util.Collection;
+import java.util.Map;
 
 import javax.persistence.EntityNotFoundException;
 
@@ -49,6 +50,7 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
+import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.qc.impl.QCPostProcessor;
 
@@ -295,7 +297,7 @@ public interface QCBean {
      *            the strings
      * @return the collection
      */
-    public Collection<Instance> locateInstances(String[] strings);
+    public Collection<Instance> locateInstances(String... strings);
 
     /**
      * Delete study.
@@ -445,6 +447,15 @@ public interface QCBean {
             String targetStudyUID, Attributes createdStudyattributes,
             Attributes targetSeriesattributes, Code qcRejectionCode, String noneIOCMAET);*/
 
-    QCEvent replaced(String oldIUID, String newIUID, Code qcRejectionCode) throws QCOperationNotPermittedException;
+    /**
+     * Perform additional QC and IOCM operation for the replacement done for an NoneIOCM Instance Update.
+     * 
+     * @param oldIUID
+     * @param newIUID
+     * @param qcRejectionCode
+     * @return 'UPDATE' QCEvent or null if operation was skipped. 
+     * @throws QCOperationNotPermittedException
+     */
+    QCEvent replaced(Map<String, String> oldToNewIUIDs, Code qcRejectionCode) throws QCOperationNotPermittedException;
 
 }

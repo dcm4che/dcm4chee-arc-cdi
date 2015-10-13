@@ -38,14 +38,23 @@
 
 package org.dcm4chee.archive.noneiocm.impl;
 
+import java.util.Collection;
+
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService.NoneIOCMChangeType;
+import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
@@ -63,39 +72,63 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
 
     private static final Logger LOG = LoggerFactory.getLogger(StoreServiceNoneIOCMDecorator.class);
 
+    protected static final String NONE_IOCM_HIDE_NEW_INSTANCE = "NONE_IOCM_HIDE_NEW_INSTANCE";
+
     @Inject
     NoneIOCMChangeRequestorService noneIocmService;
 
+    @Inject
+    QCBean qcBean;
+    
+    @Override
+    public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
+    	if (noneIocmService.isNoneIOCMChangeRequestor(context.getStoreSession().getRemoteAET())) {
+    		Attributes attrs = context.getAttributes();
+    		String origSopIUID = attrs.getString(Tag.SOPInstanceUID);
+    		QCInstanceHistory h = noneIocmService.getLastQCInstanceHistory(origSopIUID);
+    		if (h != null) {
+    			Collection<Instance> instances = qcBean.locateInstances(origSopIUID);
+    			if (instances.size() > 0) {
+    				String sourceAET = instances.iterator().next().getSeries().getSourceAET();
+    				if (noneIocmService.isNoneIOCMChangeRequest(context.getStoreSession().getRemoteAET(), sourceAET)) {
+    					LOG.info("Instance already QCed! Change SOP Instance UID {} to current UID {}", origSopIUID, h.getCurrentUID());
+    					attrs.setString(Tag.SOPInstanceUID, VR.UI, h.getCurrentUID());
+    				}
+    			}
+    		}
+    	}
+    	return getNextDecorator().findOrCreateInstance(em, context);
+    }
     @Override
     public StoreAction instanceExists(EntityManager em, StoreContext context, Instance inst)
             throws DicomServiceException {
-        if (noneIocmService.isNoneIOCMChangeRequestor(context.getStoreSession().getRemoteAET())) {
+        if (noneIocmService.isNoneIOCMChangeRequest(context.getStoreSession().getRemoteAET(), inst.getSeries().getSourceAET())) {
             LOG.debug("{} is a None IOCM Change Requestor! check for changes.", context.getStoreSession().getRemoteAET());
             NoneIOCMChangeType chgType = noneIocmService.performChange(inst, context);
             if (chgType == NoneIOCMChangeType.INSTANCE_CHANGE)
-                return StoreAction.REPLACE; 
+                return StoreAction.STORE; 
         }
         return getNextDecorator().instanceExists(em, context, inst);
     }
     
     @Override
     public Instance adjustForNoneIOCM(Instance instanceToStore, StoreContext context) {
-        String callingAET = context.getStoreSession().getRemoteAET();
-        int gracePeriodInSeconds = noneIocmService.getNoneIOCMModalityGracePeriod(callingAET);
-        if (gracePeriodInSeconds > 0) {
-            LOG.info("{}: {} is a None IOCM Change Requestor Modality! check for non structural changes.",
-                    context.getStoreSession(), callingAET);
-            noneIocmService.handleModalityChange(instanceToStore, context, gracePeriodInSeconds);
-        }
+    	String hideNewInstanceUID = (String) context.getProperty(StoreServiceNoneIOCMDecorator.NONE_IOCM_HIDE_NEW_INSTANCE);
+    	context.setProperty(StoreServiceNoneIOCMDecorator.NONE_IOCM_HIDE_NEW_INSTANCE, null);
+    	if (hideNewInstanceUID == null) {
+	        String callingAET = context.getStoreSession().getRemoteAET();
+	        int gracePeriodInSeconds = noneIocmService.getNoneIOCMModalityGracePeriod(callingAET);
+	        if (gracePeriodInSeconds > 0) {
+	            LOG.info("{}: {} is a None IOCM Change Requestor Modality! check for non structural changes.",
+	                    context.getStoreSession(), callingAET);
+	            noneIocmService.handleModalityChange(instanceToStore, context, gracePeriodInSeconds);
+	        }
+    	} else {
+    		noneIocmService.hideOrUnhideInstance(instanceToStore, NoneIOCMChangeRequestorService.REJ_CODE_QUALITY_REASON);
+    	}
         return getNextDecorator().adjustForNoneIOCM(instanceToStore, context);
     }
     
-    @Override
-    public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
-        Instance inst = getNextDecorator().findOrCreateInstance(em, context);
-        return inst;
-    }
-
     public void store(StoreContext context) throws DicomServiceException {
         getNextDecorator().store(context);
     }

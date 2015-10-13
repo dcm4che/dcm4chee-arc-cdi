@@ -65,7 +65,7 @@ import org.dcm4chee.archive.dto.ActiveService;
     @NamedQuery(
             name=ActiveProcessing.IS_STUDY_BEING_PROCESSED,
             query="SELECT count(ap) FROM ActiveProcessing ap"
-                    + " WHERE ap.studyInstanceUID = :uid AND ap.activeService IN :serviceList"
+                    + " WHERE ap.studyInstanceUID = :uid AND ap.activeService IN (:serviceList)"
             ),
     @NamedQuery(
             name=ActiveProcessing.FIND_BY_SOP_IUID,
@@ -75,10 +75,10 @@ import org.dcm4chee.archive.dto.ActiveService;
             query="SELECT ap FROM ActiveProcessing ap WHERE ap.sopInstanceUID = :uid AND ap.activeService = :service"),
     @NamedQuery(
             name=ActiveProcessing.FIND_BY_SOP_IUIDs,
-            query="SELECT ap FROM ActiveProcessing ap WHERE ap.sopInstanceUID IN :uidList"),
+            query="SELECT ap FROM ActiveProcessing ap WHERE ap.sopInstanceUID IN (:uidList)"),
     @NamedQuery(
             name=ActiveProcessing.FIND_BY_SOP_IUIDs_AND_SERVICE,
-            query="SELECT ap FROM ActiveProcessing ap WHERE ap.activeService = :service AND ap.sopInstanceUID IN :uidList"),
+            query="SELECT ap FROM ActiveProcessing ap WHERE ap.activeService = :service AND ap.sopInstanceUID IN (:uidList)"),
     @NamedQuery(
             name=ActiveProcessing.FIND_BY_SERIES_IUID,
             query="SELECT ap FROM ActiveProcessing ap WHERE ap.seriesInstanceUID = :uid"),
@@ -96,7 +96,7 @@ import org.dcm4chee.archive.dto.ActiveService;
             query="DELETE FROM ActiveProcessing ap WHERE ap.sopInstanceUID = :uid AND ap.activeService = :service"),
     @NamedQuery(
             name=ActiveProcessing.DELETE_BY_SOP_IUIDs_AND_SERVICE,
-            query="DELETE FROM ActiveProcessing ap WHERE ap.sopInstanceUID IN :uidList AND ap.activeService = :service"),
+            query="DELETE FROM ActiveProcessing ap WHERE ap.sopInstanceUID IN (:uidList) AND ap.activeService = :service"),
 })
 @Entity
 @Table(name = "active_processing", uniqueConstraints = 
