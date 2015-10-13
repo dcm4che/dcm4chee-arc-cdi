@@ -147,42 +147,31 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
     @SuppressWarnings("unchecked")
     public Collection<QCInstanceHistory> getReferencedHistory(CStoreSCUContext ctx,
             Collection<String> referencedStudyInstanceUIDs) {
-        boolean performQuery=true;
         //check if cache has UIDs and filter the referencedStudyInstanceUIDs list to remove the cached ones
-            Collection<String> diff = getUIDsMissingFromCache(referencedStudyInstanceUIDs,
-                    (Collection<String>) ctx.getProperty(CACHED_UIDS));
-            if(diff.isEmpty())
-                performQuery=false;
+        Collection<String> cachedUIDs = (Collection<String>) ctx.getProperty(CACHED_UIDS);
+        Collection<QCInstanceHistory> cachedHistory = (Collection<QCInstanceHistory>) ctx.getProperty(CACHED_HISTORY_OBJECTS);
+        Collection<String> diff = getUIDsMissingFromCache(referencedStudyInstanceUIDs, cachedUIDs);
+        if(diff.size() > 0) {
             Collection<QCInstanceHistory> resultList = new ArrayList<QCInstanceHistory>();
-        if(performQuery){
-        Query query = em.createNamedQuery(QCInstanceHistory
-                .FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST);
-        query.setParameter("uids", diff);
-        for(Iterator<Object[]> iter =  query.getResultList().iterator();iter.hasNext();) {
-            Object[] row = iter.next();
-            resultList.add((QCInstanceHistory) row[0]);
-        }
+            Query query = em.createNamedQuery(QCInstanceHistory.FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST);
+            query.setParameter("uids", diff);
+            for(Iterator<Object[]> iter =  query.getResultList().iterator();iter.hasNext();) {
+                Object[] row = iter.next();
+                resultList.add((QCInstanceHistory) row[0]);
+            }
         
-        if(ctx.getProperty(NUM_QC_REF_QUERIES)==null) {
-           ctx.setProperty(NUM_QC_REF_QUERIES,1);
+            if(ctx.getProperty(NUM_QC_REF_QUERIES)==null) {
+                ctx.setProperty(NUM_QC_REF_QUERIES,1);
+            } else {
+                ctx.setProperty(NUM_QC_REF_QUERIES, ((int)ctx.getProperty(NUM_QC_REF_QUERIES)+1));
+            }
+            cachedHistory = complementCache(ctx, cachedUIDs, cachedHistory, resultList, diff);
         }
-        else {
-            ctx.setProperty(NUM_QC_REF_QUERIES, ((int)ctx.getProperty(NUM_QC_REF_QUERIES)+1));
-        }
-        }
-        
-        return complementCache(ctx,resultList,diff);
+        return cachedHistory;
     }
 
-    @SuppressWarnings("unchecked")
-    private Collection<QCInstanceHistory> complementCache(CStoreSCUContext ctx,
-            Collection<QCInstanceHistory> resultList, Collection<String> diff) {
-        Collection<String> cachedUIDs 
-        = (Collection<String>) ctx.getProperty(CACHED_UIDS);
-        
-        Collection<QCInstanceHistory> cachedHistory 
-        = (Collection<QCInstanceHistory>) ctx.getProperty(CACHED_HISTORY_OBJECTS);
-        
+    private Collection<QCInstanceHistory> complementCache(CStoreSCUContext ctx, Collection<String> cachedUIDs, 
+            Collection<QCInstanceHistory> cachedHistory, Collection<QCInstanceHistory> resultList, Collection<String> diff) {
         if(diff.isEmpty())
             return cachedHistory;
         else {
@@ -203,7 +192,7 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
         }
         ctx.setProperty(CACHED_UIDS, cachedUIDs);
         ctx.setProperty(CACHED_HISTORY_OBJECTS, cachedHistory);
-                return cachedHistory;
+        return cachedHistory;
     }
 
     private Collection<String> getUIDsMissingFromCache(
@@ -212,14 +201,13 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
         
         if(cachedUIDS==null)
             return referencedStudyInstanceUIDs;
-        
+        ArrayList<String> diff = new ArrayList<String>(referencedStudyInstanceUIDs.size());
+        String uid;
         for(Iterator<String> iter = referencedStudyInstanceUIDs.iterator();iter.hasNext();) {
-            String uid = iter.next();
-            if(cachedUIDS.contains(uid)) {
-                iter.remove();
-            }
+            uid = iter.next();
+            diff.add(uid);
         }
-        return referencedStudyInstanceUIDs;
+        return diff;
     }
 
     @Override

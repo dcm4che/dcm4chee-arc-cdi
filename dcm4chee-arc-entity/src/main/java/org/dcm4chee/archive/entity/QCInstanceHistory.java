@@ -106,7 +106,32 @@ import org.hibernate.annotations.Cascade;
             + "LEFT JOIN qci.series.study qcst "
             + "where qcst.oldStudyUID IN (:uids) "
             + "OR qci.currentStudyUID IN (:uids) order by qci.series.study.action.createdTime DESC"
+    ),
+@NamedQuery(
+    name="QCInstanceHistory.findByOldStudyUIDs",
+    query="SELECT qci from QCInstanceHistory qci LEFT JOIN qci.series.study qcs WHERE qcs.oldStudyUID IN (:uids)"
+    ),
+@NamedQuery(
+    name="QCInstanceHistory.findByOldSeriesUIDs",
+    query="SELECT qci from QCInstanceHistory qci LEFT JOIN qci.series qcs WHERE qcs.oldSeriesUID IN (:uids)"
+    ),
+@NamedQuery(
+    name="QCInstanceHistory.findByOldSopUIDs",
+    query="SELECT qci from QCInstanceHistory qci WHERE qci.currentUID IN (SELECT DISTINCT sub.currentUID from QCInstanceHistory sub WHERE sub.oldUID IN (:uids))"
+    ),
+@NamedQuery(
+    name="QCInstanceHistory.findByNewStudyUIDs",
+    query="SELECT qci from QCInstanceHistory qci LEFT JOIN qci.series.study qcs WHERE qci.currentStudyUID IN (:uids)"
+    ),
+@NamedQuery(
+    name="QCInstanceHistory.findByNewSeriesUIDs",
+    query="SELECT qci from QCInstanceHistory qci LEFT JOIN qci.series qcs WHERE qci.currentSeriesUID IN (:uids)"
+    ),
+@NamedQuery(
+    name="QCInstanceHistory.findByNewSopUIDs",
+    query="SELECT qci from QCInstanceHistory qci WHERE qci.currentUID IN (:uids)"
     )
+
 })
 
 @Entity
@@ -121,6 +146,12 @@ public class QCInstanceHistory implements Serializable{
     public static final String STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT= "QCInstanceHistory.studyExistsInQCHistoryAsOldOrNext";
     public static final String STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT= "QCInstanceHistory.studiesExistsInQCHistoryAsOldOrNext";
     public static final String FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST = "QCInstanceHistory.findDistinctInstancesWhereStudyOldOrCurrentInList";
+    public static final String FIND_BY_OLD_STUDY_UIDS = "QCInstanceHistory.findByOldStudyUIDs";
+    public static final String FIND_BY_OLD_SERIES_UIDS = "QCInstanceHistory.findByOldSeriesUIDs";
+    public static final String FIND_BY_OLD_SOP_UIDS = "QCInstanceHistory.findByOldSopUIDs";
+    public static final String FIND_BY_NEW_STUDY_UIDS = "QCInstanceHistory.findByNewStudyUIDs";
+    public static final String FIND_BY_NEW_SERIES_UIDS = "QCInstanceHistory.findByNewSeriesUIDs";
+    public static final String FIND_BY_NEW_SOP_UIDS = "QCInstanceHistory.findByNewSopUIDs";
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

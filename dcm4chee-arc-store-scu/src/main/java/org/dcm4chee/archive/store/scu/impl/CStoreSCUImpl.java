@@ -195,6 +195,11 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
             attrs = Utils.mergeAndNormalize(attrs, (Attributes) inst.getObject());
 
             service.coerceAttributes(attrs, context);
+            if (!inst.iuid.equals(attrs.getString(Tag.SOPInstanceUID))) {
+            	String newIUID = attrs.getString(Tag.SOPInstanceUID);
+            	LOG.info("SOP Instance UID changed! {} -> {}", inst.iuid, newIUID);
+            	inst = changeSOPInstanceUID(inst, newIUID);
+            }
 
         } catch (Exception e) {
             LOG.info("Unable to store {}/{} to {}",
@@ -217,6 +222,27 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
                 throw new RuntimeException(e);
         }
     }
+
+	private ArchiveInstanceLocator changeSOPInstanceUID(ArchiveInstanceLocator inst, String newIUID) {
+		ArchiveInstanceLocator newLocator = new ArchiveInstanceLocator.Builder(
+		        inst.cuid, 
+		        newIUID,
+		        inst.tsuid)
+		.storageSystem(inst.getStorageSystem())
+		.storagePath(inst.getFilePath())
+		.entryName(inst.getEntryName())
+		.fileTimeZoneID(inst.getFileTimeZoneID())
+		.retrieveAETs(inst.getRetrieveAETs())
+		.withoutBulkdata(inst.isWithoutBulkdata())
+		.seriesInstanceUID(inst.getSeriesInstanceUID())
+		.studyInstanceUID(inst.getStudyInstanceUID())
+		.externalLocators(inst.getExternalLocators())
+		.build();
+		if (inst.getFallbackLocator() != null) {
+			newLocator.setFallbackLocator(changeSOPInstanceUID(inst.getFallbackLocator(), newIUID));
+		}
+		return newLocator;
+	}
 
 
     private Attributes readFrom(ArchiveInstanceLocator inst) throws IOException {
