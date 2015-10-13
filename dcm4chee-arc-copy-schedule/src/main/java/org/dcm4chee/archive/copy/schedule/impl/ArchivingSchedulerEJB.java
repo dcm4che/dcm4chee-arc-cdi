@@ -209,7 +209,7 @@ public class ArchivingSchedulerEJB {
                 .createNamedQuery(ArchivingTask.FIND_READY_TO_ARCHIVE, ArchivingTask.class)
                 .setMaxResults(1).getResultList();
         if (results.isEmpty()) {
-            LOG.info("No archiving tasks found to schedule");
+            LOG.debug("No archiving tasks found to schedule");
             return null;
         }
 
