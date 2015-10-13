@@ -38,6 +38,36 @@
 
 package org.dcm4chee.archive.store.impl;
 
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -47,7 +77,11 @@ import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.io.SAXTransformer.SetupTransformer;
-import org.dcm4che3.net.*;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.DateUtils;
@@ -57,7 +91,12 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.monitoring.api.Monitored;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
@@ -76,26 +115,6 @@ import org.dcm4chee.storage.service.RetrieveService;
 import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
-import java.util.*;
-import java.util.concurrent.*;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -199,23 +218,27 @@ public class StoreServiceImpl implements StoreService {
         StorageSystem system = session.getStorageSystem();
         if (system == null) {
             throw new DicomServiceException(Status.ProcessingFailure,
-                    "No writeable storage group conifugred");
+                    "No writeable storage group configured");
         }
 
-        //spool is in the same dir of the destination, to ease the move operation
+        // spool is in the same dir of the destination, to ease the move operation
         Path spoolingPath = Paths.get(system.getStorageSystemPath(), "spool");
 
+        Path spoolDirectory;
         try {
-            LOG.info("INIT spool storage - {}", spoolingPath);
-            Files.createDirectories(spoolingPath);
+            LOG.info("INIT spool storage within {}", spoolingPath);
+            if (!Files.exists(spoolingPath))
+                Files.createDirectories(spoolingPath);
+            spoolDirectory = Files.createTempDirectory(spoolingPath, null);
         } catch (IOException e) {
             throw new DicomServiceException(Status.OutOfResources,
-                    "No writeable storage system in group " +
-                            system.getStorageSystemGroup().getGroupID(), e);
+                    "Cannot create spool directory for group " +
+                            system.getStorageSystemGroup().getGroupID() +
+                            " in " + spoolingPath, e);
         }
 
         session.setSpoolStorageSystem(system);
-        session.setSpoolDirectory(spoolingPath);
+        session.setSpoolDirectory(spoolDirectory);
     }
 
     @Override
@@ -296,10 +319,10 @@ public class StoreServiceImpl implements StoreService {
     }
 
     private void deleteSpoolDirectory(StoreSession session) {
-        Path dir = session.getSpoolDirectory();
-        if (dir!=null) {
-            try (DirectoryStream<Path> directory = Files.newDirectoryStream(dir)) {
-                for (Path file : directory) {
+        Path spoolDirectory = session.getSpoolDirectory();
+        if (spoolDirectory != null) {
+            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(spoolDirectory)) {
+                for (Path file : dirStream) {
                     try {
                         Files.delete(file);
                         LOG.info("{}: M-DELETE spool file - {}", session, file);
@@ -308,11 +331,11 @@ public class StoreServiceImpl implements StoreService {
                                 file, e);
                     }
                 }
-                Files.delete(dir);
-                LOG.info("{}: M-DELETE spool directory - {}", session, dir);
+                Files.delete(spoolDirectory);
+                LOG.info("{}: M-DELETE spool directory - {}", session, spoolDirectory);
             } catch (IOException e) {
                 LOG.warn("{}: Failed to M-DELETE spool directory - {}", session,
-                        dir, e);
+                        spoolDirectory, e);
             }
         }
     }
