@@ -40,10 +40,12 @@
 package org.dcm4chee.archive.store.remember.impl;
 
 import javax.ejb.ActivationConfigProperty;
+import javax.ejb.EJBException;
 import javax.ejb.MessageDriven;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
@@ -70,14 +72,15 @@ public class StoreAndRememberMDB implements MessageListener {
 
     @Override
     public void onMessage(Message msg) {
+        // let container handle retries
+        StoreAndRememberContext ctx;
         try {
-            StoreAndRememberContext ctx = (StoreAndRememberContext) ((ObjectMessage) msg)
-                    .getObject();
-            // TODO: handle retries and delay
-            storeAndRememeberService.storeAndRemember(ctx);
-        } catch (Throwable th) {
-            LOG.error("Failed to process Store-and-Remember JMS message " + msg, th);
+            ctx = (StoreAndRememberContext) ((ObjectMessage) msg).getObject();
+        } catch (JMSException e) {
+            throw new EJBException("Failed to extract context from Store-and-Remember JMS message",
+                    e);
         }
+        storeAndRememeberService.storeAndRemember(ctx);
     }
 
 }

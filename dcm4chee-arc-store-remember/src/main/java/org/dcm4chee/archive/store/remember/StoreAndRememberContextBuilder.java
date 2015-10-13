@@ -64,9 +64,7 @@ public interface StoreAndRememberContextBuilder {
     StoreAndRememberContextBuilder storeVerifyProtocol(STORE_VERIFY_PROTOCOL storeVerifyProtocol);
 
     StoreAndRememberContextBuilder retries(int retries);
-    
-    StoreAndRememberContextBuilder delayMs(long delay);
-    
+
     StoreAndRememberContext build();
     
 }

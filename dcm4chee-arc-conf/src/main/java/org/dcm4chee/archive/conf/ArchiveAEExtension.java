@@ -40,9 +40,7 @@ package org.dcm4chee.archive.conf;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
@@ -202,6 +200,12 @@ public class ArchiveAEExtension extends AEExtension {
 
     @ConfigurableProperty(name = "dcmPatientSelector")
     private PatientSelectorConfig patientSelectorConfig;
+
+    @ConfigurableProperty(name = "dcmStoreRememberMaxRetries", defaultValue = "0")
+    private int storeAndRememberMaxRetries;
+
+    @ConfigurableProperty(name = "dcmStoreRememberDelayAfterFailedResponse", defaultValue = "3600")
+    private int storeAndRememberDelayAfterFailedResponse = 3600;
 
     public RetrieveSuppressionCriteria getRetrieveSuppressionCriteria() {
         return retrieveSuppressionCriteria;
@@ -622,6 +626,23 @@ public class ArchiveAEExtension extends AEExtension {
     public void setDefaultExternalRetrieveAETAvailability(
             Availability defaultExternalRetrieveAETAvailability) {
         this.defaultExternalRetrieveAETAvailability = defaultExternalRetrieveAETAvailability;
+    }
+
+    public int getStoreAndRememberMaxRetries() {
+        return storeAndRememberMaxRetries;
+    }
+
+    public void setStoreAndRememberMaxRetries(int storeAndRememberMaxRetries) {
+        this.storeAndRememberMaxRetries = storeAndRememberMaxRetries;
+    }
+
+    public int getStoreAndRememberDelayAfterFailedResponse() {
+        return storeAndRememberDelayAfterFailedResponse;
+    }
+
+    public void setStoreAndRememberDelayAfterFailedResponse(
+            int storeAndRememberDelayAfterFailedResponse) {
+        this.storeAndRememberDelayAfterFailedResponse = storeAndRememberDelayAfterFailedResponse;
     }
 
 }

@@ -47,7 +47,7 @@ public interface StoreAndRememberService {
 
     StoreAndRememberContextBuilder createContextBuilder();
     
-    void scheduleStoreAndRemember(StoreAndRememberContext context);
+    void scheduleStoreAndRemember(StoreAndRememberContext context, long delay);
     
     void storeAndRemember(StoreAndRememberContext context);
     
