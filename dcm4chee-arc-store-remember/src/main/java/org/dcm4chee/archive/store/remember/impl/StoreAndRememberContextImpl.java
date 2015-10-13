@@ -46,7 +46,7 @@ import org.dcm4chee.archive.store.verify.StoreVerifyService.STORE_VERIFY_PROTOCO
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-public class StoreAndRememberContextImpl implements StoreAndRememberContext {
+class StoreAndRememberContextImpl implements StoreAndRememberContext {
     private static final long serialVersionUID = 7658929872168L;
     
     private String transactionUID;
@@ -56,7 +56,6 @@ public class StoreAndRememberContextImpl implements StoreAndRememberContext {
     private STORE_VERIFY_PROTOCOL storeVerifyProtocol;
     private String[] instances;
     private int retries;
-    private long delay;
     
     public void setTransactionUID(String transactionUID) {
         this.transactionUID = transactionUID;
@@ -84,10 +83,6 @@ public class StoreAndRememberContextImpl implements StoreAndRememberContext {
 
     public void setRetries(int retries) {
         this.retries = retries;
-    }
-
-    public void setDelay(long delay) {
-        this.delay = delay;
     }
 
     @Override
@@ -126,11 +121,6 @@ public class StoreAndRememberContextImpl implements StoreAndRememberContext {
     }
     
     @Override
-    public long getDelay() {
-        return delay;
-    }
-    
-    @Override
     public String toString() {
         return "StoreAndRememberContext[" +
                 "transactionUID=" + transactionUID +
@@ -139,7 +129,6 @@ public class StoreAndRememberContextImpl implements StoreAndRememberContext {
                 ", remoteAE=" + remoteAE + 
                 ", storeVerifyProtocol="+ storeVerifyProtocol +
                 ", #instances=" + instances.length +
-                ", delay=" + delay +
                 ", retries=" + retries
                 +"]";
     }

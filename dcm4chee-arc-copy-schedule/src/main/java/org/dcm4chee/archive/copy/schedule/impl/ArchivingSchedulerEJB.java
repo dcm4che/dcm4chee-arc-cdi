@@ -242,11 +242,6 @@ public class ArchivingSchedulerEJB {
 
     private void scheduleStoreAndRemember(ArchivingTask task) throws IOException {
         String extDevice = task.getTargetExternalDevice();
-        String localAE = determineLocalAETitle();
-        if (localAE == null) {
-            throw new IOException("Could not determine local AE title for Store-and-Remember "
-                    + "task to external device " + extDevice);
-        }
 
         String remoteAE = determineRemoteAETitle(extDevice);
         if (remoteAE == null) {
@@ -255,23 +250,12 @@ public class ArchivingSchedulerEJB {
         }
 
         StoreAndRememberContext storeRememberCxt = storeAndRemeberService.createContextBuilder()
-                .seriesUID(task.getSeriesInstanceUID()).localAE(localAE)
+                .seriesUID(task.getSeriesInstanceUID())
                 .externalDeviceName(extDevice).remoteAE(remoteAE)
                 .storeVerifyProtocol(StoreVerifyService.STORE_VERIFY_PROTOCOL.AUTO).build();
-        storeAndRemeberService.scheduleStoreAndRemember(storeRememberCxt);
+        storeAndRemeberService.scheduleStoreAndRemember(storeRememberCxt, 0);
     }
 
-    private String determineLocalAETitle() {
-        String localAE = null;
-        try {
-            ArchiveDeviceExtension archiveDeviceExtension = device.getDeviceExtension(ArchiveDeviceExtension.class);
-            localAE = archiveDeviceExtension.getFetchAETitle();
-        } catch(Exception e) {
-        }
-        
-        return localAE;
-    }
-    
     private String determineRemoteAETitle(String extDeviceName) {
         String remoteAE = null;
         try {

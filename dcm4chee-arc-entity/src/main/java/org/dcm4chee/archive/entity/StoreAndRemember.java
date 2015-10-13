@@ -87,9 +87,6 @@ public class StoreAndRemember {
     @Column(name="retries_left")
     private int retriesLeft;
     
-    @Column(name="delay")
-    private long delay;
-    
     @Column(name="local_ae")
     private String localAE;
     
@@ -138,14 +135,6 @@ public class StoreAndRemember {
 
     public int getRetriesLeft() {
         return retriesLeft;
-    }
-    
-    public void setDelay(long delay) {
-        this.delay = delay;
-    }
-    
-    public long getDelay() {
-        return delay;
     }
 
     public void setRetriesLeft(int retriesLeft) {

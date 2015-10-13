@@ -73,14 +73,12 @@ public class StoreAndRememberEJB {
         String localAE = null;
         String remoteAE = null;
         String extDeviceName = null;
-        long delay = 0;
         STORE_VERIFY_PROTOCOL storeVerifyProtocol = null;
         for (StoreAndRemember sr : srs) {
             localAE = sr.getLocalAE();
             remoteAE = sr.getRemoteAE();
             extDeviceName = sr.getExternalDeviceName();
             storeVerifyProtocol = STORE_VERIFY_PROTOCOL.valueOf(sr.getStoreVerifyProtocol());
-            delay = sr.getDelay();
             
             if (StoreVerifyStatus.FAILED.equals(sr.getInstanceStatus())) {
                 failedSopInstanceUIDs.add(sr.getSopInstanceUID());
@@ -90,7 +88,7 @@ public class StoreAndRememberEJB {
         return ctxBuilder.localAE(localAE)
                 .externalDeviceName(extDeviceName)
                 .remoteAE(remoteAE)
-                .storeVerifyProtocol(storeVerifyProtocol).delayMs(delay)
+                .storeVerifyProtocol(storeVerifyProtocol)
                 .instances(failedSopInstanceUIDs.toArray(new String[failedSopInstanceUIDs.size()]));
     }
     
@@ -148,8 +146,6 @@ public class StoreAndRememberEJB {
             sr.setExternalDeviceName(cxt.getExternalDeviceName());
             sr.setStoreVerifyProtocol(cxt.getStoreVerifyProtocol().toString());
             sr.setRetriesLeft(cxt.getRetries());
-            sr.setDelay(cxt.getDelay());
-            
             sr.setSopInstanceUID(sopInstanceUID);
             sr.setInstanceStatus(StoreVerifyStatus.PENDING);
             em.persist(sr);

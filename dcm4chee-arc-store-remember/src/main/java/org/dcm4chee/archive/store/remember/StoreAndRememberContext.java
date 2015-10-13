@@ -62,7 +62,4 @@ public interface StoreAndRememberContext extends Serializable {
     public String[] getInstances();
        
     public int getRetries();
-      
-    public long getDelay();
-      
 }

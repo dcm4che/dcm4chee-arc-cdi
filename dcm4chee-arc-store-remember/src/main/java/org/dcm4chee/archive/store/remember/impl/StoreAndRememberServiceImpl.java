@@ -220,12 +220,14 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         String remoteAET = storeVerifyResponse.getRemoteAET();
         
         Availability defaultAvailability = null;
+        
         String remoteDeviceName = null;
+        ArchiveAEExtension archAEExt = null;
         try {
             ApplicationEntity archiveAE = aeCache.findApplicationEntity(localAET);
             ApplicationEntity remoteAE = aeCache.findApplicationEntity(remoteAET);
             remoteDeviceName= remoteAE.getDevice().getDeviceName();
-            ArchiveAEExtension archAEExt = archiveAE.getAEExtension(ArchiveAEExtension.class);
+            archAEExt = archiveAE.getAEExtension(ArchiveAEExtension.class);
             defaultAvailability = archAEExt.getDefaultExternalRetrieveAETAvailability();
         } catch (ConfigurationException e) {
             //failure attempt
@@ -264,7 +266,10 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
                         .retries(retriesLeft -1);
                 StoreAndRememberContext retryContext = storeRememberEJB.augmentStoreAndRememberContext(storeAndRememberTxUID, ctxBuilder)
                         .build();
-                scheduleStoreAndRemember(retryContext);
+
+                long delay = archAEExt.getStoreAndRememberDelayAfterFailedResponse() * 1000;
+                
+                scheduleStoreAndRemember(retryContext, delay);
             } else {
                 // send 'failed' response
                 storeRememberResponse.fire(new StoreAndRememberResponse(storeAndRememberTxUID, verifiedSopInstances));
@@ -290,14 +295,13 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
     }
     
     @Override
-    public void scheduleStoreAndRemember(StoreAndRememberContext ctx) {
+    public void scheduleStoreAndRemember(StoreAndRememberContext ctx, long delay) {
         try {
             Connection conn = connFactory.createConnection();
             try {
                 Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 MessageProducer producer = session.createProducer(storeAndRememberQueue);
                 ObjectMessage msg = session.createObjectMessage(ctx);
-                long delay = ctx.getDelay();
                 if (delay > 0) {
                     msg.setLongProperty("_HQ_SCHED_DELIVERY", System.currentTimeMillis() + delay);
                 }
@@ -316,6 +320,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         private String[] instances;
         private String studyIUID;
         private String seriesIUID;
+        private int retries = -1;
         
         @Override
         public StoreAndRememberContextBuilderImpl transactionUID(String txUID) {
@@ -361,13 +366,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         
         @Override
         public StoreAndRememberContextBuilderImpl retries(int retries) {
-            cxt.setRetries(retries);
-            return this;
-        }
-        
-        @Override
-        public StoreAndRememberContextBuilderImpl delayMs(long delay) {
-            cxt.setDelay(delay);
+            this.retries = retries;
             return this;
         }
         
@@ -386,7 +385,13 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
                 throw new RuntimeException("Invalid store-and-remember request: no remote AE title set");
             }
             if(cxt.getLocalAE() == null) {
-                throw new RuntimeException("Invalid store-and-remember request: no local AE title set");
+                ArchiveDeviceExtension devExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+                String fetchAET = devExt.getFetchAETitle();
+                if (fetchAET == null) {
+                    throw new IllegalStateException(
+                            "Could not determine fetch AE title for Store-and-Remember");
+                }
+                cxt.setLocalAE(fetchAET);
             }
             if(cxt.getStoreVerifyProtocol() == null) {
                 throw new RuntimeException("Invalid store-and-remember request: no store-verify protocol set");
@@ -394,6 +399,17 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             
             if(cxt.getTransactionUID() == null) {
                 cxt.setTransactionUID(generateTransactionUID());
+            }
+            
+            if(retries == -1) {
+                ApplicationEntity ae;
+                try {
+                    ae = aeCache.findApplicationEntity(cxt.getLocalAE());
+                } catch (ConfigurationException e) {
+                    throw new RuntimeException("Could not find Application Entity for " + cxt.getLocalAE());
+                }
+                ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
+                cxt.setRetries(arcAE.getStoreAndRememberMaxRetries());
             }
             
             if (instances == null) {
