@@ -106,8 +106,8 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmDeIdentifyLogs", defaultValue = "false")
     private boolean deIdentifyLogs;
 
-    @ConfigurableProperty(name = "dcmUpdateDbRetries", defaultValue = "1")
-    private int updateDbRetries = 1;
+    @ConfigurableProperty(name = "dcmUpdateDbRetries", defaultValue = "3")
+    private int updateDbRetries = 3;
 
     @ConfigurableProperty(name = "dcmUpdateDbDelay", defaultValue = "1000")
     private int updateDbDelay = 1000;
