@@ -676,19 +676,26 @@ public class LocationDeleteServiceImpl implements DeleterService {
         }
         if(hasToBeOnGroups != null && !hasToBeOnGroups.isEmpty()) {
                 return filterOnGroups(hasToBeOnGroups,!filteredOnMany.isEmpty()
-                        ? filteredOnMany : instancesDueDeleteOnGroup);
+                        ? filteredOnMany : instancesDueDeleteOnGroup, rule);
         }
         return filteredOnMany;
         }
     }
 
     private List<Instance> filterOnGroups(List<String> hasToBeOnGroups,
-            List<Instance> filteredOnMany) {
+            List<Instance> filteredOnMany, DeletionRule rule) {
         List<String> tmpFoundOnGroups = new ArrayList<String>();
         List<Instance> foundOnConfiguredGroups = new ArrayList<Instance>();
         for (Instance inst : filteredOnMany) {
             for (Location loc : inst.getLocations()) {
-                if (!tmpFoundOnGroups.contains(loc.getStorageSystemGroupID()))
+                StorageSystemGroup locationGroup = device
+                        .getDeviceExtension(StorageDeviceExtension.class)
+                        .getStorageSystemGroup(loc.getStorageSystemGroupID());
+                if (!tmpFoundOnGroups.contains(loc.getStorageSystemGroupID())
+                        && (locationGroup.getStorageSystemGroupType() == null ||
+                        locationGroup.getStorageSystemGroupType()
+                        .compareTo(rule.getSafeArchivingType()) == 0
+                || rule.getSafeArchivingType().compareTo("*") == 0))
                     tmpFoundOnGroups.add(loc.getStorageSystemGroupID());
             }
             if (tmpFoundOnGroups.containsAll(hasToBeOnGroups))
