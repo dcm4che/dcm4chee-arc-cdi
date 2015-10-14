@@ -394,7 +394,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
                 cxt.setLocalAE(fetchAET);
             }
             if(cxt.getStoreVerifyProtocol() == null) {
-                throw new RuntimeException("Invalid store-and-remember request: no store-verify protocol set");
+                cxt.setStoreVerifyProtocol(STORE_VERIFY_PROTOCOL.AUTO);
             }
             
             if(cxt.getTransactionUID() == null) {
