@@ -74,7 +74,7 @@ public class StoreSCUServiceNoneIOCMDecorator extends DelegatingCStoreSCUService
     public void coerceAttributes(Attributes attrs, CStoreSCUContext context)
             throws DicomServiceException {
         getNextDecorator().coerceAttributes(attrs, context);
-        if (noneIocmService.isNoneIOCMChangeRequestor(context.getRemoteAE().getAETitle())) {
+        if (context.getRemoteAE() != null && noneIocmService.isNoneIOCMChangeRequestor(context.getRemoteAE().getAETitle())) {
             LOG.info("##### is NoneIOCM change requestor!");
             noneIocmQRService.updateRetrieveResponseAttributes(context, attrs);
         }

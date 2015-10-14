@@ -2492,7 +2492,7 @@ public class QCBeanImpl implements QCBean {
      * @return true, if is q ced
      */
     private boolean isQCed(String sopInstanceUID) {
-        return getQCInstanceHistory(sopInstanceUID).size()!=1;//TODO Check if != 1 is correct condition!
+        return getQCInstanceHistory(sopInstanceUID).size() > 0;
     }
     
     @SuppressWarnings("unchecked")
