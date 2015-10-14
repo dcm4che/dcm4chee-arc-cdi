@@ -568,7 +568,9 @@ public class QCBeanImpl implements QCBean {
         Collection<Instance> newInstances = locateInstances(newToOldIUIDs.keySet());
         Study study = null;
         List<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
+        QCActionHistory action = generateQCAction(QCOperation.UPDATE, QCLevel.INSTANCE);
         QCStudyHistory studyHistory = null;
+        QCSeriesHistory seriesHistory = null;
     	for (Instance newInstance : newInstances) {
 	        if (study == null) {
 	        	study = newInstance.getSeries().getStudy();
@@ -587,9 +589,10 @@ public class QCBeanImpl implements QCBean {
 	        oldInstances.add(oldInstance);
 	        String seriesIUID = newInstance.getSeries().getSeriesInstanceUID();
 	        String studyIUID = study.getStudyInstanceUID();
-	        QCActionHistory action = generateQCAction(QCOperation.UPDATE, QCLevel.INSTANCE);
-	        studyHistory = createQCStudyHistory(studyIUID, studyIUID, null, action);
-	        QCSeriesHistory seriesHistory = createQCSeriesHistory(seriesIUID, null, studyHistory, newInstance.getSeries().getSourceAET());
+	        if (studyHistory == null)
+	        	studyHistory = createQCStudyHistory(studyIUID, studyIUID, null, action);
+	        if (seriesHistory == null)
+	        	seriesHistory = createQCSeriesHistory(seriesIUID, null, studyHistory, newInstance.getSeries().getSourceAET());
 	        QCInstanceHistory instanceHistory = new QCInstanceHistory(
 	                studyIUID, seriesIUID, oldIUID, newIUID, newIUID, false);
 	        instanceHistory.setSeries(seriesHistory);
