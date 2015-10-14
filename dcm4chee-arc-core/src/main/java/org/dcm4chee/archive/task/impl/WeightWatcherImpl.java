@@ -38,12 +38,6 @@
 
 package org.dcm4chee.archive.task.impl;
 
-import org.dcm4chee.archive.conf.WeightWatcherConfiguration;
-import org.dcm4chee.task.MemoryConsumingTask;
-import org.dcm4chee.task.WeightWatcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -55,6 +49,12 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.dcm4chee.archive.conf.WeightWatcherConfiguration;
+import org.dcm4chee.task.MemoryConsumingTask;
+import org.dcm4chee.task.WeightWatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Implementation of {@link WeightWatcher}.
  *
@@ -64,7 +64,7 @@ public class WeightWatcherImpl implements WeightWatcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(WeightWatcher.class);
 
-    private Lock lock = new ReentrantLock(true); // fair lock to avoid starvation
+    private final Lock lock = new ReentrantLock(true); // fair lock to avoid starvation
 
     private WeightWatcherConfiguration config;
 
@@ -89,8 +89,8 @@ public class WeightWatcherImpl implements WeightWatcher {
     private long usedMemory = 0;
 
     // taskTypesMap and taskTypes always need to be kept in sync
-    private Map<String, TaskTypeInformation> taskTypesMap = new HashMap<>();
-    private List<TaskTypeInformation> taskTypes = new ArrayList<>();
+    private final Map<String, TaskTypeInformation> taskTypesMap = new HashMap<>();
+    private final List<TaskTypeInformation> taskTypes = new ArrayList<>();
 
     /**
      * Counter for round-robin picking of task types with queued tasks.
@@ -102,7 +102,10 @@ public class WeightWatcherImpl implements WeightWatcher {
      */
     private TaskTypeInformation nextTaskType = null;
 
-    private ThreadLocal<Boolean> nestedExecution = new ThreadLocal<>();
+    /**
+     * Only used to prevent nested excecutions (starting a task within a task).
+     */
+    private final ThreadLocal<Boolean> nestedExecution = new ThreadLocal<>();
 
     public WeightWatcherImpl(WeightWatcherConfiguration config, long totalSystemMemory) {
         this.totalSystemMemory = totalSystemMemory;
@@ -228,8 +231,8 @@ public class WeightWatcherImpl implements WeightWatcher {
         return String.format("%s %s [%s]", msg, getTaskLogId(task), state);
     }
 
-    private double toMebibyte(long estimatedNeededMemory) {
-        return estimatedNeededMemory / 1024.0 / 1024.0;
+    private double toMebibyte(long bytes) {
+        return bytes / 1024.0 / 1024.0;
     }
 
     private String getTaskLogId(MemoryConsumingTask<?> task) {
@@ -268,7 +271,7 @@ public class WeightWatcherImpl implements WeightWatcher {
         return null; // no queued tasks
     }
 
-    public void reconfigure(WeightWatcherConfiguration newConfig) {
+    public final void reconfigure(WeightWatcherConfiguration newConfig) {
         Objects.requireNonNull(newConfig);
 
         lock.lock();
@@ -373,12 +376,12 @@ public class WeightWatcherImpl implements WeightWatcher {
     /**
      * Stores runtime information for a specific task type.
      */
-    private class TaskTypeInformation {
+    private static class TaskTypeInformation {
 
         /**
          * Tasks of this task type that have been queued because they would be over the memory or concurrency limit.
          */
-        public LinkedList<QueuedTask> queuedTasks = new LinkedList<>();
+        public final LinkedList<QueuedTask> queuedTasks = new LinkedList<>();
 
         /**
          * Currently running tasks of this task type.
@@ -427,7 +430,7 @@ public class WeightWatcherImpl implements WeightWatcher {
                         lastLoggedNanoTime = nanoTime;
                     }
 
-                    wakeUpCondition.await(warnTime + 1, TimeUnit.MILLISECONDS);
+                    wakeUpCondition.await(warnTime + 1L, TimeUnit.MILLISECONDS);
                 } else {
                     wakeUpCondition.await();
                 }
