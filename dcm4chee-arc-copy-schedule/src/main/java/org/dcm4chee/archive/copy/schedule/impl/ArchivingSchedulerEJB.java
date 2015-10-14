@@ -49,6 +49,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.TemporalType;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.data.Attributes;
@@ -206,7 +207,8 @@ public class ArchivingSchedulerEJB {
 
     public ArchivingTask scheduleNextArchivingTask() throws IOException {
         List<ArchivingTask> results = em
-                .createNamedQuery(ArchivingTask.FIND_READY_TO_ARCHIVE, ArchivingTask.class)
+                .createNamedQuery(ArchivingTask.FIND_READY_TO_ARCHIVE_BY_TIME, ArchivingTask.class)
+                .setParameter(1, new Date(), TemporalType.TIMESTAMP)
                 .setMaxResults(1).getResultList();
         if (results.isEmpty()) {
             LOG.debug("No archiving tasks found to schedule");

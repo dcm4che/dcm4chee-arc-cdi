@@ -65,11 +65,11 @@ import javax.persistence.TemporalType;
     query="SELECT a FROM ArchivingTask a "
         + "WHERE a.seriesInstanceUID = ?1 "),
 @NamedQuery(
-    name=ArchivingTask.FIND_READY_TO_ARCHIVE,
-    query="SELECT a FROM ArchivingTask a "
-        + "WHERE a.archivingTime <= CURRENT_TIMESTAMP AND a.delayReasonCode IS NULL "
-        + "ORDER BY a.archivingTime")
-})
+        name=ArchivingTask.FIND_READY_TO_ARCHIVE_BY_TIME,
+        query="SELECT a FROM ArchivingTask a "
+            + "WHERE a.archivingTime <= ?1 AND a.delayReasonCode IS NULL "
+            + "ORDER BY a.archivingTime")
+    })
 @Entity
 @Table(name = "archiving_task")
 public class ArchivingTask implements Serializable {
@@ -78,9 +78,9 @@ public class ArchivingTask implements Serializable {
 
     public static final String FIND_BY_SERIES_INSTANCE_UID =
             "ArchivingTask.findBySeriesInstanceUID";
-
-    public static final String FIND_READY_TO_ARCHIVE =
-            "ArchivingTask.findReadyToArchive";
+    
+    public static final String FIND_READY_TO_ARCHIVE_BY_TIME =
+            "ArchivingTask.findReadyToArchiveByTime";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
