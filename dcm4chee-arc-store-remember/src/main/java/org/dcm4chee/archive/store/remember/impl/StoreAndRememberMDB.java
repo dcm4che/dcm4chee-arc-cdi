@@ -52,8 +52,6 @@ import javax.jms.ObjectMessage;
 
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
 import org.dcm4chee.archive.store.remember.StoreAndRememberService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
@@ -65,7 +63,6 @@ import org.slf4j.LoggerFactory;
         @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 public class StoreAndRememberMDB implements MessageListener {
-    private static final Logger LOG = LoggerFactory.getLogger(StoreAndRememberMDB.class);
 
     @Inject
     private StoreAndRememberService storeAndRememeberService;
