@@ -1874,7 +1874,7 @@ public class QCBeanImpl implements QCBean {
         inst.setVerifyingObservers(newVObservers);
         }
         
-        inst.setRetrieveAETs(oldinstance.getRetrieveAETs());
+        inst.setRetrieveAETs(filterArchiveOnlyAETs(oldinstance.getAllRetrieveAETs()));
         inst.setAvailability(oldinstance.getAvailability());
         inst.setAttributes(data,
                 archiveDeviceExtension.getAttributeFilter(Entity.Instance),
@@ -2817,6 +2817,15 @@ public class QCBeanImpl implements QCBean {
         if(!isQCPermittedForStudy(study)) {
             throw new QCOperationNotPermittedException("QC operation is not allowed for protected study with UID " + study.getStudyInstanceUID());
         }
+    }
+
+    private String[] filterArchiveOnlyAETs(String[] allRetrieveAETs) {
+        List<String> filteredLocalOnly = new ArrayList<String>();
+        for(String aet : allRetrieveAETs) {
+            if(device.getApplicationAETitles().contains(aet));
+            filteredLocalOnly.add(aet);
+        }
+        return filteredLocalOnly.toArray(new String[] {});
     }
 
 }

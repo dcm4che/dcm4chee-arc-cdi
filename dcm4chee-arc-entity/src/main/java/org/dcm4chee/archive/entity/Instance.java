@@ -40,10 +40,12 @@ package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 import javax.persistence.*;
 
@@ -292,6 +294,13 @@ public class Instance implements Serializable {
 
     public void setRetrieveAETs(String... retrieveAETs) {
         this.retrieveAETs = StringUtils.concat(retrieveAETs, '\\');
+    }
+
+    public void addRetrieveAET(String aet) {
+        List<String> aets = this.retrieveAETs != null 
+                ? Arrays.asList(this.retrieveAETs) : new ArrayList<String>();
+        aets.add(aet);
+        setRetrieveAETs(aets.toArray(new String[]{}));
     }
 
     public String getEncodedRetrieveAETs() {

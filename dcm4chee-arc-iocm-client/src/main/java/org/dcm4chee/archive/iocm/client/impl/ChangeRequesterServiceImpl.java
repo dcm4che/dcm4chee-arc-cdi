@@ -264,9 +264,54 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     }
     
     public void verifyStorage(@Observes @Service(ServiceType.IOCMSERVICE) CStoreSCUResponse storeResponse) {
-    	
+        updateRetrieveAETs(filterFailedLocators(storeResponse), storeResponse.getRemoteAET());
+        //TODO - delegate this update to store and verify service
     }
+
     public void verifyStorage(@Observes @Service(ServiceType.IOCMSERVICE) StowResponse storeResponse) {
-    	
+        //no remote AET here
+    }
+
+    private void updateRetrieveAETs(Collection<ArchiveInstanceLocator> instances, String remoteAET) {
+        
+        Collection<String> uids = new ArrayList<String>();
+        for(ArchiveInstanceLocator arcInst : instances) {
+            uids.add(arcInst.iuid);
+        }
+        
+        Query query = em.createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER_MANY);
+        query.setParameter("uids", uids);
+        @SuppressWarnings("unchecked")
+        List<Instance> results = query.getResultList();
+        if(results == null)
+            return;
+        for(Instance inst : results) {
+            if(containsAET(inst.getAllRetrieveAETs(), remoteAET)) {
+                if(inst.getAllRetrieveAETs() == null)
+                    inst.setRetrieveAETs(remoteAET);
+                else
+                    inst.addRetrieveAET(remoteAET);
+            }
+        }
+    }
+
+    private boolean containsAET(String[] allRetrieveAETs, String remoteAET) {
+        if (allRetrieveAETs != null) {
+            for (String aet : allRetrieveAETs)
+                if (aet.compareTo(remoteAET) == 0)
+                    return true;
+        }
+        return false;
+    }
+
+
+    private Collection<ArchiveInstanceLocator> filterFailedLocators(CStoreSCUResponse storeResponse) {
+        Collection<ArchiveInstanceLocator> sent = new ArrayList<ArchiveInstanceLocator>();
+        for(ArchiveInstanceLocator loc : storeResponse.getInstances()) {
+            if(!Arrays.asList(storeResponse.getFailedUIDs()).contains(loc.iuid)) {
+                sent.add(loc);
+            }
+        }
+        return sent;
     }
 }
