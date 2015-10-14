@@ -74,7 +74,7 @@ public class QCActionHistory implements Serializable{
     private String action;
 
     @Basic(optional = true)
-    @Column(name = "level", updatable = false)
+    @Column(name = "qc_level", updatable = false)
     private QCLevel level;
 
     public long getPk() {
