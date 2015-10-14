@@ -1,28 +1,5 @@
 package org.dcm4chee.archive.store.impl;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
-import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.io.DicomOutputStream;
-import org.dcm4che3.net.PDVInputStream;
-import org.dcm4che3.net.Status;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.StreamUtils;
-import org.dcm4che3.util.TagUtils;
-import org.dcm4chee.archive.store.Spooler;
-import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.StoreService;
-import org.dcm4chee.archive.store.StoreSession;
-import org.dcm4chee.storage.StorageContext;
-import org.dcm4chee.storage.conf.StorageSystem;
-import org.dcm4chee.storage.service.StorageService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,13 +9,31 @@ import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.DicomOutputStream;
+import org.dcm4che3.net.PDVInputStream;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4che3.util.StreamUtils;
+import org.dcm4che3.util.TagUtils;
+import org.dcm4chee.archive.store.Spooler;
+import org.dcm4chee.archive.store.StoreContext;
+import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.storage.StorageContext;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.service.StorageService;
+
 /**
  * Created by Umberto Cappellini on 8/13/15.
  */
 @ApplicationScoped
 public class FileSpooler implements Spooler {
-
-    static Logger LOG = LoggerFactory.getLogger(FileSpooler.class);
 
     @Inject
     private StorageService storageService;
@@ -56,24 +51,20 @@ public class FileSpooler implements Spooler {
 
     private void spool(StoreContext context, byte[] toFlush, boolean parse) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        StoreService service = session.getStoreService();
-        if (session.getSpoolStorageSystem() == null)
+        StorageSystem spoolingStorage = session.getSpoolStorageSystem();
+        if (spoolingStorage == null)
             throw new DicomServiceException(Status.UnableToProcess, "Missing Spool Storage");
 
-        StorageSystem spoolingStorage = session.getSpoolStorageSystem();
         StorageContext spoolingContext = storageService.createStorageContext(spoolingStorage);
         int bufferLength = spoolingStorage.getBufferedOutputLength();
         MessageDigest digest = session.getMessageDigest();
         Attributes fmi = context.getFileMetainfo();
         InputStream in = context.getInputStream();
-        Path spoolingPath = null;
+
         OutputStream out = null;
-
         try {
-
             String suffix = context.getSpoolFileSuffix() != null ? context.getSpoolFileSuffix() : ".dcm";
-            spoolingPath = Files.createTempFile(session.getSpoolDirectory(), null, suffix);
-            spoolingContext.setFilePath(spoolingPath);
+            Path spoolingPath = Files.createTempFile(session.getSpoolDirectory(), null, suffix);
             out = Files.newOutputStream(spoolingPath);
 
             if (digest != null) {
@@ -81,7 +72,7 @@ public class FileSpooler implements Spooler {
                 out = new DigestOutputStream(out, digest);
             }
 
-            out = new BufferedOutputStream(out);
+            out = new BufferedOutputStream(out, bufferLength);
 
             if (fmi != null) {
 
@@ -110,34 +101,31 @@ public class FileSpooler implements Spooler {
 
                 if (parse) {
                 	out.flush();
-                    DicomInputStream dis = null;
-                    try {
-                        dis = new DicomInputStream(spoolingPath.toFile());
+                    try (DicomInputStream dis = new DicomInputStream(spoolingPath.toFile())) {
                         dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.URI);
                         Attributes data = dis.readDataset(-1, -1);
                         context.setAttributes(data);
                         Attributes dsFMI = dis.readFileMetaInformation();
                         context.setTransferSyntax(dsFMI != null ? dsFMI.getString(Tag.TransferSyntaxUID) : 
                                 fmi != null ? fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
-                    } finally {
-                        SafeClose.close(dis);
                     }
                 }
             }
 
-        } catch (Exception e) {
+            spoolingContext.setFilePath(spoolingPath);
+            spoolingContext.setFileSize(Files.size(spoolingPath));
+            spoolingContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
+        } catch (IOException e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         } finally {
             try {
-                SafeClose.close(out);
-                spoolingContext.setFilePath(spoolingPath);
-                spoolingContext.setFileSize(Files.size(spoolingContext.getFilePath()));
-                spoolingContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
+                if (out != null)
+                    out.close();
             } catch (IOException e) {
                 throw new DicomServiceException(Status.UnableToProcess, e);
             }
-
-            context.setSpoolingContext(spoolingContext);
         }
+
+        context.setSpoolingContext(spoolingContext);
     }
 }
