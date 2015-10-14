@@ -9,6 +9,7 @@ jms-queue add --queue-address=delete --entries=queue/delete
 jms-queue add --queue-address=archiver_1 --entries=queue/archiver_1
 jms-queue add --queue-address=archiver_2 --entries=queue/archiver_2
 jms-queue add --queue-address=storeremember --entries=queue/storeremember
+/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.storeremember/:add(max-delivery-attempts=5,redelivery-delay=60000)
 jms-queue add --queue-address=storescu --entries=queue/storescu
 jms-queue add --queue-address=stowclient --entries=queue/stowclient
 jms-queue add --queue-address=noneiocm --entries=queue/noneiocm
