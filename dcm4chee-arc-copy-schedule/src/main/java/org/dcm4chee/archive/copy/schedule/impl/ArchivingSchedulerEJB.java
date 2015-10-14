@@ -57,7 +57,6 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.code.CodeService;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ArchivingTask;
@@ -69,7 +68,6 @@ import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
 import org.dcm4chee.archive.store.remember.StoreAndRememberService;
-import org.dcm4chee.archive.store.verify.StoreVerifyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,9 +94,6 @@ public class ArchivingSchedulerEJB {
 
     @Inject
     private ActiveProcessingService activeProcessingService;
-    
-    @Inject
-    private Device device;
     
     @Inject
     private DicomConfiguration conf;
@@ -248,8 +243,9 @@ public class ArchivingSchedulerEJB {
 
         StoreAndRememberContext storeRememberCxt = storeAndRemeberService.createContextBuilder()
                 .seriesUID(task.getSeriesInstanceUID())
-                .externalDeviceName(extDevice).remoteAE(remoteAE)
-                .storeVerifyProtocol(StoreVerifyService.STORE_VERIFY_PROTOCOL.AUTO).build();
+                .externalDeviceName(extDevice)
+                .remoteAE(remoteAE)
+                .build();
         storeAndRemeberService.scheduleStoreAndRemember(storeRememberCxt, 0);
     }
 
