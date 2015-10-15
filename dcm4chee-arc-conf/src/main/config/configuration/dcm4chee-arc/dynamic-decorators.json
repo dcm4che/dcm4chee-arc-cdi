@@ -36,6 +36,9 @@
     }, "org.dcm4chee.archive.retrieve.RetrieveService": {
       "decorators": [
         {
+          "decoratorClassName": "org.dcm4chee.archive.noneiocm.impl.RetrieveServiceNoneIOCMDecorator"
+        },
+        {
           "decoratorClassName": "org.dcm4chee.archive.mima.impl.RetrieveServiceMIMADecorator"
         }
       ]

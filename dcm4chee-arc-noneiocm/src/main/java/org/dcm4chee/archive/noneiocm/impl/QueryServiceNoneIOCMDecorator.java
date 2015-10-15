@@ -73,7 +73,7 @@ public class QueryServiceNoneIOCMDecorator extends DelegatingQueryService {
             getNextDecorator().coerceRequestAttributes(context);            
             if (noneIocmService.isNoneIOCMChangeRequestor(context.getRemoteAET())) {
                 LOG.info("Is NoneIOCM Change Requestor Device");
-                noneIocmQRService.updateQueryRequestAttributes(context);
+                noneIocmQRService.updateQueryRequestAttributes(context.getKeys(), context.getRemoteDevice().getApplicationAETitles());
             }
     }
 

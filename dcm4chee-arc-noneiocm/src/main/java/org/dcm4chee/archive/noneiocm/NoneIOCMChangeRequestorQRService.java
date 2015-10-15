@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.noneiocm;
 
+import java.util.Collection;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
@@ -48,7 +50,7 @@ import org.dcm4chee.archive.store.scu.CStoreSCUContext;
  *
  */
 public interface NoneIOCMChangeRequestorQRService {
-    void updateQueryRequestAttributes(QueryContext context);
+    void updateQueryRequestAttributes(Attributes attrs, Collection<String> sourceDeviceAETs);
     void updateQueryResponseAttributes(QueryContext context, Attributes match);
     void updateRetrieveResponseAttributes(CStoreSCUContext context, Attributes attrs);
 }

@@ -93,6 +93,14 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
     				if (noneIocmService.isNoneIOCMChangeRequest(context.getStoreSession().getRemoteAET(), sourceAET)) {
     					LOG.info("Instance already QCed! Change SOP Instance UID {} to current UID {}", origSopIUID, h.getCurrentUID());
     					attrs.setString(Tag.SOPInstanceUID, VR.UI, h.getCurrentUID());
+    					if (h.getSeries().getOldSeriesUID().equals(attrs.getString(Tag.SeriesInstanceUID))) {
+        					LOG.info("Change original Series Instance UID to current SeriesIUID {}", h.getCurrentSeriesUID());
+        					attrs.setString(Tag.SeriesInstanceUID, VR.UI, h.getCurrentSeriesUID());
+    					}
+    					if (h.getSeries().getStudy().getOldStudyUID().equals(attrs.getString(Tag.StudyInstanceUID))) {
+        					LOG.info("Change original Study Instance UID to current StudyIUID {}", h.getCurrentStudyUID());
+        					attrs.setString(Tag.StudyInstanceUID, VR.UI, h.getCurrentStudyUID());
+    					}
     				}
     			}
     		}
@@ -106,7 +114,8 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
             LOG.debug("{} is a None IOCM Change Requestor! check for changes.", context.getStoreSession().getRemoteAET());
             NoneIOCMChangeType chgType = noneIocmService.performChange(inst, context);
             if (chgType == NoneIOCMChangeType.INSTANCE_CHANGE)
-                return StoreAction.STORE; 
+                return StoreAction.STORE;
+            //TODO: how to handle NoneIOCMChangeType.ILLEGAL_CHANGE?
         }
         return getNextDecorator().instanceExists(em, context, inst);
     }

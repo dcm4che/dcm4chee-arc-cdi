@@ -71,8 +71,7 @@ public class NoneIOCMChangeRequestorQRServiceEJB implements NoneIOCMChangeReques
 
 
     @Override
-    public void updateQueryRequestAttributes(QueryContext context) {
-        Attributes keys = context.getKeys();
+    public void updateQueryRequestAttributes(Attributes keys, Collection<String> sourceDeviceAETs) {
         String[] uids = null;
         NoneIocmQRLevel level = NoneIocmQRLevel.valueOf(keys.getString(Tag.QueryRetrieveLevel));
         for ( ; level != null ; level = level.parent()) {
@@ -81,7 +80,7 @@ public class NoneIOCMChangeRequestorQRServiceEJB implements NoneIOCMChangeReques
                 break;
         }
         if (uids != null)
-            updateRequestUIDs(context, level, keys, findHistory(level, true, uids));
+            updateRequestUIDs(sourceDeviceAETs, level, keys, findHistory(level, true, uids));
    }
     
     @Override
@@ -143,7 +142,7 @@ public class NoneIOCMChangeRequestorQRServiceEJB implements NoneIOCMChangeReques
         return result;
     }
     
-    private void updateRequestUIDs(QueryContext context, NoneIocmQRLevel qrLevel, Attributes keys, List<QCInstanceHistory> histories) {
+    private void updateRequestUIDs(Collection<String> collection, NoneIocmQRLevel qrLevel, Attributes keys, List<QCInstanceHistory> histories) {
         String[] uids = qrLevel.getUids(keys);
         if (histories != null && histories.size() != 0) {
             QCInstanceHistory history = null;
@@ -151,7 +150,7 @@ public class NoneIOCMChangeRequestorQRServiceEJB implements NoneIOCMChangeReques
                 for (QCInstanceHistory h : histories) {
                     if (qrLevel.getOldUID(h).equals(uids[i])) {
                         String noneIocmSourceAET = h.getSeries().getNoneIOCMSourceAET();
-                        if (noneIocmSourceAET != null && context.getRemoteDevice().getApplicationAETitles().contains(noneIocmSourceAET)) {
+                        if (noneIocmSourceAET != null && collection.contains(noneIocmSourceAET)) {
                         	uids[i] = qrLevel.getNewUID(h);
                             if (history == null)
                                 history = h;
