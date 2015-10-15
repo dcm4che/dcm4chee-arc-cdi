@@ -184,7 +184,7 @@ public class LocationCopyServiceEJB {
         }
 
         if (entries.size() > 0) {
-            ArchiverContext archiverCtx = archiverService.createContext(
+            ArchiverContext archiverCtx = archiverService.createContext(archiverService,
                     ctx.getTargetStorageSystemGroupID(), targetName);
             archiverCtx.setEntries(entries);
             archiverCtx.setProperty(DELETE_SOURCE, new Boolean(ctx.getDeleteSourceLocaton()));
