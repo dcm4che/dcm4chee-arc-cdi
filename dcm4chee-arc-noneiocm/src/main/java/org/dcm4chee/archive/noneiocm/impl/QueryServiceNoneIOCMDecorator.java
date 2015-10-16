@@ -41,6 +41,7 @@ package org.dcm4chee.archive.noneiocm.impl;
 import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorQRService;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
@@ -67,13 +68,16 @@ public class QueryServiceNoneIOCMDecorator extends DelegatingQueryService {
     
     @Inject
     NoneIOCMChangeRequestorQRService noneIocmQRService;
+    
 
     @Override
     public void coerceRequestAttributes(QueryContext context) throws DicomServiceException {
             getNextDecorator().coerceRequestAttributes(context);            
             if (noneIocmService.isNoneIOCMChangeRequestor(context.getRemoteAET())) {
                 LOG.info("Is NoneIOCM Change Requestor Device");
-                noneIocmQRService.updateQueryRequestAttributes(context.getKeys(), context.getRemoteDevice().getApplicationAETitles());
+                Device d = noneIocmQRService.getRemoteDevice(context);
+                if (d != null)
+                    noneIocmQRService.updateQueryRequestAttributes(context.getKeys(), d.getApplicationAETitles());
             }
     }
 
