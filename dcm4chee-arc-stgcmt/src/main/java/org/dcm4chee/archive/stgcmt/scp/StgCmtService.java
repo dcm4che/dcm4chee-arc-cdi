@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.stgcmt.scp;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
@@ -54,7 +55,7 @@ public interface StgCmtService {
     
     static enum N_ACTION_REQ_STATE { INVALID_REQ, SEND_REQ_FAILED, SEND_REQ_OK }
 
-    Attributes calculateResult(Attributes actionInfo);
+    Attributes calculateResult(Attributes actionInfo) throws IOException;
 
     void scheduleNEventReport(String localAET, String remoteAET,
             Attributes eventInfo, int retries, long delay);

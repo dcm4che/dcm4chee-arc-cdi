@@ -39,8 +39,7 @@
 package org.dcm4chee.archive.stgcmt.scp.impl;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
@@ -86,7 +85,9 @@ import org.dcm4chee.archive.stgcmt.scp.StgCmtService;
 import org.dcm4chee.storage.RetrieveContext;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.SyncPolicy;
 import org.dcm4chee.storage.service.RetrieveService;
+import org.dcm4chee.storage.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,6 +117,9 @@ public class StgCmtServiceImpl implements StgCmtService {
     private RetrieveService storageRetrieveService;
 
     @Inject
+    private StorageService storageService;
+
+    @Inject
     private IApplicationEntityCache aeCache;
 
     @Inject
@@ -130,14 +134,16 @@ public class StgCmtServiceImpl implements StgCmtService {
     }
 
     @Override
-    public Attributes calculateResult(Attributes actionInfo) {
+    public Attributes calculateResult(Attributes actionInfo) throws IOException {
 
         List<Tuple> foundMatches = stgCmtEJB.lookupMatches(actionInfo);
         return stgCmtEJB.calculateResult(checkForDigestAndAdjust(foundMatches),
                 actionInfo);
     }
 
-    private List<Tuple> checkForDigestAndAdjust(List<Tuple> foundMatches) {
+    private List<Tuple> checkForDigestAndAdjust(List<Tuple> foundMatches) throws IOException {
+
+        Map<StorageSystem, List<String>> committed = new HashMap<>();
 
         for (java.util.Iterator<Tuple> iter = foundMatches.iterator(); iter
                 .hasNext();) {
@@ -154,9 +160,13 @@ public class StgCmtServiceImpl implements StgCmtService {
             RetrieveContext ctx = storageRetrieveService
                     .createRetrieveContext(storageSystem);
             try {
-                if (!storageRetrieveService.calculateDigestAndMatch(ctx,
-                        digest, filePath)) {
+                if (!storageRetrieveService.calculateDigestAndMatch(ctx, digest, filePath)) {
                     iter.remove();
+                }
+                else {
+                    if (committed.get(storageSystem) == null)
+                        committed.put(storageSystem,new ArrayList<String>());
+                    committed.get(storageSystem).add(filePath);
                 }
             } catch (IOException e) {
                 LOG.error(
@@ -166,6 +176,14 @@ public class StgCmtServiceImpl implements StgCmtService {
 
             }
         }
+
+        //sync if configured
+        for (StorageSystem storageSystem : committed.keySet()) {
+            if (storageSystem.getSyncPolicy().equals(SyncPolicy.ON_STORAGE_COMMITMENT)) {
+                storageService.syncFiles(storageSystem,committed.get(storageSystem));
+            }
+        }
+
         return foundMatches;
 
     }

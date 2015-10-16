@@ -992,7 +992,7 @@ public class StoreServiceImpl implements StoreService {
         try {
             switch (session.getStorageSystem().getSyncPolicy()) {
                 case ALWAYS:
-                    storageService.syncFiles(system, storedFiles);
+                    storageService. syncFiles(system, storedFiles);
                     break;
                 case AFTER_STORE_RSP:
                     Executors.newSingleThreadExecutor().execute(new Runnable() {
@@ -1006,11 +1006,11 @@ public class StoreServiceImpl implements StoreService {
                     });
                     break;
                 case EVERY_5_STORE:
-                    if (storedFiles.size()>=5)
+                    if (storedFiles.size()>=5 || onClose)
                         storageService.syncFiles(system, storedFiles);
                     break;
                 case EVERY_25_STORE:
-                    if (storedFiles.size()>=25)
+                    if (storedFiles.size()>=25 || onClose)
                         storageService.syncFiles(system, storedFiles);
                     break;
                 case ON_ASSOCIATION_CLOSE:
