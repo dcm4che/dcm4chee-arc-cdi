@@ -65,8 +65,9 @@ import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
 
 /**
+ * TODO This is test code and should be moved to the test framework.
+ *
  * @author Gunter Zeilinger <gunterze@gmail.com>
- * 
  */
 @Path("/emulation")
 @RequestScoped
