@@ -57,6 +57,7 @@ import javax.persistence.PersistenceContext;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
@@ -101,26 +102,26 @@ public class ExportDicomImpl implements ExportDicom {
     private IApplicationEntityCache aeCache;
 
     @Override
-    public void exportStudy(String destinationAETitle, List<String> studyIuids) {
+    public void exportStudies(String destinationAETitle, List<String> studyInstanceUIDs) {
 
         CStoreSCUContext ctx = initializeContext(destinationAETitle);
         if(ctx !=null)
         cstoreSCUService.scheduleStoreSCU(UUID.randomUUID().toString(), ctx,
-                toInstanceLocators(studyIuids, null, ctx.getLocalAE()), 1, 1, 0);
+                toInstanceLocators(studyInstanceUIDs, null, ctx.getLocalAE()), 1, 1, 0);
     }
 
     @Override
-    public void exportInstances(String destinationAETitle, List<String> instanceUids) {
+    public void exportInstances(String destinationAETitle, List<String> sopInstanceUIDs) {
         CStoreSCUContext ctx = initializeContext(destinationAETitle);
         if(ctx !=null)
         cstoreSCUService.scheduleStoreSCU(UUID.randomUUID().toString(), ctx,
-                toInstanceLocators(null, instanceUids, ctx.getLocalAE()), 1, 1, 0);
+                toInstanceLocators(null, sopInstanceUIDs, ctx.getLocalAE()), 1, 1, 0);
 
     }
 
     @Override
     public void exportKeyImages(String destinationAETitle, List<String> studyUIDs,
-            List<String> keyObjectDocumentTitles) {
+            List<Code> keyObjectDocumentCodes) {
         ArrayList<ArchiveInstanceLocator> referencedInstances = new ArrayList<ArchiveInstanceLocator>();
         CStoreSCUContext ctx = initializeContext(destinationAETitle);
         if(ctx ==null) {
@@ -133,17 +134,22 @@ public class ExportDicomImpl implements ExportDicom {
         for(ArchiveInstanceLocator locator : locators) {
             Attributes objectAttrs = (Attributes) locator.getObject();
             if(objectAttrs != null) {
-                Sequence conceptNameCodeSequence = objectAttrs
-                        .getSequence(Tag.ConceptNameCodeSequence);
-                Attributes titleItem = conceptNameCodeSequence.get(1);
-                String title = titleItem.getString(Tag.CodeMeaning);
-                if (keyObjectDocumentTitles.contains(title)) {
-                    Sequence crpEvidenceSequence = objectAttrs
-                            .getSequence(Tag.CurrentRequestedProcedureEvidenceSequence);
-                    for (Iterator<Attributes> iter = crpEvidenceSequence
-                            .iterator(); iter.hasNext();) {
-                       ArrayList<String> iuids = getReferencedInstanceUIDs(iter.next());
-                       referencedInstances.addAll(toInstanceLocators(null, iuids, ctx.getLocalAE()));
+                Attributes conceptNameCode = objectAttrs.getNestedDataset(Tag.ConceptNameCodeSequence);
+                if(conceptNameCode != null) {
+                    Code code;
+                    try {
+                        code = new Code(conceptNameCode);
+                    } catch (NullPointerException npe) {
+                        LOG.error("Malformed concept name code for object {}", locator.iuid, npe);
+                        continue;
+                    }
+                    if (containsCode(keyObjectDocumentCodes, code)) {
+                        Sequence crpEvidenceSequence = objectAttrs
+                                .getSequence(Tag.CurrentRequestedProcedureEvidenceSequence);
+                        for (Attributes evidenceSeqItem : crpEvidenceSequence) {
+                            ArrayList<String> iuids = getReferencedInstanceUIDs(evidenceSeqItem);
+                            referencedInstances.addAll(toInstanceLocators(null, iuids, ctx.getLocalAE()));
+                        }
                     }
                 }
             }
@@ -157,14 +163,22 @@ public class ExportDicomImpl implements ExportDicom {
                 referencedInstances, 1, 1, 0);
     }
 
+    private boolean containsCode(List<Code> keyObjectDocumentCodes, Code code) {
+        for(Code keyObjectDocumentCode : keyObjectDocumentCodes)
+        {
+            if(keyObjectDocumentCode.equalsIgnoreMeaning(code))
+                return true;
+        }
+        return false;
+    }
+
     private ArrayList<String> getReferencedInstanceUIDs(Attributes item) {
-        ArrayList<String> referencedSopUIDs = new ArrayList<String>();
+        ArrayList<String> referencedSopUIDs = new ArrayList<>();
         Sequence seriesSequence = item.getSequence(Tag.ReferencedSeriesSequence);
-        for(Iterator<Attributes> iter = seriesSequence.iterator(); iter.hasNext();) {
-            Attributes seriesSeqItems = iter.next();
-            Sequence sopSequence = seriesSeqItems.getSequence(Tag.ReferencedSOPSequence);
-            for(Iterator<Attributes> iterSops = sopSequence.iterator(); iterSops.hasNext();) {
-                referencedSopUIDs.add(iterSops.next().getString(Tag.ReferencedSOPInstanceUID));
+        for(Attributes seriesSeqItem : seriesSequence) {
+            Sequence sopSequence = seriesSeqItem.getSequence(Tag.ReferencedSOPSequence);
+            for(Attributes sopSeqItem : sopSequence) {
+                referencedSopUIDs.add(sopSeqItem.getString(Tag.ReferencedSOPInstanceUID));
             }
         }
         return referencedSopUIDs;
@@ -193,22 +207,23 @@ public class ExportDicomImpl implements ExportDicom {
     private List<ArchiveInstanceLocator> toInstanceLocators(
             List<String> studyUIDs, List<String> iuids, 
             ApplicationEntity localAE) {
-        
+
         ArchiveAEExtension arcAE = localAE
                 .getAEExtension(ArchiveAEExtension.class);
         ArrayList<ArchiveInstanceLocator> matches = new ArrayList<>();
         QueryParam queryParam = arcAE.getQueryParam(
                 EnumSet.noneOf(QueryOption.class), new String[0]);
-        if(studyUIDs != null)
-        for (String studyUID : studyUIDs) {
-            matches.addAll(retrieveService.calculateMatches(studyUID, null,
-                    null, queryParam, false));
-        }
-        else
+        if (studyUIDs != null) {
+            for (String studyUID : studyUIDs) {
+                matches.addAll(retrieveService.calculateMatches(studyUID, null,
+                        null, queryParam, false));
+            }
+        } else {
             for (String iuid : iuids) {
                 matches.addAll(retrieveService.calculateMatches(null, null,
                         iuid, queryParam, false));
             }
+        }
         return matches;
     }
 

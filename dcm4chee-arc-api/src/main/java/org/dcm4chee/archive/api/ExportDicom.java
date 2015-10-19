@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.api;
 
+import org.dcm4che3.data.Code;
+
 import java.util.List;
 
 
@@ -50,29 +52,29 @@ public interface ExportDicom {
 
     public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.api.ExportDicom";
 
-	/**
-	 * Sends all instances for each of the studies indicated to the destination AE
-	 * 
-	 * @param destinationAETitle
-	 * @param studyIuids
-	 */
-	void exportStudy(String destinationAETitle, List<String> studyIuids);
-	
-	/**
-	 * Sends the instances identified in the list of instanceUids to the destination AE.
-	 *   
-	 * @param destinationAE
-	 * @param instanceUids
-	 */
-	void exportInstances(String destinationAE, List<String> instanceUids);
-	
-	/**
-	 * For each study identified, all of the instances that are contained within the KeyObjectDocument that is identified by the
-	 * KeyObjectDocumentTitle will be sent to the indicated destination AE
-	 * 
-	 * @param destinationAE
-	 * @param studyUids
-	 * @param keyObjectDocumentTitles
-	 */
-	void exportKeyImages(String destinationAE, List<String> studyUids, List<String> keyObjectDocumentTitles);
+    /**
+     * Sends all instances for each of the studies indicated to the destination Application Entity.
+     *
+     * @param destinationAET    AE title
+     * @param studyInstanceUIDs studies
+     */
+    void exportStudies(String destinationAET, List<String> studyInstanceUIDs);
+
+    /**
+     * Sends instances to the destination Application Entity.
+     *
+     * @param destinationAET  AE title
+     * @param sopInstanceUIDs instances
+     */
+    void exportInstances(String destinationAET, List<String> sopInstanceUIDs);
+
+    /**
+     * For each study, all of the instances that are contained within the KeyObjectDocuments that are
+     * identified by the keyObjectDocumentCodes will be sent to the indicated destination Application Entity.
+     *
+     * @param destinationAET         AE title
+     * @param studyInstanceUIDs      studies
+     * @param keyObjectDocumentCodes key object document codes
+     */
+    void exportKeyImages(String destinationAET, List<String> studyInstanceUIDs, List<Code> keyObjectDocumentCodes);
 }
