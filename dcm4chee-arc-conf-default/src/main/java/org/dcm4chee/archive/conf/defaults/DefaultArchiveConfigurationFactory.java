@@ -374,6 +374,9 @@ public class DefaultArchiveConfigurationFactory {
     public static class FactoryParams {
         public String baseStoragePath = "/var/local/dcm4chee-arc/";
         public boolean useGroupBasedTCConfig;
+        /**
+         * Useful for testing, not recommended for production
+         */
         public boolean generateUUIDsBasedOnName;
     }
 
@@ -402,6 +405,11 @@ public class DefaultArchiveConfigurationFactory {
         auditUDP.setProtocol(protocol);
         arrDevice.addConnection(auditUDP);
         arr.addConnection(auditUDP);
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            auditUDP.setUuid(makeUuidFromName(name+"auditUDP"));
+        }
+
         return arrDevice;
     }
 
@@ -435,9 +443,6 @@ public class DefaultArchiveConfigurationFactory {
             device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
         ApplicationEntity ae = new ApplicationEntity(aet);
 
-        if (factoryParams.generateUUIDsBasedOnName)
-            ae.setUuid(makeUuidFromAet(aet));
-
         ExternalArchiveAEExtension externalArchiveExt =
                 new ExternalArchiveAEExtension();
         if (containsArchiveType(device.getPrimaryDeviceTypes()))
@@ -455,6 +460,13 @@ public class DefaultArchiveConfigurationFactory {
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
         device.addConnection(dicomTLS);
         ae.addConnection(dicomTLS);
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            ae.setUuid(makeUuidFromName(aet));
+            dicom.setUuid(makeUuidFromName(aet+"dicom"));
+            dicom.setUuid(makeUuidFromName(aet+"dicomtls"));
+        }
+
         return device;
     }
 
@@ -485,6 +497,13 @@ public class DefaultArchiveConfigurationFactory {
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
         device.addConnection(hl7TLS);
         hl7app.addConnection(hl7TLS);
+
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            hl7.setUuid(makeUuidFromName(name+"hl7"));
+            hl7TLS.setUuid(makeUuidFromName(name+"hl7tls"));
+        }
+
         return device;
     }
 
@@ -513,6 +532,12 @@ public class DefaultArchiveConfigurationFactory {
                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
         device.addConnection(dicomTLS);
+
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            dicom.setUuid(makeUuidFromName(name + "dicom"));
+            dicomTLS.setUuid(makeUuidFromName(name + "dicomTls"));
+        }
 
         addArchiveDeviceExtension(device);
         addHL7DeviceExtension(device);
@@ -785,7 +810,7 @@ public class DefaultArchiveConfigurationFactory {
         ApplicationEntity ae = new ApplicationEntity(aet);
 
         if (factoryParams.generateUUIDsBasedOnName)
-            ae.setUuid(makeUuidFromAet(aet));
+            ae.setUuid(makeUuidFromName(aet));
 
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
@@ -972,7 +997,7 @@ public class DefaultArchiveConfigurationFactory {
         return ae;
     }
 
-    private String makeUuidFromAet(String aet) {
+    private String makeUuidFromName(String aet) {
         try {
             return javax.xml.bind.DatatypeConverter.printHexBinary(MessageDigest.getInstance("SHA-1").digest(aet.getBytes()));
         } catch (NoSuchAlgorithmException e) {
@@ -987,7 +1012,7 @@ public class DefaultArchiveConfigurationFactory {
         ApplicationEntity ae = new ApplicationEntity(aet);
 
         if (factoryParams.generateUUIDsBasedOnName)
-            ae.setUuid(makeUuidFromAet(aet));
+            ae.setUuid(makeUuidFromName(aet));
 
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
@@ -1024,7 +1049,7 @@ public class DefaultArchiveConfigurationFactory {
         ApplicationEntity ae = new ApplicationEntity(aet);
 
         if (factoryParams.generateUUIDsBasedOnName)
-            ae.setUuid(makeUuidFromAet(aet));
+            ae.setUuid(makeUuidFromName(aet));
 
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
         ae.addAEExtension(aeExt);
