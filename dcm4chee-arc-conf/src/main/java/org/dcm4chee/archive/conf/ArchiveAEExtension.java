@@ -38,19 +38,13 @@
 
 package org.dcm4chee.archive.conf;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-
-import javax.xml.transform.Templates;
-import javax.xml.transform.TransformerConfigurationException;
-
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
+import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.ConfigurableProperty.ConfigurablePropertyType;
 import org.dcm4che3.conf.core.api.LDAP;
-import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
 import org.dcm4che3.io.TemplatesCache;
@@ -59,6 +53,12 @@ import org.dcm4che3.net.TransferCapability.Role;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
 import org.dcm4chee.storage.conf.Availability;
+
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerConfigurationException;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -72,6 +72,9 @@ public class ArchiveAEExtension extends AEExtension {
     private static final long serialVersionUID = -2390448404282661045L;
 
     public static final String DEF_RETRY_INTERVAL = "60";
+
+    @ConfigurableProperty(type = ConfigurablePropertyType.OptimisticLockingHash)
+    private String olockHash;
 
     @ConfigurableProperty(name = "dcmModifyingSystem")
     private String modifyingSystem;
@@ -274,9 +277,7 @@ public class ArchiveAEExtension extends AEExtension {
     }
 
     public void setCompressionRules(CompressionRules rules) {
-        compressionRules.clear();
-        if (rules != null)
-            compressionRules.add(rules);
+        compressionRules = rules;
     }
 
     public boolean removeCompressionRule(CompressionRule ac) {
@@ -645,4 +646,11 @@ public class ArchiveAEExtension extends AEExtension {
         this.storeAndRememberDelayAfterFailedResponse = storeAndRememberDelayAfterFailedResponse;
     }
 
+    public String getOlockHash() {
+        return olockHash;
+    }
+
+    public void setOlockHash(String olockHash) {
+        this.olockHash = olockHash;
+    }
 }
