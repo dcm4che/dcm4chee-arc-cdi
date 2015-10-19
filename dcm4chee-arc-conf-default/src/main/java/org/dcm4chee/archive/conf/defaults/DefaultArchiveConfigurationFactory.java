@@ -464,7 +464,7 @@ public class DefaultArchiveConfigurationFactory {
         if (factoryParams.generateUUIDsBasedOnName) {
             ae.setUuid(makeUuidFromName(aet));
             dicom.setUuid(makeUuidFromName(aet+"dicom"));
-            dicom.setUuid(makeUuidFromName(aet+"dicomtls"));
+            dicomTLS.setUuid(makeUuidFromName(aet+"dicomtls"));
         }
 
         return device;
@@ -680,7 +680,7 @@ public class DefaultArchiveConfigurationFactory {
         device.addDeviceExtension(ext);
     }
 
-    private static void addAuditLogger(Device device, Device arrDevice) {
+    private void addAuditLogger(Device device, Device arrDevice) {
         Connection auditUDP = new Connection("audit-udp-initiating", "localhost");
         auditUDP.setProtocol(Connection.Protocol.SYSLOG_UDP);
         device.addConnection(auditUDP);
@@ -690,9 +690,14 @@ public class DefaultArchiveConfigurationFactory {
         auditLogger.addConnection(auditUDP);
         auditLogger.setAuditSourceTypeCodes("4");
         auditLogger.addAuditRecordRepositoryDevice(arrDevice);
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            auditUDP.setUuid(makeUuidFromName(device.getDeviceName() + "audipudp"));
+        }
+
     }
 
-    private static void addHL7DeviceExtension(Device device) {
+    private void addHL7DeviceExtension(Device device) {
         HL7DeviceExtension ext = new HL7DeviceExtension();
         device.addDeviceExtension(ext);
 
@@ -708,6 +713,11 @@ public class DefaultArchiveConfigurationFactory {
                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
         device.addConnection(hl7TLS);
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            hl7.setUuid(makeUuidFromName(device.getDeviceName() + "hl7"));
+            hl7TLS.setUuid(makeUuidFromName(device.getDeviceName() + "hl7Tls"));
+        }
 
         HL7Application hl7App = new HL7Application("*");
         ArchiveHL7ApplicationExtension hl7AppExt = new ArchiveHL7ApplicationExtension();

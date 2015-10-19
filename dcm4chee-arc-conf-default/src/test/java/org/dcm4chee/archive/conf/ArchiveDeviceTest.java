@@ -167,7 +167,12 @@ public class ArchiveDeviceTest {
 
         res = DeepEquals.deepEquals(anotherArc, arc);
 
+        if (!res) {
+            DeepEquals.printOutInequality();
+        }
+
         assertTrue("Reconfigure", res);
+
 
     }
 

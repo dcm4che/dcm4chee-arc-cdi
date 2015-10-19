@@ -8,6 +8,8 @@ import org.dcm4che3.conf.core.olock.HashBasedOptimisticLockingConfiguration;
 import org.dcm4che3.conf.core.storage.InMemoryConfiguration;
 import org.dcm4che3.conf.core.util.Extensions;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
@@ -300,16 +302,42 @@ public class DicomConfigOptimisticLockingTests {
 
 
         device1.getConnections().remove(0);
+        for (ApplicationEntity entity : device1.getApplicationEntities()) {
+            entity.getConnections().remove(0);
+        }
+
         device1.getDeviceExtension(AuditLogger.class).getConnections().clear();
         dicomConfig.merge(device1);
 
-        //device2.getConnections().get(1).setSocketCloseDelay(12345);
-//        dicomConfig.merge(device2);
+        device2.getConnections().get(1).setSocketCloseDelay(12345);
+        device2.getConnections().get(0).setSocketCloseDelay(23456);
+        dicomConfig.merge(device2);
 
 
         Device loaded = dicomConfig.findDevice("dcm4chee-arc");
+        Assert.assertEquals(12345, loaded.getConnections().get(0).getSocketCloseDelay());
+
+
+
+        // the rest should be identical
+
         loaded.setOlockHash(null);
         device1.setOlockHash(null);
+
+        loaded.getConnections().get(0).setSocketCloseDelay(50);
+
+        for (ApplicationEntity entity : loaded.getApplicationEntities()) {
+            entity.setOlockHash(null);
+            for (Connection connection : entity.getConnections()) connection.setOlockHash(null);
+
+        }
+
+        for (ApplicationEntity entity : device1.getApplicationEntities()) {
+            entity.setOlockHash(null);
+            for (Connection connection : entity.getConnections()) connection.setOlockHash(null);
+        }
+
+
         boolean b = DeepEquals.deepEquals(loaded, device1);
         if (!b) DeepEquals.printOutInequality();
         Assert.assertTrue(b);
@@ -317,28 +345,72 @@ public class DicomConfigOptimisticLockingTests {
 
     }
 
-        // add 2 AEs
-
-        // add 2 AEs with concurrent changes in other AEs
-
-        // remove 2 AEs
-
-
-        // eg some items added, some deleted from the list
-
 
     @Test
-    public void testNulls() {
+    public void twoModifiedConnectionsOneAddedOneFails() {
 
-        // what if we pesist null-object somehwere
+        Device device1 = dicomConfig.findDevice("dcm4chee-arc");
+        Device device2 = dicomConfig.findDevice("dcm4chee-arc");
+        Device device3 = dicomConfig.findDevice("dcm4chee-arc");
+        Device device4 = dicomConfig.findDevice("dcm4chee-arc");
 
-        // what if we pesist something where null-object was before
+
+        Connection conn = new Connection();
+        conn.setCommonName("newConn");
+        conn.setPort(12346);
+        device1.addConnection(conn);
+        dicomConfig.merge(device1);
+
+        device2.getConnections().get(0).setSocketCloseDelay(23456);
+        dicomConfig.merge(device2);
+
+        device3.getConnections().get(1).setSocketCloseDelay(12345);
+        dicomConfig.merge(device3);
+
+        device4.getConnections().remove(0);
+
+        try {
+            dicomConfig.merge(device4);
+            Assert.fail();
+        } catch (OptimisticLockException ignored) {
+        }
+
+
+        Device loaded = dicomConfig.findDevice("dcm4chee-arc");
+        Assert.assertEquals(23456, loaded.getConnections().get(0).getSocketCloseDelay());
+        Assert.assertEquals(12345, loaded.getConnections().get(1).getSocketCloseDelay());
+        Assert.assertEquals(6, loaded.getConnections().size());
+
+
+
+        // the rest should be identical
+
+        loaded.setOlockHash(null);
+        device1.setOlockHash(null);
+
+        loaded.getConnections().get(0).setSocketCloseDelay(50);
+        loaded.getConnections().get(1).setSocketCloseDelay(50);
+
+        for (Connection connection : device1.getConnections()) connection.setOlockHash(null);
+        for (Connection connection : loaded.getConnections()) connection.setOlockHash(null);
+
+        for (ApplicationEntity entity : loaded.getApplicationEntities()) {
+            entity.setOlockHash(null);
+
+        }
+
+        for (ApplicationEntity entity : device1.getApplicationEntities()) {
+            entity.setOlockHash(null);
+        }
+
+
+        boolean b = DeepEquals.deepEquals(loaded, device1);
+        if (!b) DeepEquals.printOutInequality();
+        Assert.assertTrue(b);
 
 
     }
 
-
-    // TODO play around with adding/removing extensions
 
     @Test
     public void testRandomScenarios() throws Exception {
