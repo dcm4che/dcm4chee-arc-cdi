@@ -41,13 +41,15 @@ package org.dcm4chee.archive.conf;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
 
+import java.io.Serializable;
+
 /**
  * Configuration for WeightWatcher
  *
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
 @ConfigurableClass
-public class WeightWatcherConfiguration {
+public class WeightWatcherConfiguration implements Serializable {
 
     @ConfigurableProperty(defaultValue = "true", description = "")
     private boolean weightWatcherEnabled = true;
