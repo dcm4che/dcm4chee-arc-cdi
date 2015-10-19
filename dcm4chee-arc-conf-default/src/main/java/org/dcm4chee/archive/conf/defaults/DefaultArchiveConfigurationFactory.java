@@ -38,14 +38,6 @@
 
 package org.dcm4chee.archive.conf.defaults;
 
-import static org.dcm4che3.net.TransferCapability.Role.SCP;
-import static org.dcm4che3.net.TransferCapability.Role.SCU;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Issuer;
@@ -64,6 +56,14 @@ import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.storage.conf.*;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static org.dcm4che3.net.TransferCapability.Role.SCP;
+import static org.dcm4che3.net.TransferCapability.Role.SCU;
 
 public class DefaultArchiveConfigurationFactory {
 
@@ -406,12 +406,11 @@ public class DefaultArchiveConfigurationFactory {
     }
 
 
-    protected Device createDevice(String name) throws Exception {
+    protected Device createDevice(String name) {
         return init(new Device(name), null, null);
     }
 
-    private static Device init(Device device, Issuer issuer, Code institutionCode)
-            throws Exception {
+    private static Device init(Device device, Issuer issuer, Code institutionCode) {
         String name = device.getDeviceName();
 
         //TODO: implement
@@ -429,7 +428,7 @@ public class DefaultArchiveConfigurationFactory {
 
     protected Device createDevice(String name,
                                   Issuer issuer, Code institutionCode, String aet,
-                                  String host, int port, int tlsPort) throws Exception {
+                                  String host, int port, int tlsPort) {
         Device device = init(new Device(name), issuer, institutionCode);
         if (name.equalsIgnoreCase(OTHER_DEVICES[0])
                 || name.equalsIgnoreCase("dcm4chee-arc"))
@@ -468,7 +467,7 @@ public class DefaultArchiveConfigurationFactory {
 
     protected Device createHL7Device(String name,
                                      Issuer issuer, Code institutionCode, String appName,
-                                     String host, int port, int tlsPort) throws Exception {
+                                     String host, int port, int tlsPort) {
         Device device = new Device(name);
         HL7DeviceExtension hl7Device = new HL7DeviceExtension();
         device.addDeviceExtension(hl7Device);
@@ -489,8 +488,7 @@ public class DefaultArchiveConfigurationFactory {
         return device;
     }
 
-    public Device createArchiveDevice(String name, Device arrDevice)
-            throws Exception {
+    public Device createArchiveDevice(String name, Device arrDevice) {
 
         //KeyStore keyStore = SSLManagerFactory.loadKeyStore("JKS", ResourceLocator.resourceURL("cacerts.jks"), "secret");
 
