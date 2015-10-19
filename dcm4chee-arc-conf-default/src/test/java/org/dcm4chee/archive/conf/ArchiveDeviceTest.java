@@ -38,33 +38,34 @@
 
 package org.dcm4chee.archive.conf;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Properties;
-
+import org.dcm4che3.conf.api.ConfigurationNotFoundException;
 import org.dcm4che3.conf.api.DicomConfiguration;
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
-import org.dcm4che3.conf.api.AttributeCoercions;
-import org.dcm4che3.conf.api.ConfigurationNotFoundException;
+import org.dcm4che3.conf.core.api.ConfigurableClassExtension;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
-import org.dcm4che3.imageio.codec.CompressionRules;
-import org.dcm4che3.net.*;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.ExternalArchiveAEExtension;
+import org.dcm4che3.net.TCGroupConfigAEExtension;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.net.web.WebServiceAEExtension;
-import org.dcm4chee.archive.conf.defaults.DeepEquals;
-import org.dcm4chee.archive.conf.defaults.DeepEquals.CustomDeepEquals;
-import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
+import org.dcm4chee.archive.conf.defaults.test.DeepEquals;
 import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory;
+import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Properties;
+
+import static org.junit.Assert.assertTrue;
 
 public class ArchiveDeviceTest {
 
@@ -86,23 +87,14 @@ public class ArchiveDeviceTest {
             builder = DicomConfigurationBuilder.newJsonConfigurationBuilder(
                     "../dcm4chee-arc-conf/src/main/config/configuration/dcm4chee-arc/sample-config.json");
         }
-        builder.registerDeviceExtension(ArchiveDeviceExtension.class);
-        builder.registerDeviceExtension(NoneIOCMChangeRequestorExtension.class);
-        builder.registerDeviceExtension(StorageDeviceExtension.class);
-        builder.registerDeviceExtension(HL7DeviceExtension.class);
-        builder.registerDeviceExtension(ImageReaderExtension.class);
-        builder.registerDeviceExtension(ImageWriterExtension.class);
-        builder.registerDeviceExtension(AuditRecordRepository.class);
-        builder.registerDeviceExtension(AuditLogger.class);
-        builder.registerAEExtension(ArchiveAEExtension.class);
-        builder.registerAEExtension(ExternalArchiveAEExtension.class);
-        builder.registerAEExtension(WebServiceAEExtension.class);
-        builder.registerAEExtension(TCGroupConfigAEExtension.class);
-        builder.registerHL7ApplicationExtension(ArchiveHL7ApplicationExtension.class);
+
+        for (ConfigurableClassExtension extension : getDefaultExtensions())
+            builder.registerExtensionForBaseExtension(extension.getClass(), extension.getBaseClass());
+
+
 
         CommonDicomConfigurationWithHL7 configWithHL7 = builder
-                .cache(false)
-                .persistDefaults(false)
+                .cache(true)
                 .build();
         config = configWithHL7;
         hl7Config = configWithHL7;
@@ -110,9 +102,27 @@ public class ArchiveDeviceTest {
         cleanUp();
     }
 
+    public static ArrayList<ConfigurableClassExtension> getDefaultExtensions() {
+        ArrayList<ConfigurableClassExtension> extensions = new ArrayList<>();
+
+        extensions.add(new ArchiveDeviceExtension());
+        extensions.add(new StorageDeviceExtension());
+        extensions.add(new NoneIOCMChangeRequestorExtension());
+        extensions.add(new StorageDeviceExtension());
+        extensions.add(new HL7DeviceExtension());
+        extensions.add(new ImageReaderExtension());
+        extensions.add(new ImageWriterExtension());
+        extensions.add(new AuditRecordRepository());
+        extensions.add(new AuditLogger());
+        extensions.add(new ArchiveAEExtension());
+        extensions.add(new ExternalArchiveAEExtension());
+        extensions.add(new WebServiceAEExtension());
+        extensions.add(new TCGroupConfigAEExtension());
+        extensions.add(new ArchiveHL7ApplicationExtension());
+        return extensions;
+    }
 
 
-    
     @Test
     public void test() throws Exception {
 
@@ -131,21 +141,11 @@ public class ArchiveDeviceTest {
 
 
         // register custom deep equals methods
-        DeepEquals.customDeepEquals = new HashMap<Class<?>, CustomDeepEquals>();
-        DeepEquals.customDeepEquals.put(CompressionRules.class, new CustomEquals.CompressionRulesDeepEquals());
-        DeepEquals.customDeepEquals.put(AttributeCoercions.class, new CustomEquals.AttributeCoercionsDeepEquals());
 
         boolean res = DeepEquals.deepEquals(arc, arcLoaded);
 
         if (!res) {
-            System.out.println(DeepEquals.lastClass);
-            System.out.println(DeepEquals.lastDualKey);
-
-            // trace
-            System.out.println("'Path' in the object tree where inequality is located:");
-            for (DeepEquals.DualKey dualKey : DeepEquals.lastDualKey.getTrace()) {
-                System.out.println(dualKey.getFieldName());
-            }
+            DeepEquals.printOutInequality();
         }
 
         assertTrue("Store/read failed for an attribute. See console output.", res);

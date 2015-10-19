@@ -1,10 +1,9 @@
-package org.dcm4chee.archive.conf;
+package org.dcm4chee.archive.conf.defaults.test;
 
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.conf.api.AttributeCoercions;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.CompressionRules;
-import org.dcm4chee.archive.conf.defaults.DeepEquals;
 
 import java.util.Iterator;
 
