@@ -49,10 +49,7 @@ import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -110,16 +107,12 @@ public class ClearDataForIT extends BaseStoreIT {
         war.addClass(BaseStoreIT.class);
         war.addClass(InitDataForIT.class);
         war.addClass(ParamFactory.class);
-        JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
-                .importRuntimeAndTestDependencies().resolve()
-                .withoutTransitivity().as(JavaArchive.class);
-        for (JavaArchive a : archs) {
-            a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-            war.addAsLibrary(a);
-        }
+      
+        ITHelper.addDefaultDependenciesToWebArchive(war);
+        
 //      war.as(ZipExporter.class).exportTo(
 //      new File("test.war"), true);
-        war.addAsLibraries(archs);
+        
         return war;
     }
 
