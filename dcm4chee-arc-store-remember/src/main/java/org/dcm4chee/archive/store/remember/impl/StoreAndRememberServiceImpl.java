@@ -378,7 +378,8 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         
         @Override
         public StoreAndRememberContext build() {
-            if(cxt.getExternalDeviceName() == null) {
+            String extDeviceName = cxt.getExternalDeviceName();
+            if(extDeviceName == null) {
                 throw new RuntimeException("Invalid store-and-remember request: no external device name set");
             }
             if(cxt.getRemoteAE() == null) {
@@ -414,9 +415,9 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             
             if (instances == null) {
                 if (seriesIUID != null) {
-                    instances = storeRememberEJB.getSeriesInstances(seriesIUID);
+                    instances = storeRememberEJB.getNotExternallyArchivedSeriesInstances(seriesIUID, extDeviceName);
                 } else if (studyIUID != null) {
-                    instances = storeRememberEJB.getStudyInstances(studyIUID);
+                    instances = storeRememberEJB.getNotExternallyArchivedStudyInstances(studyIUID, extDeviceName);
                 } else {
                     throw new RuntimeException("Invalid store-and-remember request: no series or study UID set");
                 }
