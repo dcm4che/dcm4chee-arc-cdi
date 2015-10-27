@@ -38,14 +38,6 @@
 
 package org.dcm4chee.archive.conf.defaults;
 
-import static org.dcm4che3.net.TransferCapability.Role.SCP;
-import static org.dcm4che3.net.TransferCapability.Role.SCU;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Issuer;
@@ -64,6 +56,14 @@ import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.storage.conf.*;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static org.dcm4che3.net.TransferCapability.Role.SCP;
+import static org.dcm4che3.net.TransferCapability.Role.SCU;
 
 public class DefaultArchiveConfigurationFactory {
 
@@ -374,6 +374,9 @@ public class DefaultArchiveConfigurationFactory {
     public static class FactoryParams {
         public String baseStoragePath = "/var/local/dcm4chee-arc/";
         public boolean useGroupBasedTCConfig;
+        /**
+         * Useful for testing, not recommended for production
+         */
         public boolean generateUUIDsBasedOnName;
     }
 
@@ -402,16 +405,20 @@ public class DefaultArchiveConfigurationFactory {
         auditUDP.setProtocol(protocol);
         arrDevice.addConnection(auditUDP);
         arr.addConnection(auditUDP);
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            auditUDP.setUuid(makeUuidFromName(name+"auditUDP"));
+        }
+
         return arrDevice;
     }
 
 
-    protected Device createDevice(String name) throws Exception {
+    protected Device createDevice(String name) {
         return init(new Device(name), null, null);
     }
 
-    private static Device init(Device device, Issuer issuer, Code institutionCode)
-            throws Exception {
+    private static Device init(Device device, Issuer issuer, Code institutionCode) {
         String name = device.getDeviceName();
 
         //TODO: implement
@@ -429,15 +436,12 @@ public class DefaultArchiveConfigurationFactory {
 
     protected Device createDevice(String name,
                                   Issuer issuer, Code institutionCode, String aet,
-                                  String host, int port, int tlsPort) throws Exception {
+                                  String host, int port, int tlsPort) {
         Device device = init(new Device(name), issuer, institutionCode);
         if (name.equalsIgnoreCase(OTHER_DEVICES[0])
                 || name.equalsIgnoreCase("dcm4chee-arc"))
             device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
         ApplicationEntity ae = new ApplicationEntity(aet);
-
-        if (factoryParams.generateUUIDsBasedOnName)
-            ae.setUuid(makeUuidFromAet(aet));
 
         ExternalArchiveAEExtension externalArchiveExt =
                 new ExternalArchiveAEExtension();
@@ -456,6 +460,13 @@ public class DefaultArchiveConfigurationFactory {
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
         device.addConnection(dicomTLS);
         ae.addConnection(dicomTLS);
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            ae.setUuid(makeUuidFromName(aet));
+            dicom.setUuid(makeUuidFromName(aet+"dicom"));
+            dicomTLS.setUuid(makeUuidFromName(aet+"dicomtls"));
+        }
+
         return device;
     }
 
@@ -468,7 +479,7 @@ public class DefaultArchiveConfigurationFactory {
 
     protected Device createHL7Device(String name,
                                      Issuer issuer, Code institutionCode, String appName,
-                                     String host, int port, int tlsPort) throws Exception {
+                                     String host, int port, int tlsPort) {
         Device device = new Device(name);
         HL7DeviceExtension hl7Device = new HL7DeviceExtension();
         device.addDeviceExtension(hl7Device);
@@ -486,11 +497,17 @@ public class DefaultArchiveConfigurationFactory {
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
         device.addConnection(hl7TLS);
         hl7app.addConnection(hl7TLS);
+
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            hl7.setUuid(makeUuidFromName(name+"hl7"));
+            hl7TLS.setUuid(makeUuidFromName(name+"hl7tls"));
+        }
+
         return device;
     }
 
-    public Device createArchiveDevice(String name, Device arrDevice)
-            throws Exception {
+    public Device createArchiveDevice(String name, Device arrDevice) {
 
         //KeyStore keyStore = SSLManagerFactory.loadKeyStore("JKS", ResourceLocator.resourceURL("cacerts.jks"), "secret");
 
@@ -515,6 +532,12 @@ public class DefaultArchiveConfigurationFactory {
                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
         device.addConnection(dicomTLS);
+
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            dicom.setUuid(makeUuidFromName(name + "dicom"));
+            dicomTLS.setUuid(makeUuidFromName(name + "dicomTls"));
+        }
 
         addArchiveDeviceExtension(device);
         addHL7DeviceExtension(device);
@@ -657,7 +680,7 @@ public class DefaultArchiveConfigurationFactory {
         device.addDeviceExtension(ext);
     }
 
-    private static void addAuditLogger(Device device, Device arrDevice) {
+    private void addAuditLogger(Device device, Device arrDevice) {
         Connection auditUDP = new Connection("audit-udp-initiating", "localhost");
         auditUDP.setProtocol(Connection.Protocol.SYSLOG_UDP);
         device.addConnection(auditUDP);
@@ -667,9 +690,14 @@ public class DefaultArchiveConfigurationFactory {
         auditLogger.addConnection(auditUDP);
         auditLogger.setAuditSourceTypeCodes("4");
         auditLogger.addAuditRecordRepositoryDevice(arrDevice);
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            auditUDP.setUuid(makeUuidFromName(device.getDeviceName() + "audipudp"));
+        }
+
     }
 
-    private static void addHL7DeviceExtension(Device device) {
+    private void addHL7DeviceExtension(Device device) {
         HL7DeviceExtension ext = new HL7DeviceExtension();
         device.addDeviceExtension(ext);
 
@@ -685,6 +713,11 @@ public class DefaultArchiveConfigurationFactory {
                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
         device.addConnection(hl7TLS);
+
+        if (factoryParams.generateUUIDsBasedOnName) {
+            hl7.setUuid(makeUuidFromName(device.getDeviceName() + "hl7"));
+            hl7TLS.setUuid(makeUuidFromName(device.getDeviceName() + "hl7Tls"));
+        }
 
         HL7Application hl7App = new HL7Application("*");
         ArchiveHL7ApplicationExtension hl7AppExt = new ArchiveHL7ApplicationExtension();
@@ -787,7 +820,7 @@ public class DefaultArchiveConfigurationFactory {
         ApplicationEntity ae = new ApplicationEntity(aet);
 
         if (factoryParams.generateUUIDsBasedOnName)
-            ae.setUuid(makeUuidFromAet(aet));
+            ae.setUuid(makeUuidFromName(aet));
 
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
@@ -974,7 +1007,7 @@ public class DefaultArchiveConfigurationFactory {
         return ae;
     }
 
-    private String makeUuidFromAet(String aet) {
+    private String makeUuidFromName(String aet) {
         try {
             return javax.xml.bind.DatatypeConverter.printHexBinary(MessageDigest.getInstance("SHA-1").digest(aet.getBytes()));
         } catch (NoSuchAlgorithmException e) {
@@ -989,7 +1022,7 @@ public class DefaultArchiveConfigurationFactory {
         ApplicationEntity ae = new ApplicationEntity(aet);
 
         if (factoryParams.generateUUIDsBasedOnName)
-            ae.setUuid(makeUuidFromAet(aet));
+            ae.setUuid(makeUuidFromName(aet));
 
         ae.addConnection(dicom);
         ae.addConnection(dicomTLS);
@@ -1026,7 +1059,7 @@ public class DefaultArchiveConfigurationFactory {
         ApplicationEntity ae = new ApplicationEntity(aet);
 
         if (factoryParams.generateUUIDsBasedOnName)
-            ae.setUuid(makeUuidFromAet(aet));
+            ae.setUuid(makeUuidFromName(aet));
 
         ArchiveAEExtension aeExt = new ArchiveAEExtension();
         ae.addAEExtension(aeExt);
