@@ -6,8 +6,11 @@ import org.dcm4che3.conf.core.api.OptimisticLockException;
 import org.dcm4che3.conf.core.normalization.DefaultsAndNullFilterDecorator;
 import org.dcm4che3.conf.core.olock.HashBasedOptimisticLockingConfiguration;
 import org.dcm4che3.conf.core.storage.InMemoryConfiguration;
+import org.dcm4che3.conf.core.storage.SingleJsonFileConfigurationStorage;
 import org.dcm4che3.conf.core.util.Extensions;
+import org.dcm4che3.conf.dicom.CommonDicomConfiguration;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
+import org.dcm4che3.conf.dicom.DicomPath;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
@@ -22,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * @author Roman K
@@ -30,6 +34,8 @@ public class DicomConfigOptimisticLockingTests {
 
 
     private CommonDicomConfigurationWithHL7 dicomConfig;
+
+    private Configuration bareStorage;
 
 
     @Before
@@ -46,6 +52,8 @@ public class DicomConfigOptimisticLockingTests {
 
 //        Configuration storage = new SingleJsonFileConfigurationStorage("target/config.json");
         Configuration storage = new InMemoryConfiguration();
+
+        bareStorage = storage;
 
         storage = new HashBasedOptimisticLockingConfiguration(storage, allExtensionClasses, storage);
 
@@ -71,6 +79,89 @@ public class DicomConfigOptimisticLockingTests {
 
     }
 
+
+    @Test
+    public void testPersistDeviceNoHash() {
+
+        // Make changes, then persist original node without hashes - should fully overwrite the existing node
+
+        Object exportedDeviceNode = bareStorage.getConfigurationNode(DicomPath.DeviceByName.set("deviceName", "dcm4chee-arc").path(), null);
+
+        Device device1 = dicomConfig.findDevice("dcm4chee-arc");
+        device1.setDescription("a new description");
+        device1.getApplicationEntity("DCM4CHEE").setDescription("another new desc");
+        device1.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).setIANMaxRetries(100);
+
+        dicomConfig.merge(device1);
+
+        // check if changes persisted
+        Device device2 = dicomConfig.findDevice("dcm4chee-arc");
+        Assert.assertEquals(device1.getDescription(), device2.getDescription());
+        Assert.assertEquals(device1.getApplicationEntity("DCM4CHEE").getDescription(), device2.getApplicationEntity("DCM4CHEE").getDescription());
+        Assert.assertEquals(
+                device1.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).getIANMaxRetries(),
+                device2.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).getIANMaxRetries()
+        );
+
+        // persist original node with no hashes
+        dicomConfig.getConfigurationStorage().persistNode(
+                DicomPath.DeviceByName.set("deviceName", "dcm4chee-arc").path(),
+                (Map<String, Object>) exportedDeviceNode,
+                Device.class
+        );
+
+        // all changes should be reverted
+        Device device3 = dicomConfig.findDevice("dcm4chee-arc");
+        Assert.assertNotEquals(device1.getDescription(), device3.getDescription());
+        Assert.assertNotEquals(device1.getApplicationEntity("DCM4CHEE").getDescription(), device3.getApplicationEntity("DCM4CHEE").getDescription());
+        Assert.assertNotEquals(
+                device1.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).getIANMaxRetries(),
+                device3.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).getIANMaxRetries()
+        );
+
+
+    }
+
+
+    @Test
+    public void testFullImportExport() {
+
+        // Make changes, then persist original ROOT node without hashes - should fully overwrite the existing config
+
+        Object exportedConfig = dicomConfig.getConfigurationStorage().getConfigurationNode("/", null);
+//        Object exportedConfig = dicomConfig.getConfigurationStorage().getConfigurationRoot();
+
+
+        Device device1 = dicomConfig.findDevice("dcm4chee-arc");
+        device1.setDescription("a new description");
+        device1.getApplicationEntity("DCM4CHEE").setDescription("another new desc");
+        device1.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).setIANMaxRetries(100);
+
+        dicomConfig.merge(device1);
+
+        // check if changes persisted
+        Device device2 = dicomConfig.findDevice("dcm4chee-arc");
+        Assert.assertEquals(device1.getDescription(), device2.getDescription());
+        Assert.assertEquals(device1.getApplicationEntity("DCM4CHEE").getDescription(), device2.getApplicationEntity("DCM4CHEE").getDescription());
+        Assert.assertEquals(
+                device1.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).getIANMaxRetries(),
+                device2.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).getIANMaxRetries()
+        );
+
+        // persist original root node with no hashes
+        dicomConfig.getConfigurationStorage().persistNode("/", (Map<String, Object>) exportedConfig, null);
+
+        // all changes should be reverted
+        Device device3 = dicomConfig.findDevice("dcm4chee-arc");
+        Assert.assertNotEquals(device1.getDescription(), device3.getDescription());
+        Assert.assertNotEquals(device1.getApplicationEntity("DCM4CHEE").getDescription(), device3.getApplicationEntity("DCM4CHEE").getDescription());
+        Assert.assertNotEquals(
+                device1.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).getIANMaxRetries(),
+                device3.getApplicationEntity("DCM4CHEE").getAEExtension(ArchiveAEExtension.class).getIANMaxRetries()
+        );
+
+
+    }
 
     @Test
     public void testMultiDepthMerge() {
