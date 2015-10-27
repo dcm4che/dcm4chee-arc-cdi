@@ -151,7 +151,10 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmRejectedObjectsCleanUpMaxNumberOfDeletes")
     private int rejectedObjectsCleanUpMaxNumberOfDeletes;
 
-    @ConfigurableProperty(name = "dcmMppsEmulationPollInterval", defaultValue = "0")
+    @ConfigurableProperty(name = "dcmMppsEmulationPollInterval",
+            description = "Interval in seconds that should be used to poll for finished study updates (and therefore mpps emulation candidates)" +
+                    "If set to 0, disables polling.",
+            defaultValue = "0")
     private int mppsEmulationPollInterval;
 
     @ConfigurableProperty(name = "dcmDeletionServicePollInterval", defaultValue = "0")
