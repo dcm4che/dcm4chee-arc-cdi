@@ -118,14 +118,14 @@ public class StoreServiceEJB {
                 Collection<Location> locations = instance.getLocations(2);
                 try {
                 	findOrCreateStudyOnStorageGroup(context);
-                    StorageContext metadataContext = context.getMetadataContext().get();
-                    if (metadataContext != null) {
+                	Future<StorageContext> metadataContextFuture = context.getMetadataContext();
+                    if (metadataContextFuture != null && metadataContextFuture.get() != null) {
                         Location metadata = createMetadataLocation(context);
                         locations.add(metadata);
                     }
 
-                    StorageContext bulkdataContext = context.getBulkdataContext().get();
-                    if (bulkdataContext != null) {
+                    Future<StorageContext> bulkdataContextFuture = context.getBulkdataContext();
+                    if (bulkdataContextFuture != null && bulkdataContextFuture.get() != null) {
                         Location bulkdata = createBulkdataLocation(context);
                         locations.add(bulkdata);
                         context.setFileRef(bulkdata);

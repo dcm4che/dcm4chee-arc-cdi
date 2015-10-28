@@ -71,7 +71,6 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -132,14 +131,8 @@ public class OptimisticLockForIT extends BaseStoreIT {
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "test.war");
-        JavaArchive[] archs = Maven.resolver().loadPomFromFile("testpom.xml")
-                .importRuntimeAndTestDependencies().resolve()
-                .withoutTransitivity().as(JavaArchive.class);
-        for (JavaArchive a : archs) {
-            a.addAsManifestResource(new File(
-                    "src/test/resources/testdata/beans.xml"), "beans.xml");
-            war.addAsLibrary(a);
-        }
+        ITHelper.addDefaultDependenciesToWebArchive(war, new File(
+                    "src/test/resources/testdata/beans.xml"));
 
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "test.jar");
         jar.addClass(BaseStoreIT.class);

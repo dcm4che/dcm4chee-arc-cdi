@@ -54,10 +54,7 @@ import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -133,15 +130,7 @@ public class InitDataForIT {
         WebArchive war= ShrinkWrap.create(WebArchive.class, "test.war");
         war.addClass(InitDataForIT.class);
         war.addClass(ParamFactory.class);
-        JavaArchive[] archs =   Maven.resolver()
-                .loadPomFromFile("testpom.xml")
-                .importRuntimeAndTestDependencies()
-                .resolve().withoutTransitivity()
-                .as(JavaArchive.class);
-        for(JavaArchive a: archs) {
-            a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-            war.addAsLibrary(a);
-        }
+        ITHelper.addDefaultDependenciesToWebArchive(war);
         for (String resourceName : INSTANCES)
             war.addAsResource(resourceName);
 //        war.as(ZipExporter.class).exportTo(

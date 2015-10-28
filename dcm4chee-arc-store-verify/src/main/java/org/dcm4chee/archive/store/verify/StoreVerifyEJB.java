@@ -136,9 +136,7 @@ public class StoreVerifyEJB {
         return dimseEntry;
     }
 
-    public void updateStatus(String transactionID
-            , StoreVerifyStatus status) {
-
+    public void updateStatus(String transactionID, StoreVerifyStatus status) {
         if (transactionID.startsWith("dimse")) {
             StoreVerifyDimse dimseEntry = getDimseEntry(transactionID);
             dimseEntry.setStatus(status);
@@ -151,79 +149,4 @@ public class StoreVerifyEJB {
         }
     }
 
-    /*
-     * External Location Service methods
-     */
-
-    public void addExternalLocation(String iuid, String retrieveAET,
-            String retrieveDeviceName, Availability availability) {
-        ExternalRetrieveLocation location = new ExternalRetrieveLocation(
-                retrieveDeviceName, availability);
-
-        Instance instance = getInstance(iuid);
-        ArrayList<String> currentRetrieveAETs = new ArrayList<String>(
-                Arrays.asList(instance.getRetrieveAETs()));
-        currentRetrieveAETs.add(retrieveAET);
-        String[] updatedRetrieveAETs = new String[currentRetrieveAETs.size()];
-        instance.setRetrieveAETs(currentRetrieveAETs
-                .toArray(updatedRetrieveAETs));
-        location.setInstance(instance);
-        em.persist(location);
-    }
-
-	private Instance getInstance(String iuid) {
-		Query query = em.createQuery("select i from Instance i where"
-                + " i.sopInstanceUID = ?1");
-        query.setParameter(1, iuid);
-        Instance instance = (Instance) query.getSingleResult();
-		return instance;
-	}
-
-    public void removeExternalLocation(String iuid, String retrieveDeviceName) {
-        
-        Query query = em.createNamedQuery(ExternalRetrieveLocation
-                .FIND_EXT_LOCATIONS_BY_IUID_DEVICE_NAME);
-        query.setParameter(1, iuid); //sop UID
-        query.setParameter(2, retrieveDeviceName); //retrieve Device Name
-        ArrayList<ExternalRetrieveLocation> list = 
-                (ArrayList<ExternalRetrieveLocation>) query.getResultList();
-
-        for (ExternalRetrieveLocation extLocation : list)
-            em.remove(extLocation);
-        Instance instance = getInstance(iuid);
-        ArrayList<String> currentRetrieveAETs = (ArrayList<String>) new ArrayList<String>(
-                Arrays.asList(instance.getRetrieveAETs()));
-
-        ArrayList<String> remoteAETsOfDevice = (ArrayList<String>)
-                getRemoteAETsOfDevice(retrieveDeviceName);
-
-        for (String aet : remoteAETsOfDevice)
-            if (currentRetrieveAETs.contains(aet))
-                currentRetrieveAETs.remove(aet);
-
-        String[] updatedRetrieveAETs = new String[currentRetrieveAETs.size()];
-        instance.setRetrieveAETs(currentRetrieveAETs
-                .toArray(updatedRetrieveAETs));
-    }
-
-    private Collection<String> getRemoteAETsOfDevice(String retrieveDeviceName) {
-        try {
-            Device device = conf.findDevice(retrieveDeviceName);
-            return device.getApplicationAETitles();
-        } catch (ConfigurationException e) {
-            LOG.error("Unable to find device {}", retrieveDeviceName);
-        }
-        return new ArrayList<String>();
-    }
-
-    public void removeExternalLocation(String iuid, Availability availability) {
-        Query query = em.createNamedQuery(ExternalRetrieveLocation
-                .FIND_EXT_LOCATIONS_BY_IUID_AVAILABILITY);
-        query.setParameter(1, iuid); //sop UID
-        query.setParameter(2, availability); //availability
-        ArrayList<ExternalRetrieveLocation> list = 
-                (ArrayList<ExternalRetrieveLocation>) query.getResultList();
-        for(ExternalRetrieveLocation extLocation : list)
-            em.remove(extLocation);
-    }
 }

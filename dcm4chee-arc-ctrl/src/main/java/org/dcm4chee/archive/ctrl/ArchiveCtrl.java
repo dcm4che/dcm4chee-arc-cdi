@@ -58,7 +58,6 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
-import org.dcm4chee.storage.StorageDevice;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.dcm4chee.storage.conf.StorageSystemGroup;

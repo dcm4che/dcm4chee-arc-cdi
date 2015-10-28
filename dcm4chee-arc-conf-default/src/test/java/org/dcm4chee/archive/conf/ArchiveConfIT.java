@@ -41,24 +41,12 @@ package org.dcm4chee.archive.conf;
 
 import org.dcm4che3.conf.api.hl7.HL7Configuration;
 import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
-import org.dcm4che3.conf.core.api.Configuration;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
-import org.dcm4che3.conf.dicom.DicomConfigurationBuilder;
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
-import org.dcm4che3.net.ExternalArchiveAEExtension;
-import org.dcm4che3.net.TCGroupConfigAEExtension;
-import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4che3.net.audit.AuditRecordRepository;
-import org.dcm4che3.net.hl7.HL7DeviceExtension;
-import org.dcm4che3.net.imageio.ImageReaderExtension;
-import org.dcm4che3.net.imageio.ImageWriterExtension;
-import org.dcm4che3.net.web.WebServiceAEExtension;
-import org.dcm4chee.archive.conf.defaults.DeepEquals;
-import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory;
-import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
-import org.dcm4chee.archive.conf.defaults.ExtendedStudyDictionary;
-import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.archive.conf.defaults.*;
+import org.dcm4chee.archive.conf.defaults.test.CustomEquals;
+import org.dcm4chee.archive.conf.defaults.test.DeepEquals;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -71,10 +59,6 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Any;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
 import java.io.File;

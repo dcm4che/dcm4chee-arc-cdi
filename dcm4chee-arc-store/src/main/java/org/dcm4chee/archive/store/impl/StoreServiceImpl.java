@@ -564,9 +564,12 @@ public class StoreServiceImpl implements StoreService {
                 .getDeviceExtension(ArchiveDeviceExtension.class);
 
         try {
-            StorageContext bulkdataContext = context.getBulkdataContext().get();
-            String nodbAttrsDigest = noDBAttsDigest(bulkdataContext.getFilePath(),context.getStoreSession());
-            context.setNoDBAttsDigest(nodbAttrsDigest);
+            Future<StorageContext> bulkdataContextFuture = context.getBulkdataContext();
+            if(bulkdataContextFuture != null) {
+                StorageContext bulkdataContext = bulkdataContextFuture.get();
+                String nodbAttrsDigest = noDBAttsDigest(bulkdataContext.getFilePath(),context.getStoreSession());
+                context.setNoDBAttsDigest(nodbAttrsDigest);
+            }
         } catch (IOException|InterruptedException|ExecutionException e1) {
             throw new DicomServiceException(Status.UnableToProcess, e1);
         }

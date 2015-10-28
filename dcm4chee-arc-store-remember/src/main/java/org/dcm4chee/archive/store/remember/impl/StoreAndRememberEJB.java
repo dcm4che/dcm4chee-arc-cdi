@@ -92,24 +92,34 @@ public class StoreAndRememberEJB {
                 .instances(failedSopInstanceUIDs.toArray(new String[failedSopInstanceUIDs.size()]));
     }
     
-    public String[] getStudyInstances(String studyIUID) {
+    public String[] getNotExternallyArchivedStudyInstances(String studyIUID, String extDeviceName) {
+        // TODO: ALEX: expensive query!
         List<String> sopInstanceUIDs = em.createQuery(
-                "SELECT inst.sopInstanceUID FROM Series se "
-                + "JOIN se.instances inst "        
-                + "WHERE se.study.studyInstanceUID = ?1",
+                "SELECT DISTINCT inst.sopInstanceUID "
+                        + "FROM ExternalRetrieveLocation el "
+                        + "RIGHT JOIN el.instance inst "
+                        + "WHERE inst.series.study.studyInstanceUID = ?1 "
+                        + "AND (el.retrieveDeviceName IS NULL "
+                        + "OR el.retrieveDeviceName != ?2)",
                 String.class)
                 .setParameter(1, studyIUID)
+                .setParameter(2, extDeviceName)
                 .getResultList();
-        
         return sopInstanceUIDs.toArray(new String[sopInstanceUIDs.size()]);
     }
     
-    public String[] getSeriesInstances(String seriesIUID) {
+    public String[] getNotExternallyArchivedSeriesInstances(String seriesIUID, String extDeviceName) {
+        // TODO: ALEX: expensive query!
         List<String> sopInstanceUIDs =  em.createQuery(
-                "SELECT i.sopInstanceUID FROM Instance i "
-                + "WHERE i.series.seriesInstanceUID = ?1",
+                "SELECT DISTINCT inst.sopInstanceUID "
+                + "FROM ExternalRetrieveLocation el "
+                + "RIGHT JOIN el.instance inst "
+                + "WHERE inst.series.seriesInstanceUID = ?1 "
+                + "AND (el.retrieveDeviceName IS NULL "
+                + "OR el.retrieveDeviceName != ?2)",
                 String.class)
                 .setParameter(1, seriesIUID)
+                .setParameter(2, extDeviceName)
                 .getResultList();
         return sopInstanceUIDs.toArray(new String[sopInstanceUIDs.size()]);
     }
