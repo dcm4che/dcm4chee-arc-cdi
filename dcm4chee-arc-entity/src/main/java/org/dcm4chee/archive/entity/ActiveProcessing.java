@@ -39,7 +39,6 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
-import java.util.Date;
 
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
@@ -53,8 +52,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -147,27 +144,9 @@ public class ActiveProcessing implements Serializable {
     @Column(name = "active_service", updatable = false)
     private ActiveService activeService;
 
-    @Column(name = "created_time", updatable = false)
-    private Date createdTime;
-
-    @Column(name = "updated_time")
-    private Date updatedTime;
-
     @OneToOne(fetch=FetchType.EAGER, cascade=CascadeType.ALL, orphanRemoval = true, optional = true)
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
-
-    @PrePersist
-    public void onPrePersist() {
-        Date now = new Date();
-        createdTime = now;
-        updatedTime = now;
-    }
-
-    @PreUpdate
-    public void onPreUpdate() {
-        updatedTime = new Date();
-    }
 
     public final long getPk() {
         return pk;
@@ -203,14 +182,6 @@ public class ActiveProcessing implements Serializable {
 
     public void setActiveService(ActiveService activeService) {
         this.activeService = activeService;
-    }
-
-    public Date getCreatedTime() {
-        return createdTime;
-    }
-
-    public Date getUpdatedTime() {
-        return updatedTime;
     }
 
     public AttributesBlob getAttributesBlob() {

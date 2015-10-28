@@ -203,9 +203,9 @@ public class DefaultRetrieveService implements RetrieveService {
                 locator = augmentExternalLocations(updateLocator(storageConf, 
                         locator, seriesAttrs, tuple));
             } else {
-                if (locator != null && !withoutBulkData && !locatorWithoutBulkData && locator.isWithoutBulkdata())
-                    locator = null; //replace current locator (withoutBulkData) with locator with bulkdata 
-                locator = updateLocator(storageConf, locator, seriesAttrs, tuple);
+            	if (locator != null && !withoutBulkData && !locatorWithoutBulkData && locator.isWithoutBulkdata())
+            		locator = null; //replace current locator (withoutBulkData) with locator with bulkdata 
+            	locator = updateLocator(storageConf, locator, seriesAttrs, tuple);
             }
         }
         if (locator != null)

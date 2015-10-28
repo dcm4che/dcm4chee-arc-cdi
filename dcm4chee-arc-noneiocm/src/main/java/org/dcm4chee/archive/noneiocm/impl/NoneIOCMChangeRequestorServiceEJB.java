@@ -111,7 +111,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
 
     @Inject
     private CodeService codeService;
-
+    
     @Resource(mappedName = "java:/ConnectionFactory")
     private ConnectionFactory connFactory;
 
@@ -126,13 +126,13 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
 
     @Override
     public boolean isNoneIOCMChangeRequestor(String callingAET) {
-        return getNoneIOCMDevice(callingAET) != null;
+    	return getNoneIOCMDevice(callingAET) != null;
     }
-
+    
     @Override
     public boolean isNoneIOCMChangeRequest(String callingAET, String sourceAET) {
-        Device d = getNoneIOCMDevice(callingAET);
-        return d == null ? false : callingAET.equals(sourceAET) ? true : d.getApplicationAETitles().contains(sourceAET);
+    	Device d = getNoneIOCMDevice(callingAET);
+       	return d == null ? false : callingAET.equals(sourceAET) ? true : d.getApplicationAETitles().contains(sourceAET);
     }
 
     @Override
@@ -148,23 +148,21 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         }
         return -1;
     }
-
+    
     private Device getNoneIOCMDevice(String callingAET) {
-        if (callingAET != null) {
-            NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
-            if (ext == null || ext.getNoneIOCMChangeRequestorDevices().isEmpty()) {
-                LOG.debug("No NoneIOCMChangeRequestorDevices configured!");
-                return null;
-            }
-            for (Device d : ext.getNoneIOCMChangeRequestorDevices()) {
-                if (d != null && d.getApplicationAETitles().contains(callingAET)) {
-                    return d;
-                }
+        NoneIOCMChangeRequestorExtension ext = device.getDeviceExtension(NoneIOCMChangeRequestorExtension.class);
+        if (ext == null || ext.getNoneIOCMChangeRequestorDevices().isEmpty()) {
+            LOG.debug("No NoneIOCMChangeRequestorDevices configured!");
+            return null;
+        }
+        for (Device d : ext.getNoneIOCMChangeRequestorDevices()) {
+            if (d.getApplicationAETitles().contains(callingAET)) {
+            	return d;
             }
         }
-        return null;
+    	return null;
     }
-
+    
     @Override
     public NoneIOCMChangeType getChangeType(Instance inst, Attributes attrs) {
         Attributes patAttrs = inst.getSeries().getStudy().getPatient().getAttributes();
@@ -194,11 +192,11 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         }
         return NoneIOCMChangeType.INSTANCE_CHANGE;
     }
-
+    
     public List<QCInstanceHistory> findInstanceHistory(String sopInstanceUID) {
         return new ArrayList<QCInstanceHistory>();
     }
-
+    
     @Override
     public NoneIOCMChangeType performChange(Instance inst, StoreContext context) {
         Attributes chgAttrs = new Attributes(context.getAttributes(), BASIC_CHG_ATTRIBUTES);
@@ -250,7 +248,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_OLD_UID);
         query.setParameter(1, sopIUID);
         @SuppressWarnings("unchecked")
-        List<QCInstanceHistory> tmp = (List<QCInstanceHistory>) query.getResultList();
+		List<QCInstanceHistory> tmp = (List<QCInstanceHistory>) query.getResultList();
         return tmp.size() == 0 ? null : tmp.get(0);
     }
 
@@ -258,14 +256,14 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
 
     @Override
     public void hideOrUnhideInstance(Instance instance, org.dcm4che3.data.Code rejNoteCode) {
-        Code code = rejNoteCode == null ? null : codeService.findOrCreate(new Code(NoneIOCMChangeRequestorService.REJ_CODE_QUALITY_REASON));
-        instance.setRejectionNoteCode(code);
-        em.merge(instance);
+    	Code code = rejNoteCode == null ? null : codeService.findOrCreate(new Code(NoneIOCMChangeRequestorService.REJ_CODE_QUALITY_REASON));
+    	instance.setRejectionNoteCode(code);
+    	em.merge(instance);
     }
-
+    
     @Override
     public void handleModalityChange(Instance inst, StoreContext context, int gracePeriodInSeconds) {
-
+        
         if(withinGracePeriodAndNoneIOCMSource(inst, gracePeriodInSeconds)) {
             context.setOldNONEIOCMChangeUID(inst.getSopInstanceUID());
             Attributes attrs = context.getAttributes();
@@ -286,7 +284,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
     public void onStoreInstance(StoreContext context) {
         //check here if the stored instance was received by NoneIOCM
         //Source modality within grace period
-
+        
         if(context.getOldNONEIOCMChangeUID() != null) {
             //create Split QC history for none IOCM
             QCActionHistory action = new QCActionHistory();
@@ -301,7 +299,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
             em.persist(studyHistory);
             QCSeriesHistory seriesHistory = new QCSeriesHistory();
             seriesHistory.setStudy(studyHistory);
-            seriesHistory.setUpdatedAttributesBlob(null); //no change (expect same attrs in series)
+              seriesHistory.setUpdatedAttributesBlob(null); //no change (expect same attrs in series)
             seriesHistory.setOldSeriesUID(context.getAttributes().getString(Tag.SeriesInstanceUID));
             em.persist(seriesHistory);
             QCInstanceHistory instanceHistory = new QCInstanceHistory(
@@ -320,17 +318,17 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         query.setParameter(1, inst.getSopInstanceUID());
         query.setParameter(2, QCOperation.DELETE.toString());
         QCInstanceHistory foundQCInstanceHistory = (QCInstanceHistory) query.getSingleResult();
-
+        
         if(foundQCInstanceHistory == null)
             return false;
-
+        
         if(foundQCInstanceHistory.getSeries().getNoneIOCMSourceAET() == null)
             return false;
-
+        
         long createdTime = foundQCInstanceHistory.getSeries()
                 .getStudy().getAction().getCreatedTime().getTime();
         long now = System.currentTimeMillis();
-
+        
         return (now - createdTime) < gracePeriodInSeconds; 
     }
 
