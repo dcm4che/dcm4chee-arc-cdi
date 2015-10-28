@@ -20,6 +20,10 @@ import org.dcm4chee.archive.conf.ArchiveDeviceTest;
 import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory.FactoryParams;
 import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
 import org.dcm4chee.archive.conf.defaults.test.DeepEquals;
+import org.dcm4chee.storage.conf.Availability;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.SyncPolicy;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,6 +80,47 @@ public class DicomConfigOptimisticLockingTests {
         params.useGroupBasedTCConfig = true;
 
         init.persistDefaultConfig(dicomConfig, dicomConfig, params);
+
+    }
+
+
+    @Test
+    public void optimisticLockingDemoTest() {
+
+        //// three users load the config at the same time
+        Device device1 = dicomConfig.findDevice("dcm4chee-arc");
+        Device device2 = dicomConfig.findDevice("dcm4chee-arc");
+        Device device3 = dicomConfig.findDevice("dcm4chee-arc");
+
+        //// one user modifies the port of a connection
+        device1.getConnections().get(0).setPort(12121);
+        dicomConfig.merge(device1);
+
+        //// second user tries to modify the same connection but fails
+        device2.getConnections().get(0).setBindAddress("anotherhost");
+        try {
+            dicomConfig.merge(device2);
+            Assert.fail("Should not succeed");
+        } catch (OptimisticLockException ignored) {
+        }
+
+        //// third user adds a storage system. This change does not conflict with connection settings, so it succeeds
+        // create new storage system
+        StorageSystem fs2 = new StorageSystem();
+        fs2.setStorageSystemID("fs2");
+        fs2.setProviderName("org.dcm4chee.storage.filesystem");
+        fs2.setStorageSystemPath("someNewPath");
+        fs2.setAvailability(Availability.OFFLINE);
+        fs2.setSyncPolicy(SyncPolicy.ON_ASSOCIATION_CLOSE);
+        // add it
+        device3.getDeviceExtension(StorageDeviceExtension.class).getStorageSystemGroup("DEFAULT").addStorageSystem(fs2);
+        // merge
+        dicomConfig.merge(device3);
+
+        //// the resulting device includes both changes from first and third user
+        Device loaded = dicomConfig.findDevice("dcm4chee-arc");
+        Assert.assertEquals(12121, loaded.getConnections().get(0).getPort());
+        Assert.assertNotNull(loaded.getDeviceExtension(StorageDeviceExtension.class).getStorageSystemGroup("DEFAULT").getStorageSystem("fs2"));
 
     }
 
