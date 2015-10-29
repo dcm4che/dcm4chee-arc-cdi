@@ -41,6 +41,7 @@ package org.dcm4chee.archive.conf;
 import org.dcm4che3.conf.api.extensions.ReconfiguringIterator;
 import org.dcm4che3.conf.core.api.ConfigurableClass;
 import org.dcm4che3.conf.core.api.ConfigurableProperty;
+import org.dcm4che3.conf.core.api.ConfigurableProperty.ConfigurablePropertyType;
 import org.dcm4che3.conf.core.api.LDAP;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.io.TemplatesCache;
@@ -70,6 +71,9 @@ import java.util.TreeMap;
 public class ArchiveDeviceExtension extends DeviceExtension {
 
     private static final long serialVersionUID = -3611223780276386740L;
+
+    @ConfigurableProperty(type = ConfigurablePropertyType.OptimisticLockingHash)
+    private String olockHash;
 
     @ConfigurableProperty(name = "dcmVisibleImageClasses")
     private String[] visibleImageSRClasses = {};
@@ -147,7 +151,10 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmRejectedObjectsCleanUpMaxNumberOfDeletes")
     private int rejectedObjectsCleanUpMaxNumberOfDeletes;
 
-    @ConfigurableProperty(name = "dcmMppsEmulationPollInterval", defaultValue = "0")
+    @ConfigurableProperty(name = "dcmMppsEmulationPollInterval",
+            description = "Interval in seconds that should be used to poll for finished study updates (and therefore mpps emulation candidates)" +
+                    "If set to 0, disables polling.",
+            defaultValue = "0")
     private int mppsEmulationPollInterval;
 
     @ConfigurableProperty(name = "dcmDeletionServicePollInterval", defaultValue = "0")
@@ -221,6 +228,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
+
+    public String getOlockHash() {
+        return olockHash;
+    }
+
+    public void setOlockHash(String olockHash) {
+        this.olockHash = olockHash;
+    }
 
     public List<MPPSEmulationAndStudyUpdateRule> getMppsEmulationAndStudyUpdateRules() {
         return mppsEmulationAndStudyUpdateRules;

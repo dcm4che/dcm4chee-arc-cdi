@@ -32,7 +32,7 @@ public class DefaultDicomConfigInitializer {
 
     public DefaultDicomConfigInitializer persistDefaultConfig(DicomConfiguration config,
                                                               HL7Configuration hl7Config,
-                                                              DefaultArchiveConfigurationFactory.FactoryParams params) throws Exception {
+                                                              DefaultArchiveConfigurationFactory.FactoryParams params) {
 
         DefaultArchiveConfigurationFactory defaultArchiveConfigurationFactory = new DefaultArchiveConfigurationFactory(params);
 
