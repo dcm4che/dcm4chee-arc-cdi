@@ -72,7 +72,7 @@ public class NoneIOCMChangeRequestorQRServiceEJB implements NoneIOCMChangeReques
     private static final String NONE_IOCM_QC_HISTORY = "NONE_IOCM_QC_HISTORY";
 
     @PersistenceContext(name="dcm4chee-arc")
-    EntityManager em;
+    private EntityManager em;
 
     @Inject
     private IApplicationEntityCache aeCache;
@@ -93,16 +93,14 @@ public class NoneIOCMChangeRequestorQRServiceEJB implements NoneIOCMChangeReques
             NoneIocmQRLevel level = keys.getString(Tag.QueryRetrieveLevel) != null ? 
                     NoneIocmQRLevel.valueOf(keys.getString(Tag.QueryRetrieveLevel)) : getLevelWithUIDs(keys);
             if (level != null) {
-                List<QCInstanceHistory> history = null;
                 @SuppressWarnings("unchecked")
                 HashMap<String, List<QCInstanceHistory>> historyMap = (HashMap<String, List<QCInstanceHistory>>) context.getProperty(NONE_IOCM_QC_HISTORY);
                 if (historyMap == null) {
                     historyMap = new HashMap<String, List<QCInstanceHistory>>();
                     context.setProperty(NONE_IOCM_QC_HISTORY, historyMap);
                 }
-                if (historyMap.containsKey(match.getString(Tag.StudyInstanceUID))) {
-                    history = historyMap.get(studyIUID);
-                } else {
+                List<QCInstanceHistory> history = historyMap.get(studyIUID);
+                if(history == null) {
                     history = findHistory(NoneIocmQRLevel.STUDY, false, studyIUID);
                     historyMap.put(studyIUID, history);
                 }

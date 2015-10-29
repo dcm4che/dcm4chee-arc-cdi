@@ -47,11 +47,9 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService.NoneIOCMChangeType;
 import org.dcm4chee.archive.qc.QCBean;
@@ -75,10 +73,10 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
     protected static final String NONE_IOCM_HIDE_NEW_INSTANCE = "NONE_IOCM_HIDE_NEW_INSTANCE";
 
     @Inject
-    NoneIOCMChangeRequestorService noneIocmService;
+    private NoneIOCMChangeRequestorService noneIocmService;
 
     @Inject
-    QCBean qcBean;
+    private QCBean qcBean;
     
     @Override
     public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {

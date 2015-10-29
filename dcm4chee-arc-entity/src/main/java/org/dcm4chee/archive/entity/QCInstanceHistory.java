@@ -180,7 +180,7 @@ public class QCInstanceHistory implements Serializable{
 
     @OneToOne(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true, optional=true)
     @JoinColumn(name = "dicomattrs_fk")
-    private AttributesBlob previousAtributesBlob;
+    private AttributesBlob previousAttributesBlob;
 
     @Basic(optional = false)
     @Column(name = "cloned", updatable = false)
@@ -263,11 +263,11 @@ public class QCInstanceHistory implements Serializable{
     }
 
     public AttributesBlob getPreviousAtributesBlob() {
-        return previousAtributesBlob;
+        return previousAttributesBlob;
     }
 
     public void setPreviousAtributesBlob(AttributesBlob previousAtributesBlob) {
-        this.previousAtributesBlob = new AttributesBlob(previousAtributesBlob.getAttributes());
+        this.previousAttributesBlob = new AttributesBlob(previousAtributesBlob.getAttributes());
     }
 
     @Override

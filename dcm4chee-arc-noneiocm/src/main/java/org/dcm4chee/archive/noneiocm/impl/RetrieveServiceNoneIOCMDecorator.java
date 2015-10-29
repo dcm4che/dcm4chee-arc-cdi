@@ -46,7 +46,6 @@ import javax.security.jacc.PolicyContextException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.dcm4che3.conf.api.IApplicationEntityCache;
-import org.dcm4che3.conf.core.api.Configuration;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.IDWithIssuer;

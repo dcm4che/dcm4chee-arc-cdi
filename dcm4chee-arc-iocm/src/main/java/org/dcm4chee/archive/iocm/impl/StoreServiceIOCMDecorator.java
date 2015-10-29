@@ -88,14 +88,15 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
     public static int DUPLICATE_REJECTION = Status.CannotUnderstand + 0x805;
     public static int NO_MPPS = Status.CannotUnderstand + 0x806;
 
-    static Logger LOG = LoggerFactory.getLogger(StoreServiceIOCMDecorator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StoreServiceIOCMDecorator.class);
 
     @Inject RejectionService rejectionService;
 
     @Inject
     private StoreServiceEJB storeServiceEJB;
 
-    @Inject Event<RejectionEvent> event;
+    @Inject 
+    private Event<RejectionEvent> event;
 
     /* 
      * Extends default instanceExists method. The first part of the method throws 
