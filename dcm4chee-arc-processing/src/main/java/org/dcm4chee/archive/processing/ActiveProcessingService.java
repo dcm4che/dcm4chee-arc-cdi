@@ -40,6 +40,7 @@ package org.dcm4chee.archive.processing;
  * ***** END LICENSE BLOCK ***** */
 
 
+import java.util.Collection;
 import java.util.List;
 
 import org.dcm4che3.data.Attributes;
@@ -53,8 +54,11 @@ import org.dcm4chee.archive.entity.ActiveProcessing;
  */
 
 public interface ActiveProcessingService {
+    
+    public static final String JNDI_NAME = "java:global/org.dcm4chee.archive.processing.ActiveProcessingService";
 
     boolean addActiveProcess(String studyIUID, String seriesIUID, String sopIUID, ActiveService service);
+    
     boolean addActiveProcess(String studyIUID, String seriesIUID, String sopIUID, ActiveService service, Attributes attrs);
     
     boolean isStudyUnderProcessingByServices(String studyIUID, List<ActiveService> services);
@@ -68,5 +72,14 @@ public interface ActiveProcessingService {
     List<ActiveProcessing> getActiveProcessesBySOPInstanceUIDs(List<String> sopIUIDs, ActiveService activeService);
 
     boolean deleteActiveProcessBySOPInstanceUIDandService(String sopIUID, ActiveService service);
-    boolean deleteActiveProcessBySOPInstanceUIDsAndService(List<String> sopIUIDs, ActiveService service);
+    
+    boolean deleteActiveProcessesBySOPInstanceUIDsAndService(List<String> sopIUIDs, ActiveService service);
+    
+    /**
+     * Deletes the given active-processings from the DB within a new transaction.
+     * @param activeProcessings
+     * @return
+     */
+    boolean deleteActiveProcesses(Collection<ActiveProcessing> activeProcessings);
+     
 }

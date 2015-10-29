@@ -1,8 +1,13 @@
 package org.dcm4chee.archive.processing.impl;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
@@ -19,6 +24,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
+@EJB(name = ActiveProcessingService.JNDI_NAME, beanInterface = ActiveProcessingService.class)
 @Stateless
 public class ActiveProcessingServiceImpl implements ActiveProcessingService {
 
@@ -116,34 +122,39 @@ public class ActiveProcessingServiceImpl implements ActiveProcessingService {
 
     @Override
     public boolean deleteActiveProcessBySOPInstanceUIDandService(String sopIUID, ActiveService service) {
-        Query query = em.createNamedQuery(ActiveProcessing.DELETE_BY_SOP_IUID_AND_SERVICE);
-        query.setParameter("uid", sopIUID);
-        query.setParameter("service", service);
-        int result = 0;
-        try{
-            result = query.executeUpdate();
-        }
-        catch(Exception e){
-            LOG.error("Unable to delete provided Active Process with SOPIUID "
-                    + "= {} for service {} - reason {}", sopIUID, service, e);
-        }
-        return result == 0 ? false : true;
+        return deleteActiveProcessesBySOPInstanceUIDsAndService(Arrays.asList(sopIUID), service);
     }
 
     @Override
-    public boolean deleteActiveProcessBySOPInstanceUIDsAndService(List<String> sopIUIDs, ActiveService service) {
+    public boolean deleteActiveProcessesBySOPInstanceUIDsAndService(List<String> sopIUIDs, ActiveService service) {
+        if(sopIUIDs.isEmpty()) {
+            return true;
+        }
+        
         Query query = em.createNamedQuery(ActiveProcessing.DELETE_BY_SOP_IUIDs_AND_SERVICE);
         query.setParameter("uidList", sopIUIDs);
         query.setParameter("service", service);
         int result = 0;
-        try{
+        try {
             result = query.executeUpdate();
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             LOG.error("Unable to delete provided Active Process with SOP IUIDs "
                     + "= {} for service {} - reason {}", sopIUIDs, service, e);
         }
-        return result == 0 ? false : true;
+
+        return result != 0;
+    }
+    
+    @Override
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public boolean deleteActiveProcesses(Collection<ActiveProcessing> activeProcessings) {
+        for(ActiveProcessing ap : activeProcessings) {
+            // we are in a new transaction -> re-attach entity
+            ap = em.merge(ap);
+            em.remove(ap);
+        }
+        
+        return true;
     }
 
 }

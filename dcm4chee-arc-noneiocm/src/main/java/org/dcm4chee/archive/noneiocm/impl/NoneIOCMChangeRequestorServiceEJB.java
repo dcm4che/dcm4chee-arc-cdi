@@ -38,6 +38,8 @@
 
 package org.dcm4chee.archive.noneiocm.impl;
 
+import static java.lang.String.format;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -77,6 +79,7 @@ import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.QCSeriesHistory;
 import org.dcm4chee.archive.entity.QCStudyHistory;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
+import org.dcm4chee.archive.noneiocm.NoneIocmChangeRequestorMDB;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
@@ -101,7 +104,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
 
     private static final List<ActiveService> NONE_IOCM_ACTIVE_SERVICES = Arrays.asList(ActiveService.NONE_IOCM_UPDATE);
 
-    private Logger LOG = LoggerFactory.getLogger(NoneIOCMChangeRequestorServiceEJB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NoneIOCMChangeRequestorServiceEJB.class);
 
     @Inject
     private ActiveProcessingService activeProcessingService;
@@ -119,10 +122,10 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
     private Queue noneiocmQueue;
 
     @Inject
-    Device device;
+    private Device device;
 
     @PersistenceContext(name="dcm4chee-arc")
-    EntityManager em;
+    private EntityManager em;
 
     @Override
     public boolean isNoneIOCMChangeRequestor(String callingAET) {
@@ -171,6 +174,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         IDWithIssuer currentPID = IDWithIssuer.pidOf(patAttrs);
         return getChangeType(currentPID, inst.getSeries().getStudy().getStudyInstanceUID(), inst.getSeries().getSeriesInstanceUID(), inst.getSopInstanceUID(), attrs);
     }
+    
     private NoneIOCMChangeType getChangeType(IDWithIssuer currentPID, String studyIUID, String seriesIUID, String sopIUID, Attributes attrs) {
         if (!sopIUID.equals(attrs.getString(Tag.SOPInstanceUID)))
             throw new IllegalArgumentException("Current and new Instance must have the same SOP Instance UID!");
@@ -254,8 +258,6 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         return tmp.size() == 0 ? null : tmp.get(0);
     }
 
-
-
     @Override
     public void hideOrUnhideInstance(Instance instance, org.dcm4che3.data.Code rejNoteCode) {
         Code code = rejNoteCode == null ? null : codeService.findOrCreate(new Code(NoneIOCMChangeRequestorService.REJ_CODE_QUALITY_REASON));
@@ -265,7 +267,6 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
 
     @Override
     public void handleModalityChange(Instance inst, StoreContext context, int gracePeriodInSeconds) {
-
         if(withinGracePeriodAndNoneIOCMSource(inst, gracePeriodInSeconds)) {
             context.setOldNONEIOCMChangeUID(inst.getSopInstanceUID());
             Attributes attrs = context.getAttributes();
@@ -314,6 +315,7 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
             em.persist(instanceHistory);
         }
     }
+    
     private boolean withinGracePeriodAndNoneIOCMSource(Instance inst, int gracePeriodInSeconds) {
         Query query = em.createNamedQuery(QCInstanceHistory
                 .FIND_BY_CURRENT_UID_FOR_ACTION, QCInstanceHistory.class);
@@ -338,34 +340,35 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
     public void onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
         LOG.debug("onStudyUpdated:{}", studyUpdatedEvent);
         if (isNoneIOCMChangeRequestor(studyUpdatedEvent.getSourceAET())) {
-            LOG.debug("Is NoneIOCM source");
-            if ( activeProcessingService.isStudyUnderProcessingByServices(studyUpdatedEvent.getStudyInstanceUID(), NONE_IOCM_ACTIVE_SERVICES)) {
-                LOG.debug("Schedule NoneIOCM change request for study {}", studyUpdatedEvent.getStudyInstanceUID());
+            String updatedStudyUID = studyUpdatedEvent.getStudyInstanceUID();
+            LOG.debug("Received Study-Updated event for study {} updated by a non-IOCM source", updatedStudyUID);
+            if (activeProcessingService.isStudyUnderProcessingByServices(updatedStudyUID, NONE_IOCM_ACTIVE_SERVICES)) {
+                LOG.debug("Schedule NoneIOCM change request for study {}", updatedStudyUID);
                 try {
-                    scheduleNoneIocmChangeRequest(studyUpdatedEvent.getStudyInstanceUID(), 0);
+                    scheduleNonIocmChangeRequest(updatedStudyUID, 0);
                 } catch (JMSException e) {
-                    LOG.error("Schedule NoneIOCMChangeRequest for study "+studyUpdatedEvent.getStudyInstanceUID()+" failed!", e);
+                    LOG.error(format("Schedule of Non-IOCM-Change-Request for study %s failed!", updatedStudyUID), e);
                 }
             } else {
-                LOG.debug("No active NoneIOCM service found for study {}", studyUpdatedEvent.getStudyInstanceUID());
+                LOG.debug("No active Non-IOCM service found for study {}", updatedStudyUID);
             }
         }
     }
 
-    public void scheduleNoneIocmChangeRequest(String studyIUID, int delay) throws JMSException {
+    private void scheduleNonIocmChangeRequest(String studyIUID, int delay) throws JMSException {
         Connection conn = connFactory.createConnection();
         try {
-            Session session = conn.createSession(false,
-                    Session.AUTO_ACKNOWLEDGE);
+            Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
             MessageProducer producer = session.createProducer(noneiocmQueue);
             Message msg = session.createMessage();
-            if (delay > 0)
-                msg.setLongProperty("_HQ_SCHED_DELIVERY",
-                        System.currentTimeMillis() + delay);
-            msg.setStringProperty("studyIUID", studyIUID);
+            if (delay > 0) {
+                msg.setLongProperty("_HQ_SCHED_DELIVERY", System.currentTimeMillis() + delay);
+            }
+            msg.setStringProperty(NoneIocmChangeRequestorMDB.UPDATED_STUDY_UID_MSG_PROPERTY, studyIUID);
             producer.send(msg);
         } finally {
             conn.close();
         }
     }
+    
 }

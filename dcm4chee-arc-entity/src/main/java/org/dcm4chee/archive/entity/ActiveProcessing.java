@@ -95,8 +95,8 @@ import org.dcm4chee.archive.dto.ActiveService;
             name=ActiveProcessing.FIND_BY_STUDY_IUID_AND_SERVICE,
             query="SELECT ap FROM ActiveProcessing ap WHERE ap.studyInstanceUID = :uid AND ap.activeService = :service"),
     @NamedQuery(
-            name=ActiveProcessing.DELETE_BY_SOP_IUID_AND_SERVICE,
-            query="DELETE FROM ActiveProcessing ap WHERE ap.sopInstanceUID = :uid AND ap.activeService = :service"),
+            name=ActiveProcessing.DELETE_BY_STUDY_IUID_AND_SERVICE,
+            query="DELETE FROM ActiveProcessing ap WHERE ap.studyInstanceUID = :uid AND ap.activeService = :service"),
     @NamedQuery(
             name=ActiveProcessing.DELETE_BY_SOP_IUIDs_AND_SERVICE,
             query="DELETE FROM ActiveProcessing ap WHERE ap.sopInstanceUID IN (:uidList) AND ap.activeService = :service"),
@@ -121,7 +121,7 @@ public class ActiveProcessing implements Serializable {
     public static final String FIND_BY_STUDY_IUID = "ActiveProcessing.findByStudyInstanceUID";
     public static final String FIND_BY_STUDY_IUID_AND_SERVICE = "ActiveProcessing.findByStudyInstanceUIDAndService";
 
-    public static final String DELETE_BY_SOP_IUID_AND_SERVICE = "ActiveProcessing.deleteBySOPInstanceUIDAndService";
+    public static final String DELETE_BY_STUDY_IUID_AND_SERVICE = "ActiveProcessing.deleteByStudyInstanceUIDAndService";
     public static final String DELETE_BY_SOP_IUIDs_AND_SERVICE = "ActiveProcessing.deleteBySOPInstanceUIDsAndService";
 
     public static final String IS_STUDY_BEING_PROCESSED = "ActiveProcessing.isStudyBeingProcessed";
