@@ -110,35 +110,51 @@ public class StoreServiceEJB {
         Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
 
-        switch(context.getStoreAction()) {
-            case IGNORE:
-            case UPDATEDB:
-                return;
-            default:
-                Collection<Location> locations = instance.getLocations(2);
-                try {
-                	findOrCreateStudyOnStorageGroup(context);
-                	Future<StorageContext> metadataContextFuture = context.getMetadataContext();
-                    if (metadataContextFuture != null && metadataContextFuture.get() != null) {
-                        Location metadata = createMetadataLocation(context);
-                        locations.add(metadata);
-                    }
-
-                    Future<StorageContext> bulkdataContextFuture = context.getBulkdataContext();
-                    if (bulkdataContextFuture != null && bulkdataContextFuture.get() != null) {
-                        Location bulkdata = createBulkdataLocation(context);
-                        locations.add(bulkdata);
-                        context.setFileRef(bulkdata);
-
-                        updateRetrieveAETs(session, instance);
-                        updateAvailability(session, instance);
-                    }
-
-                } catch (Exception e) {
-                    throw new DicomServiceException(Status.UnableToProcess, e);
+        if (context.getStoreAction()!= StoreAction.IGNORE &&
+            context.getStoreAction()!= StoreAction.UPDATEDB) {
+            Collection<Location> locations = instance.getLocations(2);
+            try {
+                findOrCreateStudyOnStorageGroup(context);
+                Future<StorageContext> metadataContextFuture = context.getMetadataContext();
+                if (metadataContextFuture != null && metadataContextFuture.get() != null) {
+                    Location metadata = createMetadataLocation(context);
+                    locations.add(metadata);
                 }
+
+                Future<StorageContext> bulkdataContextFuture = context.getBulkdataContext();
+                if (bulkdataContextFuture != null && bulkdataContextFuture.get() != null) {
+                    Location bulkdata = createBulkdataLocation(context);
+                    locations.add(bulkdata);
+                    context.setFileRef(bulkdata);
+
+                    updateRetrieveAETs(session, instance);
+                    updateAvailability(session, instance);
+                }
+
+            } catch (Exception e) {
+                throw new DicomServiceException(Status.UnableToProcess, e);
+            }
         }
+
+        updateAttributes(context);
      }
+
+    private void updateAttributes(StoreContext context) {
+        Instance instance = context.getInstance();
+        Series series = instance.getSeries();
+        Study study = series.getStudy();
+        Patient patient = study.getPatient();
+        Attributes attrs = context.getAttributes();
+        Attributes modified = new Attributes();
+        attrs.update(patient.getAttributes(), modified);
+        attrs.update(study.getAttributes(), modified);
+        attrs.update(series.getAttributes(), modified);
+        attrs.update(instance.getAttributes(), modified);
+        if (!modified.isEmpty()) {
+            modified.addAll(context.getCoercedOriginalAttributes());
+            context.setCoercedOrginalAttributes(modified);
+        }
+    }
 
     public Instance createInstance(StoreContext context)
             throws DicomServiceException {
