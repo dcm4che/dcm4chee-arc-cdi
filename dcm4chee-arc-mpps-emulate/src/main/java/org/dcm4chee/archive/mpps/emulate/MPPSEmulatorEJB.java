@@ -40,29 +40,44 @@
 
 package org.dcm4chee.archive.mpps.emulate;
 
-import org.dcm4che3.data.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.ElementDictionary;
+import org.dcm4che3.data.Sequence;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.UIDUtils;
-import org.dcm4chee.archive.conf.*;
-import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.MPPSCreationRule;
+import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -102,18 +117,38 @@ public class MPPSEmulatorEJB {
             Tag.PatientSex };
 
     private static final int[] SERIES_Selection = {
+            Tag.SeriesInstanceUID,
             Tag.SeriesDescription,
             Tag.PerformingPhysicianName,
             Tag.ProtocolName,
-            Tag.SeriesInstanceUID };
+            Tag.OperatorsName,
+            Tag.RetrieveAETitle
+    };
 
     private static final int[] STUDY_Selection = {
             Tag.ProcedureCodeSequence,
             Tag.StudyID };
 
-    private static final int[] MPPS_SET_Selection = { Tag.SpecificCharacterSet,
-            Tag.SOPInstanceUID, Tag.PerformedProcedureStepEndDate, Tag.PerformedProcedureStepEndTime,
-            Tag.PerformedProcedureStepStatus, Tag.PerformedSeriesSequence };
+    private static final int[] MPPS_SET_Selection = {
+            Tag.SpecificCharacterSet,
+            Tag.SOPInstanceUID,
+            Tag.PerformedProcedureStepEndDate,
+            Tag.PerformedProcedureStepEndTime,
+            Tag.PerformedSeriesSequence,
+            Tag.PerformedProcedureStepDescription,
+            Tag.PerformedProcedureTypeDescription,
+            Tag.ProcedureCodeSequence,
+            Tag.PerformedProtocolCodeSequence
+    };
+
+    static {
+        Arrays.sort(PATIENT_Selection);
+        Arrays.sort(SERIES_Selection);
+        Arrays.sort(STUDY_Selection);
+        Arrays.sort(MPPS_SET_Selection);
+    }
+
+    private static final ElementDictionary dict = ElementDictionary.getStandardElementDictionary();
 
     /**
      * Checks configured rule, finds the series, emulates MPPS
@@ -156,7 +191,8 @@ public class MPPSEmulatorEJB {
         mppsService.createPerformedProcedureStep(mppsCreateAttributes, mppsContext);
 
         // update MPPS with status COMPLETED
-        mppsService.updatePerformedProcedureStep(completedAttributes,mppsContext);
+        MPPSContext mppsCompletedContext = new MPPSContext(studyUpdatedEvent.getSourceAET(), localAET, mppsIUID, Dimse.N_SET_RQ);
+        mppsService.updatePerformedProcedureStep(completedAttributes, mppsCompletedContext);
 
         ArrayList<String> refMppsList = new ArrayList<>();
         refMppsList.add(mppsIUID);
@@ -210,6 +246,8 @@ public class MPPSEmulatorEJB {
         mppsAttrs.setString(Tag.PerformedProcedureStepStatus, VR.CS, MPPS.IN_PROGRESS);
         mppsAttrs.addSelected(patient.getAttributes(), PATIENT_Selection);
         mppsAttrs.addSelected(study.getAttributes(), STUDY_Selection);
+        if (!mppsAttrs.contains(Tag.ProcedureCodeSequence))
+            mppsAttrs.newSequence(Tag.ProcedureCodeSequence, 0);
         mppsAttrs.setString(Tag.SOPInstanceUID, VR.UI, mppsSOPInstanceUID);
         mppsAttrs.setString(Tag.SOPClassUID, VR.UI, UID.ModalityPerformedProcedureStepSOPClass);
         mppsAttrs.setString(Tag.PerformedStationAETitle, VR.AE, firstSeries.getSourceAET());
@@ -218,10 +256,13 @@ public class MPPSEmulatorEJB {
         mppsAttrs.setString(Tag.Modality, VR.CS, modality);
         mppsAttrs.setString(Tag.PerformedProcedureStepID, VR.SH, makePPSID(modality, study.getStudyInstanceUID()));
         mppsAttrs.setString(Tag.PerformedProcedureStepDescription, VR.LO, study.getStudyDescription());
+        mppsAttrs.setNull(Tag.PerformedProcedureTypeDescription, VR.LO);
+        mppsAttrs.newSequence(Tag.ReferencedPatientSequence, 0);
+        mppsAttrs.newSequence(Tag.PerformedProtocolCodeSequence, 0);
 
-        // scheduled attribute sequence
+        // scheduled step attributes sequence
         // TODO scheduled/unscheduled
-        Sequence SchedStepAttSq = mppsAttrs.newSequence(Tag.ScheduledStepAttributesSequence, 1);
+        Sequence schedStepAttSq = mppsAttrs.newSequence(Tag.ScheduledStepAttributesSequence, 1);
         Attributes ssasItem = new Attributes();
         ssasItem.setString(Tag.StudyInstanceUID, VR.UI, study.getStudyInstanceUID());
         ssasItem.setString(Tag.AccessionNumber, VR.SH, study.getAccessionNumber());
@@ -231,7 +272,7 @@ public class MPPSEmulatorEJB {
         ssasItem.setNull(Tag.ScheduledProcedureStepDescription, VR.LO);
         ssasItem.newSequence(Tag.ScheduledProtocolCodeSequence, 0);
         ssasItem.newSequence(Tag.ReferencedStudySequence, 0);
-        SchedStepAttSq.add(ssasItem);
+        schedStepAttSq.add(ssasItem);
 
         // performed series sequence
         Sequence perfSeriesSq = mppsAttrs.newSequence(Tag.PerformedSeriesSequence, seriesList.size());
@@ -240,16 +281,20 @@ public class MPPSEmulatorEJB {
         	if (series.getInstances().isEmpty())
         		continue;
             Attributes pssqItem = new Attributes();
+            for (int tag : SERIES_Selection) // ensure all type 2 tags are set
+                pssqItem.setNull(tag, dict.vrOf(tag));
             pssqItem.addSelected(series.getAttributes(), SERIES_Selection);
             Sequence refImgSq = pssqItem.newSequence(Tag.ReferencedImageSequence, series.getInstances().size());
             for (Instance inst : series.getInstances()) {
-                start_date = choseDate(start_date, inst.getCreatedTime(), false);
-                end_date = choseDate(end_date, inst.getCreatedTime(), true);
+                start_date = chooseDate(start_date, inst.getCreatedTime(), false);
+                end_date = chooseDate(end_date, inst.getCreatedTime(), true);
                 Attributes refImg = new Attributes();
-                refImg.setString(Tag.SOPClassUID, VR.UI, inst.getSopClassUID());
-                refImg.setString(Tag.SOPInstanceUID, VR.UI, inst.getSopInstanceUID());
+                refImg.setString(Tag.ReferencedSOPClassUID, VR.UI, inst.getSopClassUID());
+                refImg.setString(Tag.ReferencedSOPInstanceUID, VR.UI, inst.getSopInstanceUID());
                 refImgSq.add(refImg);
             }
+            // TODO shouldn't we add non-images to ReferencedNonImageCompositeSOPInstanceSequence instead of ReferencedImageSequence?
+            pssqItem.newSequence(Tag.ReferencedNonImageCompositeSOPInstanceSequence, 0);
             perfSeriesSq.add(pssqItem);
         }
         if (start_date == null) {
@@ -351,7 +396,7 @@ public class MPPSEmulatorEJB {
                         studyInstanceUID.length() - 14));
     }
 
-    private Date choseDate(Date date1, Date date2, boolean returnMostRecent) {
+    private Date chooseDate(Date date1, Date date2, boolean returnMostRecent) {
         if (date1 == null)
             return date2;
         if (date2 == null)
