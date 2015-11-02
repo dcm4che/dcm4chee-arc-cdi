@@ -47,6 +47,7 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.conf.api.internal.DicomConfigurationManager;
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
@@ -71,7 +72,7 @@ public class ArchiveDeviceProducer {
             "dcm4chee-arc";
 
     @Inject
-    private DicomConfiguration conf;
+    private DicomConfigurationManager conf;
 
     @Inject
     private CodeService codeService;
@@ -82,6 +83,7 @@ public class ArchiveDeviceProducer {
     private void init() {
         try {
             device = findDevice();
+            conf.preventDeviceModifications(device);
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
         }
