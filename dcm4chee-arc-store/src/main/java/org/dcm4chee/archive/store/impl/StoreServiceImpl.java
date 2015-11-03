@@ -583,24 +583,6 @@ public class StoreServiceImpl implements StoreService {
             }
         });
 
-        updateAttributes(context);
-    }
-
-    private void updateAttributes(StoreContext context) {
-        Instance instance = context.getInstance();
-        Series series = instance.getSeries();
-        Study study = series.getStudy();
-        Patient patient = study.getPatient();
-        Attributes attrs = context.getAttributes();
-        Attributes modified = new Attributes();
-        attrs.update(patient.getAttributes(), modified);
-        attrs.update(study.getAttributes(), modified);
-        attrs.update(series.getAttributes(), modified);
-        attrs.update(instance.getAttributes(), modified);
-        if (!modified.isEmpty()) {
-            modified.addAll(context.getCoercedOriginalAttributes());
-            context.setCoercedOrginalAttributes(modified);
-        }
         logCoercedAttributes(context);
     }
 

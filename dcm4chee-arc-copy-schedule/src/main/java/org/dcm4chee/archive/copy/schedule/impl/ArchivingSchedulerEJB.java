@@ -117,10 +117,13 @@ public class ArchivingSchedulerEJB {
         storageGroupTargets = filterAlreadyScheduledStorageGroupTargets(alreadyScheduledTasks,
                 storageGroupTargets, seriesInstanceUID, archivingTime);
 
-        for (String targetGroupID : storageGroupTargets) {
-            createAndPersistStorageGroupArchivingTask(seriesInstanceUID, archivingTime,
-                    storeContext.getFileRef().getStorageSystemGroupID(),
-                    archivingRule.getDelayReasonCode(), targetGroupID);
+        if (!storageGroupTargets.isEmpty()) {
+            flagOrUnflagSeriesAsActiveProcess(seriesInstanceUID, ActiveService.LOCAL_ARCHIVING, true);
+            for (String targetGroupID : storageGroupTargets) {
+                createAndPersistStorageGroupArchivingTask(seriesInstanceUID, archivingTime,
+                        storeContext.getFileRef().getStorageSystemGroupID(),
+                        archivingRule.getDelayReasonCode(), targetGroupID);
+            }
         }
 
         List<String> extDeviceTargets = new ArrayList<String>(
@@ -132,10 +135,13 @@ public class ArchivingSchedulerEJB {
         extDeviceTargets = filterAlreadyScheduledExtDeviceTargets(alreadyScheduledTasks,
                 extDeviceTargets, seriesInstanceUID, archivingTime);
 
-        for (String extDeviceTarget : extDeviceTargets) {
-            createAndPersistExtDeviceArchivingTask(seriesInstanceUID, archivingTime, storeContext
-                    .getFileRef().getStorageSystemGroupID(), archivingRule.getDelayReasonCode(),
-                    extDeviceTarget);
+        if (!extDeviceTargets.isEmpty()) {
+            flagOrUnflagSeriesAsActiveProcess(seriesInstanceUID, ActiveService.STORE_REMEMBER_ARCHIVING, true);
+            for (String extDeviceTarget : extDeviceTargets) {
+                createAndPersistExtDeviceArchivingTask(seriesInstanceUID, archivingTime,
+                        storeContext.getFileRef().getStorageSystemGroupID(),
+                        archivingRule.getDelayReasonCode(), extDeviceTarget);
+            }
         }
     }
 
@@ -180,7 +186,6 @@ public class ArchivingSchedulerEJB {
         task.setTargetStorageSystemGroupID(targetStorageGroupID);
         if (delayReasonCode != null)
             task.setDelayReasonCode(codeService.findOrCreate(delayReasonCode));
-        flagOrUnflagSeriesAsActiveProcess(seriesInstanceUID, ActiveService.LOCAL_ARCHIVING, true);
         em.persist(task);
         LOG.info("Create {}", task);
     }
@@ -195,7 +200,6 @@ public class ArchivingSchedulerEJB {
         task.setTargetExternalDevice(targetExtDevice);
         if (delayReasonCode != null)
             task.setDelayReasonCode(codeService.findOrCreate(delayReasonCode));
-        flagOrUnflagSeriesAsActiveProcess(seriesInstanceUID, ActiveService.STORE_REMEMBER_ARCHIVING, true);
         em.persist(task);
         LOG.info("Create {}", task);
     }

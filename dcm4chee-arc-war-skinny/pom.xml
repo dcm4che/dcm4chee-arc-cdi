@@ -15,7 +15,6 @@
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-stow</artifactId>
       <version>${project.version}</version>
-
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
@@ -32,7 +31,7 @@
       <artifactId>dcm4chee-arc-qido</artifactId>
       <version>${project.version}</version>
     </dependency>
-	<dependency>
+    <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-qc-rest</artifactId>
       <version>${project.version}</version>
@@ -112,7 +111,6 @@
         <version>2.1.1</version>
         <configuration>
           <packagingIncludes>
-            WEB-INF/lib/dcm4chee-arc-rs-common-${project.version}.jar,
             WEB-INF/lib/dcm4chee-arc-stow-${project.version}.jar,
             WEB-INF/lib/dcm4chee-arc-ctrl-${project.version}.jar,
             WEB-INF/lib/dcm4chee-arc-wado-${project.version}.jar,
