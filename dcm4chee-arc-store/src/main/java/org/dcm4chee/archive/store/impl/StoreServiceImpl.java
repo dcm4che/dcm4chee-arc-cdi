@@ -161,6 +161,9 @@ public class StoreServiceImpl implements StoreService {
                     groupID = group.getGroupID();
             }
         }
+        if (groupID == null)
+            throw new DicomServiceException(Status.OutOfResources,
+                    "Storage System Group not configured");
         StorageSystem storageSystem = storageService.selectStorageSystem(
                 groupID, 0);
         if (storageSystem == null)
