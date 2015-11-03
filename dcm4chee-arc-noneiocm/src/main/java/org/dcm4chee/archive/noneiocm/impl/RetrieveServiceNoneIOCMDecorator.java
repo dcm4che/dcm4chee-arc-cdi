@@ -87,8 +87,8 @@ public class RetrieveServiceNoneIOCMDecorator extends DelegatingRetrieveService 
     @Inject
     private IApplicationEntityCache aeCache;
 
-//    @Inject
-//    private HostAECache hostAECache;
+    @Inject
+    private HostAECache hostAECache;
 
     @Override
     public IDWithIssuer[] queryPatientIDs(RetrieveContext context, Attributes keys) {
@@ -113,35 +113,35 @@ public class RetrieveServiceNoneIOCMDecorator extends DelegatingRetrieveService 
     @Override
     public List<ArchiveInstanceLocator> calculateMatches(String studyUID, String seriesUID,
             String objectUID, QueryParam queryParam, boolean withoutBulkData) {
-//        String aet = sourceAET.get();
-//        ApplicationEntity sourceAE = null;
-//        if (aet == null) {
-//            try {
-//                HttpServletRequest request = (HttpServletRequest) PolicyContext.getContext("javax.servlet.http.HttpServletRequest");
-//                sourceAE = hostAECache.findAE(new HttpSource(request));
-//                aet = sourceAE.getAETitle();
-//            } catch (PolicyContextException | ConfigurationException e) {
-//                LOG.warn("Missing Source AET! Neither get info via RetrieveContext (need call RetrieveService.queryPatientIDs() before) nor HttpServletRequest!");
-//            }
-//        }
-//        if (aet != null && noneIocmService.isNoneIOCMChangeRequestor(aet)) {
-//            LOG.info("Is NoneIOCM Change Requestor Device");
-//            try {
-//                if (sourceAE == null)
-//                    sourceAE = aeCache.findApplicationEntity(aet);
-//                if (sourceAE != null) {
-//                    Attributes keys = new Attributes();
-//                    keys.setString(Tag.QueryRetrieveLevel, VR.CS, "IMAGE");
-//                    keys.setString(Tag.StudyInstanceUID, VR.UI, studyUID);
-//                    keys.setString(Tag.SeriesInstanceUID, VR.UI, seriesUID);
-//                    keys.setString(Tag.SOPInstanceUID, VR.UI, objectUID);
-//                    noneIocmQRService.updateRetrieveRequestAttributes(keys, sourceAE.getDevice().getApplicationAETitles());
-//                    studyUID = keys.getString(Tag.StudyInstanceUID);
-//                    seriesUID = keys.getString(Tag.SeriesInstanceUID);
-//                    objectUID = keys.getString(Tag.SOPInstanceUID);
-//                }
-//            } catch (ConfigurationException ignore) {}
-//        }
+        String aet = sourceAET.get();
+        ApplicationEntity sourceAE = null;
+        if (aet == null) {
+            try {
+                HttpServletRequest request = (HttpServletRequest) PolicyContext.getContext("javax.servlet.http.HttpServletRequest");
+                sourceAE = hostAECache.findAE(new HttpSource(request));
+                aet = sourceAE.getAETitle();
+            } catch (PolicyContextException | ConfigurationException e) {
+                LOG.warn("Missing Source AET! Neither get info via RetrieveContext (need call RetrieveService.queryPatientIDs() before) nor HttpServletRequest!");
+            }
+        }
+        if (aet != null && noneIocmService.isNoneIOCMChangeRequestor(aet)) {
+            LOG.info("Is NoneIOCM Change Requestor Device");
+            try {
+                if (sourceAE == null)
+                    sourceAE = aeCache.findApplicationEntity(aet);
+                if (sourceAE != null) {
+                    Attributes keys = new Attributes();
+                    keys.setString(Tag.QueryRetrieveLevel, VR.CS, "IMAGE");
+                    keys.setString(Tag.StudyInstanceUID, VR.UI, studyUID);
+                    keys.setString(Tag.SeriesInstanceUID, VR.UI, seriesUID);
+                    keys.setString(Tag.SOPInstanceUID, VR.UI, objectUID);
+                    noneIocmQRService.updateRetrieveRequestAttributes(keys, sourceAE.getDevice().getApplicationAETitles());
+                    studyUID = keys.getString(Tag.StudyInstanceUID);
+                    seriesUID = keys.getString(Tag.SeriesInstanceUID);
+                    objectUID = keys.getString(Tag.SOPInstanceUID);
+                }
+            } catch (ConfigurationException ignore) {}
+        }
         return getNextDecorator().calculateMatches(studyUID, seriesUID, objectUID, queryParam, withoutBulkData);
     }
 
