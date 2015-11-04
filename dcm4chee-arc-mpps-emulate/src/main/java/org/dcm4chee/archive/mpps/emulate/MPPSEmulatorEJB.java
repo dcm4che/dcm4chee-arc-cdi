@@ -284,6 +284,8 @@ public class MPPSEmulatorEJB {
             for (int tag : SERIES_Selection) // ensure all type 2 tags are set
                 pssqItem.setNull(tag, dict.vrOf(tag));
             pssqItem.addSelected(series.getAttributes(), SERIES_Selection);
+            if (!pssqItem.containsValue(Tag.ProtocolName))
+                pssqItem.setString(Tag.ProtocolName, VR.LO, "UNKNOWN");
             Sequence refImgSq = pssqItem.newSequence(Tag.ReferencedImageSequence, series.getInstances().size());
             for (Instance inst : series.getInstances()) {
                 start_date = chooseDate(start_date, inst.getCreatedTime(), false);
