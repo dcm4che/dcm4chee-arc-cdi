@@ -68,13 +68,16 @@ import javax.persistence.UniqueConstraint;
     query="SELECT s FROM StudyOnStorageSystemGroup s "
             + "WHERE s.study.studyInstanceUID = ?1 "
             + "and s.storageSystemGroupID = ?2"),
-    @NamedQuery(
+@NamedQuery(
         name=StudyOnStorageSystemGroup.FIND_BY_STUDY_INSTANCE_UID_AND_GRP_UID_MARKED,
         query = "SELECT s from StudyOnStorageSystemGroup s "
                 + "where s.study.studyInstanceUID = ?1 "
                 + "and s.storageSystemGroupID = ?2 "
-                + "and s.markedForDeletion = TRUE"
-            )
+                + "and s.markedForDeletion = TRUE"),
+@NamedQuery(
+        name=StudyOnStorageSystemGroup.FIND_MIN_ACCESS_TIME,
+        query = "SELECT MIN(s.accessTime) FROM StudyOnStorageSystemGroup s")
+
 })
 @Entity
 @Table(name = "study_on_stg_sys", uniqueConstraints = 
@@ -91,6 +94,10 @@ public class StudyOnStorageSystemGroup implements Serializable {
 
     public static final String FIND_BY_STUDY_INSTANCE_UID_AND_GRP_UID_MARKED =
             "StudyOnStorageSystemGroup.findByStudyInstanceUIDAndGrpUIDMarked";
+
+    public static final String FIND_MIN_ACCESS_TIME =
+            "StudyOnStorageSystemGroup.findMinAccessTime";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "pk")

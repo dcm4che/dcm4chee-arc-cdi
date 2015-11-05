@@ -95,7 +95,12 @@ import org.dcm4chee.storage.conf.Availability;
 @NamedQuery(
     name=Instance.FIND_BY_SERIES_INSTANCE_UID,
     query="SELECT i FROM Instance i "
-            + "WHERE i.series.seriesInstanceUID = ?1")})
+            + "WHERE i.series.seriesInstanceUID = ?1"),
+@NamedQuery(
+        name=Instance.COUNT_BY_SERIES_INSTANCE_UID,
+        query="SELECT COUNT(i) FROM Instance i "
+                + "WHERE i.series.seriesInstanceUID = ?1")})
+
 @Entity
 @Table(name = "instance")
 public class Instance implements Serializable {
@@ -108,6 +113,8 @@ public class Instance implements Serializable {
             "Instance.findBySOPInstanceUIDMany.eager";
     public static final String FIND_BY_SERIES_INSTANCE_UID =
             "Instance.findBySeriesInstanceUID";
+    public static final String COUNT_BY_SERIES_INSTANCE_UID =
+            "Instance.countBySeriesInstanceUID";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -50,6 +50,7 @@ import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.patient.PatientService;
@@ -67,6 +68,7 @@ import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;

@@ -226,6 +226,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty
     private WeightWatcherConfiguration weightWatcherConfiguration = new WeightWatcherConfiguration();
 
+    @ConfigurableProperty
+    private UnarchivedInstanceDetector unarchivedInstanceDetector;
+
     private transient FuzzyStr fuzzyStr;
     private transient TemplatesCache templatesCache;
 
@@ -742,5 +745,13 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     public void setWeightWatcherConfiguration(WeightWatcherConfiguration weightWatcherConfiguration) {
         this.weightWatcherConfiguration = weightWatcherConfiguration;
+    }
+
+    public UnarchivedInstanceDetector getUnarchivedInstanceDetector() {
+        return unarchivedInstanceDetector;
+    }
+
+    public void setUnarchivedInstanceDetector(UnarchivedInstanceDetector unarchivedInstanceDetector) {
+        this.unarchivedInstanceDetector = unarchivedInstanceDetector;
     }
 }

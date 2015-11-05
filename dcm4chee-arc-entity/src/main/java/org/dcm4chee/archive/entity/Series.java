@@ -115,8 +115,14 @@ import org.dcm4chee.archive.conf.AttributeFilter;
             + "s.attributesBlob.encodedAttributes, "
             + "s.study.attributesBlob.encodedAttributes, "
             + "s.study.patient.attributesBlob.encodedAttributes) "
-            + "FROM Series s WHERE s.pk = ?1")
-})
+            + "FROM Series s WHERE s.pk = ?1"),
+@NamedQuery(
+        name=Series.FIND_BY_CREATED_TIME_RANGE,
+        query="SELECT s FROM Series s "
+                + "WHERE s.createdTime BETWEEN ?1 AND ?2 "
+                + "ORDER BY s.createdTime")
+    })
+
 @Entity
 @Table(name = "series")
 public class Series implements Serializable {
@@ -134,6 +140,8 @@ public class Series implements Serializable {
     public static final String FIND_BY_STUDY_INSTANCE_UID_AND_SOURCE_AET = "Series.findByStudyInstanceUIDAndSourceAET";
 
     public static final String FIND_BY_SERIES_INSTANCE_UID_FETCH_REQ_ATTRS = "Series.findBySeriesInstanceUIDFetchReqAttrs";
+
+    public static final String FIND_BY_CREATED_TIME_RANGE = "Series.findByCreatedTimeRange";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

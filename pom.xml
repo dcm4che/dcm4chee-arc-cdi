@@ -656,6 +656,7 @@
     <module>dcm4chee-arc-copy-schedule</module>
     <module>dcm4chee-arc-processing</module>
     <module>dcm4chee-arc-hsm-status</module>
+    <module>dcm4chee-arc-copy-mgmt</module>
   </modules>
   <profiles>
     <profile>
