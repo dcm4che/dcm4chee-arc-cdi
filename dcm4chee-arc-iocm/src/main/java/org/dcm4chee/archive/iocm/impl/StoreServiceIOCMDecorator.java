@@ -54,6 +54,9 @@ import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.iocm.InstanceAlreadyRejectedException;
 import org.dcm4chee.archive.iocm.RejectionEvent;
 import org.dcm4chee.archive.iocm.RejectionService;
+import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
+import org.dcm4chee.archive.sc.impl.BasicStructuralChangeContext;
+import org.dcm4chee.archive.sc.impl.StructuralChangeTransactionAggregator;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
@@ -90,13 +93,17 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
 
     private static final Logger LOG = LoggerFactory.getLogger(StoreServiceIOCMDecorator.class);
 
-    @Inject RejectionService rejectionService;
+    @Inject 
+    private RejectionService rejectionService;
 
     @Inject
     private StoreServiceEJB storeServiceEJB;
 
     @Inject 
     private Event<RejectionEvent> event;
+    
+    @Inject
+    private StructuralChangeTransactionAggregator stucturalChangeAggregator;
 
     /* 
      * Extends default instanceExists method. The first part of the method throws 
@@ -163,7 +170,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             @SuppressWarnings("unchecked")
             Collection<String> mppsIUIDs = (Collection<String>)
                     context.getProperty("org.dcm4chee.archive.iocm.mppsiuids");
-            event.fire(new RejectionEvent(context, rejectionNote, mppsIUIDs));
+            event.fire(new RejectionEvent(context, rejectionNote, mppsIUIDs)); 
         }
     }
 
@@ -178,25 +185,28 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
                 rejectionCode);
         ArrayList<Series> affectedSeries = new ArrayList<Series>();
         Collection<Instance> rejectedInstances =
-                queryRejectedInstances(em, context, rejectionNote,
-                        rejectionParam, affectedSeries);
+                queryRejectedInstances(em, context, rejectionNote, rejectionParam, affectedSeries);
         for (Series series : affectedSeries) {
             String ppsIUID =  series.getPerformedProcedureStepInstanceUID();
             String ppsCUID = series.getPerformedProcedureStepClassUID();
-            if (ppsIUID != null
-                    && UID.ModalityPerformedProcedureStepSOPClass.equals(ppsCUID)) {
+            if (ppsIUID != null && UID.ModalityPerformedProcedureStepSOPClass.equals(ppsCUID)) {
                 affectedMPPS.add(ppsIUID);
             }
         }
         try {
-            if (rejectionParam.isRevokeRejection())
-                rejectionService.restore(context.getStoreSession(), rejectedInstances,
+            if (rejectionParam.isRevokeRejection()) {
+                int restored = rejectionService.restore(context.getStoreSession(), rejectedInstances,
                         rejectionParam.getOverwritePreviousRejection());
-            else {
-                rejectionService.reject(context.getStoreSession(), rejectedInstances,
-                        rejectionCode,
+                if(restored > 0) {
+                    aggregateIOCMStructuralChange(STRUCTURAL_CHANGE.IOCM_STRUCTURAL_CHANGE.IOCM_RESTORE, rejectedInstances);
+                }
+            } else {
+                int rejected = rejectionService.reject(context.getStoreSession(), rejectedInstances, rejectionCode,
                         rejectionParam.getOverwritePreviousRejection());
                 updateRejectionStatus(rejectionNote.getSeries().getStudy(), rejectionNote);
+                if(rejected > 0) {
+                    aggregateIOCMStructuralChange(STRUCTURAL_CHANGE.IOCM_STRUCTURAL_CHANGE.IOCM_REJECT, rejectedInstances);
+                }
             }
         } catch (InstanceAlreadyRejectedException e) {
             Instance inst = e.getInstance();
@@ -207,12 +217,24 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
                     "referenced SOP instance already rejected");
         }
     }
+    
+    private void aggregateIOCMStructuralChange(STRUCTURAL_CHANGE.IOCM_STRUCTURAL_CHANGE change, Collection<Instance> rejectedInstances) {
+        BasicStructuralChangeContext changeContext = new BasicStructuralChangeContext(STRUCTURAL_CHANGE.IOCM, change);
+        for(Instance rejectedInstance : rejectedInstances) {
+            String sopInstanceUID = rejectedInstance.getSopInstanceUID();
+            String seriesInstanceUID = rejectedInstance.getSeries().getSeriesInstanceUID();
+            String studyInstanceUID = rejectedInstance.getSeries().getStudy().getStudyInstanceUID();
+            changeContext.addAffectedInstance(new BasicStructuralChangeContext.InstanceImpl(studyInstanceUID, seriesInstanceUID, sopInstanceUID));
+        }
+        stucturalChangeAggregator.aggregate(changeContext);
+    }
 
     private void updateRejectionStatus(Study study, Instance rejectionNote) {
         if(isRejected(study, rejectionNote)) {
             study.setRejected(true);
         }
     }
+    
     private boolean isRejected(Study study, Instance rejectionNote) {
         boolean studyisRejected = true;
         if(study.getSeries()!=null)
@@ -223,6 +245,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
         }
         return studyisRejected;
     }
+    
     private boolean isRejected(Series series) {
         
         if(series.getInstances() != null)
@@ -234,6 +257,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
         series.setRejected(true);
         return true;
     }
+    
     private Collection<Instance> queryRejectedInstances(EntityManager em,
             StoreContext context, Instance rejectionNote, 
             RejectionParam rejectionParam, Collection<Series> affectedSeries)
@@ -242,8 +266,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
         HashMap<String,Attributes> refSOPs = new HashMap<String,Attributes>();
         Attributes attrs = context.getAttributes();
         String studyIUID = attrs.getString(Tag.StudyInstanceUID);
-        for (Attributes refStudy : attrs
-                .getSequence(Tag.CurrentRequestedProcedureEvidenceSequence)) {
+        for (Attributes refStudy : attrs.getSequence(Tag.CurrentRequestedProcedureEvidenceSequence)) {
             if (!studyIUID.equals(refStudy.getString(Tag.StudyInstanceUID))) {
                 LOG.info("{}: Study[iuid={}] of Rejection Note does not match "
                         + "Study[iuid={}] of referenced Instances - Rejection Note not applied",
@@ -252,11 +275,9 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
                 throw new DicomServiceException(STUDY_MISMATCH,
                         "referenced SOP instances belong to different Study than Rejection Note");
             }
-            for (Attributes refSeries
-                    : refStudy.getSequence(Tag.ReferencedSeriesSequence)) {
+            for (Attributes refSeries : refStudy.getSequence(Tag.ReferencedSeriesSequence)) {
                 String currentSeriesIUID = refSeries.getString(Tag.SeriesInstanceUID);
-                for (Attributes refSOP
-                        : refSeries.getSequence(Tag.ReferencedSOPSequence)) {
+                for (Attributes refSOP : refSeries.getSequence(Tag.ReferencedSOPSequence)) {
                     refSOPs.put(refSOP.getString(Tag.ReferencedSOPInstanceUID), refSOP);
                 }
                 Series series = null;
