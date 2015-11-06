@@ -38,6 +38,18 @@
 
 package org.dcm4chee.archive.conf.defaults;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
+
 import org.dcm4che3.conf.api.AttributeCoercion;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.Issuer;
@@ -46,7 +58,16 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.imageio.codec.CompressionRule;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
-import org.dcm4che3.net.*;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Connection;
+import org.dcm4che3.net.DefaultTransferCapabilities;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.DeviceType;
+import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.ExternalArchiveAEExtension;
+import org.dcm4che3.net.QueryOption;
+import org.dcm4che3.net.TCGroupConfigAEExtension;
+import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.audit.AuditLogger;
 import org.dcm4che3.net.audit.AuditRecordRepository;
 import org.dcm4che3.net.hl7.HL7Application;
@@ -54,13 +75,31 @@ import org.dcm4che3.net.hl7.HL7DeviceExtension;
 import org.dcm4che3.net.imageio.ImageReaderExtension;
 import org.dcm4che3.net.imageio.ImageWriterExtension;
 import org.dcm4che3.net.web.WebServiceAEExtension;
-import org.dcm4chee.archive.conf.*;
-import org.dcm4chee.storage.conf.*;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.ArchiveHL7ApplicationExtension;
+import org.dcm4chee.archive.conf.ArchivingRule;
+import org.dcm4chee.archive.conf.AttributeFilter;
+import org.dcm4chee.archive.conf.DeletionRule;
+import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.MPPSCreationRule;
+import org.dcm4chee.archive.conf.MPPSEmulationAndStudyUpdateRule;
+import org.dcm4chee.archive.conf.MetadataUpdateStrategy;
+import org.dcm4chee.archive.conf.NoneIOCMChangeRequestorExtension;
+import org.dcm4chee.archive.conf.PatientSelectorConfig;
+import org.dcm4chee.archive.conf.PrivateDerivedFields;
+import org.dcm4chee.archive.conf.PrivateTag;
+import org.dcm4chee.archive.conf.QueryRetrieveView;
+import org.dcm4chee.archive.conf.RejectionParam;
+import org.dcm4chee.archive.conf.StoreAction;
+import org.dcm4chee.storage.conf.Archiver;
+import org.dcm4chee.storage.conf.Availability;
+import org.dcm4chee.storage.conf.Container;
+import org.dcm4chee.storage.conf.FileCache;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystem;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
+import org.dcm4chee.storage.conf.SyncPolicy;
 
 import static org.dcm4che3.net.TransferCapability.Role.SCP;
 import static org.dcm4che3.net.TransferCapability.Role.SCU;
@@ -245,7 +284,8 @@ public class DefaultArchiveConfigurationFactory {
             Tag.Laterality,
             Tag.PerformedProcedureStepStartDate,
             Tag.PerformedProcedureStepStartTime,
-            Tag.RequestAttributesSequence
+            Tag.RequestAttributesSequence,
+            Tag.ProtocolName
     };
     private static final int[] INSTANCE_ATTRS = {
             Tag.SpecificCharacterSet,

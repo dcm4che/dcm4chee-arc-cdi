@@ -38,6 +38,12 @@
 
 package org.dcm4chee.archive.store.scu.impl;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -69,12 +75,6 @@ import org.dcm4chee.task.TaskType;
 import org.dcm4chee.task.WeightWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -159,9 +159,6 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         Attributes attrs = null;
         try {
             tsuid = selectTransferSyntaxFor(storeas, inst);
-
-            if (inst == null)
-                throw new UnsupportedStoreSCUException("Unable to send instance");
 
             ArchiveAEExtension arcAEExt = context.getLocalAE().getAEExtension(
                     ArchiveAEExtension.class);
