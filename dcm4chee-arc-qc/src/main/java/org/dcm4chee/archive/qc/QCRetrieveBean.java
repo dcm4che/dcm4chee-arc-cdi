@@ -5,6 +5,7 @@ import java.util.Collection;
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.sc.StructuralChangeContainer;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 
 public interface QCRetrieveBean {
@@ -59,4 +60,6 @@ public interface QCRetrieveBean {
      * @return void
      */
     public void recalculateQueryAttributes(QCEvent event);
+    
+    public void recalculateQueryAttributes(StructuralChangeContainer changeContainer);
 }

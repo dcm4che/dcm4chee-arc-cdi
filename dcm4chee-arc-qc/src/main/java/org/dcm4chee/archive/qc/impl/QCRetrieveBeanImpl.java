@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -49,7 +50,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.print.attribute.HashAttributeSet;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -63,15 +63,17 @@ import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.entity.QCUpdateHistory;
+import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
-import org.dcm4chee.archive.qc.QCRetrieveBean;
 import org.dcm4chee.archive.qc.QCEvent.QCOperation;
+import org.dcm4chee.archive.qc.QCRetrieveBean;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
+import org.dcm4chee.archive.sc.StructuralChangeContainer;
+import org.dcm4chee.archive.sc.StructuralChangeContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -266,6 +268,65 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
                     + "Can not re-calculate derived fields on QC");
             return;
         }
+        }
+    }
+    
+    @Override
+    public void recalculateQueryAttributes(StructuralChangeContainer changeContainer) {
+        LOG.info("Received SC change container , initiating derived fields calculation");
+        ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        String defaultAETitle;
+        try {
+            defaultAETitle = arcDevExt.getDefaultAETitle();
+        } catch (Exception e) {
+            LOG.error("Undefined defaultAETitle, "
+                    + "cannot calculate derived fields on MPPS COMPLETE");
+            return;
+        }
+        ApplicationEntity archiveAE = device.getApplicationEntity(defaultAETitle);
+        ArchiveAEExtension arcAEExt = archiveAE.getAEExtension(ArchiveAEExtension.class);
+        QueryRetrieveView view = arcDevExt.getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
+        QueryParam param = new QueryParam();
+        param.setQueryRetrieveView(view);
+        
+        for(StructuralChangeContext changeCtx : changeContainer.getContexts()) {
+            if(!changeCtx.hasChangeType(STRUCTURAL_CHANGE.QC)) {
+                continue;
+            }
+            
+            Enum<?>[] qcUpdateChangeTypes = changeCtx.getSubChangeTypeHierarchy(QCOperation.UPDATE);
+            if(qcUpdateChangeTypes != null) {
+                QCContextImpl qcCtx = (QCContextImpl)changeCtx;
+                QCUpdateScope updateScope = (QCUpdateScope)qcUpdateChangeTypes[1];
+                try {
+                    if (QCUpdateScope.STUDY.equals(updateScope)) {
+                        Study study = findStudyByUID(qcCtx.getUpdateAttributes().getString(Tag.StudyInstanceUID));
+                        queryService.createStudyView(study.getPk(), param);
+                    }
+                    if (QCUpdateScope.SERIES.equals(updateScope)) {
+                        Series series = findSeriesByUID(qcCtx.getUpdateAttributes().getString(Tag.SeriesInstanceUID));
+                        queryService.createSeriesView(series.getPk(), param);
+                    }
+                } catch (Exception e) {
+                    LOG.error("Error processing updated object event with scope={}"
+                            + ", Unable to recalculate query attributes - reason {}", updateScope, e);
+                }
+            } else {
+                Set<String> affectedStudies = changeCtx.getAffectedStudyUIDs();
+                try {
+                    for (String studyIUID : affectedStudies) {
+                        Study study = findStudyByUID(studyIUID);
+                        queryService.createStudyView(study.getPk(), param);
+                        for (Series series : study.getSeries()) {
+                            queryService.createSeriesView(series.getPk(), param);
+                        }
+                    }
+                } catch (Exception e) {
+                    LOG.error("Study or Series lookup failed, "
+                            + "Can not re-calculate derived fields on QC");
+                    return;
+                }
+            }
         }
     }
 

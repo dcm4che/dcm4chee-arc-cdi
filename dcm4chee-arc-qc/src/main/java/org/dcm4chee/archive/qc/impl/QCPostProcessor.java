@@ -38,14 +38,12 @@
 package org.dcm4chee.archive.qc.impl;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
-import org.slf4j.Logger;
-import org.dcm4chee.archive.dto.Service;
-import org.dcm4chee.archive.dto.ServiceType;
-import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
+import org.dcm4chee.archive.sc.StructuralChangeContainer;
+import org.dcm4chee.archive.sc.StructuralChangeTransactionHook;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -53,16 +51,24 @@ import org.slf4j.LoggerFactory;
  */
 
 @ApplicationScoped
-public class QCPostProcessor {
-
-    static final Logger LOG = LoggerFactory.getLogger(QCPostProcessor.class);
+public class QCPostProcessor implements StructuralChangeTransactionHook {
+    private static final Logger LOG = LoggerFactory.getLogger(QCPostProcessor.class);
+    
     @Inject
     private QCRetrieveBean retrieveBean;
 
-    public void observeQC(@Observes @Service(ServiceType.QCPOSTPROCESSING) QCEvent event) {
+//    public void observeQC(@Observes @Service(ServiceType.QCPOSTPROCESSING) QCEvent event) {
+//        LOG.info("QC operation successfull, starting post processing");
+//        //recalculate query Attributes
+//        retrieveBean.recalculateQueryAttributes(event);
+//    }
+    
+    @Override
+    public boolean beforeCommitStructuralChanges(StructuralChangeContainer changeContext) {
         LOG.info("QC operation successfull, starting post processing");
         //recalculate query Attributes
-        retrieveBean.recalculateQueryAttributes(event);
+        retrieveBean.recalculateQueryAttributes(changeContext);
+        return true;
     }
 
 }
