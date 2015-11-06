@@ -608,6 +608,7 @@
     <module>dcm4chee-arc-stow</module>
     <module>dcm4chee-arc-stow-client</module>
     <module>dcm4chee-arc-ctrl</module>
+    <module>dcm4chee-arc-sc</module>
     <module>dcm4chee-arc-qc</module>
     <module>dcm4chee-arc-qc-rest</module>
     <module>dcm4chee-arc-location-mgmt</module>
