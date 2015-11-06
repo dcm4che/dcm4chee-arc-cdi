@@ -41,10 +41,12 @@ package org.dcm4chee.archive.store.scu.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
@@ -156,16 +158,15 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     @Override
     protected void storeInstance(Association storeas, ArchiveInstanceLocator inst) throws IOException, InterruptedException {
         String tsuid;
-        Attributes attrs = null;
+        DatasetWithFMI datasetWithFMI = null;
+        Attributes attrs;
         try {
-            tsuid = selectTransferSyntaxFor(storeas, inst);
-
             ArchiveAEExtension arcAEExt = context.getLocalAE().getAEExtension(
                     ArchiveAEExtension.class);
 
             do {
                 try {
-                    attrs = readFrom(inst);
+                    datasetWithFMI = readFrom(inst);
                 } catch (IOException e) {
                     LOG.info("Failed to read Data Set with iuid={} from {}@{}",
                             inst.iuid, inst.getFilePath(), inst.getStorageSystem(), e);
@@ -175,7 +176,11 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
                     }
                     LOG.info("Try to read Data Set from alternative location");
                 }
-            } while (attrs == null);
+            } while (datasetWithFMI == null);
+
+            tsuid = selectTransferSyntaxFor(storeas, inst, datasetWithFMI);
+
+            attrs = datasetWithFMI.getDataset();
 
             // check for suppression criteria
             if (context.getRemoteAE() != null) {
@@ -242,7 +247,7 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
 	}
 
 
-    private Attributes readFrom(ArchiveInstanceLocator inst) throws IOException {
+    private DatasetWithFMI readFrom(ArchiveInstanceLocator inst) throws IOException {
 
         try (DicomInputStream din = new DicomInputStream(service.getFile(inst)
                 .toFile())) {
@@ -257,7 +262,7 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
                 }
             }
             din.setIncludeBulkData(includeBulkData);
-            return din.readDataset(-1, stopTag);
+            return din.readDatasetWithFMI(-1, stopTag);
         }
     }
 
@@ -310,24 +315,28 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
 
     private String getDefaultConfiguredTransferSyntax(InstanceLocator ref) {
         if (context.getRemoteAE() != null) {
-            ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                    context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU));
+            Collection<TransferCapability> aeTCs = context.getRemoteAE().getTransferCapabilitiesWithRole(Role.SCU);
             for (TransferCapability supportedTC : aeTCs) {
-                if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0) {
-                    return supportedTC
-                            .containsTransferSyntax(UID.ExplicitVRLittleEndian) ? UID.ExplicitVRLittleEndian
-                            : UID.ImplicitVRLittleEndian;
+                if (ref.cuid.equals(supportedTC.getSopClass())) {
+                    if (supportedTC.containsTransferSyntax(UID.ExplicitVRLittleEndian))
+                        return UID.ExplicitVRLittleEndian;
+                    else
+                        return UID.ImplicitVRLittleEndian;
                 }
             }
         }
         return UID.ImplicitVRLittleEndian;
     }
 
-    @Override
-    protected String selectTransferSyntaxFor(Association storeas,
-                                             ArchiveInstanceLocator inst) throws UnsupportedStoreSCUException {
-        Set<String> acceptedTransferSyntax = storeas
-                .getTransferSyntaxesFor(inst.cuid);
+    protected String selectTransferSyntaxFor(Association storeas, ArchiveInstanceLocator inst, DatasetWithFMI dataSetWithFMI) throws UnsupportedStoreSCUException {
+        Set<String> acceptedTransferSyntax = new HashSet<>(storeas.getTransferSyntaxesFor(inst.cuid));
+
+        // prevent that (possibly) faulty JPEG-LS data leaves the system,
+        // we only want to store it decompressed
+        if (inst.getStorageSystem().getStorageSystemGroup().isPossiblyFaultyJPEGLS(dataSetWithFMI)) {
+            acceptedTransferSyntax.remove(UID.JPEGLSLossless);
+        }
+
         // check for SOP classes elimination
         if (context.getArchiveAEExtension().getRetrieveSuppressionCriteria()
                 .isCheckTransferCapabilities()) {
@@ -338,8 +347,7 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
                 throw new UnsupportedStoreSCUException(
                         "Unable to send instance, SOP class not configured");
 
-            if (isConfiguredAndAccepted(inst,
-                    storeas.getTransferSyntaxesFor(inst.cuid)))
+            if (isConfiguredAndAccepted(inst, acceptedTransferSyntax))
                 return inst.tsuid;
             else
                 return getDefaultConfiguredTransferSyntax(inst);
@@ -348,9 +356,10 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         if (acceptedTransferSyntax.contains(inst.tsuid))
             return inst.tsuid;
 
-        return storeas.getTransferSyntaxesFor(inst.cuid).contains(
-                UID.ExplicitVRLittleEndian) ? UID.ExplicitVRLittleEndian
-                : UID.ImplicitVRLittleEndian;
+        if (acceptedTransferSyntax.contains(UID.ExplicitVRLittleEndian))
+            return UID.ExplicitVRLittleEndian;
+        else
+            return UID.ImplicitVRLittleEndian;
     }
 
     private BasicCStoreSCUResp pushInstances(ArrayList<ArchiveInstanceLocator> instances, Association storeas, int priority) {
