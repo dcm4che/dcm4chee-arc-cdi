@@ -62,8 +62,9 @@ import org.dcm4che3.util.UIDUtils;
 import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
-import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCOperationNotPermittedException;
+import org.dcm4chee.archive.qc.impl.SCAwareQCBeanImpl;
+import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
 import org.dcm4chee.archive.studyprotection.StudyProtectionHook;
 import org.dcm4chee.hooks.Hooks;
 import org.slf4j.Logger;
@@ -92,7 +93,7 @@ public class NoneIocmChangeRequestorMDB implements MessageListener {
     private ActiveProcessingService activeProcessingService;
     
     @Inject
-    private QCBean qcBean;
+    private SCAwareQCBeanImpl qcBean;
     
     @Inject
     private Hooks<StudyProtectionHook> studyProtectionHooks;
@@ -145,7 +146,7 @@ public class NoneIocmChangeRequestorMDB implements MessageListener {
             
             if (sopUIDchanged.size() > 0) {
                 try {
-                    qcBean.replaced(sopUIDchanged, REJ_CODE_QUALITY_REASON);
+                    qcBean.replaced(STRUCTURAL_CHANGE.NON_IOCM, sopUIDchanged, REJ_CODE_QUALITY_REASON);
                 } catch(QCOperationNotPermittedException e1) {
                     LOG.warn("QC Replace-Operation not permitted", e1);
                 }
@@ -155,7 +156,7 @@ public class NoneIocmChangeRequestorMDB implements MessageListener {
                 for (Map.Entry<String, List<String>> e : seriesUIDchanged.entrySet()) {
                     seriesAttrs.setString(Tag.SeriesInstanceUID, VR.UI, e.getKey());
                     try {
-                        qcBean.split(e.getValue(), null, processStudyIUID, null, seriesAttrs, REJ_CODE_QUALITY_REASON);
+                        qcBean.split(STRUCTURAL_CHANGE.NON_IOCM, e.getValue(), null, processStudyIUID, null, seriesAttrs, REJ_CODE_QUALITY_REASON);
                     } catch (QCOperationNotPermittedException e2) {
                         LOG.warn("QC Split-Operation not permitted", e2);
                     }
@@ -164,7 +165,7 @@ public class NoneIocmChangeRequestorMDB implements MessageListener {
             if (studyUIDchanged.size() > 0) {
                 for (Map.Entry<String, List<String>> e : studyUIDchanged.entrySet()) {
                     try {
-                        qcBean.split(e.getValue(), null, e.getKey(), null, null, REJ_CODE_QUALITY_REASON);
+                        qcBean.split(STRUCTURAL_CHANGE.NON_IOCM, e.getValue(), null, e.getKey(), null, null, REJ_CODE_QUALITY_REASON);
                     } catch (QCOperationNotPermittedException e3) {
                         LOG.warn("QC Split-Operation not permitted", e3);
                     }
@@ -175,7 +176,7 @@ public class NoneIocmChangeRequestorMDB implements MessageListener {
                     IDWithIssuer pid = IDWithIssuer.pidOf(patAttrChanged.get(e.getKey()));
                     String studyUID = UIDUtils.createUID();
                     try {
-                        qcBean.split(e.getValue(), pid, studyUID, null, null, REJ_CODE_QUALITY_REASON);
+                        qcBean.split(STRUCTURAL_CHANGE.NON_IOCM, e.getValue(), pid, studyUID, null, null, REJ_CODE_QUALITY_REASON);
                     } catch (QCOperationNotPermittedException e4) {
                         LOG.warn("QC Split-Operation not permitted", e4);
                     }
