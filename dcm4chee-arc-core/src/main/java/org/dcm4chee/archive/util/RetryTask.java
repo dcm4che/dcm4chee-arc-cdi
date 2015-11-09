@@ -1,24 +1,62 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is part of dcm4che, an implementation of DICOM(TM) in
+ * Java(TM), hosted at https://github.com/gunterze/dcm4che.
+ *
+ * The Initial Developer of the Original Code is
+ * Agfa Healthcare.
+ * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * See @authors listed below
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
 package org.dcm4chee.archive.util;
+
+import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.Callable;
-
 /**
  * Created by umberto on 9/30/15.
  */
-public class RetryTask<T, E extends Exception> implements Callable<T> {
+class RetryTask<T, E extends Exception> implements Callable<T> {
 
-    static Logger LOG = LoggerFactory.getLogger(RetryTask.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RetryTask.class);
 
-    private Callable<T> task;
+    private final Callable<T> task;
 
-    private int retries; // number of tries
+    private final int retries; // number of tries
     private int left; // left tries
-    private long wait; // wait interval
+    private final long wait; // wait interval
 
-    public RetryTask(int numberOfRetries, long timeToWait, Callable<T> task) {
+    RetryTask(int numberOfRetries, long timeToWait, Callable<T> task) {
         this.retries = numberOfRetries;
         left = numberOfRetries;
         this.wait = timeToWait;
@@ -29,16 +67,15 @@ public class RetryTask<T, E extends Exception> implements Callable<T> {
         while (true) {
             try {
                 return task.call();
-            }
-            catch (Exception e) {
-                left--;
-                if (left == 0) {
+            } catch (Exception e) {
+                if(!RetryBean.isRetryable(e)) {
+                    LOG.info("Exception not retryable");
+                    castAndThrow(e);
+                } else if (--left == 0) {
                     LOG.error("task failed " + retries + " times at " + wait + "ms interval", e);
-                    if (e instanceof RuntimeException)
-                        throw (RuntimeException)e;
-                    else
-                        throw (E)e;
+                    castAndThrow(e);
                 }
+                
                 try {
                     Thread.sleep(wait);
                 } catch (InterruptedException e1) {
@@ -47,6 +84,13 @@ public class RetryTask<T, E extends Exception> implements Callable<T> {
                 }
             }
         }
+    }
+    
+    private void castAndThrow(Exception e) throws E {
+        if (e instanceof RuntimeException)
+            throw (RuntimeException) e;
+        else
+            throw (E)e;
     }
 
 }
