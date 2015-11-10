@@ -39,6 +39,10 @@
 
 package org.dcm4chee.archive.qc.impl;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,6 +51,8 @@ import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCEvent.QCOperation;
+import org.dcm4chee.archive.qc.QCOperationContext;
+import org.dcm4chee.archive.qc.QC_OPERATION;
 import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
 import org.dcm4chee.archive.sc.impl.BasicStructuralChangeContext;
 
@@ -54,16 +60,16 @@ import org.dcm4chee.archive.sc.impl.BasicStructuralChangeContext;
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-public class QCContextImpl extends BasicStructuralChangeContext {
+public class QCContextImpl extends BasicStructuralChangeContext implements QCOperationContext {
     private final Set<Instance> sourceInstances = new HashSet<>();
     private final Set<Instance> targetInstances = new HashSet<>();
 
     private Attributes updateAttributes;
     
-    private Set<org.dcm4chee.archive.entity.Instance> rejectionNotes;
+    private Set<org.dcm4chee.archive.entity.Instance> rejectionNotes = Collections.emptySet();
     
     public static QCContextImpl createInstance(Enum<?> structuralChangeType, QCEvent qcEvent) {
-        QCOperation qcOperation = QCOperation.valueOf(qcEvent.getOperation().toString());
+        QC_OPERATION qcOperation = QC_OPERATION.valueOf(qcEvent.getOperation().toString());
         
         QCContextImpl qcCtx;
         if(QCOperation.UPDATE.equals(qcOperation)) {
@@ -73,23 +79,32 @@ public class QCContextImpl extends BasicStructuralChangeContext {
             qcCtx = new QCContextImpl(structuralChangeType, qcOperation);
         }
         
-        for(QCEventInstance qcInstance : qcEvent.getSource()) {
-            Instance instance = new InstanceImpl(qcInstance.getStudyInstanceUID(), 
-                    qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
-            qcCtx.addAffectedInstance(instance);
-            qcCtx.sourceInstances.add(instance);
+        Collection<QCEventInstance> sourceInstances = qcEvent.getSource();
+        if(sourceInstances != null) {
+            for (QCEventInstance qcInstance : sourceInstances) {
+                Instance instance = new InstanceImpl(qcInstance.getStudyInstanceUID(),
+                        qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
+                qcCtx.addAffectedInstance(instance);
+                qcCtx.sourceInstances.add(instance);
+            }
         }
         
-        for(QCEventInstance qcInstance : qcEvent.getTarget()) {
-            Instance instance = new InstanceImpl(qcInstance.getStudyInstanceUID(), 
-                    qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
-            qcCtx.addAffectedInstance(instance);
-            qcCtx.targetInstances.add(instance);
+        Collection<QCEventInstance> targetInstances = qcEvent.getTarget();
+        if (targetInstances != null) {
+            for (QCEventInstance qcInstance : targetInstances) {
+                Instance instance = new InstanceImpl(qcInstance.getStudyInstanceUID(),
+                        qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
+                qcCtx.addAffectedInstance(instance);
+                qcCtx.targetInstances.add(instance);
+            }
         }
         
         qcCtx.updateAttributes = qcEvent.getUpdateAttributes();
         
-        qcCtx.rejectionNotes = new HashSet<>(qcEvent.getRejectionNotes());
+        Collection<org.dcm4chee.archive.entity.Instance> rejectionNotes = qcEvent.getRejectionNotes();
+        if(rejectionNotes != null) {
+            qcCtx.rejectionNotes = new HashSet<>(rejectionNotes);
+        }
         
         return qcCtx;
     }
@@ -98,20 +113,45 @@ public class QCContextImpl extends BasicStructuralChangeContext {
         super(qcOperations);
     }
     
+    @Override
     public Set<Instance> getSourceInstances() {
         return sourceInstances;
     }
     
+    @Override
     public Set<Instance> getTargetInstances() {
         return targetInstances;
     }
     
+    @Override
     public Set<org.dcm4chee.archive.entity.Instance> getRejectionNotes() {
         return rejectionNotes;
     }
     
+    @Override
     public Attributes getUpdateAttributes() {
         return updateAttributes;
+    }
+    
+    @Override
+    public String toString() {
+        String str = "QCContext[ operation: "+ Arrays.toString(getChangeTypeHierarchy()) 
+                + "\n timestamp: " + new Date(getTimestamp()).toString() 
+                + "\n updateAttributes : " + (updateAttributes == null ? "No Info" : updateAttributes.toString())
+                + "\n operation successfully applied on the following instances : \n" + ((sourceInstances != null) ? toString(sourceInstances) : "[]")
+                + "\n resulting in the following instances : \n" + ((targetInstances != null) ? toString(targetInstances) : "[]")
+                + "]";
+                return str;
+    }
+
+    private static String toString(Collection<Instance> insts) {
+        StringBuffer buf = new StringBuffer();
+        buf.append("[");
+        for (Instance inst : insts) {
+            buf.append(inst.toString() + "\n");
+        }
+        buf.append("]");
+        return buf.toString();
     }
 
 }

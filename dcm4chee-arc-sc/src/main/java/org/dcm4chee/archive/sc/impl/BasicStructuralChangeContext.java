@@ -39,6 +39,8 @@
 
 package org.dcm4chee.archive.sc.impl;
 
+import static java.lang.String.format;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -154,6 +156,33 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
         @Override
         public String getSopInstanceUID() {
             return sopInstanceUID;
+        }
+        
+        @Override
+        public String toString() {
+            return format("(studyInstanceUID: %s, seriesInstanceUID: %s, sopInstanceUID: %s)", 
+                    studyInstanceUID, seriesInstanceUID, sopInstanceUID);
+        }
+        
+        @Override
+        public boolean equals(Object other) {
+            if(this == other) {
+                return true;
+            }
+            
+            if(other == null || !(other instanceof Instance)) {
+                return false;
+            }
+            
+            Instance that = (Instance)other;
+            return studyInstanceUID.equals(that.getStudyInstanceUID()) 
+                    && seriesInstanceUID.equals(that.getSeriesInstanceUID())
+                    && sopInstanceUID.equals(that.getSopInstanceUID());
+        }
+        
+        @Override
+        public int hashCode() {
+            return 37 * studyInstanceUID.hashCode() + seriesInstanceUID.hashCode() + sopInstanceUID.hashCode();
         }
         
     }

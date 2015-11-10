@@ -37,47 +37,20 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.sc.impl;
+package org.dcm4chee.archive.sc;
 
-import static java.lang.String.format;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
-import org.dcm4chee.archive.sc.StructuralChangeContainer;
-import org.dcm4chee.archive.sc.StructuralChangeTransactionHook;
-import org.dcm4chee.hooks.Hooks;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.dcm4chee.archive.util.NotRetryable;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-@ApplicationScoped
-public class StructuralChangeHookExecutor {
-    private static final Logger LOG = LoggerFactory.getLogger(StructuralChangeHookExecutor.class);
-    
-    @Inject
-    private Hooks<StructuralChangeTransactionHook> structuralChangeHooks;
-    
-    public boolean executeBeforCommitStructuralChangeHooks(StructuralChangeContainer changeContext) {
-       
-        for (StructuralChangeTransactionHook scHook : structuralChangeHooks) {
-            try {
-                if (!scHook.beforeCommitStructuralChanges(changeContext)) {
-                    LOG.info("Structural change hook {} marked transaction as failed", scHook.getClass().getName());
-                    return false;
-                }
-            } catch (Exception e) {
-                LOG.error(format("Error while executing structural change hook %s. Mark transaction as FAILED",
-                        scHook.getClass().getName()), e);
-                return false;
-            }
-        }
-       
-        return true;
+@NotRetryable
+public class StructuralChangeRejectedException extends RuntimeException {
+    private static final long serialVersionUID = 78897239784L;
+
+    public StructuralChangeRejectedException() {
+        // NOP
     }
-    
+
 }

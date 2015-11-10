@@ -43,7 +43,9 @@ import static java.lang.String.format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.ejb.Stateless;
@@ -72,6 +74,7 @@ import org.dcm4chee.archive.conf.Entity;
 import org.dcm4chee.archive.conf.NoneIOCMChangeRequestorExtension;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.dto.ActiveService;
+import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCActionHistory;
@@ -85,9 +88,14 @@ import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.archive.qc.QCEvent.QCOperation;
+import org.dcm4chee.archive.qc.QCOperationNotPermittedException;
+import org.dcm4chee.archive.qc.StructuralChangeService;
+import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
+import org.dcm4chee.archive.studyprotection.StudyProtectionHook;
+import org.dcm4chee.hooks.Hooks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,6 +116,12 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
 
     @Inject
     private ActiveProcessingService activeProcessingService;
+    
+    @Inject
+    private StructuralChangeService scService;
+    
+    @Inject
+    private Hooks<StudyProtectionHook> studyProtectionHooks;
 
     @Inject
     private PatientService patientService;
@@ -369,6 +383,101 @@ public class NoneIOCMChangeRequestorServiceEJB implements NoneIOCMChangeRequesto
         } finally {
             conn.close();
         }
+    }
+    
+    @Override
+    public void processNonIOCMRequest(String processStudyIUID,  List<ActiveProcessing> nonIocmProcessings) {
+        // check if study protected against structural changes
+        if (!areStructuralChangesPermittedForStudy(processStudyIUID)) {
+            LOG.info("Non-IOCM active-processing message for study {} will be ignored as study is protected", processStudyIUID);
+            return;
+        }
+
+        Map<String, String> sopUIDchanged = new HashMap<String, String>();
+        Map<String, List<String>> studyUIDchanged = new HashMap<String, List<String>>();
+        Map<String, List<String>> seriesUIDchanged = new HashMap<String, List<String>>();
+        Map<String, List<String>> patIDchanged = new HashMap<String, List<String>>();
+        Map<String, Attributes> patAttrChanged = new HashMap<String, Attributes>();
+
+        for (ActiveProcessing processing : nonIocmProcessings) {
+            Attributes attrs = processing.getAttributes();
+            Attributes item = attrs.getNestedDataset(Tag.ModifiedAttributesSequence);
+            if (item.contains(Tag.StudyInstanceUID)) {
+                addChgdIUID(studyUIDchanged, attrs.getString(Tag.StudyInstanceUID),
+                        attrs.getString(Tag.SOPInstanceUID));
+            } else if (item.contains(Tag.SeriesInstanceUID)) {
+                addChgdIUID(seriesUIDchanged, attrs.getString(Tag.SeriesInstanceUID),
+                        attrs.getString(Tag.SOPInstanceUID));
+            } else if (item.contains(Tag.SOPInstanceUID)) {
+                sopUIDchanged.put(attrs.getString(Tag.SOPInstanceUID),
+                        item.getString(Tag.SOPInstanceUID));
+            } else if (item.contains(Tag.PatientID)) {
+                String pid = attrs.getString(Tag.PatientID) + "^^^"
+                        + attrs.getString(Tag.IssuerOfPatientID);
+                addChgdIUID(patIDchanged, pid, attrs.getString(Tag.SOPInstanceUID));
+                patAttrChanged.put(pid, attrs);
+            } else {
+                LOG.warn("Cannot determine Non-IOCM change! Ignore this active-processing ({})",
+                        processing);
+            }
+        }
+
+        if (sopUIDchanged.size() > 0) {
+            try {
+                scService.replaced(STRUCTURAL_CHANGE.NON_IOCM, sopUIDchanged, REJ_CODE_QUALITY_REASON);
+            } catch (QCOperationNotPermittedException e1) {
+                LOG.warn("QC Replace-Operation not permitted", e1);
+            }
+        }
+        if (seriesUIDchanged.size() > 0) {
+            Attributes seriesAttrs = new Attributes();
+            for (Map.Entry<String, List<String>> e : seriesUIDchanged.entrySet()) {
+                seriesAttrs.setString(Tag.SeriesInstanceUID, VR.UI, e.getKey());
+                try {
+                    scService.split(STRUCTURAL_CHANGE.NON_IOCM, e.getValue(), null, processStudyIUID, null, seriesAttrs, REJ_CODE_QUALITY_REASON);
+                } catch (QCOperationNotPermittedException e2) {
+                    LOG.warn("QC Split-Operation not permitted", e2);
+                }
+            }
+        }
+        if (studyUIDchanged.size() > 0) {
+            for (Map.Entry<String, List<String>> e : studyUIDchanged.entrySet()) {
+                try {
+                    scService.split(STRUCTURAL_CHANGE.NON_IOCM, e.getValue(), null, e.getKey(), null, null, REJ_CODE_QUALITY_REASON);
+                } catch (QCOperationNotPermittedException e3) {
+                    LOG.warn("QC Split-Operation not permitted", e3);
+                }
+            }
+        }
+        if (patIDchanged.size() > 0) {
+            for (Map.Entry<String, List<String>> e : patIDchanged.entrySet()) {
+                IDWithIssuer pid = IDWithIssuer.pidOf(patAttrChanged.get(e.getKey()));
+                String studyUID = UIDUtils.createUID();
+                try {
+                    scService.split(STRUCTURAL_CHANGE.NON_IOCM, e.getValue(), pid, studyUID, null, null, REJ_CODE_QUALITY_REASON);
+                } catch (QCOperationNotPermittedException e4) {
+                    LOG.warn("QC Split-Operation not permitted", e4);
+                }
+            }
+        }
+    }
+    
+    private static void addChgdIUID(Map<String, List<String>> map, String key, String iuid) {
+        List<String> chgdIUIDs = map.get(key);
+        if (chgdIUIDs == null) {
+            chgdIUIDs = new ArrayList<String>();
+            map.put(key, chgdIUIDs);
+        }
+        chgdIUIDs.add(iuid);
+    }
+    
+    private boolean areStructuralChangesPermittedForStudy(String studyIUID) {
+        for(StudyProtectionHook studyProtectionHook : studyProtectionHooks) {
+            if(studyProtectionHook.isProtected(studyIUID)) {
+                return false;
+            }
+        }
+        return true;
     }
     
 }

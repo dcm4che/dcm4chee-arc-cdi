@@ -55,8 +55,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
@@ -70,12 +70,12 @@ import org.dcm4che3.net.Device;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.qc.QCEvent;
-import org.dcm4chee.archive.qc.rest.IssuerObject;
 import org.dcm4chee.archive.qc.PatientCommands;
-import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.QCOperationContext;
 import org.dcm4chee.archive.qc.QCOperationNotPermittedException;
-import org.dcm4chee.archive.qc.rest.QCObject;
+import org.dcm4chee.archive.qc.QCService;
+import org.dcm4chee.archive.qc.StructuralChangeService;
+import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,7 +96,10 @@ public class QCRestful {
     private Device device;
 
     @Inject
-    private QCBean qcManager;
+    private QCService qcService;
+    
+    @Inject
+    private StructuralChangeService scService;
 
     private String aeTitle;
 
@@ -129,75 +132,62 @@ public class QCRestful {
     @POST
     @Consumes("application/json")
     public Response performQC(QCObject object) {
-        
-        QCEvent event = null;
         Code code = (object.getQcRejectionCode().getCodeValue()!=null?initializeCode(object):null);
         IDWithIssuer pid = (object.getPid()!=null?initializeIDWithIssuer(object):null);
         
-        try{
-        switch (object.getOperation().toLowerCase()) {
-        case "update":
-            ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        QCOperationContext qcOperationContext = null;
+        try {
+            switch (object.getOperation().toLowerCase()) {
+            case "update":
+                ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
 
-            if(object.getUpdateScope() == null) {
-                LOG.error("Unable to decide update Scope for QC update");
-                throw new WebApplicationException( Response.status(Status.CONFLICT)
-                        .entity("Unrecognized update scope")
-                        .build());
+                if (object.getUpdateScope() == null) {
+                    LOG.error("Unable to decide update Scope for QC update");
+                    throw new WebApplicationException(Response.status(Status.CONFLICT)
+                            .entity("Unrecognized update scope").build());
+                } else {
+                    // here merge provided data with pid, study uid, series uid
+                    // , instance uid
+                    qcOperationContext = qcService.updateDicomObject(arcDevExt, object.getUpdateScope(), object.getUpdateData());
+                }
+
+                break;
+
+            case "merge":
+                qcOperationContext = qcService.mergeStudies(object.getMoveSOPUIDs(), object.getTargetStudyUID(),
+                        object.getTargetStudyData(), object.getTargetSeriesData(), code);
+                break;
+
+            case "split":
+                qcOperationContext = qcService.split(Arrays.asList(object.getMoveSOPUIDs()), pid,
+                        object.getTargetStudyUID(), object.getTargetStudyData(),
+                        object.getTargetSeriesData(), code);
+                break;
+
+            case "segment":
+                qcOperationContext = qcService.segment(Arrays.asList(object.getMoveSOPUIDs()),
+                        Arrays.asList(object.getCloneSOPUIDs()), pid, object.getTargetStudyUID(),
+                        object.getTargetStudyData(), object.getTargetSeriesData(), code);
+                break;
+
+            case "reject":
+                qcOperationContext = scService.reject(STRUCTURAL_CHANGE.QC, object.getRestoreOrRejectUIDs(), code);
+                break;
+
+            case "restore":
+                qcOperationContext = qcService.restore(object.getRestoreOrRejectUIDs());
+                break;
+            default:
+                return Response.status(Response.Status.CONFLICT)
+                        .entity("Unable to decide operation").build();
             }
-            else {
-                //here merge provided data with pid, study uid, series uid , instance uid
-                event = qcManager.updateDicomObject(arcDevExt, object.getUpdateScope(), object.getUpdateData());
-            }
-            
-            break;
-            
-        case "merge":
-            
-            event = qcManager.mergeStudies(
-                    object.getMoveSOPUIDs(), object.getTargetStudyUID(),
-                    object.getTargetStudyData(), object.getTargetSeriesData(),
-                    code);
-            break;
-            
-        case "split":
-            event = qcManager.split(Arrays.asList(object.getMoveSOPUIDs()), pid,
-                    object.getTargetStudyUID(), object.getTargetStudyData(), 
-                    object.getTargetSeriesData(),  code);
-            break;
-            
-        case "segment":
-            
-            event = qcManager.segment(
-                    Arrays.asList(object.getMoveSOPUIDs()),
-                    Arrays.asList(object.getCloneSOPUIDs()), pid,
-                    object.getTargetStudyUID(), object.getTargetStudyData(), 
-                    object.getTargetSeriesData(),  code);
-            break;
-            
-        case "reject":
-            
-            event = qcManager.reject(
-                    object.getRestoreOrRejectUIDs(), code);
-            break;
-            
-        case "restore":
-            
-            event = qcManager.restore( 
-                    object.getRestoreOrRejectUIDs());
-            break;
-        default:
-            return Response.status(Response.Status.CONFLICT).entity("Unable to decide operation").build();
-        }
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             LOG.error("{} : Error in performing QC - Restful interface", e);
-            throw new WebApplicationException( Response.status(Status.CONFLICT)
-                    .entity(e.getMessage())
-                    .build());
+            throw new WebApplicationException(Response.status(Status.CONFLICT)
+                    .entity(e.getMessage()).build());
         }
-        qcManager.notify(event);
-        String strEvent = event.toString();
+        
+        String strEvent = qcOperationContext.toString();
         return Response.ok("Successfully performed operation "+object.getOperation() + " Operation resulted in the following event :\n" +strEvent).build();
     }
 
@@ -269,17 +259,13 @@ public class QCRestful {
             @PathParam("IssuerID") String issuerID,
             @QueryParam("qcRejectionCode") Code qcRejectionCode) {
         RSP = "Deleted Patient with PID = ";
-        QCEvent event = null;
-        try{
-			event = qcManager.deletePatient(new IDWithIssuer(patientID, new Issuer(issuerID, ':')), checkRejectionCode(qcRejectionCode));
-        }
-        catch (Exception e)
-        {
+        try {
+			qcService.deletePatient(new IDWithIssuer(patientID, new Issuer(issuerID, ':')), checkRejectionCode(qcRejectionCode));
+        } catch (Exception e) {
             RSP = "Failed to delete patient with ID = "+patientID + " issued by " + issuerID;
             return Response.status(Status.CONFLICT).entity(RSP).build();
         }
         RSP += patientID + " Issuer = " + issuerID;
-        qcManager.notify(event);
         return Response.ok(RSP).build();
 
     }
@@ -297,9 +283,8 @@ public class QCRestful {
             @PathParam("StudyInstanceUID") String studyInstanceUID,
             @QueryParam("qcRejectionCode") Code qcRejectionCode) {
         RSP = "Deleted Study with UID = ";
-        QCEvent event = null;
         try{
-            event = qcManager.deleteStudy(studyInstanceUID, checkRejectionCode(qcRejectionCode));
+            qcService.deleteStudy(studyInstanceUID, checkRejectionCode(qcRejectionCode));
         }
         catch (Exception e)
         {
@@ -307,7 +292,6 @@ public class QCRestful {
             return Response.status(Status.CONFLICT).entity(RSP).build();
         }
         RSP += studyInstanceUID;
-        qcManager.notify(event);
         return Response.ok(RSP).build();
 
     }
@@ -328,9 +312,8 @@ public class QCRestful {
             @PathParam("SeriesInstanceUID") String seriesInstanceUID,
             @QueryParam("qcRejectionCode") Code qcRejectionCode) {
         RSP = "Deleted Series with UID = ";
-        QCEvent event = null;
         try {
-            event = qcManager.deleteSeries(seriesInstanceUID, checkRejectionCode(qcRejectionCode));
+            qcService.deleteSeries(seriesInstanceUID, checkRejectionCode(qcRejectionCode));
         }
         catch(Exception e)
         {
@@ -338,7 +321,6 @@ public class QCRestful {
             return Response.status(Status.CONFLICT).entity(RSP).build();
         }
         RSP+=seriesInstanceUID;
-        qcManager.notify(event);
         return Response.ok(RSP).build();
     }
 
@@ -361,9 +343,8 @@ public class QCRestful {
             @PathParam("SOPInstanceUID") String sopInstanceUID,
             @QueryParam("qcRejectionCode") Code qcRejectionCode) {
         RSP = "Deleted Instance with UID = ";
-        QCEvent event = null;
         try{
-            event = qcManager.deleteInstance(sopInstanceUID, checkRejectionCode(qcRejectionCode));
+            qcService.deleteInstance(sopInstanceUID, checkRejectionCode(qcRejectionCode));
         }
         catch(Exception e)
         {
@@ -371,7 +352,6 @@ public class QCRestful {
             return Response.status(Status.CONFLICT).entity(RSP).build();
         } 
         RSP+=sopInstanceUID;
-        qcManager.notify(event);
         return Response.ok(RSP).build();
     }
 
@@ -396,8 +376,7 @@ public class QCRestful {
         RSP = "Series with UID = "
                 + seriesInstanceUID
                 + " was empty and Deleted = "
-                + qcManager.deleteSeriesIfEmpty(seriesInstanceUID,
-                        studyInstanceUID);
+                + scService.deleteSeriesIfEmpty(seriesInstanceUID, studyInstanceUID);
 
         return Response.ok(RSP).build();
     }
@@ -415,7 +394,7 @@ public class QCRestful {
             @PathParam("StudyInstanceUID") String studyInstanceUID) {
         RSP = "Study with UID = " + studyInstanceUID
                 + " was empty and Deleted = "
-                + qcManager.deleteStudyIfEmpty(studyInstanceUID);
+                + scService.deleteStudyIfEmpty(studyInstanceUID);
 
         return Response.ok(RSP).build();
     }
@@ -437,7 +416,7 @@ public class QCRestful {
         IDWithIssuer pid = new IDWithIssuer(patientID, new Issuer(issuerID, ':'));
         RSP = "Patient with PID = " + pid.toString() 
                 + " was empty and Deleted = "
-                + qcManager.deletePatientIfEmpty(pid);
+                + scService.deletePatientIfEmpty(pid);
 
         return Response.ok(RSP).build();
     }
@@ -460,7 +439,7 @@ public class QCRestful {
             ApplicationEntity applicationEntity, PatientCommands command, String patientOperation) throws QCOperationNotPermittedException {
         ArrayList<Boolean> listRSP = new ArrayList<Boolean>();
         for (int i = 0; i < attrs.size(); i++) {
-            listRSP.add(qcManager.patientOperation(attrs.get(i), attrs.get(++i), arcAEExt, command));
+            listRSP.add(scService.patientOperation(attrs.get(i), attrs.get(++i), arcAEExt, command));
         }
         int trueCount=0;
         

@@ -39,7 +39,6 @@ package org.dcm4chee.archive.qc.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -60,18 +59,15 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
-import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.archive.qc.QCBean;
-import org.dcm4chee.archive.qc.QCEvent;
-import org.dcm4chee.archive.qc.QCEvent.QCOperation;
+import org.dcm4chee.archive.qc.QCOperationContext;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
+import org.dcm4chee.archive.qc.QC_OPERATION;
 import org.dcm4chee.archive.query.QueryService;
-import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
 import org.dcm4chee.archive.sc.StructuralChangeContainer;
 import org.dcm4chee.archive.sc.StructuralChangeContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
@@ -93,9 +89,6 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
     private static final String CACHED_UIDS = "qc_cached_uids";
     private static final String CACHED_HISTORY_OBJECTS="qc_cached_history";
     private static final String NUM_QC_REF_QUERIES="number_of_reference_queries_for_qc";
-    
-    @Inject
-    QCBean qcManager;
     
     @Inject
     private Device device;
@@ -212,64 +205,64 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
         return diff;
     }
 
-    @Override
-    public void recalculateQueryAttributes(QCEvent event) {
-        LOG.info("Received QC post processing event , initiating derived fields calculation");
-        ArchiveDeviceExtension arcDevExt = device
-                .getDeviceExtension(ArchiveDeviceExtension.class);
-        String defaultAETitle = "";
-        try {
-         defaultAETitle =  arcDevExt.getDefaultAETitle();
-        }
-        catch(Exception e) {
-            LOG.error("Undefined defaultAETitle, "
-                    + "Can not calculate derived fields on MPPS COMPLETE");
-            return;
-        }
-        ApplicationEntity archiveAE = device
-                .getApplicationEntity(defaultAETitle);
-        ArchiveAEExtension arcAEExt = archiveAE
-                .getAEExtension(ArchiveAEExtension.class);
-        QueryRetrieveView view = arcDevExt
-                .getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
-        QueryParam param = new QueryParam();
-        param.setQueryRetrieveView(view);
-        
-        if (event.getOperation() == QCOperation.UPDATE) {
-            String updateScope = event.getUpdateScope();
-            try {
-                if (updateScope.compareTo(QCUpdateScope.STUDY.toString()) == 0) {
-                    Study study = findStudyByUID(event.getUpdateAttributes().getString(Tag.StudyInstanceUID));
-                    queryService.createStudyView(study.getPk(), param);
-                }
-                if (updateScope.compareTo(QCUpdateScope.SERIES.toString()) == 0) {
-                    Series series = findSeriesByUID(event.getUpdateAttributes().getString(Tag.SeriesInstanceUID));
-                    queryService.createSeriesView(series.getPk(), param);
-                }
-            } catch (Exception e) {
-                LOG.error("Error processing updated object event with scope={}"
-                        + ", Unable to recalculate query attributes - reason {}", event.getUpdateScope(), e);
-            }
-
-        }
-        else {
-        HashMap<String, ArrayList<String>> studiesMap = findReferencedStudiesInQCEvent(event);
-        //now for each study
-        try {
-        for(String studyIUID : studiesMap.keySet()) {
-            Study study = findStudyByUID(studyIUID);
-            queryService.createStudyView(study.getPk(), param);
-            for(Series series : study.getSeries())
-                queryService.createSeriesView(series.getPk(), param);
-        }
-        }
-        catch(Exception e) {
-            LOG.error("Study or Series lookup failed, "
-                    + "Can not re-calculate derived fields on QC");
-            return;
-        }
-        }
-    }
+//    @Override
+//    public void recalculateQueryAttributes(QCEvent event) {
+//        LOG.info("Received QC post processing event , initiating derived fields calculation");
+//        ArchiveDeviceExtension arcDevExt = device
+//                .getDeviceExtension(ArchiveDeviceExtension.class);
+//        String defaultAETitle = "";
+//        try {
+//         defaultAETitle =  arcDevExt.getDefaultAETitle();
+//        }
+//        catch(Exception e) {
+//            LOG.error("Undefined defaultAETitle, "
+//                    + "Can not calculate derived fields on MPPS COMPLETE");
+//            return;
+//        }
+//        ApplicationEntity archiveAE = device
+//                .getApplicationEntity(defaultAETitle);
+//        ArchiveAEExtension arcAEExt = archiveAE
+//                .getAEExtension(ArchiveAEExtension.class);
+//        QueryRetrieveView view = arcDevExt
+//                .getQueryRetrieveView(arcAEExt.getQueryRetrieveViewID());
+//        QueryParam param = new QueryParam();
+//        param.setQueryRetrieveView(view);
+//        
+//        if (event.getOperation() == QCOperation.UPDATE) {
+//            String updateScope = event.getUpdateScope();
+//            try {
+//                if (updateScope.compareTo(QCUpdateScope.STUDY.toString()) == 0) {
+//                    Study study = findStudyByUID(event.getUpdateAttributes().getString(Tag.StudyInstanceUID));
+//                    queryService.createStudyView(study.getPk(), param);
+//                }
+//                if (updateScope.compareTo(QCUpdateScope.SERIES.toString()) == 0) {
+//                    Series series = findSeriesByUID(event.getUpdateAttributes().getString(Tag.SeriesInstanceUID));
+//                    queryService.createSeriesView(series.getPk(), param);
+//                }
+//            } catch (Exception e) {
+//                LOG.error("Error processing updated object event with scope={}"
+//                        + ", Unable to recalculate query attributes - reason {}", event.getUpdateScope(), e);
+//            }
+//
+//        }
+//        else {
+//        HashMap<String, ArrayList<String>> studiesMap = findReferencedStudiesInQCEvent(event);
+//        //now for each study
+//        try {
+//        for(String studyIUID : studiesMap.keySet()) {
+//            Study study = findStudyByUID(studyIUID);
+//            queryService.createStudyView(study.getPk(), param);
+//            for(Series series : study.getSeries())
+//                queryService.createSeriesView(series.getPk(), param);
+//        }
+//        }
+//        catch(Exception e) {
+//            LOG.error("Study or Series lookup failed, "
+//                    + "Can not re-calculate derived fields on QC");
+//            return;
+//        }
+//        }
+//    }
     
     @Override
     public void recalculateQueryAttributes(StructuralChangeContainer changeContainer) {
@@ -290,13 +283,9 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
         param.setQueryRetrieveView(view);
         
         for(StructuralChangeContext changeCtx : changeContainer.getContexts()) {
-            if(!changeCtx.hasChangeType(STRUCTURAL_CHANGE.QC)) {
-                continue;
-            }
-            
-            Enum<?>[] qcUpdateChangeTypes = changeCtx.getSubChangeTypeHierarchy(QCOperation.UPDATE);
+            Enum<?>[] qcUpdateChangeTypes = changeCtx.getSubChangeTypeHierarchy(QC_OPERATION.UPDATE);
             if(qcUpdateChangeTypes != null) {
-                QCContextImpl qcCtx = (QCContextImpl)changeCtx;
+                QCOperationContext qcCtx = (QCOperationContext)changeCtx;
                 QCUpdateScope updateScope = (QCUpdateScope)qcUpdateChangeTypes[1];
                 try {
                     if (QCUpdateScope.STUDY.equals(updateScope)) {
@@ -330,34 +319,34 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
         }
     }
 
-    private HashMap<String, ArrayList<String>> findReferencedStudiesInQCEvent(QCEvent event) {
-        HashMap<String, ArrayList<String>> studyMap = new HashMap<String, ArrayList<String>>();
-        for(QCEventInstance inst : getAggregatedQCInstances(event)) {
-            if(!studyMap.containsKey(inst.getStudyInstanceUID())) {
-                ArrayList<String> seriesMap = new ArrayList<String>();
-                seriesMap.add(inst.getSeriesInstanceUID());
-                studyMap.put(inst.getStudyInstanceUID(), seriesMap);
-            }
-            else {
-                ArrayList<String> seriesMap = studyMap.get(inst.getStudyInstanceUID());
-                if(!seriesMap.contains(inst.getSeriesInstanceUID())) {
-                    seriesMap.add(inst.getSeriesInstanceUID());
-                    studyMap.put(inst.getStudyInstanceUID(), seriesMap);
-                }
-            }
-        }
-        return studyMap;
-    }
+//    private HashMap<String, ArrayList<String>> findReferencedStudiesInQCEvent(QCEvent event) {
+//        HashMap<String, ArrayList<String>> studyMap = new HashMap<String, ArrayList<String>>();
+//        for(QCEventInstance inst : getAggregatedQCInstances(event)) {
+//            if(!studyMap.containsKey(inst.getStudyInstanceUID())) {
+//                ArrayList<String> seriesMap = new ArrayList<String>();
+//                seriesMap.add(inst.getSeriesInstanceUID());
+//                studyMap.put(inst.getStudyInstanceUID(), seriesMap);
+//            }
+//            else {
+//                ArrayList<String> seriesMap = studyMap.get(inst.getStudyInstanceUID());
+//                if(!seriesMap.contains(inst.getSeriesInstanceUID())) {
+//                    seriesMap.add(inst.getSeriesInstanceUID());
+//                    studyMap.put(inst.getStudyInstanceUID(), seriesMap);
+//                }
+//            }
+//        }
+//        return studyMap;
+//    }
 
-    private ArrayList<QCEventInstance> getAggregatedQCInstances(QCEvent event) {
-        
-        ArrayList<QCEventInstance> aggregatedEventInstances = (ArrayList<QCEventInstance>) event
-                .getSource();
-        if (event.getTarget() != null)
-            aggregatedEventInstances.addAll(event.getTarget());
-        
-        return aggregatedEventInstances;
-    }
+//    private ArrayList<QCEventInstance> getAggregatedQCInstances(QCEvent event) {
+//        
+//        ArrayList<QCEventInstance> aggregatedEventInstances = (ArrayList<QCEventInstance>) event
+//                .getSource();
+//        if (event.getTarget() != null)
+//            aggregatedEventInstances.addAll(event.getTarget());
+//        
+//        return aggregatedEventInstances;
+//    }
 
     private Study findStudyByUID(String studyUID) {
         String queryStr = "SELECT s FROM Study s JOIN FETCH s.series se WHERE s.studyInstanceUID = ?1";

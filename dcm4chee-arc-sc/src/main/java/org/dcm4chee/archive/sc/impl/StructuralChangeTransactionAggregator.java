@@ -50,6 +50,7 @@ import javax.transaction.TransactionManager;
 import javax.transaction.TransactionSynchronizationRegistry;
 
 import org.dcm4chee.archive.sc.StructuralChangeContext;
+import org.dcm4chee.archive.sc.StructuralChangeRejectedException;
 
 /**
  * Aggregates structural changes that happen within a transaction.
@@ -113,7 +114,8 @@ public class StructuralChangeTransactionAggregator {
             StructuralChangeContainerImpl changeContainer = (StructuralChangeContainerImpl)tsRegistry.getResource(CHANGE_CONTAINER_TX_RESOURCE);
             if (changeContainer != null) {
                 if (!beforeCommitExecutor.executeBeforCommitStructuralChangeHooks(changeContainer)) {
-                    markTransactionAsRollback(getTransaction());
+                    // let transaction fail
+                    throw new StructuralChangeRejectedException();
                 }
             }
         }
@@ -121,22 +123,6 @@ public class StructuralChangeTransactionAggregator {
         @Override
         public void afterCompletion(int status) {
             // nop
-        }
-        
-        private Transaction getTransaction() {
-            try {
-                return tmManager.getTransaction();
-            } catch (SystemException e) {
-                throw new RuntimeException("Error while accessing transaction", e);
-            }
-        }
-        
-        private void markTransactionAsRollback(Transaction tx) {
-            try {
-                tx.setRollbackOnly();
-            } catch (Exception e) {
-                throw new RuntimeException("Error while flagging transaction", e);
-            }
         }
        
     }

@@ -81,6 +81,13 @@
           "hookClassName": "org.dcm4chee.archive.mima.impl.MIMASupplementMPPSHook"
         }
       ]
+    },
+    "org.dcm4chee.archive.sc.StructuralChangeTransactionHook": {
+      "hookImplementations": [
+        {
+          "hookClassName": "org.dcm4chee.archive.qc.impl.QCPostProcessor"
+        }
+      ]
     }
   }
 }

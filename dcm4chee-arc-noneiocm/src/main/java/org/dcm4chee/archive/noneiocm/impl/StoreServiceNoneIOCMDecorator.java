@@ -53,6 +53,7 @@ import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
 import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService.NoneIOCMChangeType;
 import org.dcm4chee.archive.qc.QCBean;
+import org.dcm4chee.archive.qc.StructuralChangeService;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
@@ -76,7 +77,7 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
     private NoneIOCMChangeRequestorService noneIocmService;
 
     @Inject
-    private QCBean qcBean;
+    private StructuralChangeService scService;
     
     @Override
     public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
@@ -85,7 +86,7 @@ public class StoreServiceNoneIOCMDecorator extends DelegatingStoreService {
     		String origSopIUID = attrs.getString(Tag.SOPInstanceUID);
     		QCInstanceHistory h = noneIocmService.getLastQCInstanceHistory(origSopIUID);
     		if (h != null) {
-    			Collection<Instance> instances = qcBean.locateInstances(origSopIUID);
+    			Collection<Instance> instances = scService.locateInstances(origSopIUID);
     			if (instances.size() > 0) {
     				String sourceAET = instances.iterator().next().getSeries().getSourceAET();
     				if (noneIocmService.isNoneIOCMChangeRequest(context.getStoreSession().getRemoteAET(), sourceAET)) {

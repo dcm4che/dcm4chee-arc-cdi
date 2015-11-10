@@ -51,6 +51,16 @@ public interface QCRetrieveBean {
     public Collection<QCInstanceHistory> getReferencedHistory(CStoreSCUContext ctx,
             Collection<String> referencedStudyInstanceUIDs);
 
+//    /**
+//     * Re-Calculate Query Attributes
+//     * Used by the QCPostProcessor to recalculate query 
+//     * attributes for study and series.
+//     * @param event 
+//     * 
+//     * @return void
+//     */
+//    public void recalculateQueryAttributes(QCEvent event);
+    
     /**
      * Re-Calculate Query Attributes
      * Used by the QCPostProcessor to recalculate query 
@@ -59,7 +69,5 @@ public interface QCRetrieveBean {
      * 
      * @return void
      */
-    public void recalculateQueryAttributes(QCEvent event);
-    
     public void recalculateQueryAttributes(StructuralChangeContainer changeContainer);
 }

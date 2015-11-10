@@ -473,7 +473,7 @@ public class QCBeanImpl implements QCBean {
             String oldInstanceUID = instance.getSopInstanceUID();
             String oldSeriesInstanceUID = instance.getSeries().getSeriesInstanceUID();
             
-            if(!oldToNewSeries.keySet().contains(oldSeriesInstanceUID)) {
+            if(!oldToNewSeries.containsKey(oldSeriesInstanceUID)) {
                 Series series = instance.getSeries();
                 newSeries= createSeries(series, targetStudy, targetSeriesAttrs);
                 QCSeriesHistory seriesHistory = createQCSeriesHistory(oldSeriesInstanceUID,
@@ -504,7 +504,7 @@ public class QCBeanImpl implements QCBean {
         for(Instance instance: toClone) {
             String oldInstanceUID = instance.getSopInstanceUID();
             String oldSeriesInstanceUID = instance.getSeries().getSeriesInstanceUID();
-            if(!oldToNewSeries.keySet().contains(oldSeriesInstanceUID)) {
+            if(!oldToNewSeries.containsKey(oldSeriesInstanceUID)) {
                 Series series = instance.getSeries();
                 newSeries= createSeries(series, targetStudy, targetSeriesAttrs);
                 QCSeriesHistory seriesHistory = createQCSeriesHistory(oldSeriesInstanceUID,
@@ -525,8 +525,7 @@ public class QCBeanImpl implements QCBean {
                     newSeriesInstanceUID, oldInstanceUID,
                     newInstanceUID, newInstanceUID, true);
             
-            instanceHistory.setSeries(oldToNewSeries.get(instance.getSeries()
-                    .getSeriesInstanceUID()).getSeriesHistory());
+            instanceHistory.setSeries(oldToNewSeries.get(oldSeriesInstanceUID).getSeriesHistory());
             instancesHistory.add(instanceHistory);
             clonedTargetUIDs.add(new QCEventInstance(newInstanceUID, newSeriesInstanceUID, targetStudy.getStudyInstanceUID()));
             clonedSourceUIDs.add(new QCEventInstance(oldInstanceUID, oldSeriesInstanceUID, sourceStudy.getStudyInstanceUID()));
@@ -542,7 +541,7 @@ public class QCBeanImpl implements QCBean {
         recordHistoryEntry(instancesHistory);
         Instance rejNote = createAndStoreRejectionNote(
                 codeService.findOrCreate(new Code(qcRejectionCode)), toMove);
-        QCEvent segmentEvent = new QCEvent(QCOperation.SEGMENT,null,null,movedSourceUIDs,movedTargetUIDs);
+        QCEvent segmentEvent = new QCEvent(QCOperation.SEGMENT, null, null, movedSourceUIDs, movedTargetUIDs);
         segmentEvent.addRejectionNote(rejNote);
         changeRequester.scheduleChangeRequest(movedSourceUIDs, movedTargetUIDs, rejNote);
         internalNotification.select(new ServiceQualifier(ServiceType.QCDURINGTRANSACTION)).fire(segmentEvent);
@@ -660,7 +659,7 @@ public class QCBeanImpl implements QCBean {
 
     @Override
     public boolean canApplyQC(Instance instance) {
-        return instance.getRejectionNoteCode()!=null? false : true;
+        return instance.getRejectionNoteCode() == null;
     }
 
     @Override

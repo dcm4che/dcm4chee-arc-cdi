@@ -53,8 +53,8 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
+import org.dcm4chee.archive.qc.StructuralChangeService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
 import org.dcm4chee.archive.store.scu.decorators.DelegatingCStoreSCUService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
@@ -79,16 +79,8 @@ public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
     private QCRetrieveBean qcRetrieveManager;
 
     @Inject
-    private QCBean qcManager;
+    private StructuralChangeService scService;
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.dcm4chee.archive.retrieve.RetrieveService#coerceRetrievedObject(org
-     * .dcm4chee.archive.retrieve.RetrieveContext, java.lang.String,
-     * org.dcm4che3.data.Attributes)
-     */
     @Override
     public void coerceAttributes(Attributes attrs, CStoreSCUContext context)
             throws DicomServiceException {
@@ -101,7 +93,7 @@ public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
         case DEACTIVATE:
             break;
         case PATIENT:
-            Patient patient = qcManager.findPatient(attrs);
+            Patient patient = scService.findPatient(attrs);
             requiresUpdate = qcRetrieveManager.requiresReferenceUpdate(null,
                     patient);
             LOG.debug("Instance Retrieved Requires Update : {}", requiresUpdate);

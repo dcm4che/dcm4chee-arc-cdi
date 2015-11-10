@@ -57,8 +57,9 @@ import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.qc.PatientCommands;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
+import org.dcm4chee.archive.qc.QCOperationContext;
 import org.dcm4chee.archive.qc.QCOperationNotPermittedException;
-import org.dcm4chee.archive.sc.StructuralChangeContext;
+import org.dcm4chee.archive.qc.StructuralChangeService;
 import org.dcm4chee.archive.sc.impl.StructuralChangeTransactionAggregator;
 
 /**
@@ -66,133 +67,140 @@ import org.dcm4chee.archive.sc.impl.StructuralChangeTransactionAggregator;
  *
  */
 @Stateless
-public class SCAwareQCBeanImpl {
+public class StructuralChangeServiceImpl implements StructuralChangeService {
     @Inject
     private QCBean qcBean;
     
     @Inject
     private StructuralChangeTransactionAggregator structuralChangeAggregator;
    
-    public QCEvent mergeStudies(Enum<?> structuralChangeType, String[] sourceStudyUids, String targetStudyUID,
+    @Override
+    public QCOperationContext mergeStudies(Enum<?> structuralChangeType, String[] sourceStudyUids, String targetStudyUID,
             Attributes targetStudyattributes, Attributes targetSeriesattributes,
             Code qcRejectionCode) throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.mergeStudies(sourceStudyUids, targetStudyUID, targetStudyattributes, targetSeriesattributes, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
-    public QCEvent merge(Enum<?> structuralChangeType, String sourceStudyUid, String targetStudyUid,
+    @Override
+    public QCOperationContext merge(Enum<?> structuralChangeType, String sourceStudyUid, String targetStudyUid,
             Attributes targetStudyattributes, Attributes targetSeriesattributes,
             Code qcRejectionCode) throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.merge(sourceStudyUid, targetStudyUid, targetStudyattributes, targetSeriesattributes, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
-    public QCEvent split(Enum<?> structuralChangeType, Collection<String> toMove, IDWithIssuer pid, String targetStudyUID,
+    @Override
+    public QCOperationContext split(Enum<?> structuralChangeType, Collection<String> toMove, IDWithIssuer pid, String targetStudyUID,
             Attributes createdStudyattributes, Attributes targetSeriesattributes,
             Code qcRejectionCode) throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.split(toMove, pid, targetStudyUID, createdStudyattributes, targetSeriesattributes, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
-    public QCEvent segment(Enum<?> structuralChangeType, Collection<String> toMove, Collection<String> toClone, IDWithIssuer pid,
+    @Override
+    public QCOperationContext segment(Enum<?> structuralChangeType, Collection<String> toMove, Collection<String> toClone, IDWithIssuer pid,
             String targetStudyUID, Attributes targetStudyattributes,
             Attributes targetSeriesattributes, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.segment(toMove, toClone, pid, targetStudyUID, targetStudyattributes, targetSeriesattributes, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
     
+    @Override
     public boolean canApplyQC(Instance sopInstanceUID) {
         return qcBean.canApplyQC(sopInstanceUID);
     }
 
-    public QCEvent updateDicomObject(Enum<?> structuralChangeType, ArchiveDeviceExtension arcDevExt, QCUpdateScope scope,
+    @Override
+    public QCOperationContext updateDicomObject(Enum<?> structuralChangeType, ArchiveDeviceExtension arcDevExt, QCUpdateScope scope,
             Attributes attributes) throws QCOperationNotPermittedException, EntityNotFoundException {
         QCEvent qcEvent = qcBean.updateDicomObject(arcDevExt, scope, attributes);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
+    @Override
     public boolean patientOperation(Attributes sourcePatientAttributes,
             Attributes targetPatientAttributes, ArchiveAEExtension arcAEExt, PatientCommands command)
             throws QCOperationNotPermittedException {
-        throw new IllegalStateException("Method not implemented");
+        return qcBean.patientOperation(sourcePatientAttributes, targetPatientAttributes, arcAEExt, command);
     }
 
-    public Collection<Instance> locateInstances(String... strings) {
-        throw new IllegalStateException("Method not implemented");
+    @Override
+    public Collection<Instance> locateInstances(String... sopInstanceUIDs) {
+        return qcBean.locateInstances(sopInstanceUIDs);
     }
 
-    public QCEvent deletePatient(Enum<?> structuralChangeType, IDWithIssuer pid, Code qcRejectionCode)
+    @Override
+    public QCOperationContext deletePatient(Enum<?> structuralChangeType, IDWithIssuer pid, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.deletePatient(pid, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
-    public QCEvent deleteStudy(Enum<?> structuralChangeType, String studyInstanceUID, Code qcRejectionCode)
+    @Override
+    public QCOperationContext deleteStudy(Enum<?> structuralChangeType, String studyInstanceUID, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.deleteStudy(studyInstanceUID, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
-    public QCEvent deleteSeries(Enum<?> structuralChangeType, String seriesInstanceUID, Code qcRejectionCode)
+    @Override
+    public QCOperationContext deleteSeries(Enum<?> structuralChangeType, String seriesInstanceUID, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.deleteSeries(seriesInstanceUID, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
-    public QCEvent deleteInstance(Enum<?> structuralChangeType, String sopInstanceUID, Code qcRejectionCode)
+    @Override
+    public QCOperationContext deleteInstance(Enum<?> structuralChangeType, String sopInstanceUID, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.deleteInstance(sopInstanceUID, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
+    @Override
     public boolean deletePatientIfEmpty(IDWithIssuer pid) {
-        throw new IllegalStateException("Method not implemented");
+        return qcBean.deletePatientIfEmpty(pid);
     }
     
+    @Override
     public boolean deleteStudyIfEmpty(String studyInstanceUID) {
-        throw new IllegalStateException("Method not implemented");
+        return qcBean.deleteStudyIfEmpty(studyInstanceUID);
     }
 
+    @Override
     public boolean deleteSeriesIfEmpty(String seriesInstanceUID, String studyInstanceUID) {
-        throw new IllegalStateException("Method not implemented");
+        return qcBean.deleteSeriesIfEmpty(seriesInstanceUID, studyInstanceUID);
     }
 
-    public QCEvent reject(Enum<?> structuralChangeType, String[] sopInstanceUIDs, Code qcRejectionCode)
+    @Override
+    public QCOperationContext reject(Enum<?> structuralChangeType, String[] sopInstanceUIDs, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.reject(sopInstanceUIDs, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
-    public QCEvent restore(Enum<?> structuralChangeType, String[] sopInstanceUIDs) throws QCOperationNotPermittedException {
+    @Override
+    public QCOperationContext restore(Enum<?> structuralChangeType, String[] sopInstanceUIDs) throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.restore(sopInstanceUIDs);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
+    @Override
     public Patient findPatient(Attributes attrs) {
-        throw new IllegalStateException("Method not implemented");
+        return qcBean.findPatient(attrs);
     }
 
-    public QCEvent replaced(Enum<?> structuralChangeType, Map<String, String> oldToNewIUIDs, Code qcRejectionCode)
+    @Override
+    public QCOperationContext replaced(Enum<?> structuralChangeType, Map<String, String> oldToNewIUIDs, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.replaced(oldToNewIUIDs, qcRejectionCode);
-        aggregateStructuralChange(structuralChangeType, qcEvent);
-        return qcEvent;
+        return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
     
-    private StructuralChangeContext aggregateStructuralChange(Enum<?> structuralChangeType, QCEvent qcEvent) {
-        StructuralChangeContext changeContext = QCContextImpl.createInstance(structuralChangeType, qcEvent);
+    private QCContextImpl aggregateStructuralChange(Enum<?> structuralChangeType, QCEvent qcEvent) {
+        QCContextImpl changeContext = QCContextImpl.createInstance(structuralChangeType, qcEvent);
         structuralChangeAggregator.aggregate(changeContext);
         return changeContext;
     }

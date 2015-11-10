@@ -43,6 +43,7 @@ import java.util.List;
 import javax.enterprise.event.Observes;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCInstanceHistory;
 import org.dcm4chee.archive.store.StoreContext;
@@ -82,5 +83,7 @@ public interface NoneIOCMChangeRequestorService {
     void hideOrUnhideInstance(Instance instance, org.dcm4che3.data.Code rejNoteCode);
     
 	QCInstanceHistory getLastQCInstanceHistory(String sopIUID);
+	
+	void processNonIOCMRequest(String processStudyIUID,  List<ActiveProcessing> nonIocmProcessings);
 
 }
