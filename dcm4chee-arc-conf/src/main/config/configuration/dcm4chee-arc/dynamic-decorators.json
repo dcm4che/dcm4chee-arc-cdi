@@ -70,5 +70,17 @@
         }
       ]
     }
+  },
+  "hooks": {
+    "org.dcm4chee.archive.mpps.MPPSHook": {
+      "hookImplementations": [
+        {
+          "hookClassName": "org.dcm4chee.archive.mpps.MPPSHook"
+        },
+        {
+          "hookClassName": "org.dcm4chee.archive.mima.impl.MIMASupplementMPPSHook"
+        }
+      ]
+    }
   }
 }
