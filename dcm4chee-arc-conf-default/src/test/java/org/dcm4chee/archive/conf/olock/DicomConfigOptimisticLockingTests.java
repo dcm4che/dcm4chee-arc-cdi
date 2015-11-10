@@ -6,7 +6,6 @@ import org.dcm4che3.conf.core.api.OptimisticLockException;
 import org.dcm4che3.conf.core.normalization.DefaultsAndNullFilterDecorator;
 import org.dcm4che3.conf.core.olock.HashBasedOptimisticLockingConfiguration;
 import org.dcm4che3.conf.core.storage.InMemoryConfiguration;
-import org.dcm4che3.conf.core.storage.SingleJsonFileConfigurationStorage;
 import org.dcm4che3.conf.core.util.Extensions;
 import org.dcm4che3.conf.dicom.CommonDicomConfiguration;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
@@ -61,7 +60,7 @@ public class DicomConfigOptimisticLockingTests {
 
         storage = new HashBasedOptimisticLockingConfiguration(storage, allExtensionClasses, storage);
 
-        storage = new DefaultsAndNullFilterDecorator(storage, allExtensionClasses);
+        storage = new DefaultsAndNullFilterDecorator(storage, allExtensionClasses, CommonDicomConfiguration.createDefaultDicomVitalizer());
 
         dicomConfig = new CommonDicomConfigurationWithHL7(
                 storage,
