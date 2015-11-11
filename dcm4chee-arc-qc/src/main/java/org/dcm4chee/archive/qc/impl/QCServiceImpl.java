@@ -40,7 +40,6 @@
 package org.dcm4chee.archive.qc.impl;
 
 import java.util.Collection;
-import java.util.Map;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -131,12 +130,6 @@ public class QCServiceImpl implements QCService {
     public QCOperationContext restore(String[] sopInstanceUIDs)
             throws QCOperationNotPermittedException {
         return scService.restore(STRUCTURAL_CHANGE.QC, sopInstanceUIDs);
-    }
-
-    @Override
-    public QCOperationContext replaced(Map<String, String> oldToNewIUIDs, Code qcRejectionCode)
-            throws QCOperationNotPermittedException {
-        return scService.replaced(STRUCTURAL_CHANGE.QC, oldToNewIUIDs, qcRejectionCode);
     }
 
 }

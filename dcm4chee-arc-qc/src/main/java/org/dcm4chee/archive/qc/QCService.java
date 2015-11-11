@@ -40,7 +40,6 @@
 package org.dcm4chee.archive.qc;
 
 import java.util.Collection;
-import java.util.Map;
 
 import javax.persistence.EntityNotFoundException;
 
@@ -213,16 +212,5 @@ public interface QCService {
      * @throws QCOperationNotPermittedException
      */
     QCOperationContext restore(String[] sopInstanceUIDs) throws QCOperationNotPermittedException;
-
-    /**
-     * Perform additional QC and IOCM operation for the replacement done for an NoneIOCM Instance Update.
-     * 
-     * @param oldIUID
-     * @param newIUID
-     * @param qcRejectionCode
-     * @return Returns the context of the operation performed
-     * @throws QCOperationNotPermittedException
-     */
-    QCOperationContext replaced(Map<String, String> oldToNewIUIDs, Code qcRejectionCode) throws QCOperationNotPermittedException;
     
 }

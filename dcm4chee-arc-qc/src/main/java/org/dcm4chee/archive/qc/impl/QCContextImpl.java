@@ -50,7 +50,6 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.qc.QCEvent;
-import org.dcm4chee.archive.qc.QCEvent.QCOperation;
 import org.dcm4chee.archive.qc.QCOperationContext;
 import org.dcm4chee.archive.qc.QC_OPERATION;
 import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
@@ -72,7 +71,7 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
         QC_OPERATION qcOperation = QC_OPERATION.valueOf(qcEvent.getOperation().toString());
         
         QCContextImpl qcCtx;
-        if(QCOperation.UPDATE.equals(qcOperation)) {
+        if(QC_OPERATION.UPDATE.equals(qcOperation)) {
             QCUpdateScope updateScope = QCUpdateScope.valueOf(qcEvent.getUpdateScope());
             qcCtx = new QCContextImpl(structuralChangeType, STRUCTURAL_CHANGE.QC, qcOperation, updateScope);
         } else {
