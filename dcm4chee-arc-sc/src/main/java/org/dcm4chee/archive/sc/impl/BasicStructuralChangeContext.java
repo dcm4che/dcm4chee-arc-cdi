@@ -41,7 +41,9 @@ package org.dcm4chee.archive.sc.impl;
 
 import static java.lang.String.format;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -54,7 +56,7 @@ import org.dcm4chee.archive.sc.StructuralChangeContext;
 public class BasicStructuralChangeContext implements StructuralChangeContext {
     private final Set<String> affectedStudyUIDs = new HashSet<>();
     private final Set<String> affectedSeriesUIDs = new HashSet<>();
-    private final Set<Instance> affectedInstances = new HashSet<>();
+    private final Set<InstanceIdentifier> affectedInstances = new HashSet<>();
     
     protected final Enum<?>[] changeTypes;
     private final long timestamp;
@@ -116,28 +118,39 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
     }
     
     @Override
-    public Set<Instance> getAffectedInstances() {
+    public Set<InstanceIdentifier> getAffectedInstances() {
         return affectedInstances;
     }
     
-    public void addAffectedInstance(Instance affectedInstance) {
+    public void addAffectedInstance(InstanceIdentifier affectedInstance) {
         this.affectedStudyUIDs.add(affectedInstance.getStudyInstanceUID());
         this.affectedSeriesUIDs.add(affectedInstance.getSeriesInstanceUID());
         this.affectedInstances.add(affectedInstance);
     }
     
-    public void addAffectedInstances(Collection<Instance> affectedInstances) {
-        for(Instance affectedInstance : affectedInstances) {
+    public void addAffectedInstances(Collection<InstanceIdentifier> affectedInstances) {
+        for(InstanceIdentifier affectedInstance : affectedInstances) {
             addAffectedInstance(affectedInstance);
         }
     }
     
-    public static class InstanceImpl implements Instance {
+    @Override
+    public String toString() {
+        String str = "BasicStructuralChangeContext[ operation: "+ Arrays.toString(getChangeTypeHierarchy()) 
+                + "\n timestamp: " + new Date(getTimestamp()).toString() 
+                + "\n affectedStudies: " + getAffectedStudyUIDs()
+                + "\n affectedSeries: " + getAffectedSeriesUIDs()
+                + "\n #affectedInstances: " + getAffectedInstances().size()
+                + "]";
+                return str;
+    }
+    
+    public static class InstanceIdentifierImpl implements InstanceIdentifier {
         private final String studyInstanceUID;
         private final String seriesInstanceUID;
         private final String sopInstanceUID;
         
-        public InstanceImpl(String studyInstanceUID, String seriesInstanceUID, String sopInstanceUID) {
+        public InstanceIdentifierImpl(String studyInstanceUID, String seriesInstanceUID, String sopInstanceUID) {
             this.studyInstanceUID = studyInstanceUID;
             this.seriesInstanceUID = seriesInstanceUID;
             this.sopInstanceUID = sopInstanceUID;
@@ -170,11 +183,11 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
                 return true;
             }
             
-            if(other == null || !(other instanceof Instance)) {
+            if(other == null || !(other instanceof InstanceIdentifier)) {
                 return false;
             }
             
-            Instance that = (Instance)other;
+            InstanceIdentifier that = (InstanceIdentifier)other;
             return studyInstanceUID.equals(that.getStudyInstanceUID()) 
                     && seriesInstanceUID.equals(that.getSeriesInstanceUID())
                     && sopInstanceUID.equals(that.getSopInstanceUID());

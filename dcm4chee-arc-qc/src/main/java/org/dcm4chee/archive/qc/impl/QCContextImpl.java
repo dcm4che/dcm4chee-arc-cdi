@@ -60,8 +60,8 @@ import org.dcm4chee.archive.sc.impl.BasicStructuralChangeContext;
  *
  */
 public class QCContextImpl extends BasicStructuralChangeContext implements QCOperationContext {
-    private final Set<Instance> sourceInstances = new HashSet<>();
-    private final Set<Instance> targetInstances = new HashSet<>();
+    private final Set<InstanceIdentifier> sourceInstances = new HashSet<>();
+    private final Set<InstanceIdentifier> targetInstances = new HashSet<>();
 
     private Attributes updateAttributes;
     
@@ -81,7 +81,7 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
         Collection<QCEventInstance> sourceInstances = qcEvent.getSource();
         if(sourceInstances != null) {
             for (QCEventInstance qcInstance : sourceInstances) {
-                Instance instance = new InstanceImpl(qcInstance.getStudyInstanceUID(),
+                InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
                         qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
                 qcCtx.addAffectedInstance(instance);
                 qcCtx.sourceInstances.add(instance);
@@ -91,7 +91,7 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
         Collection<QCEventInstance> targetInstances = qcEvent.getTarget();
         if (targetInstances != null) {
             for (QCEventInstance qcInstance : targetInstances) {
-                Instance instance = new InstanceImpl(qcInstance.getStudyInstanceUID(),
+                InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
                         qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
                 qcCtx.addAffectedInstance(instance);
                 qcCtx.targetInstances.add(instance);
@@ -113,12 +113,12 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
     }
     
     @Override
-    public Set<Instance> getSourceInstances() {
+    public Set<InstanceIdentifier> getSourceInstances() {
         return sourceInstances;
     }
     
     @Override
-    public Set<Instance> getTargetInstances() {
+    public Set<InstanceIdentifier> getTargetInstances() {
         return targetInstances;
     }
     
@@ -143,10 +143,10 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
                 return str;
     }
 
-    private static String toString(Collection<Instance> insts) {
+    private static String toString(Collection<InstanceIdentifier> insts) {
         StringBuffer buf = new StringBuffer();
         buf.append("[");
-        for (Instance inst : insts) {
+        for (InstanceIdentifier inst : insts) {
             buf.append(inst.toString() + "\n");
         }
         buf.append("]");

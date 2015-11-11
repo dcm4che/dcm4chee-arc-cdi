@@ -75,9 +75,9 @@ public interface StructuralChangeContext {
     
     Set<String> getAffectedSeriesUIDs();
     
-    Set<Instance> getAffectedInstances();
+    Set<InstanceIdentifier> getAffectedInstances();
     
-    interface Instance {
+    interface InstanceIdentifier {
         
         String getStudyInstanceUID();
         

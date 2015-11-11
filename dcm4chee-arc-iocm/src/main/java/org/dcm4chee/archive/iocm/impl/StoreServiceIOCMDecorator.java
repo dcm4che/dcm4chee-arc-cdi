@@ -224,7 +224,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             String sopInstanceUID = rejectedInstance.getSopInstanceUID();
             String seriesInstanceUID = rejectedInstance.getSeries().getSeriesInstanceUID();
             String studyInstanceUID = rejectedInstance.getSeries().getStudy().getStudyInstanceUID();
-            changeContext.addAffectedInstance(new BasicStructuralChangeContext.InstanceImpl(studyInstanceUID, seriesInstanceUID, sopInstanceUID));
+            changeContext.addAffectedInstance(new BasicStructuralChangeContext.InstanceIdentifierImpl(studyInstanceUID, seriesInstanceUID, sopInstanceUID));
         }
         stucturalChangeAggregator.aggregate(changeContext);
     }

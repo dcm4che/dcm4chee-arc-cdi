@@ -68,6 +68,7 @@ import org.dcm4chee.archive.qc.QCOperationContext;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
 import org.dcm4chee.archive.qc.QC_OPERATION;
 import org.dcm4chee.archive.query.QueryService;
+import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
 import org.dcm4chee.archive.sc.StructuralChangeContainer;
 import org.dcm4chee.archive.sc.StructuralChangeContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
@@ -283,6 +284,10 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
         param.setQueryRetrieveView(view);
         
         for(StructuralChangeContext changeCtx : changeContainer.getContexts()) {
+            if (!changeCtx.hasChangeType(STRUCTURAL_CHANGE.QC)) {
+                continue;
+            }
+            
             Enum<?>[] qcUpdateChangeTypes = changeCtx.getSubChangeTypeHierarchy(QC_OPERATION.UPDATE);
             if(qcUpdateChangeTypes != null) {
                 QCOperationContext qcCtx = (QCOperationContext)changeCtx;

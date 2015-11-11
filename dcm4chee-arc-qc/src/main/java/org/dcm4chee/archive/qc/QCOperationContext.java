@@ -51,9 +51,9 @@ import org.dcm4chee.archive.sc.StructuralChangeContext;
  */
 public interface QCOperationContext extends StructuralChangeContext {
     
-    Set<Instance> getSourceInstances();
+    Set<InstanceIdentifier> getSourceInstances();
         
-    Set<Instance> getTargetInstances();
+    Set<InstanceIdentifier> getTargetInstances();
     
     Set<org.dcm4chee.archive.entity.Instance> getRejectionNotes();
        
