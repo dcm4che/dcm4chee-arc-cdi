@@ -324,20 +324,14 @@
       </build>
     </profile>
     <profile>
-      <id>monitoring</id>
-      <activation>
-        <property>
-          <name>monitoring</name>
-          <value>true</value>
-        </property>
-      </activation>        
+      <id>jmelody</id>      
       <dependencies>
-	    <dependency>
-	      <groupId>net.bull.javamelody</groupId>
-	      <artifactId>javamelody-core</artifactId>
-	      <version>1.55.0</version>
-	    </dependency>    
-	  </dependencies>      
+        <dependency>
+          <groupId>net.bull.javamelody</groupId>
+          <artifactId>javamelody-core</artifactId>
+          <version>1.55.0</version>
+        </dependency>    
+      </dependencies>      
     </profile>    
   </profiles>	  
   <build>

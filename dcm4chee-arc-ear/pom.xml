@@ -351,20 +351,14 @@
   </dependencies>
   <profiles>
     <profile>
-      <id>monitoring</id>
-      <activation>
-        <property>
-          <name>monitoring</name>
-          <value>true</value>
-        </property>
-      </activation>        
+      <id>jmelody</id>
       <dependencies>
-	    <dependency>
-	      <groupId>net.bull.javamelody</groupId>
-	      <artifactId>javamelody-core</artifactId>
-	      <version>1.55.0</version>
-	    </dependency>    
-	  </dependencies>      
+        <dependency>
+          <groupId>net.bull.javamelody</groupId>
+          <artifactId>javamelody-core</artifactId>
+          <version>1.55.0</version>
+        </dependency>    
+      </dependencies>      
     </profile>
     <profile>
       <id>csp</id>
@@ -374,8 +368,7 @@
           <artifactId>dcm4chee-arc-conf-default</artifactId>
           <version>${project.version}</version>
         </dependency>
-
-       </dependencies>
+      </dependencies>
     </profile>
     <profile>
       <id>conf-db</id>
