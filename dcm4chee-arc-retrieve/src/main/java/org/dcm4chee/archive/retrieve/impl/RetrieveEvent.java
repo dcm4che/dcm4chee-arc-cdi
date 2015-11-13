@@ -54,14 +54,7 @@ public class RetrieveEvent {
     private Device device;
     List<ArchiveInstanceLocator> instances;
 
-    
-    /**
-     * @param source
-     * @param destination
-     * @param remoteAET
-     * @param matches
-     */
-    public RetrieveEvent(Participant requestor, Participant source, 
+    public RetrieveEvent(Participant requestor, Participant source,
             Participant destination,
             Device device,
            List<ArchiveInstanceLocator> matches) {

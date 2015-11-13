@@ -37,9 +37,42 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.wado;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
+
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
+import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.Fragments;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -70,37 +103,6 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.jboss.resteasy.plugins.providers.multipart.OutputPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.core.UriInfo;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Service implementing DICOM Supplement 161: WADO by RESTful Services
@@ -224,8 +226,9 @@ public class WadoRS extends Wado {
                     if (relatedType
                             .isCompatible(MediaTypes.APPLICATION_DICOM_TYPE)) {
                         acceptDicom = true;
-                        acceptedTransferSyntaxes.add(mediaType
-                                .getParameters().get("transfer-syntax"));
+                        String acceptedTsUID = mediaType.getParameters().get("transfer-syntax");
+                        // note: acceptedTsUID could be null, then it means that any transfer syntax is accepted
+                        acceptedTransferSyntaxes.add(acceptedTsUID);
                     } else if (relatedType
                             .isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE)) {
                         acceptDicomXML = true;
@@ -246,58 +249,70 @@ public class WadoRS extends Wado {
         }
     }
 
-    private String selectDicomTransferSyntaxes(InstanceLocator ref) {
-        List<String> supportedTransferSyntaxes = acceptedTransferSyntaxes;
-        if(context.getLocalAE()!=null)
-        if (arcAE.getRetrieveSuppressionCriteria()
-                .isCheckTransferCapabilities()){
-        if(confSupportsTransferSyntax(ref)!=null)
-            return ref.tsuid;
-        else
-            return getDefaultConfiguredTransferSyntax(ref);
-        }
-        for (String ts1 : supportedTransferSyntaxes) {
-            if (ts1 == null || ts1.equals(ref.tsuid))
-                return ref.tsuid;
-        }
-        if (ImageReaderFactory.canDecompress(ref.tsuid)) {
-            if (supportedTransferSyntaxes.contains(UID.ExplicitVRLittleEndian)) {
-                return UID.ExplicitVRLittleEndian;
+    private String selectDicomTransferSyntaxes(ArchiveInstanceLocator ref, DatasetWithFMI datasetWithFMI) {
+
+        if (context.getLocalAE() != null) {
+            if (arcAE.getRetrieveSuppressionCriteria().isCheckTransferCapabilities()) {
+                if (confSupportsTransferSyntax(ref) &&
+                        !ref.getStorageSystem().getStorageSystemGroup().isPossiblyFaultyJPEGLS(datasetWithFMI))
+                    return ref.tsuid;
+                else
+                    return getDefaultConfiguredTransferSyntax(ref);
             }
-            if (supportedTransferSyntaxes.contains(UID.ImplicitVRLittleEndian)) {
+        }
+
+        // prevent that (possibly) faulty JPEG-LS data leaves the system,
+        // we only want to send it decompressed
+        if (!ref.getStorageSystem().getStorageSystemGroup().isPossiblyFaultyJPEGLS(datasetWithFMI)) {
+
+            for (String ts1 : acceptedTransferSyntaxes) {
+                if (ts1 == null || ts1.equals(ref.tsuid))
+                    return ref.tsuid;
+            }
+
+        }
+
+        if (ImageReaderFactory.canDecompress(ref.tsuid)) {
+            // note: null means any transfer syntax is accepted
+            if (acceptedTransferSyntaxes.contains(null) || acceptedTransferSyntaxes.contains(UID.ExplicitVRLittleEndian)) {
+                return UID.ExplicitVRLittleEndian;
+            } else if (acceptedTransferSyntaxes.contains(UID.ImplicitVRLittleEndian)) {
                 return UID.ImplicitVRLittleEndian;
             }
         }
+
         return null;
     }
 
-    private String confSupportsTransferSyntax(InstanceLocator ref) {
-        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                context.getLocalAE().getTransferCapabilitiesWithRole(
-                        Role.SCU));
-            for (TransferCapability supportedTC : aeTCs){
-                if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0 && 
-                        supportedTC.containsTransferSyntax(ref.tsuid)) {
-                    return ref.tsuid;
-                }
+    private boolean confSupportsTransferSyntax(InstanceLocator ref) {
+        Collection<TransferCapability> aeTCs = context.getLocalAE().getTransferCapabilitiesWithRole(Role.SCU);
+        for (TransferCapability supportedTC : aeTCs) {
+            if (ref.cuid.equals(supportedTC.getSopClass()) &&
+                    supportedTC.containsTransferSyntax(ref.tsuid)) {
+                return true;
             }
-            return null;
+        }
+        return false;
     }
 
-    private String getDefaultConfiguredTransferSyntax(InstanceLocator ref)
-    {
-        ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
-                context.getLocalAE().getTransferCapabilitiesWithRole(
-                        Role.SCU));
+    private String getDefaultConfiguredTransferSyntax(InstanceLocator ref) {
+        Collection<TransferCapability> aeTCs = context.getLocalAE().getTransferCapabilitiesWithRole(Role.SCU);
         for (TransferCapability supportedTC : aeTCs){
-            if (ref.cuid.compareTo(supportedTC.getSopClass()) == 0 ) {
-                return supportedTC.containsTransferSyntax(UID.ExplicitVRLittleEndian)?
-                        UID.ExplicitVRLittleEndian:UID.ImplicitVRLittleEndian;
+            if (ref.cuid.equals(supportedTC.getSopClass())) {
+                if (supportedTC.containsTransferSyntax(UID.ExplicitVRLittleEndian))
+                    return UID.ExplicitVRLittleEndian;
+                else
+                    return UID.ImplicitVRLittleEndian;
             }
         }
         return UID.ImplicitVRLittleEndian;
     }
-    private MediaType selectBulkdataMediaTypeForTransferSyntax(String ts) {
+
+    private MediaType selectBulkdataMediaTypeForTransferSyntax(DatasetWithFMI dataset, String ts) {
+
+        // TODO check for faulty JPEG-LS data
+        //boolean rejectCompressed = ref.getStorageSystem().getStorageSystemGroup().isPossiblyFaultyJPEGLS(datasetWithFMI);
+
         MediaType requiredMediaType = null;
         try {
             requiredMediaType = MediaTypes.forTransferSyntax(ts);
@@ -322,7 +337,7 @@ public class WadoRS extends Wado {
         if (acceptOctetStream && ImageReaderFactory.canDecompress(ts)) {
             return MediaType.APPLICATION_OCTET_STREAM_TYPE;
         }
-        return requiredMediaType;
+        return null;
     }
 
     @GET
@@ -404,6 +419,7 @@ public class WadoRS extends Wado {
 
         String bulkDataURI = "file://" + bulkDataPath;
 
+        // TODO ensure faulty JPEG-LS decompression
         return (length <= 0) ? retrievePixelDataFromFile(bulkDataURI)
                 : retrieveBulkData(new BulkData(bulkDataURI, offset, length,
                         false));
@@ -492,13 +508,13 @@ public class WadoRS extends Wado {
                         .get(context.getRemoteAE().getAETitle());
                 if (supressionCriteriaTemplateURI != null) {
                     List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
-                    for(ArchiveInstanceLocator ref: refs){
+                    for (ArchiveInstanceLocator ref : refs) {
                         Attributes attrs = getFileAttributes(ref);
-                    if(storescuService.applySuppressionCriteria(ref, attrs,
-                            supressionCriteriaTemplateURI, context) == null)
-                        instsfailed.add(ref);
-                    else
-                        adjustedRefs.add(ref);
+                        if (storescuService.applySuppressionCriteria(ref, attrs,
+                                supressionCriteriaTemplateURI, context) == null)
+                            instsfailed.add(ref);
+                        else
+                            adjustedRefs.add(ref);
                     }
                     refs = adjustedRefs;
                 }
@@ -506,29 +522,28 @@ public class WadoRS extends Wado {
             ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(refs);
             final MultipartRelatedOutput multiPartOutput = new MultipartRelatedOutput();
             final ZipOutput zipOutput = new ZipOutput();
-            if(!refs.isEmpty()) {
-            addDicomOrBulkDataOrZip(refs, instscompleted, instsfailed,
-                    multiPartOutput, zipOutput);
+            if (!refs.isEmpty()) {
+                addDicomOrBulkDataOrZip(refs, instscompleted, instsfailed,
+                        multiPartOutput, zipOutput);
             }
-            if(!external.isEmpty()) {
+            if (!external.isEmpty()) {
                 FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
                     @Override
                     public void onFetch(Collection<ArchiveInstanceLocator> instances,
-                            BasicCStoreSCUResp resp) {
+                                        BasicCStoreSCUResp resp) {
                         addDicomOrBulkDataOrZip((List<ArchiveInstanceLocator>) instances, instscompleted, instsfailed,
                                 multiPartOutput, zipOutput);
                     }
                 };
-                
-                    ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
-                    failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, fetchCallBack, fetchCallBack);
-                    instsfailed.addAll(failedToFetchForward);
+
+                ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
+                failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, fetchCallBack, fetchCallBack);
+                instsfailed.addAll(failedToFetchForward);
             }
-            if(!acceptDicom && !acceptBulkdata && (acceptAll || acceptZip))
-            return Response.ok().entity(zipOutput)
-                    .type(MediaTypes.APPLICATION_ZIP_TYPE).build();
-            else
-            {
+            if (!acceptDicom && !acceptBulkdata && (acceptAll || acceptZip)) {
+                return Response.ok().entity(zipOutput)
+                        .type(MediaTypes.APPLICATION_ZIP_TYPE).build();
+            } else {
                 int status = instsfailed.size() > 0 ? STATUS_PARTIAL_CONTENT : STATUS_OK;
                 return Response.status(status).entity(multiPartOutput).build();
             }
@@ -550,11 +565,10 @@ public class WadoRS extends Wado {
         if (acceptDicom || acceptBulkdata) {
             retrieveDicomOrBulkData(refs, instscompleted,
                     instsfailed, multiPartOutput);
-        }
-        else { 
+        } else {
             if (!acceptZip && !acceptAll)
-            throw new WebApplicationException(Status.NOT_ACCEPTABLE);
-        retrieveZIP(refs, instsfailed, instscompleted, zipOutput);
+                throw new WebApplicationException(Status.NOT_ACCEPTABLE);
+            retrieveZIP(refs, instsfailed, instscompleted, zipOutput);
         }
     }
 
@@ -563,18 +577,20 @@ public class WadoRS extends Wado {
             List<ArchiveInstanceLocator> instsfailed,
             MultipartRelatedOutput output) {
         if (acceptedBulkdataMediaTypes.isEmpty()) {
-
-            for (ArchiveInstanceLocator ref : refs)
+            for (ArchiveInstanceLocator ref : refs) {
                 if (!addDicomObjectTo(ref, output)) {
                     instsfailed.add((ArchiveInstanceLocator) ref);
                 } else
                     instscompleted.add((ArchiveInstanceLocator) ref);
+            }
         } else {
-            for (InstanceLocator ref : refs)
+            for (InstanceLocator ref : refs) {
                 if (addPixelDataTo(ref.uri, output) != STATUS_OK) {
                     instsfailed.add((ArchiveInstanceLocator) ref);
-                } else
+                } else {
                     instscompleted.add((ArchiveInstanceLocator) ref);
+                }
+            }
         }
 
         if (output.getParts().isEmpty())
@@ -585,12 +601,27 @@ public class WadoRS extends Wado {
             List<ArchiveInstanceLocator> instsfailed,
             List<ArchiveInstanceLocator> instscompleted, ZipOutput output) {
         for (ArchiveInstanceLocator ref : refs) {
-            try{
-            output.addEntry(new DicomObjectOutput(ref, (Attributes) ref
-                    .getObject(), ref.tsuid, context, storescuService, weightWatcher));
-            instscompleted.add(ref);
-            }
-            catch(Exception e) {
+            try {
+                LocatorDatasetReader locatorDatasetReader;
+                try {
+                    locatorDatasetReader = new LocatorDatasetReader(ref, context, storescuService).read();
+                } catch (IOException e) {
+                    throw new WebApplicationException(e);
+                }
+                ArchiveInstanceLocator selectedLocator = locatorDatasetReader.getSelectedLocator();
+                DatasetWithFMI datasetWithFMI = locatorDatasetReader.getDatasetWithFMI();
+
+                String selectedTransferSyntaxUID = selectedLocator.tsuid;
+
+                // prevent that (possibly) faulty JPEG-LS data leaves the system,
+                // we only want to send it decompressed
+                if (ref.getStorageSystem().getStorageSystemGroup().isPossiblyFaultyJPEGLS(datasetWithFMI)) {
+                    selectedTransferSyntaxUID = UID.ExplicitVRLittleEndian;
+                }
+
+                output.addEntry(new DicomObjectOutput(datasetWithFMI.getDataset(), selectedLocator.tsuid, selectedTransferSyntaxUID, weightWatcher));
+                instscompleted.add(ref);
+            } catch (Exception e) {
                 instsfailed.add(ref);
                 LOG.error(
                         "Failed to add zip Entry for instance {} - Exception {}",
@@ -685,19 +716,18 @@ public class WadoRS extends Wado {
             // prefer local copies
             if (!external.isEmpty() && refs.isEmpty()) {
                 ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
-                failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, null,null);
-                
-                if(!failedToFetchForward.isEmpty()) {
-                    for(Iterator<ArchiveInstanceLocator> iter = external.iterator(); iter.hasNext();) {
-                        if(failedToFetchForward.contains(iter.next())) {
+                failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, null, null);
+
+                if (!failedToFetchForward.isEmpty()) {
+                    for (Iterator<ArchiveInstanceLocator> iter = external.iterator(); iter.hasNext(); ) {
+                        if (failedToFetchForward.contains(iter.next())) {
                             iter.remove();
                         }
                     }
                 }
                 refs.addAll(external);
             }
-                streamingOutput = new DicomJSONOutput(aetitle, uriInfo, refs,
-                        context, storescuService);
+            streamingOutput = new DicomJSONOutput(aetitle, uriInfo, refs, context, storescuService);
         } else {
             ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(refs);
             // prefer local copies
@@ -737,69 +767,82 @@ public class WadoRS extends Wado {
 
     private boolean addDicomObjectTo(ArchiveInstanceLocator ref,
             MultipartRelatedOutput output) {
-        String tsuid = selectDicomTransferSyntaxes(ref);
-        if (tsuid == null) {
+        LocatorDatasetReader locatorDatasetReader;
+        try {
+            locatorDatasetReader = new LocatorDatasetReader(ref, context, storescuService).read();
+        } catch (IOException e) {
+            throw new WebApplicationException(e);
+        }
+        ArchiveInstanceLocator selectedLocator = locatorDatasetReader.getSelectedLocator();
+        DatasetWithFMI datasetWithFMI = locatorDatasetReader.getDatasetWithFMI();
+
+        String selectedTransferSyntaxUID = selectDicomTransferSyntaxes(ref, datasetWithFMI);
+        if (selectedTransferSyntaxUID == null) {
             return false;
         }
-        Attributes attrs = (Attributes) ref.getObject();
         addPart(output,
-                new DicomObjectOutput(ref, attrs, tsuid, context, storescuService, weightWatcher),
-                MediaType.valueOf("application/dicom;transfer-syntax=" + tsuid),
+                new DicomObjectOutput(datasetWithFMI.getDataset(), selectedLocator.tsuid, selectedTransferSyntaxUID, weightWatcher),
+                MediaType.valueOf("application/dicom;transfer-syntax=" + selectedTransferSyntaxUID),
                 null, ref.iuid);
         return true;
     }
 
     private int addPixelDataTo(String fileURI, MultipartRelatedOutput output,
             int... frameList) {
-        DicomInputStream dis = null;
         try {
             LOG.info("Add Pixel Data [file={}]",fileURI);
-            dis = new DicomInputStream(new File(new URI(fileURI)));
-            dis.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes fmi = dis.readFileMetaInformation();
-            String iuid = fmi.getString(Tag.MediaStorageSOPInstanceUID);
-            MediaType mediaType = selectBulkdataMediaTypeForTransferSyntax(dis
-                    .getTransferSyntax());
+
+            DatasetWithFMI datasetWithFMI;
+            String transferSyntaxUID;
+            try (DicomInputStream din = new DicomInputStream(new File(new URI(fileURI)))) {
+                din.setIncludeBulkData(IncludeBulkData.URI);
+                datasetWithFMI = din.readDatasetWithFMI();
+                transferSyntaxUID = din.getTransferSyntax();
+            }
+
+            // note: un-coerced SOPInstanceUID! (could be QCed, or whatever)
+            String uncoercedIuid = datasetWithFMI.getDataset().getString(Tag.SOPInstanceUID);
+
+            MediaType mediaType = selectBulkdataMediaTypeForTransferSyntax(datasetWithFMI, transferSyntaxUID);
             if (mediaType == null) {
                 LOG.info(
                         "{}: Failed to retrieve Pixel Data of Instance[uid={}]: Requested Transfer Syntax not supported",
-                        method, iuid);
+                        method, uncoercedIuid);
                 return STATUS_NOT_ACCEPTABLE;
             }
 
             if (isMultiframeMediaType(mediaType) && frameList.length > 0) {
                 LOG.info(
                         "{}: Failed to retrieve Frame Pixel Data of Instance[uid={}]: Not supported for Content-Type={}",
-                        new Object[] { method, iuid, mediaType });
+                        new Object[]{method, uncoercedIuid, mediaType});
                 return STATUS_NOT_ACCEPTABLE;
             }
 
-            Attributes ds = dis.readDataset(-1, -1);
-            Object pixeldata = ds.getValue(Tag.PixelData);
+            Object pixeldata = datasetWithFMI.getDataset().getValue(Tag.PixelData);
             if (pixeldata == null) {
                 LOG.info(
                         "{}: Failed to retrieve Pixel Data of Instance[uid={}]: Not an image",
-                        method, iuid);
+                        method, uncoercedIuid);
                 return STATUS_NOT_ACCEPTABLE;
             }
 
-            int frames = ds.getInt(Tag.NumberOfFrames, 1);
-            int[] adjustedFrameList = adjustFrameList(iuid, frameList, frames);
+            int frames = datasetWithFMI.getDataset().getInt(Tag.NumberOfFrames, 1);
+            int[] adjustedFrameList = adjustFrameList(uncoercedIuid, frameList, frames);
 
             String bulkDataURI = toBulkDataURI(fileURI);
             if (pixeldata instanceof Fragments) {
                 Fragments bulkData = (Fragments) pixeldata;
                 if (mediaType == MediaType.APPLICATION_OCTET_STREAM_TYPE) {
-                    addDecompressedPixelDataTo(ds, dis.getTransferSyntax(), adjustedFrameList, output, bulkDataURI, iuid);
+                    addDecompressedPixelDataTo(datasetWithFMI.getDataset(), transferSyntaxUID, adjustedFrameList, output, bulkDataURI, uncoercedIuid);
                 } else {
                     addCompressedPixelDataTo(bulkData, frames,
                             adjustedFrameList, output, mediaType, bulkDataURI,
-                            iuid);
+                            uncoercedIuid);
                 }
             } else {
                 BulkData bulkData = (BulkData) pixeldata;
-                addUncompressedPixelDataTo(bulkData, ds, adjustedFrameList,
-                        output, bulkDataURI, iuid);
+                addUncompressedPixelDataTo(bulkData, datasetWithFMI.getDataset(), adjustedFrameList,
+                        output, bulkDataURI, uncoercedIuid);
             }
             return adjustedFrameList.length < frameList.length ? STATUS_PARTIAL_CONTENT
                     : STATUS_OK;
@@ -809,8 +852,6 @@ public class WadoRS extends Wado {
             throw new WebApplicationException(e);
         } catch (URISyntaxException e) {
             throw new WebApplicationException(e);
-        } finally {
-            SafeClose.close(dis);
         }
     }
 

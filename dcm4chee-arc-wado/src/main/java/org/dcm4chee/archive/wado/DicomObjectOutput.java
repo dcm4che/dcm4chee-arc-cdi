@@ -37,19 +37,18 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.wado;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
+import javax.ws.rs.core.StreamingOutput;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.imageio.codec.Decompressor;
 import org.dcm4che3.imageio.codec.TransferSyntaxType;
-import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
 import org.dcm4che3.io.DicomOutputStream;
-import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.store.scu.CStoreSCUContext;
-import org.dcm4chee.archive.store.scu.CStoreSCUService;
 import org.dcm4chee.task.ImageProcessingTaskTypes;
 import org.dcm4chee.task.MemoryConsumingTask;
 import org.dcm4chee.task.TaskType;
@@ -57,20 +56,9 @@ import org.dcm4chee.task.WeightWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.core.StreamingOutput;
-import java.io.IOException;
-import java.io.OutputStream;
-
 /**
  * Callback object used by the RESTful runtime when ready
  * to write the response (the method write is invoked).
- * <p>
- * The write method reads the referenced file in the file
- * system and eventually updates it with attributes than
- * in the meanwhile may have changed.
- * <p>
- * Bulk Data is not loaded in memory, but only an URI reference
- * to it. It is read only at stream time.
  * <p>
  * If the requested Transfer Syntax UID is different to
  * the one used to store the file, the data is returned
@@ -83,49 +71,21 @@ class DicomObjectOutput implements StreamingOutput {
 
     private static final Logger LOG = LoggerFactory.getLogger(DicomObjectOutput.class);
 
-    private ArchiveInstanceLocator fileRef;
-    private final Attributes attrs;
-    private final String tsuid;
-    private CStoreSCUContext context;
-    private CStoreSCUService service;
+    private final Attributes dataset;
+    private String sourceTransferSyntaxUID;
+    private final String targetTransferSyntaxUID;
     private final WeightWatcher weightWatcher;
 
-    DicomObjectOutput(ArchiveInstanceLocator fileRef, Attributes attrs, String tsuid,
-                      CStoreSCUContext ctx, CStoreSCUService srv, WeightWatcher weightWatcher) {
-        this.fileRef = fileRef;
-        this.attrs = attrs;
-        this.tsuid = tsuid;
-        this.context = ctx;
-        this.service = srv;
+    DicomObjectOutput(Attributes dataset, String sourceTransferSyntaxUID, String targetTransferSyntaxUID, WeightWatcher weightWatcher) {
+        this.sourceTransferSyntaxUID = sourceTransferSyntaxUID;
+        this.dataset = dataset;
+        this.targetTransferSyntaxUID = targetTransferSyntaxUID;
         this.weightWatcher = weightWatcher;
     }
 
     public void write(OutputStream out) throws IOException {
-        ArchiveInstanceLocator inst = fileRef;
-        Attributes dataset = null;
-        do {
-            try {
-                dataset = readFrom(inst);
-            } catch (IOException e) {
-                LOG.info("Failed to read Data Set with iuid={} from {}@{}",
-                        inst.iuid, inst.getFilePath(), inst.getStorageSystem(), e);
-                inst = inst.getFallbackLocator();
-                if (inst == null)
-                    throw e;
-                LOG.info("Try read Data Set from alternative location");
-            }
-        } while (dataset == null);
-
-        if (context.getRemoteAE() != null) {
-            service.coerceFileBeforeMerge(inst, dataset, context);
-        }
-        dataset = Utils.mergeAndNormalize(dataset, attrs);
-        if (context.getRemoteAE() != null) {
-            service.coerceAttributes(dataset, context);
-        }
-
         try {
-            weightWatcher.execute(new WriteDicomObjectTask(dataset, inst.tsuid, tsuid, out));
+            weightWatcher.execute(new WriteDicomObjectTask(dataset, sourceTransferSyntaxUID, targetTransferSyntaxUID, out));
         } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
@@ -133,14 +93,6 @@ class DicomObjectOutput implements StreamingOutput {
                 throw (RuntimeException) e;
             else
                 throw new RuntimeException(e); // should not happen
-        }
-    }
-
-    private Attributes readFrom(ArchiveInstanceLocator inst) throws IOException {
-        try (DicomInputStream din = new DicomInputStream(service.getFile(inst)
-                .toFile())) {
-            din.setIncludeBulkData(IncludeBulkData.URI);
-            return din.readDataset(-1, -1);
         }
     }
 

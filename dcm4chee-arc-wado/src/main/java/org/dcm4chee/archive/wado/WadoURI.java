@@ -37,8 +37,45 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.wado;
 
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.enterprise.context.RequestScoped;
+import javax.enterprise.event.Event;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageInputStream;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.StreamingOutput;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
+
 import org.dcm4che3.conf.core.api.ConfigurationException;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
@@ -70,41 +107,6 @@ import org.dcm4chee.task.WeightWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
-
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.event.Event;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageInputStream;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.StreamingOutput;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Service implementing DICOM PS 3.18-2011 (WADO), URI based communication.
@@ -297,11 +299,10 @@ public class WadoURI extends Wado {
             ArchiveInstanceLocator instance = null;
             Attributes attrs = null;
             Response resp = null;
-            
+
             if (ref.get(0).getStorageSystem() != null) {
                 instance = ref.get(0);
-                attrs = (Attributes) instance.getObject();
-                resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
+                resp = retrieve(instscompleted, instsfailed, ref, instance);
             }
             //external
             else {
@@ -326,8 +327,7 @@ public class WadoURI extends Wado {
 
                 instsfailed = fetchForwardService.fetchForward(aetitle, ref, fetchCallBack, fetchCallBack);
                 instance = ref.get(0);
-                attrs = (Attributes) instance.getObject();
-                resp = retrieve(instscompleted, instsfailed, ref, instance, attrs);
+                resp = retrieve(instscompleted, instsfailed, ref, instance);
             }
            
             if (resp == null) {
@@ -348,12 +348,11 @@ public class WadoURI extends Wado {
 
     private Response retrieve(List<ArchiveInstanceLocator> instscompleted,
             List<ArchiveInstanceLocator> instsfailed,
-            List<ArchiveInstanceLocator> ref, ArchiveInstanceLocator instance,
-            Attributes attrs) {
+                              List<ArchiveInstanceLocator> ref, ArchiveInstanceLocator instance) {
         if(!instsfailed.isEmpty())
             throw new WebApplicationException(Status.CONFLICT);
         MediaType mediaType = selectMediaType(instance.tsuid,
-                instance.cuid, attrs);
+                instance.cuid, (Attributes) instance.getObject());
         if (!isAccepted(mediaType)) {
             instsfailed.addAll(ref);
             throw new WebApplicationException(Status.NOT_ACCEPTABLE);
@@ -361,14 +360,14 @@ public class WadoURI extends Wado {
 
         if (mediaType == MediaTypes.APPLICATION_DICOM_TYPE) {
             instscompleted.addAll(ref);
-            return retrieveNativeDicomObject(instance, attrs);
+            return retrieveNativeDicomObject(instance);
         }
 
         if (mediaType == MediaTypes.IMAGE_JPEG_TYPE
                 || mediaType == MediaTypes.IMAGE_PNG_TYPE
                 || mediaType == MediaTypes.IMAGE_GIF_TYPE) {
             instscompleted.addAll(ref);
-            return retrieveImage(instance, attrs, mediaType);
+            return retrieveImage(instance, mediaType);
         }
 
         if (mediaType.isCompatible(MediaTypes.APPLICATION_PDF_TYPE)
@@ -381,9 +380,9 @@ public class WadoURI extends Wado {
         if (mediaType == MediaType.TEXT_HTML_TYPE) {
             try {
                 instscompleted.addAll(ref);
-                return retrieveSRHTML(instance, attrs);
+                return retrieveSRHTML(instance);
             } catch (TransformerConfigurationException e) {
-                return retrieveNativeDicomObject(instance, attrs);
+                return retrieveNativeDicomObject(instance);
             }
         }
         return null;
@@ -434,7 +433,7 @@ public class WadoURI extends Wado {
         return false;
     }
 
-    private Response retrieveSRHTML(final ArchiveInstanceLocator ref, final Attributes attrs)
+    private Response retrieveSRHTML(final ArchiveInstanceLocator ref)
             throws TransformerConfigurationException {
         return Response.ok(new StreamingOutput() {
             @Override
@@ -464,7 +463,7 @@ public class WadoURI extends Wado {
                 th.setResult(new StreamResult(bout));
                 w = new SAXWriter(th);
                 Attributes data = readAttributes(ref);
-                data.addAll(attrs);
+                data.addAll((Attributes) ref.getObject());
                 try {
                     w.write(data);
                 } catch (SAXException e) {
@@ -506,16 +505,32 @@ public class WadoURI extends Wado {
             }
     }
 
-    private Response retrieveNativeDicomObject(ArchiveInstanceLocator ref,
-            Attributes attrs) {
-        String tsuid = selectTransferSyntax(ref.tsuid);
-        MediaType mediaType = MediaType
-                .valueOf("application/dicom;transfer-syntax=" + tsuid);
-        return Response.ok(new DicomObjectOutput(ref, attrs, tsuid, context, storescuService, weightWatcher), mediaType)
-                .build();
+    private Response retrieveNativeDicomObject(ArchiveInstanceLocator ref) {
+
+        LocatorDatasetReader locatorDatasetReader;
+        try {
+            locatorDatasetReader = new LocatorDatasetReader(ref, context, storescuService).read();
+        } catch (IOException e) {
+            throw new WebApplicationException(e);
+        }
+        ArchiveInstanceLocator selectedLocator = locatorDatasetReader.getSelectedLocator();
+        DatasetWithFMI datasetWithFMI = locatorDatasetReader.getDatasetWithFMI();
+
+        String selectedTransferSyntaxUID = selectTransferSyntax(selectedLocator, datasetWithFMI);
+        MediaType mediaType = MediaType.valueOf("application/dicom;transfer-syntax=" + selectedTransferSyntaxUID);
+        return Response.ok(
+                new DicomObjectOutput(datasetWithFMI.getDataset(), selectedLocator.tsuid, selectedTransferSyntaxUID, weightWatcher),
+                mediaType).build();
     }
 
-    private String selectTransferSyntax(String tsuid) {
+    private String selectTransferSyntax(ArchiveInstanceLocator inst, DatasetWithFMI datasetWithFMI) {
+        String tsuid = inst.tsuid;
+
+        // prevent that (possibly) faulty JPEG-LS data leaves the system,
+        // we only want to give it out uncompressed
+        if (inst.getStorageSystem().getStorageSystemGroup().isPossiblyFaultyJPEGLS(datasetWithFMI)) {
+            return selectFirstUncompressedTransferSyntax();
+        }
 
         // no need of decompression
         if (transferSyntax.contains("*") || transferSyntax.contains(tsuid))
@@ -525,7 +540,10 @@ public class WadoURI extends Wado {
         if (!ImageReaderFactory.canDecompress(tsuid))
             return tsuid;
 
-        // select first requested uncompressed ts
+        return selectFirstUncompressedTransferSyntax();
+    }
+
+    private String selectFirstUncompressedTransferSyntax() {
         for (String singleTransferSyntax : transferSyntax)
             if (TransferSyntaxType.forUID(singleTransferSyntax).equals(TransferSyntaxType.NATIVE))
                 return singleTransferSyntax;
@@ -534,7 +552,8 @@ public class WadoURI extends Wado {
         return UID.ExplicitVRLittleEndian;
     }
 
-    private Response retrieveImage(ArchiveInstanceLocator ref, final Attributes attrs, final MediaType mediaType) {
+    private Response retrieveImage(ArchiveInstanceLocator ref, final MediaType mediaType) {
+        Attributes attrs = (Attributes) ref.getObject();
         ImageInputStream iis = null;
         ImageReader reader = null;
         ImageWriter imageWriter = null;
