@@ -175,7 +175,7 @@ public class WadoRS extends Wado {
 
     private boolean acceptDicom;
 
-    private boolean acceptOctetStream;
+    private boolean acceptOctetStream; // Little Endian uncompressed bulk data
 
     private boolean acceptBulkdata;
 
@@ -234,9 +234,13 @@ public class WadoRS extends Wado {
                         acceptDicomXML = true;
                     } else {
                         acceptBulkdata = true;
-                        if (relatedType
-                                .isCompatible(MediaType.APPLICATION_OCTET_STREAM_TYPE))
+                        if (relatedType.isCompatible(MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
                             acceptOctetStream = true;
+                        } else {
+                            String acceptedTsUID = mediaType.getParameters().get("transfer-syntax");
+                            if (acceptedTsUID != null)
+                                relatedType = MediaType.valueOf(relatedType.toString() + ";transfer-syntax=" + acceptedTsUID);
+                        }
                         acceptedBulkdataMediaTypes.add(relatedType);
                     }
                 } catch (IllegalArgumentException e) {
@@ -325,13 +329,12 @@ public class WadoRS extends Wado {
         if (acceptAll)
             return requiredMediaType;
 
-        boolean defaultTS = !requiredMediaType.getParameters().containsKey(
-                "transfer-syntax");
+        String requiredTransferSyntaxUID = MediaTypes.transferSyntaxOf(requiredMediaType);
+
         for (MediaType mediaType : acceptedBulkdataMediaTypes) {
-            if (mediaType.isCompatible(requiredMediaType)) {
-                String ts1 = mediaType.getParameters().get("transfer-syntax");
-                if (ts1 == null ? defaultTS : ts1.equals(ts))
-                    return requiredMediaType;
+            if (mediaType.isCompatible(requiredMediaType) &&
+                    requiredTransferSyntaxUID.equals(MediaTypes.transferSyntaxOf(mediaType))) {
+                return requiredMediaType;
             }
         }
         if (acceptOctetStream && ImageReaderFactory.canDecompress(ts)) {
