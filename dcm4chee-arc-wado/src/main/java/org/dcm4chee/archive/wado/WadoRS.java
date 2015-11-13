@@ -418,7 +418,7 @@ public class WadoRS extends Wado {
         init("retrieveMetadata");
 
         List<ArchiveInstanceLocator> instances = retrieveService
-                .calculateMatches(studyInstanceUID, null, null, queryParam, true);
+                .calculateMatches(studyInstanceUID, null, null, queryParam, false);
 
         return retrieveMetadata(instances);
     }
@@ -434,7 +434,7 @@ public class WadoRS extends Wado {
 
         List<ArchiveInstanceLocator> instances = retrieveService
                 .calculateMatches(studyInstanceUID, seriesInstanceUID, null,
-                        queryParam, true);
+                        queryParam, false);
 
         return retrieveMetadata(instances);
     }
@@ -451,7 +451,7 @@ public class WadoRS extends Wado {
 
         List<ArchiveInstanceLocator> instances = retrieveService
                 .calculateMatches(studyInstanceUID, seriesInstanceUID,
-                        sopInstanceUID, queryParam, true);
+                        sopInstanceUID, queryParam, false);
 
         return retrieveMetadata(instances);
     }
