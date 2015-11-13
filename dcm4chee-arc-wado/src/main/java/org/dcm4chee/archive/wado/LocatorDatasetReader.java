@@ -81,9 +81,10 @@ class LocatorDatasetReader {
     public LocatorDatasetReader read() throws IOException {
         selectedLocator = locatorWithFallbacks;
 
+        DatasetWithFMI originalDatasetWithFMI = null;
         do {
             try {
-                datasetWithFMI = readFrom(selectedLocator);
+                originalDatasetWithFMI = readFrom(selectedLocator);
             } catch (IOException e) {
                 LOG.info("Failed to read Data Set with iuid={} from {}@{}",
                         selectedLocator.iuid, selectedLocator.getFilePath(), selectedLocator.getStorageSystem(), e);
@@ -92,9 +93,9 @@ class LocatorDatasetReader {
                     throw e;
                 LOG.info("Try read Data Set from alternative location");
             }
-        } while (datasetWithFMI == null);
+        } while (originalDatasetWithFMI == null);
 
-        Attributes dataset = datasetWithFMI.getDataset();
+        Attributes dataset = originalDatasetWithFMI.getDataset();
 
         if (context.getRemoteAE() != null) {
             storescuService.coerceFileBeforeMerge(selectedLocator, dataset, context);
@@ -103,6 +104,8 @@ class LocatorDatasetReader {
         if (context.getRemoteAE() != null) {
             storescuService.coerceAttributes(dataset, context);
         }
+
+        datasetWithFMI = new DatasetWithFMI(originalDatasetWithFMI.getFileMetaInformation(), dataset);
 
         return this;
     }
