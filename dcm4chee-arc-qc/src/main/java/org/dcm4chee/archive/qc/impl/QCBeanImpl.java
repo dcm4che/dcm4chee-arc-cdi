@@ -241,7 +241,6 @@ public class QCBeanImpl implements QCBean {
             org.dcm4che3.data.Code qcRejectionCode) throws QCOperationNotPermittedException {
         Study source = findStudy(sourceStudyUID);
         Study target = findStudy(targetStudyUID);
-        boolean samePatient = source.getPatient().getPk() == target.getPatient().getPk();
 
         if(source==null || target==null) {
             LOG.error("{} : QC info[Merge] - Failure, Source Study {} or Target Study {}"
@@ -249,12 +248,6 @@ public class QCBeanImpl implements QCBean {
             throw new EJBException();
         }
 
-        if(!samePatient) {
-            LOG.error("{} : QC info[Merge] - Failure, Source Study {} or Target Study {}"
-                    + " do not belong to the same patient",qcSource,sourceStudyUID,
-                    targetStudyUID);
-            throw new EJBException();
-        }
         
         checkIfQCPermittedForStudy(source);
         checkIfQCPermittedForStudy(target);
