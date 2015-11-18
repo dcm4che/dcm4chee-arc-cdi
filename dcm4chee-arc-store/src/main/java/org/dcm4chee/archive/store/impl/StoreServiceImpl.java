@@ -46,8 +46,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -86,7 +84,6 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.Entity;
@@ -539,6 +536,7 @@ public class StoreServiceImpl implements StoreService {
                         bulkdataPath = bulkdataRoot + '.' + copies++;
                     }
                 }
+
                 out = new BufferedOutputStream(out, bufferLength);
                 out = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
                 ((DicomOutputStream) out).writeDataset(fmi, attributes);
@@ -549,7 +547,6 @@ public class StoreServiceImpl implements StoreService {
                     SafeClose.close(out);
                     bulkdataContext.setFilePath(Paths.get(bulkdataPath));
                     bulkdataContext.setFileSize(Files.size(Paths.get(bulkdataStorageSystem.getStorageSystemPath(), bulkdataPath)));
-                    bulkdataContext.setFileDigest(spoolingContext.getFileDigest());
                     context.getStoreSession().addStoredFile(bulkdataPath);
                 } catch (IOException e) {
                     throw new DicomServiceException(Status.UnableToProcess, e);
@@ -818,7 +815,6 @@ public class StoreServiceImpl implements StoreService {
         int copies = 1;
 
         int bufferLength = metadataStorage.getBufferedOutputLength();
-        MessageDigest digest = metadataContext.getDigest();
         OutputStream out = null;
 
         try {
@@ -833,10 +829,6 @@ public class StoreServiceImpl implements StoreService {
 
             Attributes metadata = new Attributes(attributes.bigEndian(), attributes.size());
             metadata.addWithoutBulkData(attributes, BulkDataDescriptor.DEFAULT);
-            if (digest != null) {
-                digest.reset();
-                out = new DigestOutputStream(out, digest);
-            }
 
             out = new BufferedOutputStream(out, bufferLength);
             out = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
@@ -846,9 +838,7 @@ public class StoreServiceImpl implements StoreService {
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         } finally {
-
             SafeClose.close(out);
-            metadataContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
         }
         return metadataContext;
     }

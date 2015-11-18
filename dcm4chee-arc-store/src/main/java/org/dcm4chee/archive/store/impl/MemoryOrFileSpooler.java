@@ -48,28 +48,8 @@ public class MemoryOrFileSpooler implements Spooler {
 
         StorageSystem spoolingStorage = session.getSpoolStorageSystem();
         StorageContext spoolingContext = storageService.createStorageContext(spoolingStorage);
-        MessageDigest digest = session.getMessageDigest();
         Attributes fmi = context.getFileMetainfo();
         InputStream in = context.getInputStream();
-
-        if (digest != null) {
-            in = new DigestInputStream(in, digest);
-            digest.reset();
-
-            if (fmi != null) {
-                OutputStream out = null;
-                try {
-                    out = new NullOutputStream();
-                    out = new DigestOutputStream(out, digest);
-                    out = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
-                    ((DicomOutputStream)out).writeFileMetaInformation(fmi);
-                } catch (IOException e) {
-                    throw new DicomServiceException(Status.UnableToProcess, e);
-                } finally {
-                    SafeClose.close(out);
-                }
-            }
-        }
 
         int cutoffLength = spoolingStorage.getSpoolingCutoffLength();
         ByteArrayOutputStream bufferOS = new ByteArrayOutputStream(cutoffLength);
@@ -112,7 +92,6 @@ public class MemoryOrFileSpooler implements Spooler {
                 } catch (IOException e) {
                     throw new DicomServiceException(StoreService.DATA_SET_NOT_PARSEABLE);
                 } finally {
-                    spoolingContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
                     context.setSpoolingContext(spoolingContext);
                 }
             }
