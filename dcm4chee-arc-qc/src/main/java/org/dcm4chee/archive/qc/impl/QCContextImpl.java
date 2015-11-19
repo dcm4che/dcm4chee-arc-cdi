@@ -60,9 +60,6 @@ import org.dcm4chee.archive.sc.impl.BasicStructuralChangeContext;
  *
  */
 public class QCContextImpl extends BasicStructuralChangeContext implements QCOperationContext {
-    private final Set<InstanceIdentifier> sourceInstances = new HashSet<>();
-    private final Set<InstanceIdentifier> targetInstances = new HashSet<>();
-
     private Attributes updateAttributes;
     
     private Set<org.dcm4chee.archive.entity.Instance> rejectionNotes = Collections.emptySet();
@@ -83,8 +80,7 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
             for (QCEventInstance qcInstance : sourceInstances) {
                 InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
                         qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
-                qcCtx.addAffectedInstance(instance);
-                qcCtx.sourceInstances.add(instance);
+                qcCtx.addSourceInstance(instance);
             }
         }
         
@@ -93,8 +89,7 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
             for (QCEventInstance qcInstance : targetInstances) {
                 InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
                         qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
-                qcCtx.addAffectedInstance(instance);
-                qcCtx.targetInstances.add(instance);
+                qcCtx.addTargetInstance(instance);
             }
         }
         
@@ -113,16 +108,6 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
     }
     
     @Override
-    public Set<InstanceIdentifier> getSourceInstances() {
-        return sourceInstances;
-    }
-    
-    @Override
-    public Set<InstanceIdentifier> getTargetInstances() {
-        return targetInstances;
-    }
-    
-    @Override
     public Set<org.dcm4chee.archive.entity.Instance> getRejectionNotes() {
         return rejectionNotes;
     }
@@ -137,8 +122,8 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
         String str = "QCContext[ operation: "+ Arrays.toString(getChangeTypeHierarchy()) 
                 + "\n timestamp: " + new Date(getTimestamp()).toString() 
                 + "\n updateAttributes : " + (updateAttributes == null ? "No Info" : updateAttributes.toString())
-                + "\n operation successfully applied on the following instances : \n" + ((sourceInstances != null) ? toString(sourceInstances) : "[]")
-                + "\n resulting in the following instances : \n" + ((targetInstances != null) ? toString(targetInstances) : "[]")
+                + "\n operation successfully applied on the following instances : \n" + toString(getSourceInstances())
+                + "\n resulting in the following instances : \n" + toString(getTargetInstances())
                 + "]";
                 return str;
     }

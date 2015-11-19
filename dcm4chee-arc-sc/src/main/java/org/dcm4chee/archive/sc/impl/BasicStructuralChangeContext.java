@@ -42,7 +42,6 @@ package org.dcm4chee.archive.sc.impl;
 import static java.lang.String.format;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -58,6 +57,9 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
     private final Set<String> affectedSeriesUIDs = new HashSet<>();
     private final Set<InstanceIdentifier> affectedInstances = new HashSet<>();
     
+    private final Set<InstanceIdentifier> sourceInstances = new HashSet<>();
+    private final Set<InstanceIdentifier> targetInstances = new HashSet<>();
+    
     protected final Enum<?>[] changeTypes;
     private final long timestamp;
     
@@ -65,7 +67,7 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
         this(System.currentTimeMillis(), changeType);
     }
     
-    public BasicStructuralChangeContext(long timestamp, Enum<?>... changeTypes) {
+    private BasicStructuralChangeContext(long timestamp, Enum<?>... changeTypes) {
         this.changeTypes = changeTypes;
         this.timestamp = timestamp;
     }
@@ -122,16 +124,30 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
         return affectedInstances;
     }
     
-    public void addAffectedInstance(InstanceIdentifier affectedInstance) {
+    @Override
+    public Set<InstanceIdentifier> getSourceInstances() {
+        return sourceInstances;
+    }
+    
+    @Override
+    public Set<InstanceIdentifier> getTargetInstances() {
+        return targetInstances;
+    }
+    
+    public void addSourceInstance(InstanceIdentifier srcInstance) {
+        this.sourceInstances.add(srcInstance);
+        addAffectedInstance(srcInstance);
+    }
+    
+    public void addTargetInstance(InstanceIdentifier targetInstance) {
+        this.targetInstances.add(targetInstance);
+        addAffectedInstance(targetInstance);
+    }
+    
+    private void addAffectedInstance(InstanceIdentifier affectedInstance) {
         this.affectedStudyUIDs.add(affectedInstance.getStudyInstanceUID());
         this.affectedSeriesUIDs.add(affectedInstance.getSeriesInstanceUID());
         this.affectedInstances.add(affectedInstance);
-    }
-    
-    public void addAffectedInstances(Collection<InstanceIdentifier> affectedInstances) {
-        for(InstanceIdentifier affectedInstance : affectedInstances) {
-            addAffectedInstance(affectedInstance);
-        }
     }
     
     @Override
@@ -140,7 +156,8 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
                 + "\n timestamp: " + new Date(getTimestamp()).toString() 
                 + "\n affectedStudies: " + getAffectedStudyUIDs()
                 + "\n affectedSeries: " + getAffectedSeriesUIDs()
-                + "\n #affectedInstances: " + getAffectedInstances().size()
+                + "\n #sourceInstances: " + getSourceInstances().size()
+                + "\n #targetInstances: " + getTargetInstances().size()
                 + "]";
                 return str;
     }
