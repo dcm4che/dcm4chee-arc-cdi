@@ -10,14 +10,15 @@ import org.dcm4che3.conf.core.util.Extensions;
 import org.dcm4che3.conf.dicom.CommonDicomConfiguration;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomPath;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Connection;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceTest;
+import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory.FactoryParams;
 import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
+import org.dcm4chee.archive.conf.defaults.ExtendedStudyDictionary;
 import org.dcm4chee.archive.conf.defaults.test.DeepEquals;
 import org.dcm4chee.storage.conf.Availability;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
@@ -29,6 +30,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * @author Roman K
@@ -123,6 +125,21 @@ public class DicomConfigOptimisticLockingTests {
 
     }
 
+
+    @Test
+    public void persistNodeHavingIntegerKeyedMap() {
+        Device device = dicomConfig.findDevice("dcm4chee-arc");
+        ArchiveDeviceExtension archExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
+        Map<Integer, String> STUDY_PRIVATE_ATTRS = new TreeMap<Integer, String>();
+        STUDY_PRIVATE_ATTRS.put(ExtendedStudyDictionary.StudyLastUpdateDateTime, "EXTENDED STUDY");
+        AttributeFilter filter = new AttributeFilter(new int[]{Tag.StudyID}, STUDY_PRIVATE_ATTRS);
+
+        // This will set the dcmPrivateTag in AttributeFilter which is a map
+        // that has an Integer key type
+        archExt.setAttributeFilter(Entity.Study, filter);
+
+        dicomConfig.merge(device);
+    }
 
     @Test
     public void testPersistDeviceNoHash() {
@@ -245,7 +262,6 @@ public class DicomConfigOptimisticLockingTests {
         } catch (OptimisticLockException e) {
             //noop
         }
-
 
 
         // all 4 changes should make it
@@ -425,8 +441,6 @@ public class DicomConfigOptimisticLockingTests {
         Device device2 = dicomConfig.findDevice("dcm4chee-arc");
 
 
-
-
     }
 
     @Test
@@ -451,7 +465,6 @@ public class DicomConfigOptimisticLockingTests {
 
         Device loaded = dicomConfig.findDevice("dcm4chee-arc");
         Assert.assertEquals(12345, loaded.getConnections().get(0).getSocketCloseDelay());
-
 
 
         // the rest should be identical
@@ -515,7 +528,6 @@ public class DicomConfigOptimisticLockingTests {
         Assert.assertEquals(23456, loaded.getConnections().get(0).getSocketCloseDelay());
         Assert.assertEquals(12345, loaded.getConnections().get(1).getSocketCloseDelay());
         Assert.assertEquals(6, loaded.getConnections().size());
-
 
 
         // the rest should be identical
