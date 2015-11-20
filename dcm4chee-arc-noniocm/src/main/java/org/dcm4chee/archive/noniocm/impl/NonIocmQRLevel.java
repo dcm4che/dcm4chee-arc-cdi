@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.noneiocm.impl;
+package org.dcm4chee.archive.noniocm.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -47,39 +47,39 @@ import org.dcm4chee.archive.entity.QCInstanceHistory;
  * @author Franz Willer <franz.willer@gmail.com>
  *
  */
-enum NoneIocmQRLevel {
+enum NonIocmQRLevel {
     PATIENT {
         String getHistoryQueryName(boolean b) { return null; }
         String[] getUids(Attributes keys) { return null; }
         String getOldUID(QCInstanceHistory history) { return null; }
         String getNewUID(QCInstanceHistory history) { return null; }
-        NoneIocmQRLevel parent() { return null; }
+        NonIocmQRLevel parent() { return null; }
     },
     STUDY {
         String getHistoryQueryName(boolean b) { return b ? QCInstanceHistory.FIND_BY_OLD_STUDY_UIDS : QCInstanceHistory.FIND_BY_NEW_STUDY_UIDS; }
         String[] getUids(Attributes keys) { return keys.getStrings(Tag.StudyInstanceUID); }
         String getOldUID(QCInstanceHistory history) { return history.getSeries().getStudy().getOldStudyUID(); }
         String getNewUID(QCInstanceHistory history) { return history.getCurrentStudyUID(); }
-        NoneIocmQRLevel parent() { return PATIENT; }
+        NonIocmQRLevel parent() { return PATIENT; }
     },
     SERIES {
         String getHistoryQueryName(boolean b) { return b ? QCInstanceHistory.FIND_BY_OLD_SERIES_UIDS : QCInstanceHistory.FIND_BY_NEW_SERIES_UIDS; }
         String[] getUids(Attributes keys) { return keys.getStrings(Tag.SeriesInstanceUID); }
         String getOldUID(QCInstanceHistory history) { return history.getSeries().getOldSeriesUID(); }
         String getNewUID(QCInstanceHistory history) { return history.getCurrentSeriesUID(); }
-        NoneIocmQRLevel parent() { return STUDY; }
+        NonIocmQRLevel parent() { return STUDY; }
     },
     IMAGE {
         String getHistoryQueryName(boolean b) { return b ? QCInstanceHistory.FIND_BY_OLD_SOP_UIDS : QCInstanceHistory.FIND_BY_NEW_SOP_UIDS; }
         String[] getUids(Attributes keys) { return keys.getStrings(Tag.SOPInstanceUID); }
         String getOldUID(QCInstanceHistory history) { return history.getOldUID(); }
         String getNewUID(QCInstanceHistory history) { return history.getCurrentUID(); }
-        NoneIocmQRLevel parent() { return SERIES; }
+        NonIocmQRLevel parent() { return SERIES; }
     };
 
     abstract String getHistoryQueryName(boolean oldToNew);
     abstract String[] getUids(Attributes keys);
     abstract String getOldUID(QCInstanceHistory history);
     abstract String getNewUID(QCInstanceHistory history);
-    abstract NoneIocmQRLevel parent();
+    abstract NonIocmQRLevel parent();
 }

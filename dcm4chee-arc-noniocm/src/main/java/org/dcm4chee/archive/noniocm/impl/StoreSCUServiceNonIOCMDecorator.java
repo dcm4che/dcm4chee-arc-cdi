@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * Agfa Healthcare.
- * Portions created by the Initial Developer are Copyright (C) 2011-2014
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,55 +35,49 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.dcm4chee.archive.noniocm.impl;
 
-package org.dcm4chee.archive.noneiocm;
+import java.util.ArrayList;
 
-import java.util.List;
-
-import javax.enterprise.event.Observes;
+import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4chee.archive.entity.ActiveProcessing;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.store.StoreContext;
-import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
-
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorQRService;
+import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorService;
+import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.store.scu.decorators.DelegatingCStoreSCUService;
+import org.dcm4chee.conf.decorators.DynamicDecorator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
+ * Applies UID changes for NoneIOCM devices to return the original UIDs.
+ * 
  * @author Franz Willer <franz.willer@gmail.com>
- *
  */
-public interface NoneIOCMChangeRequestorService {
+@DynamicDecorator
+public class StoreSCUServiceNonIOCMDecorator extends DelegatingCStoreSCUService {
 
-    public enum NoneIOCMChangeType {
-        PAT_ID_CHANGE, STUDY_IUID_CHANGE, SERIES_IUID_CHANGE, INSTANCE_CHANGE, NO_CHANGE, ILLEGAL_CHANGE
+    private static final Logger LOG = LoggerFactory
+            .getLogger(StoreSCUServiceNonIOCMDecorator.class);
+
+    ArrayList<Attributes> modifications = new ArrayList<Attributes>();
+
+    @Inject
+    private NonIOCMChangeRequestorService nonIocmService;
+
+    @Inject
+    private NonIOCMChangeRequestorQRService nonIocmQRService;
+
+    @Override
+    public void coerceAttributes(Attributes attrs, CStoreSCUContext context)
+            throws DicomServiceException {
+        getNextDecorator().coerceAttributes(attrs, context);
+        if (context.getRemoteAE() != null && nonIocmService.isNonIOCMChangeRequestor(context.getRemoteAE().getAETitle())) {
+            LOG.info("##### is NoneIOCM change requestor!");
+            nonIocmQRService.updateRetrieveResponseAttributes(context, attrs);
+        }
+
     }
-    
-    public final org.dcm4che3.data.Code REJ_CODE_QUALITY_REASON = new org.dcm4che3.data.Code("(113001, DCM, \"Rejected for Quality Reasons\")");
-
-    boolean isNoneIOCMChangeRequestor(String callingAET);
-    
-    boolean isNoneIOCMChangeRequest(String callingAET, String sourceAET);
-    
-    int getNoneIOCMModalityGracePeriod(String callingAET);
-    
-    NoneIOCMChangeType getChangeType(Instance inst, Attributes attrs);
-    
-    NoneIOCMChangeType performChange(Instance inst, StoreContext context);
-
-    List<QCInstanceHistory> findInstanceHistory(String sopInstanceUID);
-
-    void onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent);
-
-    public void onStoreInstance(@Observes StoreContext context);
-
-    void handleModalityChange(Instance inst, StoreContext context, int gracePeriodInSeconds);
-    
-    void hideOrUnhideInstance(Instance instance, org.dcm4che3.data.Code rejNoteCode);
-    
-	QCInstanceHistory getLastQCInstanceHistory(String sopIUID);
-	
-	void processNonIOCMRequest(String processStudyIUID,  List<ActiveProcessing> nonIocmProcessings);
-
 }

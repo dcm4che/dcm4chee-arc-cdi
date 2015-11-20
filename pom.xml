@@ -632,7 +632,7 @@
     <module>dcm4chee-arc-qido-client</module>
     <module>dcm4chee-arc-iocm</module>
     <module>dcm4chee-arc-iocm-client</module>
-    <module>dcm4chee-arc-noneiocm</module>
+    <module>dcm4chee-arc-noniocm</module>
     <module>dcm4chee-arc-web</module>
     <module>dcm4chee-arc-mima</module>
     <module>dcm4chee-arc-audit</module>

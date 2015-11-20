@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.noneiocm.impl;
+package org.dcm4chee.archive.noniocm.impl;
 
 import java.util.List;
 
@@ -54,8 +54,8 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
-import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorQRService;
-import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
+import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorQRService;
+import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorService;
 import org.dcm4chee.archive.retrieve.RetrieveContext;
 import org.dcm4chee.archive.retrieve.decorators.DelegatingRetrieveService;
 import org.dcm4chee.archive.rs.HostAECache;
@@ -71,18 +71,18 @@ import org.slf4j.LoggerFactory;
  *
  */
 @DynamicDecorator
-public class RetrieveServiceNoneIOCMDecorator extends DelegatingRetrieveService {
+public class RetrieveServiceNonIOCMDecorator extends DelegatingRetrieveService {
 
     private static Logger LOG =
-            LoggerFactory.getLogger(RetrieveServiceNoneIOCMDecorator.class);
+            LoggerFactory.getLogger(RetrieveServiceNonIOCMDecorator.class);
 
     private static final ThreadLocal<String> sourceAET = new ThreadLocal<String>();
 
     @Inject
-    NoneIOCMChangeRequestorService noneIocmService;
+    NonIOCMChangeRequestorService nonIocmService;
 
     @Inject
-    NoneIOCMChangeRequestorQRService noneIocmQRService;
+    NonIOCMChangeRequestorQRService nonIocmQRService;
 
     @Inject
     private IApplicationEntityCache aeCache;
@@ -99,12 +99,12 @@ public class RetrieveServiceNoneIOCMDecorator extends DelegatingRetrieveService 
     @Override
     public List<ArchiveInstanceLocator> calculateMatches(IDWithIssuer[] pids,
             Attributes keys, QueryParam queryParam, boolean withoutBulkData) {
-        if (noneIocmService.isNoneIOCMChangeRequestor(sourceAET.get())) {
+        if (nonIocmService.isNonIOCMChangeRequestor(sourceAET.get())) {
             LOG.info("Is NoneIOCM Change Requestor Device");
             try {
                 ApplicationEntity sourceAE = aeCache.findApplicationEntity(sourceAET.get());
                 if (sourceAE != null)
-                    noneIocmQRService.updateRetrieveRequestAttributes(keys, sourceAE.getDevice().getApplicationAETitles());
+                    nonIocmQRService.updateRetrieveRequestAttributes(keys, sourceAE.getDevice().getApplicationAETitles());
             } catch (ConfigurationException ignore) {}
         }
         return getNextDecorator().calculateMatches(pids, keys, queryParam, withoutBulkData);
@@ -124,7 +124,7 @@ public class RetrieveServiceNoneIOCMDecorator extends DelegatingRetrieveService 
                 LOG.warn("Missing Source AET! Neither get info via RetrieveContext (need call RetrieveService.queryPatientIDs() before) nor HttpServletRequest!");
             }
         }
-        if (aet != null && noneIocmService.isNoneIOCMChangeRequestor(aet)) {
+        if (aet != null && nonIocmService.isNonIOCMChangeRequestor(aet)) {
             LOG.info("Is NoneIOCM Change Requestor Device");
             try {
                 if (sourceAE == null)
@@ -135,7 +135,7 @@ public class RetrieveServiceNoneIOCMDecorator extends DelegatingRetrieveService 
                     keys.setString(Tag.StudyInstanceUID, VR.UI, studyUID);
                     keys.setString(Tag.SeriesInstanceUID, VR.UI, seriesUID);
                     keys.setString(Tag.SOPInstanceUID, VR.UI, objectUID);
-                    noneIocmQRService.updateRetrieveRequestAttributes(keys, sourceAE.getDevice().getApplicationAETitles());
+                    nonIocmQRService.updateRetrieveRequestAttributes(keys, sourceAE.getDevice().getApplicationAETitles());
                     studyUID = keys.getString(Tag.StudyInstanceUID);
                     seriesUID = keys.getString(Tag.SeriesInstanceUID);
                     objectUID = keys.getString(Tag.SOPInstanceUID);

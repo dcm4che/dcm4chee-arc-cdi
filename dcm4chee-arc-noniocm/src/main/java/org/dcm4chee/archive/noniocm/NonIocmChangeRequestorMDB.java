@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.noneiocm;
+package org.dcm4chee.archive.noniocm;
 
 import java.util.List;
 
@@ -71,8 +71,8 @@ import org.slf4j.LoggerFactory;
         @ActivationConfigProperty(propertyName = "acknowledgeMode",
                                   propertyValue = "Auto-acknowledge") })
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class NoneIocmChangeRequestorMDB implements MessageListener {
-    private static final Logger LOG = LoggerFactory.getLogger(NoneIocmChangeRequestorMDB.class);
+public class NonIocmChangeRequestorMDB implements MessageListener {
+    private static final Logger LOG = LoggerFactory.getLogger(NonIocmChangeRequestorMDB.class);
     
     public static final String UPDATED_STUDY_UID_MSG_PROPERTY = "studyIUID";
     
@@ -82,7 +82,7 @@ public class NoneIocmChangeRequestorMDB implements MessageListener {
     private ActiveProcessingService activeProcessingService;
     
     @Inject
-    private NoneIOCMChangeRequestorService changeRequestorService;
+    private NonIOCMChangeRequestorService changeRequestorService;
 
     @Override
     public void onMessage(Message msg) {
@@ -129,7 +129,7 @@ public class NoneIocmChangeRequestorMDB implements MessageListener {
     
     private List<ActiveProcessing> getNonIOCMActiveProcessings(String studyUID) {
         try {
-            return activeProcessingService.getActiveProcessesByStudy(studyUID, ActiveService.NONE_IOCM_UPDATE);
+            return activeProcessingService.getActiveProcessesByStudy(studyUID, ActiveService.NON_IOCM_UPDATE);
         } catch (Exception e) {
             LOG.error("Could not fetch Non-IOCM active processings from database", e);
             return null;

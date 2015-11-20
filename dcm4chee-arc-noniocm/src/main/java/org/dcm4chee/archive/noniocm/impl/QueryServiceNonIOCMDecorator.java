@@ -36,15 +36,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.noneiocm.impl;
+package org.dcm4chee.archive.noniocm.impl;
 
 import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorQRService;
-import org.dcm4chee.archive.noneiocm.NoneIOCMChangeRequestorService;
+import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorQRService;
+import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorService;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.decorators.DelegatingQueryService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
@@ -58,22 +58,22 @@ import org.slf4j.LoggerFactory;
  * 
  */
 @DynamicDecorator
-public class QueryServiceNoneIOCMDecorator extends DelegatingQueryService {
+public class QueryServiceNonIOCMDecorator extends DelegatingQueryService {
 
     private static Logger LOG = LoggerFactory
-            .getLogger(QueryServiceNoneIOCMDecorator.class);
+            .getLogger(QueryServiceNonIOCMDecorator.class);
 
     @Inject
-    NoneIOCMChangeRequestorService noneIocmService;
+    NonIOCMChangeRequestorService noneIocmService;
     
     @Inject
-    NoneIOCMChangeRequestorQRService noneIocmQRService;
+    NonIOCMChangeRequestorQRService noneIocmQRService;
     
 
     @Override
     public void coerceRequestAttributes(QueryContext context) throws DicomServiceException {
             getNextDecorator().coerceRequestAttributes(context);            
-            if (noneIocmService.isNoneIOCMChangeRequestor(context.getRemoteAET())) {
+            if (noneIocmService.isNonIOCMChangeRequestor(context.getRemoteAET())) {
                 LOG.info("Is NoneIOCM Change Requestor Device");
                 Device d = noneIocmQRService.getRemoteDevice(context);
                 if (d != null)
@@ -87,7 +87,7 @@ public class QueryServiceNoneIOCMDecorator extends DelegatingQueryService {
     @Override
     public void coerceResponseAttributes(QueryContext context, Attributes match) throws DicomServiceException {
         getNextDecorator().coerceResponseAttributes(context, match);
-        if (noneIocmService.isNoneIOCMChangeRequestor(context.getRemoteAET())) {
+        if (noneIocmService.isNonIOCMChangeRequestor(context.getRemoteAET())) {
             LOG.info("Is NoneIOCM Change Requestor Device");
             noneIocmQRService.updateQueryResponseAttributes(context, match);
         }

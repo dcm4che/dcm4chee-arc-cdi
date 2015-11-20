@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.noneiocm;
+package org.dcm4chee.archive.noniocm;
 
 import java.util.Collection;
 
@@ -50,7 +50,7 @@ import org.dcm4chee.archive.store.scu.CStoreSCUContext;
  * @author Franz Willer <franz.willer@gmail.com>
  *
  */
-public interface NoneIOCMChangeRequestorQRService {
+public interface NonIOCMChangeRequestorQRService {
     void updateQueryRequestAttributes(Attributes attrs, Collection<String> sourceDeviceAETs);
     void updateQueryResponseAttributes(QueryContext context, Attributes match);
     void updateRetrieveResponseAttributes(CStoreSCUContext context, Attributes attrs);
