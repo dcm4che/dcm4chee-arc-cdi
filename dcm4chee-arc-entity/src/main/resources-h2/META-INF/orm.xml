@@ -54,42 +54,6 @@
     </attributes>
   </mapped-superclass>
 
-  <entity class="Patient">
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="IDENTITY" />
-      </id>
-    </attributes>
-  </entity>
-
-  <entity class="Study">
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="IDENTITY" />
-      </id>
-    </attributes>
-  </entity>
-
-  <entity class="Series">
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="IDENTITY" />
-      </id>
-    </attributes>
-  </entity>
-
-  <entity class="Instance">
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="IDENTITY" />
-      </id>
-    </attributes>
-  </entity>
-
   <entity class="AttributesBlob">
     <attributes>
       <basic name="encodedAttributes" optional="false">
@@ -98,22 +62,4 @@
     </attributes>
   </entity>
   
-  <entity class="StoreAndRemember">
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="IDENTITY" />
-      </id>
-    </attributes>
-  </entity>
-  
-  <entity class="ActiveProcessing">
-    <attributes>
-      <id name="pk">
-        <column name="pk" />
-        <generated-value strategy="IDENTITY" />
-      </id>
-    </attributes>
-  </entity>
-
 </entity-mappings>
