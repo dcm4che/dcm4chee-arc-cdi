@@ -55,7 +55,6 @@
   </mapped-superclass>
 
   <entity class="Patient">
-    <table name="patient" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -65,7 +64,6 @@
   </entity>
 
   <entity class="Study">
-    <table name="study" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -75,7 +73,6 @@
   </entity>
 
   <entity class="Series">
-    <table name="series" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -85,7 +82,6 @@
   </entity>
 
   <entity class="Instance">
-    <table name="instance" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -95,7 +91,6 @@
   </entity>
 
   <entity class="AttributesBlob">
-    <table name="dicomattrs" />
     <attributes>
       <basic name="encodedAttributes" optional="false">
         <column name="attrs" column-definition="varbinary" />
@@ -104,7 +99,6 @@
   </entity>
   
   <entity class="StoreAndRemember">
-    <table name="store_and_remember" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -114,7 +108,6 @@
   </entity>
   
   <entity class="ActiveProcessing">
-    <table name="active_processing" />
     <attributes>
       <id name="pk">
         <column name="pk" />
