@@ -38,24 +38,20 @@
 
 package org.dcm4che.archive.audit.message;
 
-import javax.servlet.http.HttpServletRequest;
-
+import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.audit.AuditMessages;
-import org.dcm4che3.audit.ParticipantObjectDescription;
 import org.dcm4che3.audit.AuditMessages.EventActionCode;
 import org.dcm4che3.audit.AuditMessages.EventID;
+import org.dcm4che3.audit.AuditMessages.ParticipantObjectDescription;
 import org.dcm4che3.audit.AuditMessages.RoleIDCode;
 import org.dcm4che3.audit.Instance;
 import org.dcm4che3.audit.ParticipantObjectDetail;
 import org.dcm4che3.audit.ParticipantObjectIdentification;
 import org.dcm4che3.audit.SOPClass;
-import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.Association;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4che3.audit.AuditMessage;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.store.StoreSession;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -129,8 +125,7 @@ public class StoreAudit extends AuditMessage {
                                 AuditMessages.ParticipantObjectTypeCodeRole.Patient,
                                 null, null, null));
 
-        this.getAuditSourceIdentification().add(
-                logger.createAuditSourceIdentification());
+        this.setAuditSourceIdentification(logger.createAuditSourceIdentification());
     }
 
     private String getPatientID(Attributes attrs) {
@@ -147,14 +142,6 @@ public class StoreAudit extends AuditMessage {
         desc.getSOPClass().add(sop);
         return desc;
     }
-    
-    private ParticipantObjectDetail createPODetail(String studyuid) {
-        ParticipantObjectDetail det = new ParticipantObjectDetail();
-        det.setType("StudyInstanceUID");
-        det.setValue(studyuid.getBytes());
-        return det;
-    }
-
 
     private SOPClass createSOPClass(Attributes attributes) {
         SOPClass sop = new SOPClass();
@@ -175,18 +162,16 @@ public class StoreAudit extends AuditMessage {
     public void addInstance(Attributes attributes) {
         String sopclassuid = attributes.getString(Tag.SOPClassUID);
 
-        ParticipantObjectDescription desc = this
-                .getParticipantObjectIdentification().get(0)
-                .getParticipantObjectDescription();
+        ParticipantObjectIdentification poi = this.getParticipantObjectIdentification().get(0); //first POI is studyIUID
 
         SOPClass sop = null;
 
-        for (SOPClass existingsop : desc.getSOPClass())
+        for (SOPClass existingsop : poi.getSOPClass())
             if (existingsop.getUID().equals(sopclassuid))
                 sop = existingsop;
 
         if (sop == null) { // sop class were not found
-            desc.getSOPClass().add(createSOPClass(attributes));
+            poi.getSOPClass().add(createSOPClass(attributes));
         } else { // sop class already existed
 
             Integer numberOfInstances = sop.getNumberOfInstances();

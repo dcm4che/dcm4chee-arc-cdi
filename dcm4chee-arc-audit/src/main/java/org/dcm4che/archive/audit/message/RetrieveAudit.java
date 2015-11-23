@@ -46,8 +46,8 @@ import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.audit.AuditMessages;
 import org.dcm4che3.audit.AuditMessages.EventActionCode;
 import org.dcm4che3.audit.AuditMessages.EventID;
+import org.dcm4che3.audit.AuditMessages.ParticipantObjectDescription;
 import org.dcm4che3.audit.Instance;
-import org.dcm4che3.audit.ParticipantObjectDescription;
 import org.dcm4che3.audit.SOPClass;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -156,8 +156,7 @@ public class RetrieveAudit extends AuditMessage {
                                 null, null, null));
         }
 
-        this.getAuditSourceIdentification().add(
-                logger.createAuditSourceIdentification());
+        this.setAuditSourceIdentification(logger.createAuditSourceIdentification());
     }
 
     /**

@@ -43,19 +43,14 @@ import java.io.IOException;
 
 import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.audit.AuditMessages;
+import org.dcm4che3.audit.AuditMessages.EventActionCode;
+import org.dcm4che3.audit.AuditMessages.EventID;
 import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
 import org.dcm4che3.audit.AuditMessages.ParticipantObjectIDTypeCode;
 import org.dcm4che3.audit.AuditMessages.ParticipantObjectTypeCode;
 import org.dcm4che3.audit.AuditMessages.ParticipantObjectTypeCodeRole;
-import org.dcm4che3.audit.Instance;
-import org.dcm4che3.audit.ParticipantObjectDescription;
-import org.dcm4che3.audit.ParticipantObjectDetail;
-import org.dcm4che3.audit.SOPClass;
-import org.dcm4che3.audit.AuditMessages.EventActionCode;
-import org.dcm4che3.audit.AuditMessages.EventID;
 import org.dcm4che3.audit.AuditMessages.RoleIDCode;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
+import org.dcm4che3.audit.ParticipantObjectDetail;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.net.audit.AuditLogger;
@@ -122,8 +117,7 @@ public class QueryAudit extends AuditMessage {
                 null, 
                 pod));
 
-        this.getAuditSourceIdentification().add(
-                logger.createAuditSourceIdentification());
+        this.setAuditSourceIdentification(logger.createAuditSourceIdentification());
     }
 
 }

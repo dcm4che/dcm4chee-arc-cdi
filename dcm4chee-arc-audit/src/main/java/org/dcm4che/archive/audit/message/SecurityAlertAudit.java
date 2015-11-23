@@ -120,8 +120,7 @@ public class SecurityAlertAudit extends AuditMessage {
                                 null, //description
                                 poid));
         
-        this.getAuditSourceIdentification().add(
-                logger.createAuditSourceIdentification());
+        this.setAuditSourceIdentification(logger.createAuditSourceIdentification());
     }
     
     private static byte[] toBytes (String s)

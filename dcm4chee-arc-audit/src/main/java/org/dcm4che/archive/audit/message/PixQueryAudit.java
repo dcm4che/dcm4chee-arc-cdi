@@ -126,8 +126,7 @@ public class PixQueryAudit extends AuditMessage {
                 null, 
                 pod));
         
-        this.getAuditSourceIdentification().add(
-                logger.createAuditSourceIdentification());
+        this.setAuditSourceIdentification(logger.createAuditSourceIdentification());
     }
 
 }

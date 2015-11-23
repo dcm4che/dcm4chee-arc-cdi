@@ -38,27 +38,15 @@
 
 package org.dcm4che.archive.audit.message;
 
-import javax.servlet.http.HttpServletRequest;
-
+import org.dcm4che3.audit.AuditMessage;
 import org.dcm4che3.audit.AuditMessages;
-import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
-import org.dcm4che3.audit.AuditMessages.EventTypeCode;
-import org.dcm4che3.audit.ParticipantObjectDescription;
 import org.dcm4che3.audit.AuditMessages.EventActionCode;
 import org.dcm4che3.audit.AuditMessages.EventID;
 import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
+import org.dcm4che3.audit.AuditMessages.EventTypeCode;
 import org.dcm4che3.audit.AuditMessages.RoleIDCode;
-import org.dcm4che3.audit.Instance;
-import org.dcm4che3.audit.ParticipantObjectIdentification;
-import org.dcm4che3.audit.SOPClass;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.Association;
-import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4che3.audit.AuditMessage;
 import org.dcm4chee.archive.dto.Participant;
-import org.dcm4chee.archive.store.StoreSession;
 
 /**
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
@@ -100,7 +88,6 @@ public class StartStopAudit extends AuditMessage {
                         true, source.getIdentity(), null, null,
                         source.getHost(), RoleIDCode.ApplicationLauncher));
         
-        this.getAuditSourceIdentification().add(
-                logger.createAuditSourceIdentification());
+        this.setAuditSourceIdentification(logger.createAuditSourceIdentification());
     }
 }

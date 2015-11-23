@@ -39,14 +39,11 @@
 package org.dcm4chee.archive.audit;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import javax.management.Query;
 
 import org.dcm4che.archive.audit.message.PixQueryAudit;
 import org.dcm4che.archive.audit.message.QueryAudit;
@@ -54,14 +51,13 @@ import org.dcm4che.archive.audit.message.RetrieveAudit;
 import org.dcm4che.archive.audit.message.SecurityAlertAudit;
 import org.dcm4che.archive.audit.message.StartStopAudit;
 import org.dcm4che.archive.audit.message.StoreAudit;
-import org.dcm4che3.audit.AuditMessages;
-import org.dcm4che3.audit.AuditMessages.*;
 import org.dcm4che3.audit.AuditMessage;
-import org.dcm4che3.data.Attributes;
+import org.dcm4che3.audit.AuditMessages.EventActionCode;
+import org.dcm4che3.audit.AuditMessages.EventID;
+import org.dcm4che3.audit.AuditMessages.EventOutcomeIndicator;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.audit.AuditLogger;
-import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
 import org.dcm4chee.archive.conf.StoreAction;
