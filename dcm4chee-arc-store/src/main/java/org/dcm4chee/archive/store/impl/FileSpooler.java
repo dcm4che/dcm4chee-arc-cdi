@@ -62,11 +62,13 @@ public class FileSpooler implements Spooler {
         InputStream in = context.getInputStream();
 
         OutputStream out = null;
+        Path spoolingPath;
         try {
             String suffix = context.getSpoolFileSuffix() != null ? context.getSpoolFileSuffix() : ".dcm";
-            Path spoolingPath = Files.createTempFile(session.getSpoolDirectory(), null, suffix);
+            spoolingPath = Files.createTempFile(session.getSpoolDirectory(), null, suffix);
             out = Files.newOutputStream(spoolingPath);
 
+            // normally the StorageService is responsible for digest calculation, but here we have to do it ourselves
             if (digest != null) {
                 digest.reset();
                 out = new DigestOutputStream(out, digest);
@@ -112,9 +114,6 @@ public class FileSpooler implements Spooler {
                 }
             }
 
-            spoolingContext.setFilePath(spoolingPath);
-            spoolingContext.setFileSize(Files.size(spoolingPath));
-            spoolingContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
         } catch (IOException e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         } finally {
@@ -125,6 +124,14 @@ public class FileSpooler implements Spooler {
                 throw new DicomServiceException(Status.UnableToProcess, e);
             }
         }
+
+        spoolingContext.setFilePath(spoolingPath);
+        try {
+            spoolingContext.setFileSize(Files.size(spoolingPath));
+        } catch (IOException e) {
+            throw new DicomServiceException(Status.UnableToProcess, e);
+        }
+        spoolingContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
 
         context.setSpoolingContext(spoolingContext);
     }

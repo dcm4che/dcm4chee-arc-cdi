@@ -64,13 +64,7 @@
       </build>
     </profile>
     <profile>
-      <id>monitoring</id>
-      <activation>
-        <property>
-          <name>monitoring</name>
-          <value>true</value>
-        </property>
-      </activation>      
+      <id>jmelody</id>
       <build>
         <plugins>
           <plugin>

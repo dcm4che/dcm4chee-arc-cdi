@@ -43,11 +43,11 @@ import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.RollbackException;
+import javax.transaction.Status;
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import javax.transaction.TransactionSynchronizationRegistry;
 
 import org.dcm4chee.archive.sc.StructuralChangeContext;
 import org.dcm4chee.archive.sc.StructuralChangeRejectedException;
@@ -59,40 +59,37 @@ import org.dcm4chee.archive.sc.StructuralChangeRejectedException;
  */
 @ApplicationScoped
 public class StructuralChangeTransactionAggregator {
-    private static final String CHANGE_CONTAINER_TX_RESOURCE = "StructuralChangeContainer";
-    
     @Resource(lookup="java:jboss/TransactionManager")
     private TransactionManager tmManager; 
     
-    @Resource(lookup="java:jboss/TransactionSynchronizationRegistry")
-    private TransactionSynchronizationRegistry tsRegistry;
+    private static final ThreadLocal<StructuralChangeContainerImpl> threadLocalChangeContainer = new ThreadLocal<>();
     
     @Inject
-    private StructuralChangeHookExecutor beforeCommitExecutor;
+    private StructuralChangeHookExecutor scChangeHookExecutor;
     
     /**
      * Aggregates the result state of a QC operation to the current QC workflow.
      * @param qcEvent Result state of QC operation
      */
     public void aggregate(StructuralChangeContext changeContext) {
-        StructuralChangeContainerImpl changeContainer = initOrGetWorkflow();
+        StructuralChangeContainerImpl changeContainer = initOrGetChangeContainer();
         if (changeContainer != null) {
             changeContainer.addContext(changeContext);
         }
     }
     
-    private StructuralChangeContainerImpl initOrGetWorkflow() {
+    private StructuralChangeContainerImpl initOrGetChangeContainer() {
         try {
             Transaction tx = tmManager.getTransaction();
             if (tx == null) {
                 return null;
             }
 
-            StructuralChangeContainerImpl changeContainer = (StructuralChangeContainerImpl)tsRegistry.getResource(CHANGE_CONTAINER_TX_RESOURCE);
+            StructuralChangeContainerImpl changeContainer = threadLocalChangeContainer.get();
             if (changeContainer == null) {
                 tx.registerSynchronization(new OnStructuralChangesCommitRunner());
                 changeContainer = new StructuralChangeContainerImpl();
-                tsRegistry.putResource(CHANGE_CONTAINER_TX_RESOURCE, changeContainer);
+                threadLocalChangeContainer.set(changeContainer);
             }
             return changeContainer;
         } catch (SystemException | IllegalStateException e) {
@@ -111,9 +108,9 @@ public class StructuralChangeTransactionAggregator {
         // only called for active (not-rolled-back) transactions
         @Override
         public void beforeCompletion() {
-            StructuralChangeContainerImpl changeContainer = (StructuralChangeContainerImpl)tsRegistry.getResource(CHANGE_CONTAINER_TX_RESOURCE);
+            StructuralChangeContainerImpl changeContainer = threadLocalChangeContainer.get();
             if (changeContainer != null) {
-                if (!beforeCommitExecutor.executeBeforCommitStructuralChangeHooks(changeContainer)) {
+                if (!scChangeHookExecutor.executeBeforeCommitStructuralChangeHooks(changeContainer)) {
                     // let transaction fail
                     throw new StructuralChangeRejectedException();
                 }
@@ -122,7 +119,16 @@ public class StructuralChangeTransactionAggregator {
         
         @Override
         public void afterCompletion(int status) {
-            // nop
+            StructuralChangeContainerImpl changeContainer = threadLocalChangeContainer.get();
+            if (changeContainer != null) {
+                try {
+                    if(status == Status.STATUS_COMMITTED) {
+                        scChangeHookExecutor.asyncExecuteAfterCommitStructuralChangeHooks(changeContainer);
+                    }
+                } finally {
+                    threadLocalChangeContainer.remove();
+                }
+            }
         }
        
     }

@@ -40,27 +40,42 @@
 package org.dcm4chee.archive.sc;
 
 
+
 /**
- * Hook that is called in the BEFORE-COMMIT phase of a transaction that includes structural changes.
- * 
+ * Hook that allows to add arbitrary logic to life-cycle phases of a transaction 
+ * that includes structural changes.
  * 
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
- *
  */
 public interface StructuralChangeTransactionHook {
 
     /**
      * Transaction life-cycle method. It is called before a current transaction 
-     * that is associated with structural changes is committed.
+     * that is associated with structural changes is committed (= BEFORE-COMMIT phase).
      * </p>
      * The method implementation is allowed to fail the transaction by either marking it as 'set-rollback-only' internally or
      * by returning <code>false</code>.
      * </p>
      * If no structural changes are associated with a current transaction then this method is NOT called.
-     * @param changeContext
+     * @param changeContainer
      * @return Returns <code>true</code> if the current transaction should proceed, returns <code>false</code> if the current
      * transaction should be rolled back
      */
-    public boolean beforeCommitStructuralChanges(StructuralChangeContainer changeContext);
+    boolean beforeCommitStructuralChanges(StructuralChangeContainer changeContainer);
+    
+    /**
+     * Transaction life-cycle method. It is called after a transaction associated with structural changes has been
+     * committed successfully (= AFTER-COMMIT phase).
+     * <p>
+     * <ul>
+     *   <li>The method is executed outside any transaction context. 
+     *   If the logic implemented by this method is supposed to run inside a transaction then it is the 
+     *   responsibility of the implementation to ensure this</li>
+     *   <li>The method is executed asynchronously in a different thread than the one that committed the SC transaction</li>
+     *   <li>The method is not called for failed (=rolled-back) transactions</li>
+     * </ul>
+     * @param changeContainer
+     */
+    void afterCommitStructuralChanges(StructuralChangeContainer changeContainer);
     
 }

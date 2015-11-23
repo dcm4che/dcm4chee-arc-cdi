@@ -41,11 +41,16 @@ package org.dcm4chee.archive.sc.impl;
 
 import static java.lang.String.format;
 
+
+
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import org.dcm4chee.archive.sc.StructuralChangeContainer;
 import org.dcm4chee.archive.sc.StructuralChangeTransactionHook;
+import org.dcm4chee.archive.task.executor.impl.PlatformTaskExecutor;
+import org.dcm4chee.archive.task.executor.impl.PlatformTaskExecutor.CompletionHandler;
 import org.dcm4chee.hooks.Hooks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,22 +67,49 @@ public class StructuralChangeHookExecutor {
     @Inject
     private Hooks<StructuralChangeTransactionHook> structuralChangeHooks;
     
-    public boolean executeBeforCommitStructuralChangeHooks(StructuralChangeContainer changeContext) {
+    @Inject
+    private PlatformTaskExecutor taskExecutor;
+    
+    public boolean executeBeforeCommitStructuralChangeHooks(StructuralChangeContainer changeContainer) {
        
         for (StructuralChangeTransactionHook scHook : structuralChangeHooks) {
             try {
-                if (!scHook.beforeCommitStructuralChanges(changeContext)) {
+                if (!scHook.beforeCommitStructuralChanges(changeContainer)) {
                     LOG.info("Structural change hook {} marked transaction as failed", scHook.getClass().getName());
                     return false;
                 }
             } catch (Exception e) {
-                LOG.error(format("Error while executing structural change hook %s. Mark transaction as FAILED",
+                LOG.error(format("Error while executing BEFORE-COMMIT structural change hook %s. Mark transaction as FAILED",
                         scHook.getClass().getName()), e);
                 return false;
             }
         }
        
         return true;
+    }
+    
+    public void asyncExecuteAfterCommitStructuralChangeHooks(final StructuralChangeContainer changeContainer) {
+        final CompletionHandler<String> completionHandler = new CompletionHandler<String>() {
+
+            @Override
+            public void onComplete(String hookName) {
+                //NOP
+            }
+
+            @Override
+            public void onException(String hookName, Exception e) {
+                LOG.error(format("Error while executing AFTER-COMMIT structural change hook %s", hookName), e);
+            }
+        };
+        
+        for (final StructuralChangeTransactionHook scHook : structuralChangeHooks) {
+            taskExecutor.asyncExecute(scHook.getClass().getName(), new Runnable() {
+                @Override
+                public void run() {
+                    scHook.afterCommitStructuralChanges(changeContainer);
+                }    
+            }, completionHandler);
+        }
     }
     
 }

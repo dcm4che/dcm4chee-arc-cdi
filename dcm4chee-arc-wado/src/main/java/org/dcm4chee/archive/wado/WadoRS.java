@@ -48,6 +48,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
@@ -76,6 +77,7 @@ import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.Fragments;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.imageio.codec.ImageReaderFactory;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomInputStream.IncludeBulkData;
@@ -97,6 +99,8 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.storage.conf.StorageDeviceExtension;
+import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.dcm4chee.task.WeightWatcher;
 import org.jboss.resteasy.plugins.providers.multipart.ContentIDUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
@@ -312,34 +316,38 @@ public class WadoRS extends Wado {
         return UID.ImplicitVRLittleEndian;
     }
 
-    private MediaType selectBulkdataMediaTypeForTransferSyntax(DatasetWithFMI dataset, String ts) {
+    private MediaType selectBulkdataMediaTypeForTransferSyntax(StorageSystemGroup storageSystemGroup, DatasetWithFMI datasetWithFMI, String ts) {
 
-        // TODO check for faulty JPEG-LS data
-        //boolean rejectCompressed = ref.getStorageSystem().getStorageSystemGroup().isPossiblyFaultyJPEGLS(datasetWithFMI);
+        // prevent that faulty JPEG-LS data leaves the system
+        boolean rejectCompressed = storageSystemGroup.isPossiblyFaultyJPEGLS(datasetWithFMI);
 
-        MediaType requiredMediaType = null;
-        try {
-            requiredMediaType = MediaTypes.forTransferSyntax(ts);
-        } catch (IllegalArgumentException e) {
-            // ignored
-        }
-        if (requiredMediaType == null)
-            return null;
+        if (!rejectCompressed) {
+            MediaType requiredMediaType = null;
+            try {
+                requiredMediaType = MediaTypes.forTransferSyntax(ts);
+            } catch (IllegalArgumentException e) {
+                // ignored
+            }
+            if (requiredMediaType == null)
+                return null;
 
-        if (acceptAll)
-            return requiredMediaType;
-
-        String requiredTransferSyntaxUID = MediaTypes.transferSyntaxOf(requiredMediaType);
-
-        for (MediaType mediaType : acceptedBulkdataMediaTypes) {
-            if (mediaType.isCompatible(requiredMediaType) &&
-                    requiredTransferSyntaxUID.equals(MediaTypes.transferSyntaxOf(mediaType))) {
+            if (acceptAll)
                 return requiredMediaType;
+
+            String requiredTransferSyntaxUID = MediaTypes.transferSyntaxOf(requiredMediaType);
+
+            for (MediaType mediaType : acceptedBulkdataMediaTypes) {
+                if (mediaType.isCompatible(requiredMediaType) &&
+                        requiredTransferSyntaxUID.equals(MediaTypes.transferSyntaxOf(mediaType))) {
+                    return requiredMediaType;
+                }
             }
         }
+
         if (acceptOctetStream && ImageReaderFactory.canDecompress(ts)) {
             return MediaType.APPLICATION_OCTET_STREAM_TYPE;
         }
+
         return null;
     }
 
@@ -414,6 +422,8 @@ public class WadoRS extends Wado {
     @Path("/bulkdata/{BulkDataPath:.*}")
     @Produces("multipart/related")
     public Response retrieveBulkdata(
+            @QueryParam("storageSystemGroup") String storageSystemGroupName,
+            @QueryParam("storageSystem") String storageSystemName,
             @PathParam("BulkDataPath") String bulkDataPath,
             @QueryParam("offset") @DefaultValue("0") int offset,
             @QueryParam("length") @DefaultValue("-1") int length) {
@@ -422,11 +432,19 @@ public class WadoRS extends Wado {
 
         String bulkDataURI = "file://" + bulkDataPath;
 
-        // TODO ensure faulty JPEG-LS decompression
-        return (length <= 0) ? retrievePixelDataFromFile(bulkDataURI)
-                : retrieveBulkData(new BulkData(bulkDataURI, offset, length,
-                        false));
+        if (length <= 0) {
+            // compressed pixel data
 
+            StorageDeviceExtension storageDeviceExtension = device.getDeviceExtension(StorageDeviceExtension.class);
+            StorageSystemGroup storageSystemGroup = storageDeviceExtension.getStorageSystemGroup(storageSystemGroupName);
+            Objects.requireNonNull(storageSystemGroup);
+
+            return retrievePixelDataFromFile(storageSystemGroup, bulkDataURI);
+        } else {
+            // uncompressed pixel data, or some other bulk data (e.g. overlay data)
+
+            return retrieveBulkData(new BulkData(bulkDataURI, offset, length, false));
+        }
     }
 
     @GET
@@ -473,6 +491,27 @@ public class WadoRS extends Wado {
                         sopInstanceUID, queryParam, false);
 
         return retrieveMetadata(instances);
+    }
+
+    public static void replacePixelDataBulkDataURI(ArchiveInstanceLocator ref, Attributes dataset) {
+        Object pixelData = dataset.getValue(Tag.PixelData);
+
+        // HACK: in the case of compressed pixel data we are replacing the bulk data uri by one with undefined length
+
+        if (pixelData instanceof Fragments) {
+            Fragments frags = (Fragments) pixelData;
+            String pixeldataBulkDataURI = ((BulkData) frags.get(1))
+                    .uriWithoutQuery() +
+                    "?offset=0" +
+                    "&length=-1" +
+                    "&storageSystemGroup=" + ref.getStorageSystem().getStorageSystemGroup().getGroupID() +
+                    "&storageSystem=" + ref.getStorageSystem().getStorageSystemID();
+            dataset.setValue(
+                    Tag.PixelData,
+                    VR.OB,
+                    new BulkData(null, pixeldataBulkDataURI,
+                            dataset.bigEndian()));
+        }
     }
 
     private Response retrieve(List<ArchiveInstanceLocator> refs)
@@ -587,8 +626,8 @@ public class WadoRS extends Wado {
                     instscompleted.add((ArchiveInstanceLocator) ref);
             }
         } else {
-            for (InstanceLocator ref : refs) {
-                if (addPixelDataTo(ref.uri, output) != STATUS_OK) {
+            for (ArchiveInstanceLocator ref : refs) {
+                if (addPixelDataTo(ref.getStorageSystem().getStorageSystemGroup(), ref.uri, output) != STATUS_OK) {
                     instsfailed.add((ArchiveInstanceLocator) ref);
                 } else {
                     instscompleted.add((ArchiveInstanceLocator) ref);
@@ -648,7 +687,7 @@ public class WadoRS extends Wado {
     }
 
 
-    private Response retrievePixelData(ArchiveInstanceLocator inst,
+    private Response retrievePixelData(final ArchiveInstanceLocator inst,
             final int... frames) {
         final String fileURI = inst.uri;
         final ArrayList<Integer> status =  new ArrayList<Integer>();
@@ -659,14 +698,14 @@ public class WadoRS extends Wado {
 
         ArrayList<ArchiveInstanceLocator> failedToFetchForward = new ArrayList<ArchiveInstanceLocator>();
         if(!locations.isEmpty()) {
-            status.add(addPixelDataTo(fileURI, output, frames));
+            status.add(addPixelDataTo(inst.getStorageSystem().getStorageSystemGroup(), fileURI, output, frames));
         }
         if(!external.isEmpty()) {
             FetchForwardCallBack fetchCallBack = new FetchForwardCallBack() {
                 @Override
                 public void onFetch(Collection<ArchiveInstanceLocator> instances,
                         BasicCStoreSCUResp resp) {
-                    status.add(addPixelDataTo(fileURI, output, frames));
+                    status.add(addPixelDataTo(inst.getStorageSystem().getStorageSystemGroup(), fileURI, output, frames));
                 }
             };
             failedToFetchForward = fetchForwardService.fetchForward(aetitle, external, fetchCallBack, fetchCallBack);
@@ -680,11 +719,11 @@ public class WadoRS extends Wado {
 
         return Response.status( status.get(0).intValue()).entity(output).build();
     }
-    private Response retrievePixelDataFromFile(String fileURI) {
 
+    private Response retrievePixelDataFromFile(StorageSystemGroup storageSystemGroup, String fileURI) {
         MultipartRelatedOutput output = new MultipartRelatedOutput();
-            int status = addPixelDataTo(fileURI, output, new int[]{});
-        
+        int status = addPixelDataTo(storageSystemGroup, fileURI, output, new int[]{});
+
         if (output.getParts().isEmpty())
             throw new WebApplicationException(Status.NOT_ACCEPTABLE);
 
@@ -790,8 +829,7 @@ public class WadoRS extends Wado {
         return true;
     }
 
-    private int addPixelDataTo(String fileURI, MultipartRelatedOutput output,
-            int... frameList) {
+    private int addPixelDataTo(StorageSystemGroup storageSystemGroup, String fileURI, MultipartRelatedOutput output, int... frameList) {
         try {
             LOG.info("Add Pixel Data [file={}]",fileURI);
 
@@ -806,7 +844,7 @@ public class WadoRS extends Wado {
             // note: un-coerced SOPInstanceUID! (could be QCed, or whatever)
             String uncoercedIuid = datasetWithFMI.getDataset().getString(Tag.SOPInstanceUID);
 
-            MediaType mediaType = selectBulkdataMediaTypeForTransferSyntax(datasetWithFMI, transferSyntaxUID);
+            MediaType mediaType = selectBulkdataMediaTypeForTransferSyntax(storageSystemGroup, datasetWithFMI, transferSyntaxUID);
             if (mediaType == null) {
                 LOG.info(
                         "{}: Failed to retrieve Pixel Data of Instance[uid={}]: Requested Transfer Syntax not supported",

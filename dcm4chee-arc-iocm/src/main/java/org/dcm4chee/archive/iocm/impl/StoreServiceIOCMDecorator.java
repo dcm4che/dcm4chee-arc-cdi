@@ -56,6 +56,7 @@ import org.dcm4chee.archive.iocm.RejectionEvent;
 import org.dcm4chee.archive.iocm.RejectionService;
 import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
 import org.dcm4chee.archive.sc.impl.BasicStructuralChangeContext;
+import org.dcm4chee.archive.sc.impl.BasicStructuralChangeContext.InstanceIdentifierImpl;
 import org.dcm4chee.archive.sc.impl.StructuralChangeTransactionAggregator;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
@@ -224,7 +225,19 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             String sopInstanceUID = rejectedInstance.getSopInstanceUID();
             String seriesInstanceUID = rejectedInstance.getSeries().getSeriesInstanceUID();
             String studyInstanceUID = rejectedInstance.getSeries().getStudy().getStudyInstanceUID();
-            changeContext.addAffectedInstance(new BasicStructuralChangeContext.InstanceIdentifierImpl(studyInstanceUID, seriesInstanceUID, sopInstanceUID));
+            
+            InstanceIdentifierImpl instanceId = new InstanceIdentifierImpl(studyInstanceUID, seriesInstanceUID, sopInstanceUID);
+            
+            switch(change) {
+            case IOCM_REJECT:
+                changeContext.addSourceInstance(instanceId);
+                break;
+            case IOCM_RESTORE:
+                changeContext.addTargetInstance(instanceId);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown IOCM structural change type " + change);
+            }
         }
         stucturalChangeAggregator.aggregate(changeContext);
     }

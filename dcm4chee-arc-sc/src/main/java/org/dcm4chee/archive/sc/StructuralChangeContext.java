@@ -77,6 +77,10 @@ public interface StructuralChangeContext {
     
     Set<InstanceIdentifier> getAffectedInstances();
     
+    Set<InstanceIdentifier> getSourceInstances();
+    
+    Set<InstanceIdentifier> getTargetInstances();
+    
     interface InstanceIdentifier {
         
         String getStudyInstanceUID();

@@ -71,4 +71,9 @@ public class QCPostProcessor implements StructuralChangeTransactionHook {
         return true;
     }
 
+    @Override
+    public void afterCommitStructuralChanges(StructuralChangeContainer changeContext) {
+        // NOP
+    }
+
 }

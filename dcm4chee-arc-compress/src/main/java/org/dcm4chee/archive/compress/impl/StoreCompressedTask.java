@@ -38,6 +38,12 @@
 
 package org.dcm4chee.archive.compress.impl;
 
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
@@ -49,7 +55,6 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.storage.ObjectAlreadyExistsException;
@@ -61,14 +66,6 @@ import org.dcm4chee.task.MemoryConsumingTask;
 import org.dcm4chee.task.TaskType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 
 /**
  * Compresses and stores DICOM instance.
@@ -118,7 +115,6 @@ class StoreCompressedTask implements MemoryConsumingTask<StorageContext> {
         int copies = 1;
 
         int bufferLength = bulkdataStorage.getBufferedOutputLength();
-        MessageDigest digest = bulkdataContext.getDigest();
         OutputStream out = null;
 
         while (out == null) {
@@ -135,11 +131,6 @@ class StoreCompressedTask implements MemoryConsumingTask<StorageContext> {
             String transferSyntax = rule.getTransferSyntax();
             compressor.compress();
             Attributes newfmi = attributes.createFileMetaInformation(transferSyntax);
-
-            if (digest != null) {
-                digest.reset();
-                out = new DigestOutputStream(out, digest);
-            }
 
             out = new BufferedOutputStream(out, bufferLength);
             out = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
@@ -165,7 +156,6 @@ class StoreCompressedTask implements MemoryConsumingTask<StorageContext> {
                 if (bulkdataContext != null) {
                     bulkdataContext.setFilePath(Paths.get(bulkdataPath));
                     bulkdataContext.setFileSize(Files.size(Paths.get(bulkdataStorage.getStorageSystemPath(), bulkdataPath)));
-                    bulkdataContext.setFileDigest(digest == null ? null : TagUtils.toHexString(digest.digest()));
                 }
 
                 // make sure to remove the reference to the compressed pixel data,
