@@ -190,6 +190,12 @@
         "dicomNetworkAE" : {
           "MPPSSCP" : {
             "_.uuid" : "B9C7AB013F8DA013D0D56AFD707F5A3A5A1F1FEB",
+            "dcmTransferCapability" : [ {
+              "cn" : "All",
+              "dicomSOPClass" : "*",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "*" ]
+            } ],
             "dicomAETitle" : "MPPSSCP",
             "dicomAssociationAcceptor" : true,
             "dicomAssociationInitiator" : true,
