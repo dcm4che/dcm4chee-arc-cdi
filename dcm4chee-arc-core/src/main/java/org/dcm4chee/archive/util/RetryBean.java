@@ -42,9 +42,13 @@ import java.util.concurrent.Callable;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
+import javax.transaction.Status;
 
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.util.TransactionSynchronization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by umberto on 9/30/15.
@@ -52,12 +56,26 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 @Dependent
 public class RetryBean<T, E extends Exception> {
 
+    private static Logger log = LoggerFactory.getLogger(RetryBean.class);
+
     @Inject 
     private Device device;
 
+    @Inject
+    TransactionSynchronization transaction;
+
     public T retry(Callable<T> callable) throws E {
         ArchiveDeviceExtension dE = device.getDeviceExtension(ArchiveDeviceExtension.class);
-        return new RetryTask<T,E>(dE.getUpdateDbRetries(), dE.getUpdateDbDelay(), callable).call();
+
+        int updateDbRetries = dE.getUpdateDbRetries();
+
+        // ONLY retry if we are outside a transaction by default
+        if (transaction.getStatus() != Status.STATUS_NO_TRANSACTION) {
+            updateDbRetries = 1;
+            log.debug("Not using a retry, because the service is called within an existing transaction");
+        }
+
+        return new RetryTask<T,E>(updateDbRetries, dE.getUpdateDbDelay(), callable).call();
     }
     
     /**
