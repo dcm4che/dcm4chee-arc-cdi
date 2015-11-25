@@ -292,11 +292,30 @@ public class Instance implements Serializable {
         this.retrieveAETs = StringUtils.concat(retrieveAETs, '\\');
     }
 
-    public void addRetrieveAET(String aet) {
-        List<String> aets = this.retrieveAETs != null 
-                ? Arrays.asList(this.retrieveAETs) : new ArrayList<String>();
-        aets.add(aet);
-        setRetrieveAETs(aets.toArray(new String[]{}));
+    /**
+     * Adds a retrieve AET.
+     * @param aet AET to add
+     * @return Returns {@code true} if the AET was added, returns {@code false} if the AET already
+     * existed and therefore was not added.
+     */
+    public boolean addRetrieveAET(String aet) {
+        if(retrieveAETs == null) {
+            setRetrieveAETs(aet);
+        }
+        
+        String[] oldRetrieveAETs = getRetrieveAETs();
+        for(String retrieveAET : oldRetrieveAETs) {
+            if(retrieveAET.equals(aet)) {
+                return false;
+            }
+        }
+        
+        String[] newRetrieveAETs = new String[oldRetrieveAETs.length + 1];
+        System.arraycopy(oldRetrieveAETs, 0, newRetrieveAETs, 0, oldRetrieveAETs.length);
+        newRetrieveAETs[oldRetrieveAETs.length] = aet;
+        
+        setRetrieveAETs(newRetrieveAETs);
+        return true;
     }
 
     public String getEncodedRetrieveAETs() {

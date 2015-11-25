@@ -71,6 +71,7 @@ import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.Service;
 import org.dcm4chee.archive.dto.ServiceType;
+import org.dcm4chee.archive.entity.StoreAndRemember;
 import org.dcm4chee.archive.entity.StoreVerifyStatus;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.store.remember.StoreAndRememberContext;
@@ -246,14 +247,18 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
         for(Entry<String, VerifiedInstanceStatus> inst : verifiedSopInstances.entrySet()) {
             Availability externalAvailability = inst.getValue().getAvailability();
             String sopInstanceUID = inst.getKey();
+            StoreAndRemember sr = storeRememberEJB.getStoreRememberTxByUIDs(storeAndRememberTxUID, sopInstanceUID);
             if (Availability.ONLINE.equals(externalAvailability) || Availability.NEARLINE.equals(externalAvailability)) {
                 Availability instAvailability = (defaultAvailability == null) ? externalAvailability
                         : (externalAvailability.compareTo(defaultAvailability) <= 0 ? externalAvailability : defaultAvailability);
-                storeRememberEJB.addExternalLocation(sopInstanceUID, retrieveAET, remoteDeviceName, instAvailability);
-                storeRememberEJB.updateStoreRemember(storeAndRememberTxUID, sopInstanceUID, StoreVerifyStatus.VERIFIED);
+                
+                if(sr.isRemember()) {
+                    storeRememberEJB.rememberLocation(sopInstanceUID, retrieveAET, remoteDeviceName, instAvailability);
+                }
+                storeRememberEJB.updateStoreRemember(sr, StoreVerifyStatus.VERIFIED);
                 numVerified++;
             } else {
-                storeRememberEJB.updateStoreRemember(storeAndRememberTxUID, sopInstanceUID, StoreVerifyStatus.FAILED);
+                storeRememberEJB.updateStoreRemember(sr, StoreVerifyStatus.FAILED);
             }
         }
         
@@ -376,6 +381,11 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             return this;
         }
         
+        public StoreAndRememberContextBuilderImpl remember(boolean remember) {
+            cxt.setRemember(remember);
+            return this;
+        }
+        
         @Override
         public StoreAndRememberContext build() {
             String extDeviceName = cxt.getExternalDeviceName();
@@ -396,6 +406,9 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
             }
             if(cxt.getStoreVerifyProtocol() == null) {
                 cxt.setStoreVerifyProtocol(STORE_VERIFY_PROTOCOL.AUTO);
+            }
+            if(cxt.isRemember() == null) {
+                cxt.setRemember(true);
             }
             
             if(cxt.getTransactionUID() == null) {

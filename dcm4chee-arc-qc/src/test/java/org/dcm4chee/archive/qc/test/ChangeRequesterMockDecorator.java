@@ -38,7 +38,7 @@
 
 package org.dcm4chee.archive.qc.test;
 
-import java.util.List;
+import java.util.Set;
 
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
@@ -47,9 +47,9 @@ import javax.inject.Inject;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.IOCMConfig;
-import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
+import org.dcm4chee.archive.sc.StructuralChangeContext.InstanceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,16 +72,16 @@ public class ChangeRequesterMockDecorator implements ChangeRequesterService {
     private Device device;
 
     @Override
-    public void scheduleChangeRequest(List<QCEventInstance> sourceInstanceUIDs, List<QCEventInstance> updatedInstanceUIDs,
-            Instance rejNote) {
+    public void scheduleChangeRequest(Set<InstanceIdentifier> sourceInstanceUIDs, Set<InstanceIdentifier> updatedInstanceUIDs,
+            Set<Instance> rejNotes) {
         LOG.info("############## scheduleChangeRequest called!count:{}",++count);
         IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
         String[] aets = cfg != null ? cfg.getIocmDestinations() : null;
-        PerformedChangeRequest.addChangeRequest(updatedInstanceUIDs, rejNote, aets);
+        PerformedChangeRequest.addChangeRequest(updatedInstanceUIDs, rejNotes, aets);
     }
     
     @Override
-    public void scheduleUpdateOnlyChangeRequest(List<QCEventInstance> updatedInstanceUIDs) {
+    public void scheduleUpdateOnlyChangeRequest(Set<InstanceIdentifier> updatedInstanceUIDs) {
         LOG.info("############## scheduleUpdateOnlyChangeRequest called!count:{}",++count);
         IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
         String[] aets = cfg != null ? cfg.getNoneIocmDestinations() : null;

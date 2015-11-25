@@ -44,9 +44,10 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 
-import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.sc.StructuralChangeContext.InstanceIdentifier;
 
 /**
  * @author Franz Willer <franz.willer@gmail.com>
@@ -55,15 +56,15 @@ import org.dcm4chee.archive.entity.Instance;
 
 public class PerformedChangeRequest {
 
-    private static ArrayList<Collection<QCEventInstance>> updatedInstanceUIDs = new ArrayList<Collection<QCEventInstance>>();
+    private static ArrayList<Collection<InstanceIdentifier>> updatedInstanceUIDs = new ArrayList<>();
     private static ArrayList<Instance> rejNotes = new ArrayList<Instance>();
     private static ArrayList<String[]> notifiedAets = new ArrayList<String[]>();
     
     private static int lastChecked = -1;
    
-    public static void addChangeRequest(Collection<QCEventInstance> updatedInstances, Instance rejNote, String[] aets) {
+    public static void addChangeRequest(Collection<InstanceIdentifier> updatedInstances, Set<Instance> rejNotes, String[] aets) {
         updatedInstanceUIDs.add(updatedInstances);
-        rejNotes.add(rejNote);
+        rejNotes.addAll(rejNotes);
         notifiedAets.add(aets);
     }
 
@@ -77,7 +78,7 @@ public class PerformedChangeRequest {
         return updatedInstanceUIDs.size();
     }
     
-    public static void checkChangeRequest(int idx, Collection<QCEventInstance> updatedInstances, Instance rejNote, String[] aets) {
+    public static void checkChangeRequest(int idx, Collection<InstanceIdentifier> updatedInstances, Instance rejNote, String[] aets) {
         if (idx < 0) {
             idx = rejNotes.size()-1;
             assertTrue("No new changerequest available", idx > lastChecked);
@@ -92,14 +93,14 @@ public class PerformedChangeRequest {
         assertTrue("New changerequest found", (rejNotes.size()-1) == lastChecked);
     }
     
-    public static void checkChangeRequests(int idx, Collection<QCEventInstance> expectedUpdatedInstances, Collection<Instance> expectedRejNotes, String[] aets) {
+    public static void checkChangeRequests(int idx, Collection<InstanceIdentifier> expectedUpdatedInstances, Collection<Instance> expectedRejNotes, String[] aets) {
         if (idx < 0) {
             idx = rejNotes.size()-1;
             assertTrue("No new changerequest available", idx > lastChecked);
             lastChecked = idx;
         }
         ArrayList<Instance> chkRejNotes = new ArrayList<Instance>(expectedRejNotes);
-        ArrayList<QCEventInstance> chkUpdatedInstances = new ArrayList<QCEventInstance>(expectedUpdatedInstances);
+        ArrayList<InstanceIdentifier> chkUpdatedInstances = new ArrayList<>(expectedUpdatedInstances);
         for (int i = 0, len = expectedRejNotes.size(); i < len ; i++) {
             assertTrue("RejectionNote is not expected! "+rejNotes.get(idx), chkRejNotes.remove(rejNotes.get(idx)));
             assertTrue("Updated instances not expected! "+updatedInstanceUIDs.get(idx), chkUpdatedInstances.removeAll(updatedInstanceUIDs.get(idx)));

@@ -54,6 +54,7 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
 import org.dcm4chee.archive.qc.PatientCommands;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
@@ -72,6 +73,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService {
     private QCBean qcBean;
     
     @Inject
+    private ChangeRequesterService changeRequester;
+    
+    @Inject
     private StructuralChangeTransactionAggregator structuralChangeAggregator;
    
     @Override
@@ -79,7 +83,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService {
             Attributes targetStudyattributes, Attributes targetSeriesattributes,
             Code qcRejectionCode) throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.mergeStudies(sourceStudyUids, targetStudyUID, targetStudyattributes, targetSeriesattributes, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
 
     @Override
@@ -87,7 +93,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService {
             Attributes targetStudyattributes, Attributes targetSeriesattributes,
             Code qcRejectionCode) throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.merge(sourceStudyUid, targetStudyUid, targetStudyattributes, targetSeriesattributes, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
 
     @Override
@@ -95,7 +103,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService {
             Attributes createdStudyattributes, Attributes targetSeriesattributes,
             Code qcRejectionCode) throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.split(toMove, pid, targetStudyUID, createdStudyattributes, targetSeriesattributes, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
 
     @Override
@@ -104,7 +114,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService {
             Attributes targetSeriesattributes, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.segment(toMove, toClone, pid, targetStudyUID, targetStudyattributes, targetSeriesattributes, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
     
     @Override
@@ -116,7 +128,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService {
     public QCOperationContext updateDicomObject(Enum<?> structuralChangeType, ArchiveDeviceExtension arcDevExt, QCUpdateScope scope,
             Attributes attributes) throws QCOperationNotPermittedException, EntityNotFoundException {
         QCEvent qcEvent = qcBean.updateDicomObject(arcDevExt, scope, attributes);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleUpdateOnlyChangeRequest(qcOperationCtx.getSourceInstances());
+        return qcOperationCtx;
     }
 
     @Override
@@ -135,28 +149,36 @@ public class StructuralChangeServiceImpl implements StructuralChangeService {
     public QCOperationContext deletePatient(Enum<?> structuralChangeType, IDWithIssuer pid, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.deletePatient(pid, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
 
     @Override
     public QCOperationContext deleteStudy(Enum<?> structuralChangeType, String studyInstanceUID, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.deleteStudy(studyInstanceUID, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
 
     @Override
     public QCOperationContext deleteSeries(Enum<?> structuralChangeType, String seriesInstanceUID, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.deleteSeries(seriesInstanceUID, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
 
     @Override
     public QCOperationContext deleteInstance(Enum<?> structuralChangeType, String sopInstanceUID, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.deleteInstance(sopInstanceUID, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
 
     @Override
@@ -178,12 +200,15 @@ public class StructuralChangeServiceImpl implements StructuralChangeService {
     public QCOperationContext reject(Enum<?> structuralChangeType, String[] sopInstanceUIDs, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.reject(sopInstanceUIDs, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
 
     @Override
     public QCOperationContext restore(Enum<?> structuralChangeType, String[] sopInstanceUIDs) throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.restore(sopInstanceUIDs);
+        //TODO: schedule change request for restored instances (= send restore note)?
         return aggregateStructuralChange(structuralChangeType, qcEvent);
     }
 
@@ -196,7 +221,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService {
     public QCOperationContext replaced(Enum<?> structuralChangeType, Map<String, String> oldToNewIUIDs, Code qcRejectionCode)
             throws QCOperationNotPermittedException {
         QCEvent qcEvent = qcBean.replaced(oldToNewIUIDs, qcRejectionCode);
-        return aggregateStructuralChange(structuralChangeType, qcEvent);
+        QCOperationContext qcOperationCtx = aggregateStructuralChange(structuralChangeType, qcEvent);
+        changeRequester.scheduleChangeRequest(qcOperationCtx.getSourceInstances(), qcOperationCtx.getTargetInstances(), qcOperationCtx.getRejectionNotes());
+        return qcOperationCtx;
     }
     
     private QCContextImpl aggregateStructuralChange(Enum<?> structuralChangeType, QCEvent qcEvent) {

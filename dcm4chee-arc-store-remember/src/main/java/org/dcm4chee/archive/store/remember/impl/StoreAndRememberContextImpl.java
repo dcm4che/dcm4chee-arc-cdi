@@ -56,6 +56,7 @@ class StoreAndRememberContextImpl implements StoreAndRememberContext {
     private STORE_VERIFY_PROTOCOL storeVerifyProtocol;
     private String[] instances;
     private int retries;
+    private Boolean remember;
     
     public void setTransactionUID(String transactionUID) {
         this.transactionUID = transactionUID;
@@ -83,6 +84,10 @@ class StoreAndRememberContextImpl implements StoreAndRememberContext {
 
     public void setRetries(int retries) {
         this.retries = retries;
+    }
+    
+    public void setRemember(boolean remember) {
+        this.remember = remember;
     }
 
     @Override
@@ -118,6 +123,11 @@ class StoreAndRememberContextImpl implements StoreAndRememberContext {
     @Override
     public int getRetries() {
         return retries;
+    }
+    
+    @Override
+    public Boolean isRemember() {
+        return remember;
     }
     
     @Override
