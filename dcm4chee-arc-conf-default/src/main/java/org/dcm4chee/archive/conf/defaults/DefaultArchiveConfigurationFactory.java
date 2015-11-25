@@ -487,6 +487,16 @@ public class DefaultArchiveConfigurationFactory {
             device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
         ApplicationEntity ae = new ApplicationEntity(aet);
 
+        if ("MPPSSCP".equals(aet)) {
+            TransferCapability tc = new TransferCapability();
+            tc.setCommonName("All");
+            tc.setSopClass("*");
+            tc.setRole(SCP);
+            tc.setTransferSyntaxes("*");
+            ae.addTransferCapability(tc);
+        }
+
+
         ExternalArchiveAEExtension externalArchiveExt =
                 new ExternalArchiveAEExtension();
         if (containsArchiveType(device.getPrimaryDeviceTypes()))
