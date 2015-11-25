@@ -46,12 +46,15 @@ import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.BasicMPPSSCP;
 import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
+import org.dcm4chee.archive.util.RetryBean;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
+import java.util.concurrent.Callable;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -64,11 +67,22 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
     @Inject
     private MPPSService mppsService;
 
+    @Inject
+    RetryBean<Void,DicomServiceException> retry;
+
     @Override
-    protected Attributes create(Association as, Attributes cmd, Attributes data, Attributes rsp) throws DicomServiceException {
+    protected Attributes create(final Association as, Attributes cmd, final Attributes data, Attributes rsp) throws DicomServiceException {
         try {
-            String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
-            mppsService.createPerformedProcedureStep(data, new MPPSContext(as.getCallingAET(), as.getCalledAET(), iuid, Dimse.N_CREATE_RQ));
+            final String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
+
+            retry.retry(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    mppsService.createPerformedProcedureStep(data, new MPPSContext(as.getCallingAET(), as.getCalledAET(), iuid, Dimse.N_CREATE_RQ));
+                    return null;
+                }
+            });
+
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -79,10 +93,18 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
     }
 
     @Override
-    protected Attributes set(Association as, Attributes cmd, Attributes data, Attributes rsp) throws DicomServiceException {
+    protected Attributes set(final Association as, Attributes cmd, final Attributes data, Attributes rsp) throws DicomServiceException {
         try {
-            String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
-            mppsService.updatePerformedProcedureStep(data, new MPPSContext(as.getCallingAET(), as.getCalledAET(), iuid, Dimse.N_SET_RQ));
+            final String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
+
+            retry.retry(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    mppsService.updatePerformedProcedureStep(data, new MPPSContext(as.getCallingAET(), as.getCalledAET(), iuid, Dimse.N_SET_RQ));
+                    return null;
+                }
+            });
+
         } catch (DicomServiceException e) {
             throw e;
         } catch (Exception e) {

@@ -41,16 +41,20 @@
 package org.dcm4chee.archive.mpps.emulate;
 
 import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
+import org.dcm4chee.archive.util.RetryBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import java.util.concurrent.Callable;
 
 /**
  * @author Roman K
@@ -66,7 +70,10 @@ public class MPPSEmulator {
     @Inject
     private Device device;
 
-    public MPPS onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent) {
+    @Inject
+    RetryBean<MPPS,DicomServiceException> retry;
+
+    public MPPS onStudyUpdated(@Observes final StudyUpdatedEvent studyUpdatedEvent) {
 
         if (studyUpdatedEvent.getLocalAETs()== null || studyUpdatedEvent.getLocalAETs().isEmpty()) {
             LOG.info("No local AETs are referenced for a study update, will not emulate MPPS");
@@ -74,7 +81,12 @@ public class MPPSEmulator {
         }
 
         try {
-            return ejb.emulateMPPS(studyUpdatedEvent);
+            return retry.retry(new Callable<MPPS>() {
+                @Override
+                public MPPS call() throws Exception {
+                    return ejb.emulateMPPS(studyUpdatedEvent);
+                }
+            });
         } catch (DicomServiceException e) {
             LOG.error("Cannot emulate MPPS",e);
             return null;
