@@ -115,10 +115,4 @@ public interface DerivedStudyFields {
      * @return number of visible series of this Study (proprietary field)
      */
     int getNumberOfVisibleSeries();
-    
-    /**
-     * Reset fields for calculation 
-     */
-    void reset();
-
 }

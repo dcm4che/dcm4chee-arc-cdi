@@ -41,14 +41,6 @@ public class DynamicDecoratorProducer {
 	@DynamicDecorator
 	Instance<DelegatingServiceImpl<CStoreSCUService>> dynamicCStoreSCUDecorators;
 
-	@Inject
-	@DynamicDecorator
-	Instance<DelegatingServiceImpl<DerivedStudyFields>> dynamicDerivedStudyFieldsDecorators;
-
-	@Inject
-	@DynamicDecorator
-	Instance<DelegatingServiceImpl<DerivedSeriesFields>> dynamicDerivedSeriesFieldsDecorators;
-
     @Inject
     @DynamicDecorator
     Instance<DelegatingServiceImpl<StorageService>> dynamicStorageDecorators;
@@ -93,21 +85,6 @@ public class DynamicDecoratorProducer {
 	@ConfiguredDynamicDecorators
 	public Collection<DelegatingServiceImpl<CStoreSCUService>> getConfiguredCStoreSCUServiceDynamicDecorators() {
 		return decoratorManager.getOrderedDecorators(dynamicCStoreSCUDecorators, CStoreSCUService.class);
-	}
-
-	@Produces @RequestScoped
-	@ConfiguredDynamicDecorators
-	public Collection<DelegatingServiceImpl<DerivedStudyFields>> getConfiguredDerivedStudyFieldsDynamicDecorators() {
-		return decoratorManager.getOrderedDecorators(dynamicDerivedStudyFieldsDecorators,
-				DerivedStudyFields.class, false); //false => not using cache
-	}
-
-	@Produces @RequestScoped
-	@ConfiguredDynamicDecorators
-	public Collection<DelegatingServiceImpl<DerivedSeriesFields>> getConfiguredDerivedSeriesFieldsDynamicDecorators() {
-		return decoratorManager.getOrderedDecorators
-				(dynamicDerivedSeriesFieldsDecorators,
-				DerivedSeriesFields.class, false); //false => not using cache
 	}
 
     @Produces

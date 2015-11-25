@@ -40,11 +40,16 @@ package org.dcm4chee.archive.query.impl;
 
 import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.query.DerivedStudyFields;
 import org.dcm4chee.storage.conf.Availability;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.RequestScoped;
 import java.util.Date;
@@ -52,20 +57,28 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * Calculates the derived fields for a Study.
+ *
  * Created by Umberto Cappellini on 6/12/15.
  */
-@RequestScoped
 public class DefaultDerivedStudyFields implements DerivedStudyFields {
 
-    protected int numberOfInstances;
-    protected String[] retrieveAETs;
-    protected Availability availability;
-    protected Set<Long> seriesPKs = new HashSet<Long>();
-    protected Set<String> mods = new HashSet<String>();
-    protected Set<String> cuids = new HashSet<String>();
+    private final Device device;
+
+    private int numberOfInstances;
+    private String[] retrieveAETs;
+    private Availability availability;
+    private Set<Long> seriesPKs = new HashSet<Long>();
+    private Set<String> mods = new HashSet<String>();
+    private Set<String> cuids = new HashSet<String>();
     private Date lastUpdateTime = null;
-    private int numberOfVisibleImages;
-    private int numberOfVisibleSeries;
+
+    private int numberOfVisibleImages=0;
+    private Set<String> visibleSeriesUIDs = new HashSet<String>();
+
+    public DefaultDerivedStudyFields(Device device) {
+        this.device = device;
+    }
 
     @Override
     public Expression<?>[] fields() {
@@ -75,7 +88,9 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
                 QInstance.instance.sopClassUID,
                 QInstance.instance.retrieveAETs,
                 QInstance.instance.availability,
-                QInstance.instance.updatedTime
+                QInstance.instance.updatedTime,
+                QInstance.instance.attributesBlob,
+                QSeries.series.seriesInstanceUID
         };
     }
 
@@ -121,7 +136,7 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
     
     @Override
     public int getNumberOfVisibleSeries() {
-        return numberOfVisibleSeries;
+        return visibleSeriesUIDs.size();
     }
 
     @Override
@@ -129,8 +144,7 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
         String[] retrieveAETs1 = StringUtils.split(
                 result.get(QInstance.instance.retrieveAETs),
                 '\\');
-        Availability availability1 =
-                result.get(QInstance.instance.availability);
+        Availability availability1 = result.get(QInstance.instance.availability);
         if (numberOfInstances++ == 0) {
             retrieveAETs = retrieveAETs1;
             availability = availability1;
@@ -145,23 +159,22 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
             if (modality1 != null)
                 mods.add(modality1);
         }
-        cuids.add(result.get(QInstance.instance.sopClassUID));
+
+        String sopClass = result.get(QInstance.instance.sopClassUID);
+
+        cuids.add(sopClass);
         Date instanceUpdateTime = result.get(QInstance.instance
                 .updatedTime);
         if (lastUpdateTime == null || instanceUpdateTime.after(lastUpdateTime))
             lastUpdateTime = instanceUpdateTime;
+
+        if (device.getDeviceExtension(ArchiveDeviceExtension.class).isVisibleSOPClass(sopClass)) {
+            String seriesUID = result.get(QSeries.series.seriesInstanceUID);
+            AttributesBlob blob = result.get(QInstance.instance.attributesBlob);
+            visibleSeriesUIDs.add(seriesUID);
+            int numberOfVisibleImagesInInstance = blob != null ? blob.getAttributes().getInt(Tag.NumberOfFrames, 1) : 1;
+            numberOfVisibleImages += numberOfVisibleImagesInInstance;
+        }
     }
-    
-    @Override
-    public void reset() {
-        numberOfInstances = 0;
-        retrieveAETs = null;
-        availability = null;
-        seriesPKs.clear();
-        mods.clear();
-        cuids.clear();
-        lastUpdateTime = null;
-        numberOfVisibleImages = 0;
-        numberOfVisibleSeries = 0;
-    }
+
 }

@@ -40,36 +40,47 @@ package org.dcm4chee.archive.query.impl;
 
 import com.mysema.query.Tuple;
 import com.mysema.query.types.Expression;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.net.Device;
 import org.dcm4che3.util.StringUtils;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.QInstance;
-import org.dcm4chee.archive.entity.QSeries;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.query.DerivedSeriesFields;
 import org.dcm4chee.storage.conf.Availability;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.RequestScoped;
 import java.util.Date;
 
 /**
+ * Calculates the derived fields for a Series.
+ *
  * Created by Umberto Cappellini on 6/12/15.
  */
-@RequestScoped
 public class DefaultDerivedSeriesFields implements DerivedSeriesFields {
 
-    protected int numberOfInstances;
-    protected String[] retrieveAETs;
-    protected Availability availability;
+    private final Device device;
+
+    private int numberOfInstances;
+    private String[] retrieveAETs;
+    private Availability availability;
     private Date lastUpdateTime = null;
     private int numberOfVisibleImages;
+
+    public DefaultDerivedSeriesFields(Device device) {
+        this.device = device;
+    }
 
     @Override
     public Expression<?>[] fields() {
         return new Expression<?>[]{
                 QInstance.instance.retrieveAETs,
                 QInstance.instance.availability,
-                QInstance.instance.updatedTime
+                QInstance.instance.updatedTime,
+                QInstance.instance.attributesBlob,
+                QInstance.instance.sopClassUID
         };
     }
 
@@ -118,14 +129,14 @@ public class DefaultDerivedSeriesFields implements DerivedSeriesFields {
                 .updatedTime);
         if (lastUpdateTime == null || instanceUpdateTime.after(lastUpdateTime))
             lastUpdateTime = instanceUpdateTime;
-    }
-    
-    @Override
-    public void reset() {
-        numberOfInstances = 0;
-        retrieveAETs = null;
-        availability = null;
-        numberOfVisibleImages = 0;
+
+        AttributesBlob blob = result.get(QInstance.instance.attributesBlob);
+        String sopClass = result.get(QInstance.instance.sopClassUID);
+
+        if (device.getDeviceExtension(ArchiveDeviceExtension.class).isVisibleSOPClass(sopClass)) {
+            int numberOfVisibleImagesInInstance = blob != null ? blob.getAttributes().getInt(Tag.NumberOfFrames, 1) : 1;
+            numberOfVisibleImages += numberOfVisibleImagesInInstance;
+        }
     }
 
 }
