@@ -133,7 +133,8 @@ public class DefaultArchiveConfigurationFactory {
             "MPPSSCU",
             "FINDSCU",
             "GETSCU",
-            AET_FALLBACK_WEB_CLIENT
+            AET_FALLBACK_WEB_CLIENT,
+            "MOVESCU"
     };
     protected static final Issuer SITE_A =
             new Issuer("Site A", "1.2.40.0.13.1.1.999.111.1111", "ISO");
@@ -150,6 +151,7 @@ public class DefaultArchiveConfigurationFactory {
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // FINDSCU
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // GETSCU
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // AET_FALLBACK_WEB_CLIENT
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING // MOVESCU
     };
     private static final Issuer SITE_B =
             new Issuer("Site B", "1.2.40.0.13.1.1.999.222.2222", "ISO");
@@ -164,6 +166,7 @@ public class DefaultArchiveConfigurationFactory {
             SITE_A, // FINDSCU
             SITE_A, // GETSCU
             SITE_A, // AET_FALLBACK_WEB_CLIENT
+            SITE_A, // MOVESCU
     };
     private static final Code INST_B =
             new Code("222.2222", "99DCM4CHEE", null, "Site B");
@@ -178,6 +181,7 @@ public class DefaultArchiveConfigurationFactory {
             null, // FINDSCU
             null, // GETSCU
             null, // AET_FALLBACK_WEB_CLIENT
+            null, // MOVESCU
     };
     private static final int PENDING_CMOVE_INTERVAL = 5000;
     private static final int CONFIGURATION_STALE_TIMEOUT = 60;
