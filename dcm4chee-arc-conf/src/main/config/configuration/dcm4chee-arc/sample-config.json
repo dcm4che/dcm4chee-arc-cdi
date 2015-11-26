@@ -508,8 +508,6 @@
         } ],
         "dicomDeviceName" : "movescu",
         "dicomInstalled" : true,
-        "dicomIssuerOfAccessionNumber" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
-        "dicomIssuerOfPatientID" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
         "dicomNetworkAE" : {
           "MOVESCU" : {
             "_.uuid" : "51626E0514BDEC5D284325D5330EE56F34E50869",
@@ -599,8 +597,6 @@
         } ],
         "dicomDeviceName" : "dcmext",
         "dicomInstalled" : true,
-        "dicomIssuerOfAccessionNumber" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
-        "dicomIssuerOfPatientID" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
         "dicomNetworkAE" : {
           "DCMEXT" : {
             "_.uuid" : "9C6B4BE560B17FF9BA42A4D5004F94B9830E0A94",

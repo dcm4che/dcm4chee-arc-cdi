@@ -175,9 +175,9 @@ public class DefaultArchiveConfigurationFactory {
             SITE_A, // FINDSCU
             SITE_A, // GETSCU
             SITE_A, // AET_FALLBACK_WEB_CLIENT
-            SITE_A, // MOVESCU
+            null, // MOVESCU
             SITE_A, // HL7SND
-            SITE_A, // DCMEXT
+            null, // DCMEXT
     };
     private static final Code INST_B =
             new Code("222.2222", "99DCM4CHEE", null, "Site B");
