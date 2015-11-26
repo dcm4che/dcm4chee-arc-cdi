@@ -464,7 +464,7 @@ public class DefaultArchiveConfigurationFactory {
         arr.addConnection(auditUDP);
 
         if (factoryParams.generateUUIDsBasedOnName) {
-            auditUDP.setUuid(makeUuidFromName(name+"auditUDP"));
+            auditUDP.setUuid(makeUuidFromName(name + "auditUDP"));
         }
 
         return arrDevice;
@@ -500,14 +500,21 @@ public class DefaultArchiveConfigurationFactory {
             device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
         ApplicationEntity ae = new ApplicationEntity(aet);
 
-        // For MPPSSCP and DCMEXT add a universal transfer capability
-        if (MPPSSCP.equals(aet) || DCMEXT.equals(aet)) {
+        // For MPPSSCP add a universal transfer capability
+        if (MPPSSCP.equals(aet)) {
             TransferCapability tc = new TransferCapability();
             tc.setCommonName("All");
             tc.setSopClass("*");
             tc.setRole(SCP);
             tc.setTransferSyntaxes("*");
             ae.addTransferCapability(tc);
+        }
+
+        if (DCMEXT.equals(aet)) {
+            for (TCGroupConfigAEExtension.DefaultGroup defaultGroup : TCGroupConfigAEExtension.DefaultGroup.values()) {
+                DefaultArchiveConfigurationFactory.addTCsForDefaultGroup(ae, SCP, defaultGroup);
+                DefaultArchiveConfigurationFactory.addTCsForDefaultGroup(ae, SCU, defaultGroup);
+            }
         }
 
 
@@ -531,8 +538,8 @@ public class DefaultArchiveConfigurationFactory {
 
         if (factoryParams.generateUUIDsBasedOnName) {
             ae.setUuid(makeUuidFromName(aet));
-            dicom.setUuid(makeUuidFromName(aet+"dicom"));
-            dicomTLS.setUuid(makeUuidFromName(aet+"dicomtls"));
+            dicom.setUuid(makeUuidFromName(aet + "dicom"));
+            dicomTLS.setUuid(makeUuidFromName(aet + "dicomtls"));
         }
 
         return device;
@@ -568,8 +575,8 @@ public class DefaultArchiveConfigurationFactory {
 
 
         if (factoryParams.generateUUIDsBasedOnName) {
-            hl7.setUuid(makeUuidFromName(name+"hl7"));
-            hl7TLS.setUuid(makeUuidFromName(name+"hl7tls"));
+            hl7.setUuid(makeUuidFromName(name + "hl7"));
+            hl7TLS.setUuid(makeUuidFromName(name + "hl7tls"));
         }
 
         return device;
