@@ -55,7 +55,6 @@
   </mapped-superclass>
 
   <entity class="Code">
-    <table name="code" />
     <sequence-generator name="seq" sequence-name="code_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -66,7 +65,6 @@
   </entity>
 
   <entity class="ContentItem">
-    <table name="content_item" />
     <sequence-generator name="seq" sequence-name="content_item_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -77,7 +75,6 @@
   </entity>
 
   <entity class="Issuer">
-    <table name="id_issuer" />
     <sequence-generator name="seq" sequence-name="is_issuer_pks"
                         allocation-size="1" />
     <attributes>
@@ -89,7 +86,6 @@
   </entity>
 
   <entity class="PatientID">
-    <table name="patient_id" />
     <sequence-generator name="seq" sequence-name="patient_id_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -100,7 +96,6 @@
   </entity>
 
   <entity class="PersonName">
-    <table name="person_name" />
     <sequence-generator name="seq" sequence-name="person_name_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -111,7 +106,6 @@
   </entity>
 
   <entity class="SoundexCode">
-    <table name="soundex_code" />
     <sequence-generator name="seq" sequence-name="soundex_code_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -122,7 +116,6 @@
   </entity>
 
   <entity class="Patient">
-    <table name="patient" />
     <sequence-generator name="seq" sequence-name="patient_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -133,7 +126,6 @@
   </entity>
 
   <entity class="Study">
-    <table name="study" />
     <sequence-generator name="seq" sequence-name="study_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -144,7 +136,6 @@
   </entity>
 
   <entity class="StudyQueryAttributes">
-    <table name="study_query_attrs" />
     <sequence-generator name="seq" sequence-name="study_query_attrs_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -155,7 +146,6 @@
   </entity>
 
   <entity class="Series">
-    <table name="series" />
     <sequence-generator name="seq" sequence-name="series_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -166,7 +156,6 @@
   </entity>
 
   <entity class="SeriesQueryAttributes">
-    <table name="series_query_attrs" />
     <sequence-generator name="seq" sequence-name="series_query_attrs_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -177,7 +166,6 @@
   </entity>
 
   <entity class="RequestAttributes">
-    <table name="series_req" />
     <sequence-generator name="seq" sequence-name="series_req_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -188,7 +176,6 @@
   </entity>
 
   <entity class="Instance">
-    <table name="instance" />
     <sequence-generator name="seq" sequence-name="instance_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -199,7 +186,6 @@
   </entity>
 
   <entity class="VerifyingObserver">
-    <table name="verify_observer" />
     <sequence-generator name="seq" sequence-name="verify_observer_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -210,7 +196,6 @@
   </entity>
 
   <entity class="Location">
-    <table name="location" />
     <sequence-generator name="seq" sequence-name="location_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -221,7 +206,6 @@
   </entity>
 
   <entity class="MWLItem">
-    <table name="mwl_item" />
     <sequence-generator name="seq" sequence-name="mwl_item_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -232,7 +216,6 @@
   </entity>
 
   <entity class="ScheduledStationAETitle">
-    <table name="sps_station_aet" />
     <sequence-generator name="seq" sequence-name="sps_station_aet_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -243,7 +226,6 @@
   </entity>
 
   <entity class="MPPS">
-    <table name="mpps" />
     <sequence-generator name="seq" sequence-name="mpps_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -254,7 +236,6 @@
   </entity>
   
     <entity class="AttributesBlob">
-    <table name="dicomattrs" />
     <sequence-generator name="seq" sequence-name="dicomattrs_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -268,7 +249,6 @@
   </entity>
 
     <entity class="QCActionHistory">
-    <table name="qc_action_history"/>
     <sequence-generator name="seq" sequence-name="qc_action_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -279,7 +259,6 @@
   </entity>
 
   <entity class="QCInstanceHistory">
-    <table name="qc_instance_history"/>
     <sequence-generator name="seq" sequence-name="qc_instance_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -290,7 +269,6 @@
   </entity>
 
   <entity class="QCSeriesHistory">
-    <table name="qc_series_history"/>
     <sequence-generator name="seq" sequence-name="qc_series_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -301,7 +279,6 @@
   </entity>
 
   <entity class="QCStudyHistory">
-    <table name="qc_study_history"/>
     <sequence-generator name="seq" sequence-name="qc_study_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -312,7 +289,6 @@
   </entity>
 
   <entity class="QCUpdateHistory">
-    <table name="qc_update_history"/>
     <sequence-generator name="seq" sequence-name="qc_update_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -323,7 +299,6 @@
   </entity>
 
   <entity class="org.dcm4chee.archive.entity.StudyUpdateSession">
-    <table name="study_update_session"/>
     <sequence-generator name="seq" sequence-name="study_update_session_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -334,7 +309,6 @@
   </entity>
 
   <entity class="ExternalRetrieveLocation">
-    <table name="ext_retrieve_location" />
     <sequence-generator name="seq" sequence-name="ext_retrieve_location_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -345,7 +319,6 @@
   </entity>
 
  <entity class="StoreVerifyDimse">
-    <table name="store_verify_dimse" />
     <sequence-generator name="seq" sequence-name="store_verify_dimse_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -356,7 +329,6 @@
   </entity>
 
   <entity class="StoreVerifyWeb">
-    <table name="store_verify_web" />
     <sequence-generator name="seq" sequence-name="store_verify_web_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -368,7 +340,6 @@
 
 
   <entity class="ArchivingTask">
-    <table name="archiving_task"/>
     <sequence-generator name="seq" sequence-name="archiving_task_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -379,7 +350,6 @@
   </entity>
 
   <entity class="StudyOnStorageSystemGroup">
-    <table name="study_on_stg_sys"/>
     <sequence-generator name="seq" sequence-name="study_on_stg_sys_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -390,7 +360,6 @@
   </entity>
   
   <entity class="StoreAndRemember">
-    <table name="store_and_remember" />
     <sequence-generator name="seq" sequence-name="store_and_remember_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
@@ -401,7 +370,6 @@
   </entity>
   
   <entity class="ActiveProcessing">
-    <table name="active_processing" />
     <sequence-generator name="seq" sequence-name="active_processing_pks" allocation-size="1" />
     <attributes>
       <id name="pk">

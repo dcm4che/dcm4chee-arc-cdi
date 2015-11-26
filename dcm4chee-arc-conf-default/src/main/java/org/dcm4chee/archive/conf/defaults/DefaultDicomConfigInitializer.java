@@ -40,8 +40,14 @@ public class DefaultDicomConfigInitializer {
 
         for (int i = 0; i < DefaultArchiveConfigurationFactory.OTHER_AES.length; i++) {
             String aet = DefaultArchiveConfigurationFactory.OTHER_AES[i];
-            config.persist(defaultArchiveConfigurationFactory.createDevice(DefaultArchiveConfigurationFactory.OTHER_DEVICES[i], DefaultArchiveConfigurationFactory.OTHER_ISSUER[i], DefaultArchiveConfigurationFactory.OTHER_INST_CODES[i],
-                    aet, "localhost", DefaultArchiveConfigurationFactory.OTHER_PORTS[i << 1], DefaultArchiveConfigurationFactory.OTHER_PORTS[(i << 1) + 1]));
+            config.persist(defaultArchiveConfigurationFactory.createDevice(
+                    DefaultArchiveConfigurationFactory.OTHER_DEVICES[i],
+                    DefaultArchiveConfigurationFactory.OTHER_ISSUER[i],
+                    DefaultArchiveConfigurationFactory.OTHER_INST_CODES[i],
+                    aet,
+                    "localhost",
+                    DefaultArchiveConfigurationFactory.OTHER_PORTS[i << 1],
+                    DefaultArchiveConfigurationFactory.OTHER_PORTS[(i << 1) + 1]));
         }
 
         log.debug("Creating other external devices");
