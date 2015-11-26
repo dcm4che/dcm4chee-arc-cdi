@@ -107,6 +107,9 @@ import static org.dcm4che3.net.TransferCapability.Role.SCU;
 public class DefaultArchiveConfigurationFactory {
 
     private static final String AET_FALLBACK_WEB_CLIENT = "FALLBACK-WEBC";
+    private static final String MPPSSCP = "MPPSSCP";
+    private static final String DCMEXT = "DCMEXT";
+
 
     public static final String PIX_MANAGER = "HL7RCV^DCM4CHEE";
     public static final String[] OTHER_DEVICES = {
@@ -121,20 +124,24 @@ public class DefaultArchiveConfigurationFactory {
             "getscu",
             "fallbackWebClient",
             "movescu",
-            "hl7snd"
+            "hl7snd",
+            "dcmext"
     };
     protected static final String[] OTHER_AES = {
             "DCMQRSCP",
             "STGCMTSCU",
             "STORESCP",
-            "MPPSSCP",
+            MPPSSCP,
             "IANSCP",
             "STORESCU",
             "MPPSSCU",
             "FINDSCU",
             "GETSCU",
             AET_FALLBACK_WEB_CLIENT,
-            "MOVESCU"
+            "MOVESCU",
+            "HL7SND",
+            DCMEXT
+
     };
     protected static final Issuer SITE_A =
             new Issuer("Site A", "1.2.40.0.13.1.1.999.111.1111", "ISO");
@@ -151,7 +158,9 @@ public class DefaultArchiveConfigurationFactory {
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // FINDSCU
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // GETSCU
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // AET_FALLBACK_WEB_CLIENT
-            Connection.NOT_LISTENING, Connection.NOT_LISTENING // MOVESCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // MOVESCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // HL7SND
+            11122, Connection.NOT_LISTENING // DCMEXT
     };
     private static final Issuer SITE_B =
             new Issuer("Site B", "1.2.40.0.13.1.1.999.222.2222", "ISO");
@@ -167,6 +176,8 @@ public class DefaultArchiveConfigurationFactory {
             SITE_A, // GETSCU
             SITE_A, // AET_FALLBACK_WEB_CLIENT
             SITE_A, // MOVESCU
+            SITE_A, // HL7SND
+            SITE_A, // DCMEXT
     };
     private static final Code INST_B =
             new Code("222.2222", "99DCM4CHEE", null, "Site B");
@@ -182,6 +193,8 @@ public class DefaultArchiveConfigurationFactory {
             null, // GETSCU
             null, // AET_FALLBACK_WEB_CLIENT
             null, // MOVESCU
+            null, // HL7SND
+            null, // DCMEXT
     };
     private static final int PENDING_CMOVE_INTERVAL = 5000;
     private static final int CONFIGURATION_STALE_TIMEOUT = 60;
@@ -487,7 +500,8 @@ public class DefaultArchiveConfigurationFactory {
             device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
         ApplicationEntity ae = new ApplicationEntity(aet);
 
-        if ("MPPSSCP".equals(aet)) {
+        // For MPPSSCP and DCMEXT add a universal transfer capability
+        if (MPPSSCP.equals(aet) || DCMEXT.equals(aet)) {
             TransferCapability tc = new TransferCapability();
             tc.setCommonName("All");
             tc.setSopClass("*");

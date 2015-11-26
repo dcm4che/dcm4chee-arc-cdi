@@ -527,8 +527,99 @@
       "hl7snd" : {
         "_.uuid" : "Device-hl7snd",
         "dcmLimitOpenAssociations" : 0,
+        "dicomConnection" : [ {
+          "_.uuid" : "B0773BBCB57372D42AA7C1625B1FE9AFADCB2D8A",
+          "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
+          "dicomHostname" : "localhost"
+        }, {
+          "_.uuid" : "5223F72E1B4B7AD1B91C62D62DFC18B2ED8E8BCA",
+          "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
+          "dicomHostname" : "localhost",
+          "dicomTLSCipherSuite" : [ "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" ]
+        } ],
         "dicomDeviceName" : "hl7snd",
-        "dicomInstalled" : true
+        "dicomInstalled" : true,
+        "dicomIssuerOfAccessionNumber" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
+        "dicomIssuerOfPatientID" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
+        "dicomNetworkAE" : {
+          "HL7SND" : {
+            "_.uuid" : "00919536D4E06516C2CEF58080DF159A75F2B731",
+            "dicomAETitle" : "HL7SND",
+            "dicomAssociationAcceptor" : true,
+            "dicomAssociationInitiator" : true,
+            "dicomNetworkConnectionReference" : [ {
+              "_.ref" : "//*[_.uuid='B0773BBCB57372D42AA7C1625B1FE9AFADCB2D8A']"
+            }, {
+              "_.ref" : "//*[_.uuid='5223F72E1B4B7AD1B91C62D62DFC18B2ED8E8BCA']"
+            } ]
+          }
+        }
+      },
+      "dcmext" : {
+        "_.uuid" : "Device-dcmext",
+        "dcmLimitOpenAssociations" : 0,
+        "dicomConnection" : [ {
+          "_.uuid" : "0531054DECFAFB8155A308305C8C47B334B45BAF",
+          "cn" : "dicom",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
+          "dicomHostname" : "localhost",
+          "dicomPort" : 11122
+        }, {
+          "_.uuid" : "7E85819620AD8D04891B833C83AF21461032A8E6",
+          "cn" : "dicom-tls",
+          "dcmAAACTimeout" : 5000,
+          "dcmAARQTimeout" : 5000,
+          "dcmARRPTimeout" : 5000,
+          "dcmIdleTimeout" : 5000,
+          "dcmResponseTimeout" : 5000,
+          "dcmRetrieveTimeout" : 5000,
+          "dcmTCPConnectTimeout" : 5000,
+          "dicomHostname" : "localhost",
+          "dicomTLSCipherSuite" : [ "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" ]
+        } ],
+        "dicomDeviceName" : "dcmext",
+        "dicomInstalled" : true,
+        "dicomIssuerOfAccessionNumber" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
+        "dicomIssuerOfPatientID" : "Site A&1.2.40.0.13.1.1.999.111.1111&ISO",
+        "dicomNetworkAE" : {
+          "DCMEXT" : {
+            "_.uuid" : "9C6B4BE560B17FF9BA42A4D5004F94B9830E0A94",
+            "dcmTransferCapability" : [ {
+              "cn" : "All",
+              "dicomSOPClass" : "*",
+              "dicomTransferRole" : "SCP",
+              "dicomTransferSyntax" : [ "*" ]
+            } ],
+            "dicomAETitle" : "DCMEXT",
+            "dicomAssociationAcceptor" : true,
+            "dicomAssociationInitiator" : true,
+            "dicomNetworkConnectionReference" : [ {
+              "_.ref" : "//*[_.uuid='0531054DECFAFB8155A308305C8C47B334B45BAF']"
+            }, {
+              "_.ref" : "//*[_.uuid='7E85819620AD8D04891B833C83AF21461032A8E6']"
+            } ]
+          }
+        }
       },
       "hl7rcv" : {
         "_.uuid" : "Device-hl7rcv",
