@@ -45,13 +45,12 @@ import org.dcm4che3.net.Device;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.entity.AttributesBlob;
+import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.DerivedSeriesFields;
 import org.dcm4chee.storage.conf.Availability;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.RequestScoped;
 import java.util.Date;
 
 /**
