@@ -57,6 +57,7 @@ import org.dcm4chee.archive.store.NewStudyCreated;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.util.ArchiveDeidentifier;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.slf4j.Logger;
@@ -356,8 +357,10 @@ public class StoreServiceEJB {
                        MetadataUpdateStrategy.COERCE_MERGE)) {
                 study.setAttributes(studyAttrs, studyFilter,
                         storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+                boolean deident = storeParam.isDeIdentifyLogs();
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
-                        studyAttrs, modified);
+                        deident ? studyAttrs.toString(ArchiveDeidentifier.DEFAULT) : studyAttrs,
+                        deident ? modified.toString(ArchiveDeidentifier.DEFAULT) : modified);
             }
         }
         if (!context.isFetch()
@@ -397,8 +400,10 @@ public class StoreServiceEJB {
                        MetadataUpdateStrategy.COERCE_MERGE)) {
                 series.setAttributes(seriesAttrs, seriesFilter,
                         storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+                boolean deident = storeParam.isDeIdentifyLogs();
                 LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
-                        seriesAttrs, modified);
+                        deident ? seriesAttrs.toString(ArchiveDeidentifier.DEFAULT) : seriesAttrs,
+                        deident ? modified.toString(ArchiveDeidentifier.DEFAULT) : modified);
             }
         }
         updateStudy(context, series.getStudy());

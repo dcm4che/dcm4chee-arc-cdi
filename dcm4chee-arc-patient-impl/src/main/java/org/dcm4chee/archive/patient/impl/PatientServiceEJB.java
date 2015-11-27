@@ -62,6 +62,7 @@ import org.dcm4chee.archive.patient.PatientMergedException;
 import org.dcm4chee.archive.patient.PatientSelector;
 import org.dcm4chee.archive.patient.PatientSelectorFactory;
 import org.dcm4chee.archive.patient.PatientService;
+import org.dcm4chee.archive.util.ArchiveDeidentifier;
 import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,31 +147,6 @@ public class PatientServiceEJB implements PatientService {
                         Patient.class).setParameter(1, familyName)
                 .getResultList();
     }
-
-    // private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
-    // BooleanBuilder builder = new BooleanBuilder();
-    // Collection<BooleanExpression> eqIDs = new ArrayList<BooleanExpression>(
-    // pids.size());
-    // for (IDWithIssuer pid : pids) {
-    // BooleanExpression eqID = QPatientID.patientID.id.eq(pid.getID());
-    // if (pid.getIssuer() == null) {
-    // builder.or(eqID);
-    // } else {
-    // builder.or(ExpressionUtils.and(eqID,
-    // eqOrNoIssuer(pid.getIssuer())));
-    // eqIDs.add(eqID);
-    // }
-    // }
-    // BooleanExpression matchingIDs = new HibernateSubQuery()
-    // .from(QPatientID.patientID)
-    // .leftJoin(QPatientID.patientID.issuer, QIssuer.issuer)
-    // .where(ExpressionUtils.and(
-    // QPatientID.patientID.patient.eq(QPatient.patient),
-    // builder)).exists();
-    // Session session = em.unwrap(Session.class);
-    // return new HibernateQuery(session).from(QPatient.patient)
-    // .where(matchingIDs).list(QPatient.patient);
-    // }
 
     private List<Patient> findPatientByIDs(Collection<IDWithIssuer> pids) {
         BooleanBuilder builder = new BooleanBuilder();
@@ -306,8 +282,15 @@ public class PatientServiceEJB implements PatientService {
         }
         Attributes patientAttrs = patient.getAttributes();
         AttributeFilter filter = storeParam.getAttributeFilter(Entity.Patient);
-        if (Utils.updateAttributes(patientAttrs, attrs, null , filter, MetadataUpdateStrategy.COERCE_MERGE))
-            patient.setAttributes(patientAttrs, filter,storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        Attributes modified = new Attributes();
+        boolean deident = storeParam.isDeIdentifyLogs();
+        if (Utils.updateAttributes(patientAttrs, attrs, modified , filter, MetadataUpdateStrategy.COERCE_MERGE)) {
+            LOG.info("[{}]: Update {}:\n{}\nmodified:\n{}", this.getClass().getName(),
+                    patient.toString(deident),
+                    deident ? patientAttrs.toString(ArchiveDeidentifier.DEFAULT) : patientAttrs,
+                    deident ? modified.toString(ArchiveDeidentifier.DEFAULT) : modified);
+            patient.setAttributes(patientAttrs, filter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        }
     }
 
     private boolean mergePatientIDs(Patient patient,
