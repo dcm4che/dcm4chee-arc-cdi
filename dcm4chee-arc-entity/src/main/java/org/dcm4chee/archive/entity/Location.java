@@ -162,8 +162,8 @@ public class Location implements Serializable {
 
     @ManyToMany
     @JoinTable(name="rel_instance_location",
-            joinColumns={@JoinColumn(name="instance_fk", referencedColumnName="pk")},
-            inverseJoinColumns={@JoinColumn(name="location_fk", referencedColumnName="pk")})
+            joinColumns={@JoinColumn(name="location_fk", referencedColumnName="pk")},
+            inverseJoinColumns={@JoinColumn(name="instance_fk", referencedColumnName="pk")})
     private Collection<Instance> instances;
 
     public static final class Builder {
