@@ -687,18 +687,15 @@ public class StoreServiceImpl implements StoreService {
                 unmarkLocationsForDelete(inst, context);
                 return inst;
             case REPLACE:
-                for (Iterator<Location> iter = inst.getLocations().iterator(); iter
-                        .hasNext();) {
+                for (Iterator<Location> iter = inst.getLocations().iterator(); iter.hasNext();) {
                     Location fileRef = iter.next();
-                    // no other instances referenced through alias table
-                    if (fileRef.getInstances().size() == 1) {
+                    // remove inst
+                    fileRef.getInstances().remove(inst);
+                    // no other instances referenced by location
+                    if (fileRef.getInstances().isEmpty()) {
                         // delete
                         replaced.add(fileRef);
-                    } else {
-                        // remove inst
-                        fileRef.getInstances().remove(inst);
                     }
-                    iter.remove();
                 }
                 em.remove(inst);
             }

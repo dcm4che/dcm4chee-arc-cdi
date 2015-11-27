@@ -56,6 +56,7 @@ import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.storage.conf.Availability;
+import org.hibernate.annotations.OptimisticLock;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -191,17 +192,12 @@ public class Instance implements Serializable {
     @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<ContentItem> contentItems;
 
-//    @OneToMany(mappedBy = "instance", cascade = CascadeType.ALL, orphanRemoval = false)
-//    private Collection<Location> locations;
-
     @ManyToOne(optional = false)
     @JoinColumn(name = "series_fk")
     private Series series;
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(name="rel_instance_location",
-    joinColumns={@JoinColumn(name="instance_fk", referencedColumnName="pk")},
-    inverseJoinColumns={@JoinColumn(name="location_fk", referencedColumnName="pk")})
+    @OptimisticLock(excluded = true) // updates of locations should NOT increment the Instance version
+    @ManyToMany(mappedBy = "instances")
     private Collection<Location> locations;
 
     @Transient
@@ -356,23 +352,14 @@ public class Instance implements Serializable {
         this.contentItems = contentItems;
     }
 
+    /**
+     * @return Locations of instance. Note: This collection can NOT be used to update the locations of an instance,
+     * as Location is the managing (owning) side of the relationship. Please use {@link Location#addInstance(Instance)}
+     * instead.
+     */
     public Collection<Location> getLocations() {
         return locations;
     }
-
-    public Collection<Location> getLocations(int initSize) {
-        if (locations == null)
-            locations = new ArrayList<Location>(initSize);
-        return locations;
-    }
-
-//    public void setOtherLocations(Collection<Location> otherLocations) {
-//        this.otherLocations = otherLocations;
-//    }
-//
-//    public Collection<Location> getOtherLocations() {
-//        return otherLocations;
-//    }
 
     public void setLocations(Collection<Location> locations) {
         this.locations = locations;

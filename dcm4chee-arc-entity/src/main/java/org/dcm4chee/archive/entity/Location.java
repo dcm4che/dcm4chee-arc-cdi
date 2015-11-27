@@ -39,6 +39,7 @@
 package org.dcm4chee.archive.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
@@ -50,6 +51,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -157,7 +160,10 @@ public class Location implements Serializable {
     @Column(name = "wo_bulkdata", updatable = false)
     private boolean withoutBulkData;
 
-    @ManyToMany(mappedBy="locations")
+    @ManyToMany
+    @JoinTable(name="rel_instance_location",
+            joinColumns={@JoinColumn(name="instance_fk", referencedColumnName="pk")},
+            inverseJoinColumns={@JoinColumn(name="location_fk", referencedColumnName="pk")})
     private Collection<Instance> instances;
 
     public static final class Builder {
@@ -321,6 +327,12 @@ public class Location implements Serializable {
 
     public void setInstances(Collection<Instance> instances) {
         this.instances = instances;
+    }
+
+    public void addInstance(Instance instance) {
+        if (instances == null)
+            instances = new ArrayList<>(1);
+        instances.add(instance);
     }
 
     @Override

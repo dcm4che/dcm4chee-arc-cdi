@@ -416,29 +416,6 @@ public class LocationMgmtEJB implements LocationMgmt {
             studyOnStgSysGrp.setMarkedForDeletion(true);
     }
 
-    @Override
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-    public Collection<Location> detachInstanceOnGroup(long instancePK
-            , String groupID) {
-        Instance inst  = em.find(Instance.class, instancePK);
-        List<Location> locationsOnGroup = new ArrayList<>(); 
-        for(Iterator<Location> iter = inst.getLocations().iterator(); iter.hasNext();){
-            Location loc = iter.next();
-            loc = em.find(Location.class, loc.getPk());
-            if(loc.getStorageSystemGroupID().compareTo(groupID) == 0){
-                locationsOnGroup.add(loc);
-                for(Iterator<Instance> iterInst = loc.getInstances().iterator(); iterInst.hasNext();){
-                  Instance tempInst = iterInst.next();
-                  if(tempInst.getSopInstanceUID().compareTo(inst.getSopInstanceUID()) == 0)
-                  iterInst.remove();
-                }
-                iter.remove();
-            }
-        }
-        em.flush();
-        return locationsOnGroup;
-    }
-
     private StudyOnStorageSystemGroup findStudyOnStorageGroup(
             String studyInstanceUID, String groupID) throws NoResultException{
         return em
@@ -540,19 +517,15 @@ public class LocationMgmtEJB implements LocationMgmt {
         query.setParameter("pks", refPks);
         List<Location> refs = query.getResultList();
         Collection<Long> filteredLocations = new ArrayList<Long>();
-        for (Iterator<Location> iterLoc =refs.iterator();iterLoc.hasNext();) {
+        for (Iterator<Location> iterLoc = refs.iterator(); iterLoc.hasNext(); ) {
             Location loc = iterLoc.next();
-            int markedCnt = 0;
-            for (Iterator<Instance> iterInst = loc.getInstances().iterator(); iterInst.hasNext();){
+            for (Iterator<Instance> iterInst = loc.getInstances().iterator(); iterInst.hasNext(); ) {
                 Instance inst = iterInst.next();
-                if (isMarkedForDelete(inst.getSeries().getStudy()
-                        .getStudyInstanceUID(), loc.getStorageSystemGroupID())) {
-                    markedCnt++;
-                    //detach here so that either loc is tied to only instance 
+                if (isMarkedForDelete(inst.getSeries().getStudy().getStudyInstanceUID(), loc.getStorageSystemGroupID())) {
+                    //detach here so that either loc is tied to only instance
                     //or loc is tied to many and won't be deleted then is kept
-//                          iterInst.remove();
-//                          iterLoc.remove();
-                          inst.getLocations().remove(loc);
+                    iterInst.remove();
+                    inst.getLocations().remove(loc);
                     //remove active process
                     activeProcessingService.deleteActiveProcessBySOPInstanceUIDandService(inst.getSopInstanceUID(), ActiveService.DELETER_SERVICE);
                     //unset marked for deletion to compensate for other instances to be deleted when the current delete fails
@@ -562,12 +535,12 @@ public class LocationMgmtEJB implements LocationMgmt {
 //                    studyOnStgSysGrp
 //                            .setAccessTime(new Date(System.currentTimeMillis()));
 //                    studyOnStgSysGrp.setMarkedForDeletion(false);
-                    if(inst.getLocations().isEmpty()) 
+                    if (inst.getLocations().isEmpty())
                         em.remove(inst);
-                    
+
                 }
-        }
-            if (markedCnt == loc.getInstances().size() || loc.getInstances().isEmpty())
+            }
+            if (loc.getInstances().isEmpty())
                 filteredLocations.add(loc.getPk());
         }
         em.flush();

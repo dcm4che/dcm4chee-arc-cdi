@@ -232,8 +232,8 @@ public class HsmMoveIT extends HsmITBase {
         assertEquals("ONLINE Refs Study 1 & 2", RESOURCES_STUDY_2_1SERIES.length+RESOURCES_STUDY_1_2SERIES.length, onlineRefsTot.size());
 
         utx.begin();
-        instancesStudy1.get(0).getLocations().add(onlineRefs.get(0));
-        em.merge(instancesStudy1.get(0));
+        onlineRefs.get(0).addInstance(instancesStudy1.get(0));
+        em.merge(onlineRefs.get(0));
         em.flush();
         utx.commit();
         

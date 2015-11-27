@@ -88,8 +88,6 @@ public interface LocationMgmt {
     void markForDeletion(String studyInstanceUID, String groupID)
             throws NoResultException;
 
-    Collection<Location> detachInstanceOnGroup(long instancePK, String groupID);
-
     Collection<Long> filterForMarkedForDeletionStudiesOnGroup(Collection<Long> refPKs);
 
 	void purgeStudiesRejectedOrDeletedOnAllGroups();

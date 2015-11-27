@@ -98,8 +98,9 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
     }
 
     private Collection<Location> detachReferences(Instance inst) {
-        ArrayList<Location> toDelete = new ArrayList<Location>(inst.getLocations().size());
-        for(Iterator<Location> iterator = inst.getLocations().iterator(); iterator.hasNext();) {
+        Collection<Location> locations = inst.getLocations();
+        ArrayList<Location> toDelete = new ArrayList<>(locations.size());
+        for(Iterator<Location> iterator = locations.iterator(); iterator.hasNext();) {
             Location ref = iterator.next();
             iterator.remove();
             ref.getInstances().remove(inst);
