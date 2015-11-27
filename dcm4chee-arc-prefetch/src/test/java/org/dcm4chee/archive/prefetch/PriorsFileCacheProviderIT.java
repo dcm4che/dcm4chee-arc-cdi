@@ -162,8 +162,11 @@ public class PriorsFileCacheProviderIT {
                 .as(JavaArchive.class);
         for (JavaArchive a : archs) {
             a.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-            war.addAsLibrary(a);
+             war.addAsLibrary(a);
         }
+
+        war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+
         for (String resourceName : INSTANCE_RESOURCES)
             war.addAsResource(resourceName);
         return war;
