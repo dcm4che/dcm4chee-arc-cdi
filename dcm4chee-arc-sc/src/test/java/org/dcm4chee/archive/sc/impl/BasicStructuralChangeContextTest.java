@@ -37,65 +37,36 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.sc;
+package org.dcm4chee.archive.sc.impl;
 
-import java.util.Set;
+
+import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * Describes a structural change performed on an existing study done on PATIENT/STUDY/SERIES/INSTANCE level.
- * 
- * A structural change has associated structural change types which are assumed to form an ordered hierarchy.
- * 
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-public interface StructuralChangeContext {
+public class BasicStructuralChangeContextTest {
+    
+    private static enum TEST_CHANGE_TYPE1 { CHANGE_TYPE1 }
+    
+    private static enum TEST_CHANGE_TYPE2 { CHANGE_TYPE2 }
+    
+    private static enum TEST_CHANGE_TYPE3 { CHANGE_TYPE3 }
 
-    /**
-     * @return Returns the complete structural change type hierarchy associated with the change
-     */
-    Enum<?>[] getChangeTypeHierarchy();
-    
-    /**
-     * @param changeType Returns <code>true</code> if the given type is part of the associated change type hierarchy,
-     * returns <code>false</code> otherwise
-     * @return
-     */
-    boolean hasChangeType(Enum<?> changeType);
-
-    /**
-     * @param changeType
-     * @return  Returns the sub-hierarchy starting from the given change type, returns <code>null</code> if the given
-     * change type is not contained in the hierarchy
-     */
-    Enum<?>[] getSubChangeTypeHierarchy(Enum<?> changeType);
-    
-    /**
-     * @param changeTypeClass
-     * @return Returns the value for a given change type class contained in the change type hierarchy. 
-     * If the change type is not contained in the hierarchy then <code>null</code> is returned.
-     */
-    <T extends Enum<?>> T getChangeTypeValue(Class<T> changeTypeClass);
-  
-    long getTimestamp();
-
-    Set<String> getAffectedStudyUIDs();
-    
-    Set<String> getAffectedSeriesUIDs();
-    
-    Set<InstanceIdentifier> getAffectedInstances();
-    
-    Set<InstanceIdentifier> getSourceInstances();
-    
-    Set<InstanceIdentifier> getTargetInstances();
-    
-    interface InstanceIdentifier {
+    @Test
+    public void testChangeTypes() {
+        BasicStructuralChangeContext scCtx = new BasicStructuralChangeContext(
+                STRUCTURAL_CHANGE.IOCM, 
+                TEST_CHANGE_TYPE1.CHANGE_TYPE1, 
+                TEST_CHANGE_TYPE2.CHANGE_TYPE2);
+        Assert.assertArrayEquals(new Enum<?>[] {TEST_CHANGE_TYPE1.CHANGE_TYPE1, TEST_CHANGE_TYPE2.CHANGE_TYPE2}, 
+                scCtx.getSubChangeTypeHierarchy(TEST_CHANGE_TYPE1.CHANGE_TYPE1));
         
-        String getStudyInstanceUID();
-        
-        String getSeriesInstanceUID();
-        
-        String getSopInstanceUID();
-        
+        Assert.assertEquals(TEST_CHANGE_TYPE1.CHANGE_TYPE1, scCtx.getChangeTypeValue(TEST_CHANGE_TYPE1.class));
+        Assert.assertNull(scCtx.getChangeTypeValue(TEST_CHANGE_TYPE3.class));
     }
+    
 }

@@ -39,20 +39,22 @@
 
 package org.dcm4chee.archive.qc.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.dto.QCEventInstance;
+import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
 import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCOperationContext;
 import org.dcm4chee.archive.qc.QC_OPERATION;
-import org.dcm4chee.archive.sc.STRUCTURAL_CHANGE;
 import org.dcm4chee.archive.sc.impl.BasicStructuralChangeContext;
 
 /**
@@ -64,44 +66,131 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
     
     private Set<org.dcm4chee.archive.entity.Instance> rejectionNotes = Collections.emptySet();
     
-    public static QCContextImpl createInstance(Enum<?> structuralChangeType, QCEvent qcEvent) {
-        QC_OPERATION qcOperation = QC_OPERATION.valueOf(qcEvent.getOperation().toString());
-        
-        QCContextImpl qcCtx;
-        if(QC_OPERATION.UPDATE.equals(qcOperation)) {
-            QCUpdateScope updateScope = QCUpdateScope.valueOf(qcEvent.getUpdateScope());
-            qcCtx = new QCContextImpl(structuralChangeType, STRUCTURAL_CHANGE.QC, qcOperation, updateScope);
+//    public static QCContextImpl createInstance(Enum<?> structuralChangeType, QCEvent qcEvent) {
+//        QC_OPERATION qcOperation = QC_OPERATION.valueOf(qcEvent.getOperation().toString());
+//        
+//        QCContextImpl qcCtx;
+//        if(QC_OPERATION.UPDATE.equals(qcOperation)) {
+//            QCUpdateScope updateScope = QCUpdateScope.valueOf(qcEvent.getUpdateScope());
+//            qcCtx = new QCContextImpl(structuralChangeType, STRUCTURAL_CHANGE.QC, qcOperation, updateScope);
+//        } else {
+//            qcCtx = new QCContextImpl(structuralChangeType, qcOperation);
+//        }
+//        
+//        Collection<QCEventInstance> sourceInstances = qcEvent.getSource();
+//        if(sourceInstances != null) {
+//            for (QCEventInstance qcInstance : sourceInstances) {
+//                InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
+//                        qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
+//                qcCtx.addSourceInstance(instance);
+//            }
+//        }
+//        
+//        Collection<QCEventInstance> targetInstances = qcEvent.getTarget();
+//        if (targetInstances != null) {
+//            for (QCEventInstance qcInstance : targetInstances) {
+//                InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
+//                        qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
+//                qcCtx.addTargetInstance(instance);
+//            }
+//        }
+//        
+//        qcCtx.updateAttributes = qcEvent.getUpdateAttributes();
+//        
+//        Collection<org.dcm4chee.archive.entity.Instance> rejectionNotes = qcEvent.getRejectionNotes();
+//        if(rejectionNotes != null) {
+//            qcCtx.rejectionNotes = new HashSet<>(rejectionNotes);
+//        }
+//        
+//        return qcCtx;
+//    }
+    
+    public void addRejectionNotes(Collection<Instance> rejectionNotes) {
+        if(this.rejectionNotes == Collections.<Instance>emptySet()) {
+            this.rejectionNotes = new HashSet<>(rejectionNotes);
         } else {
-            qcCtx = new QCContextImpl(structuralChangeType, qcOperation);
+            this.rejectionNotes.addAll(rejectionNotes);
         }
-        
-        Collection<QCEventInstance> sourceInstances = qcEvent.getSource();
-        if(sourceInstances != null) {
-            for (QCEventInstance qcInstance : sourceInstances) {
-                InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
-                        qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
-                qcCtx.addSourceInstance(instance);
-            }
-        }
-        
-        Collection<QCEventInstance> targetInstances = qcEvent.getTarget();
-        if (targetInstances != null) {
-            for (QCEventInstance qcInstance : targetInstances) {
-                InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
-                        qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
-                qcCtx.addTargetInstance(instance);
-            }
-        }
-        
-        qcCtx.updateAttributes = qcEvent.getUpdateAttributes();
-        
-        Collection<org.dcm4chee.archive.entity.Instance> rejectionNotes = qcEvent.getRejectionNotes();
-        if(rejectionNotes != null) {
-            qcCtx.rejectionNotes = new HashSet<>(rejectionNotes);
-        }
-        
-        return qcCtx;
     }
+    
+    public void addRejectionNote(Instance rejectionNote) {
+        if(this.rejectionNotes == Collections.<Instance>emptySet()) {
+            this.rejectionNotes = new HashSet<>();
+        }
+        
+        this.rejectionNotes.add(rejectionNote);
+    }
+    
+    public void setUpdateAttributes(Attributes updateAttrs) {
+        this.updateAttributes = updateAttrs;
+    }
+    
+    public static QCEvent toQCEvent(QCOperationContext qcContext) {
+        QCEvent.QCOperation qcOperation = QCEvent.QCOperation.valueOf(qcContext.getChangeTypeValue(QC_OPERATION.class).toString());
+        QCUpdateScope qcUpdateScope = qcContext.getChangeTypeValue(QCUpdateScope.class);
+        String updateScope = (qcUpdateScope != null) ? qcUpdateScope.toString() : null;
+     
+        List<QCEventInstance> qcSourceInstances = new ArrayList<>();
+        for (InstanceIdentifier sourceInstance : qcContext.getSourceInstances()) {
+            QCEventInstance qcInstance = new QCEventInstance(sourceInstance.getSopInstanceUID(),
+                    sourceInstance.getSeriesInstanceUID(), sourceInstance.getStudyInstanceUID());
+            qcSourceInstances.add(qcInstance);
+        }
+        
+        List<QCEventInstance> qcTargetInstances = new ArrayList<>();
+        for (InstanceIdentifier targetInstance : qcContext.getTargetInstances()) {
+            QCEventInstance qcInstance = new QCEventInstance(targetInstance.getSopInstanceUID(),
+                    targetInstance.getSeriesInstanceUID(), targetInstance.getStudyInstanceUID());
+            qcTargetInstances.add(qcInstance);
+        }
+        
+        Attributes updateAttrs = qcContext.getUpdateAttributes();
+        
+        QCEvent qcEvent = new QCEvent(qcOperation, updateScope, updateAttrs, qcSourceInstances, qcTargetInstances);
+        
+        for(org.dcm4chee.archive.entity.Instance rejNote : qcContext.getRejectionNotes()) {
+            qcEvent.addRejectionNote(rejNote);
+        }
+        
+        return qcEvent;
+    }
+    
+    public static class Builder {
+        private final QCContextImpl qcContext;
+        
+        public Builder(Enum<?>... changeTypes) {
+            qcContext = new QCContextImpl(changeTypes);
+        }
+        
+        public Builder addSourceInstances(Collection<InstanceIdentifier> srcInstances) {
+            qcContext.addSourceInstances(srcInstances);
+            return this;
+        }
+        
+        public Builder addTargetInstances(Collection<InstanceIdentifier> targetInstances) {
+            qcContext.addTargetInstances(targetInstances);
+            return this;
+        }
+        
+        public Builder addRejectionNote(Instance rejNote) {
+            qcContext.addRejectionNote(rejNote);
+            return this;
+        }
+        
+        public Builder addRejectionNotes(Collection<Instance> rejNotes) {
+            qcContext.addRejectionNotes(rejNotes);
+            return this;
+        }
+        
+        public Builder updateAttributes(Attributes updateAttrs) {
+            qcContext.setUpdateAttributes(updateAttrs);
+            return this;
+        }
+        
+        public QCOperationContext build() {
+            return qcContext;
+        }
+     }
     
     private QCContextImpl(Enum<?>... qcOperations) {
         super(qcOperations);
