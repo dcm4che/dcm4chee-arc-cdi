@@ -6,15 +6,19 @@ import org.dcm4che3.conf.core.api.OptimisticLockException;
 import org.dcm4che3.conf.core.normalization.DefaultsAndNullFilterDecorator;
 import org.dcm4che3.conf.core.olock.HashBasedOptimisticLockingConfiguration;
 import org.dcm4che3.conf.core.storage.InMemoryConfiguration;
+import org.dcm4che3.conf.core.util.ConfigNodeUtil;
 import org.dcm4che3.conf.core.util.Extensions;
 import org.dcm4che3.conf.dicom.CommonDicomConfiguration;
 import org.dcm4che3.conf.dicom.CommonDicomConfigurationWithHL7;
 import org.dcm4che3.conf.dicom.DicomPath;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.net.ApplicationEntity;
-import org.dcm4che3.net.Connection;
-import org.dcm4che3.net.Device;
+import org.dcm4che3.net.*;
 import org.dcm4che3.net.audit.AuditLogger;
+import org.dcm4che3.net.audit.AuditRecordRepository;
+import org.dcm4che3.net.hl7.HL7DeviceExtension;
+import org.dcm4che3.net.imageio.ImageReaderExtension;
+import org.dcm4che3.net.imageio.ImageWriterExtension;
+import org.dcm4che3.net.web.WebServiceAEExtension;
 import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.conf.defaults.DefaultArchiveConfigurationFactory.FactoryParams;
 import org.dcm4chee.archive.conf.defaults.DefaultDicomConfigInitializer;
@@ -35,7 +39,7 @@ import java.util.TreeMap;
 /**
  * @author Roman K
  */
-public class DicomConfigOptimisticLockingTests {
+public class DicomConfigOptimisticLockingTest {
 
 
     private CommonDicomConfigurationWithHL7 dicomConfig;
@@ -47,7 +51,23 @@ public class DicomConfigOptimisticLockingTests {
     public void before() {
 
         // prepare storage
-        ArrayList<ConfigurableClassExtension> defaultExtensions = ArchiveDeviceTest.getDefaultExtensions();
+        ArrayList<ConfigurableClassExtension> extensions = new ArrayList<>();
+
+        extensions.add(new ArchiveDeviceExtension());
+        extensions.add(new StorageDeviceExtension());
+        extensions.add(new NoneIOCMChangeRequestorExtension());
+        extensions.add(new StorageDeviceExtension());
+        extensions.add(new HL7DeviceExtension());
+        extensions.add(new ImageReaderExtension());
+        extensions.add(new ImageWriterExtension());
+        extensions.add(new AuditRecordRepository());
+        extensions.add(new AuditLogger());
+        extensions.add(new ArchiveAEExtension());
+        extensions.add(new ExternalArchiveAEExtension());
+        extensions.add(new WebServiceAEExtension());
+        extensions.add(new TCGroupConfigAEExtension());
+        extensions.add(new ArchiveHL7ApplicationExtension());
+        ArrayList<ConfigurableClassExtension> defaultExtensions = extensions;
         defaultExtensions.add(new OlockedDeviceExtension());
 
         ArrayList<Class> allExtensionClasses = new ArrayList<Class>();
@@ -122,6 +142,56 @@ public class DicomConfigOptimisticLockingTests {
         Device loaded = dicomConfig.findDevice("dcm4chee-arc");
         Assert.assertEquals(12121, loaded.getConnections().get(0).getPort());
         Assert.assertNotNull(loaded.getDeviceExtension(StorageDeviceExtension.class).getStorageSystemGroup("DEFAULT").getStorageSystem("fs2"));
+
+    }
+
+
+    @Test
+    public void optimisticLockingTestDefAe() {
+
+        Device device = dicomConfig.findDevice("dcm4chee-arc");
+
+        Map deviceNode = (Map) dicomConfig
+                .getConfigurationStorage()
+                .getConfigurationNode(DicomPath.DeviceByName.set("deviceName", "dcm4chee-arc").path(), Device.class);
+
+        Object node = ConfigNodeUtil.getNode(deviceNode, "dcmDefaultAE/_.hash");
+
+        Assert.assertNull(node);
+    }
+
+    @Test
+    public void changeStringArrayElement() {
+
+        // set iocm config with 'dcmext'
+        IOCMConfig iocmConfig = new IOCMConfig();
+        Device device = dicomConfig.findDevice("dcm4chee-arc");
+
+        device.getDeviceExtension(ArchiveDeviceExtension.class).setIocmConfig(iocmConfig);
+
+        iocmConfig.setIocmDestinations(new String[]{"dcmext"});
+
+        dicomConfig.merge(device);
+
+        // load and change to 'DCMEXT
+        Device deviceCopy = dicomConfig.findDevice("dcm4chee-arc");
+
+        deviceCopy
+                .getDeviceExtension(ArchiveDeviceExtension.class)
+                .getIocmConfig()
+                .setIocmDestinations(new String[]{"DCMEXT"});
+
+        dicomConfig.merge(deviceCopy);
+
+
+        // load and assert
+        Device anotherDev = dicomConfig.findDevice("dcm4chee-arc");
+
+        Assert.assertEquals("DCMEXT",
+                anotherDev
+                        .getDeviceExtension(ArchiveDeviceExtension.class)
+                        .getIocmConfig()
+                        .getIocmDestinations()[0]);
 
     }
 
