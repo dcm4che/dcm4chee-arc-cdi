@@ -30,8 +30,12 @@ public class DefaultArchiveConfigInitScript implements UpgradeScript {
             try {
                 DefaultArchiveConfigurationFactory.FactoryParams params = new DefaultArchiveConfigurationFactory.FactoryParams();
                 params.baseStoragePath=upgradeContext.getProperties().getProperty("org.dcm4che.config.init.baseStorageDir", "/var/local/dcm4chee-arc/");
-                params.useGroupBasedTCConfig = true;
 
+                if (upgradeContext.getProperties().containsKey("timeout")) {
+                    params.socketTimeout = Integer.valueOf(upgradeContext.getProperties().getProperty("timeout"));
+                }
+
+                params.useGroupBasedTCConfig = true;
 
                 new DefaultDicomConfigInitializer()
                         .persistDefaultConfig(

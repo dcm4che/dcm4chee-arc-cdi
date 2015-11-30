@@ -45,13 +45,13 @@ import org.dcm4che3.net.Device;
 import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.entity.AttributesBlob;
+import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.entity.QSeries;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.DerivedStudyFields;
 import org.dcm4chee.storage.conf.Availability;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.RequestScoped;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -68,13 +68,13 @@ public class DefaultDerivedStudyFields implements DerivedStudyFields {
     private int numberOfInstances;
     private String[] retrieveAETs;
     private Availability availability;
-    private Set<Long> seriesPKs = new HashSet<Long>();
-    private Set<String> mods = new HashSet<String>();
-    private Set<String> cuids = new HashSet<String>();
+    private final Set<Long> seriesPKs = new HashSet<Long>();
+    private final Set<String> mods = new HashSet<String>();
+    private final Set<String> cuids = new HashSet<String>();
     private Date lastUpdateTime = null;
 
     private int numberOfVisibleImages=0;
-    private Set<String> visibleSeriesUIDs = new HashSet<String>();
+    private final Set<String> visibleSeriesUIDs = new HashSet<String>();
 
     public DefaultDerivedStudyFields(Device device) {
         this.device = device;

@@ -102,6 +102,7 @@ import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.StoreSessionClosed;
+import org.dcm4chee.archive.util.ArchiveDeidentifier;
 import org.dcm4chee.archive.util.RetryBean;
 import org.dcm4chee.storage.ObjectAlreadyExistsException;
 import org.dcm4chee.storage.RetrieveContext;
@@ -588,11 +589,13 @@ public class StoreServiceImpl implements StoreService {
 
     private void logCoercedAttributes(StoreContext context) {
         StoreSession session = context.getStoreSession();
+        boolean deident = session.getStoreParam().isDeIdentifyLogs();
         Attributes attrs = context.getCoercedOriginalAttributes();
         if (!attrs.isEmpty()) {
+            Attributes newatts = new Attributes(context.getAttributes(), attrs.tags());
             LOG.info("{}: Coerced Attributes:\n{}New Attributes:\n{}", session,
-                    attrs,
-                    new Attributes(context.getAttributes(), attrs.tags()));
+                    deident ? attrs.toString(ArchiveDeidentifier.DEFAULT) : attrs,
+                    deident ? newatts.toString(ArchiveDeidentifier.DEFAULT) : newatts);
         }
     }
 
@@ -687,18 +690,15 @@ public class StoreServiceImpl implements StoreService {
                 unmarkLocationsForDelete(inst, context);
                 return inst;
             case REPLACE:
-                for (Iterator<Location> iter = inst.getLocations().iterator(); iter
-                        .hasNext();) {
+                for (Iterator<Location> iter = inst.getLocations().iterator(); iter.hasNext();) {
                     Location fileRef = iter.next();
-                    // no other instances referenced through alias table
-                    if (fileRef.getInstances().size() == 1) {
+                    // remove inst
+                    fileRef.getInstances().remove(inst);
+                    // no other instances referenced by location
+                    if (fileRef.getInstances().isEmpty()) {
                         // delete
                         replaced.add(fileRef);
-                    } else {
-                        // remove inst
-                        fileRef.getInstances().remove(inst);
                     }
-                    iter.remove();
                 }
                 em.remove(inst);
             }
@@ -764,14 +764,6 @@ public class StoreServiceImpl implements StoreService {
     public Patient findOrCreatePatient(EntityManager em, StoreContext context)
             throws DicomServiceException {
         try {
-            // ArchiveAEExtension arcAE = context.getStoreSession()
-            // .getArchiveAEExtension();
-            // PatientSelector selector = arcAE.getPatientSelector();
-            // System.out.println("Selector Class Name:"+selector.getPatientSelectorClassName());
-            // for (String key :
-            // selector.getPatientSelectorProperties().keySet())
-            // System.out.println("Property:("+key+","+selector.getPatientSelectorProperties().get(key)+")");
-
             StoreSession session = context.getStoreSession();
             return patientService.updateOrCreatePatientOnCStore(context
                     .getAttributes(), PatientSelectorFactory

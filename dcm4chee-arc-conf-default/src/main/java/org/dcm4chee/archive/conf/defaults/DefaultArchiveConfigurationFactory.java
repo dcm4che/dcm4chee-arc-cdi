@@ -107,6 +107,9 @@ import static org.dcm4che3.net.TransferCapability.Role.SCU;
 public class DefaultArchiveConfigurationFactory {
 
     private static final String AET_FALLBACK_WEB_CLIENT = "FALLBACK-WEBC";
+    private static final String MPPSSCP = "MPPSSCP";
+    private static final String DCMEXT = "DCMEXT";
+
 
     public static final String PIX_MANAGER = "HL7RCV^DCM4CHEE";
     public static final String[] OTHER_DEVICES = {
@@ -121,20 +124,24 @@ public class DefaultArchiveConfigurationFactory {
             "getscu",
             "fallbackWebClient",
             "movescu",
-            "hl7snd"
+            "hl7snd",
+            "dcmext"
     };
     protected static final String[] OTHER_AES = {
             "DCMQRSCP",
             "STGCMTSCU",
             "STORESCP",
-            "MPPSSCP",
+            MPPSSCP,
             "IANSCP",
             "STORESCU",
             "MPPSSCU",
             "FINDSCU",
             "GETSCU",
             AET_FALLBACK_WEB_CLIENT,
-            "MOVESCU"
+            "MOVESCU",
+            "HL7SND",
+            DCMEXT
+
     };
     protected static final Issuer SITE_A =
             new Issuer("Site A", "1.2.40.0.13.1.1.999.111.1111", "ISO");
@@ -151,7 +158,9 @@ public class DefaultArchiveConfigurationFactory {
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // FINDSCU
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // GETSCU
             Connection.NOT_LISTENING, Connection.NOT_LISTENING, // AET_FALLBACK_WEB_CLIENT
-            Connection.NOT_LISTENING, Connection.NOT_LISTENING // MOVESCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // MOVESCU
+            Connection.NOT_LISTENING, Connection.NOT_LISTENING, // HL7SND
+            11122, Connection.NOT_LISTENING // DCMEXT
     };
     private static final Issuer SITE_B =
             new Issuer("Site B", "1.2.40.0.13.1.1.999.222.2222", "ISO");
@@ -166,7 +175,9 @@ public class DefaultArchiveConfigurationFactory {
             SITE_A, // FINDSCU
             SITE_A, // GETSCU
             SITE_A, // AET_FALLBACK_WEB_CLIENT
-            SITE_A, // MOVESCU
+            null, // MOVESCU
+            SITE_A, // HL7SND
+            null, // DCMEXT
     };
     private static final Code INST_B =
             new Code("222.2222", "99DCM4CHEE", null, "Site B");
@@ -182,6 +193,8 @@ public class DefaultArchiveConfigurationFactory {
             null, // GETSCU
             null, // AET_FALLBACK_WEB_CLIENT
             null, // MOVESCU
+            null, // HL7SND
+            null, // DCMEXT
     };
     private static final int PENDING_CMOVE_INTERVAL = 5000;
     private static final int CONFIGURATION_STALE_TIMEOUT = 60;
@@ -393,7 +406,7 @@ public class DefaultArchiveConfigurationFactory {
             UID.ColonCADSRStorage,
             UID.ImplantationPlanSRStorage
     };
-    public static final int TIMEOUT = 5000;
+    private static final int TIMEOUT = 5000;
     public static QueryRetrieveView[] QUERY_RETRIEVE_VIEWS = {
             HIDE_REJECTED_VIEW,
             REGULAR_USE_VIEW,
@@ -415,6 +428,10 @@ public class DefaultArchiveConfigurationFactory {
         factoryParams = params;
     }
 
+    public int getTimeout() {
+        return getFactoryParams().socketTimeout == null ? TIMEOUT : getFactoryParams().socketTimeout;
+    }
+
     public static class FactoryParams {
         public String baseStoragePath = "/var/local/dcm4chee-arc/";
         public boolean useGroupBasedTCConfig;
@@ -422,6 +439,13 @@ public class DefaultArchiveConfigurationFactory {
          * Useful for testing, not recommended for production
          */
         public boolean generateUUIDsBasedOnName;
+
+        /**
+         * If not null, used to assign all timeouts to all connections.
+         * If null, default (5sec) is used.
+         * If set to 0, there is no timeout.
+         */
+        public Integer socketTimeout;
     }
 
     FactoryParams factoryParams = new FactoryParams();
@@ -445,13 +469,13 @@ public class DefaultArchiveConfigurationFactory {
         Device arrDevice = new Device(name);
         AuditRecordRepository arr = new AuditRecordRepository();
         arrDevice.addDeviceExtension(arr);
-        Connection auditUDP = new Connection("audit-udp", "localhost", port, TIMEOUT);
+        Connection auditUDP = new Connection("audit-udp", "localhost", port, getTimeout());
         auditUDP.setProtocol(protocol);
         arrDevice.addConnection(auditUDP);
         arr.addConnection(auditUDP);
 
         if (factoryParams.generateUUIDsBasedOnName) {
-            auditUDP.setUuid(makeUuidFromName(name+"auditUDP"));
+            auditUDP.setUuid(makeUuidFromName(name + "auditUDP"));
         }
 
         return arrDevice;
@@ -487,13 +511,21 @@ public class DefaultArchiveConfigurationFactory {
             device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
         ApplicationEntity ae = new ApplicationEntity(aet);
 
-        if ("MPPSSCP".equals(aet)) {
+        // For MPPSSCP add a universal transfer capability
+        if (MPPSSCP.equals(aet)) {
             TransferCapability tc = new TransferCapability();
             tc.setCommonName("All");
             tc.setSopClass("*");
             tc.setRole(SCP);
             tc.setTransferSyntaxes("*");
             ae.addTransferCapability(tc);
+        }
+
+        if (DCMEXT.equals(aet)) {
+            for (TCGroupConfigAEExtension.DefaultGroup defaultGroup : TCGroupConfigAEExtension.DefaultGroup.values()) {
+                DefaultArchiveConfigurationFactory.addTCsForDefaultGroup(ae, SCP, defaultGroup);
+                DefaultArchiveConfigurationFactory.addTCsForDefaultGroup(ae, SCU, defaultGroup);
+            }
         }
 
 
@@ -505,10 +537,10 @@ public class DefaultArchiveConfigurationFactory {
         externalArchiveExt.setPrefersForwarding(false);
         ae.setAssociationAcceptor(true);
         device.addApplicationEntity(ae);
-        Connection dicom = new Connection("dicom", host, port, TIMEOUT);
+        Connection dicom = new Connection("dicom", host, port, getTimeout());
         device.addConnection(dicom);
         ae.addConnection(dicom);
-        Connection dicomTLS = new Connection("dicom-tls", host, tlsPort, TIMEOUT);
+        Connection dicomTLS = new Connection("dicom-tls", host, tlsPort, getTimeout());
         dicomTLS.setTlsCipherSuites(
                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
                 Connection.TLS_RSA_WITH_3DES_EDE_CBC_SHA);
@@ -517,8 +549,8 @@ public class DefaultArchiveConfigurationFactory {
 
         if (factoryParams.generateUUIDsBasedOnName) {
             ae.setUuid(makeUuidFromName(aet));
-            dicom.setUuid(makeUuidFromName(aet+"dicom"));
-            dicomTLS.setUuid(makeUuidFromName(aet+"dicomtls"));
+            dicom.setUuid(makeUuidFromName(aet + "dicom"));
+            dicomTLS.setUuid(makeUuidFromName(aet + "dicomtls"));
         }
 
         return device;
@@ -540,11 +572,11 @@ public class DefaultArchiveConfigurationFactory {
         init(device, issuer, institutionCode);
         HL7Application hl7app = new HL7Application(appName);
         hl7Device.addHL7Application(hl7app);
-        Connection hl7 = new Connection("hl7", host, port, TIMEOUT);
+        Connection hl7 = new Connection("hl7", host, port, getTimeout());
         hl7.setProtocol(Connection.Protocol.HL7);
         device.addConnection(hl7);
         hl7app.addConnection(hl7);
-        Connection hl7TLS = new Connection("hl7-tls", host, tlsPort, TIMEOUT);
+        Connection hl7TLS = new Connection("hl7-tls", host, tlsPort, getTimeout());
         hl7TLS.setProtocol(Connection.Protocol.HL7);
         hl7TLS.setTlsCipherSuites(
                 Connection.TLS_RSA_WITH_AES_128_CBC_SHA,
@@ -554,8 +586,8 @@ public class DefaultArchiveConfigurationFactory {
 
 
         if (factoryParams.generateUUIDsBasedOnName) {
-            hl7.setUuid(makeUuidFromName(name+"hl7"));
-            hl7TLS.setUuid(makeUuidFromName(name+"hl7tls"));
+            hl7.setUuid(makeUuidFromName(name + "hl7"));
+            hl7TLS.setUuid(makeUuidFromName(name + "hl7tls"));
         }
 
         return device;
@@ -570,14 +602,14 @@ public class DefaultArchiveConfigurationFactory {
 
         Device device = new Device(name);
         device.setPrimaryDeviceTypes(new String[]{DeviceType.ARCHIVE.toString()});
-        Connection dicom = new Connection("dicom", "localhost", 11112, TIMEOUT);
+        Connection dicom = new Connection("dicom", "localhost", 11112, getTimeout());
         dicom.setBindAddress("0.0.0.0");
         dicom.setClientBindAddress("0.0.0.0");
         dicom.setMaxOpsInvoked(0);
         dicom.setMaxOpsPerformed(0);
         device.addConnection(dicom);
 
-        Connection dicomTLS = new Connection("dicom-tls", "localhost", 2762, TIMEOUT);
+        Connection dicomTLS = new Connection("dicom-tls", "localhost", 2762, getTimeout());
         dicomTLS.setBindAddress("0.0.0.0");
         dicomTLS.setClientBindAddress("0.0.0.0");
         dicomTLS.setMaxOpsInvoked(0);
@@ -755,12 +787,12 @@ public class DefaultArchiveConfigurationFactory {
         HL7DeviceExtension ext = new HL7DeviceExtension();
         device.addDeviceExtension(ext);
 
-        Connection hl7 = new Connection("hl7", "localhost", 2575, TIMEOUT);
+        Connection hl7 = new Connection("hl7", "localhost", 2575, getTimeout());
         hl7.setBindAddress("0.0.0.0");
         hl7.setProtocol(Connection.Protocol.HL7);
         device.addConnection(hl7);
 
-        Connection hl7TLS = new Connection("hl7-tls", "localhost", 12575, TIMEOUT);
+        Connection hl7TLS = new Connection("hl7-tls", "localhost", 12575, getTimeout());
         hl7TLS.setBindAddress("0.0.0.0");
         hl7TLS.setProtocol(Connection.Protocol.HL7);
         hl7TLS.setTlsCipherSuites(

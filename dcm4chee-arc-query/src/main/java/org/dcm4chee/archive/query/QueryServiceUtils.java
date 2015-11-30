@@ -40,6 +40,7 @@
 package org.dcm4chee.archive.query;
 
 import org.dcm4che3.net.service.QueryRetrieveLevel;
+import org.dcm4chee.archive.util.ArchiveDeidentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,9 @@ public class QueryServiceUtils {
     private static final Logger LOG = LoggerFactory.getLogger(QueryServiceUtils.class);
 
     public static Query createQuery(QueryService queryService, QueryRetrieveLevel qrlevel, QueryContext ctx) {
-        LOG.info("Query Keys: {}", ctx.getKeys());
+
+        boolean deident = ctx.getQueryParam().isDeIdentifyLogs();
+        LOG.info("Query Keys: {}", deident ? ctx.getKeys().toString(ArchiveDeidentifier.DEFAULT) : ctx.getKeys());
 
         switch (qrlevel) {
         case PATIENT:

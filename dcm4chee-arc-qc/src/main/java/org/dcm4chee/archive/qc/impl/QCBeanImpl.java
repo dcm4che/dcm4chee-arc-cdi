@@ -1025,14 +1025,11 @@ public class QCBeanImpl implements QCBean {
     
     private Instance createNewInstance(Instance source, Series target) throws DicomServiceException {
         Instance newInstance = createInstance(source, target);
-        Collection<Location> locations  = newInstance.getLocations() ;
-        
-        if(newInstance.getLocations()==null) {
-            locations = new ArrayList<Location>();
-            newInstance.setLocations(locations);
-        };
-        
-        locations.addAll(source.getLocations());
+
+        for(Location location : source.getLocations()) {
+            location.addInstance(newInstance);
+        }
+
         return newInstance;
     }
     

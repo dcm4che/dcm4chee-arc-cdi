@@ -104,6 +104,7 @@ public class PriorsCacheProviderEJB {
         String targetSystemID = targetStorageSystem.getStorageSystemID();
         Location sourceLocation = null;
         Collection<Location> duplicates = new ArrayList<Location>();
+
         for (Iterator<Location> iter = inst.getLocations().iterator(); iter.hasNext();) {
             Location location = iter.next();
             if (location.getStorageSystemGroupID().equals(sourceGroupID)
@@ -139,9 +140,10 @@ public class PriorsCacheProviderEJB {
                 .timeZone(sourceLocation.getTimeZone())
                 .otherAttsDigest(sourceLocation.getOtherAttsDigest()).build();
         LOG.info("Create {}", newLocation);
-        em.persist(newLocation);
 
-        inst.getLocations().add(newLocation);
+        newLocation.addInstance(inst);
+
+        em.persist(newLocation);
 
         em.flush();
         em.detach(newLocation);

@@ -285,10 +285,9 @@ public class LocationCopyServiceEJB {
                     .timeZone((String) entry.getProperty(TIME_ZONE))
                     .status(ctx.getObjectStatus() != null ? Status.valueOf(ctx.getObjectStatus())
                             : Status.ARCHIVED).build();
-            inst.getLocations().add(location);
+            location.addInstance(inst);
             LOG.info("Create {}", location);
             em.persist(location);
-            em.merge(inst);
             event.addCopy(location);
         }
         em.flush();

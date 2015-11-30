@@ -8,7 +8,6 @@
   </parent>
   <properties>
     <skipITs>true</skipITs>
-    <skipTests>true</skipTests>
   </properties>
   <artifactId>dcm4chee-arc-hsm</artifactId>
   <dependencies>
