@@ -6,6 +6,7 @@ import org.dcm4che3.conf.core.api.OptimisticLockException;
 import org.dcm4che3.conf.core.normalization.DefaultsAndNullFilterDecorator;
 import org.dcm4che3.conf.core.olock.HashBasedOptimisticLockingConfiguration;
 import org.dcm4che3.conf.core.storage.InMemoryConfiguration;
+import org.dcm4che3.conf.core.storage.SingleJsonFileConfigurationStorage;
 import org.dcm4che3.conf.core.util.ConfigNodeUtil;
 import org.dcm4che3.conf.core.util.Extensions;
 import org.dcm4che3.conf.dicom.CommonDicomConfiguration;
@@ -51,22 +52,7 @@ public class DicomConfigOptimisticLockingTest {
     public void before() {
 
         // prepare storage
-        ArrayList<ConfigurableClassExtension> extensions = new ArrayList<>();
-
-        extensions.add(new ArchiveDeviceExtension());
-        extensions.add(new StorageDeviceExtension());
-        extensions.add(new NoneIOCMChangeRequestorExtension());
-        extensions.add(new StorageDeviceExtension());
-        extensions.add(new HL7DeviceExtension());
-        extensions.add(new ImageReaderExtension());
-        extensions.add(new ImageWriterExtension());
-        extensions.add(new AuditRecordRepository());
-        extensions.add(new AuditLogger());
-        extensions.add(new ArchiveAEExtension());
-        extensions.add(new ExternalArchiveAEExtension());
-        extensions.add(new WebServiceAEExtension());
-        extensions.add(new TCGroupConfigAEExtension());
-        extensions.add(new ArchiveHL7ApplicationExtension());
+        ArrayList<ConfigurableClassExtension> extensions = ArchiveDeviceTest.getDefaultExtensions();
         ArrayList<ConfigurableClassExtension> defaultExtensions = extensions;
         defaultExtensions.add(new OlockedDeviceExtension());
 
@@ -439,14 +425,10 @@ public class DicomConfigOptimisticLockingTest {
         Device device1 = dicomConfig.findDevice("dcm4chee-arc");
         Device device2 = dicomConfig.findDevice("dcm4chee-arc");
 
-        device1.getApplicationEntity("DCM4CHEE").setAETitle("DCM4CHEE-NEW");
-
+        device1.getApplicationEntity("DCM4CHEE_TRASH").setAETitle("DCM4CHEE_TRASH-NEW");
         dicomConfig.merge(device1);
 
-
-        device2.getApplicationEntity("DCM4CHEE").setAETitle("DCM4CHEE-NEW-BUT-DIFF");
-
-
+        device2.getApplicationEntity("DCM4CHEE_TRASH").setAETitle("DCM4CHEE_TRASH-NEW-BUT-DIFF");
         try {
             dicomConfig.merge(device2);
             Assert.fail();
@@ -455,15 +437,14 @@ public class DicomConfigOptimisticLockingTest {
 
 
         Device loaded = dicomConfig.findDevice("dcm4chee-arc");
-        loaded.getApplicationEntity("DCM4CHEE-NEW").setOlockHash(null);
-        device1.getApplicationEntity("DCM4CHEE-NEW").setOlockHash(null);
+        loaded.getApplicationEntity("DCM4CHEE_TRASH-NEW").setOlockHash(null);
+        device1.getApplicationEntity("DCM4CHEE_TRASH-NEW").setOlockHash(null);
         loaded.setOlockHash(null);
         device1.setOlockHash(null);
+
         boolean b = DeepEquals.deepEquals(loaded, device1);
         if (!b) DeepEquals.printOutInequality();
         Assert.assertTrue("State in the storage should be eq to device1", b);
-
-
     }
 
     @Test
