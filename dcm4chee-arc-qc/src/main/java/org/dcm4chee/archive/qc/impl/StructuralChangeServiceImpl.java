@@ -1100,14 +1100,11 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
     
     private Instance createNewInstance(Instance source, Series target) throws DicomServiceException {
         Instance newInstance = createInstance(source, target);
-        Collection<Location> locations  = newInstance.getLocations() ;
+
+        for (Location location : source.getLocations()) {
+            location.addInstance(newInstance);
+        }
         
-        if(newInstance.getLocations()==null) {
-            locations = new ArrayList<Location>();
-            newInstance.setLocations(locations);
-        };
-        
-        locations.addAll(source.getLocations());
         return newInstance;
     }
     
