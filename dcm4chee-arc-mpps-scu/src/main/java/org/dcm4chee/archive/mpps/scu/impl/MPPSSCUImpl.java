@@ -67,7 +67,7 @@ public class MPPSSCUImpl implements MPPSSCU {
 
     private static final Logger LOG = LoggerFactory.getLogger(MPPSSCUImpl.class);
 
-    @Resource(mappedName="java:/ConnectionFactory")
+    @Resource(mappedName="java:/JmsXA")
     private ConnectionFactory connFactory;
 
     @Resource(mappedName="java:/queue/mppsscu")

@@ -84,7 +84,7 @@ public class StowClientServiceImpl implements StowClientService {
 
     private static final Logger LOG = LoggerFactory.getLogger(StowClientServiceImpl.class);
     
-    @Resource(mappedName = "java:/ConnectionFactory")
+    @Resource(mappedName = "java:/JmsXA")
     private ConnectionFactory connFactory;
 
     @Resource(mappedName = "java:/queue/stowclient")

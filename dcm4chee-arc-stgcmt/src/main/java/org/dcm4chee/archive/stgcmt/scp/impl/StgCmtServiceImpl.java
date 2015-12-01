@@ -104,7 +104,7 @@ public class StgCmtServiceImpl implements StgCmtService {
     private static final Logger LOG = LoggerFactory
             .getLogger(StgCmtServiceImpl.class);
 
-    @Resource(mappedName = "java:/ConnectionFactory")
+    @Resource(mappedName = "java:/JmsXA")
     private ConnectionFactory connFactory;
  
     @Resource(mappedName = "java:/queue/stgcmtscp")

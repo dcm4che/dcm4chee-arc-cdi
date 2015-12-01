@@ -117,7 +117,7 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
     @Inject
     private Event<StoreAndRememberResponse> storeRememberResponse;
     
-    @Resource(mappedName = "java:/ConnectionFactory")
+    @Resource(mappedName = "java:/JmsXA")
     private ConnectionFactory connFactory;
 
     @Resource(mappedName = "java:/queue/storeremember")

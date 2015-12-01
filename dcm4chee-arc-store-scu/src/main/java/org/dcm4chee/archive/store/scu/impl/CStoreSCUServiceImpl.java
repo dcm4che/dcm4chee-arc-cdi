@@ -107,7 +107,7 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     @Inject
     private FetchForwardService fetchForwardService;
 
-    @Resource(mappedName = "java:/ConnectionFactory")
+    @Resource(mappedName = "java:/JmsXA")
     private ConnectionFactory connFactory;
 
     @Resource(mappedName = "java:/queue/storescu")
