@@ -87,7 +87,7 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
             return toBeDeleted;
         } catch (Exception e) {
             LOG.error("{}: Error deleting rejected objects, Transaction rolled back", e);
-            throw new EJBException(e.getMessage());
+            throw new EJBException(e.getMessage(), e);
         }
     }
 
