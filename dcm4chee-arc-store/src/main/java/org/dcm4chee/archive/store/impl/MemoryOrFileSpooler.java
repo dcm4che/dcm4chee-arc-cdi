@@ -90,7 +90,7 @@ public class MemoryOrFileSpooler implements Spooler {
                     context.setTransferSyntax(dsFMI != null ? dsFMI.getString(Tag.TransferSyntaxUID) : 
                             fmi != null ? fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
                 } catch (IOException e) {
-                    throw new DicomServiceException(StoreService.DATA_SET_NOT_PARSEABLE);
+                    throw new DicomServiceException(StoreService.DATA_SET_NOT_PARSEABLE, e);
                 } finally {
                     context.setSpoolingContext(spoolingContext);
                 }
