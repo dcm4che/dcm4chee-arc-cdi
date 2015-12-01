@@ -156,10 +156,11 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     }
 
     @Override
-    protected void storeInstance(Association storeas, ArchiveInstanceLocator inst) throws IOException, InterruptedException {
+    protected void storeInstance(Association storeas, ArchiveInstanceLocator instanceLocator) throws IOException, InterruptedException {
         String tsuid;
         DatasetWithFMI datasetWithFMI = null;
         Attributes attrs;
+        ArchiveInstanceLocator inst = instanceLocator;
         try {
             ArchiveAEExtension arcAEExt = context.getLocalAE().getAEExtension(
                     ArchiveAEExtension.class);
@@ -205,7 +206,7 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
 
         } catch (Exception e) {
             LOG.info("Unable to store {}/{} to {}",
-                    UID.nameOf(inst.cuid), UID.nameOf(inst.tsuid),
+                    UID.nameOf(instanceLocator.cuid), UID.nameOf(instanceLocator.tsuid),
                     storeas.getRemoteAET(), e);
             failed.add(inst);
             return;
