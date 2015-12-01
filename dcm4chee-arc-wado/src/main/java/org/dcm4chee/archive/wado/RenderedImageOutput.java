@@ -252,7 +252,7 @@ public class RenderedImageOutput implements StreamingOutput {
         // in most cases (if it is a monochrome image) the DicomImageReader will apply a LUT
         if (imageParams.getPhotometricInterpretation().isMonochrome()) {
             // the resulting buffered image has one byte per sample (see DicomImageReader.read)
-            long uncompressedFrameAppliedLUTLength = imageParams.getRows() * imageParams.getColumns();
+            long uncompressedFrameAppliedLUTLength = (long)imageParams.getRows() * imageParams.getColumns();
 
             // Note: in some cases (if it is already 8-bit) the raster of the original uncompressed image will also be
             // re-used for the version with the applied LUT. This is not (yet) considered here.
@@ -276,7 +276,7 @@ public class RenderedImageOutput implements StreamingOutput {
         // for color images in some cases a new INT-RGB buffered image is allocated (BufferedImageUtils.convertToIntRGB())
         boolean needsColorConversion = attributes.getInt(Tag.SamplesPerPixel, 0) == 3;
         if (needsColorConversion) {
-            sizeOfColorAdjustedImage = imageParams.getRows() * imageParams.getColumns() * 4; // int has 4 bytes
+            sizeOfColorAdjustedImage = (long)imageParams.getRows() * imageParams.getColumns() * 4; // int has 4 bytes
 
             memoryNeededForAdjustingAndCompression += sizeOfColorAdjustedImage;
         } else {
