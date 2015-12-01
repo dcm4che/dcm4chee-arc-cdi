@@ -74,7 +74,7 @@ import org.slf4j.LoggerFactory;
  */
 class StoreCompressedTask implements MemoryConsumingTask<StorageContext> {
 
-    private static Logger LOG = LoggerFactory.getLogger(StoreServiceCompressDecorator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StoreServiceCompressDecorator.class);
 
     private final StorageService storageService;
     private final StoreContext context;
