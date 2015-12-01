@@ -123,7 +123,7 @@ public class LocationMgmtEJB implements LocationMgmt {
     @Inject
     private javax.enterprise.inject.Instance<StorageSystemProvider> storageSystemProviders;
 
-    @Resource(mappedName = "java:/ConnectionFactory")
+    @Resource(mappedName = "java:/JmsXA")
     private ConnectionFactory connFactory;
 
     @Resource(mappedName = "java:/queue/delete")
