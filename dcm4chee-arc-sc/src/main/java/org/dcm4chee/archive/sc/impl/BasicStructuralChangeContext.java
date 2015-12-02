@@ -238,14 +238,17 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
             }
             
             InstanceIdentifier that = (InstanceIdentifier)other;
-            return studyInstanceUID.equals(that.getStudyInstanceUID()) 
-                    && seriesInstanceUID.equals(that.getSeriesInstanceUID())
-                    && sopInstanceUID.equals(that.getSopInstanceUID());
+            
+            return ((studyInstanceUID != null) ? studyInstanceUID.equals(that.getStudyInstanceUID()) : (that.getStudyInstanceUID() == null))
+                    && ((seriesInstanceUID != null) ? seriesInstanceUID.equals(that.getSeriesInstanceUID()) : (that.getSeriesInstanceUID() == null))
+                    &&  ((sopInstanceUID != null) ? sopInstanceUID.equals(that.getSopInstanceUID()) : (that.getSopInstanceUID() == null));
         }
         
         @Override
         public int hashCode() {
-            return 37 * studyInstanceUID.hashCode() + seriesInstanceUID.hashCode() + sopInstanceUID.hashCode();
+            return 37 * ((studyInstanceUID != null) ? studyInstanceUID.hashCode() : 73) 
+                    * ((seriesInstanceUID != null) ? seriesInstanceUID.hashCode() : 11) 
+                    * ((sopInstanceUID != null) ? sopInstanceUID.hashCode() : 13);
         }
         
     }
