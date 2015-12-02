@@ -62,6 +62,12 @@
 -->
     <ds>java:/PacsDS</ds>
 
+    <!--
+    Possible values: standalone,cluster
+    Impacts mostly config-related resources such as cli scripts
+     -->
+    <cluster>standalone</cluster>
+
     <!-- by default, the config browser is not protected -->
     <conf-web-classifier>arc-unsecure</conf-web-classifier>
   </properties>
