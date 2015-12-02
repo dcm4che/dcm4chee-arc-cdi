@@ -2130,12 +2130,10 @@
             "Image Writer Factory" : {
               "dicomImageWriterMap" : {
                 "1.2.840.10008.1.2.4.50" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmImageWriteParam" : [ ]
+                  "dcmIIOFormatName" : "jpeg"
                 },
                 "1.2.840.10008.1.2.4.51" : {
                   "dcmIIOFormatName" : "jpeg",
-                  "dcmImageWriteParam" : [ ],
                   "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageWriter"
                 },
                 "1.2.840.10008.1.2.4.57" : {
@@ -2167,21 +2165,17 @@
               },
               "dicomImageWriterMapMime" : {
                 "image/gif" : {
-                  "dcmIIOFormatName" : "gif",
-                  "dcmImageWriteParam" : [ ]
+                  "dcmIIOFormatName" : "gif"
                 },
                 "image/jp2" : {
                   "dcmIIOFormatName" : "jpeg2000",
-                  "dcmImageWriteParam" : [ ],
                   "dcmJavaClassName" : "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageWriterCodecLib"
                 },
                 "image/jpeg" : {
-                  "dcmIIOFormatName" : "jpeg",
-                  "dcmImageWriteParam" : [ ]
+                  "dcmIIOFormatName" : "jpeg"
                 },
                 "image/png" : {
-                  "dcmIIOFormatName" : "png",
-                  "dcmImageWriteParam" : [ ]
+                  "dcmIIOFormatName" : "png"
                 }
               }
             }
@@ -2364,8 +2358,6 @@
                     "condition" : {
                       "dcmAETitle" : [ "WITHOUT_PN" ],
                       "dcmDIMSE" : "C_FIND_RSP",
-                      "dcmDeviceName" : [ ],
-                      "dcmSOPClass" : [ ],
                       "dicomTransferRole" : "SCP"
                     },
                     "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/ensure-retrieve-ae-title.xsl"
@@ -2374,8 +2366,6 @@
                     "condition" : {
                       "dcmAETitle" : [ "WITHOUT_PN" ],
                       "dcmDIMSE" : "C_STORE_RQ",
-                      "dcmDeviceName" : [ ],
-                      "dcmSOPClass" : [ ],
                       "dicomTransferRole" : "SCU"
                     },
                     "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl"
@@ -2384,8 +2374,6 @@
                     "condition" : {
                       "dcmAETitle" : [ "ENSURE_PID" ],
                       "dcmDIMSE" : "C_STORE_RQ",
-                      "dcmDeviceName" : [ ],
-                      "dcmSOPClass" : [ ],
                       "dicomTransferRole" : "SCP"
                     },
                     "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl"
@@ -2397,12 +2385,8 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSY" ],
                       "dcmBitsStored" : [ 8 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
                       "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "RGB" ],
-                      "dcmPixelRepresentation" : 0,
-                      "dcmSOPClass" : [ ]
+                      "dcmPixelRepresentation" : 0
                     },
                     "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=10.0", "avgPixelValueBlockSize=8.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.50"
@@ -2411,12 +2395,8 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSY" ],
                       "dcmBitsStored" : [ 9, 10, 11, 12 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
                       "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2" ],
-                      "dcmPixelRepresentation" : 0,
-                      "dcmSOPClass" : [ ]
+                      "dcmPixelRepresentation" : 0
                     },
                     "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=20.0", "avgPixelValueBlockSize=8.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.51"
@@ -2425,11 +2405,7 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSLESS" ],
                       "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ],
-                      "dcmSOPClass" : [ ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ]
                     },
                     "dcmImageWriteParam" : [ "maxPixelValueError=0.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.70"
@@ -2438,11 +2414,7 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LS" ],
                       "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ],
-                      "dcmSOPClass" : [ ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ]
                     },
                     "dcmImageWriteParam" : [ "maxPixelValueError=0.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.80"
@@ -2451,11 +2423,7 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_2000" ],
                       "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ],
-                      "dcmSOPClass" : [ ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ]
                     },
                     "dcmImageWriteParam" : [ "maxPixelValueError=0.0", "compressionType=JPEG2000" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.90"
@@ -4333,8 +4301,6 @@
                     "condition" : {
                       "dcmAETitle" : [ "WITHOUT_PN" ],
                       "dcmDIMSE" : "C_FIND_RSP",
-                      "dcmDeviceName" : [ ],
-                      "dcmSOPClass" : [ ],
                       "dicomTransferRole" : "SCP"
                     },
                     "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/ensure-retrieve-ae-title.xsl"
@@ -4343,8 +4309,6 @@
                     "condition" : {
                       "dcmAETitle" : [ "WITHOUT_PN" ],
                       "dcmDIMSE" : "C_STORE_RQ",
-                      "dcmDeviceName" : [ ],
-                      "dcmSOPClass" : [ ],
                       "dicomTransferRole" : "SCU"
                     },
                     "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/nullify-pn.xsl"
@@ -4353,8 +4317,6 @@
                     "condition" : {
                       "dcmAETitle" : [ "ENSURE_PID" ],
                       "dcmDIMSE" : "C_STORE_RQ",
-                      "dcmDeviceName" : [ ],
-                      "dcmSOPClass" : [ ],
                       "dicomTransferRole" : "SCP"
                     },
                     "labeledURI" : "${jboss.server.config.url}/dcm4chee-arc/ensure-pid.xsl"
@@ -4366,12 +4328,8 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSY" ],
                       "dcmBitsStored" : [ 8 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
                       "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "RGB" ],
-                      "dcmPixelRepresentation" : 0,
-                      "dcmSOPClass" : [ ]
+                      "dcmPixelRepresentation" : 0
                     },
                     "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=10.0", "avgPixelValueBlockSize=8.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.50"
@@ -4380,12 +4338,8 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSY" ],
                       "dcmBitsStored" : [ 9, 10, 11, 12 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
                       "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2" ],
-                      "dcmPixelRepresentation" : 0,
-                      "dcmSOPClass" : [ ]
+                      "dcmPixelRepresentation" : 0
                     },
                     "dcmImageWriteParam" : [ "compressionQuality=0.8", "maxPixelValueError=20.0", "avgPixelValueBlockSize=8.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.51"
@@ -4394,11 +4348,7 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LOSSLESS" ],
                       "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ],
-                      "dcmSOPClass" : [ ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ]
                     },
                     "dcmImageWriteParam" : [ "maxPixelValueError=0.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.70"
@@ -4407,11 +4357,7 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_LS" ],
                       "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ],
-                      "dcmSOPClass" : [ ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ]
                     },
                     "dcmImageWriteParam" : [ "maxPixelValueError=0.0" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.80"
@@ -4420,11 +4366,7 @@
                     "condition" : {
                       "dcmAETitle" : [ "JPEG_2000" ],
                       "dcmBitsStored" : [ 8, 9, 10, 11, 12, 13, 14, 15, 16 ],
-                      "dcmBodyPartExamined" : [ ],
-                      "dcmDeviceName" : [ ],
-                      "dcmImageType" : [ ],
-                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ],
-                      "dcmSOPClass" : [ ]
+                      "dcmPhotometricInterpretation" : [ "MONOCHROME1", "MONOCHROME2", "PALETTE_COLOR", "RGB", "YBR_FULL" ]
                     },
                     "dcmImageWriteParam" : [ "maxPixelValueError=0.0", "compressionType=JPEG2000" ],
                     "dicomTransferSyntax" : "1.2.840.10008.1.2.4.90"
