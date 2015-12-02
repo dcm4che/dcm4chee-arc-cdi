@@ -106,7 +106,6 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     @Inject
     private StoreAndRememberService storeAndRememberService;
     
-   
     @Override
     public void scheduleChangeRequest(ChangeRequestContext changeRequestCtx) {
         scheduleChangeRequestInt(changeRequestCtx.getUpdatedInstances(), changeRequestCtx.getRejectionNotes(), changeRequestCtx.getExternalStoreAndRememberAETs());

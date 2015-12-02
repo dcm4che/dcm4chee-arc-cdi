@@ -66,45 +66,6 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
     
     private Set<org.dcm4chee.archive.entity.Instance> rejectionNotes = Collections.emptySet();
     
-//    public static QCContextImpl createInstance(Enum<?> structuralChangeType, QCEvent qcEvent) {
-//        QC_OPERATION qcOperation = QC_OPERATION.valueOf(qcEvent.getOperation().toString());
-//        
-//        QCContextImpl qcCtx;
-//        if(QC_OPERATION.UPDATE.equals(qcOperation)) {
-//            QCUpdateScope updateScope = QCUpdateScope.valueOf(qcEvent.getUpdateScope());
-//            qcCtx = new QCContextImpl(structuralChangeType, STRUCTURAL_CHANGE.QC, qcOperation, updateScope);
-//        } else {
-//            qcCtx = new QCContextImpl(structuralChangeType, qcOperation);
-//        }
-//        
-//        Collection<QCEventInstance> sourceInstances = qcEvent.getSource();
-//        if(sourceInstances != null) {
-//            for (QCEventInstance qcInstance : sourceInstances) {
-//                InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
-//                        qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
-//                qcCtx.addSourceInstance(instance);
-//            }
-//        }
-//        
-//        Collection<QCEventInstance> targetInstances = qcEvent.getTarget();
-//        if (targetInstances != null) {
-//            for (QCEventInstance qcInstance : targetInstances) {
-//                InstanceIdentifier instance = new InstanceIdentifierImpl(qcInstance.getStudyInstanceUID(),
-//                        qcInstance.getSeriesInstanceUID(), qcInstance.getSopInstanceUID());
-//                qcCtx.addTargetInstance(instance);
-//            }
-//        }
-//        
-//        qcCtx.updateAttributes = qcEvent.getUpdateAttributes();
-//        
-//        Collection<org.dcm4chee.archive.entity.Instance> rejectionNotes = qcEvent.getRejectionNotes();
-//        if(rejectionNotes != null) {
-//            qcCtx.rejectionNotes = new HashSet<>(rejectionNotes);
-//        }
-//        
-//        return qcCtx;
-//    }
-    
     public void addRejectionNotes(Collection<Instance> rejectionNotes) {
         if(this.rejectionNotes == Collections.<Instance>emptySet()) {
             this.rejectionNotes = new HashSet<>(rejectionNotes);
