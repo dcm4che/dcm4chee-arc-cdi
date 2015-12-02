@@ -134,7 +134,9 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
         }
         
         public Builder addRejectionNote(Instance rejNote) {
-            qcContext.addRejectionNote(rejNote);
+            if(rejNote != null) {
+                qcContext.addRejectionNote(rejNote);
+            }
             return this;
         }
         

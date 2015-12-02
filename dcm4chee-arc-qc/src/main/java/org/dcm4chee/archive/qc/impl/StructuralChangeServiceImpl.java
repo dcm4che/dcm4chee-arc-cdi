@@ -1036,7 +1036,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
     
 	private Collection<Instance> locateInstances(Collection<String> sopIUIDs) {
     	if (sopIUIDs.isEmpty()) {
-    		Collections.emptyList();
+    		return Collections.emptyList();
     	}
         return em.createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER_MANY, Instance.class)
                 .setParameter("uids", sopIUIDs)
