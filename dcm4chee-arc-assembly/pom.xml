@@ -61,13 +61,6 @@
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-ear</artifactId>
-      <version>${project.version}</version>
-      <classifier>${db}</classifier>
-      <type>ear</type>
-    </dependency>
-    <dependency>
-      <groupId>org.dcm4che.dcm4chee-arc</groupId>
       <artifactId>dcm4chee-arc-web</artifactId>
       <version>${project.version}</version>
       <type>war</type>
@@ -140,4 +133,67 @@
       <type>zip</type>
     </dependency>
   </dependencies>
+  <profiles>
+    <profile>
+      <id>default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-arc</groupId>
+          <artifactId>dcm4chee-arc-ear</artifactId>
+          <version>${project.version}</version>
+          <classifier>${db}</classifier>
+          <type>ear</type>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>arr-csp</id>
+      <build>
+        <finalName>dcm4chee-arc-arr-${project.version}</finalName>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>2.10</version>
+            <executions>
+              <execution>
+                <id>copy</id>
+                <goals>
+                  <goal>copy</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.dcm4che.dcm4chee-arr</groupId>
+                      <artifactId>dcm4chee-arr-cdi-conf-jbosscli</artifactId>
+                      <version>4.2.0-SNAPSOT</version>
+                      <type>cli</type>
+                      <overWrite>false</overWrite>
+                      <outputDirectory>${project.build.directory}/dcm4chee-arr</outputDirectory>
+                      <destFileName>arr-setup.cli</destFileName>
+                    </artifactItem>
+                  </artifactItems>
+                  <outputDirectory>${project.build.directory}/wars</outputDirectory>
+                  <overWriteReleases>false</overWriteReleases>
+                  <overWriteSnapshots>true</overWriteSnapshots>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <dependencies>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-arc</groupId>
+          <artifactId>dcm4chee-arc-ear</artifactId>
+          <version>${project.version}</version>
+          <classifier>arr-${db}</classifier>
+          <type>ear</type>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>

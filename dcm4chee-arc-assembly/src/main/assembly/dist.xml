@@ -75,6 +75,13 @@
       <outputDirectory>sql</outputDirectory>
       <lineEnding>dos</lineEnding>
     </fileSet>
+    <fileSet>
+      <directory>${project.build.directory}/dcm4chee-arr</directory>
+      <outputDirectory>jboss-cli/</outputDirectory>
+      <includes>
+        <include>arr-setup.cli</include>
+      </includes>
+    </fileSet>
   </fileSets>
   <dependencySets>
     <dependencySet>

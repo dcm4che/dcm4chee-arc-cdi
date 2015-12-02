@@ -438,6 +438,68 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>arr-csp</id>
+      <activation>
+        <property>
+          <name>arr-csp</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-arr</groupId>
+          <artifactId>dcm4chee-arr-cdi-war-skinny</artifactId>
+          <classifier>${db}</classifier>
+          <type>war</type>
+          <version>${dcm4chee-arr.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-arr</groupId>
+          <artifactId>dcm4chee-arr-web</artifactId>
+          <type>war</type>
+          <version>${dcm4chee-arr.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.dcm4che.dcm4chee-arr</groupId>
+          <artifactId>dcm4chee-arr-conf-default</artifactId>
+          <version>${dcm4chee-arr.version}</version>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-ear-plugin</artifactId>
+            <configuration>
+              <classifier>arr-${db}</classifier>
+              <defaultLibBundleDir>lib</defaultLibBundleDir>
+              <modules combine.children="append">
+                <webModule>
+                  <groupId>org.dcm4che.dcm4chee-arc</groupId>
+                  <artifactId>dcm4chee-arc-war-skinny</artifactId>
+                  <contextRoot>dcm4chee-arc</contextRoot>
+                </webModule>
+                <webModule>
+                  <groupId>org.dcm4che.dcm4chee-conf</groupId>
+                  <artifactId>dcm4chee-conf-web</artifactId>
+                  <contextRoot>config</contextRoot>
+                </webModule>
+                <webModule>
+                  <groupId>org.dcm4che.dcm4chee-arr</groupId>
+                  <artifactId>dcm4chee-arr-cdi-war-skinny</artifactId>
+                  <contextRoot>dcm4chee-arr</contextRoot>
+                </webModule>
+                <webModule>
+                  <groupId>org.dcm4che.dcm4chee-arr</groupId>
+                  <artifactId>dcm4chee-arr-web</artifactId>
+                  <contextRoot>dcm4chee-arr-web</contextRoot>
+                </webModule>
+              </modules>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
   <build>
     <plugins>
