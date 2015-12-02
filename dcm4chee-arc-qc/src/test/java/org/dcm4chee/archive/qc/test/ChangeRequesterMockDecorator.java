@@ -48,6 +48,7 @@ import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.IOCMConfig;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.iocm.client.ChangeRequestContext;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
 import org.dcm4chee.archive.sc.StructuralChangeContext.InstanceIdentifier;
 import org.slf4j.Logger;
@@ -70,15 +71,6 @@ public class ChangeRequesterMockDecorator implements ChangeRequesterService {
   
     @Inject
     private Device device;
-
-    @Override
-    public void scheduleChangeRequest(Set<InstanceIdentifier> sourceInstanceUIDs, Set<InstanceIdentifier> updatedInstanceUIDs,
-            Set<Instance> rejNotes) {
-        LOG.info("############## scheduleChangeRequest called!count:{}",++count);
-        IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
-        String[] aets = cfg != null ? cfg.getIocmDestinations() : null;
-        PerformedChangeRequest.addChangeRequest(updatedInstanceUIDs, rejNotes, aets);
-    }
     
     @Override
     public void scheduleUpdateOnlyChangeRequest(Set<InstanceIdentifier> updatedInstanceUIDs) {
@@ -86,5 +78,21 @@ public class ChangeRequesterMockDecorator implements ChangeRequesterService {
         IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
         String[] aets = cfg != null ? cfg.getNoneIocmDestinations() : null;
         PerformedChangeRequest.addChangeRequest(updatedInstanceUIDs, null, aets);
+    }
+
+    @Override
+    public ChangeRequestContext createChangeRequestContext(
+            Set<InstanceIdentifier> sourceInstanceUIDs,
+            Set<InstanceIdentifier> updatedInstanceUIDs, Set<Instance> rejectionNotes) {
+        throw new IllegalStateException("Method not implemented");
+    }
+
+    @Override
+    public void scheduleChangeRequest(ChangeRequestContext changeRequestCtx) {
+        LOG.info("############## scheduleChangeRequest called!count:{}",++count);
+        IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
+        String[] aets = cfg != null ? cfg.getIocmDestinations() : null;
+        PerformedChangeRequest.addChangeRequest(changeRequestCtx.getUpdatedInstances(), changeRequestCtx.getRejectionNotes(), aets);
+        
     }
 }

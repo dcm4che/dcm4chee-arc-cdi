@@ -46,8 +46,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -98,6 +100,7 @@ import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.iocm.RejectionDeleteService;
 import org.dcm4chee.archive.iocm.RejectionService;
+import org.dcm4chee.archive.iocm.client.ChangeRequestContext;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.patient.PatientService;
@@ -113,7 +116,9 @@ import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.studyprotection.StudyProtectionHook;
+import org.dcm4chee.archive.task.executor.impl.PlatformTaskExecutor;
 import org.dcm4chee.hooks.Hooks;
+import org.dcm4chee.util.TransactionSynchronization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -183,8 +188,14 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
     @Inject
     private StructuralChangeTransactionAggregator structuralChangeAggregator;
     
-    @Inject
+    @EJB
     private ChangeRequesterService changeRequester;
+    
+    @EJB
+    private PlatformTaskExecutor platformExecutor;
+    
+    @Inject
+    private TransactionSynchronization transactionSynchronization;
 
     /**
      * Triggered by the container to set the value for the archive extension.
@@ -230,7 +241,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         QCOperationContext mergeCtx = mergeCtxBuilder.build();
         
         structuralChangeAggregator.aggregate(mergeCtx);
-        scheduleChangeRequest(mergeCtx);
+        scheduleChangeRequestAfterTxCommit(mergeCtx);
         
         return mergeCtx;
     }
@@ -260,7 +271,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
         
         structuralChangeAggregator.aggregate(mergeCtx);
-        scheduleChangeRequest(mergeCtx);
+        scheduleChangeRequestAfterTxCommit(mergeCtx);
         
         return mergeCtx;
     }
@@ -441,7 +452,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
     
         structuralChangeAggregator.aggregate(splitCtx);
-        scheduleChangeRequest(splitCtx);
+        scheduleChangeRequestAfterTxCommit(splitCtx);
         
         return splitCtx;
     }
@@ -576,7 +587,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
         
         structuralChangeAggregator.aggregate(segmentCtx);
-        scheduleChangeRequest(segmentCtx);
+        scheduleChangeRequestAfterTxCommit(segmentCtx);
      
         return segmentCtx;
     }
@@ -604,7 +615,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
     
         structuralChangeAggregator.aggregate(rejectCtx);
-        scheduleChangeRequest(rejectCtx);
+        scheduleChangeRequestAfterTxCommit(rejectCtx);
     
         return rejectCtx;
     }
@@ -672,7 +683,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
 
         structuralChangeAggregator.aggregate(updateCtx);
-        scheduleChangeRequest(updateCtx);
+        scheduleChangeRequestAfterTxCommit(updateCtx);
       
         return updateCtx;
     }
@@ -762,7 +773,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
 
         structuralChangeAggregator.aggregate(updateCtx);
-        scheduleChangeRequest(updateCtx);
+        scheduleChangeRequestAfterTxCommit(updateCtx);
         
         return updateCtx;
     }
@@ -831,7 +842,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
 
         structuralChangeAggregator.aggregate(deleteCtx);
-        scheduleChangeRequest(deleteCtx);
+        scheduleChangeRequestAfterTxCommit(deleteCtx);
         
         createQCDeleteHistory(rejectedInstances);
         rejectAndScheduleForDeletion(rejectedInstances, qcRejectionCode);
@@ -868,7 +879,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
         
         structuralChangeAggregator.aggregate(deleteCtx);
-        scheduleChangeRequest(deleteCtx);
+        scheduleChangeRequestAfterTxCommit(deleteCtx);
         
         createQCDeleteHistory(rejectedInstances);
         rejectAndScheduleForDeletion(rejectedInstances, qcRejectionCode);
@@ -904,7 +915,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
     
         structuralChangeAggregator.aggregate(deleteCtx);
-        scheduleChangeRequest(deleteCtx);
+        scheduleChangeRequestAfterTxCommit(deleteCtx);
         
         createQCDeleteHistory(insts);
         rejectAndScheduleForDeletion(insts, qcRejectionCode);
@@ -944,7 +955,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             .build();
 
         structuralChangeAggregator.aggregate(deleteCtx);
-        scheduleChangeRequest(deleteCtx);
+        scheduleChangeRequestAfterTxCommit(deleteCtx);
         
         createQCDeleteHistory(deletedInstances);
         rejectAndScheduleForDeletion(deletedInstances, qcRejectionCode);
@@ -2871,8 +2882,27 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         return filteredLocalOnly.toArray(new String[] {});
     }
     
-    private void scheduleChangeRequest(QCOperationContext qcCtx) {
-        changeRequester.scheduleChangeRequest(qcCtx.getSourceInstances(), qcCtx.getTargetInstances(), qcCtx.getRejectionNotes());
+    /*
+     * Schedules a change request that will be fired after the SC transaction has committed successfully
+     * -> Do not send change request to external system if SC transaction failed!
+     */
+    private void scheduleChangeRequestAfterTxCommit(final QCOperationContext qcCtx) {
+        final ChangeRequestContext changeRequestCtx = changeRequester.createChangeRequestContext(qcCtx.getSourceInstances(), qcCtx.getTargetInstances(), qcCtx.getRejectionNotes());
+        
+        Executor executor = new Executor() {
+            @Override
+            public void execute(Runnable r) {
+                platformExecutor.asyncExecute(r);
+            }
+        };
+        
+        transactionSynchronization.afterSuccessfulCommit(new Runnable() {
+            @Override
+            public void run() {
+                changeRequester.scheduleChangeRequest(changeRequestCtx);
+            }
+            
+        }, executor);      
     }
 
 }

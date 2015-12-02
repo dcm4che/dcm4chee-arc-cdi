@@ -42,12 +42,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -68,6 +71,7 @@ import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.fetch.forward.FetchForwardCallBack;
 import org.dcm4chee.archive.fetch.forward.FetchForwardService;
+import org.dcm4chee.archive.iocm.client.ChangeRequestContext;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
 import org.dcm4chee.archive.retrieve.RetrieveService;
 import org.dcm4chee.archive.sc.StructuralChangeContext.InstanceIdentifier;
@@ -79,7 +83,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Franz Willer <franz.willer@gmail.com>
  */
-@ApplicationScoped
+@Stateless
 public class ChangeRequesterServiceImpl implements ChangeRequesterService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChangeRequesterServiceImpl.class);
@@ -96,39 +100,44 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
     
-//    @Inject
-//    private IApplicationEntityCache aeCache;
-    
     @Inject
     private DicomConfiguration conf;
-
-    private transient ArchiveDeviceExtension archDeviceExt;
     
     @Inject
     private StoreAndRememberService storeAndRememberService;
     
-    public void scheduleChangeRequest(Set<InstanceIdentifier> sourceInstanceUIDs, Set<InstanceIdentifier> updatedInstanceUIDs, Set<Instance> rejNotes) {
+   
+    @Override
+    public void scheduleChangeRequest(ChangeRequestContext changeRequestCtx) {
+        scheduleChangeRequestInt(changeRequestCtx.getUpdatedInstances(), changeRequestCtx.getRejectionNotes(), changeRequestCtx.getExternalStoreAndRememberAETs());
+    }
+    
+    private void scheduleChangeRequestInt(Set<InstanceIdentifier> updatedInstanceUIDs, Set<Instance> rejNotes, Collection<String> extDevicesAETs) {
         LOG.debug("scheduleChangeRequest() called! rejNote:{}\nupdated:{}", rejNotes, updatedInstanceUIDs);
         IOCMConfig cfg = getIOCMConfig();
         if (cfg == null) {
             LOG.info("IOCMConfig not configured! Skipped!");
             return;
         }
+        
         ApplicationEntity callingAE = device.getApplicationEntity(cfg.getCallingAET());
+        if(callingAE == null) {
+            LOG.error("No calling AE configured for IOCM change requests");
+            return;
+        }
+        
         String[] iocmTargetAETs = cfg.getIocmDestinations();
         LOG.debug("IOCM target AE titles from IOCMConfig:{}", Arrays.toString(iocmTargetAETs));
         
-        Collection<String> extDevicesAETs = getExternalDevicesAETitles(sourceInstanceUIDs);
-        
         // schedule store of rejection note
         if (rejNotes != null) {
-            List<ArchiveInstanceLocator> rejNoteLocator = locate(toIUIDArray2(rejNotes));
+            List<ArchiveInstanceLocator> rejNoteLocator = locate(extractUIDsFromInstances(rejNotes));
             scheduleStore(callingAE, iocmTargetAETs, rejNoteLocator, extDevicesAETs);
         }
         
         // schedule store of updated instances for IOCM & Non-IOCM AEs
         if (updatedInstanceUIDs != null && updatedInstanceUIDs.size() > 0) {
-            List<ArchiveInstanceLocator> locators = locate(toIUIDArray(updatedInstanceUIDs));
+            List<ArchiveInstanceLocator> locators = locate(extractUIDsFromInstanceIds(updatedInstanceUIDs));
             scheduleStore(callingAE, iocmTargetAETs, locators, extDevicesAETs);
 
             String[] nonIOCMAETs = cfg.getNoneIocmDestinations();
@@ -137,6 +146,21 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             	scheduleStore(callingAE, nonIOCMAETs, locators, extDevicesAETs);
             }
         }
+    }
+    
+    private Map<String,String> getExternalCoordinates(String... targetAETs) {
+        Map<String,String> extCoordinates = new HashMap<>();
+        for(String targetAET : targetAETs) {
+            ApplicationEntity targetAE = conf.findApplicationEntity(targetAET);
+            if(targetAE == null) {
+                LOG.error("Could not find AE " + targetAET);
+                continue;
+            }
+            Device targetDevice = targetAE.getDevice();
+            extCoordinates.put(targetDevice.getDeviceName(), targetAET);
+        }
+        
+        return extCoordinates;
     }
 	
 	private void scheduleStore(ApplicationEntity callingAE, String[] targetAETs,
@@ -151,7 +175,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
                     instanceLocators.addAll(instances);
                 }
             };
-            fetchForwardService.fetchForward(archDeviceExt.getDefaultAETitle(), externalLocators, fetchCallBack, fetchCallBack);
+            fetchForwardService.fetchForward(getArchiveDeviceExtension().getDefaultAETitle(), externalLocators, fetchCallBack, fetchCallBack);
             LOG.info("FetchForward finished!");
         }
         
@@ -160,10 +184,14 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
             instanceUIDs[i] = instanceLocators.get(i).iuid;
         }
         
-        for (String targetAET : targetAETs) {
+        Map<String,String> extCoordinates = getExternalCoordinates(targetAETs);
+        
+        for (Entry<String,String> extCoordinate : extCoordinates.entrySet()) {
+            String targetDeviceName = extCoordinate.getKey();
+            String targetAET = extCoordinate.getValue();
             StoreAndRememberContext storeRememberCxt = storeAndRememberService.createContextBuilder()
                     .instances(instanceUIDs)
-                    .externalDeviceName(null)
+                    .externalDeviceName(targetDeviceName)
                     .localAE(callingAE.getAETitle())
                     .remoteAE(targetAET)
                     .remember(extDeviceAETs.contains(targetAET))
@@ -173,15 +201,17 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     }
 
 	public void scheduleUpdateOnlyChangeRequest(Set<InstanceIdentifier> updatedInstanceUIDs) {
-	    scheduleChangeRequest(updatedInstanceUIDs, updatedInstanceUIDs, Collections.<Instance>emptySet());
+	    Collection<String> extDevicesAETs = getExternalDevicesAETitles(updatedInstanceUIDs);
+        scheduleChangeRequestInt(updatedInstanceUIDs, Collections.<Instance>emptySet(), extDevicesAETs);
     }
     
+	
+	private ArchiveDeviceExtension getArchiveDeviceExtension() {
+	    return device.getDeviceExtension(ArchiveDeviceExtension.class);
+	}
+	
     private IOCMConfig getIOCMConfig() {
-        if (archDeviceExt == null) {
-            archDeviceExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
-            if (archDeviceExt == null)
-                return null;
-        }
+        ArchiveDeviceExtension archDeviceExt = getArchiveDeviceExtension();
         return archDeviceExt.getIocmConfig();
     }
     
@@ -209,7 +239,7 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     	return externalLocators;
     }
     
-    private Collection<String> getExternalDevicesAETitles(Collection<InstanceIdentifier> instanceIDs) {
+    private Set<String> getExternalDevicesAETitles(Collection<InstanceIdentifier> instanceIDs) {
     	List<String> uids = new ArrayList<String>(instanceIDs.size());
     	for (InstanceIdentifier qci : instanceIDs) {
     		uids.add(qci.getSopInstanceUID());
@@ -231,20 +261,55 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     	return allRetrieveAETss;
     }
 
-    private static String[] toIUIDArray(Collection<InstanceIdentifier> instanceIDs) {
-        String[] arr = new String[instanceIDs.size()];
+    private static String[] extractUIDsFromInstanceIds(Collection<InstanceIdentifier> instanceIDs) {
+        String[] uids = new String[instanceIDs.size()];
         int index = 0;
-        for(InstanceIdentifier inst : instanceIDs)
-            arr[index++] = inst.getSopInstanceUID();
-        return arr;
+        for(InstanceIdentifier instanceID : instanceIDs)
+            uids[index++] = instanceID.getSopInstanceUID();
+        return uids;
     }
     
-    private static String[] toIUIDArray2(Collection<Instance> instances) {
-        String[] arr = new String[instances.size()];
+    private static String[] extractUIDsFromInstances(Collection<Instance> instances) {
+        String[] uids = new String[instances.size()];
         int index = 0;
         for(Instance inst : instances)
-            arr[index++] = inst.getSopInstanceUID();
-        return arr;
+            uids[index++] = inst.getSopInstanceUID();
+        return uids;
+    }
+
+    @Override
+    public ChangeRequestContext createChangeRequestContext(Set<InstanceIdentifier> sourceInstanceUIDs, final Set<InstanceIdentifier> updatedInstanceUIDs, final Set<Instance> rejectionNotes) {
+        final Set<String> externalStoreAndRememberAETs = getExternalDevicesAETitles(sourceInstanceUIDs);
+        return new ChangeRequestContextImpl(updatedInstanceUIDs, rejectionNotes, externalStoreAndRememberAETs);
+    }
+    
+    private static class ChangeRequestContextImpl implements ChangeRequestContext {
+        private final Set<InstanceIdentifier> updatedInstanceUIDs;
+        private final Set<Instance> rejectionNotes;
+        private final Set<String> externalStoreAndRememberAETs;
+       
+        private ChangeRequestContextImpl(Set<InstanceIdentifier> updatedInstanceUIDs, 
+                Set<Instance> rejectionNotes, Set<String> externalStoreAndRememberAETs) {
+            this.updatedInstanceUIDs = Collections.unmodifiableSet(updatedInstanceUIDs);
+            this.rejectionNotes = Collections.unmodifiableSet(rejectionNotes);
+            this.externalStoreAndRememberAETs = Collections.unmodifiableSet(externalStoreAndRememberAETs);
+        }
+       
+        @Override
+        public Set<InstanceIdentifier> getUpdatedInstances() {
+            return updatedInstanceUIDs;
+        }
+       
+        @Override
+        public Set<Instance> getRejectionNotes() {
+            return rejectionNotes;
+        }
+      
+        @Override
+        public Set<String> getExternalStoreAndRememberAETs() {
+            return externalStoreAndRememberAETs;
+        }
+        
     }
     
 }

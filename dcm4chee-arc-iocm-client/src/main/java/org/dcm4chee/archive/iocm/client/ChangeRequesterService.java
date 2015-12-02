@@ -48,8 +48,10 @@ import org.dcm4chee.archive.sc.StructuralChangeContext.InstanceIdentifier;
  *
  */
 public interface ChangeRequesterService {
-
-    void scheduleChangeRequest(Set<InstanceIdentifier> sourceInstanceUIDs, Set<InstanceIdentifier> updatedInstanceUIDs, Set<Instance> rejectionNotes);
+    
+    ChangeRequestContext createChangeRequestContext(Set<InstanceIdentifier> sourceInstanceUIDs, Set<InstanceIdentifier> updatedInstanceUIDs, Set<Instance> rejectionNotes);
+    
+    void scheduleChangeRequest(ChangeRequestContext changeRequestCtx);
     
     void scheduleUpdateOnlyChangeRequest(Set<InstanceIdentifier> updatedInstanceUIDs);
     
