@@ -208,7 +208,7 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
             LOG.info("Unable to store {}/{} to {}",
                     UID.nameOf(instanceLocator.cuid), UID.nameOf(instanceLocator.tsuid),
                     storeas.getRemoteAET(), e);
-            failed.add(inst);
+            failed.add(instanceLocator);
             return;
         }
 
