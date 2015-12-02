@@ -757,13 +757,14 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         addUpdateHistoryEntry(updateAction, scope, unmodified,
                 scope == QCUpdateScope.PATIENT ? Long.toString(unmodifiedAndPK.getPK()) : null);
        
-        TypedQuery<String> query = em.createQuery(queryString, String.class);
-        query.setParameter(1, queryParam);
-        List<String> iuids = query.getResultList();
-
         List<InstanceIdentifier> updatedIUIDs = new ArrayList<>();
-        for (String str : iuids) {
-            updatedIUIDs.add(new InstanceIdentifierImpl(null, null, str));
+        
+        if (queryString != null) {
+            TypedQuery<String> query = em.createQuery(queryString, String.class);
+            query.setParameter(1, queryParam);
+            for (String updatedUID : query.getResultList()) {
+                updatedIUIDs.add(new InstanceIdentifierImpl(null, null, updatedUID));
+            }
         }
         
         QCOperationContext updateCtx = new QCContextImpl.Builder(structuralChangeType, QC_OPERATION.UPDATE, scope)

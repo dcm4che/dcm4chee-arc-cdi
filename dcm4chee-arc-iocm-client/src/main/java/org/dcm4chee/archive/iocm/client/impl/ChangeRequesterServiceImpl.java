@@ -239,6 +239,10 @@ public class ChangeRequesterServiceImpl implements ChangeRequesterService {
     }
     
     private Set<String> getExternalDevicesAETitles(Collection<InstanceIdentifier> instanceIDs) {
+        if(instanceIDs.isEmpty()) {
+            return Collections.emptySet();
+        }
+        
     	List<String> uids = new ArrayList<String>(instanceIDs.size());
     	for (InstanceIdentifier qci : instanceIDs) {
     		uids.add(qci.getSopInstanceUID());
