@@ -372,8 +372,6 @@ public class QidoRS {
                 query.orderBy(orderSpecifiers);
     
             query.executeQuery();
-            if (!query.hasMoreMatches())
-                return Response.ok().build();
     
             return Response.status(status).entity(
                     output.entity(this, query, qrlevel)).build();
@@ -622,7 +620,7 @@ public class QidoRS {
                 MediaTypes.APPLICATION_DICOM_XML_TYPE);
         }
         LOG.info("{}: {} Matches", method, count);
-        return output;
+        return count > 0 ? output : null;
     }
 
     private Object writeJSON(Query query, QueryRetrieveLevel qrlevel) {
