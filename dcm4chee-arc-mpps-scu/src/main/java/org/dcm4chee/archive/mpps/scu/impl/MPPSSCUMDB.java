@@ -81,7 +81,7 @@ public class MPPSSCUMDB implements MessageListener {
                 (Attributes) ((ObjectMessage) msg).getObject());
         } catch (Exception e) {
             LOG.warn("Failed to process " + msg + " - retry number {}", JMSUtils.getMessageDeliveryCount(msg), e);
-            throw new EJBException("Exception to trigger JMS retry", e);
+            throw new EJBException("Exception that could trigger JMS retry", e);
         }
     }
 }
