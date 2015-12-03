@@ -47,6 +47,7 @@ import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.hooks.AttributeCoercionHook;
 import org.dcm4chee.archive.mpps.MPPSContext;
+import org.dcm4chee.archive.mpps.MPPSForwardService;
 import org.dcm4chee.archive.mpps.MPPSHook;
 import org.dcm4chee.archive.mpps.MPPSService;
 import org.dcm4chee.archive.mpps.MPPSServiceEJB;
@@ -66,10 +67,11 @@ import javax.inject.Inject;
 import javax.xml.transform.Templates;
 
 /**
+ * Default implementation of {@link MPPSService}.
+ *
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-
 @Stateless
 public class DefaultMPPSService implements MPPSService {
 
@@ -95,17 +97,19 @@ public class DefaultMPPSService implements MPPSService {
     private Device device;
 
     @Inject
-    TransactionSynchronization transaction;
+    private TransactionSynchronization transaction;
 
     /**
      * We need to move coercion out of the interface to remove this 'self' injection
      */
     @EJB
-    MPPSService mppsService;
+    private MPPSService mppsService;
 
     @Inject
-    Hooks<MPPSHook> mppsHooks;
+    private Hooks<MPPSHook> mppsHooks;
 
+    @Inject
+    private MPPSForwardService mppsForwardService;
 
     @Override
     public void createPerformedProcedureStep(final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
@@ -114,15 +118,20 @@ public class DefaultMPPSService implements MPPSService {
         ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
         ejb.createPerformedProcedureStep(ae, mppsContext.getMppsSopInstanceUID(), attrs);
 
-        for (MPPSHook mppsHook : mppsHooks) mppsHook.processMPPS(mppsContext, attrs);
+        for (MPPSHook mppsHook : mppsHooks) {
+            mppsHook.processMPPS(mppsContext, attrs);
+        }
+
+        final MPPSEvent mppsEvent = new MPPSEvent(attrs, mppsContext);
+
+        mppsForwardService.scheduleForwardMPPS(mppsEvent);
 
         transaction.afterSuccessfulCommit(new Runnable() {
             @Override
             public void run() {
-                createMPPSEvent.fire(new MPPSEvent(attrs, mppsContext));
+                createMPPSEvent.fire(mppsEvent);
             }
         });
-
     }
 
     @Override
@@ -132,15 +141,21 @@ public class DefaultMPPSService implements MPPSService {
         ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
         final MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsContext.getMppsSopInstanceUID(), attrs);
 
-        for (MPPSHook mppsHook : mppsHooks) mppsHook.processMPPS(mppsContext, attrs);
+        for (MPPSHook mppsHook : mppsHooks) {
+            mppsHook.processMPPS(mppsContext, attrs);
+        }
+
+        final MPPSEvent mppsEvent = new MPPSEvent(attrs, mppsContext);
+
+        mppsForwardService.scheduleForwardMPPS(mppsEvent);
 
         transaction.afterSuccessfulCommit(new Runnable() {
             @Override
             public void run() {
                 if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
-                    updateMPPSEvent.fire(new MPPSEvent(attrs, mppsContext));
+                    updateMPPSEvent.fire(mppsEvent);
                 else
-                    finalMPPSEvent.fire(new MPPSEvent(attrs, mppsContext));
+                    finalMPPSEvent.fire(mppsEvent);
             }
         });
     }

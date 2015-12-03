@@ -55,6 +55,7 @@ import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.archive.util.RetryBean;
+import org.dcm4chee.util.jms.JMSUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,8 +77,6 @@ public class NonIocmChangeRequestorMDB implements MessageListener {
     
     public static final String UPDATED_STUDY_UID_MSG_PROPERTY = "studyIUID";
     
-    private static final String JMS_DELIVERY_COUNT_MSG_PROPERTY = "JMSXDeliveryCount";
-
     @EJB
     private ActiveProcessingService activeProcessingService;
     
@@ -105,7 +104,7 @@ public class NonIocmChangeRequestorMDB implements MessageListener {
             LOG.warn("Failed to process Non-IOCM active-processing message", th);
          
             boolean retryable = RetryBean.isRetryable(th);
-            int msgDeliveryCount = getMessageDeliveryCount(msg);
+            int msgDeliveryCount = JMSUtils.getMessageDeliveryCount(msg);
             //TODO: remove hard-coded number of retries
             // throw exception to force JMS retry
             if (retryable && msgDeliveryCount <= 3) {
@@ -136,12 +135,4 @@ public class NonIocmChangeRequestorMDB implements MessageListener {
         }
     }
     
-    private static int getMessageDeliveryCount(Message msg) {
-        try {
-            return msg.getIntProperty(JMS_DELIVERY_COUNT_MSG_PROPERTY);
-        } catch (JMSException e) {
-            return Integer.MAX_VALUE;
-        }
-    }
-
 }
