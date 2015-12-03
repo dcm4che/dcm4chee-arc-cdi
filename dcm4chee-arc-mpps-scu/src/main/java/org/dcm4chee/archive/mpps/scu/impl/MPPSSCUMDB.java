@@ -37,6 +37,13 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.mpps.scu.impl;
 
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.net.Dimse;
+import org.dcm4chee.archive.mpps.scu.MPPSSCU;
+import org.dcm4chee.util.jms.JMSUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJBException;
 import javax.ejb.MessageDriven;
@@ -44,15 +51,6 @@ import javax.inject.Inject;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
-
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.Dimse;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.mpps.scu.MPPSSCU;
-import org.dcm4chee.archive.util.RetryBean;
-import org.dcm4chee.util.jms.JMSUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
