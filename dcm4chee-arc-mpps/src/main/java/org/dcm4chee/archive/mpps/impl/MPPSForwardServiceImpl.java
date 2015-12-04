@@ -47,13 +47,9 @@ import org.dcm4che3.net.Dimse;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSForwardService;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;

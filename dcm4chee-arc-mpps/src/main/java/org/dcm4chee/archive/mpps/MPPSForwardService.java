@@ -41,7 +41,6 @@
 package org.dcm4chee.archive.mpps;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
 
 /**
  * Forwards MPPS messages to configured MPPS forwarding destinations.

@@ -40,7 +40,6 @@ package org.dcm4chee.archive.mpps.impl;
 
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
-import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
@@ -50,13 +49,8 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.hooks.AttributeCoercionHook;
 import org.dcm4chee.archive.mpps.MPPSContext;
-import org.dcm4chee.archive.mpps.MPPSForwardService;
 import org.dcm4chee.archive.mpps.MPPSHook;
 import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.mpps.event.MPPSCreate;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
-import org.dcm4chee.archive.mpps.event.MPPSFinal;
-import org.dcm4chee.archive.mpps.event.MPPSUpdate;
 import org.dcm4chee.hooks.Hooks;
 import org.dcm4chee.util.TransactionSynchronization;
 import org.slf4j.Logger;
@@ -73,18 +67,6 @@ import org.slf4j.LoggerFactory;
 public class DefaultMPPSService implements MPPSService {
 
     private static Logger LOG = LoggerFactory.getLogger(DefaultMPPSService.class);
-
-    @Inject
-    @MPPSCreate
-    private Event<MPPSEvent> createMPPSEvent;
-
-    @Inject
-    @MPPSUpdate
-    private Event<MPPSEvent> updateMPPSEvent;
-
-    @Inject
-    @MPPSFinal
-    private Event<MPPSEvent> finalMPPSEvent;
 
     @Inject
     private Device device;
@@ -108,15 +90,6 @@ public class DefaultMPPSService implements MPPSService {
         for (MPPSHook mppsHook : mppsHooks) {
             mppsHook.onMPPSCreate(mppsContext, attrs);
         }
-
-        final MPPSEvent mppsEvent = new MPPSEvent(attrs, mppsContext);
-
-        transaction.afterSuccessfulCommit(new Runnable() {
-            @Override
-            public void run() {
-                createMPPSEvent.fire(mppsEvent);
-            }
-        });
     }
 
     @Override
@@ -134,18 +107,6 @@ public class DefaultMPPSService implements MPPSService {
                 mppsHook.onMPPSFinal(mppsContext, attrs);
             }
         }
-
-        final MPPSEvent mppsEvent = new MPPSEvent(attrs, mppsContext);
-
-        transaction.afterSuccessfulCommit(new Runnable() {
-            @Override
-            public void run() {
-                if (mppsStatus == MPPS.Status.IN_PROGRESS)
-                    updateMPPSEvent.fire(mppsEvent);
-                else
-                    finalMPPSEvent.fire(mppsEvent);
-            }
-        });
     }
 
     private void coerceAttributes(MPPSContext context, Attributes attrs) throws DicomServiceException {
