@@ -43,13 +43,13 @@ public class CStoreSCUServiceDynamicDecorator extends DynamicDecoratorWrapper<CS
 	}
 
 	@Override
-	public ArchiveInstanceLocator applySuppressionCriteria(ArchiveInstanceLocator ref, Attributes attrs, String supressionCriteriaTemplateURI, CStoreSCUContext context) {
-		return wrapWithDynamicDecorators(delegate).applySuppressionCriteria(ref, attrs, supressionCriteriaTemplateURI, context);
+	public boolean isInstanceSuppressed(ArchiveInstanceLocator ref, Attributes attrs, String supressionCriteriaTemplateURI, CStoreSCUContext context) {
+		return wrapWithDynamicDecorators(delegate).isInstanceSuppressed(ref, attrs, supressionCriteriaTemplateURI, context);
 	}
 
 	@Override
-	public ArchiveInstanceLocator eliminateUnSupportedSOPClasses(ArchiveInstanceLocator ref, CStoreSCUContext context) {
-		return wrapWithDynamicDecorators(delegate).eliminateUnSupportedSOPClasses(ref, context);
+	public boolean isSOPClassUnsupported(ArchiveInstanceLocator ref, CStoreSCUContext context) {
+		return wrapWithDynamicDecorators(delegate).isSOPClassUnsupported(ref, context);
 	}
 
 	@Override

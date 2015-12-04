@@ -187,9 +187,11 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
             if (context.getRemoteAE() != null) {
                 String templateURI = arcAEExt.getRetrieveSuppressionCriteria()
                         .getSuppressionCriteriaMap().get(context.getRemoteAE().getAETitle());
-                if (templateURI != null)
-                    inst = service.applySuppressionCriteria(inst, attrs, templateURI,
-                            context);
+                if (templateURI != null) {
+                    if(service.isInstanceSuppressed(inst, attrs, templateURI, context)) {
+                        throw new UnsupportedStoreSCUException("Unable to send instance, instance is suppressed by suppression criteria");
+                    }
+                }
             }
 
             service.coerceFileBeforeMerge(inst, attrs, context);
@@ -341,10 +343,8 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
         // check for SOP classes elimination
         if (context.getArchiveAEExtension().getRetrieveSuppressionCriteria()
                 .isCheckTransferCapabilities()) {
-            inst = service.eliminateUnSupportedSOPClasses(inst, context);
-
             // check if eliminated then throw exception
-            if (inst == null)
+            if (service.isSOPClassUnsupported(inst, context))
                 throw new UnsupportedStoreSCUException(
                         "Unable to send instance, SOP class not configured");
 

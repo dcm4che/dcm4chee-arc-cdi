@@ -37,13 +37,13 @@ public class DelegatingCStoreSCUService extends DelegatingServiceImpl<CStoreSCUS
 	}
 
 	@Override
-	public ArchiveInstanceLocator applySuppressionCriteria(ArchiveInstanceLocator ref, Attributes attrs, String supressionCriteriaTemplateURI, CStoreSCUContext context) {
-		return getNextDecorator().applySuppressionCriteria(ref, attrs, supressionCriteriaTemplateURI, context);
+	public boolean isInstanceSuppressed(ArchiveInstanceLocator ref, Attributes attrs, String supressionCriteriaTemplateURI, CStoreSCUContext context) {
+		return getNextDecorator().isInstanceSuppressed(ref, attrs, supressionCriteriaTemplateURI, context);
 	}
 
 	@Override
-	public ArchiveInstanceLocator eliminateUnSupportedSOPClasses(ArchiveInstanceLocator ref, CStoreSCUContext context) {
-		return getNextDecorator().eliminateUnSupportedSOPClasses(ref, context);
+	public boolean isSOPClassUnsupported(ArchiveInstanceLocator ref, CStoreSCUContext context) {
+		return getNextDecorator().isSOPClassUnsupported(ref, context);
 	}
 
 	@Override
