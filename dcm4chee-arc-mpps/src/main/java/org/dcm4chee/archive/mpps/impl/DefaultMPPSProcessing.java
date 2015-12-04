@@ -97,6 +97,15 @@ public class DefaultMPPSProcessing extends MPPSHook {
 
     @Override
     public void onMPPSUpdate(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        updateOrFinal(context, attributes);
+    }
+
+    @Override
+    public void onMPPSFinal(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        updateOrFinal(context, attributes);
+    }
+
+    private void updateOrFinal(MPPSContext context, Attributes attributes) throws DicomServiceException {
         ApplicationEntity ae = device.getApplicationEntityNotNull(context.getReceivingAET());
         ejb.updatePerformedProcedureStep(ae, context.getMppsSopInstanceUID(), attributes);
     }

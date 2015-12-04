@@ -57,6 +57,7 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.ian.scu.IANSCU;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.store.StoreContext;
@@ -100,17 +101,16 @@ public class IANSCUImpl implements IANSCU {
     @Inject
     private Device device;
 
-    public void onMPPSReceive(@Observes @MPPSFinal MPPSEvent event) {
-
-        ApplicationEntity ae = null;
+    public void onMPPSReceive(MPPSContext context, Attributes attributes) {
+        ApplicationEntity ae;
         try {
-            ae = device.getApplicationEntityNotNull(event.getContext().getReceivingAET());
+            ae = device.getApplicationEntityNotNull(context.getReceivingAET());
 
             ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
             if (arcAE != null
                     && arcAE.getIANDestinations().length > 0
-                    && !isIncorrectWorklistEntrySelected(event.getAttributes())) {
-                IANBuilder builder = createIANBuilder(event.getMppsSopInstanceUID(), event.getAttributes());
+                    && !isIncorrectWorklistEntrySelected(attributes)) {
+                IANBuilder builder = createIANBuilder(context.getMppsSopInstanceUID(), attributes);
                 if (builder.numberOfOutstandingInstances() == 0)
                     scheduleSendIAN(ae.getAETitle(), arcAE.getIANDestinations(), builder.getIAN());
             }

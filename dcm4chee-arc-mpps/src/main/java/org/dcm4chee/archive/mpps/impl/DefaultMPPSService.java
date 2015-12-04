@@ -38,10 +38,16 @@
 
 package org.dcm4chee.archive.mpps.impl;
 
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.*;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.hooks.AttributeCoercionHook;
 import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSForwardService;
@@ -51,15 +57,10 @@ import org.dcm4chee.archive.mpps.event.MPPSCreate;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.event.MPPSFinal;
 import org.dcm4chee.archive.mpps.event.MPPSUpdate;
-import org.dcm4chee.util.TransactionSynchronization;
 import org.dcm4chee.hooks.Hooks;
+import org.dcm4chee.util.TransactionSynchronization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
 
 /**
  * Default implementation of {@link MPPSService}.
@@ -128,15 +129,21 @@ public class DefaultMPPSService implements MPPSService {
 
         coerceAttributes(mppsContext, attrs);
 
-        for (MPPSHook mppsHook : mppsHooks) {
-            mppsHook.onMPPSUpdate(mppsContext, attrs);
+        final MPPS.Status mppsStatus = MPPS.getMPPSStatus(attrs);
+        if (mppsStatus == MPPS.Status.IN_PROGRESS) {
+            for (MPPSHook mppsHook : mppsHooks) {
+                mppsHook.onMPPSUpdate(mppsContext, attrs);
+            }
+        } else {
+            for (MPPSHook mppsHook : mppsHooks) {
+                mppsHook.onMPPSFinal(mppsContext, attrs);
+            }
         }
 
         final MPPSEvent mppsEvent = new MPPSEvent(attrs, mppsContext);
 
         mppsForwardService.scheduleForwardMPPS(mppsEvent);
 
-        final MPPS.Status mppsStatus = MPPS.getMPPSStatus(attrs);
         transaction.afterSuccessfulCommit(new Runnable() {
             @Override
             public void run() {
