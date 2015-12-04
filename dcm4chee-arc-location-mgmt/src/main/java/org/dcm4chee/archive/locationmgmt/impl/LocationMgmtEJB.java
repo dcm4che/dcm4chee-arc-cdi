@@ -156,6 +156,12 @@ public class LocationMgmtEJB implements LocationMgmt {
                     MessageProducer producer = session.createProducer(deleteQueue);
                     ObjectMessage msg = session
                             .createObjectMessage((Serializable) refPks);
+                    StringBuilder list = new StringBuilder();
+                    for (Long pk : refPks) {
+                        if (list.length()>0) list.append(",");
+                        list.append(pk);
+                    }
+                    msg.setStringProperty("PKS",list.toString());
                     if (delay > 0)
                         msg.setLongProperty("_HQ_SCHED_DELIVERY",
                                 System.currentTimeMillis() + delay);

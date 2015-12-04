@@ -199,6 +199,7 @@ public class StgCmtServiceImpl implements StgCmtService {
                 MessageProducer producer = session
                         .createProducer(stgcmtSCPQueue);
                 ObjectMessage msg = session.createObjectMessage(eventInfo);
+                msg.setStringProperty("TRANSACTION_UID", eventInfo.getString(Tag.TransactionUID));
                 msg.setStringProperty("LocalAET", localAET);
                 msg.setStringProperty("RemoteAET", remoteAET);
                 msg.setIntProperty("Retries", retries);

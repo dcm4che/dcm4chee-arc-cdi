@@ -37,6 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 package org.dcm4chee.archive.store.remember.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -307,6 +308,12 @@ public class StoreAndRememberServiceImpl implements StoreAndRememberService {
                 Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 MessageProducer producer = session.createProducer(storeAndRememberQueue);
                 ObjectMessage msg = session.createObjectMessage(ctx);
+                StringBuilder iuid = new StringBuilder();
+                for (String i : ctx.getInstances()) {
+                    if (iuid.length() > 0) iuid.append(',');
+                    iuid.append(i);
+                }
+                msg.setStringProperty("SOP_INSTANCE_UID", iuid.toString());
                 if (delay > 0) {
                     msg.setLongProperty("_HQ_SCHED_DELIVERY", System.currentTimeMillis() + delay);
                 }

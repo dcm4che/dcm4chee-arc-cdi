@@ -75,7 +75,7 @@ import org.slf4j.LoggerFactory;
 public class NonIocmChangeRequestorMDB implements MessageListener {
     private static final Logger LOG = LoggerFactory.getLogger(NonIocmChangeRequestorMDB.class);
     
-    public static final String UPDATED_STUDY_UID_MSG_PROPERTY = "studyIUID";
+    public static final String UPDATED_STUDY_UID_MSG_PROPERTY = "STUDY_UID";
     
     @EJB
     private ActiveProcessingService activeProcessingService;

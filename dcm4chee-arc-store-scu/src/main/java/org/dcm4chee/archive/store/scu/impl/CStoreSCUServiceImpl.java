@@ -186,6 +186,23 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                 ObjectMessage msg = session
                         .createObjectMessage(new CStoreSCUJMSMessage(
                                 insts, context));
+
+                StringBuilder stiuid = new StringBuilder();
+                StringBuilder iuid = new StringBuilder();
+                ArrayList<String> studies = new ArrayList<String>();
+
+                for (ArchiveInstanceLocator i : insts) {
+                    if (!studies.contains(i.getStudyInstanceUID())) {
+                        if (stiuid.length() > 0) stiuid.append(',');
+                        stiuid.append(i.getStudyInstanceUID());
+                        studies.add(i.getStudyInstanceUID());
+                    }
+                    if (iuid.length() > 0) iuid.append(',');
+                    iuid.append(i.getStudyInstanceUID());
+                }
+
+                msg.setStringProperty("SOP_INSTANCE_UID", iuid.toString());
+                msg.setStringProperty("STUDY_UID", stiuid.toString());
                 msg.setIntProperty("Priority", priority);
                 msg.setIntProperty("Retries", retries);
                 msg.setStringProperty("MessageID", messageID);
