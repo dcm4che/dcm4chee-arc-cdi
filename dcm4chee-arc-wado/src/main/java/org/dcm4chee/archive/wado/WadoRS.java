@@ -596,7 +596,7 @@ public class WadoRS extends Wado {
                 List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<>();
                 for (ArchiveInstanceLocator ref : refs) {
                     Attributes attrs = getFileAttributes(ref);
-                    if (storescuService.isInstanceSuppressed(ref, attrs, supressionCriteriaTemplateURI, context)) {
+                    if (!storescuService.isInstanceSuppressed(ref, attrs, supressionCriteriaTemplateURI, context)) {
                         adjustedRefs.add(ref);
                     }
                 }
