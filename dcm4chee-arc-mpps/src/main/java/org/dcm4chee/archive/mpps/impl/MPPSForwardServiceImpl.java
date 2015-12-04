@@ -45,6 +45,7 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Dimse;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSForwardService;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.slf4j.Logger;
@@ -80,17 +81,16 @@ public class MPPSForwardServiceImpl implements MPPSForwardService {
     private Queue mppsSCUQueue;
 
     @Override
-    public void scheduleForwardMPPS(MPPSEvent event) {
-        ApplicationEntity ae = device.getApplicationEntityNotNull(event.getContext().getReceivingAET());
+    public void scheduleForwardMPPS(MPPSContext mppsContext, Attributes attributes) {
+        ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
 
         ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
         if (arcAE == null)
             return;
 
-        String iuid = event.getContext().getMppsSopInstanceUID();
-        Attributes attrs = event.getAttributes();
+        String iuid = mppsContext.getMppsSopInstanceUID();
         for (ApplicationEntity remoteAE : arcAE.getForwardMPPSDestinations()) {
-            scheduleForwardMPPS(event.getContext().getDimse(), ae.getAETitle(), remoteAE.getAETitle(), iuid, attrs);
+            scheduleForwardMPPS(mppsContext.getDimse(), ae.getAETitle(), remoteAE.getAETitle(), iuid, attributes);
         }
     }
 

@@ -101,9 +101,6 @@ public class DefaultMPPSService implements MPPSService {
     @Inject
     private Hooks<MPPSHook> mppsHooks;
 
-    @Inject
-    private MPPSForwardService mppsForwardService;
-
     @Override
     public void createPerformedProcedureStep(final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
         coerceAttributes(mppsContext, attrs);
@@ -113,8 +110,6 @@ public class DefaultMPPSService implements MPPSService {
         }
 
         final MPPSEvent mppsEvent = new MPPSEvent(attrs, mppsContext);
-
-        mppsForwardService.scheduleForwardMPPS(mppsEvent);
 
         transaction.afterSuccessfulCommit(new Runnable() {
             @Override
@@ -141,8 +136,6 @@ public class DefaultMPPSService implements MPPSService {
         }
 
         final MPPSEvent mppsEvent = new MPPSEvent(attrs, mppsContext);
-
-        mppsForwardService.scheduleForwardMPPS(mppsEvent);
 
         transaction.afterSuccessfulCommit(new Runnable() {
             @Override
@@ -178,6 +171,5 @@ public class DefaultMPPSService implements MPPSService {
     public void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs) throws DicomServiceException {
         //noop - this is not called anymore
     }
-
 
 }

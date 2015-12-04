@@ -38,18 +38,40 @@
  *  ***** END LICENSE BLOCK *****
  */
 
-package org.dcm4chee.archive.mpps;
+package org.dcm4chee.archive.mpps.impl;
+
+import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
+import org.dcm4che3.net.service.DicomServiceException;
+import org.dcm4chee.archive.mpps.MPPSContext;
+import org.dcm4chee.archive.mpps.MPPSForwardService;
+import org.dcm4chee.archive.mpps.MPPSHook;
 
 /**
- * Forwards MPPS messages to configured MPPS forwarding destinations.
- *
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public interface MPPSForwardService {
+public class MPPSForwardHook extends MPPSHook {
 
-    public void scheduleForwardMPPS(MPPSContext mppsContext, Attributes attributes);
+    @Inject
+    private MPPSForwardService mppsForwardService;
 
+    @Override
+    public void onMPPSCreate(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        forward(context, attributes);
+    }
+
+    @Override
+    public void onMPPSUpdate(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        forward(context, attributes);
+    }
+
+    @Override
+    public void onMPPSFinal(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        forward(context, attributes);
+    }
+
+    private void forward(MPPSContext context, Attributes attributes) {
+        mppsForwardService.scheduleForwardMPPS(context, attributes);
+    }
 }
