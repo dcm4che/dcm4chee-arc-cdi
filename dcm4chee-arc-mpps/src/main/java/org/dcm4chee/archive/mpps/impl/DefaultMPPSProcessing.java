@@ -38,37 +38,66 @@
  *  ***** END LICENSE BLOCK *****
  */
 
-package org.dcm4chee.archive.mpps;
+package org.dcm4chee.archive.mpps.impl;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.UID;
+import org.dcm4che3.io.SAXTransformer;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Status;
+import org.dcm4che3.net.TransferCapability;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.ServiceContext;
-import org.dcm4chee.archive.hooks.AttributeCoercionHook;
+import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.entity.MPPS;
+import org.dcm4chee.archive.mpps.MPPSContext;
+import org.dcm4chee.archive.mpps.MPPSHook;
+
+import javax.inject.Inject;
+import javax.xml.transform.Templates;
 
 /**
- * Create a subclass to add extra functionality
  * @author Roman K
  */
-public class MPPSHook implements AttributeCoercionHook<MPPSContext> {
+public class DefaultMPPSProcessing extends MPPSHook {
 
-    /**
-     * Override to modify original attributes
-     */
+    @Inject
+    private Device device;
+
+    @Inject
+    private DefaultMPPSProcessingEJB ejb;
+
+
     @Override
     public void coerceAttributes(MPPSContext context, Attributes attributes) throws DicomServiceException {
+
+        // XSLT
+        try {
+            ApplicationEntity ae = device.getApplicationEntityNotNull(context.getReceivingAET());
+            ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
+            Templates tpl = arcAE.getAttributeCoercionTemplates(
+                    UID.ModalityPerformedProcedureStepSOPClass,
+                    context.getDimse(), TransferCapability.Role.SCP,
+                    context.getSendingAET());
+            if (tpl != null) {
+                Attributes modified = new Attributes();
+                attributes.update(SAXTransformer.transform(attributes, tpl, false, false), modified);
+            }
+        } catch (Exception e) {
+            throw new DicomServiceException(Status.ProcessingFailure, e);
+        }
     }
 
-    /**
-     * Called in the MPPS processing transaction
-     */
+
+    @Override
     public void onMPPSCreate(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        ApplicationEntity ae = device.getApplicationEntityNotNull(context.getReceivingAET());
+        ejb.createPerformedProcedureStep(ae, context.getMppsSopInstanceUID(), attributes);
     }
 
-
-    /**
-     * Called in the MPPS processing transaction
-     */
+    @Override
     public void onMPPSUpdate(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        ApplicationEntity ae = device.getApplicationEntityNotNull(context.getReceivingAET());
+        ejb.updatePerformedProcedureStep(ae, context.getMppsSopInstanceUID(), attributes);
     }
-
 }

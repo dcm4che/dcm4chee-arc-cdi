@@ -277,13 +277,22 @@ public class MPPS implements Serializable {
                 Tag.ScheduledStepAttributesSequence);
         if (ssa != null)
             this.accessionNumber = ssa.getString(Tag.AccessionNumber);
-        String s = attrs.getString(Tag.PerformedProcedureStepStatus);
-        if (s != null)
-            status = Status.valueOf(s.replace(' ', '_'));
-        
+
+        Status status = getMPPSStatus(attrs);
+
+        if (status != null)
+            this.status = status;
+
         if (attributesBlob == null)
             attributesBlob = new AttributesBlob(attrs);
         else
             attributesBlob.setAttributes(attrs);
+    }
+
+    public static Status getMPPSStatus(Attributes attrs) {
+        String s = attrs.getString(Tag.PerformedProcedureStepStatus);
+        Status status = null;
+        if (s != null) status = Status.valueOf(s.replace(' ', '_'));
+        return status;
     }
 }

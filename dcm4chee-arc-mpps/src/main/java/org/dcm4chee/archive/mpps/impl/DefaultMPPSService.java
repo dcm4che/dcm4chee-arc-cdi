@@ -39,18 +39,14 @@
 package org.dcm4chee.archive.mpps.impl;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.UID;
-import org.dcm4che3.io.SAXTransformer;
 import org.dcm4che3.net.*;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.*;
 import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.hooks.AttributeCoercionHook;
 import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSForwardService;
 import org.dcm4chee.archive.mpps.MPPSHook;
 import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.mpps.MPPSServiceEJB;
 import org.dcm4chee.archive.mpps.event.MPPSCreate;
 import org.dcm4chee.archive.mpps.event.MPPSEvent;
 import org.dcm4chee.archive.mpps.event.MPPSFinal;
@@ -64,22 +60,18 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
-import javax.xml.transform.Templates;
 
 /**
  * Default implementation of {@link MPPSService}.
  *
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Roman K
  */
 @Stateless
 public class DefaultMPPSService implements MPPSService {
 
-    private static Logger LOG = LoggerFactory
-            .getLogger(DefaultMPPSService.class);
-
-    @Inject
-    private MPPSServiceEJB ejb;
+    private static Logger LOG = LoggerFactory.getLogger(DefaultMPPSService.class);
 
     @Inject
     @MPPSCreate
@@ -115,11 +107,8 @@ public class DefaultMPPSService implements MPPSService {
     public void createPerformedProcedureStep(final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
         coerceAttributes(mppsContext, attrs);
 
-        ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
-        ejb.createPerformedProcedureStep(ae, mppsContext.getMppsSopInstanceUID(), attrs);
-
         for (MPPSHook mppsHook : mppsHooks) {
-            mppsHook.processMPPS(mppsContext, attrs);
+            mppsHook.onMPPSCreate(mppsContext, attrs);
         }
 
         final MPPSEvent mppsEvent = new MPPSEvent(attrs, mppsContext);
@@ -136,23 +125,22 @@ public class DefaultMPPSService implements MPPSService {
 
     @Override
     public void updatePerformedProcedureStep(final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
+
         coerceAttributes(mppsContext, attrs);
 
-        ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
-        final MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsContext.getMppsSopInstanceUID(), attrs);
-
         for (MPPSHook mppsHook : mppsHooks) {
-            mppsHook.processMPPS(mppsContext, attrs);
+            mppsHook.onMPPSUpdate(mppsContext, attrs);
         }
 
         final MPPSEvent mppsEvent = new MPPSEvent(attrs, mppsContext);
 
         mppsForwardService.scheduleForwardMPPS(mppsEvent);
 
+        final MPPS.Status mppsStatus = MPPS.getMPPSStatus(attrs);
         transaction.afterSuccessfulCommit(new Runnable() {
             @Override
             public void run() {
-                if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
+                if (mppsStatus == MPPS.Status.IN_PROGRESS)
                     updateMPPSEvent.fire(mppsEvent);
                 else
                     finalMPPSEvent.fire(mppsEvent);
@@ -164,22 +152,6 @@ public class DefaultMPPSService implements MPPSService {
         // call coercers
         for (AttributeCoercionHook<MPPSContext> attributeCoercionHook : mppsHooks) {
             attributeCoercionHook.coerceAttributes(context, attrs);
-        }
-
-        // XSLT
-        try {
-            ApplicationEntity ae = device.getApplicationEntityNotNull(context.getReceivingAET());
-            ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
-            Templates tpl = arcAE.getAttributeCoercionTemplates(
-                    UID.ModalityPerformedProcedureStepSOPClass,
-                    context.getDimse(), TransferCapability.Role.SCP,
-                    context.getSendingAET());
-            if (tpl != null) {
-                Attributes modified = new Attributes();
-                attrs.update(SAXTransformer.transform(attrs, tpl, false, false), modified);
-            }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.ProcessingFailure, e);
         }
     }
 
