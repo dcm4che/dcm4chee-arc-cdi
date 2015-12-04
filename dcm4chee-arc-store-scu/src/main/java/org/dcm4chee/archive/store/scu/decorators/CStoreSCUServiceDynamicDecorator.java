@@ -48,8 +48,8 @@ public class CStoreSCUServiceDynamicDecorator extends DynamicDecoratorWrapper<CS
 	}
 
 	@Override
-	public boolean isSOPClassUnsupported(ArchiveInstanceLocator ref, CStoreSCUContext context) {
-		return wrapWithDynamicDecorators(delegate).isSOPClassUnsupported(ref, context);
+	public boolean isSOPClassSuppressed(ArchiveInstanceLocator ref, CStoreSCUContext context) {
+		return wrapWithDynamicDecorators(delegate).isSOPClassSuppressed(ref, context);
 	}
 
 	@Override

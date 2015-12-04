@@ -87,9 +87,9 @@ public interface CStoreSCUService {
                                                 CStoreSCUContext context);
 
     /**
-     * Used to eliminate unsupported SOP classes or transfer syntaxes
+     * Used to eliminate unsupported SOP classes
      */
-    boolean isSOPClassUnsupported(ArchiveInstanceLocator ref, CStoreSCUContext context);
+    boolean isSOPClassSuppressed(ArchiveInstanceLocator ref, CStoreSCUContext context);
 
     Path getFile(ArchiveInstanceLocator inst) throws IOException;
 

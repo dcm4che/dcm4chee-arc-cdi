@@ -270,7 +270,7 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     }
 
     @Override
-    public boolean isSOPClassUnsupported(
+    public boolean isSOPClassSuppressed(
             ArchiveInstanceLocator ref, CStoreSCUContext context) {
         if (context.getRemoteAE() != null) {
             try {

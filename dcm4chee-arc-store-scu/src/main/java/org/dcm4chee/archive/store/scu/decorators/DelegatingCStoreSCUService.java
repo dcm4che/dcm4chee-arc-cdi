@@ -42,8 +42,8 @@ public class DelegatingCStoreSCUService extends DelegatingServiceImpl<CStoreSCUS
 	}
 
 	@Override
-	public boolean isSOPClassUnsupported(ArchiveInstanceLocator ref, CStoreSCUContext context) {
-		return getNextDecorator().isSOPClassUnsupported(ref, context);
+	public boolean isSOPClassSuppressed(ArchiveInstanceLocator ref, CStoreSCUContext context) {
+		return getNextDecorator().isSOPClassSuppressed(ref, context);
 	}
 
 	@Override

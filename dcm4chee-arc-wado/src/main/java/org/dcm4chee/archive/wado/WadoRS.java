@@ -529,39 +529,11 @@ public class WadoRS extends Wado {
             else {
                 insts.addAll(refs);
             }
-            // check for SOP classes elimination
-            if (arcAE.getRetrieveSuppressionCriteria()
-                    .isCheckTransferCapabilities())
-            {
-                List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
-                for(ArchiveInstanceLocator ref: refs){
-                    if(storescuService.isSOPClassUnsupported(ref, context))
-                        instsfailed.add(ref);
-                    else
-                        adjustedRefs.add(ref);
-                }
-                refs = adjustedRefs;
-            }
-            // check for suppression criteria
-            Map<String, String> suppressionCriteriaMap = arcAE
-                    .getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
-            if(context.getRemoteAE() !=null)
-            if (suppressionCriteriaMap.containsKey(context.getRemoteAE().getAETitle())) {
-                String supressionCriteriaTemplateURI = suppressionCriteriaMap
-                        .get(context.getRemoteAE().getAETitle());
-                if (supressionCriteriaTemplateURI != null) {
-                    List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<ArchiveInstanceLocator>();
-                    for (ArchiveInstanceLocator ref : refs) {
-                        Attributes attrs = getFileAttributes(ref);
-                        if (storescuService.isInstanceSuppressed(ref, attrs,
-                                supressionCriteriaTemplateURI, context))
-                            instsfailed.add(ref);
-                        else
-                            adjustedRefs.add(ref);
-                    }
-                    refs = adjustedRefs;
-                }
-            }
+
+            refs = eliminateSuppressedSOPClasses(refs);
+
+            refs = eliminateSuppressedInstances(refs);
+
             ArrayList<ArchiveInstanceLocator> external = extractExternalLocators(refs);
             final MultipartRelatedOutput multiPartOutput = new MultipartRelatedOutput();
             final ZipOutput zipOutput = new ZipOutput();
@@ -599,6 +571,39 @@ public class WadoRS extends Wado {
                             request.getRemoteAddr(), request.getRemoteUser()),
                     device, insts, instscompleted, instswarning, instsfailed));
         }
+    }
+
+    private List<ArchiveInstanceLocator> eliminateSuppressedSOPClasses(List<ArchiveInstanceLocator> refs) {
+        // check for SOP classes elimination
+        if (arcAE.getRetrieveSuppressionCriteria().isCheckTransferCapabilities()) {
+            List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<>();
+            for (ArchiveInstanceLocator ref : refs) {
+                if (!storescuService.isSOPClassSuppressed(ref, context)) {
+                    adjustedRefs.add(ref);
+                }
+            }
+            refs = adjustedRefs;
+        }
+        return refs;
+    }
+
+    private List<ArchiveInstanceLocator> eliminateSuppressedInstances(List<ArchiveInstanceLocator> refs) {
+        // check for suppression criteria
+        if (context.getRemoteAE() != null) {
+            Map<String, String> suppressionCriteriaMap = arcAE.getRetrieveSuppressionCriteria().getSuppressionCriteriaMap();
+            String supressionCriteriaTemplateURI = suppressionCriteriaMap.get(context.getRemoteAE().getAETitle());
+            if (supressionCriteriaTemplateURI != null) {
+                List<ArchiveInstanceLocator> adjustedRefs = new ArrayList<>();
+                for (ArchiveInstanceLocator ref : refs) {
+                    Attributes attrs = getFileAttributes(ref);
+                    if (storescuService.isInstanceSuppressed(ref, attrs, supressionCriteriaTemplateURI, context)) {
+                        adjustedRefs.add(ref);
+                    }
+                }
+                return adjustedRefs;
+            }
+        }
+        return refs;
     }
 
     private void addDicomOrBulkDataOrZip(List<ArchiveInstanceLocator> refs,
