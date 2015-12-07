@@ -38,133 +38,81 @@
 
 package org.dcm4chee.archive.mpps.impl;
 
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.UID;
-import org.dcm4che3.io.SAXTransformer;
-import org.dcm4che3.net.*;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.conf.*;
-import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.entity.MPPS;
 import org.dcm4chee.archive.hooks.AttributeCoercionHook;
 import org.dcm4chee.archive.mpps.MPPSContext;
 import org.dcm4chee.archive.mpps.MPPSHook;
 import org.dcm4chee.archive.mpps.MPPSService;
-import org.dcm4chee.archive.mpps.MPPSServiceEJB;
-import org.dcm4chee.archive.mpps.event.MPPSCreate;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
-import org.dcm4chee.archive.mpps.event.MPPSFinal;
-import org.dcm4chee.archive.mpps.event.MPPSUpdate;
-import org.dcm4chee.util.TransactionSynchronization;
 import org.dcm4chee.hooks.Hooks;
+import org.dcm4chee.util.TransactionSynchronization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.xml.transform.Templates;
-
 /**
+ * Default implementation of {@link MPPSService}.
+ *
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
+ * @author Roman K
  */
-
 @Stateless
 public class DefaultMPPSService implements MPPSService {
 
-    private static Logger LOG = LoggerFactory
-            .getLogger(DefaultMPPSService.class);
-
-    @Inject
-    private MPPSServiceEJB ejb;
-
-    @Inject
-    @MPPSCreate
-    private Event<MPPSEvent> createMPPSEvent;
-
-    @Inject
-    @MPPSUpdate
-    private Event<MPPSEvent> updateMPPSEvent;
-
-    @Inject
-    @MPPSFinal
-    private Event<MPPSEvent> finalMPPSEvent;
+    private static Logger LOG = LoggerFactory.getLogger(DefaultMPPSService.class);
 
     @Inject
     private Device device;
 
     @Inject
-    TransactionSynchronization transaction;
+    private TransactionSynchronization transaction;
 
     /**
      * We need to move coercion out of the interface to remove this 'self' injection
      */
     @EJB
-    MPPSService mppsService;
+    private MPPSService mppsService;
 
     @Inject
-    Hooks<MPPSHook> mppsHooks;
-
+    private Hooks<MPPSHook> mppsHooks;
 
     @Override
     public void createPerformedProcedureStep(final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
         coerceAttributes(mppsContext, attrs);
 
-        ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
-        ejb.createPerformedProcedureStep(ae, mppsContext.getMppsSopInstanceUID(), attrs);
-
-        for (MPPSHook mppsHook : mppsHooks) mppsHook.processMPPS(mppsContext, attrs);
-
-        transaction.afterSuccessfulCommit(new Runnable() {
-            @Override
-            public void run() {
-                createMPPSEvent.fire(new MPPSEvent(attrs, mppsContext));
-            }
-        });
-
+        for (MPPSHook mppsHook : mppsHooks) {
+            mppsHook.onMPPSCreate(mppsContext, attrs);
+        }
     }
 
     @Override
     public void updatePerformedProcedureStep(final Attributes attrs, final MPPSContext mppsContext) throws DicomServiceException {
+
         coerceAttributes(mppsContext, attrs);
 
-        ApplicationEntity ae = device.getApplicationEntityNotNull(mppsContext.getReceivingAET());
-        final MPPS mpps = ejb.updatePerformedProcedureStep(ae, mppsContext.getMppsSopInstanceUID(), attrs);
-
-        for (MPPSHook mppsHook : mppsHooks) mppsHook.processMPPS(mppsContext, attrs);
-
-        transaction.afterSuccessfulCommit(new Runnable() {
-            @Override
-            public void run() {
-                if (mpps.getStatus() == MPPS.Status.IN_PROGRESS)
-                    updateMPPSEvent.fire(new MPPSEvent(attrs, mppsContext));
-                else
-                    finalMPPSEvent.fire(new MPPSEvent(attrs, mppsContext));
+        final MPPS.Status mppsStatus = MPPS.getMPPSStatus(attrs);
+        if (mppsStatus == MPPS.Status.IN_PROGRESS) {
+            for (MPPSHook mppsHook : mppsHooks) {
+                mppsHook.onMPPSUpdate(mppsContext, attrs);
             }
-        });
+        } else {
+            for (MPPSHook mppsHook : mppsHooks) {
+                mppsHook.onMPPSFinal(mppsContext, attrs);
+            }
+        }
     }
 
     private void coerceAttributes(MPPSContext context, Attributes attrs) throws DicomServiceException {
         // call coercers
         for (AttributeCoercionHook<MPPSContext> attributeCoercionHook : mppsHooks) {
             attributeCoercionHook.coerceAttributes(context, attrs);
-        }
-
-        // XSLT
-        try {
-            ApplicationEntity ae = device.getApplicationEntityNotNull(context.getReceivingAET());
-            ArchiveAEExtension arcAE = ae.getAEExtensionNotNull(ArchiveAEExtension.class);
-            Templates tpl = arcAE.getAttributeCoercionTemplates(
-                    UID.ModalityPerformedProcedureStepSOPClass,
-                    context.getDimse(), TransferCapability.Role.SCP,
-                    context.getSendingAET());
-            if (tpl != null) {
-                Attributes modified = new Attributes();
-                attrs.update(SAXTransformer.transform(attrs, tpl, false, false), modified);
-            }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.ProcessingFailure, e);
         }
     }
 
@@ -184,6 +132,5 @@ public class DefaultMPPSService implements MPPSService {
     public void coerceAttributes(MPPSContext context, Dimse dimse, Attributes attrs) throws DicomServiceException {
         //noop - this is not called anymore
     }
-
 
 }

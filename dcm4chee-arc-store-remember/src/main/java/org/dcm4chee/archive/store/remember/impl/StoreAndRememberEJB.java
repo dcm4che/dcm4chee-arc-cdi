@@ -38,7 +38,6 @@
 package org.dcm4chee.archive.store.remember.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.ejb.Stateless;
@@ -74,11 +73,13 @@ public class StoreAndRememberEJB {
         String remoteAE = null;
         String extDeviceName = null;
         STORE_VERIFY_PROTOCOL storeVerifyProtocol = null;
+        boolean remember = false;
         for (StoreAndRemember sr : srs) {
             localAE = sr.getLocalAE();
             remoteAE = sr.getRemoteAE();
             extDeviceName = sr.getExternalDeviceName();
             storeVerifyProtocol = STORE_VERIFY_PROTOCOL.valueOf(sr.getStoreVerifyProtocol());
+            remember = sr.isRemember();
             
             if (StoreVerifyStatus.FAILED.equals(sr.getInstanceStatus())) {
                 failedSopInstanceUIDs.add(sr.getSopInstanceUID());
@@ -89,6 +90,7 @@ public class StoreAndRememberEJB {
                 .externalDeviceName(extDeviceName)
                 .remoteAE(remoteAE)
                 .storeVerifyProtocol(storeVerifyProtocol)
+                .remember(remember)
                 .instances(failedSopInstanceUIDs.toArray(new String[failedSopInstanceUIDs.size()]));
     }
     
@@ -131,7 +133,7 @@ public class StoreAndRememberEJB {
         return srs;
     }
     
-    private StoreAndRemember getStoreRememberTxByUIDs(String txUID, String sopInstanceUID) {
+    public StoreAndRemember getStoreRememberTxByUIDs(String txUID, String sopInstanceUID) {
         TypedQuery<StoreAndRemember> query  = em.createNamedQuery(StoreAndRemember.GET_STORE_REMEMBER_BY_UIDS, StoreAndRemember.class);
         query.setParameter(1, txUID);
         query.setParameter(2, sopInstanceUID);
@@ -156,6 +158,7 @@ public class StoreAndRememberEJB {
             sr.setExternalDeviceName(cxt.getExternalDeviceName());
             sr.setStoreVerifyProtocol(cxt.getStoreVerifyProtocol().toString());
             sr.setRetriesLeft(cxt.getRetries());
+            sr.setRemember(cxt.isRemember());
             sr.setSopInstanceUID(sopInstanceUID);
             sr.setInstanceStatus(StoreVerifyStatus.PENDING);
             em.persist(sr);
@@ -201,23 +204,17 @@ public class StoreAndRememberEJB {
         return srs.size() > 0;
     }
     
-    public void updateStoreRemember(String txUID, String sopInstanceUID, StoreVerifyStatus status) {
-        StoreAndRemember sr = getStoreRememberTxByUIDs(txUID, sopInstanceUID);
+    public void updateStoreRemember(StoreAndRemember sr, StoreVerifyStatus status) {
         sr.setInstanceStatus(status);
         em.merge(sr);
     }
     
-    public void addExternalLocation(String iuid, String retrieveAET, String retrieveDeviceName, Availability availability) {
+    public void rememberLocation(String iuid, String retrieveAET, String retrieveDeviceName, Availability availability) {
         ExternalRetrieveLocation location = new ExternalRetrieveLocation(
                 retrieveDeviceName, availability);
 
         Instance instance = getInstanceByUID(iuid);
-        ArrayList<String> currentRetrieveAETs = new ArrayList<String>(
-                Arrays.asList(instance.getRetrieveAETs()));
-        currentRetrieveAETs.add(retrieveAET);
-        String[] updatedRetrieveAETs = new String[currentRetrieveAETs.size()];
-        instance.setRetrieveAETs(currentRetrieveAETs
-                .toArray(updatedRetrieveAETs));
+        instance.addRetrieveAET(retrieveAET);
         location.setInstance(instance);
         em.persist(location);
     }

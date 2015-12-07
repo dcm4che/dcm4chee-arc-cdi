@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.stow.client.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
@@ -84,7 +85,7 @@ public class StowClientServiceImpl implements StowClientService {
 
     private static final Logger LOG = LoggerFactory.getLogger(StowClientServiceImpl.class);
     
-    @Resource(mappedName = "java:/ConnectionFactory")
+    @Resource(mappedName = "java:/JmsXA")
     private ConnectionFactory connFactory;
 
     @Resource(mappedName = "java:/queue/stowclient")
@@ -108,6 +109,22 @@ public class StowClientServiceImpl implements StowClientService {
                 ObjectMessage msg = session
                         .createObjectMessage(new StowJMSMessage(
                                 insts, ctx));
+                StringBuilder stiuid = new StringBuilder();
+                StringBuilder iuid = new StringBuilder();
+                ArrayList<String> studies = new ArrayList<String>();
+
+                for (ArchiveInstanceLocator i : insts) {
+                    if (!studies.contains(i.getStudyInstanceUID())) {
+                        if (stiuid.length() > 0) stiuid.append(',');
+                        stiuid.append(i.getStudyInstanceUID());
+                        studies.add(i.getStudyInstanceUID());
+                    }
+                    if (iuid.length() > 0) iuid.append(',');
+                    iuid.append(i.getStudyInstanceUID());
+                }
+
+                msg.setStringProperty("SOP_INSTANCE_UID", iuid.toString());
+                msg.setStringProperty("STUDY_UID", stiuid.toString());
                 msg.setIntProperty("Priority", priority);
                 msg.setIntProperty("Retries", retries);
                 msg.setStringProperty("TransactionID", transactionID);

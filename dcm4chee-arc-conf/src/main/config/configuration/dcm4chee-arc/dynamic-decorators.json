@@ -75,10 +75,16 @@
     "org.dcm4chee.archive.mpps.MPPSHook": {
       "hookImplementations": [
         {
-          "hookClassName": "org.dcm4chee.archive.mpps.MPPSHook"
+          "hookClassName": "org.dcm4chee.archive.mima.impl.MIMASupplementMPPSHook"
         },
         {
-          "hookClassName": "org.dcm4chee.archive.mima.impl.MIMASupplementMPPSHook"
+          "hookClassName": "org.dcm4chee.archive.mpps.impl.DefaultMPPSProcessing"
+        },
+        {
+          "hookClassName": "org.dcm4chee.archive.mpps.impl.MPPSForwardHook"
+        },
+        {
+          "hookClassName": "org.dcm4chee.archive.ian.scu.impl.IanScuMPPSHook"
         }
       ]
     },

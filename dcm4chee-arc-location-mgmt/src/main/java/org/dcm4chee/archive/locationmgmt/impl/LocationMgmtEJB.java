@@ -61,13 +61,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.Session;
+import javax.jms.*;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
@@ -123,7 +117,7 @@ public class LocationMgmtEJB implements LocationMgmt {
     @Inject
     private javax.enterprise.inject.Instance<StorageSystemProvider> storageSystemProviders;
 
-    @Resource(mappedName = "java:/ConnectionFactory")
+    @Resource(mappedName = "java:/JmsXA")
     private ConnectionFactory connFactory;
 
     @Resource(mappedName = "java:/queue/delete")
@@ -154,8 +148,13 @@ public class LocationMgmtEJB implements LocationMgmt {
                     Session session = conn.createSession(false,
                             Session.AUTO_ACKNOWLEDGE);
                     MessageProducer producer = session.createProducer(deleteQueue);
-                    ObjectMessage msg = session
-                            .createObjectMessage((Serializable) refPks);
+                    Message msg = session.createMessage();
+                    StringBuilder list = new StringBuilder();
+                    for (Long pk : refPks) {
+                        if (list.length()>0) list.append(",");
+                        list.append(pk);
+                    }
+                    msg.setStringProperty("PKS",list.toString());
                     if (delay > 0)
                         msg.setLongProperty("_HQ_SCHED_DELIVERY",
                                 System.currentTimeMillis() + delay);

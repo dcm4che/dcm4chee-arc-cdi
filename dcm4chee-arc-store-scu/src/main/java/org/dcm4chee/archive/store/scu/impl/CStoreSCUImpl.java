@@ -156,10 +156,11 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
     }
 
     @Override
-    protected void storeInstance(Association storeas, ArchiveInstanceLocator inst) throws IOException, InterruptedException {
+    protected void storeInstance(Association storeas, ArchiveInstanceLocator instanceLocator) throws IOException, InterruptedException {
         String tsuid;
         DatasetWithFMI datasetWithFMI = null;
         Attributes attrs;
+        ArchiveInstanceLocator inst = instanceLocator;
         try {
             ArchiveAEExtension arcAEExt = context.getLocalAE().getAEExtension(
                     ArchiveAEExtension.class);
@@ -178,18 +179,29 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
                 }
             } while (datasetWithFMI == null);
 
-            tsuid = selectTransferSyntaxFor(storeas, inst, datasetWithFMI);
-
             attrs = datasetWithFMI.getDataset();
 
-            // check for suppression criteria
-            if (context.getRemoteAE() != null) {
-                String templateURI = arcAEExt.getRetrieveSuppressionCriteria()
-                        .getSuppressionCriteriaMap().get(context.getRemoteAE().getAETitle());
-                if (templateURI != null)
-                    inst = service.applySuppressionCriteria(inst, attrs, templateURI,
-                            context);
+            if (context.getArchiveAEExtension().getRetrieveSuppressionCriteria().isCheckTransferCapabilities()) {
+                // check if eliminated by sop class
+                if (service.isSOPClassSuppressed(inst, context)) {
+                    LOG.info("Not sending instance {} because its SOPClass is suppressed", inst.iuid);
+                    return;
+                }
             }
+
+            // check for suppression criteria
+            ApplicationEntity remoteAE = context.getRemoteAE();
+            if (remoteAE != null) {
+                String templateURI = arcAEExt.getRetrieveSuppressionCriteria().getSuppressionCriteriaMap().get(remoteAE.getAETitle());
+                if (templateURI != null) {
+                    if(service.isInstanceSuppressed(inst, attrs, templateURI, context)) {
+                        LOG.info("Not sending instance {} because it is suppressed", inst.iuid);
+                        return;
+                    }
+                }
+            }
+
+            tsuid = selectTransferSyntaxFor(storeas, inst, datasetWithFMI);
 
             service.coerceFileBeforeMerge(inst, attrs, context);
 
@@ -205,9 +217,9 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
 
         } catch (Exception e) {
             LOG.info("Unable to store {}/{} to {}",
-                    UID.nameOf(inst.cuid), UID.nameOf(inst.tsuid),
+                    UID.nameOf(instanceLocator.cuid), UID.nameOf(instanceLocator.tsuid),
                     storeas.getRemoteAET(), e);
-            failed.add(inst);
+            failed.add(instanceLocator);
             return;
         }
 
@@ -337,16 +349,9 @@ public class CStoreSCUImpl extends BasicCStoreSCU<ArchiveInstanceLocator>
             acceptedTransferSyntax.remove(UID.JPEGLSLossless);
         }
 
-        // check for SOP classes elimination
+        // transfer capabilities from the config should be used
         if (context.getArchiveAEExtension().getRetrieveSuppressionCriteria()
                 .isCheckTransferCapabilities()) {
-            inst = service.eliminateUnSupportedSOPClasses(inst, context);
-
-            // check if eliminated then throw exception
-            if (inst == null)
-                throw new UnsupportedStoreSCUException(
-                        "Unable to send instance, SOP class not configured");
-
             if (isConfiguredAndAccepted(inst, acceptedTransferSyntax))
                 return inst.tsuid;
             else

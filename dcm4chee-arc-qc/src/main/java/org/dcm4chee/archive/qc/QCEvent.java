@@ -49,7 +49,7 @@ import org.dcm4chee.archive.entity.Instance;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * 
  */
-
+@Deprecated
 public class QCEvent {
 
     public enum QCOperation{

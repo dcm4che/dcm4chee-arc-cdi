@@ -72,25 +72,23 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
     @Override
     public Collection<Location> deleteRejected(Object source, Collection<Instance> instances) {
         try {
-        Collection<Location> toBeDeleted = new HashSet<Location>();
-        for(Instance inst: instances) {
-            inst = em.find(Instance.class,inst.getPk());
-              if(isRejected(inst)){
-                inst.getSeries().clearQueryAttributes();
-                inst.getSeries().getStudy().clearQueryAttributes();
-                toBeDeleted.addAll(detachReferences(inst));
-                em.remove(inst);
-                LOG.info("Removing {} and Scheduling delete for associated file references" , inst);
+            Collection<Location> toBeDeleted = new HashSet<Location>();
+            for (Instance inst : instances) {
+                inst = em.find(Instance.class, inst.getPk());
+                if (isRejected(inst)) {
+                    inst.getSeries().clearQueryAttributes();
+                    inst.getSeries().getStudy().clearQueryAttributes();
+                    toBeDeleted.addAll(detachReferences(inst));
+                    em.remove(inst);
+                    LOG.info("Removing {} and Scheduling delete for associated file references", inst);
+                }
             }
-        }
 
-           return toBeDeleted;
-        }
-        catch(Exception e) {
+            return toBeDeleted;
+        } catch (Exception e) {
             LOG.error("{}: Error deleting rejected objects, Transaction rolled back", e);
-            throw new EJBException(e.getMessage());
+            throw new EJBException(e.getMessage(), e);
         }
-
     }
 
     private boolean isRejected(Instance inst) {

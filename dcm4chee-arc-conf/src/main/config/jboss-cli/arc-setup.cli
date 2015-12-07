@@ -3,7 +3,9 @@ ${data-source-string}
 data-source --name=PacsDS --enabled=true
 
 jms-queue add --queue-address=ianscu --entries=queue/ianscu
+/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.ianscu/:add(max-delivery-attempts=1,redelivery-delay=60000)
 jms-queue add --queue-address=mppsscu --entries=queue/mppsscu
+/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.mppsscu/:add(max-delivery-attempts=1,redelivery-delay=5000)
 jms-queue add --queue-address=stgcmtscp --entries=queue/stgcmtscp
 jms-queue add --queue-address=delete --entries=queue/delete
 jms-queue add --queue-address=archiver_1 --entries=queue/archiver_1
@@ -14,3 +16,16 @@ jms-queue add --queue-address=storescu --entries=queue/storescu
 jms-queue add --queue-address=stowclient --entries=queue/stowclient
 jms-queue add --queue-address=noneiocm --entries=queue/noneiocm
 jms-topic add --topic-address=DicomConfigurationChangeTopic --entries=/topic/DicomConfigurationChangeTopic
+
+
+# Infinispan dcm4chee cache container
+
+/subsystem=infinispan/cache-container=dcm4chee:add
+${dcm4chee.infinispan.transport}
+
+# Fetch forward cache
+/subsystem=infinispan/cache-container=dcm4chee/${dcm4chee.infinispan.default-cache-type}=fetch-forward:add(batching=false,start=EAGER ${dcm4chee.infinispan.sync-mode})
+/subsystem=infinispan/cache-container=dcm4chee/${dcm4chee.infinispan.default-cache-type}=fetch-forward/locking=LOCKING:add(acquire-timeout=15000,concurrency-level=500,isolation=READ_COMMITTED,striping=false)
+/subsystem=infinispan/cache-container=dcm4chee/${dcm4chee.infinispan.default-cache-type}=fetch-forward/eviction=EVICTION:add(strategy=NONE)
+/subsystem=infinispan/cache-container=dcm4chee/${dcm4chee.infinispan.default-cache-type}=fetch-forward/expiration=EXPIRATION:add(max-idle="300000")
+/subsystem=infinispan/cache-container=dcm4chee/${dcm4chee.infinispan.default-cache-type}=fetch-forward/transaction=TRANSACTION:add(mode=NON_XA, locking=PESSIMISTIC)

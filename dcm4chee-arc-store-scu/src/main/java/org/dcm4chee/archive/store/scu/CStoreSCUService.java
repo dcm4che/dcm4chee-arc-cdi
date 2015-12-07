@@ -82,15 +82,14 @@ public interface CStoreSCUService {
      * Applies template filters on the retrieved instance to remove if undesired
      * according to style sheet
      */
-    ArchiveInstanceLocator applySuppressionCriteria(ArchiveInstanceLocator ref,
-            Attributes attrs, String supressionCriteriaTemplateURI,
-            CStoreSCUContext context);
+    boolean isInstanceSuppressed(ArchiveInstanceLocator ref,
+                                                Attributes attrs, String supressionCriteriaTemplateURI,
+                                                CStoreSCUContext context);
 
     /**
-     * Used to eliminate unsupported SOP classes or transfer syntaxes
+     * Used to eliminate unsupported SOP classes
      */
-    ArchiveInstanceLocator eliminateUnSupportedSOPClasses(
-            ArchiveInstanceLocator ref, CStoreSCUContext context);
+    boolean isSOPClassSuppressed(ArchiveInstanceLocator ref, CStoreSCUContext context);
 
     Path getFile(ArchiveInstanceLocator inst) throws IOException;
 

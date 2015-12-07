@@ -40,6 +40,7 @@ package org.dcm4chee.archive.api;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.Future;
 
 /**
@@ -53,26 +54,46 @@ public interface FetchService {
 
     /**
      * Asynchronously retrieve a study, regardless of where it is located.
-     * @param Study instance UID
+     * @param studyUID instance UID
      * @return A future that will be fulfilled when the retrieve is complete.
      * The string value of the future will be the requested studyUID.
      */
-    public Future<String> fetchStudyAsync(String studyUID) throws IOException;
+    FetchProgress fetchStudyAsync(String studyUID);
 
     /**
      * Asynchronously retrieve a series, regardless of where it is located.
-     * @param Series instance UID
+     * @param seriesUID instance UID
      * @return A future that will be fulfilled when the retrieve is complete.
      * The string value of the future will be the requested seriesUID.
      */
-    public Future<String> fetchSeriesAsync(String seriesUID) throws IOException;
+    FetchProgress fetchSeriesAsync(String seriesUID);
 
     /**
      * Asynchronously retrieve an instance, regardless of where it is located.
-     * @param SOP instance UID
+     * @param sopIUID instance UID
      * @return A future that will be fulfilled when the retrieve is complete. The future will then contain
      * the Path value for where the instance can be accessed.
      */
-    public Future<Path> fetchInstanceAsync(String sopIUID) throws IOException;
-    
+    Future<Path> fetchInstanceAsync(String sopIUID);
+
+
+    /**
+     * Provides means to control the fetch process, such as checking the progress, registering listeners, or cancelling the whole operation.
+     *
+     */
+    interface FetchProgress {
+
+        /**
+         * @return The future for this whole fetch procedure.
+         */
+        Future<FetchResult> getFuture();
+
+
+
+
+    }
+
+    interface FetchResult {
+        String getStudyUID();
+    }
 }

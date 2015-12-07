@@ -38,7 +38,9 @@
 
 package org.dcm4chee.archive.locationmgmt;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.StringTokenizer;
 
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
@@ -73,7 +75,11 @@ public class LocationMgmtMDB implements MessageListener{
     public void onMessage(Message message) {
         try {
             @SuppressWarnings("unchecked")
-            Collection<Long> refPks = (Collection<Long>) ((ObjectMessage) message).getObject();
+            Collection<Long> refPks = new ArrayList<Long>();
+            StringTokenizer stk = new StringTokenizer(message.getStringProperty("PKS"),",");
+            while ( stk.hasMoreTokens() ) {
+                refPks.add(Long.parseLong(stk.nextToken()));
+            }
             LOG.info("Removing {} locations", refPks.size());
             boolean fromDeleter = message.getBooleanProperty("checkStudyMarked");
             if(fromDeleter) {

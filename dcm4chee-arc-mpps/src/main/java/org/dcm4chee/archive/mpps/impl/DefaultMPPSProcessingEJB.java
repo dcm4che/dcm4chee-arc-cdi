@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.mpps;
+package org.dcm4chee.archive.mpps.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -68,8 +68,8 @@ import javax.persistence.PersistenceContext;
  * @author Roman K
  */
 @Stateless
-public class MPPSServiceEJB {
-    private static final Logger LOG = LoggerFactory.getLogger(MPPSServiceEJB.class);
+public class DefaultMPPSProcessingEJB {
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultMPPSProcessingEJB.class);
 
     @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;

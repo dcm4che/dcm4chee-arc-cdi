@@ -41,40 +41,14 @@
 package org.dcm4chee.archive.mpps;
 
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.ServiceContext;
-import org.dcm4chee.archive.hooks.AttributeCoercionHook;
 
 /**
- * Create a subclass to add extra functionality
- * @author Roman K
+ * Forwards MPPS messages to configured MPPS forwarding destinations.
+ *
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public class MPPSHook implements AttributeCoercionHook<MPPSContext> {
+public interface MPPSForwardService {
 
-    /**
-     * Override to modify original attributes
-     */
-    @Override
-    public void coerceAttributes(MPPSContext context, Attributes attributes) throws DicomServiceException {
-    }
-
-    /**
-     * Called in the MPPS processing transaction
-     */
-    public void onMPPSCreate(MPPSContext context, Attributes attributes) throws DicomServiceException {
-    }
-
-
-    /**
-     * Called in the MPPS processing transaction
-     */
-    public void onMPPSUpdate(MPPSContext context, Attributes attributes) throws DicomServiceException {
-    }
-
-    /**
-     * Called in the MPPS processing transaction
-     */
-    public void onMPPSFinal(MPPSContext context, Attributes attributes) throws DicomServiceException {
-    }
+    public void scheduleForwardMPPS(MPPSContext mppsContext, Attributes attributes);
 
 }

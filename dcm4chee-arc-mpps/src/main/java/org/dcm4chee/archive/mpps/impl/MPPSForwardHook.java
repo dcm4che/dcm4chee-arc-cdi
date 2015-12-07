@@ -38,43 +38,40 @@
  *  ***** END LICENSE BLOCK *****
  */
 
-package org.dcm4chee.archive.mpps;
+package org.dcm4chee.archive.mpps.impl;
+
+import javax.inject.Inject;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.ServiceContext;
-import org.dcm4chee.archive.hooks.AttributeCoercionHook;
+import org.dcm4chee.archive.mpps.MPPSContext;
+import org.dcm4chee.archive.mpps.MPPSForwardService;
+import org.dcm4chee.archive.mpps.MPPSHook;
 
 /**
- * Create a subclass to add extra functionality
- * @author Roman K
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public class MPPSHook implements AttributeCoercionHook<MPPSContext> {
+public class MPPSForwardHook extends MPPSHook {
 
-    /**
-     * Override to modify original attributes
-     */
+    @Inject
+    private MPPSForwardService mppsForwardService;
+
     @Override
-    public void coerceAttributes(MPPSContext context, Attributes attributes) throws DicomServiceException {
-    }
-
-    /**
-     * Called in the MPPS processing transaction
-     */
     public void onMPPSCreate(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        forward(context, attributes);
     }
 
-
-    /**
-     * Called in the MPPS processing transaction
-     */
+    @Override
     public void onMPPSUpdate(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        forward(context, attributes);
     }
 
-    /**
-     * Called in the MPPS processing transaction
-     */
+    @Override
     public void onMPPSFinal(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        forward(context, attributes);
     }
 
+    private void forward(MPPSContext context, Attributes attributes) {
+        mppsForwardService.scheduleForwardMPPS(context, attributes);
+    }
 }

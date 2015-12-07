@@ -40,6 +40,11 @@ package org.dcm4chee.archive.mpps.scu;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.IncompatibleConnectionException;
+import org.dcm4che3.net.service.DicomServiceException;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -48,6 +53,6 @@ import org.dcm4che3.net.Dimse;
 public interface MPPSSCU {
 
     void sendMPPS(Dimse dimse, String localAET, String remoteAET, String iuid,
-            Attributes attrs, int retries);
+            Attributes attrs) throws DicomServiceException;
 
 }

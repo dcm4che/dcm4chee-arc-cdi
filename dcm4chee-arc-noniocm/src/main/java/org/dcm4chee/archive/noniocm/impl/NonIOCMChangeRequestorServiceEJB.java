@@ -129,7 +129,7 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
     @Inject
     private CodeService codeService;
 
-    @Resource(mappedName = "java:/ConnectionFactory")
+    @Resource(mappedName = "java:/JmsXA")
     private ConnectionFactory connFactory;
 
     @Resource(mappedName = "java:/queue/noneiocm")

@@ -107,7 +107,7 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     @Inject
     private FetchForwardService fetchForwardService;
 
-    @Resource(mappedName = "java:/ConnectionFactory")
+    @Resource(mappedName = "java:/JmsXA")
     private ConnectionFactory connFactory;
 
     @Resource(mappedName = "java:/queue/storescu")
@@ -186,6 +186,23 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                 ObjectMessage msg = session
                         .createObjectMessage(new CStoreSCUJMSMessage(
                                 insts, context));
+
+                StringBuilder stiuid = new StringBuilder();
+                StringBuilder iuid = new StringBuilder();
+                ArrayList<String> studies = new ArrayList<String>();
+
+                for (ArchiveInstanceLocator i : insts) {
+                    if (!studies.contains(i.getStudyInstanceUID())) {
+                        if (stiuid.length() > 0) stiuid.append(',');
+                        stiuid.append(i.getStudyInstanceUID());
+                        studies.add(i.getStudyInstanceUID());
+                    }
+                    if (iuid.length() > 0) iuid.append(',');
+                    iuid.append(i.getStudyInstanceUID());
+                }
+
+                msg.setStringProperty("SOP_INSTANCE_UID", iuid.toString());
+                msg.setStringProperty("STUDY_UID", stiuid.toString());
                 msg.setIntProperty("Priority", priority);
                 msg.setIntProperty("Retries", retries);
                 msg.setStringProperty("MessageID", messageID);
@@ -228,7 +245,7 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
     }
 
     @Override
-    public ArchiveInstanceLocator applySuppressionCriteria(
+    public boolean isInstanceSuppressed(
             ArchiveInstanceLocator ref, Attributes attrs,
             String supressionCriteriaTemplateURI, CStoreSCUContext context) {
 
@@ -246,10 +263,9 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                                 .getAETitle(), context.getRemoteAE()
                                 .getAETitle()));
                 wr.write(attrs);
-                eliminate = (resultWriter.toString()
-                        .compareToIgnoreCase("true") == 0 ? true : false);
+                eliminate = Boolean.valueOf(resultWriter.toString());
                 if (!eliminate) {
-                    return ref;
+                    return false;
                 }
 
                 if (LOG.isDebugEnabled()) {
@@ -260,20 +276,20 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                             + ref.iuid
                             + " from response");
                 }
-                return null;
+                return true;
             }
 
         } catch (Exception e) {
-            LOG.error("Error applying supression criteria, {}", e);
-            return ref;
+            LOG.error("Error applying suppression criteria, {}", e);
+            return false;
         }
-        return ref;
+        return false;
     }
 
     @Override
-    public ArchiveInstanceLocator eliminateUnSupportedSOPClasses(
+    public boolean isSOPClassSuppressed(
             ArchiveInstanceLocator ref, CStoreSCUContext context) {
-        if (context.getRemoteAE() != null)
+        if (context.getRemoteAE() != null) {
             try {
                 // for wado source and destination are the same
                 ArrayList<TransferCapability> aeTCs = new ArrayList<TransferCapability>(
@@ -281,8 +297,8 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                                 Role.SCU));
 
                 for (TransferCapability supportedTC : aeTCs) {
-                    if (supportedTC.getSopClass().compareTo(ref.cuid) == 0) {
-                        return ref;
+                    if (supportedTC.getSopClass().equals(ref.cuid)) {
+                        return false;
                     }
                 }
 
@@ -290,12 +306,13 @@ public class CStoreSCUServiceImpl implements CStoreSCUService {
                     LOG.debug("Applying UnSupported SOP Class Elimination"
                             + "\nRemoving Referenced Instance: " + ref.iuid);
                 }
-                return null;
+                return true;
             } catch (Exception e) {
                 LOG.error("Exception while applying elimination, {}", e);
-                return ref;
+                return false;
             }
-        return ref;
+        }
+        return false;
     }
 
     @Override

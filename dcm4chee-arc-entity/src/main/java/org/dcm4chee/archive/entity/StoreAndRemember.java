@@ -104,6 +104,9 @@ public class StoreAndRemember {
     
     @Column(name="instance_status")
     private StoreVerifyStatus instanceStatus;
+    
+    @Column(name="remember")
+    private boolean remember;
 
     public long getPk() {
         return pk;
@@ -180,13 +183,21 @@ public class StoreAndRemember {
     public void setSopInstanceUID(String sopInstanceUID) {
         this.sopInstanceUID = sopInstanceUID;
     }
-
+    
     public StoreVerifyStatus getInstanceStatus() {
         return instanceStatus;
     }
 
     public void setInstanceStatus(StoreVerifyStatus instanceStatus) {
         this.instanceStatus = instanceStatus;
+    }
+    
+    public boolean isRemember() {
+        return remember;
+    }
+    
+    public void setRemember(boolean remember) {
+        this.remember = remember;
     }
 
 }

@@ -140,12 +140,6 @@ public class ArchiveAEExtension extends AEExtension {
     @ConfigurableProperty(name = "dcmFwdMppsDestination", collectionOfReferences = true)
     private List<ApplicationEntity> forwardMPPSDestinations = new ArrayList<>();
 
-    @ConfigurableProperty(name = "dcmFwdMppsMaxRetries", defaultValue = "0")
-    private int forwardMPPSMaxRetries;
-
-    @ConfigurableProperty(name = "dcmFwdMppsRetryInterval", defaultValue = DEF_RETRY_INTERVAL)
-    private int forwardMPPSRetryInterval = Integer.parseInt(DEF_RETRY_INTERVAL);
-
     @ConfigurableProperty(name = "dcmIanDestination")
     private String[] IANDestinations = {};
 
@@ -444,22 +438,6 @@ public class ArchiveAEExtension extends AEExtension {
 
     public void setForwardMPPSDestinations(List<ApplicationEntity> forwardMPPSDestinations) {
         this.forwardMPPSDestinations = forwardMPPSDestinations;
-    }
-
-    public final int getForwardMPPSMaxRetries() {
-        return forwardMPPSMaxRetries;
-    }
-
-    public final void setForwardMPPSMaxRetries(int forwardMPPSMaxRetries) {
-        this.forwardMPPSMaxRetries = forwardMPPSMaxRetries;
-    }
-
-    public final int getForwardMPPSRetryInterval() {
-        return forwardMPPSRetryInterval;
-    }
-
-    public final void setForwardMPPSRetryInterval(int forwardMPPSRetryInterval) {
-        this.forwardMPPSRetryInterval = forwardMPPSRetryInterval;
     }
 
     public String[] getIANDestinations() {

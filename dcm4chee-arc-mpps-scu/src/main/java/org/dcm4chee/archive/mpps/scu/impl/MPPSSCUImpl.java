@@ -41,21 +41,21 @@ package org.dcm4chee.archive.mpps.scu.impl;
 import org.dcm4che3.conf.api.IApplicationEntityCache;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.UID;
-import org.dcm4che3.net.*;
+import org.dcm4che3.net.ApplicationEntity;
+import org.dcm4che3.net.Association;
+import org.dcm4che3.net.Device;
+import org.dcm4che3.net.Dimse;
+import org.dcm4che3.net.DimseRSP;
+import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.AAssociateRQ;
 import org.dcm4che3.net.pdu.PresentationContext;
-import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.mpps.event.MPPSEvent;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.mpps.scu.MPPSSCU;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import javax.jms.Connection;
-import javax.jms.*;
 import java.io.IOException;
 
 /**
@@ -67,66 +67,15 @@ public class MPPSSCUImpl implements MPPSSCU {
 
     private static final Logger LOG = LoggerFactory.getLogger(MPPSSCUImpl.class);
 
-    @Resource(mappedName="java:/ConnectionFactory")
-    private ConnectionFactory connFactory;
-
-    @Resource(mappedName="java:/queue/mppsscu")
-    private Queue mppsSCUQueue;
-
     @Inject
     private IApplicationEntityCache aeCache;
 
     @Inject
     private Device device;
 
-    @SuppressWarnings("unused")
-    private void onMPPSReceive(@Observes MPPSEvent event) {
-        try {
-            ApplicationEntity ae = device.getApplicationEntityNotNull(event.getContext().getReceivingAET());
-
-            ArchiveAEExtension arcAE = ae.getAEExtension(ArchiveAEExtension.class);
-            if (arcAE == null)
-                return;
-
-            String iuid = event.getMppsSopInstanceUID();
-            Attributes attrs = event.getAttributes();
-            for (ApplicationEntity remoteAE : arcAE.getForwardMPPSDestinations()) {
-                scheduleForwardMPPS(event.getDIMSE(), ae.getAETitle(), remoteAE.getAETitle(),
-                        iuid, attrs, 0, 0);
-            }
-        } catch (Exception e) {
-            LOG.error("Error while scheduling MPPS forwarding",e);
-        }
-    }
-
-    private void scheduleForwardMPPS(Dimse dimse, String localAET, String remoteAET,
-            String iuid, Attributes attrs, int retries, long delay) {
-        try {
-            Connection conn = connFactory.createConnection();
-            try {
-                Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                MessageProducer producer = session.createProducer(mppsSCUQueue);
-                ObjectMessage msg = session.createObjectMessage(attrs);
-                msg.setStringProperty("CommandField", dimse.name());
-                msg.setStringProperty("SOPInstancesUID", iuid);
-                msg.setStringProperty("LocalAET", localAET);
-                msg.setStringProperty("RemoteAET", remoteAET);
-                msg.setIntProperty("Retries", retries);
-                if (delay > 0)
-                    msg.setLongProperty("_HQ_SCHED_DELIVERY",
-                            System.currentTimeMillis() + delay);
-                producer.send(msg);
-            } finally {
-                conn.close();
-            }
-        } catch (JMSException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Override
     public void sendMPPS(Dimse dimse, String localAET, String remoteAET,
-            String iuid, Attributes attrs, int retries) {
+            String iuid, Attributes attrs) throws DicomServiceException {
         ApplicationEntity localAE = device
                 .getApplicationEntity(localAET);
         if (localAE == null) {
@@ -153,35 +102,24 @@ public class MPPSSCUImpl implements MPPSSCU {
                 LOG.info("{}: Failed to release Association to {}", as, remoteAET);
             }
         } catch (Exception e) {
-            ArchiveAEExtension aeExt = localAE.getAEExtension(ArchiveAEExtension.class);
-            if (aeExt != null && retries < aeExt.getForwardMPPSMaxRetries()) {
-                int delay = aeExt.getForwardMPPSRetryInterval();
-                LOG.info("Failed to forward MPPS to {} - retry in {}s: {}",
-                        remoteAET, delay, e);
-                scheduleForwardMPPS(dimse, localAET, remoteAET, iuid, attrs,
-                        retries + 1, delay * 1000L);
-            } else {
-                LOG.warn("Failed to forward MPPS to {}: {}",
-                        remoteAET, e);
-            }
+            throw new DicomServiceException(Status.UnableToProcess, "Failed to forward MPPS to " + remoteAET, e);
         }
     }
 
     private DimseRSP sendMPPS(Association as, Dimse dimse, String iuid,
             Attributes attrs) throws IOException, InterruptedException {
-        switch(dimse) {
-        case N_CREATE_RQ:
-            return as.ncreate(
-                    UID.ModalityPerformedProcedureStepSOPClass,
-                    iuid, attrs, null);
-        case N_SET_RQ:
-            return as.nset(
-                    UID.ModalityPerformedProcedureStepSOPClass,
-                    iuid, attrs, null);
-        default:
-            throw new IllegalArgumentException("dimse: " + dimse);
+        switch (dimse) {
+            case N_CREATE_RQ:
+                return as.ncreate(
+                        UID.ModalityPerformedProcedureStepSOPClass,
+                        iuid, attrs, null);
+            case N_SET_RQ:
+                return as.nset(
+                        UID.ModalityPerformedProcedureStepSOPClass,
+                        iuid, attrs, null);
+            default:
+                throw new IllegalArgumentException("dimse: " + dimse);
         }
-        
     }
 
 }

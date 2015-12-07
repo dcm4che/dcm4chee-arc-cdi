@@ -106,6 +106,7 @@ public class DecompressedPixelDataOutput implements StreamingOutput {
             return decompressor.getEstimatedNeededMemory();
         }
 
+        @Override
         public Void call() throws IOException {
             try {
                 if (frameIndex == -1) {

@@ -42,6 +42,7 @@ package org.dcm4chee.archive.sc.impl;
 import static java.lang.String.format;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -77,6 +78,13 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
         return indexOfChangeType(changeType) != -1;
     }
     
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends Enum<?>> T getChangeTypeValue(Class<T> changeTypeClass) {
+        int idx = indexOfChangeTypeClass(changeTypeClass);
+        return (idx != -1) ? (T)changeTypes[idx] : null;
+    }
+    
     @Override
     public Enum<?>[] getSubChangeTypeHierarchy(Enum<?> changeType) {
         int idx = indexOfChangeType(changeType);
@@ -93,6 +101,15 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
     private int indexOfChangeType(Enum<?> changeType) {
         for (int i = 0; i < changeTypes.length; i++) {
             if(changeTypes[i].equals(changeType)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    private int indexOfChangeTypeClass(Class<?> changeTypeClass) {
+        for (int i = 0; i < changeTypes.length; i++) {
+            if(changeTypeClass.isAssignableFrom(changeTypes[i].getClass())) {
                 return i;
             }
         }
@@ -139,15 +156,31 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
         addAffectedInstance(srcInstance);
     }
     
+    public void addSourceInstances(Collection<InstanceIdentifier> srcInstances) {
+        this.sourceInstances.addAll(srcInstances);
+        addAffectedInstances(srcInstances);
+    }
+    
     public void addTargetInstance(InstanceIdentifier targetInstance) {
         this.targetInstances.add(targetInstance);
         addAffectedInstance(targetInstance);
+    }
+    
+    public void addTargetInstances(Collection<InstanceIdentifier> targetInstances) {
+        this.targetInstances.addAll(targetInstances);
+        addAffectedInstances(targetInstances);
     }
     
     private void addAffectedInstance(InstanceIdentifier affectedInstance) {
         this.affectedStudyUIDs.add(affectedInstance.getStudyInstanceUID());
         this.affectedSeriesUIDs.add(affectedInstance.getSeriesInstanceUID());
         this.affectedInstances.add(affectedInstance);
+    }
+    
+    private void addAffectedInstances(Collection<InstanceIdentifier> affectedInstances) {
+        for(InstanceIdentifier affectedInstance : affectedInstances) {
+            addAffectedInstance(affectedInstance);
+        }
     }
     
     @Override
@@ -205,14 +238,17 @@ public class BasicStructuralChangeContext implements StructuralChangeContext {
             }
             
             InstanceIdentifier that = (InstanceIdentifier)other;
-            return studyInstanceUID.equals(that.getStudyInstanceUID()) 
-                    && seriesInstanceUID.equals(that.getSeriesInstanceUID())
-                    && sopInstanceUID.equals(that.getSopInstanceUID());
+            
+            return ((studyInstanceUID != null) ? studyInstanceUID.equals(that.getStudyInstanceUID()) : (that.getStudyInstanceUID() == null))
+                    && ((seriesInstanceUID != null) ? seriesInstanceUID.equals(that.getSeriesInstanceUID()) : (that.getSeriesInstanceUID() == null))
+                    &&  ((sopInstanceUID != null) ? sopInstanceUID.equals(that.getSopInstanceUID()) : (that.getSopInstanceUID() == null));
         }
         
         @Override
         public int hashCode() {
-            return 37 * studyInstanceUID.hashCode() + seriesInstanceUID.hashCode() + sopInstanceUID.hashCode();
+            return 37 * ((studyInstanceUID != null) ? studyInstanceUID.hashCode() : 73) 
+                    * ((seriesInstanceUID != null) ? seriesInstanceUID.hashCode() : 11) 
+                    * ((sopInstanceUID != null) ? sopInstanceUID.hashCode() : 13);
         }
         
     }

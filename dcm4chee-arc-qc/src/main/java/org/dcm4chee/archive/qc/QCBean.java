@@ -60,6 +60,7 @@ import org.dcm4chee.archive.qc.impl.QCPostProcessor;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
 
+@Deprecated
 public interface QCBean {
 
     /**

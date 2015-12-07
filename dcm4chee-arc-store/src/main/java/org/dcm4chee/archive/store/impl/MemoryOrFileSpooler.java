@@ -82,7 +82,12 @@ public class MemoryOrFileSpooler implements Spooler {
         else {
             if (parse) {
                 try {
-                    DicomInputStream dis = new DicomInputStream(new ByteArrayInputStream(bufferOS.toByteArray()));
+                    DicomInputStream dis;
+                    ByteArrayInputStream bais = new ByteArrayInputStream(bufferOS.toByteArray());
+                    if (fmi!=null && fmi.getString(Tag.TransferSyntaxUID)!=null)
+                        dis = new DicomInputStream(bais, fmi.getString(Tag.TransferSyntaxUID));
+                    else
+                        dis = new DicomInputStream(bais); //guess ts
                     dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
                     Attributes data = dis.readDataset(-1, -1);
                     context.setAttributes(data);
@@ -90,7 +95,7 @@ public class MemoryOrFileSpooler implements Spooler {
                     context.setTransferSyntax(dsFMI != null ? dsFMI.getString(Tag.TransferSyntaxUID) : 
                             fmi != null ? fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);
                 } catch (IOException e) {
-                    throw new DicomServiceException(StoreService.DATA_SET_NOT_PARSEABLE);
+                    throw new DicomServiceException(StoreService.DATA_SET_NOT_PARSEABLE, e);
                 } finally {
                     context.setSpoolingContext(spoolingContext);
                 }

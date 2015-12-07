@@ -37,65 +37,23 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.archive.sc;
+package org.dcm4chee.archive.iocm.client;
 
 import java.util.Set;
 
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.sc.StructuralChangeContext.InstanceIdentifier;
+
 /**
- * Describes a structural change performed on an existing study done on PATIENT/STUDY/SERIES/INSTANCE level.
- * 
- * A structural change has associated structural change types which are assumed to form an ordered hierarchy.
- * 
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
  *
  */
-public interface StructuralChangeContext {
-
-    /**
-     * @return Returns the complete structural change type hierarchy associated with the change
-     */
-    Enum<?>[] getChangeTypeHierarchy();
+public interface ChangeRequestContext {
     
-    /**
-     * @param changeType Returns <code>true</code> if the given type is part of the associated change type hierarchy,
-     * returns <code>false</code> otherwise
-     * @return
-     */
-    boolean hasChangeType(Enum<?> changeType);
-
-    /**
-     * @param changeType
-     * @return  Returns the sub-hierarchy starting from the given change type, returns <code>null</code> if the given
-     * change type is not contained in the hierarchy
-     */
-    Enum<?>[] getSubChangeTypeHierarchy(Enum<?> changeType);
+    Set<InstanceIdentifier> getUpdatedInstances();
     
-    /**
-     * @param changeTypeClass
-     * @return Returns the value for a given change type class contained in the change type hierarchy. 
-     * If the change type is not contained in the hierarchy then <code>null</code> is returned.
-     */
-    <T extends Enum<?>> T getChangeTypeValue(Class<T> changeTypeClass);
+    Set<Instance> getRejectionNotes();
+    
+    Set<String> getExternalStoreAndRememberAETs();
   
-    long getTimestamp();
-
-    Set<String> getAffectedStudyUIDs();
-    
-    Set<String> getAffectedSeriesUIDs();
-    
-    Set<InstanceIdentifier> getAffectedInstances();
-    
-    Set<InstanceIdentifier> getSourceInstances();
-    
-    Set<InstanceIdentifier> getTargetInstances();
-    
-    interface InstanceIdentifier {
-        
-        String getStudyInstanceUID();
-        
-        String getSeriesInstanceUID();
-        
-        String getSopInstanceUID();
-        
-    }
 }

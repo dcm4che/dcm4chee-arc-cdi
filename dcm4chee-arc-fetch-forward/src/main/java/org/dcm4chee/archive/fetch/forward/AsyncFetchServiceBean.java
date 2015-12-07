@@ -38,43 +38,60 @@
  *  ***** END LICENSE BLOCK *****
  */
 
-package org.dcm4chee.archive.mpps;
+package org.dcm4chee.archive.fetch.forward;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4chee.archive.ServiceContext;
-import org.dcm4chee.archive.hooks.AttributeCoercionHook;
+import org.dcm4che3.net.Device;
+import org.dcm4chee.archive.api.FetchService;
+
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.concurrent.Future;
 
 /**
- * Create a subclass to add extra functionality
- * @author Roman K
+ * Rationale:
+ * Fetch is preferably done on series level, due to
+ * - not all support instance level cmove
+ * - on study level it could be too much at once and is more error prone
+ *
+ * Then it falls back to study level.
+ *
+ * Once an instance or series is requested, the whole study is fetched implicitly in the background.
+ *
  */
-public class MPPSHook implements AttributeCoercionHook<MPPSContext> {
+@EJB(name = FetchService.JNDI_NAME, beanInterface = FetchService.class)
+@Stateless
+public class AsyncFetchServiceBean implements FetchService {
 
-    /**
-     * Override to modify original attributes
-     */
+
+    @Inject
+    Device device;
+
     @Override
-    public void coerceAttributes(MPPSContext context, Attributes attributes) throws DicomServiceException {
+    public FetchProgress fetchStudyAsync(String studyUID) {
+
+        // handle not existent
+        // handle already available
+
+        throw new RuntimeException("not implemented");
     }
 
-    /**
-     * Called in the MPPS processing transaction
-     */
-    public void onMPPSCreate(MPPSContext context, Attributes attributes) throws DicomServiceException {
+    @Override
+    public FetchProgress fetchSeriesAsync(String seriesUID) {
+
+        // handle not existent
+        // handle already available
+        throw new RuntimeException("not implemented");
     }
 
+    @Override
+    public Future<Path> fetchInstanceAsync(String sopIUID) {
 
-    /**
-     * Called in the MPPS processing transaction
-     */
-    public void onMPPSUpdate(MPPSContext context, Attributes attributes) throws DicomServiceException {
+        // handle not existent
+        // handle already available
+
+        throw new RuntimeException("not implemented");
     }
-
-    /**
-     * Called in the MPPS processing transaction
-     */
-    public void onMPPSFinal(MPPSContext context, Attributes attributes) throws DicomServiceException {
-    }
-
 }

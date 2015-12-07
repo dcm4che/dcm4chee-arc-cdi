@@ -38,7 +38,7 @@
 
 package org.dcm4chee.archive.qc.test;
 
-import java.util.List;
+import java.util.Set;
 
 import javax.decorator.Decorator;
 import javax.decorator.Delegate;
@@ -47,9 +47,10 @@ import javax.inject.Inject;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.IOCMConfig;
-import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.iocm.client.ChangeRequestContext;
 import org.dcm4chee.archive.iocm.client.ChangeRequesterService;
+import org.dcm4chee.archive.sc.StructuralChangeContext.InstanceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,21 +71,28 @@ public class ChangeRequesterMockDecorator implements ChangeRequesterService {
   
     @Inject
     private Device device;
-
-    @Override
-    public void scheduleChangeRequest(List<QCEventInstance> sourceInstanceUIDs, List<QCEventInstance> updatedInstanceUIDs,
-            Instance rejNote) {
-        LOG.info("############## scheduleChangeRequest called!count:{}",++count);
-        IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
-        String[] aets = cfg != null ? cfg.getIocmDestinations() : null;
-        PerformedChangeRequest.addChangeRequest(updatedInstanceUIDs, rejNote, aets);
-    }
     
     @Override
-    public void scheduleUpdateOnlyChangeRequest(List<QCEventInstance> updatedInstanceUIDs) {
+    public void scheduleUpdateOnlyChangeRequest(Set<InstanceIdentifier> updatedInstanceUIDs) {
         LOG.info("############## scheduleUpdateOnlyChangeRequest called!count:{}",++count);
         IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
         String[] aets = cfg != null ? cfg.getNoneIocmDestinations() : null;
         PerformedChangeRequest.addChangeRequest(updatedInstanceUIDs, null, aets);
+    }
+
+    @Override
+    public ChangeRequestContext createChangeRequestContext(
+            Set<InstanceIdentifier> sourceInstanceUIDs,
+            Set<InstanceIdentifier> updatedInstanceUIDs, Set<Instance> rejectionNotes) {
+        throw new IllegalStateException("Method not implemented");
+    }
+
+    @Override
+    public void scheduleChangeRequest(ChangeRequestContext changeRequestCtx) {
+        LOG.info("############## scheduleChangeRequest called!count:{}",++count);
+        IOCMConfig cfg = device.getDeviceExtension(ArchiveDeviceExtension.class).getIocmConfig();
+        String[] aets = cfg != null ? cfg.getIocmDestinations() : null;
+        PerformedChangeRequest.addChangeRequest(changeRequestCtx.getUpdatedInstances(), changeRequestCtx.getRejectionNotes(), aets);
+        
     }
 }

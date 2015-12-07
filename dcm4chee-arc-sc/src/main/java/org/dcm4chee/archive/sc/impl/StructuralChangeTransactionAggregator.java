@@ -39,7 +39,6 @@
 
 package org.dcm4chee.archive.sc.impl;
 
-import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.RollbackException;
@@ -47,10 +46,11 @@ import javax.transaction.Status;
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
+import javax.transaction.TransactionSynchronizationRegistry;
 
 import org.dcm4chee.archive.sc.StructuralChangeContext;
 import org.dcm4chee.archive.sc.StructuralChangeRejectedException;
+import org.dcm4chee.util.TransactionSynchronization;
 
 /**
  * Aggregates structural changes that happen within a transaction.
@@ -59,10 +59,10 @@ import org.dcm4chee.archive.sc.StructuralChangeRejectedException;
  */
 @ApplicationScoped
 public class StructuralChangeTransactionAggregator {
-    @Resource(lookup="java:jboss/TransactionManager")
-    private TransactionManager tmManager; 
+    private static final String ON_SC_COMMIT_RUNNER_TX_RESOURCE = OnStructuralChangesCommitRunner.class.getName();
     
-    private static final ThreadLocal<StructuralChangeContainerImpl> threadLocalChangeContainer = new ThreadLocal<>();
+    @Inject
+    private TransactionSynchronization txSnychronization;
     
     @Inject
     private StructuralChangeHookExecutor scChangeHookExecutor;
@@ -80,18 +80,20 @@ public class StructuralChangeTransactionAggregator {
     
     private StructuralChangeContainerImpl initOrGetChangeContainer() {
         try {
-            Transaction tx = tmManager.getTransaction();
+            Transaction tx = txSnychronization.getTransactionManager().getTransaction();
             if (tx == null) {
                 return null;
             }
+            
+            TransactionSynchronizationRegistry txSyncRegistry = txSnychronization.getSynchronizationRegistry();
 
-            StructuralChangeContainerImpl changeContainer = threadLocalChangeContainer.get();
-            if (changeContainer == null) {
-                tx.registerSynchronization(new OnStructuralChangesCommitRunner());
-                changeContainer = new StructuralChangeContainerImpl();
-                threadLocalChangeContainer.set(changeContainer);
+            OnStructuralChangesCommitRunner  onStructuralChangesCommitRunner  = (OnStructuralChangesCommitRunner)txSyncRegistry.getResource(ON_SC_COMMIT_RUNNER_TX_RESOURCE);
+            if (onStructuralChangesCommitRunner == null) {
+                onStructuralChangesCommitRunner = new OnStructuralChangesCommitRunner();
+                tx.registerSynchronization(onStructuralChangesCommitRunner);
+                txSyncRegistry.putResource(ON_SC_COMMIT_RUNNER_TX_RESOURCE, onStructuralChangesCommitRunner);
             }
-            return changeContainer;
+            return onStructuralChangesCommitRunner.getStructuralChangeContainer();
         } catch (SystemException | IllegalStateException e) {
             throw new RuntimeException("Could not register transaction synchronizer for aggregating structural changes within transaction");
         } catch (RollbackException e) {
@@ -100,15 +102,19 @@ public class StructuralChangeTransactionAggregator {
     }
     
     /*
-     * Transaction synchronization hook that executes logic in the before-commit
-     * phase of a transaction with structural changes
+     * Transaction synchronization hook that executes logic in the before-commit and after-commit
+     * phases of a transaction with structural changes
      */
     private class OnStructuralChangesCommitRunner implements Synchronization {
+        private StructuralChangeContainerImpl changeContainer = new StructuralChangeContainerImpl();
 
+        private StructuralChangeContainerImpl getStructuralChangeContainer() {
+            return changeContainer;
+        }
+        
         // only called for active (not-rolled-back) transactions
         @Override
         public void beforeCompletion() {
-            StructuralChangeContainerImpl changeContainer = threadLocalChangeContainer.get();
             if (changeContainer != null) {
                 if (!scChangeHookExecutor.executeBeforeCommitStructuralChangeHooks(changeContainer)) {
                     // let transaction fail
@@ -119,14 +125,13 @@ public class StructuralChangeTransactionAggregator {
         
         @Override
         public void afterCompletion(int status) {
-            StructuralChangeContainerImpl changeContainer = threadLocalChangeContainer.get();
             if (changeContainer != null) {
                 try {
                     if(status == Status.STATUS_COMMITTED) {
                         scChangeHookExecutor.asyncExecuteAfterCommitStructuralChangeHooks(changeContainer);
                     }
                 } finally {
-                    threadLocalChangeContainer.remove();
+                    changeContainer = null;
                 }
             }
         }
