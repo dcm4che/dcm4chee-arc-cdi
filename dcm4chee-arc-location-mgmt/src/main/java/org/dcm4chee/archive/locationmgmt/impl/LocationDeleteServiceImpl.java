@@ -38,29 +38,6 @@
 
 package org.dcm4chee.archive.locationmgmt.impl;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import javax.jms.JMSException;
-
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.ArchiveServiceStarted;
@@ -77,14 +54,23 @@ import org.dcm4chee.archive.locationmgmt.LocationDeleteResult;
 import org.dcm4chee.archive.locationmgmt.LocationDeleteResult.DeletionStatus;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
-import org.dcm4chee.storage.conf.Availability;
-import org.dcm4chee.storage.conf.StorageDeviceExtension;
-import org.dcm4chee.storage.conf.StorageSystem;
-import org.dcm4chee.storage.conf.StorageSystemGroup;
-import org.dcm4chee.storage.conf.StorageSystemStatus;
+import org.dcm4chee.storage.conf.*;
 import org.dcm4chee.storage.spi.StorageSystemProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
+import javax.inject.Inject;
+import javax.jms.JMSException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -667,18 +653,15 @@ public class LocationDeleteServiceImpl implements DeleterService {
         if((Integer.parseInt(rule.getNumberOfArchivedCopies()) == 0)) {
             return instancesDueDeleteOnGroup;
         }
-        else if(Integer.parseInt(rule.getNumberOfArchivedCopies()) > 0) {
-            return filterNCopiesExist(instancesDueDeleteOnGroup, rule);
-        }
         else {
+            filteredOnMany = filterSafeNCopiesExist(instancesDueDeleteOnGroup, rule);
         if( hasToBeOnSystems != null && !hasToBeOnSystems.isEmpty()) {
             filteredOnMany = filterOnExternalSystem(hasToBeOnSystems, instancesDueDeleteOnGroup);
         }
         if(hasToBeOnGroups != null && !hasToBeOnGroups.isEmpty()) {
-                return filterOnGroups(hasToBeOnGroups,!filteredOnMany.isEmpty()
-                        ? filteredOnMany : instancesDueDeleteOnGroup, rule);
+                filteredOnMany = filterOnGroups(hasToBeOnGroups,filteredOnMany, rule);
         }
-        return filteredOnMany;
+            return filteredOnMany;
         }
     }
 
@@ -719,7 +702,7 @@ public class LocationDeleteServiceImpl implements DeleterService {
         return foundOnConfiguredSystems;
     }
 
-    private List<Instance> filterNCopiesExist(
+    private List<Instance> filterSafeNCopiesExist(
             List<Instance> instancesDueDeleteOnGroup, DeletionRule rule) {
         String groupID = rule.getStorageSystemGroupID();
         List<Instance> foundOnNSafeLocations = new ArrayList<Instance>();

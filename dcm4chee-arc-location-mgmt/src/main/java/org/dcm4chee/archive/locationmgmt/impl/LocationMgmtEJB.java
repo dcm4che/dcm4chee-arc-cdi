@@ -38,6 +38,7 @@
 
 package org.dcm4chee.archive.locationmgmt.impl;
 
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -67,15 +68,12 @@ import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import com.mysema.query.Tuple;
+import com.mysema.query.jpa.impl.JPAQuery;
+
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.dto.ActiveService;
-import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.Location;
-import org.dcm4chee.archive.entity.QInstance;
-import org.dcm4chee.archive.entity.QStudyOnStorageSystemGroup;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.archive.entity.StudyOnStorageSystemGroup;
+import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
 import org.dcm4chee.storage.ObjectNotFoundException;
@@ -89,8 +87,21 @@ import org.dcm4chee.storage.spi.StorageSystemProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mysema.query.Tuple;
-import com.mysema.query.jpa.impl.JPAQuery;
+import javax.annotation.Resource;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+import javax.jms.*;
+import javax.jms.Queue;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -338,7 +349,7 @@ public class LocationMgmtEJB implements LocationMgmt {
     @Override
     public List<Instance> findInstancesDueDelete(int studyRetention, 
             String studyRetentionUnit, String groupID, String studyInstanceUID, String seriesInstanceUID) {
-        Timestamp studyDueDate = getStudyDueDate(studyRetention, studyRetentionUnit);
+        Timestamp studyDueDate = new Timestamp(getStudyDueDate(studyRetention, studyRetentionUnit).getTimeInMillis());
         
         JPAQuery query = new JPAQuery(em);
         
@@ -425,21 +436,21 @@ public class LocationMgmtEJB implements LocationMgmt {
                 .getSingleResult();
     }
 
-    private Timestamp getStudyDueDate(int studyRetention, String studyRetentionUnit) {
-        Timestamp dueDate;
+    private Calendar getStudyDueDate(int studyRetention, String studyRetentionUnit) {
+        GregorianCalendar dueDate = new GregorianCalendar();
         long now = System.currentTimeMillis();
         switch (TimeUnit.valueOf(studyRetentionUnit)) {
           case DAYS:
-              dueDate = new Timestamp(now - 86400000 * studyRetention);
+              dueDate.setTimeInMillis(now - (86400000 * (long)studyRetention));
             break;
           case HOURS:
-              dueDate = new Timestamp(now - 3600000 * studyRetention);
+              dueDate.setTimeInMillis(now - (3600000 * (long)studyRetention));
             break;
           case MINUTES:
-              dueDate = new Timestamp(now - 60000 * studyRetention);
+              dueDate.setTimeInMillis(now - (60000 * (long)studyRetention));
             break;
           default:
-              dueDate = new Timestamp(now - 1000 * studyRetention);
+              dueDate.setTimeInMillis(now - (1000 * (long)studyRetention));
             break;
         }
         return dueDate;
