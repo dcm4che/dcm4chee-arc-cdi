@@ -972,7 +972,6 @@ public class DefaultArchiveConfigurationFactory {
                 new int[]{8},                // Bits Stored
                 0,                              // Pixel Representation
                 new String[]{"JPEG_LOSSY"},  // Source AETs
-                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -989,7 +988,6 @@ public class DefaultArchiveConfigurationFactory {
                 new int[]{9, 10, 11, 12},    // Bits Stored
                 0,                              // Pixel Representation
                 new String[]{"JPEG_LOSSY"},  // Source AETs
-                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -1009,7 +1007,6 @@ public class DefaultArchiveConfigurationFactory {
                 new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},    // Bits Stored
                 -1,                              // Pixel Representation
                 new String[]{"JPEG_LOSSLESS"},  // Source AETs
-                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -1027,7 +1024,6 @@ public class DefaultArchiveConfigurationFactory {
                 new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},    // Bits Stored
                 -1,                             // Pixel Representation
                 new String[]{"JPEG_LS"},     // Source AETs
-                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -1045,7 +1041,6 @@ public class DefaultArchiveConfigurationFactory {
                 new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},  // Bits Stored
                 -1,                             // Pixel Representation
                 new String[]{"JPEG_2000"},   // Source AETs
-                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -1186,7 +1181,6 @@ public class DefaultArchiveConfigurationFactory {
                 new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},    // Bits Stored
                 -1,                              // Pixel Representation
                 new String[]{"JPEG_LOSSLESS"},  // Source AETs
-                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -1204,7 +1198,6 @@ public class DefaultArchiveConfigurationFactory {
                 new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},    // Bits Stored
                 -1,                             // Pixel Representation
                 new String[]{"JPEG_LS"},     // Source AETs
-                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
@@ -1222,7 +1215,6 @@ public class DefaultArchiveConfigurationFactory {
                 new int[]{8, 9, 10, 11, 12, 13, 14, 15, 16},  // Bits Stored
                 -1,                             // Pixel Representation
                 new String[]{"JPEG_2000"},   // Source AETs
-                null,                           // Source Device Names
                 null,                           // SOP Classes
                 null,                           // Image Types
                 null,                           // Body Parts
