@@ -366,28 +366,26 @@ public class LocationDeleteServiceImpl implements DeleterService {
 
     private void freeSpace(DeletionRule rule) {
 
-          if (validateGroupForDeletion(rule.getStorageSystemGroupID())) {
+        if (validateGroupForDeletion(rule.getStorageSystemGroupID())) {
             int minTimeToKeepStudy = rule.getMinTimeStudyNotAccessed();
             String minTimeToKeppStudyUnit = rule
                     .getMinTimeStudyNotAccessedUnit();
-            List<Instance> allInstancesDueDeleteOnGroup = (ArrayList<Instance>) 
+            List<Instance> allInstancesDueDeleteOnGroup =
                     locationManager.findInstancesDueDelete(minTimeToKeepStudy
                             , minTimeToKeppStudyUnit, rule.getStorageSystemGroupID(), null, null);
-            
-                Map<String, List<Instance>> mapInstancesFoundOnGroupToStudy = 
-                        getInstancesOnGroupPerStudyMap(allInstancesDueDeleteOnGroup, rule);
-                    for (String studyUID : mapInstancesFoundOnGroupToStudy
-                            .keySet()) {
-                        if (!rule.isDeleteAsMuchAsPossible() 
-                                && !needsFreeSpace(rule.getStorageSystemGroupID(), calculateExpectedDataVolumePerDay(rule)))
-                                break;
-                    markCorrespondingStudyAndScheduleForDeletion(
-                            studyUID,
-                            rule,
-                            (ArrayList<Instance>) filterCopiesExist(
-                                    (ArrayList<Instance>) mapInstancesFoundOnGroupToStudy
-                                            .get(studyUID), rule));
-                }
+
+            Map<String, List<Instance>> mapInstancesFoundOnGroupToStudy =
+                    getInstancesOnGroupPerStudyMap(allInstancesDueDeleteOnGroup, rule);
+            for (String studyUID : mapInstancesFoundOnGroupToStudy
+                    .keySet()) {
+                if (!rule.isDeleteAsMuchAsPossible()
+                        && !needsFreeSpace(rule.getStorageSystemGroupID(), calculateExpectedDataVolumePerDay(rule)))
+                    break;
+                markCorrespondingStudyAndScheduleForDeletion(
+                        studyUID,
+                        rule,
+                        filterCopiesExist(mapInstancesFoundOnGroupToStudy.get(studyUID), rule));
+            }
             handleFailedToDeleteLocations(rule.getStorageSystemGroupID());
         }
     }
