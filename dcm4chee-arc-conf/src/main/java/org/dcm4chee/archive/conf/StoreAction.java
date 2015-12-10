@@ -39,14 +39,44 @@
 package org.dcm4chee.archive.conf;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * There Store Action determines how a store operation of a single instance will be handled, especially in the case that
+ * the instance already exists.
  *
+ * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
 public enum StoreAction {
+
+    /**
+     * Normal store. The instance doesn't exist yet.
+     */
     STORE,
+
+    /**
+     * The instance should be stored again. This typically happens all (local) locations of an instance were deleted
+     * previously and it's now getting sent in again.
+     */
     RESTORE,
+
+    /**
+     * The instance is already existing, but should be completely replaced. This involves deleting all old
+     * locations and the old instance record from the database and storing the new instance.
+     */
     REPLACE,
+
+    /**
+     * The instance already exists and the newly stored version should be completely ignored.
+     */
     IGNORE,
+
+    /**
+     * The instance already exists and will not be stored again, only the database will be updated.
+     */
     UPDATEDB,
+
+    /**
+     * Some problem happened during storage or during updating the database and the store operation for this instance
+     * should fail (i.e. should be completely rolled back).
+     */
     FAIL
 }
