@@ -103,8 +103,7 @@ import com.mysema.query.types.path.StringPath;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
-@Path("/qido/{AETitle}")
-public class QidoRS {
+public class QidoRS implements org.dcm4chee.archive.web.IQidoRS {
 
     private static final int STATUS_OK = 200;
     private static final int STATUS_PARTIAL_CONTENT = 206;
@@ -215,6 +214,7 @@ public class QidoRS {
      * @param aet
      *            AE title
      */
+
     @PathParam("AETitle")
     public void setAETitle(String aet) {
         
@@ -227,111 +227,79 @@ public class QidoRS {
         }
     }
 
-    @GET
-    @Path("/studies")
-    @Produces("multipart/related;type=application/dicom+xml")
+    @Override
     public Response searchForStudiesXML() throws Exception {
         return search("searchForStudiesXML", QueryRetrieveLevel.STUDY,
                 false, null, null, STUDY_FIELDS, Output.DICOM_XML);
     }
 
-    @GET
-    @Path("/studies")
-    @Produces("application/json")
+    @Override
     public Response searchForStudiesJSON() throws Exception {
         return search("searchForStudiesJSON", QueryRetrieveLevel.STUDY,
                 false, null, null, STUDY_FIELDS, Output.JSON);
     }
 
-    @GET
-    @Path("/series")
-    @Produces("multipart/related;type=application/dicom+xml")
+    @Override
     public Response searchForSeriesXML() throws Exception {
         return search("searchForSeriesXML",
                 QueryRetrieveLevel.SERIES, true, null, null,
                 STUDY_SERIES_FIELDS, Output.DICOM_XML);
     }
 
-    @GET
-    @Path("/series")
-    @Produces("application/json")
+    @Override
     public Response searchForSeriesJSON() throws Exception {
         return search("searchForSeriesJSON",
                 QueryRetrieveLevel.SERIES, true, null, null,
                 STUDY_SERIES_FIELDS, Output.JSON);
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/series")
-    @Produces("multipart/related;type=application/dicom+xml")
-    public Response searchForSeriesOfStudyXML(
-            @PathParam("StudyInstanceUID") String studyInstanceUID) throws Exception {
+    @Override
+    public Response searchForSeriesOfStudyXML(String studyInstanceUID) throws Exception {
         return search("searchForSeriesOfStudyXML", QueryRetrieveLevel.SERIES,
                 false, studyInstanceUID, null, SERIES_FIELDS, Output.DICOM_XML);
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/series")
-    @Produces("application/json")
-    public Response searchForSeriesOfStudyJSON(
-            @PathParam("StudyInstanceUID") String studyInstanceUID) throws Exception {
+    @Override
+    public Response searchForSeriesOfStudyJSON(String studyInstanceUID) throws Exception {
         return search("searchForSeriesOfStudyJSON", QueryRetrieveLevel.SERIES,
                 false, studyInstanceUID, null, SERIES_FIELDS, Output.JSON);
     }
 
-    @GET
-    @Path("/instances")
-    @Produces("multipart/related;type=application/dicom+xml")
+    @Override
     public Response searchForInstancesXML() throws Exception {
         return search("searchForInstancesXML",
                 QueryRetrieveLevel.IMAGE, true, null, null,
                 STUDY_SERIES_INSTANCE_FIELDS, Output.DICOM_XML);
     }
 
-    @GET
-    @Path("/instances")
-    @Produces("application/json")
+    @Override
     public Response searchForInstancesJSON() throws Exception {
         return search("searchForInstancesJSON",
                 QueryRetrieveLevel.IMAGE, true, null, null,
                 STUDY_SERIES_INSTANCE_FIELDS, Output.JSON);
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/instances")
-    @Produces("multipart/related;type=application/dicom+xml")
-    public Response searchForInstancesOfStudyXML(
-            @PathParam("StudyInstanceUID") String studyInstanceUID) throws Exception {
+    @Override
+    public Response searchForInstancesOfStudyXML(String studyInstanceUID) throws Exception {
         return search("searchForInstancesOfStudyXML", QueryRetrieveLevel.IMAGE,
                 true, studyInstanceUID, null, SERIES_INSTANCE_FIELDS, Output.DICOM_XML);
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/instances")
-    @Produces("application/json")
-    public Response searchForInstancesOfStudyJSON(
-            @PathParam("StudyInstanceUID") String studyInstanceUID) throws Exception {
+    @Override
+    public Response searchForInstancesOfStudyJSON(String studyInstanceUID) throws Exception {
         return search("searchForInstancesOfStudyJSON", QueryRetrieveLevel.IMAGE,
                 true, studyInstanceUID, null, SERIES_INSTANCE_FIELDS, Output.JSON);
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances")
-    @Produces("multipart/related;type=application/dicom+xml")
-    public Response searchForInstancesOfSeriesXML(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID) throws Exception {
+    @Override
+    public Response searchForInstancesOfSeriesXML(String studyInstanceUID,String seriesInstanceUID) throws Exception {
         return search("searchForInstancesOfSeriesXML", QueryRetrieveLevel.IMAGE,
                 false, studyInstanceUID, seriesInstanceUID,
                 INSTANCE_FIELDS, Output.DICOM_XML);
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances")
-    @Produces("application/json")
-    public Response searchForInstancesOfSeriesJSON(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID) throws Exception {
+    @Override
+    public Response searchForInstancesOfSeriesJSON(String studyInstanceUID,String seriesInstanceUID) throws Exception {
         return search("searchForInstancesOfSeriesJSON", QueryRetrieveLevel.IMAGE,
                 false, studyInstanceUID, seriesInstanceUID,
                 INSTANCE_FIELDS, Output.JSON);
@@ -679,7 +647,6 @@ public class QidoRS {
     private String RetrieveURL(Attributes match, QueryRetrieveLevel qrlevel) {
         StringBuilder sb = new StringBuilder(256);
         sb.append(uriInfo.getBaseUri())
-          .append("wado/")
           .append(aetitle)
           .append("/studies/")
           .append(match.getString(Tag.StudyInstanceUID));

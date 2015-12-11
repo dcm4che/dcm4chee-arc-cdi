@@ -88,7 +88,6 @@ import org.dcm4che3.net.service.BasicCStoreSCUResp;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.InstanceLocator;
 import org.dcm4che3.util.SafeClose;
-import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.ws.rs.MediaTypes;
 import org.dcm4chee.archive.dto.ArchiveInstanceLocator;
 import org.dcm4chee.archive.dto.GenericParticipant;
@@ -117,8 +116,7 @@ import org.slf4j.LoggerFactory;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-@Path("/wado/{AETitle}")
-public class WadoRS extends Wado {
+public class WadoRS extends Wado implements org.dcm4chee.archive.web.IWadoRS {
 
     @Inject
     private Event<RetrieveAfterSendEvent> retrieveEvent;
@@ -140,24 +138,6 @@ public class WadoRS extends Wado {
     private static final String CONTENT_LOCATION = "Content-Location";
 
     private static final Logger LOG = LoggerFactory.getLogger(WadoRS.class);
-
-    public static final class FrameList {
-        final int[] frames;
-
-        public FrameList(String s) {
-            String[] ss = StringUtils.split(s, ',');
-            int[] values = new int[ss.length];
-            for (int i = 0; i < ss.length; i++) {
-                try {
-                    if ((values[i] = Integer.parseInt(ss[i])) <= 0)
-                        throw new WebApplicationException(Status.BAD_REQUEST);
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException(s);
-                }
-            }
-            this.frames = values;
-        }
-    }
 
     @Context
     private HttpServletRequest request;
@@ -191,7 +171,7 @@ public class WadoRS extends Wado {
     private String method;
 
     private String toBulkDataURI(String uri) {
-        return uriInfo.getBaseUri() + "wado/" + aetitle + "/bulkdata/"
+        return uriInfo.getBaseUri() + aetitle + "/bulkdata/"
                 + URI.create(uri).getPath();
     }
 
@@ -352,10 +332,8 @@ public class WadoRS extends Wado {
         return null;
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}")
-    public Response retrieveStudy(
-            @PathParam("StudyInstanceUID") String studyInstanceUID)
+    @Override
+    public Response retrieveStudy(String studyInstanceUID)
             throws DicomServiceException  {
         init("retrieveStudy");
 
@@ -365,11 +343,8 @@ public class WadoRS extends Wado {
         return retrieve(instances);
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}")
-    public Response retrieveSeries(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID)
+    @Override
+    public Response retrieveSeries(String studyInstanceUID,String seriesInstanceUID)
             throws DicomServiceException {
         init("retrieveSeries");
 
@@ -380,12 +355,8 @@ public class WadoRS extends Wado {
         return retrieve(instances);
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}")
-    public Response retrieveInstance(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID)
+    @Override
+    public Response retrieveInstance(String studyInstanceUID,String seriesInstanceUID,String sopInstanceUID)
             throws DicomServiceException {
         init("retrieveInstance");
 
@@ -396,14 +367,8 @@ public class WadoRS extends Wado {
         return retrieve(instances);
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}/frames/{FrameList}")
-    @Produces("multipart/related")
-    public Response retrieveFrame(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID,
-            @PathParam("FrameList") FrameList frameList) {
+    @Override
+    public Response retrieveFrame(String studyInstanceUID,String seriesInstanceUID,String sopInstanceUID,FrameList frameList) {
         init("retrieveFrame");
 
         List<ArchiveInstanceLocator> instances = retrieveService
@@ -413,21 +378,14 @@ public class WadoRS extends Wado {
         if (instances == null || instances.size() == 0)
             throw new WebApplicationException(Status.NOT_FOUND);
 
-        return retrievePixelData(instances.get(0), frameList.frames);
+        return retrievePixelData(instances.get(0), frameList.getFrames());
     }
 
     /**
      * BulkDataURI is expected to be a path to a file.
      */
-    @GET
-    @Path("/bulkdata/{BulkDataPath:.*}")
-    @Produces("multipart/related")
-    public Response retrieveBulkdata(
-            @QueryParam("storageSystemGroup") String storageSystemGroupName,
-            @QueryParam("storageSystem") String storageSystemName,
-            @PathParam("BulkDataPath") String bulkDataPath,
-            @QueryParam("offset") @DefaultValue("0") int offset,
-            @QueryParam("length") @DefaultValue("-1") int length) {
+    @Override
+    public Response retrieveBulkdata(String storageSystemGroupName,String storageSystemName,String bulkDataPath,int offset,int length) {
 
         init("retrieveBulkdata");
 
@@ -448,10 +406,8 @@ public class WadoRS extends Wado {
         }
     }
 
-    @GET
-    @Path("/studies/{StudyInstanceUID}/metadata")
-    public Response retrieveStudyMetadata(
-            @PathParam("StudyInstanceUID") String studyInstanceUID)
+    @Override
+    public Response retrieveStudyMetadata(String studyInstanceUID)
             throws DicomServiceException {
         init("retrieveMetadata");
 
@@ -462,11 +418,8 @@ public class WadoRS extends Wado {
     }
 
     // create metadata retrieval for Series
-    @GET
-    @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/metadata")
-    public Response retrieveSeriesMetadata(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID)
+    @Override
+    public Response retrieveSeriesMetadata(String studyInstanceUID,String seriesInstanceUID)
             throws DicomServiceException {
         init("retrieveMetadata");
 
@@ -478,12 +431,8 @@ public class WadoRS extends Wado {
     }
 
     // create metadata retrieval for Instances
-    @GET
-    @Path("/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}/metadata")
-    public Response retrieveInstanceMetadata(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
-            @PathParam("SeriesInstanceUID") String seriesInstanceUID,
-            @PathParam("SOPInstanceUID") String sopInstanceUID)
+    @Override
+    public Response retrieveInstanceMetadata(String studyInstanceUID,String seriesInstanceUID,String sopInstanceUID)
             throws DicomServiceException {
         init("retrieveMetadata");
 

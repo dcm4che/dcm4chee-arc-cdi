@@ -50,6 +50,10 @@
       <groupId>com.mysema.querydsl</groupId>
       <artifactId>querydsl-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-api</artifactId>
+    </dependency>
   </dependencies>
     <build>
     <plugins>
@@ -58,7 +62,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Dependencies>org.dcm4che.json</Dependencies>
+              <Dependencies>org.dcm4che.json, org.dcm4chee.archive.api</Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

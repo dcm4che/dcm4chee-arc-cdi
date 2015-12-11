@@ -10,5 +10,6 @@
         <module name="org.dcm4che.conf.core-api" export="true"/>
         <module name="javax.api"/>
         <module name="org.slf4j"/>
+        <module name="javax.ws.rs.api"/>
     </dependencies>
 </module>

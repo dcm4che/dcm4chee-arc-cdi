@@ -41,6 +41,11 @@
       <artifactId>dcm4chee-arc-location-mgmt-rest</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- TODO temporary dependency until we figure out why it doesn't work with arc-api as jboss module-->
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-api</artifactId>
+    </dependency>
   </dependencies>
   <profiles>
     <profile>

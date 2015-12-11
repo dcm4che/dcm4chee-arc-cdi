@@ -103,9 +103,8 @@ import org.slf4j.LoggerFactory;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
-@Path("/stow/{AETitle}")
 @RequestScoped
-public class StowRS {
+public class StowRS implements org.dcm4chee.archive.web.IStowRS {
 
     public static final int TRANSFER_SYNTAX_NOT_SUPPORTED = 0xC122;
     public static final int DIFF_STUDY_INSTANCE_UID = 0xC409;
@@ -196,7 +195,7 @@ public class StowRS {
         } else {
             creatorType = CreatorType.BINARY;
         }
-        wadoURL = uriInfo.getBaseUri() + "wado/" + ae.getAETitle() + "/studies/";
+        wadoURL = uriInfo.getBaseUri() + ae.getAETitle() + "/studies/";
         if (studyInstanceUID != null)
             response.setString(Tag.RetrieveURL, VR.UR, wadoURL + studyInstanceUID);
         else
@@ -204,11 +203,8 @@ public class StowRS {
         sopSequence = response.newSequence(Tag.ReferencedSOPSequence, 10);
     }
 
-    @POST
-    @Path("/studies/{StudyInstanceUID}")
-    @Consumes("multipart/related")
-    public Response storeInstances(
-            @PathParam("StudyInstanceUID") String studyInstanceUID,
+    @Override
+    public Response storeInstances(String studyInstanceUID,
             InputStream in) throws Exception {
         this.studyInstanceUID = studyInstanceUID;
         return storeInstances(in);
@@ -223,9 +219,7 @@ public class StowRS {
     @Context
     Request req;
 
-    @POST
-    @Path("/studies")
-    @Consumes({"multipart/related","multipart/form-data"})
+    @Override
     public Response storeInstances(InputStream in) throws Exception {
         String str = req.toString();
         LOG.info(str);

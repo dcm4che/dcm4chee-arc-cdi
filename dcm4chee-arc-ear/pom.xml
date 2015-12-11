@@ -483,7 +483,7 @@
                 <webModule>
                   <groupId>org.dcm4che.dcm4chee-arc</groupId>
                   <artifactId>dcm4chee-arc-war-skinny</artifactId>
-                  <contextRoot>dcm4chee-arc</contextRoot>
+                  <contextRoot>dicom-web</contextRoot>
                 </webModule>
                 <webModule>
                   <groupId>org.dcm4che.dcm4chee-conf</groupId>
