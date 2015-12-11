@@ -57,7 +57,10 @@ import org.dcm4chee.archive.store.NewStudyCreated;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.store.hooks.PersonNameManagerHook;
 import org.dcm4chee.archive.util.ArchiveDeidentifier;
+import org.dcm4chee.hooks.Hooks;
+import org.dcm4chee.hooks.Limit;
 import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.slf4j.Logger;
@@ -102,6 +105,10 @@ public class StoreServiceEJB {
 
     @Inject
     private Device device;
+
+    @Inject
+    @Limit(min=1, max=1)
+    private Hooks<PersonNameManagerHook> personNameSelector;
 
     public void updateDB(StoreContext context)
             throws DicomServiceException {
@@ -185,17 +192,21 @@ public class StoreServiceEJB {
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
+        Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
+        String nullValue = session.getStoreParam().getNullValueForQueryFields();
+        FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
         Series series = new Series();
         series.setStudy(service.findOrCreateStudy(em, context));
-        series.setInstitutionCode(singleCode(data, Tag.InstitutionCodeSequence));
+        series.setPerformingPhysicianName(personNameSelector.iterator().next().findOrCreate(
+                Tag.PerformingPhysicianName, attrs, fuzzyStr, nullValue));
+        series.setInstitutionCode(singleCode(attrs, Tag.InstitutionCodeSequence));
         series.setRequestAttributes(createRequestAttributes(
-                data.getSequence(Tag.RequestAttributesSequence),
+                attrs.getSequence(Tag.RequestAttributesSequence),
                 storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields(), series));
         series.setSourceAET(session.getRemoteAET());
         series.addCalledAET(session.getLocalAET());
-        series.setAttributes(data,
+        series.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Series),
                 storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         em.persist(series);
@@ -203,17 +214,19 @@ public class StoreServiceEJB {
         return series;
     }
 
-    public Study createStudy(StoreContext context)
-            throws DicomServiceException {
+    public Study createStudy(StoreContext context) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
         Attributes attrs = context.getAttributes();
-        StoreParam storeParam = session.getStoreParam();
+        AttributeFilter studyFilter = session.getStoreParam().getAttributeFilter(Entity.Study);
+        String nullValue = session.getStoreParam().getNullValueForQueryFields();
+        FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
         Study study = new Study();
         study.setPatient(service.findOrCreatePatient(em, context));
+        study.setReferringPhysicianName(personNameSelector.iterator().next().findOrCreate(
+                Tag.ReferringPhysicianName, attrs, fuzzyStr, nullValue));
         study.setProcedureCodes(codeList(attrs, Tag.ProcedureCodeSequence));
-        study.setAttributes(attrs, storeParam.getAttributeFilter(Entity.Study),
-                storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        study.setAttributes(attrs, studyFilter, fuzzyStr, nullValue);
         study.setIssuerOfAccessionNumber(findOrCreateIssuer(attrs
                 .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
         em.persist(study);
@@ -221,6 +234,7 @@ public class StoreServiceEJB {
         newStudyCreatedEvent.fire(study.getStudyInstanceUID());
         return study;
     }
+
 
     private Location createBulkdataLocation(StoreContext context) throws InterruptedException, ExecutionException {
 
@@ -306,7 +320,7 @@ public class StoreServiceEJB {
     }
 
     private Collection<RequestAttributes> createRequestAttributes(Sequence seq,
-            FuzzyStr fuzzyStr, String nullValue, Series series) {
+            FuzzyStr fuzzyStr, String nullValue, Series series) throws DicomServiceException {
         if (seq == null || seq.isEmpty())
             return null;
 
@@ -318,6 +332,8 @@ public class StoreServiceEJB {
                     findOrCreateIssuer(item
                             .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)),
                     fuzzyStr, nullValue);
+            request.setRequestingPhysician(personNameSelector.iterator().next().findOrCreate(
+                    Tag.RequestingPhysician, item, fuzzyStr, nullValue));
             request.setSeries(series);
             list.add(request);
         }
@@ -335,75 +351,84 @@ public class StoreServiceEJB {
                 .getStorageSystem().getStorageSystemGroup().getGroupID());
     }
 
-    public void updateStudy(StoreContext context, Study study) {
+    public void updateStudy(StoreContext context, Study study) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes data = context.getAttributes();
+        Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
+        String nullValue = session.getStoreParam().getNullValueForQueryFields();
+        FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
         study.clearQueryAttributes();
-        AttributeFilter studyFilter = storeParam
-                .getAttributeFilter(Entity.Study);
+        AttributeFilter studyFilter = storeParam.getAttributeFilter(Entity.Study);
         Attributes studyAttrs = study.getAttributes();
         Attributes modified = new Attributes();
         // check if trashed
         if (isRejected(study)) {
             em.remove(study.getAttributesBlob());
-            study.setAttributes(new Attributes(data), studyFilter,
-                    storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+            study.setAttributes(new Attributes(attrs), studyFilter, fuzzyStr, nullValue);
         } else {
-            if (!context.isFetch()
-                    && !session.getLocalAET().equals(
-                       device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle())
-                    && Utils.updateAttributes(studyAttrs, data, modified, studyFilter,
-                       MetadataUpdateStrategy.COERCE_MERGE)) {
-                study.setAttributes(studyAttrs, studyFilter,
-                        storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-                boolean deident = storeParam.isDeIdentifyLogs();
-                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
-                        deident ? studyAttrs.toString(ArchiveDeidentifier.DEFAULT) : studyAttrs,
-                        deident ? modified.toString(ArchiveDeidentifier.DEFAULT) : modified);
+            if (!isFetch(context, session)) {
+
+                boolean attrs_updated = Utils.updateAttributes(studyAttrs, attrs, modified, studyFilter,
+                        MetadataUpdateStrategy.COERCE_MERGE);
+
+                if (attrs_updated) {
+                    study.setAttributes(studyAttrs, studyFilter, fuzzyStr, nullValue);
+                    boolean deident = storeParam.isDeIdentifyLogs();
+                    LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, study,
+                            deident ? studyAttrs.toString(ArchiveDeidentifier.DEFAULT) : studyAttrs,
+                            deident ? modified.toString(ArchiveDeidentifier.DEFAULT) : modified);
+                }
+
+                study.setReferringPhysicianName(personNameSelector.iterator().next()
+                        .update(study.getReferringPhysicianName(),
+                                Tag.ReferringPhysicianName, attrs, fuzzyStr, nullValue));
             }
         }
-        if (!context.isFetch()
-                && !session.getLocalAET().equals(
-                device.getDeviceExtension(
-                        ArchiveDeviceExtension.class)
-                        .getFetchAETitle()))
-            updatePatient(context, study.getPatient());
+
+        updatePatient(context, study.getPatient());
     }
 
     public void updatePatient(StoreContext context, Patient patient) {
         StoreSession session = context.getStoreSession();
-        patientService.updatePatientByCStore(patient, context.getAttributes(),
-                session.getStoreParam());
+
+        if (!isFetch(context, session)) {
+            patientService.updatePatientByCStore(patient, context.getAttributes(),
+                    session.getStoreParam());
+        }
     }
 
     public void updateSeries(StoreContext context, Series series) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes data = context.getAttributes();
+        Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
+        String nullValue = session.getStoreParam().getNullValueForQueryFields();
+        FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
         series.clearQueryAttributes();
         Attributes seriesAttrs = series.getAttributes();
-        AttributeFilter seriesFilter = storeParam
-                .getAttributeFilter(Entity.Series);
+        AttributeFilter seriesFilter = storeParam.getAttributeFilter(Entity.Series);
         Attributes modified = new Attributes();
         series.addCalledAET(session.getLocalAET());
         // check if trashed
         if (isRejected(series)) {
             em.remove(series.getAttributesBlob());
-            series.setAttributes(new Attributes(data), seriesFilter,
-                    storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+            series.setAttributes(new Attributes(attrs), seriesFilter, fuzzyStr, nullValue);
         } else {
-            if (!context.isFetch()
-                    && !session.getLocalAET().equals(
-                       device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle())
-                    && Utils.updateAttributes(seriesAttrs, data, modified, seriesFilter,
-                       MetadataUpdateStrategy.COERCE_MERGE)) {
-                series.setAttributes(seriesAttrs, seriesFilter,
-                        storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-                boolean deident = storeParam.isDeIdentifyLogs();
-                LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
-                        deident ? seriesAttrs.toString(ArchiveDeidentifier.DEFAULT) : seriesAttrs,
-                        deident ? modified.toString(ArchiveDeidentifier.DEFAULT) : modified);
+            if (!isFetch(context, session)) {
+
+                boolean attrs_updated = Utils.updateAttributes(seriesAttrs, attrs, modified, seriesFilter,
+                        MetadataUpdateStrategy.COERCE_MERGE);
+
+                if (attrs_updated) {
+                    series.setAttributes(seriesAttrs, seriesFilter, fuzzyStr, nullValue);
+                    boolean deident = storeParam.isDeIdentifyLogs();
+                    LOG.info("{}: Update {}:\n{}\nmodified:\n{}", session, series,
+                            deident ? seriesAttrs.toString(ArchiveDeidentifier.DEFAULT) : seriesAttrs,
+                            deident ? modified.toString(ArchiveDeidentifier.DEFAULT) : modified);
+                }
+
+                series.setPerformingPhysicianName(personNameSelector.iterator().next()
+                        .update(series.getPerformingPhysicianName(),
+                                Tag.PerformingPhysicianName, attrs, fuzzyStr, nullValue));
             }
         }
         updateStudy(context, series.getStudy());
@@ -411,22 +436,33 @@ public class StoreServiceEJB {
 
     public void updateInstance(StoreContext context, Instance inst) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes data = context.getAttributes();
+        Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         Attributes instAttrs = inst.getAttributes();
         AttributeFilter instFilter = storeParam
                 .getAttributeFilter(Entity.Instance);
         Attributes modified = new Attributes();
-        if (!context.isFetch()
-                && !session.getLocalAET().equals(
-                    device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle())
-                && Utils.updateAttributes(instAttrs, data, modified, instFilter,
-                   MetadataUpdateStrategy.OVERWRITE)) {
-            inst.setAttributes(data, instFilter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
-            LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
-                    modified);
+
+        if (!isFetch(context, session)) {
+
+            boolean attrs_updated = Utils.updateAttributes(instAttrs, attrs, modified, instFilter,
+                    MetadataUpdateStrategy.COERCE_MERGE);
+
+            if (attrs_updated) {
+                inst.setAttributes(attrs, instFilter, storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+                LOG.info("{}: {}:\n{}\nmodified:\n{}", session, inst, instAttrs,
+                        modified);
+            }
+
         }
+
         updateSeries(context, inst.getSeries());
+    }
+
+    private boolean isFetch(StoreContext context, StoreSession session) {
+        return  context.isFetch()
+                ||
+                session.getLocalAET().equals(device.getDeviceExtension(ArchiveDeviceExtension.class).getFetchAETitle());
     }
 
     private Collection<Code> codeList(Attributes attrs, int seqTag) {

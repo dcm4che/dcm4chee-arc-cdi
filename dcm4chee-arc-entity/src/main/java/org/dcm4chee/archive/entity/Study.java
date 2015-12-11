@@ -161,7 +161,7 @@ public class Study implements Serializable {
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
-    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @ManyToOne
     @JoinColumn(name = "ref_phys_name_fk")
     private PersonName referringPhysicianName;
 
@@ -240,7 +240,11 @@ public class Study implements Serializable {
     public PersonName getReferringPhysicianName() {
         return referringPhysicianName;
     }
-    
+
+    public void setReferringPhysicianName(PersonName referringPhysicianName) {
+        this.referringPhysicianName = referringPhysicianName;
+    }
+
     public AttributesBlob getAttributesBlob() {
         return attributesBlob;
     }
@@ -330,9 +334,7 @@ public class Study implements Serializable {
             studyDateTime = adjustedDateTimeCal.getTime();
         }
         accessionNumber = attrs.getString(Tag.AccessionNumber, nullValue);
-        referringPhysicianName = PersonName.valueOf(
-                attrs.getString(Tag.ReferringPhysicianName), fuzzyStr, nullValue, referringPhysicianName);
-        studyCustomAttribute1 = 
+        studyCustomAttribute1 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), nullValue);
         studyCustomAttribute2 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute2(), nullValue);

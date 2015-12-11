@@ -94,6 +94,13 @@
           "hookClassName": "org.dcm4chee.archive.qc.impl.QCPostProcessor"
         }
       ]
+    },
+    "org.dcm4chee.archive.store.hooks.PersonNameManagerHook": {
+      "hookImplementations": [
+        {
+          "hookClassName": "org.dcm4chee.archive.store.hooks.DefaultPersonNameManager"
+        }
+      ]
     }
   }
 }

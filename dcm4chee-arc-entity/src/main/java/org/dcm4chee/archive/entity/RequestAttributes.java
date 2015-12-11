@@ -115,7 +115,6 @@ public class RequestAttributes implements Serializable {
         requestedProcedureID = attrs.getString(Tag.RequestedProcedureID, nullValue);
         scheduledProcedureStepID = attrs.getString(Tag.ScheduledProcedureStepID, nullValue);
         requestingService = attrs.getString(Tag.RequestingService, nullValue);
-        requestingPhysician = PersonName.valueOf(attrs.getString(Tag.RequestingPhysician), fuzzyStr, nullValue, null);
     }
 
     public long getPk() {
@@ -140,6 +139,10 @@ public class RequestAttributes implements Serializable {
 
     public PersonName getRequestingPhysician() {
         return requestingPhysician;
+    }
+
+    public void setRequestingPhysician(PersonName requestingPhysician) {
+        this.requestingPhysician = requestingPhysician;
     }
 
     public String getAccessionNumber() {

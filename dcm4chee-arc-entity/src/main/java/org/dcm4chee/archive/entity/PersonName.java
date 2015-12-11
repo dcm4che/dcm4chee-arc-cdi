@@ -119,7 +119,7 @@ public class PersonName implements Serializable {
         fromDicom(pn, fuzzyStr, nullValueStr);
     }
 
-    private void fromDicom(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr, String nullValueStr) {
+    public void fromDicom(org.dcm4che3.data.PersonName pn, FuzzyStr fuzzyStr, String nullValueStr) {
         familyName = pn.get(Group.Alphabetic, Component.FamilyName);
         givenName = pn.get(Group.Alphabetic, Component.GivenName);
         middleName = pn.get(Group.Alphabetic, Component.MiddleName);

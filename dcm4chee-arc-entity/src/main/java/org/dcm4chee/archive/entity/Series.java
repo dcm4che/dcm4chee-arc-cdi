@@ -230,7 +230,7 @@ public class Series implements Serializable {
     @JoinColumn(name = "dicomattrs_fk")
     private AttributesBlob attributesBlob;
 
-    @OneToOne(cascade=CascadeType.ALL, orphanRemoval = true)
+    @ManyToOne
     @JoinColumn(name = "perf_phys_name_fk")
     private PersonName performingPhysicianName;
 
@@ -339,10 +339,13 @@ public class Series implements Serializable {
         return performingPhysicianName;
     }
 
+    public void setPerformingPhysicianName(PersonName performingPhysicianName) {
+        this.performingPhysicianName = performingPhysicianName;
+    }
+
     public Date getPerformedProcedureStepStartDateTime() {
         return performedProcedureStepStartDateTime;
     }
-
 
     public String getPerformedProcedureStepInstanceUID() {
         return performedProcedureStepInstanceUID;
@@ -475,9 +478,7 @@ public class Series implements Serializable {
             adjustedDateTimeCal.set(Calendar.MILLISECOND, 0);
         performedProcedureStepStartDateTime = adjustedDateTimeCal.getTime();
         }
-        performingPhysicianName = PersonName.valueOf(
-                attrs.getString(Tag.PerformingPhysicianName), fuzzyStr, null, performingPhysicianName);
-        seriesCustomAttribute1 = 
+        seriesCustomAttribute1 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute1(), nullValue);
         seriesCustomAttribute2 =
             AttributeFilter.selectStringValue(attrs, filter.getCustomAttribute2(), nullValue);
