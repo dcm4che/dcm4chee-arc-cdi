@@ -571,24 +571,37 @@ public class StoreServiceImpl implements StoreService {
         if (!hasSameSourceAET(instance, session.getRemoteAET()))
             return StoreAction.IGNORE;
 
-        if (hasFileRefWithDigest(fileRefs, context.getSpoolingContext().getFileDigest()))
-            return StoreAction.IGNORE;
+        // we have to synchronize with the asynchronous bulkdata processing now
+        StorageContext bulkdataContext = null;
+        try {
+            Future<StorageContext> bulkdataContextFuture = context.getBulkdataContext();
+            if (bulkdataContextFuture != null) {
+                bulkdataContext = bulkdataContextFuture.get();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            throw new DicomServiceException(Status.UnableToProcess, e);
+        }
 
-        // we have to synchronize with the asynchronous bulkdata processing now to calculate the no-db-attributes-digest
-        if (context.getStoreSession().getArchiveAEExtension().isCheckNonDBAttributesOnStorage()) {
-            try {
-                Future<StorageContext> bulkdataContextFuture = context.getBulkdataContext();
-                if (bulkdataContextFuture != null) {
-                    StorageContext bulkdataContext = bulkdataContextFuture.get();
-                    String nodbAttrsDigest = noDBAttsDigest(bulkdataContext.getFilePath(), context.getStoreSession());
-                    context.setNoDBAttsDigest(nodbAttrsDigest);
+        if(bulkdataContext != null) {
 
-                    if (hasFileRefWithOtherAttsDigest(fileRefs, context.getNoDBAttsDigest())) {
-                        return StoreAction.UPDATEDB;
-                    }
+            if (hasFileRefWithDigest(fileRefs, bulkdataContext.getFileDigest()))
+                return StoreAction.IGNORE;
+
+            if (context.getStoreSession().getArchiveAEExtension().isCheckNonDBAttributesOnStorage()) {
+                String nodbAttrsDigest;
+                try {
+                    nodbAttrsDigest = noDBAttsDigest(bulkdataContext.getFilePath(), context.getStoreSession());
+                } catch (IOException e) {
+                    throw new DicomServiceException(Status.UnableToProcess, e);
                 }
-            } catch (IOException | InterruptedException | ExecutionException e1) {
-                throw new DicomServiceException(Status.UnableToProcess, e1);
+
+                // TODO if are only setting the no-db-attr-digest in this case, it will not always get saved!
+                // TODO ... but it doesn't matter, because it seems we aren't storing it anyways at the moment
+                context.setNoDBAttsDigest(nodbAttrsDigest);
+
+                if (hasFileRefWithOtherAttsDigest(fileRefs, context.getNoDBAttsDigest())) {
+                    return StoreAction.UPDATEDB;
+                }
             }
         }
 
