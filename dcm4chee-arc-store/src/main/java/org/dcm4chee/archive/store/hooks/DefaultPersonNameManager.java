@@ -23,6 +23,10 @@ public class DefaultPersonNameManager implements PersonNameManagerHook {
     @PersistenceContext(name = "dcm4chee-arc", unitName="dcm4chee-arc")
     private EntityManager em;
 
+    /**
+     * By default, always create a new person name.
+     * @throws DicomServiceException
+     */
     @Override
     public PersonName findOrCreate(int nametag, Attributes attrs, FuzzyStr fuzzyStr, String nullValue)
             throws DicomServiceException {
@@ -36,19 +40,18 @@ public class DefaultPersonNameManager implements PersonNameManagerHook {
             return null;
 
         try {
-            PersonName queried = find(parsed);
-            if (queried!=null) {
-                return queried;
-            }
-            else {
-                em.persist(parsed);
-                return parsed;
-            }
+            em.persist(parsed);
+            return parsed;
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
     }
 
+    /**
+     * updates the existing person name, if needed.
+     *
+     * @throws DicomServiceException
+     */
     public PersonName update(PersonName previous, int nametag, Attributes attrs, FuzzyStr fuzzyStr, String nullValue)
             throws DicomServiceException {
 
@@ -59,27 +62,21 @@ public class DefaultPersonNameManager implements PersonNameManagerHook {
         if (parsed == null)
             return previous;
 
-        try {
-            PersonName queried = find(parsed);
-            if (queried!=null) {
-                return queried;
-            }
-            else {
-                if (previous == null) {
-                    em.persist(parsed);
-                    return parsed;
-                }
-                else {
-                    org.dcm4che3.data.PersonName pn = parsed.toPersonName();
-                    previous.fromDicom(pn, fuzzyStr, nullValue);
-                    return previous;
-                }
-            }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
+        if (previous!=null) {
+            org.dcm4che3.data.PersonName pn = parsed.toPersonName();
+            previous.fromDicom(pn, fuzzyStr, nullValue);
+            return previous;
+        }
+        else {
+            em.persist(parsed);
+            return parsed;
         }
     }
 
+    /**
+     * utility method to matches every field of the person name, including null fields
+     * (at the moment, not in use)
+     */
     private PersonName find (PersonName parsed) {
         //matches every field of the person name, including null fields
         BooleanBuilder builder = new BooleanBuilder();
