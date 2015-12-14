@@ -114,7 +114,7 @@ public class DicomJSONOutput implements StreamingOutput {
                 service.coerceAttributes(dataset, context);
             }
 
-            WadoRS.replacePixelDataBulkDataURI(ref, dataset);
+            DefaultWadoRS.replacePixelDataBulkDataURI(ref, dataset);
 
             writer.write(dataset);
         }
@@ -123,7 +123,7 @@ public class DicomJSONOutput implements StreamingOutput {
     }
 
     private String toBulkDataURI(String uri) {
-        return uriInfo.getBaseUri() + "wado/" + aeTitle + "/bulkdata/"
+        return uriInfo.getBaseUri() + aeTitle + "/bulkdata/"
                 + URI.create(uri).getPath();
     }
 

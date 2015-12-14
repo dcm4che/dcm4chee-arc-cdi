@@ -11,7 +11,7 @@ import java.io.InputStream;
  * Created by APUNM on 11.12.2015.
  */
 @Path("/{AETitle}")
-public interface IStowRS {
+public interface StowRS {
     @POST
     @Path("/studies/{StudyInstanceUID}")
     @Consumes("multipart/related")

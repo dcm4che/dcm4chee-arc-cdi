@@ -98,6 +98,7 @@ import org.dcm4chee.archive.retrieve.impl.RetrieveAfterSendEvent;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
+import org.dcm4chee.archive.web.WadoRS;
 import org.dcm4chee.storage.conf.StorageDeviceExtension;
 import org.dcm4chee.storage.conf.StorageSystemGroup;
 import org.dcm4chee.task.WeightWatcher;
@@ -116,7 +117,7 @@ import org.slf4j.LoggerFactory;
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
-public class WadoRS extends Wado implements org.dcm4chee.archive.web.IWadoRS {
+public class DefaultWadoRS extends Wado implements WadoRS {
 
     @Inject
     private Event<RetrieveAfterSendEvent> retrieveEvent;
@@ -137,7 +138,7 @@ public class WadoRS extends Wado implements org.dcm4chee.archive.web.IWadoRS {
     private static final String CONTENT_ID = "Content-ID";
     private static final String CONTENT_LOCATION = "Content-Location";
 
-    private static final Logger LOG = LoggerFactory.getLogger(WadoRS.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultWadoRS.class);
 
     @Context
     private HttpServletRequest request;

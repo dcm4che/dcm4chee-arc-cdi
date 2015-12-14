@@ -89,6 +89,7 @@ import org.dcm4chee.archive.query.QueryServiceUtils;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.archive.rs.HostAECache;
 import org.dcm4chee.archive.rs.HttpSource;
+import org.dcm4chee.archive.web.QidoRS;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartRelatedOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,12 +104,12 @@ import com.mysema.query.types.path.StringPath;
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  */
-public class QidoRS implements org.dcm4chee.archive.web.IQidoRS {
+public class DefaultQidoRS implements QidoRS {
 
     private static final int STATUS_OK = 200;
     private static final int STATUS_PARTIAL_CONTENT = 206;
 
-    private static final Logger LOG = LoggerFactory.getLogger(QidoRS.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultQidoRS.class);
 
     private static ElementDictionary DICT =
             ElementDictionary.getStandardElementDictionary();
@@ -553,18 +554,18 @@ public class QidoRS implements org.dcm4chee.archive.web.IQidoRS {
     private enum Output {
         DICOM_XML {
             @Override
-            Object entity(QidoRS service, Query query, QueryRetrieveLevel qrlevel) {
+            Object entity(DefaultQidoRS service, Query query, QueryRetrieveLevel qrlevel) {
                 return service.writeXML(query, qrlevel);
             }
         },
         JSON {
             @Override
-            Object entity(QidoRS service, Query query, QueryRetrieveLevel qrlevel) {
+            Object entity(DefaultQidoRS service, Query query, QueryRetrieveLevel qrlevel) {
                 return service.writeJSON(query, qrlevel);
             }
         };
         
-        abstract Object entity(QidoRS service, Query query, QueryRetrieveLevel qrlevel);
+        abstract Object entity(DefaultQidoRS service, Query query, QueryRetrieveLevel qrlevel);
     }
 
     private Object writeXML(Query query, QueryRetrieveLevel qrlevel) {

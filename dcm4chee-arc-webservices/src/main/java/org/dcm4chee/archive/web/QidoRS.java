@@ -10,7 +10,7 @@ import javax.ws.rs.core.Response;
  * Created by APUNM on 11.12.2015.
  */
 @Path("/{AETitle}")
-public interface IQidoRS {
+public interface QidoRS {
 
     @GET
     @Path("/studies")

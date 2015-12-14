@@ -121,7 +121,7 @@ import org.xml.sax.SAXException;
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
  */
 @RequestScoped
-@Path("/wado/{AETitle}")
+@Path("/{AETitle}")
 public class WadoURI extends Wado {
 
     private static final Logger LOG = LoggerFactory.getLogger(WadoURI.class);

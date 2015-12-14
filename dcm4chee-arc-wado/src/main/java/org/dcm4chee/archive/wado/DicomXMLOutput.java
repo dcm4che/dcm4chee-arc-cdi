@@ -106,7 +106,7 @@ public class DicomXMLOutput implements StreamingOutput {
                 service.coerceAttributes(dataset, context);
             }
 
-            WadoRS.replacePixelDataBulkDataURI(ref, dataset);
+            DefaultWadoRS.replacePixelDataBulkDataURI(ref, dataset);
 
             SAXTransformer.getSAXWriter(new StreamResult(out)).write(dataset);
         } catch (IOException e) {

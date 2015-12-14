@@ -96,6 +96,7 @@ import org.dcm4chee.archive.rs.MetaDataPathTSTuple;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreService;
 import org.dcm4chee.archive.store.StoreSession;
+import org.dcm4chee.archive.web.StowRS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +105,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 @RequestScoped
-public class StowRS implements org.dcm4chee.archive.web.IStowRS {
+public class DefaultStowRS implements StowRS {
 
     public static final int TRANSFER_SYNTAX_NOT_SUPPORTED = 0xC122;
     public static final int DIFF_STUDY_INSTANCE_UID = 0xC409;
@@ -113,7 +114,7 @@ public class StowRS implements org.dcm4chee.archive.web.IStowRS {
     public static final String NOT_PARSEABLE_CUID = "1.2.40.0.13.1.15.10.99";
     public static final String NOT_PARSEABLE_IUID = "1.2.40.0.13.1.15.10.99.1";
 
-    static Logger LOG = LoggerFactory.getLogger(StowRS.class);
+    static Logger LOG = LoggerFactory.getLogger(DefaultStowRS.class);
 
     @Context
     private HttpServletRequest request;
@@ -266,7 +267,7 @@ public class StowRS implements org.dcm4chee.archive.web.IStowRS {
                         transferSyntax = contentType.contains("transfer-syntax=")
                                 ?contentType.split("transfer-syntax=")[1]:null;
                     }
-                    if (!creatorType.readBodyPart(StowRS.this, session, in, 
+                    if (!creatorType.readBodyPart(DefaultStowRS.this, session, in,
                             mediaType, contentLocation, transferSyntax)) {
                         LOG.info("storeInstances: Ignore Part with Content-Type={}",
                                 mediaType);
@@ -306,7 +307,7 @@ public class StowRS implements org.dcm4chee.archive.web.IStowRS {
     private enum CreatorType {
         BINARY {
             @Override
-            boolean readBodyPart(StowRS stowRS, StoreSession session,
+            boolean readBodyPart(DefaultStowRS stowRS, StoreSession session,
                     MultipartInputStream in, MediaType mediaType,
                     String contentLocation, String transferSyntax) throws IOException {
                 if (!mediaType.getType().equalsIgnoreCase("application"))
@@ -327,7 +328,7 @@ public class StowRS implements org.dcm4chee.archive.web.IStowRS {
         }, 
         XML_BULKDATA {
             @Override
-            boolean readBodyPart(StowRS stowRS, StoreSession session,
+            boolean readBodyPart(DefaultStowRS stowRS, StoreSession session,
                     MultipartInputStream in, MediaType mediaType,
                     String contentLocation, String transferSyntax) throws IOException {
                 if (mediaType.isCompatible(MediaTypes.APPLICATION_DICOM_XML_TYPE) && transferSyntax != null) {
@@ -341,14 +342,14 @@ public class StowRS implements org.dcm4chee.archive.web.IStowRS {
                 return false;
             }
             @Override
-            void storeMetadataAndBulkdata(StowRS stowRS, StoreSession session) {
+            void storeMetadataAndBulkdata(DefaultStowRS stowRS, StoreSession session) {
                 stowRS.storeMetadataAndBulkdata(session);
             }
 
         },
         JSON_BULKDATA {
             @Override
-            boolean readBodyPart(StowRS stowRS, StoreSession session,
+            boolean readBodyPart(DefaultStowRS stowRS, StoreSession session,
                     MultipartInputStream in, MediaType mediaType,
                     String contentLocation, String transferSyntax) throws IOException {
                 if (mediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
@@ -362,17 +363,17 @@ public class StowRS implements org.dcm4chee.archive.web.IStowRS {
                 return false;
             }
             @Override
-            void storeMetadataAndBulkdata(StowRS stowRS, StoreSession session) {
+            void storeMetadataAndBulkdata(DefaultStowRS stowRS, StoreSession session) {
                 stowRS.storeMetadataAndBulkdata(session);
             }
 
         };
 
-        abstract boolean readBodyPart(StowRS stowRS, StoreSession session,
+        abstract boolean readBodyPart(DefaultStowRS stowRS, StoreSession session,
                 MultipartInputStream in, MediaType mediaType, String contentLocation, String transferSyntax)
                         throws IOException;
 
-        void storeMetadataAndBulkdata(StowRS stowRS, StoreSession session) {}
+        void storeMetadataAndBulkdata(DefaultStowRS stowRS, StoreSession session) {}
     }
 
     private void storeDicomObject(StoreSession session, InputStream in)
