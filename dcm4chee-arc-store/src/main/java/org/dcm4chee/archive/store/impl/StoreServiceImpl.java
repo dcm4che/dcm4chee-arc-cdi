@@ -344,7 +344,8 @@ public class StoreServiceImpl implements StoreService {
             Attributes ds, InputStream in) throws DicomServiceException {
         context.setFileMetainfo(fmi);
         context.setInputStream(in);
-        context.setOriginalAttributes(ds);
+        if(ds != null)
+            context.setOriginalAttributes(ds);
         try {
             fileSpooler.spool(context, true);
         } catch (IOException e) {
@@ -587,9 +588,6 @@ public class StoreServiceImpl implements StoreService {
                     }
                 }
             } catch (IOException | InterruptedException | ExecutionException e1) {
-
-                // TODO make sure to make not retryable! note: also all other dicomServiceExceptions (also thrown by non-iocm-decorator!)
-
                 throw new DicomServiceException(Status.UnableToProcess, e1);
             }
         }
