@@ -38,15 +38,15 @@
 
 package org.dcm4chee.archive.store;
 
+import java.io.InputStream;
+import java.util.TimeZone;
+import java.util.concurrent.Future;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.storage.StorageContext;
-
-import java.io.InputStream;
-import java.util.TimeZone;
-import java.util.concurrent.Future;
 
 /**
  * StoreContext represents the internal state of the current StoreService.store( )
@@ -57,14 +57,36 @@ import java.util.concurrent.Future;
  */
 public interface StoreContext {
 
+    /**
+     * @return Original (unmodified) attributes that will be stored to the storage system. Never ever modify them!
+     */
+    Attributes getOriginalAttributes();
 
-    Attributes getAttributes();
+    void setOriginalAttributes(Attributes originalAttributes);
 
-    void setAttributes(Attributes attributes);
+    /**
+     * @return Attributes that will be stored to the database. It is okay to modify those (coercion) - but only in a
+     * thread-safe way (i.e. only by the main store thread responsible for the database update, NOT by the asynchronous
+     * store-to-storage-system)
+     */
+    Attributes getAttributesForDatabase();
 
+    void setAttributesForDatabase(Attributes attributesForDatabase);
+
+    /**
+     * @return Values from the original attributes that have been modified (coerced). Currently there are two main
+     * causes for coercion:
+     * <ol>
+     * <li>Explicit coercion happening within {@link StoreService#coerceAttributes}.</li>
+     * <li>Implicit coercion happening when an instance is stored to an existing series/study/patient or
+     * updates/replaces an existing instance. Depending on the configuration (see
+     * {@link org.dcm4chee.archive.conf.MetadataUpdateStrategy} and {@link StoreAction}) the information from the
+     * existing series/study/patient will be implicitly taken over to the newly stored instance.</li>
+     * </ol>
+     */
     Attributes getCoercedOriginalAttributes();
 
-    void setCoercedOrginalAttributes(Attributes attributes);
+    void setCoercedOriginalAttributes(Attributes attributes);
 
     Attributes getFileMetainfo();
 

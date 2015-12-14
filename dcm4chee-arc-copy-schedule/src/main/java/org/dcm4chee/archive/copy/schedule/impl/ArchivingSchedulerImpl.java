@@ -96,7 +96,7 @@ public class ArchivingSchedulerImpl implements ArchivingScheduler {
         List<ArchivingRule> archivingRules = arcAE.getArchivingRules().findArchivingRule(
                 storeSession.getSourceDeviceName(),
                 storeSession.getRemoteAET(),
-                storeContext.getAttributes());
+                storeContext.getAttributesForDatabase());
 
         for (ArchivingRule rule : archivingRules)
             ejb.onStoreInstance(storeContext, rule);

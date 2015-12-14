@@ -193,10 +193,8 @@ public class WadoClientServiceImpl implements WadoClientService {
         .fileTimeZoneID(context.getFileRef().getTimeZone())
         .retrieveAETs(context.getInstance().getRawRetrieveAETs())
         .withoutBulkdata(context.getFileRef().isWithoutBulkData())
-        .seriesInstanceUID(context.getAttributes()
-                .getString(Tag.SeriesInstanceUID))
-        .studyInstanceUID(context.getAttributes()
-                .getString(Tag.StudyInstanceUID))
+        .seriesInstanceUID(context.getAttributesForDatabase().getString(Tag.SeriesInstanceUID))
+        .studyInstanceUID(context.getAttributesForDatabase().getString(Tag.StudyInstanceUID))
         .build();
         byte[] encodedInstanceAttrs = context.getInstance().getAttributesBlob()
                 .getEncodedAttributes();

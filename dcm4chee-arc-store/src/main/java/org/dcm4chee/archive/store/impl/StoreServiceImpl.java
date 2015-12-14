@@ -258,7 +258,6 @@ public class StoreServiceImpl implements StoreService {
             throws DicomServiceException {
         writeSpoolFile(context, fmi, attrs, null);
         context.setTransferSyntax(fmi.getString(Tag.TransferSyntaxUID));
-        context.setAttributes(attrs);
     }
 
     @Override
@@ -345,28 +344,11 @@ public class StoreServiceImpl implements StoreService {
             Attributes ds, InputStream in) throws DicomServiceException {
         context.setFileMetainfo(fmi);
         context.setInputStream(in);
-        context.setAttributes(ds);
+        context.setOriginalAttributes(ds);
         try {
             fileSpooler.spool(context, true);
         } catch (IOException e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
-
-    @Override
-    public void parseSpoolFile(StoreContext context)
-            throws DicomServiceException {
-        Path path = context.getSpoolingContext().getFilePath();
-        try (DicomInputStream in = new DicomInputStream(path.toFile())) {
-            in.setIncludeBulkData(IncludeBulkData.URI);
-            Attributes fmi = in.readFileMetaInformation();
-            Attributes ds = in.readDataset(-1, -1);
-            context.setTransferSyntax(fmi != null ? fmi
-                    .getString(Tag.TransferSyntaxUID)
-                    : UID.ImplicitVRLittleEndian);
-            context.setAttributes(ds);
-        } catch (IOException e) {
-            throw new DicomServiceException(DATA_SET_NOT_PARSEABLE);
         }
     }
 
@@ -401,20 +383,6 @@ public class StoreServiceImpl implements StoreService {
             // stores complete file meta+bulkdata (async)
             service.beginProcessFile(context);
             
-            try {
-                context.getBulkdataContext().get();
-                context.getMetadataContext().get();
-            } catch (ExecutionException x) {
-                LOG.warn("Store Bulkdata failed!", x);
-                for ( Throwable cause = x.getCause() ; cause != null ; cause = cause.getCause()) {
-                    if (cause instanceof DicomServiceException)
-                        throw (DicomServiceException) cause;
-                }
-                throw new DicomServiceException(Status.ProcessingFailure, x);
-            } catch (InterruptedException e) {
-                LOG.warn("Waiting for storage completed was interrupted!", e);
-                throw new DicomServiceException(Status.ProcessingFailure, e);
-            }
             // coerce attrs
             service.coerceAttributes(context);
 
@@ -462,7 +430,7 @@ public class StoreServiceImpl implements StoreService {
 
         final StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         try {
             Attributes modified = context.getCoercedOriginalAttributes();
             Templates tpl = session.getRemoteAET() != null ? arcAE
@@ -504,9 +472,9 @@ public class StoreServiceImpl implements StoreService {
             return null;
 
         Attributes fmi = context.getFileMetainfo();
-        Attributes attributes = context.getAttributes();
+        Attributes originalAttributes = context.getOriginalAttributes();
         StorageContext bulkdataContext = storageService.createStorageContext(bulkdataStorageSystem);
-        String bulkdataRoot = calculatePath(bulkdataStorageSystem, attributes);
+        String bulkdataRoot = calculatePath(bulkdataStorageSystem, originalAttributes);
         String bulkdataPath = bulkdataRoot;
         StorageContext spoolingContext = context.getSpoolingContext();
 
@@ -540,7 +508,7 @@ public class StoreServiceImpl implements StoreService {
 
                 out = new BufferedOutputStream(out, bufferLength);
                 out = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
-                ((DicomOutputStream) out).writeDataset(fmi, attributes);
+                ((DicomOutputStream) out).writeDataset(fmi, originalAttributes);
             } catch (Exception e) {
                 throw new DicomServiceException(Status.UnableToProcess, e);
             } finally {
@@ -561,20 +529,6 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public void updateDB(final StoreContext context) throws DicomServiceException {
 
-        ArchiveDeviceExtension dE = context.getStoreSession().getDevice()
-                .getDeviceExtension(ArchiveDeviceExtension.class);
-
-        try {
-            Future<StorageContext> bulkdataContextFuture = context.getBulkdataContext();
-            if(bulkdataContextFuture != null) {
-                StorageContext bulkdataContext = bulkdataContextFuture.get();
-                String nodbAttrsDigest = noDBAttsDigest(bulkdataContext.getFilePath(),context.getStoreSession());
-                context.setNoDBAttsDigest(nodbAttrsDigest);
-            }
-        } catch (IOException|InterruptedException|ExecutionException e1) {
-            throw new DicomServiceException(Status.UnableToProcess, e1);
-        }
-
         // try to call updateDB, eventually retries
         retry.retry(new Callable<Void>() {
             @Override
@@ -592,7 +546,7 @@ public class StoreServiceImpl implements StoreService {
         boolean deident = session.getStoreParam().isDeIdentifyLogs();
         Attributes attrs = context.getCoercedOriginalAttributes();
         if (!attrs.isEmpty()) {
-            Attributes newatts = new Attributes(context.getAttributes(), attrs.tags());
+            Attributes newatts = new Attributes(context.getAttributesForDatabase(), attrs.tags());
             LOG.info("{}: Coerced Attributes:\n{}New Attributes:\n{}", session,
                     deident ? attrs.toString(ArchiveDeidentifier.DEFAULT) : attrs,
                     deident ? newatts.toString(ArchiveDeidentifier.DEFAULT) : newatts);
@@ -619,11 +573,26 @@ public class StoreServiceImpl implements StoreService {
         if (hasFileRefWithDigest(fileRefs, context.getSpoolingContext().getFileDigest()))
             return StoreAction.IGNORE;
 
-        if (context.getStoreSession().getArchiveAEExtension()
-                .isCheckNonDBAttributesOnStorage()
-                && (hasFileRefWithOtherAttsDigest(fileRefs,
-                        context.getNoDBAttsDigest())))
-            return StoreAction.UPDATEDB;
+        // we have to synchronize with the asynchronous bulkdata processing now to calculate the no-db-attributes-digest
+        if (context.getStoreSession().getArchiveAEExtension().isCheckNonDBAttributesOnStorage()) {
+            try {
+                Future<StorageContext> bulkdataContextFuture = context.getBulkdataContext();
+                if (bulkdataContextFuture != null) {
+                    StorageContext bulkdataContext = bulkdataContextFuture.get();
+                    String nodbAttrsDigest = noDBAttsDigest(bulkdataContext.getFilePath(), context.getStoreSession());
+                    context.setNoDBAttsDigest(nodbAttrsDigest);
+
+                    if (hasFileRefWithOtherAttsDigest(fileRefs, context.getNoDBAttsDigest())) {
+                        return StoreAction.UPDATEDB;
+                    }
+                }
+            } catch (IOException | InterruptedException | ExecutionException e1) {
+
+                // TODO make sure to make not retryable! note: also all other dicomServiceExceptions (also thrown by non-iocm-decorator!)
+
+                throw new DicomServiceException(Status.UnableToProcess, e1);
+            }
+        }
 
         return StoreAction.REPLACE;
     }
@@ -673,7 +642,7 @@ public class StoreServiceImpl implements StoreService {
 
         try {
 
-            Attributes attrs = context.getAttributes();
+            Attributes attrs = context.getAttributesForDatabase();
             Instance inst = em
                     .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
                             Instance.class)
@@ -704,10 +673,6 @@ public class StoreServiceImpl implements StoreService {
             }
         } catch (NoResultException e) {
             context.setStoreAction(StoreAction.STORE);
-        } catch (DicomServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
         }
 
         Instance newInst = storeServiceEJB.createInstance(context);
@@ -725,7 +690,7 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public Series findOrCreateSeries(EntityManager em, StoreContext context)
             throws DicomServiceException {
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         try {
             Series series = em
                     .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID_EAGER,
@@ -744,7 +709,7 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public Study findOrCreateStudy(EntityManager em, StoreContext context)
             throws DicomServiceException {
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         try {
             Study study = em
                     .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID_EAGER,
@@ -766,7 +731,7 @@ public class StoreServiceImpl implements StoreService {
         try {
             StoreSession session = context.getStoreSession();
             return patientService.updateOrCreatePatientOnCStore(context
-                    .getAttributes(), PatientSelectorFactory
+                    .getAttributesForDatabase(), PatientSelectorFactory
                     .createSelector(session.getStoreParam()),
                     session.getStoreParam());
         } catch (Exception e) {
@@ -800,9 +765,9 @@ public class StoreServiceImpl implements StoreService {
         if (metadataStorage==null)
             return null;
 
-        Attributes attributes = context.getAttributes();
+        Attributes originalAttributes = context.getOriginalAttributes();
         StorageContext metadataContext = storageService.createStorageContext(metadataStorage);
-        String metadataRoot = calculatePath(metadataStorage, attributes);
+        String metadataRoot = calculatePath(metadataStorage, originalAttributes);
         String metadataPath = metadataRoot;
         int copies = 1;
 
@@ -819,18 +784,26 @@ public class StoreServiceImpl implements StoreService {
                 }
             }
 
-            Attributes metadata = new Attributes(attributes.bigEndian(), attributes.size());
-            metadata.addWithoutBulkData(attributes, BulkDataDescriptor.DEFAULT);
+            Attributes metadata = new Attributes(originalAttributes.bigEndian(), originalAttributes.size());
+            metadata.addWithoutBulkData(originalAttributes, BulkDataDescriptor.DEFAULT);
 
             out = new BufferedOutputStream(out, bufferLength);
             out = new DicomOutputStream(out, UID.ExplicitVRLittleEndian);
             ((DicomOutputStream)out).writeDataset(metadata.
                     createFileMetaInformation(UID.ExplicitVRLittleEndian), metadata);
 
+            out.close();
+            out = null;
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         } finally {
-            SafeClose.close(out);
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    LOG.error("Error closing out", e);
+                }
+            }
         }
         return metadataContext;
     }
@@ -901,8 +874,9 @@ public class StoreServiceImpl implements StoreService {
             noDBAtts.addNotSelected(attrs, getStoreFilters(attrs));
 
             return Utils.digestAttributes(noDBAtts, session.getMessageDigest());
-        } else
+        } else {
             return null;
+        }
     }
 
     @Override

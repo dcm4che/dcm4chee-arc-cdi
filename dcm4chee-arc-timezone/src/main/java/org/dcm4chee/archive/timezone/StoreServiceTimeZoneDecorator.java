@@ -71,7 +71,7 @@ public class StoreServiceTimeZoneDecorator extends DelegatingStoreService {
         if (archiveTimeZone == null)    // no Timezone support configured
             return;
 
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         if (!attrs.containsTimezoneOffsetFromUTC()) {
             TimeZone remoteAETimeZone = session.getSourceDeviceTimeZone();
             if (remoteAETimeZone != null) {

@@ -96,7 +96,7 @@ public class AuditObserver {
 
         StoreSession session = context.getStoreSession();
         AuditLogger logger = getLogger(session.getDevice());
-        String studyID = context.getAttributes()
+        String studyID = context.getAttributesForDatabase()
                 .getString(Tag.StudyInstanceUID);
         StoreAction storeAction = context.getStoreAction();
         HashMap<String, StoreAudit> auditMap = getOrCreateAuditsMap(session, storeAction);
@@ -105,13 +105,13 @@ public class AuditObserver {
             auditMap.put(
                     studyID,
                     new StoreAudit(session.getRemoteAET(), session.getSource(), 
-                            context.getAttributes(),
+                            context.getAttributesForDatabase(),
                             storeAction == StoreAction.IGNORE ? EventActionCode.Read : EventActionCode.Create,
                             storeAction == StoreAction.FAIL ? EventOutcomeIndicator.SeriousFailure
                             : EventOutcomeIndicator.Success, logger));
         else {
             StoreAudit existingAudit = auditMap.get(studyID);
-            existingAudit.addInstance(context.getAttributes());
+            existingAudit.addInstance(context.getAttributesForDatabase());
         }
     }
 

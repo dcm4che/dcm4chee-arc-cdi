@@ -41,6 +41,7 @@
 package org.dcm4chee.archive.store.session;
 
 import org.dcm4che3.conf.api.DicomConfiguration;
+import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
@@ -100,9 +101,10 @@ public class StudyUpdateSessionManager {
 
         StoreSession storeSession = storeContext.getStoreSession();
         String remoteAET = storeSession.getRemoteAET();
-        String studyInstanceUID = storeContext.getAttributes().getString(Tag.StudyInstanceUID);
-        String seriesInstanceUID = storeContext.getAttributes().getString(Tag.SeriesInstanceUID);
-        String sopInstanceUID = storeContext.getAttributes().getString(Tag.SOPInstanceUID);
+        Attributes attributes = storeContext.getAttributesForDatabase();
+        String studyInstanceUID = attributes.getString(Tag.StudyInstanceUID);
+        String seriesInstanceUID = attributes.getString(Tag.SeriesInstanceUID);
+        String sopInstanceUID = attributes.getString(Tag.SOPInstanceUID);
         String localAET = storeSession.getLocalAET();
         StoreAction storeAction = storeContext.getStoreAction();
 

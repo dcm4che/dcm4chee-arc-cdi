@@ -1203,7 +1203,6 @@ public class QCIT {
             Attributes fmi = new Attributes();
             fmi.setString(Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2");
             storeService.writeSpoolFile(context, fmi, load(updateResource));
-            storeService.parseSpoolFile(context);
             storeService.store(context);
             utx.commit();
             em.clear();

@@ -405,7 +405,6 @@ public class HsmITBase {
             Attributes fmi = new Attributes();
             fmi.setString(Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2");
             storeService.writeSpoolFile(context, fmi, load(dicomResource));
-            storeService.parseSpoolFile(context);
             LOG.info("Call storeService.store()!");
             storeService.store(context);
             LOG.info("Call storeService.store() finished!");

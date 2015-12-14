@@ -76,8 +76,6 @@ public interface StoreService {
     void writeSpoolFile(StoreContext context, Attributes fmi, InputStream data)
             throws DicomServiceException;
 
-    void parseSpoolFile(StoreContext context) throws DicomServiceException;
-
     void onClose(StoreSession session);
 
     void spool(StoreContext context) throws DicomServiceException;

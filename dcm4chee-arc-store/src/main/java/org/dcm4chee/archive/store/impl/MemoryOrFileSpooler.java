@@ -53,7 +53,7 @@ public class MemoryOrFileSpooler implements Spooler {
 
         int cutoffLength = spoolingStorage.getSpoolingCutoffLength();
         ByteArrayOutputStream bufferOS = new ByteArrayOutputStream(cutoffLength);
-        boolean spooToFile = false;
+        boolean spoolToFile = false;
 
         try {
             int nRead;
@@ -66,7 +66,7 @@ public class MemoryOrFileSpooler implements Spooler {
                 readBytes+=nRead;
 
                 if ((readBytes+DEFAULT_READ_SIZE)>cutoffLength) {
-                    spooToFile = true;
+                    spoolToFile = true;
                     break;
                 }
             }
@@ -75,7 +75,7 @@ public class MemoryOrFileSpooler implements Spooler {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
 
-        if (spooToFile) {
+        if (spoolToFile) {
             fileSpooler.flushNspool(context, bufferOS.toByteArray(),parse);
             SafeClose.close(bufferOS);
         }
@@ -90,7 +90,7 @@ public class MemoryOrFileSpooler implements Spooler {
                         dis = new DicomInputStream(bais); //guess ts
                     dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
                     Attributes data = dis.readDataset(-1, -1);
-                    context.setAttributes(data);
+                    context.setOriginalAttributes(data);
                     Attributes dsFMI = dis.readFileMetaInformation();
                     context.setTransferSyntax(dsFMI != null ? dsFMI.getString(Tag.TransferSyntaxUID) : 
                             fmi != null ? fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);

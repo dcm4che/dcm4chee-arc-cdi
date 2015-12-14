@@ -38,6 +38,20 @@
 
 package org.dcm4chee.archive.store.impl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.TimeZone;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import javax.ejb.Stateless;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
@@ -48,8 +62,23 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.code.CodeService;
-import org.dcm4chee.archive.conf.*;
-import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.AttributeFilter;
+import org.dcm4chee.archive.conf.Entity;
+import org.dcm4chee.archive.conf.MetadataUpdateStrategy;
+import org.dcm4chee.archive.conf.StoreAction;
+import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.archive.entity.ContentItem;
+import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Issuer;
+import org.dcm4chee.archive.entity.Location;
+import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.RequestAttributes;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.Utils;
+import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.patient.PatientService;
@@ -65,15 +94,6 @@ import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ejb.Stateless;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -118,8 +138,8 @@ public class StoreServiceEJB {
         Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
 
-        if (context.getStoreAction()!= StoreAction.IGNORE &&
-            context.getStoreAction()!= StoreAction.UPDATEDB) {
+        if (context.getStoreAction() != StoreAction.IGNORE &&
+                context.getStoreAction() != StoreAction.UPDATEDB) {
             try {
                 findOrCreateStudyOnStorageGroup(context);
                 Future<StorageContext> metadataContextFuture = context.getMetadataContext();
@@ -143,15 +163,15 @@ public class StoreServiceEJB {
             }
         }
 
-        updateAttributes(context);
-     }
+        calculateImplicitlyCoercedAttributes(context);
+    }
 
-    private void updateAttributes(StoreContext context) {
+    private void calculateImplicitlyCoercedAttributes(StoreContext context) {
         Instance instance = context.getInstance();
         Series series = instance.getSeries();
         Study study = series.getStudy();
         Patient patient = study.getPatient();
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         Attributes modified = new Attributes();
         attrs.update(patient.getAttributes(), modified);
         attrs.update(study.getAttributes(), modified);
@@ -159,7 +179,7 @@ public class StoreServiceEJB {
         attrs.update(instance.getAttributes(), modified);
         if (!modified.isEmpty()) {
             modified.addAll(context.getCoercedOriginalAttributes());
-            context.setCoercedOrginalAttributes(modified);
+            context.setCoercedOriginalAttributes(modified);
         }
     }
 
@@ -167,7 +187,7 @@ public class StoreServiceEJB {
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
-        Attributes data = context.getAttributes();
+        Attributes data = context.getAttributesForDatabase();
         StoreParam storeParam = session.getStoreParam();
         Instance inst = new Instance();
         inst.setSeries(service.findOrCreateSeries(em, context));
@@ -192,7 +212,7 @@ public class StoreServiceEJB {
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         StoreParam storeParam = session.getStoreParam();
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
@@ -217,7 +237,7 @@ public class StoreServiceEJB {
     public Study createStudy(StoreContext context) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         AttributeFilter studyFilter = session.getStoreParam().getAttributeFilter(Entity.Study);
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
@@ -353,7 +373,7 @@ public class StoreServiceEJB {
 
     public void updateStudy(StoreContext context, Study study) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         StoreParam storeParam = session.getStoreParam();
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
@@ -392,14 +412,14 @@ public class StoreServiceEJB {
         StoreSession session = context.getStoreSession();
 
         if (!isFetch(context, session)) {
-            patientService.updatePatientByCStore(patient, context.getAttributes(),
+            patientService.updatePatientByCStore(patient, context.getAttributesForDatabase(),
                     session.getStoreParam());
         }
     }
 
     public void updateSeries(StoreContext context, Series series) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         StoreParam storeParam = session.getStoreParam();
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
@@ -436,7 +456,7 @@ public class StoreServiceEJB {
 
     public void updateInstance(StoreContext context, Instance inst) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         StoreParam storeParam = session.getStoreParam();
         Attributes instAttrs = inst.getAttributes();
         AttributeFilter instFilter = storeParam

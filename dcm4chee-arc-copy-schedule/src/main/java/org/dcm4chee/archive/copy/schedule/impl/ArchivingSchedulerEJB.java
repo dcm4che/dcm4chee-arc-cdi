@@ -100,7 +100,7 @@ public class ArchivingSchedulerEJB {
     private DicomConfiguration conf;
 
     public void onStoreInstance(StoreContext storeContext, ArchivingRule archivingRule) {
-        Attributes attrs = storeContext.getAttributes();
+        Attributes attrs = storeContext.getAttributesForDatabase();
         String seriesInstanceUID = attrs.getString(Tag.SeriesInstanceUID);
         Date archivingTime = new Date(System.currentTimeMillis()
                 + archivingRule.getDelayAfterInstanceStored() * 1000L);

@@ -205,7 +205,7 @@ public class OptimisticLockForIT extends BaseStoreIT {
                 .getAEExtension(ArchiveAEExtension.class));
 
         StoreContext storeContext = storeService.createStoreContext(session);
-        storeContext.setAttributes(load(instance));
+        storeContext.setAttributesForDatabase(load(instance));
 
         return storeContext;
 

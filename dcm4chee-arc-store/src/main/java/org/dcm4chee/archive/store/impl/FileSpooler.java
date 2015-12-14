@@ -84,10 +84,10 @@ public class FileSpooler implements Spooler {
 
                 //if the context is already containing the Attributes,
                 //then those are stored
-                if (context.getAttributes() == null)
+                if (context.getOriginalAttributes() == null)
                     dout.writeFileMetaInformation(fmi);
                 else
-                    dout.writeDataset(fmi, context.getAttributes());
+                    dout.writeDataset(fmi, context.getOriginalAttributes());
 
                 out = dout;
             }
@@ -106,7 +106,7 @@ public class FileSpooler implements Spooler {
                     try (DicomInputStream dis = new DicomInputStream(spoolingPath.toFile())) {
                         dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.URI);
                         Attributes data = dis.readDataset(-1, -1);
-                        context.setAttributes(data);
+                        context.setOriginalAttributes(data);
                         Attributes dsFMI = dis.readFileMetaInformation();
                         context.setTransferSyntax(dsFMI != null ? dsFMI.getString(Tag.TransferSyntaxUID) : 
                                 fmi != null ? fmi.getString(Tag.TransferSyntaxUID) : UID.ImplicitVRLittleEndian);

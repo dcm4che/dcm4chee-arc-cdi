@@ -331,7 +331,6 @@ public class PriorsFileCacheProviderIT {
         Attributes attrs = loadAttributes(resourceName);
         Attributes fmi = attrs.createFileMetaInformation(UID.ImplicitVRLittleEndian);
         storeService.writeSpoolFile(context, fmi, attrs);
-        storeService.parseSpoolFile(context);
         storeService.store(context);
         utx.commit();
         em.clear();

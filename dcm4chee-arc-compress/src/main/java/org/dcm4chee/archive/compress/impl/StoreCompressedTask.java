@@ -87,7 +87,7 @@ class StoreCompressedTask implements MemoryConsumingTask<StorageContext> {
         this.rule = rule;
 
         Attributes fmi = context.getFileMetainfo();
-        Attributes attributes = context.getAttributes();
+        Attributes attributes = context.getOriginalAttributes();
 
         compressor = new Compressor(attributes, fmi.getString(Tag.TransferSyntaxUID),
                 rule.getTransferSyntax(), rule.getImageWriteParams());
@@ -106,7 +106,7 @@ class StoreCompressedTask implements MemoryConsumingTask<StorageContext> {
     @Override
     public StorageContext call() throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes attributes = context.getAttributes();
+        Attributes attributes = context.getOriginalAttributes();
 
         StorageSystem bulkdataStorage = session.getStorageSystem();
         StorageContext bulkdataContext = storageService.createStorageContext(bulkdataStorage);

@@ -89,8 +89,9 @@ public class StoreServiceCompressDecorator extends DelegatingStoreService {
 
         // in any case, nullify PixelData, just to be consistent with StoreCompressedTask which also has to nullify PixelData
         // (to ensure garbage collection of Compressor is possible)
-        if (context.getAttributes().contains(Tag.PixelData)) {
-            context.getAttributes().setNull(Tag.PixelData, VR.OB);
+        Attributes originalAttributes = context.getOriginalAttributes();
+        if (originalAttributes.contains(Tag.PixelData)) {
+            originalAttributes.setNull(Tag.PixelData, VR.OB);
         }
 
         return bulkdataContext;
@@ -104,7 +105,7 @@ public class StoreServiceCompressDecorator extends DelegatingStoreService {
         ArchiveAEExtension archiveAE = session.getArchiveAEExtension();
         CompressionRules rules = archiveAE.getCompressionRules();
 
-        Attributes attributes = context.getAttributes();
+        Attributes attributes = context.getOriginalAttributes();
         Object pixelData = attributes.getValue(Tag.PixelData);
 
         if (!(pixelData instanceof BulkData || pixelData instanceof byte[]))

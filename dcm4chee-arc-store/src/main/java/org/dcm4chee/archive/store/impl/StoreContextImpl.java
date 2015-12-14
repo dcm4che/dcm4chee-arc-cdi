@@ -61,8 +61,9 @@ public class StoreContextImpl implements StoreContext {
     private String spoolFileSuffix;
     private String noDBAttsDigest;
     private String transferSyntax;
-    private Attributes attributes;
-    private Attributes coercedAttributes = new Attributes();
+    private Attributes originalAttributes;
+    private Attributes attributesForDatabase;
+    private Attributes coercedOriginalAttributes = new Attributes();
     private StoreAction storeAction;
     private Instance instance;
     private Location fileRef;
@@ -113,23 +114,36 @@ public class StoreContextImpl implements StoreContext {
     }
 
     @Override
-    public Attributes getAttributes() {
-        return attributes;
+    public Attributes getOriginalAttributes() {
+        return originalAttributes;
     }
 
     @Override
-    public void setAttributes(Attributes attributes) {
-        this.attributes = attributes;
+    public void setOriginalAttributes(Attributes originalAttributes) {
+        this.originalAttributes = originalAttributes;
+
+        // COPY attributes for database
+        this.attributesForDatabase = new Attributes(originalAttributes);
+    }
+
+    @Override
+    public Attributes getAttributesForDatabase() {
+        return attributesForDatabase;
+    }
+
+    @Override
+    public void setAttributesForDatabase(Attributes attributesForDatabase) {
+        this.attributesForDatabase = attributesForDatabase;
     }
 
     @Override
     public Attributes getCoercedOriginalAttributes() {
-        return coercedAttributes;
+        return coercedOriginalAttributes;
     }
 
     @Override
-    public void setCoercedOrginalAttributes(Attributes attrs) {
-        this.coercedAttributes = attrs;
+    public void setCoercedOriginalAttributes(Attributes attrs) {
+        this.coercedOriginalAttributes = attrs;
     }
 
     @Override

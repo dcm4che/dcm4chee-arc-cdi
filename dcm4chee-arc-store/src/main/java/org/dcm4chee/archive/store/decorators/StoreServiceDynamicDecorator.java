@@ -53,10 +53,6 @@ public abstract class StoreServiceDynamicDecorator extends DynamicDecoratorWrapp
         wrapWithDynamicDecorators(delegate).writeSpoolFile(context, fmi, data);
     }
 
-    public void parseSpoolFile(StoreContext context) throws DicomServiceException {
-        wrapWithDynamicDecorators(delegate).parseSpoolFile(context);
-    }
-
     public void onClose(StoreSession session) {
         wrapWithDynamicDecorators(delegate).onClose(session);
     }

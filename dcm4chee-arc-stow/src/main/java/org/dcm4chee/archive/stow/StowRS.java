@@ -396,7 +396,7 @@ public class StowRS {
             }
             throw e;
         }
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getOriginalAttributes();
         try {
             checkStudyInstanceUID(attrs.getString(Tag.StudyInstanceUID));
             checkTransferCapability(attrs.getString(Tag.SOPClassUID),context.getTransferSyntax());
@@ -500,7 +500,6 @@ public class StowRS {
             checkStudyInstanceUID(ds.getString(Tag.StudyInstanceUID));
             checkTransferCapability(cuid, fmi.getString(Tag.TransferSyntaxUID));
             StoreContext context = storeService.createStoreContext(session);
-            context.setAttributes(ds);
             storeService.writeSpoolFile(context,fmi,ds);
             storeService.store(context);
             sopSequence.add(sopRef(context));
@@ -511,7 +510,7 @@ public class StowRS {
 
     private Attributes sopRef(StoreContext ctx) {
         StoreSession session = ctx.getStoreSession();
-        Attributes attrs = ctx.getAttributes(); 
+        Attributes attrs = ctx.getAttributesForDatabase();
         Attributes sopRef = new Attributes(5);
         String cuid = attrs.getString(Tag.SOPClassUID);
         String iuid = attrs.getString(Tag.SOPInstanceUID);

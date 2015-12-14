@@ -277,7 +277,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
                     throws DicomServiceException {
         ArrayList<Instance> result = new ArrayList<Instance>();
         HashMap<String,Attributes> refSOPs = new HashMap<String,Attributes>();
-        Attributes attrs = context.getAttributes();
+        Attributes attrs = context.getAttributesForDatabase();
         String studyIUID = attrs.getString(Tag.StudyInstanceUID);
         for (Attributes refStudy : attrs.getSequence(Tag.CurrentRequestedProcedureEvidenceSequence)) {
             if (!studyIUID.equals(refStudy.getString(Tag.StudyInstanceUID))) {
@@ -337,7 +337,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             StoreSession storeSession, HashMap<String, Attributes> refSOPs,
             String currentSeriesIUID, String studyIUID) {
         for(String sopInstanceUID : refSOPs.keySet()) {
-            Attributes data = ctx.getAttributes();
+            Attributes data = ctx.getAttributesForDatabase();
             data.setString(Tag.SeriesInstanceUID, VR.UI, currentSeriesIUID);
             data.setString(Tag.SOPInstanceUID, VR.UI, sopInstanceUID);
             data.setString(Tag.SOPClassUID, VR.UI, refSOPs.get(sopInstanceUID)
@@ -348,7 +348,7 @@ public class StoreServiceIOCMDecorator extends DelegatingStoreService {
             Attributes tempModsInStudy = new Attributes();
             tempModsInStudy.setString(Tag.ModalitiesInStudy, VR.CS, "OT");
             data.addAll(tempModsInStudy);
-            ctx.setAttributes(new Attributes(data));
+            ctx.setAttributesForDatabase(new Attributes(data));
             try {
                Instance inst = storeServiceEJB.createInstance(ctx);
                inst.setRejectionNoteCode(rejectionNote.getConceptNameCode());

@@ -160,7 +160,7 @@ public class InitDataForIT {
 //        em.joinTransaction();
         for (String res : INSTANCES) {
             StoreContext storeContext = storeService.createStoreContext(session);
-            storeContext.setAttributes(load(res));
+            storeContext.setAttributesForDatabase(load(res));
             storeService.updateDB(storeContext);
         }
 //        utx.commit();

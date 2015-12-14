@@ -82,7 +82,7 @@ public class StoreServiceNonIOCMDecorator extends DelegatingStoreService {
     @Override
     public Instance findOrCreateInstance(EntityManager em, StoreContext context) throws DicomServiceException {
     	if (nonIocmService.isNonIOCMChangeRequestor(context.getStoreSession().getRemoteAET())) {
-    		Attributes attrs = context.getAttributes();
+    		Attributes attrs = context.getAttributesForDatabase();
     		String origSopIUID = attrs.getString(Tag.SOPInstanceUID);
     		QCInstanceHistory h = nonIocmService.getLastQCInstanceHistory(origSopIUID);
     		if (h != null) {

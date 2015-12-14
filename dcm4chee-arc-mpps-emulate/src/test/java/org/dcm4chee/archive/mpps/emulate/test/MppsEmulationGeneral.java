@@ -174,7 +174,7 @@ public class MppsEmulationGeneral {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         Attributes dicom = SAXReader.parse(cl.getResource(name).toString());
         StoreContext storeContext = storeService.createStoreContext(session);
-        storeContext.setAttributes(dicom);
+        storeContext.setAttributesForDatabase(dicom);
         openTransaction();
         storeServiceEJB.updateDB(storeContext);
         closeTransaction();

@@ -43,10 +43,6 @@ public class DelegatingStoreService extends DelegatingServiceImpl<StoreService> 
         getNextDecorator().writeSpoolFile(context, fmi, data);
     }
 
-    public void parseSpoolFile(StoreContext context) throws DicomServiceException {
-        getNextDecorator().parseSpoolFile(context);
-    }
-
     public void onClose(StoreSession session) {
         getNextDecorator().onClose(session);
     }
