@@ -106,26 +106,6 @@ public class LocationCopyServiceEJB {
     @Inject
     private Event<LocationCopyContext> locationsCopied;
 
-    public void scheduleStudy(LocationCopyContext ctx, String studyIUID, long delay)
-            throws IOException {
-        LOG.info(
-                "Scheduling archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
-                studyIUID, ctx.getSourceStorageSystemGroupID(),
-                ctx.getTargetStorageSystemGroupID(), ctx.getDeleteSourceLocaton());
-        List<String> seriesUIDs = em
-                .createQuery(
-                        "SELECT se.seriesInstanceUID FROM Series se JOIN se.study st WHERE st.studyInstanceUID = ?1",
-                        String.class).setParameter(1, studyIUID).getResultList();
-        for (String uid : seriesUIDs) {
-            scheduleSeries(ctx, uid, delay);
-        }
-        LOG.info(
-                "Scheduled archiving study={}, sourceStorageGroupID={}, targetStorageGroupID={}, deleteSource={}",
-                new Object[] { studyIUID, ctx.getSourceStorageSystemGroupID(),
-                        ctx.getTargetStorageSystemGroupID(), ctx.getDeleteSourceLocaton() });
-
-    }
-
     public void scheduleSeries(LocationCopyContext ctx, String seriesIUID, long delay)
             throws IOException {
         LOG.info(
@@ -174,13 +154,16 @@ public class LocationCopyServiceEJB {
                     .setProperty(OTHER_ATTRS_DIGEST, selected.getOtherAttsDigest())
                     .setProperty(FILE_SIZE, selected.getSize())
                     .setProperty(TRANSFER_SYNTAX, selected.getTransferSyntaxUID())
-                    .setProperty(TIME_ZONE, selected.getTimeZone()).setProperty(LOCATION, selected)
+                    .setProperty(TIME_ZONE, selected.getTimeZone())
+                    .setProperty(LOCATION, selected)
                     .build();
             entries.add(entry);
 
             if (deleteCtx != null) {
                 deleteCtx.add(selected.getPk(), inst.getPk());
             }
+
+            ctx.addScheduledInstancePk(inst.getPk());
         }
 
         if (entries.size() > 0) {
@@ -189,7 +172,7 @@ public class LocationCopyServiceEJB {
             archiverCtx.setEntries(entries);
             archiverCtx.setProperty(DELETE_SOURCE, new Boolean(ctx.getDeleteSourceLocaton()));
             if (deleteCtx != null) {
-                ctx.setProperty(SOURCE_LOCATION_PKS_TO_DELETE, deleteCtx);
+                archiverCtx.setProperty(SOURCE_LOCATION_PKS_TO_DELETE, deleteCtx);
             }
             archiverCtx.setProperty(LOCATION_COPY_CONTEXT, ctx);
             archiverService.scheduleStore(archiverCtx, delay);
@@ -288,7 +271,7 @@ public class LocationCopyServiceEJB {
             location.addInstance(inst);
             LOG.info("Create {}", location);
             em.persist(location);
-            event.addCopy(location);
+            event.addTargetLocationPk(location.getPk());
         }
         em.flush();
 

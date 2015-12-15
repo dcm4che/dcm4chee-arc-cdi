@@ -75,7 +75,6 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.ArchivingRule;
 import org.dcm4chee.archive.conf.ArchivingRules;
-import org.dcm4chee.archive.conf.StoreParam;
 import org.dcm4chee.archive.dto.GenericParticipant;
 import org.dcm4chee.archive.entity.ArchivingTask;
 import org.dcm4chee.archive.entity.Instance;
@@ -394,7 +393,6 @@ public class HsmITBase {
     protected boolean store(String dicomResource, ArchiveAEExtension arcAEExt) throws NotSupportedException, SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException, HeuristicRollbackException {
         utx.begin();
         try {
-            StoreParam storeParam = ParamFactory.createStoreParam();
             StoreSession session = storeService.createStoreSession(storeService); 
             session = storeService.createStoreSession(storeService);
             session.setSource(new GenericParticipant("", "hsmTest"));
@@ -590,12 +588,18 @@ public class HsmITBase {
         return devExt.getStorageSystem(ref.getStorageSystemGroupID(), ref.getStorageSystemID());
     }
 
+    private List<String> findSeriesUidsForStudy(String studyIUID) {
+        return em
+                .createQuery(
+                        "SELECT se.seriesInstanceUID FROM Series se JOIN se.study st WHERE st.studyInstanceUID = ?1",
+                        String.class).setParameter(1, studyIUID).getResultList();
+    }
+
     protected void copyStudy(String studyIUID, String sourceStorageSystemGroupID,
             String targetStorageSystemGroupID) throws IOException {
-        LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
-        ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
-        ctx.setDeleteSourceLocation(false);
-        service.scheduleCopyStudy(ctx, studyIUID, 0);
+        for (String uid : findSeriesUidsForStudy(studyIUID)) {
+            copySeries(uid, sourceStorageSystemGroupID, targetStorageSystemGroupID);
+        }
     }
 
     protected void copySeries(String seriesIUID, String sourceStorageSystemGroupID,
@@ -608,10 +612,9 @@ public class HsmITBase {
 
     protected void moveStudy(String studyIUID, String sourceStorageSystemGroupID,
             String targetStorageSystemGroupID) throws IOException {
-        LocationCopyContext ctx = service.createContext(targetStorageSystemGroupID);
-        ctx.setSourceStorageSystemGroupID(sourceStorageSystemGroupID);
-        ctx.setDeleteSourceLocation(true);
-        service.scheduleCopyStudy(ctx, studyIUID, 0);
+        for (String uid : findSeriesUidsForStudy(studyIUID)) {
+            moveSeries(uid, sourceStorageSystemGroupID, targetStorageSystemGroupID);
+        }
     }
 
     protected void moveSeries(String seriesIUID, String sourceStorageSystemGroupID,

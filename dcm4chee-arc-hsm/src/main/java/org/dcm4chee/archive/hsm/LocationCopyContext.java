@@ -43,8 +43,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 
-import org.dcm4chee.archive.entity.Location;
-
 /**
  * @author Steve Kroetsch <stevekroetsch@hotmail.com>
  *
@@ -55,9 +53,11 @@ public class LocationCopyContext implements Serializable {
 
     private String sourceStorageSystemGroupID;
     private String targetStorageSystemGroupID;
-    private boolean deleteSourceLocation = false;
+    private boolean deleteSourceLocation;
     private HashMap<String, Serializable> properties = new HashMap<String, Serializable>();
-    private ArrayList<Location> copies = new ArrayList<Location>();
+    private ArrayList<Long> scheduledInstancePks = new ArrayList<Long>();
+    private ArrayList<Long> targetLocationPks = new ArrayList<Long>();
+
     private String jmsCorrelationID;
 
     public void setSourceStorageSystemGroupID(String sourceStorageSystemGroupID) {
@@ -84,12 +84,20 @@ public class LocationCopyContext implements Serializable {
         return deleteSourceLocation;
     }
 
-    public void addCopy(Location copy) {
-        copies.add(copy);
+    public void addTargetLocationPk(Long pk) {
+        targetLocationPks.add(pk);
     }
 
-    public Collection<Location> getCopies() {
-        return Collections.unmodifiableCollection(copies);
+    public Collection<Long> getTargetLocationPks() {
+        return Collections.unmodifiableCollection(targetLocationPks);
+    }
+
+    public void addScheduledInstancePk(Long pk) {
+        scheduledInstancePks.add(pk);
+    }
+
+    public Collection<Long> getScheduledInstancePks() {
+        return Collections.unmodifiableCollection(scheduledInstancePks);
     }
 
     public void setJMSCorrelationID(String jmsCorrelationID) {
