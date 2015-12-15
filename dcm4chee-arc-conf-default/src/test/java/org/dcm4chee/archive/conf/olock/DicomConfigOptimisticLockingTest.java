@@ -131,6 +131,53 @@ public class DicomConfigOptimisticLockingTest {
 
     }
 
+    @Test
+    public void differentSSGChanges() {
+
+        Device device1 = dicomConfig.findDevice("dcm4chee-arc");
+        Device device2 = dicomConfig.findDevice("dcm4chee-arc");
+
+        // create new storage system in DEFAULT
+        StorageSystem fs2 = new StorageSystem();
+        fs2.setStorageSystemID("fs2");
+        fs2.setProviderName("org.dcm4chee.storage.filesystem");
+        fs2.setStorageSystemPath("someNewPath");
+        fs2.setAvailability(Availability.OFFLINE);
+        fs2.setSyncPolicy(SyncPolicy.ON_ASSOCIATION_CLOSE);
+        device1.getDeviceExtension(StorageDeviceExtension.class).getStorageSystemGroup("DEFAULT").addStorageSystem(fs2);
+        dicomConfig.merge(device1);
+
+        // create new storage system in METADATA
+        StorageSystem fsB = new StorageSystem();
+        fsB.setStorageSystemID("fsB");
+        fsB.setProviderName("org.dcm4chee.storage.filesystem");
+        fsB.setStorageSystemPath("someOtherNewPath");
+        fsB.setAvailability(Availability.ONLINE);
+        fsB.setSyncPolicy(SyncPolicy.ON_ASSOCIATION_CLOSE);
+        device2.getDeviceExtension(StorageDeviceExtension.class).getStorageSystemGroup("METADATA").addStorageSystem(fsB);
+
+        // should succeed
+        dicomConfig.merge(device2);
+
+        // both should be there
+        Device device3 = dicomConfig.findDevice("dcm4chee-arc");
+
+        Assert.assertEquals("someNewPath",
+                device3
+                        .getDeviceExtension(StorageDeviceExtension.class)
+                        .getStorageSystem("DEFAULT", "fs2")
+                        .getStorageSystemPath());
+
+        Assert.assertEquals("someOtherNewPath",
+                device3
+                        .getDeviceExtension(StorageDeviceExtension.class)
+                        .getStorageSystem("METADATA", "fsB")
+                        .getStorageSystemPath());
+
+
+
+
+    }
 
     @Test
     public void optimisticLockingTestDefAe() {
