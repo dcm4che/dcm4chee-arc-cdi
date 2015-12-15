@@ -109,13 +109,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Service implementing DICOM Supplement 161: WADO by RESTful Services
- * (WADO-RS).
  * 
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
+ * @author Alessio Roselli <alessio.roselli@agfa.com>
  */
 public class DefaultWadoRS extends Wado implements WadoRS {
 

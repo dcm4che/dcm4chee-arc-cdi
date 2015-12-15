@@ -1,0 +1,10 @@
+{
+  "realm": "dcm4che",
+  "realm-public-key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCAJ0N4gkGVNPN/c8/ub9YpmdBR1qxcTMY7mgQ+MXmwfMMRPsibUapnm7MJpSz5OUx1cSwUVXtaD9a1oXxNLj9+8vPiOqszqmzVE1ONJah7CniPTgQvD3v9nnN0xB5pBY/NnmplaxESeA/KtF19eVLsxvZ+UJ/59d4++EBuhZUz0wIDAQAB",
+  "auth-server-url": "http://${org.dcm4che.auth.server}:8080/auth",
+  "ssl-required": "external",
+  "resource": "dcm4chee-arc",
+  "credentials": {
+    "secret": "2d291090-ebff-43aa-94e7-adcba46c1506"
+  }
+}

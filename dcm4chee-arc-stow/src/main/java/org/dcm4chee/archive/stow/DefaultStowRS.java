@@ -102,7 +102,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * @author Alessio Roselli <alessio.roselli@agfa.com>
  */
 @RequestScoped
 public class DefaultStowRS implements StowRS {

@@ -99,10 +99,10 @@ import com.mysema.query.types.path.DateTimePath;
 import com.mysema.query.types.path.StringPath;
 
 /**
- * Service implementing DICOM Supplement 166: Query based on ID for DICOM Objects (QIDO).
- * 
+ *
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
+ * @author Alessio Roselli <alessio.roselli@agfa.com>
  */
 public class DefaultQidoRS implements QidoRS {
 

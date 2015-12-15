@@ -664,7 +664,8 @@
     <module>dcm4chee-arc-copy-schedule</module>
     <module>dcm4chee-arc-processing</module>
     <module>dcm4chee-arc-hsm-status</module>
-	<module>dcm4chee-arc-webservices</module>
+    <module>dcm4chee-arc-webservices</module>
+    <module>dcm4chee-arc-war-webservices</module>
   </modules>
   <profiles>
     <profile>

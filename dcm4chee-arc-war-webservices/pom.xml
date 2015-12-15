@@ -8,23 +8,27 @@
     <artifactId>dcm4chee-arc-parent</artifactId>
     <version>4.5.0-SNAPSHOT</version>
   </parent>
-  <artifactId>dcm4chee-arc-war-skinny</artifactId>
+  <artifactId>dcm4chee-arc-war-webservices</artifactId>
   <packaging>war</packaging>
   <dependencies>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-ctrl</artifactId>
+      <artifactId>dcm4chee-arc-stow</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-qc-rest</artifactId>
+      <artifactId>dcm4chee-arc-wado</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcm4che.dcm4chee-arc</groupId>
-      <artifactId>dcm4chee-arc-location-mgmt-rest</artifactId>
+      <artifactId>dcm4chee-arc-qido</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.dcm4chee-arc</groupId>
+      <artifactId>dcm4chee-arc-webservices</artifactId>
     </dependency>
   </dependencies>
   <profiles>
@@ -90,10 +94,11 @@
         <version>2.1.1</version>
         <configuration>
           <packagingIncludes>
-            WEB-INF/lib/dcm4chee-arc-ctrl-${project.version}.jar,
-            WEB-INF/lib/dcm4chee-arc-qc-rest-${project.version}.jar,
-            WEB-INF/lib/dcm4chee-arc-location-mgmt-rest-${project.version}.jar,
-            WEB-INF/keycloak.json
+            WEB-INF/lib/dcm4chee-arc-stow-${project.version}.jar,
+            WEB-INF/lib/dcm4chee-arc-wado-${project.version}.jar,
+            WEB-INF/lib/dcm4chee-arc-qido-${project.version}.jar,
+            WEB-INF/lib/dcm4chee-arc-webservices-${project.version}.jar,
+			WEB-INF/keycloak.json
           </packagingIncludes>
         </configuration>
       </plugin>

@@ -119,6 +119,7 @@ import org.xml.sax.SAXException;
  * @author Umberto Cappellini <umberto.cappellini@agfa.com>
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * @author Hermann Czedik-Eysenberg <hermann-agfa@czedik.net>
+ * @author Alessio Roselli <alessio.roselli@agfa.com>
  */
 @RequestScoped
 @Path("/{AETitle}")
