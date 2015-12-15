@@ -217,11 +217,30 @@ public class Instance implements Serializable {
         Date now = new Date();
         createdTime = now;
         updatedTime = now;
+
+        // update the series, which also has an important side-effect: it will increase the version field of the series
+        // (which will in turn also increase the version field of the study).
+        // this is necessary to ensure correct calculation of derived fields for series/studies.
+        series.setUpdatedTime(now);
     }
 
     @PreUpdate
     public void onPreUpdate() {
-        updatedTime = new Date();
+        Date now = new Date();
+        updatedTime = now;
+
+        // update the series, which also has an important side-effect: it will increase the version field of the series
+        // (which will in turn also increase the version field of the study).
+        // this is necessary to ensure correct calculation of derived fields for series/studies.
+        series.setUpdatedTime(now);
+    }
+
+    @PreRemove
+    public void onPreRemove() {
+        Date now = new Date();
+        // update the series, which also has an important side-effect: it will increase the version field of the series.
+        // this is necessary to ensure correct calculation of derived fields for series/studies.
+        series.setUpdatedTime(now);
     }
 
     public AttributesBlob getAttributesBlob() {

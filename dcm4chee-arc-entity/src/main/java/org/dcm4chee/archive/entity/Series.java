@@ -58,6 +58,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
+import javax.persistence.PreRemove;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Version;
@@ -272,11 +273,28 @@ public class Series implements Serializable {
         Date now = new Date();
         createdTime = now;
         updatedTime = now;
+
+        // update the study, which also has an important side-effect: it will increase the version field of the study.
+        // this is necessary to ensure correct calculation of derived fields for series/studies.
+        study.setUpdatedTime(now);
     }
 
     @PreUpdate
     public void onPreUpdate() {
-        updatedTime = new Date();
+        Date now = new Date();
+        updatedTime = now;
+
+        // update the study, which also has an important side-effect: it will increase the version field of the study.
+        // this is necessary to ensure correct calculation of derived fields for series/studies.
+        study.setUpdatedTime(now);
+    }
+
+    @PreRemove
+    public void onPreRemove() {
+        Date now = new Date();
+        // update the study, which also has an important side-effect: it will increase the version field of the study.
+        // this is necessary to ensure correct calculation of derived fields for series/studies.
+        study.setUpdatedTime(now);
     }
 
     public AttributesBlob getAttributesBlob() {
@@ -297,6 +315,10 @@ public class Series implements Serializable {
 
     public Date getUpdatedTime() {
         return updatedTime;
+    }
+
+    public void setUpdatedTime(Date updatedTime) {
+        this.updatedTime = updatedTime;
     }
 
     public String getSeriesInstanceUID() {

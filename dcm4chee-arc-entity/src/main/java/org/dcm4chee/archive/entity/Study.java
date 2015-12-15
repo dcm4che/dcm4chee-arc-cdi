@@ -217,6 +217,10 @@ public class Study implements Serializable {
         return updatedTime;
     }
 
+    public void setUpdatedTime(Date updatedTime) {
+        this.updatedTime = updatedTime;
+    }
+
     public String getStudyInstanceUID() {
         return studyInstanceUID;
     }
