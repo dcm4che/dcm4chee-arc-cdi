@@ -58,6 +58,7 @@ import org.dcm4chee.archive.code.CodeService;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.entity.Code;
+import org.dcm4chee.storage.conf.StorageDevice;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -97,6 +98,10 @@ public class ArchiveDeviceProducer {
         return device;
     }
 
+    @Produces @StorageDevice
+    public Device getStorageDevice() {
+        return device;
+    }
     // synchronized to prevent concurrent reconfigure
     public synchronized void reloadConfiguration() throws Exception {
         Device deviceLoaded = findDevice();
