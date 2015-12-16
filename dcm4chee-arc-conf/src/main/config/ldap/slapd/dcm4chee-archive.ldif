@@ -604,6 +604,11 @@ olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.118 NAME 'dcmUpdateDbDelay'
   EQUALITY integerMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
   SINGLE-VALUE )
+olcAttributeTypes: ( 1.2.40.0.13.1.15.10.3.119 NAME 'dcmDBTimeZone'
+  DESC 'Specifies the user time zone used to update DB entries from source time zone'
+  EQUALITY caseExactIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+  SINGLE-VALUE )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
   DESC 'DICOM Archive Device related information'
   SUP top AUXILIARY
@@ -639,7 +644,8 @@ olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.4 NAME 'dcmArchiveDevice'
     dcmMaxDeleteServiceRetries $
     dcmDeleteServiceAllowedInterval $
     dcmDataVolumePerDayCalculationRange $
-    dcmDataVolumePerDayAverageOnNDays ) )
+    dcmDataVolumePerDayAverageOnNDays $
+    dcmDBTimeZone ) )
 olcObjectClasses: ( 1.2.40.0.13.1.15.10.4.5 NAME 'dcmArchiveNetworkAE'
   DESC 'DICOM Archive Network AE related information'
   SUP top AUXILIARY

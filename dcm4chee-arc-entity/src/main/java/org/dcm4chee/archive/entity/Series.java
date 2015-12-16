@@ -38,36 +38,18 @@
 
 package org.dcm4chee.archive.entity;
 
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.GregorianCalendar;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreRemove;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
-import javax.persistence.Version;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.DatePrecision;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4chee.archive.conf.AttributeFilter;
+
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -367,6 +349,10 @@ public class Series implements Serializable {
 
     public Date getPerformedProcedureStepStartDateTime() {
         return performedProcedureStepStartDateTime;
+    }
+
+    public void setPerformedProcedureStepStartDateTime(Date performedProcedureStepStartDateTime) {
+        this.performedProcedureStepStartDateTime = performedProcedureStepStartDateTime;
     }
 
     public String getPerformedProcedureStepInstanceUID() {

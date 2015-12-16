@@ -50,6 +50,7 @@ import org.dcm4chee.archive.ArchiveService;
 import org.dcm4chee.archive.ArchiveServiceReloaded;
 import org.dcm4chee.archive.ArchiveServiceStarted;
 import org.dcm4chee.archive.ArchiveServiceStopped;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.dto.Participant;
 import org.dcm4chee.archive.event.ConnectionEventSource;
 import org.dcm4chee.archive.event.LocalSource;
@@ -68,6 +69,7 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import java.io.File;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -96,6 +98,9 @@ public class ArchiveServiceImpl implements ArchiveService {
         "jboss.server.log",
         "jboss.server.temp",
     };
+
+    private static final String SITE_TIME_ZONE_PROPERTY = "site.TimeZone";
+    private static final String DB_TIME_ZONE_PROPERTY = "user.TimeZone";
 
     private ExecutorService executor;
 
@@ -164,6 +169,7 @@ public class ArchiveServiceImpl implements ArchiveService {
             if (hl7Extension != null) {
                 hl7Extension.setHL7MessageListener(hl7ServiceRegistry);
             }
+            setSystemAndDBTimeZone();
             start(new LocalSource());
         } catch (RuntimeException re) {
             destroy();
@@ -176,6 +182,25 @@ public class ArchiveServiceImpl implements ArchiveService {
         // this just touched and thus init'ed here to improve init log output, TBD where to move it
         decoratorsConfig.getDecoratedServices();
 
+    }
+
+    //resets the config value for time zone to a property site.timezone
+    private void setSystemAndDBTimeZone() {
+        TimeZone siteTimeZone = device.getTimeZoneOfDevice();
+        String siteTimeZoneID = System.getProperty(SITE_TIME_ZONE_PROPERTY) == null ?
+                siteTimeZone == null ?
+                        TimeZone.getDefault().getID()
+                        : siteTimeZone.getID()
+                : System.getProperty(SITE_TIME_ZONE_PROPERTY);
+        device.setTimeZoneOfDevice(TimeZone.getTimeZone(siteTimeZoneID));
+
+        TimeZone dbTimeZone = device.getDeviceExtension(ArchiveDeviceExtension.class).getDataBaseTimeZone();
+        String dbTimeZoneID = System.getProperty(DB_TIME_ZONE_PROPERTY) == null ?
+                dbTimeZone == null ?
+                        TimeZone.getDefault().getID()
+                        : dbTimeZone.getID()
+                : System.getProperty(DB_TIME_ZONE_PROPERTY);
+        device.getDeviceExtension(ArchiveDeviceExtension.class).setDataBaseTimeZone(TimeZone.getTimeZone(dbTimeZoneID));
     }
 
     private void shutdown(ExecutorService executor) {
@@ -228,6 +253,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         aeCache.clear();
         deviceProducer.reloadConfiguration();
         device.rebindConnections();
+        setSystemAndDBTimeZone();
         archiveServiceReloaded.fire(new StartStopReloadEvent(device, source));
     }
 

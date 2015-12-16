@@ -38,38 +38,18 @@
 
 package org.dcm4chee.archive.entity;
 
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatePrecision;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.soundex.FuzzyStr;
+import org.dcm4chee.archive.conf.AttributeFilter;
+
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Table;
-import javax.persistence.Version;
-
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.DatePrecision;
-import org.dcm4che3.data.DatePrecisions;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.soundex.FuzzyStr;
-import org.dcm4chee.archive.conf.AttributeFilter;
 
 
 /**
@@ -127,7 +107,7 @@ public class Study implements Serializable {
     @Column(name = "study_id")
     private String studyID;
 
-    @Column(name = "study_datetime", nullable = true)
+   @Column(name = "study_datetime", nullable = true)
     private Date studyDateTime;
     
     //@Basic(optional = false)
@@ -279,6 +259,14 @@ public class Study implements Serializable {
 
     public void setAccessControlID(String accessControlID) {
         this.accessControlID = accessControlID;
+    }
+
+    public Date getStudyDateTime() {
+        return studyDateTime;
+    }
+
+    public void setStudyDateTime(Date studyDateTime) {
+        this.studyDateTime = studyDateTime;
     }
 
     public boolean isRejected() {

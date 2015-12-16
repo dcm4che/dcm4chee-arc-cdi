@@ -53,14 +53,7 @@ import org.dcm4che3.util.StringUtils;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 
 /**
@@ -115,6 +108,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
 
     @ConfigurableProperty(name = "dcmUpdateDbDelay", defaultValue = "1000")
     private int updateDbDelay = 1000;
+
+    @ConfigurableProperty(name = "dcmDBTimeZone")
+    private TimeZone dataBaseTimeZone = TimeZone.getTimeZone("GMT+00:00");
 
     @LDAP(noContainerNode = true)
     @ConfigurableProperty(name = "dcmPrivateDerivedFields")
@@ -325,6 +321,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     public void setFuzzyAlgorithmClass(String fuzzyAlgorithmClass) {
         this.fuzzyStr = fuzzyStr(fuzzyAlgorithmClass);
         this.fuzzyAlgorithmClass = fuzzyAlgorithmClass;
+    }
+
+    public TimeZone getDataBaseTimeZone() {
+        return dataBaseTimeZone;
+    }
+
+    public void setDataBaseTimeZone(TimeZone dataBaseTimeZone) {
+        this.dataBaseTimeZone = dataBaseTimeZone;
     }
 
     public boolean isDeIdentifyLogs() {

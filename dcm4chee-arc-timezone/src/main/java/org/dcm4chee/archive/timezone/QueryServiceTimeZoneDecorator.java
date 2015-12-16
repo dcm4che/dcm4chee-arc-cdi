@@ -38,23 +38,18 @@
 
 package org.dcm4chee.archive.timezone;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.TimeZone;
-
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.DatePrecision;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
-import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.decorators.DelegatingQueryService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.TimeZone;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -73,7 +68,8 @@ public class QueryServiceTimeZoneDecorator extends DelegatingQueryService {
 
         getNextDecorator().coerceRequestAttributes(context);
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
-        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
+        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                .getDeviceExtension(ArchiveDeviceExtension.class).getDataBaseTimeZone();
         if (archiveTimeZone == null)    // no Timezone support configured
             return;
 
@@ -103,7 +99,7 @@ public class QueryServiceTimeZoneDecorator extends DelegatingQueryService {
         }
     }
 
-    @Override
+/*    @Override
     public void coerceResponseAttributes(QueryContext context, Attributes match)
             throws DicomServiceException {
         getNextDecorator().coerceResponseAttributes(context, match);
@@ -129,11 +125,11 @@ public class QueryServiceTimeZoneDecorator extends DelegatingQueryService {
         } catch (Exception e) {
             throw new DicomServiceException(Status.UnableToProcess, e);
         }
-    }
+    }*/
 
-    private Date dateOf(Attributes match) {
+/*    private Date dateOf(Attributes match) {
         Date date = match.getDate(Tag.ContentDateAndTime, new DatePrecision(Calendar.SECOND));
         return date != null ? date : match.getDate(Tag.StudyDateAndTime, new DatePrecision(Calendar.SECOND));
-    }
+    }*/
 
 }

@@ -46,9 +46,9 @@ package org.dcm4chee.archive.store.remember;
 public interface StoreAndRememberService {
 
     StoreAndRememberContextBuilder createContextBuilder();
-    
+
     void scheduleStoreAndRemember(StoreAndRememberContext context, long delay);
-    
+
     void storeAndRemember(StoreAndRememberContext context);
-    
+
 }

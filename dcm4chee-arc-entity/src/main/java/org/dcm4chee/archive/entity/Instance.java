@@ -38,17 +38,6 @@
 
 package org.dcm4chee.archive.entity;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-
-import javax.persistence.*;
-
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.DatePrecision;
 import org.dcm4che3.data.Tag;
@@ -57,6 +46,13 @@ import org.dcm4che3.util.StringUtils;
 import org.dcm4chee.archive.conf.AttributeFilter;
 import org.dcm4chee.storage.conf.Availability;
 import org.hibernate.annotations.OptimisticLock;
+
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -273,6 +269,10 @@ public class Instance implements Serializable {
 
     public String getInstanceNumber() {
         return instanceNumber;
+    }
+
+    public void setContentDateTime(Date contentDateTime) {
+        this.contentDateTime = contentDateTime;
     }
 
     public Date getContentDateTime() {

@@ -38,47 +38,17 @@
 
 package org.dcm4chee.archive.store.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.TimeZone;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
-import javax.ejb.Stateless;
-import javax.enterprise.event.Event;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Sequence;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
+import org.dcm4che3.data.*;
 import org.dcm4che3.net.Device;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.soundex.FuzzyStr;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4chee.archive.code.CodeService;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.conf.AttributeFilter;
-import org.dcm4chee.archive.conf.Entity;
-import org.dcm4chee.archive.conf.MetadataUpdateStrategy;
-import org.dcm4chee.archive.conf.StoreAction;
-import org.dcm4chee.archive.conf.StoreParam;
+import org.dcm4chee.archive.conf.*;
+import org.dcm4chee.archive.entity.*;
 import org.dcm4chee.archive.entity.Code;
-import org.dcm4chee.archive.entity.ContentItem;
-import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
-import org.dcm4chee.archive.entity.Location;
-import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.RequestAttributes;
-import org.dcm4chee.archive.entity.Series;
-import org.dcm4chee.archive.entity.Study;
-import org.dcm4chee.archive.entity.Utils;
-import org.dcm4chee.archive.entity.VerifyingObserver;
 import org.dcm4chee.archive.issuer.IssuerService;
 import org.dcm4chee.archive.locationmgmt.LocationMgmt;
 import org.dcm4chee.archive.patient.PatientService;
@@ -94,6 +64,15 @@ import org.dcm4chee.storage.StorageContext;
 import org.dcm4chee.storage.conf.StorageSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ejb.Stateless;
+import javax.enterprise.event.Event;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -192,7 +171,7 @@ public class StoreServiceEJB {
         Instance inst = new Instance();
         inst.setSeries(service.findOrCreateSeries(em, context));
         inst.setConceptNameCode(singleCode(data, Tag.ConceptNameCodeSequence));
-        inst.setVerifyingObservers(createVerifyingObservers(
+        inst.setVerifyingObservers(createVerifyingObservers(context,
                 data.getSequence(Tag.VerifyingObserverSequence),
                 storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields(), inst));
         inst.setContentItems(createContentItems(
@@ -203,6 +182,8 @@ public class StoreServiceEJB {
         inst.setAttributes(data,
                 storeParam.getAttributeFilter(Entity.Instance),
                 storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        //update time on db
+        updateInstanceTime(inst,device,context);
         em.persist(inst);
         LOG.info("{}: Create {}", session, inst);
         return inst;
@@ -229,6 +210,8 @@ public class StoreServiceEJB {
         series.setAttributes(attrs,
                 storeParam.getAttributeFilter(Entity.Series),
                 storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
+        //update time on db
+        updateSeriesTime(series, device, context);
         em.persist(series);
         LOG.info("{}: Create {}", session, series);
         return series;
@@ -249,6 +232,8 @@ public class StoreServiceEJB {
         study.setAttributes(attrs, studyFilter, fuzzyStr, nullValue);
         study.setIssuerOfAccessionNumber(findOrCreateIssuer(attrs
                 .getNestedDataset(Tag.IssuerOfAccessionNumberSequence)));
+        //update time on db
+        updateStudyTime(study, device, context);
         em.persist(study);
         LOG.info("{}: Create {}", session, study);
         newStudyCreatedEvent.fire(study.getStudyInstanceUID());
@@ -404,7 +389,8 @@ public class StoreServiceEJB {
                                 Tag.ReferringPhysicianName, attrs, fuzzyStr, nullValue));
             }
         }
-
+        //update time on db
+        updateStudyTime(study, device, context);
         updatePatient(context, study.getPatient());
     }
 
@@ -451,6 +437,8 @@ public class StoreServiceEJB {
                                 Tag.PerformingPhysicianName, attrs, fuzzyStr, nullValue));
             }
         }
+        //update time on db
+        updateSeriesTime(series, device, context);
         updateStudy(context, series.getStudy());
     }
 
@@ -475,7 +463,8 @@ public class StoreServiceEJB {
             }
 
         }
-
+        //update time on db
+        updateInstanceTime(inst, device, context);
         updateSeries(context, inst.getSeries());
     }
 
@@ -502,7 +491,7 @@ public class StoreServiceEJB {
         return list;
     }
 
-    private Collection<VerifyingObserver> createVerifyingObservers(
+    private Collection<VerifyingObserver> createVerifyingObservers(StoreContext context,
             Sequence seq, FuzzyStr fuzzyStr, String nullValue, Instance instance) {
         if (seq == null || seq.isEmpty())
             return null;
@@ -512,6 +501,8 @@ public class StoreServiceEJB {
         for (Attributes item : seq) {
             VerifyingObserver observer = new VerifyingObserver(item, fuzzyStr, nullValue);
             observer.setInstance(instance);
+            //update time on db
+            updateVerifyingObserverTime(observer,device,context);
             list.add(observer);
         }
         return list;
@@ -564,4 +555,50 @@ public class StoreServiceEJB {
         return false;
     }
 
+    private void updateInstanceTime(Instance inst, Device arcDevice, StoreContext ctx) {
+
+        Attributes temp = getModifiedAttributes(arcDevice, ctx
+                , (int) Tag.ContentDateAndTime
+                , inst.getAttributes()
+                .getDate(Tag.ContentDateAndTime));
+
+        inst.setContentDateTime(temp.getDate(Tag.ContentDateAndTime));
+    }
+
+    private void updateSeriesTime(Series series, Device arcDevice, StoreContext ctx) {
+
+        Attributes temp = getModifiedAttributes(arcDevice, ctx
+                , (int) Tag.PerformedProcedureStepStartDateAndTime
+                , series.getAttributes()
+                .getDate(Tag.PerformedProcedureStepStartDateAndTime));
+
+        series.setPerformedProcedureStepStartDateTime(temp.getDate(Tag.PerformedProcedureStepStartDateAndTime));
+    }
+
+    private void updateStudyTime(Study study, Device arcDevice, StoreContext ctx) {
+
+        Attributes temp = getModifiedAttributes(arcDevice, ctx
+                , (int) Tag.StudyDateAndTime
+                , study.getAttributes()
+                .getDate(Tag.StudyDateAndTime));
+
+        study.setStudyDateTime(temp.getDate(Tag.StudyDateAndTime));
+    }
+
+    private void updateVerifyingObserverTime(VerifyingObserver observer, Device arcDevice, StoreContext ctx) {
+
+        Attributes temp = getModifiedAttributes(arcDevice, ctx
+                , (int) Tag.VerificationDateTime
+                , observer.getVerificationDateTime());
+
+        observer.setVerificationDateTime(temp.getDate(Tag.VerificationDateTime));
+    }
+
+    private Attributes getModifiedAttributes(Device arcDevice, StoreContext ctx, int tagDateAndTime, Date date) {
+        Attributes temp = new Attributes();
+        temp.setDate(tagDateAndTime, VR.DT, date);
+        ArchiveDeviceExtension arcDevExt = arcDevice.getDeviceExtension(ArchiveDeviceExtension.class);
+        temp.updateTimeZoneOfSpecificTag(ctx.getSourceTimeZone(), arcDevExt.getDataBaseTimeZone(), null, tagDateAndTime);
+        return temp;
+    }
 }

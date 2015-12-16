@@ -38,25 +38,15 @@
 
 package org.dcm4chee.archive.entity;
 
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.soundex.FuzzyStr;
+
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.soundex.FuzzyStr;
 
 /**
  * @author Damien Evans <damien.daddy@gmail.com>
@@ -107,6 +97,10 @@ public class VerifyingObserver implements Serializable {
 
     public Date getVerificationDateTime() {
         return verificationDateTime;
+    }
+
+    public void setVerificationDateTime(Date verificationDateTime) {
+        this.verificationDateTime = verificationDateTime;
     }
 
     public PersonName getVerifyingObserverName() {

@@ -1489,6 +1489,45 @@ m-equality: caseExactIA5Match
 m-syntax: 1.3.6.1.4.1.1466.115.121.1.26
 m-singleValue: TRUE
 
+dn: m-oid=1.2.40.0.13.1.15.10.3.117, ou=attributetypes, cn=dcm4chee-archive, ou=
+ schema
+objectclass: metaAttributeType
+objectclass: metaTop
+objectclass: top
+m-oid: 1.2.40.0.13.1.15.10.3.117
+m-name: dcmmetadataUpdateStrategy
+m-description: Metadata Update Strategy (overwrite, overwrite_merge, coerce,
+ coerce_merge)
+m-equality: caseExactIA5Match
+m-syntax: 1.3.6.1.4.1.1466.115.121.1.26
+m-singleValue: TRUE
+
+dn: m-oid=1.2.40.0.13.1.15.10.3.118, ou=attributetypes, cn=dcm4chee-archive, ou=
+ schema
+objectclass: metaAttributeType
+objectclass: metaTop
+objectclass: top
+m-oid: 1.2.40.0.13.1.15.10.3.118
+m-name: dcmUpdateDbDelay
+m-description: Specifies the delay between retries in case of exceptions on
+DB updates
+m-equality: integerMatch
+m-syntax: 1.3.6.1.4.1.1466.115.121.1.27
+m-singleValue: TRUE
+
+dn: m-oid=1.2.40.0.13.1.15.10.3.119, ou=attributetypes, cn=dcm4chee-archive, ou=
+ schema
+objectclass: metaAttributeType
+objectclass: metaTop
+objectclass: top
+m-oid: 1.2.40.0.13.1.15.10.3.119
+m-name: dcmDBTimeZone
+m-description: Specifies the user time zone used to update DB entries from
+source time zone
+m-equality: caseExactIA5Match
+m-syntax: 1.3.6.1.4.1.1466.115.121.1.26
+m-singleValue: TRUE
+
 dn: ou=comparators, cn=dcm4chee-archive, ou=schema
 objectclass: organizationalUnit
 objectclass: top
@@ -1569,6 +1608,7 @@ m-may: dcmMaxDeleteServiceRetries
 m-may: dcmDeleteServiceAllowedInterval
 m-may: dcmDataVolumePerDayCalculationRange
 m-may: dcmDataVolumePerDayAverageOnNDays
+m-may: dcmDBTimeZone
 
 dn: m-oid=1.2.40.0.13.1.15.10.4.5, ou=objectclasses, cn=dcm4chee-archive, ou=sch
  ema
