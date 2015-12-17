@@ -127,7 +127,7 @@ public class StoreContextImpl implements StoreContext {
     }
 
     @Override
-    public Attributes getAttributesForDatabase() {
+    public Attributes getAttributes() {
         return attributesForDatabase;
     }
 

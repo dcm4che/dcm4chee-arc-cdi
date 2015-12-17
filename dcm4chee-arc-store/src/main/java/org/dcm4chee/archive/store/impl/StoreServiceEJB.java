@@ -150,7 +150,7 @@ public class StoreServiceEJB {
         Series series = instance.getSeries();
         Study study = series.getStudy();
         Patient patient = study.getPatient();
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         Attributes modified = new Attributes();
         attrs.update(patient.getAttributes(), modified);
         attrs.update(study.getAttributes(), modified);
@@ -166,7 +166,7 @@ public class StoreServiceEJB {
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
-        Attributes data = context.getAttributesForDatabase();
+        Attributes data = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         Instance inst = new Instance();
         inst.setSeries(service.findOrCreateSeries(em, context));
@@ -193,7 +193,7 @@ public class StoreServiceEJB {
             throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
@@ -220,7 +220,7 @@ public class StoreServiceEJB {
     public Study createStudy(StoreContext context) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
         StoreService service = session.getStoreService();
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         AttributeFilter studyFilter = session.getStoreParam().getAttributeFilter(Entity.Study);
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
@@ -358,7 +358,7 @@ public class StoreServiceEJB {
 
     public void updateStudy(StoreContext context, Study study) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
@@ -398,14 +398,14 @@ public class StoreServiceEJB {
         StoreSession session = context.getStoreSession();
 
         if (!isFetch(context, session)) {
-            patientService.updatePatientByCStore(patient, context.getAttributesForDatabase(),
+            patientService.updatePatientByCStore(patient, context.getAttributes(),
                     session.getStoreParam());
         }
     }
 
     public void updateSeries(StoreContext context, Series series) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
@@ -444,7 +444,7 @@ public class StoreServiceEJB {
 
     public void updateInstance(StoreContext context, Instance inst) throws DicomServiceException {
         StoreSession session = context.getStoreSession();
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         StoreParam storeParam = session.getStoreParam();
         Attributes instAttrs = inst.getAttributes();
         AttributeFilter instFilter = storeParam

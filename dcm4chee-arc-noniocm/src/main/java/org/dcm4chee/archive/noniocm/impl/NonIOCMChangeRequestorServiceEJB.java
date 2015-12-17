@@ -219,11 +219,11 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
 
     @Override
     public NonIOCMChangeType performChange(Instance inst, StoreContext context) {
-        Attributes chgAttrs = new Attributes(context.getAttributesForDatabase(), BASIC_CHG_ATTRIBUTES);
+        Attributes chgAttrs = new Attributes(context.getAttributes(), BASIC_CHG_ATTRIBUTES);
         Attributes origAttrs = new Attributes();
         Sequence origSQ = chgAttrs.ensureSequence(Tag.ModifiedAttributesSequence, 1);
         origSQ.add(origAttrs);
-        NonIOCMChangeType chgType = getChangeType(inst, context.getAttributesForDatabase());
+        NonIOCMChangeType chgType = getChangeType(inst, context.getAttributes());
         LOG.debug("performChange start for changeType:{}", chgType);
         switch (chgType) {
         case PAT_ID_CHANGE:
@@ -231,7 +231,7 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
                     context.getStoreSession().getStoreParam().getAttributeFilter(Entity.Patient).getSelection());
             StoreSession session = context.getStoreSession();
             try {
-                patientService.updateOrCreatePatientOnCStore(context.getAttributesForDatabase(),
+                patientService.updateOrCreatePatientOnCStore(context.getAttributes(),
                         PatientSelectorFactory.createSelector(session.getStoreParam()), session.getStoreParam());
             } catch (PatientCircularMergedException e) {
                 LOG.error("Patient for received Instance is merged circular!", e);
@@ -252,7 +252,7 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
         case INSTANCE_CHANGE:
             origAttrs.setString(Tag.SOPInstanceUID, VR.UI, inst.getSopInstanceUID());
             String newUID = UIDUtils.createUID();
-            context.getAttributesForDatabase().setString(Tag.SOPInstanceUID, VR.UI, newUID);
+            context.getAttributes().setString(Tag.SOPInstanceUID, VR.UI, newUID);
             context.setProperty(StoreServiceNonIOCMDecorator.NONE_IOCM_HIDE_NEW_INSTANCE, newUID);
             chgAttrs.setString(Tag.SOPInstanceUID, VR.UI, newUID);
             activeProcessingService.addActiveProcess(inst.getSeries().getStudy().getStudyInstanceUID(), 
@@ -283,7 +283,7 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
     public void handleModalityChange(Instance inst, StoreContext context, int gracePeriodInSeconds) {
         if(withinGracePeriodAndNonIOCMSource(inst, gracePeriodInSeconds)) {
             context.setOldNONEIOCMChangeUID(inst.getSopInstanceUID());
-            Attributes attrs = context.getAttributesForDatabase();
+            Attributes attrs = context.getAttributes();
             attrs.setString(null, Tag.SOPInstanceUID, VR.UI, 
                     UIDUtils.createUID());
             inst.setAttributes(attrs, context.getStoreSession().getStoreParam().getAttributeFilter(Entity.Instance),
@@ -311,17 +311,17 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
             QCStudyHistory studyHistory = new QCStudyHistory();
             studyHistory.setAction(action);
             studyHistory.setUpdatedAttributesBlob(null); //no change (expect same attrs in study)
-            studyHistory.setOldStudyUID(context.getAttributesForDatabase().getString(Tag.StudyInstanceUID));
-            studyHistory.setNextStudyUID(context.getAttributesForDatabase().getString(Tag.StudyInstanceUID));
+            studyHistory.setOldStudyUID(context.getAttributes().getString(Tag.StudyInstanceUID));
+            studyHistory.setNextStudyUID(context.getAttributes().getString(Tag.StudyInstanceUID));
             em.persist(studyHistory);
             QCSeriesHistory seriesHistory = new QCSeriesHistory();
             seriesHistory.setStudy(studyHistory);
             seriesHistory.setUpdatedAttributesBlob(null); //no change (expect same attrs in series)
-            seriesHistory.setOldSeriesUID(context.getAttributesForDatabase().getString(Tag.SeriesInstanceUID));
+            seriesHistory.setOldSeriesUID(context.getAttributes().getString(Tag.SeriesInstanceUID));
             em.persist(seriesHistory);
             QCInstanceHistory instanceHistory = new QCInstanceHistory(
-                    context.getAttributesForDatabase().getString(Tag.StudyInstanceUID),
-                    context.getAttributesForDatabase().getString(Tag.SeriesInstanceUID),
+                    context.getAttributes().getString(Tag.StudyInstanceUID),
+                    context.getAttributes().getString(Tag.SeriesInstanceUID),
                     context.getOldNONEIOCMChangeUID(),
                     context.getInstance().getSopInstanceUID(),
                     context.getInstance().getSopInstanceUID(), false);

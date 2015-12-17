@@ -69,7 +69,7 @@ public interface StoreContext {
      * thread-safe way (i.e. only by the main store thread responsible for the database update, NOT by the asynchronous
      * store-to-storage-system)
      */
-    Attributes getAttributesForDatabase();
+    Attributes getAttributes();
 
     void setAttributesForDatabase(Attributes attributesForDatabase);
 

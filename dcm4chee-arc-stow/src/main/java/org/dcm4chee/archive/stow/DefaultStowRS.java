@@ -55,10 +55,7 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
@@ -505,7 +502,7 @@ public class DefaultStowRS implements StowRS {
 
     private Attributes sopRef(StoreContext ctx) {
         StoreSession session = ctx.getStoreSession();
-        Attributes attrs = ctx.getAttributesForDatabase();
+        Attributes attrs = ctx.getAttributes();
         Attributes sopRef = new Attributes(5);
         String cuid = attrs.getString(Tag.SOPClassUID);
         String iuid = attrs.getString(Tag.SOPInstanceUID);

@@ -101,7 +101,7 @@ public class StudyUpdateSessionManager {
 
         StoreSession storeSession = storeContext.getStoreSession();
         String remoteAET = storeSession.getRemoteAET();
-        Attributes attributes = storeContext.getAttributesForDatabase();
+        Attributes attributes = storeContext.getAttributes();
         String studyInstanceUID = attributes.getString(Tag.StudyInstanceUID);
         String seriesInstanceUID = attributes.getString(Tag.SeriesInstanceUID);
         String sopInstanceUID = attributes.getString(Tag.SOPInstanceUID);

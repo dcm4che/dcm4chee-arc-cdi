@@ -69,7 +69,7 @@ public class StoreServiceMIMADecorator extends DelegatingStoreService {
             if(session.getRemoteAET() != null){
             ApplicationEntity remoteAE = aeCache.get(session.getRemoteAET());
             if (remoteAE != null) {
-                Supplements.supplementComposite(session, context.getAttributesForDatabase(),
+                Supplements.supplementComposite(session, context.getAttributes(),
                         remoteAE.getDevice());
             }
             }

@@ -75,7 +75,7 @@ public class StoreServiceTimeZoneDecorator extends DelegatingStoreService {
         if (archiveTimeZone == null)    // no Timezone support configured
             return;
 
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         Date dstDate = attrs.getDate(Tag.StudyDateAndTime, new DatePrecision(Calendar.SECOND));
         if (!attrs.containsTimezoneOffsetFromUTC()) {
             LOG.debug("{}: No Timezone Offset Tag in received object " +

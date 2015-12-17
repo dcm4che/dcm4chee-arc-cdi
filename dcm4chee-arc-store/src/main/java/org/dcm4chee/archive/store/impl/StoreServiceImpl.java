@@ -431,7 +431,7 @@ public class StoreServiceImpl implements StoreService {
 
         final StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         try {
             Attributes modified = context.getCoercedOriginalAttributes();
             Templates tpl = session.getRemoteAET() != null ? arcAE
@@ -547,7 +547,7 @@ public class StoreServiceImpl implements StoreService {
         boolean deident = session.getStoreParam().isDeIdentifyLogs();
         Attributes attrs = context.getCoercedOriginalAttributes();
         if (!attrs.isEmpty()) {
-            Attributes newatts = new Attributes(context.getAttributesForDatabase(), attrs.tags());
+            Attributes newatts = new Attributes(context.getAttributes(), attrs.tags());
             LOG.info("{}: Coerced Attributes:\n{}New Attributes:\n{}", session,
                     deident ? attrs.toString(ArchiveDeidentifier.DEFAULT) : attrs,
                     deident ? newatts.toString(ArchiveDeidentifier.DEFAULT) : newatts);
@@ -653,7 +653,7 @@ public class StoreServiceImpl implements StoreService {
 
         try {
 
-            Attributes attrs = context.getAttributesForDatabase();
+            Attributes attrs = context.getAttributes();
             Instance inst = em
                     .createNamedQuery(Instance.FIND_BY_SOP_INSTANCE_UID_EAGER,
                             Instance.class)
@@ -701,7 +701,7 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public Series findOrCreateSeries(EntityManager em, StoreContext context)
             throws DicomServiceException {
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         try {
             Series series = em
                     .createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID_EAGER,
@@ -720,7 +720,7 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public Study findOrCreateStudy(EntityManager em, StoreContext context)
             throws DicomServiceException {
-        Attributes attrs = context.getAttributesForDatabase();
+        Attributes attrs = context.getAttributes();
         try {
             Study study = em
                     .createNamedQuery(Study.FIND_BY_STUDY_INSTANCE_UID_EAGER,
@@ -742,7 +742,7 @@ public class StoreServiceImpl implements StoreService {
         try {
             StoreSession session = context.getStoreSession();
             return patientService.updateOrCreatePatientOnCStore(context
-                    .getAttributesForDatabase(), PatientSelectorFactory
+                    .getAttributes(), PatientSelectorFactory
                     .createSelector(session.getStoreParam()),
                     session.getStoreParam());
         } catch (Exception e) {
