@@ -38,29 +38,47 @@
 
 package org.dcm4chee.archive.query.impl;
 
-import com.mysema.commons.lang.CloseableIterator;
-import com.mysema.query.BooleanBuilder;
-import com.mysema.query.Tuple;
-import com.mysema.query.types.Expression;
-import com.mysema.query.types.Predicate;
+import java.util.Date;
+
+import javax.ejb.EJB;
+import javax.ejb.EJBTransactionRolledbackException;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.PersistenceContext;
+
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.net.Device;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.entity.*;
+import org.dcm4chee.archive.entity.QInstance;
+import org.dcm4chee.archive.entity.QPatient;
+import org.dcm4chee.archive.entity.QSeries;
+import org.dcm4chee.archive.entity.QSeriesQueryAttributes;
+import org.dcm4chee.archive.entity.QStudy;
+import org.dcm4chee.archive.entity.QStudyQueryAttributes;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.SeriesQueryAttributes;
+import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.StudyQueryAttributes;
+import org.dcm4chee.archive.entity.Utils;
 import org.dcm4chee.archive.query.DerivedSeriesFields;
 import org.dcm4chee.archive.query.DerivedStudyFields;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.util.QueryBuilder;
 import org.dcm4chee.mysema.query.jpa.hibernate.DetachedHibernateQueryFactory;
 import org.hibernate.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
-import java.util.Date;
+import com.mysema.commons.lang.CloseableIterator;
+import com.mysema.query.BooleanBuilder;
+import com.mysema.query.Tuple;
+import com.mysema.query.types.Expression;
+import com.mysema.query.types.Predicate;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -68,6 +86,8 @@ import java.util.Date;
  */
 @Stateless
 public class QueryServiceEJB {
+
+    private static Logger LOG = LoggerFactory.getLogger(QueryServiceEJB.class);
 
     static final Expression<?>[] PATIENT_STUDY_SERIES_ATTRS = {
         QStudy.study.pk,
@@ -85,14 +105,17 @@ public class QueryServiceEJB {
         QueryBuilder.patientAttributesBlob.encodedAttributes
     };
 
+    @EJB
+    private QueryServiceEJB self;
+
     @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
-    EntityManager em;
+    private EntityManager em;
 
     @Inject
     private Device device;
 
     @Inject
-    DetachedHibernateQueryFactory queryFactory;
+    private DetachedHibernateQueryFactory queryFactory;
 
     public Attributes getSeriesAttributes(Long seriesPk, QueryContext context) {
         String viewID = context.getQueryParam().getQueryRetrieveView().getViewID();
@@ -116,7 +139,7 @@ public class QueryServiceEJB {
         Date seriesLastUpdateTime;
         if (numberOfSeriesRelatedInstances == null) {
             SeriesQueryAttributes seriesQueryAttributes =
-                    reCalculateSeriesQueryAttributes(seriesPk, context.getQueryParam());
+                    calculateSeriesQueryAttributes(seriesPk, context.getQueryParam());
             numberOfSeriesRelatedInstances = seriesQueryAttributes.getNumberOfInstances();
             numberOfSeriesVisibleInstances = seriesQueryAttributes.getNumberOfVisibleInstances();
             seriesLastUpdateTime = seriesQueryAttributes.getLastUpdateTime();
@@ -137,7 +160,7 @@ public class QueryServiceEJB {
                 result.get(QStudyQueryAttributes.studyQueryAttributes.numberOfInstances);
         if (numberOfStudyRelatedInstances == null) {
             StudyQueryAttributes studyQueryAttributes =
-                    reCalculateStudyQueryAttributes(result.get(QStudy.study.pk), context.getQueryParam());
+                    calculateStudyQueryAttributes(result.get(QStudy.study.pk), context.getQueryParam());
             numberOfStudyRelatedInstances = studyQueryAttributes.getNumberOfInstances();
             numberOfStudyRelatedSeries = studyQueryAttributes.getNumberOfSeries();
             modalitiesInStudy = studyQueryAttributes.getRawModalitiesInStudy();
@@ -198,18 +221,21 @@ public class QueryServiceEJB {
     }
 
     /**
-     * Creates or updates StudyQueryAttributes
+     * Creates StudyQueryAttributes
      *
      * @param studyPk primary key of study
      * @param queryParam
      * @return updated or created StudyQueryAttributes
      */
-    public StudyQueryAttributes reCalculateStudyQueryAttributes(
+    public StudyQueryAttributes calculateStudyQueryAttributes(
             Long studyPk, QueryParam queryParam) {
 
         DerivedStudyFields studyDerivedFields = new DefaultDerivedStudyFields(device);
 
-        Study study = em.getReference(Study.class, studyPk);
+        Study study = em.find(Study.class, studyPk);
+
+        long calculatedForVersion = study.getVersion();
+
         try (
             CloseableIterator<Tuple> results = queryFactory.query(
                     em.unwrap(Session.class))
@@ -223,27 +249,35 @@ public class QueryServiceEJB {
             }
         }
 
-        StudyQueryAttributes queryAttrs;
+        StudyQueryAttributes queryAttrs = new StudyQueryAttributes();
+        queryAttrs.setViewID(queryParam.getQueryRetrieveView().getViewID());
+        queryAttrs.setStudy(study);
+        populateStudyQueryAttributes(studyDerivedFields, queryAttrs);
+
         try {
-            Object result = em.createNamedQuery(StudyQueryAttributes.FIND_BY_VIEW_ID_AND_STUDY_FK)
-                    .setParameter(1, queryParam.getQueryRetrieveView().getViewID())
-                    .setParameter(2, studyPk)
-                    .getSingleResult();
-
-            // update
-            queryAttrs = (StudyQueryAttributes) result;
-            populateStudyQueryAttributes(studyDerivedFields, queryAttrs);
-            em.merge(queryAttrs);
-
-        } catch (NoResultException nre) {
-            // create new
-            queryAttrs = new StudyQueryAttributes();
-            queryAttrs.setViewID(queryParam.getQueryRetrieveView().getViewID());
-            queryAttrs.setStudy(study);
-            populateStudyQueryAttributes(studyDerivedFields, queryAttrs);
-            em.persist(queryAttrs);
+            // should run in own transaction
+            self.persistStudyQueryAttributes(queryAttrs, calculatedForVersion);
+        } catch (EJBTransactionRolledbackException transactionRolledbackException) {
+            LOG.warn("Study derived fields could not be persisted, this is usually okay - probably there was a concurrent calculation/update.", transactionRolledbackException);
         }
+
         return queryAttrs;
+    }
+
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public void persistStudyQueryAttributes(StudyQueryAttributes queryAttrs, long calculatedForVersion) {
+        // locking here ensures that we really never save the wrong version of the calculated fields
+        Study study = em.find(Study.class, queryAttrs.getStudy().getPk(), LockModeType.PESSIMISTIC_READ);
+
+        long version = study.getVersion();
+
+        // somebody might have changed the study in between (while we were calculating), then we must not save the results
+        if (calculatedForVersion == version) {
+            queryAttrs.setStudy(study);
+            em.persist(queryAttrs);
+        } else {
+            LOG.info("Not saving study query attributes, because there was a concurrent modification");
+        }
     }
 
     private void populateStudyQueryAttributes(DerivedStudyFields studyDerivedFields, StudyQueryAttributes queryAttrs) {
@@ -263,18 +297,21 @@ public class QueryServiceEJB {
     }
 
     /**
-     * Creates or updates SeriesQueryAttributes
+     * Creates SeriesQueryAttributes
      *
      * @param seriesPk primary key of series
      * @param queryParam
      * @return updated or created SeriesQueryAttributes
      */
-    public SeriesQueryAttributes reCalculateSeriesQueryAttributes(
+    public SeriesQueryAttributes calculateSeriesQueryAttributes(
             Long seriesPk, QueryParam queryParam) {
 
         DerivedSeriesFields seriesDerivedFields = new DefaultDerivedSeriesFields(device);
 
-        Series series = em.getReference(Series.class, seriesPk);
+        Series series = em.find(Series.class, seriesPk);
+
+        long calculatedForVersion = series.getVersion();
+
         try (
             CloseableIterator<Tuple> results = queryFactory.query(
                     em.unwrap(Session.class))
@@ -286,27 +323,35 @@ public class QueryServiceEJB {
             }
         }
 
-        SeriesQueryAttributes queryAttrs;
+        SeriesQueryAttributes queryAttrs = new SeriesQueryAttributes();
+        queryAttrs.setSeries(series);
+        queryAttrs.setViewID(queryParam.getQueryRetrieveView().getViewID());
+        populateSeriesDerivedFields(seriesDerivedFields, queryAttrs);
+
         try {
-            Object result = em.createNamedQuery(SeriesQueryAttributes.FIND_BY_VIEW_ID_AND_SERIES_FK)
-                    .setParameter(1, queryParam.getQueryRetrieveView().getViewID())
-                    .setParameter(2, seriesPk)
-                    .getSingleResult();
-
-            // update
-            queryAttrs = ((SeriesQueryAttributes) result);
-            populateSeriesDerivedFields(seriesDerivedFields, queryAttrs);
-            em.merge(queryAttrs);
-
-        } catch (NoResultException nre) {
-            // create new
-            queryAttrs = new SeriesQueryAttributes();
-            queryAttrs.setSeries(series);
-            queryAttrs.setViewID(queryParam.getQueryRetrieveView().getViewID());
-            populateSeriesDerivedFields(seriesDerivedFields, queryAttrs);
-            em.persist(queryAttrs);
+            // should run in own transaction
+            self.persistSeriesQueryAttributes(queryAttrs, calculatedForVersion);
+        } catch (EJBTransactionRolledbackException transactionRolledbackException) {
+            LOG.warn("Series derived fields could not be persisted, this is usually okay - probably there was a concurrent calculation/update.", transactionRolledbackException);
         }
+
         return queryAttrs;
+    }
+
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public void persistSeriesQueryAttributes(SeriesQueryAttributes queryAttrs, long calculatedForVersion) {
+        // locking here ensures that we really never save the wrong version of the calculated fields
+        Series series = em.find(Series.class, queryAttrs.getSeries().getPk(), LockModeType.PESSIMISTIC_READ);
+
+        long version = series.getVersion();
+
+        // somebody might have changed the series in between (while we were calculating), then we must not save the results
+        if (calculatedForVersion == version) {
+            queryAttrs.setSeries(series);
+            em.persist(queryAttrs);
+        } else {
+            LOG.info("Not saving series query attributes, because there was a concurrent modification");
+        }
     }
 
     private void populateSeriesDerivedFields(DerivedSeriesFields seriesDerivedFields, SeriesQueryAttributes queryAttrs) {

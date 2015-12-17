@@ -77,7 +77,7 @@ import java.util.EnumSet;
 @ApplicationScoped
 public class DefaultQueryService implements QueryService {
 
-    static Logger LOG = LoggerFactory.getLogger(DefaultQueryService.class);
+    private static Logger LOG = LoggerFactory.getLogger(DefaultQueryService.class);
 
     @PersistenceContext(name = "dcm4chee-arc", unitName = "dcm4chee-arc")
     private EntityManager em;
@@ -224,13 +224,13 @@ public class DefaultQueryService implements QueryService {
     @Override
     public StudyQueryAttributes createStudyView(Long studyPk, QueryParam queryParam) {
         if (queryParam == null || queryParam.getQueryRetrieveView() == null) throw new IllegalArgumentException("Cannot create study view - queryParam/queryRetrieveView cannot be null");
-        return ejb.reCalculateStudyQueryAttributes(studyPk, queryParam);
+        return ejb.calculateStudyQueryAttributes(studyPk, queryParam);
     }
 
     @Override
     public SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam) {
         if (queryParam == null || queryParam.getQueryRetrieveView() == null) throw new IllegalArgumentException("Cannot create series view - queryParam/queryRetrieveView cannot be null");
-        return ejb.reCalculateSeriesQueryAttributes(seriesPk, queryParam);
+        return ejb.calculateSeriesQueryAttributes(seriesPk, queryParam);
     }
 
     @Override
