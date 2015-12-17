@@ -1081,10 +1081,10 @@ public class DefaultArchiveConfigurationFactory {
         extArcAEExt.setAeFetchPriority(0);
         WebServiceAEExtension wsAEExt = new WebServiceAEExtension();
         ae.addAEExtension(wsAEExt);
-        wsAEExt.setQidoRSBaseURL("http://localhost:8080/dcm4chee-arc/qido/" + aet);
-        wsAEExt.setWadoRSBaseURL("http://localhost:8080/dcm4chee-arc/wado/" + aet);
-        wsAEExt.setStowRSBaseURL("http://localhost:8080/dcm4chee-arc/stow/" + aet);
-        wsAEExt.setWadoURIBaseURL("http://localhost:8080/dcm4chee-arc/wado/" + aet);
+        wsAEExt.setQidoRSBaseURL("http://localhost:8080/dicom-web/" + aet);
+        wsAEExt.setWadoRSBaseURL("http://localhost:8080/dicom-web/" + aet);
+        wsAEExt.setStowRSBaseURL("http://localhost:8080/dicom-web/" + aet);
+        wsAEExt.setWadoURIBaseURL("http://localhost:8080/dicom-web/" + aet);
         return ae;
     }
 
