@@ -558,47 +558,52 @@ public class StoreServiceEJB {
     private void updateInstanceTime(Instance inst, Device arcDevice, StoreContext ctx) {
 
         Attributes temp = getModifiedAttributes(arcDevice, ctx
-                , (int) Tag.ContentDateAndTime
+                , Tag.ContentDateAndTime
                 , inst.getAttributes()
                 .getDate(Tag.ContentDateAndTime));
-
-        inst.setContentDateTime(temp.getDate(Tag.ContentDateAndTime));
+        Date dt = temp.getDate(Tag.ContentDateAndTime);
+        inst.setContentDateTime(dt);
     }
 
     private void updateSeriesTime(Series series, Device arcDevice, StoreContext ctx) {
 
         Attributes temp = getModifiedAttributes(arcDevice, ctx
-                , (int) Tag.PerformedProcedureStepStartDateAndTime
+                , Tag.PerformedProcedureStepStartDateAndTime
                 , series.getAttributes()
                 .getDate(Tag.PerformedProcedureStepStartDateAndTime));
-
-        series.setPerformedProcedureStepStartDateTime(temp.getDate(Tag.PerformedProcedureStepStartDateAndTime));
+        Date dt = temp.getDate(Tag.PerformedProcedureStepStartDateAndTime);
+        series.setPerformedProcedureStepStartDateTime(dt);
     }
 
     private void updateStudyTime(Study study, Device arcDevice, StoreContext ctx) {
 
         Attributes temp = getModifiedAttributes(arcDevice, ctx
-                , (int) Tag.StudyDateAndTime
+                , Tag.StudyDateAndTime
                 , study.getAttributes()
                 .getDate(Tag.StudyDateAndTime));
-
-        study.setStudyDateTime(temp.getDate(Tag.StudyDateAndTime));
+        Date dt = temp.getDate(Tag.StudyDateAndTime);
+        study.setStudyDateTime(dt);
     }
 
     private void updateVerifyingObserverTime(VerifyingObserver observer, Device arcDevice, StoreContext ctx) {
 
         Attributes temp = getModifiedAttributes(arcDevice, ctx
-                , (int) Tag.VerificationDateTime
+                , Tag.VerificationDateTime
                 , observer.getVerificationDateTime());
 
         observer.setVerificationDateTime(temp.getDate(Tag.VerificationDateTime));
     }
 
-    private Attributes getModifiedAttributes(Device arcDevice, StoreContext ctx, int tagDateAndTime, Date date) {
+    private Attributes getModifiedAttributes(Device arcDevice, StoreContext ctx, long tagDateAndTime, Date date) {
+        if(date == null)
+            return new Attributes();
+
         Attributes temp = new Attributes();
-        temp.setDate(tagDateAndTime, VR.DT, date);
+        temp.setDate(tagDateAndTime, new DatePrecision(), date);
         ArchiveDeviceExtension arcDevExt = arcDevice.getDeviceExtension(ArchiveDeviceExtension.class);
-        temp.updateTimeZoneOfSpecificTag(ctx.getSourceTimeZone(), arcDevExt.getDataBaseTimeZone(), null, tagDateAndTime);
+        temp.setDefaultTimeZone(ctx.getSourceTimeZone());
+        temp.setTimezone(arcDevExt.getDataBaseTimeZone());
+        temp.remove(Tag.TimezoneOffsetFromUTC);
         return temp;
     }
 }
