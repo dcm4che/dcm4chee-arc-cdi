@@ -47,9 +47,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Does post-processing after QC.
+ *
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  */
-
 @ApplicationScoped
 public class QCPostProcessor implements StructuralChangeTransactionHook {
     private static final Logger LOG = LoggerFactory.getLogger(QCPostProcessor.class);
@@ -57,23 +58,14 @@ public class QCPostProcessor implements StructuralChangeTransactionHook {
     @Inject
     private QCRetrieveBean retrieveBean;
 
-//    public void observeQC(@Observes @Service(ServiceType.QCPOSTPROCESSING) QCEvent event) {
-//        LOG.info("QC operation successfull, starting post processing");
-//        //recalculate query Attributes
-//        retrieveBean.recalculateQueryAttributes(event);
-//    }
-    
     @Override
     public boolean beforeCommitStructuralChanges(StructuralChangeContainer changeContext) {
-        LOG.info("QC operation successfull, starting post processing");
-        //recalculate query Attributes
-        retrieveBean.recalculateQueryAttributes(changeContext);
         return true;
     }
 
     @Override
     public void afterCommitStructuralChanges(StructuralChangeContainer changeContext) {
-        // NOP
+        LOG.info("Calculation of query attributes after QC");
+        retrieveBean.recalculateQueryAttributes(changeContext);
     }
-
 }
