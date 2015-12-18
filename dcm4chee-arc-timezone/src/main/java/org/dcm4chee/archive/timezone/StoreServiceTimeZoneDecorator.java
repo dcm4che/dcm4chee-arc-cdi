@@ -44,6 +44,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
+import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
@@ -68,36 +69,39 @@ public class StoreServiceTimeZoneDecorator extends DelegatingStoreService {
 
     @Override
     public void coerceAttributes(StoreContext context) throws DicomServiceException {
+
         getNextDecorator().coerceAttributes(context);
         StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
-        if (archiveTimeZone == null)    // no Timezone support configured
-            return;
+        if(!arcAE.getApplicationEntity().getDevice().getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
 
-        Attributes attrs = context.getAttributes();
-        Date dstDate = attrs.getDate(Tag.StudyDateAndTime, new DatePrecision(Calendar.SECOND));
-        if (!attrs.containsTimezoneOffsetFromUTC()) {
-            LOG.debug("{}: No Timezone Offset Tag in received object " +
-                    "- Appending Tag");
+            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
+            if (archiveTimeZone == null)    // no Timezone support configured
+                return;
 
-            TimeZone remoteAETimeZone = session.getSourceDeviceTimeZone();
-            if (remoteAETimeZone != null) {
-                LOG.debug("Using configured Timezone for device: {} " +
-                        "Setting TimeZone offset in blob attributes", session
-                        , remoteAETimeZone.getID());
+            Attributes attrs = context.getAttributes();
+            Date dstDate = attrs.getDate(Tag.StudyDateAndTime, new DatePrecision(Calendar.SECOND));
+            if (!attrs.containsTimezoneOffsetFromUTC()) {
+                LOG.debug("{}: No Timezone Offset Tag in received object " +
+                        "- Appending Tag");
 
-                attrs.setTimezoneOffsetFromUTC(DateUtils
-                        .formatTimezoneOffsetFromUTC(remoteAETimeZone, dstDate));
-            } else {
-                LOG.debug("{}: No Timezone configured for remote AE " +
-                                "- assume Archive Timezone: {}", session
-                        , archiveTimeZone.getID());
+                TimeZone remoteAETimeZone = session.getSourceDeviceTimeZone();
+                if (remoteAETimeZone != null) {
+                    LOG.debug("Using configured Timezone for device: {} " +
+                            "Setting TimeZone offset in blob attributes", session
+                            , remoteAETimeZone.getID());
 
-                attrs.setTimezoneOffsetFromUTC(DateUtils
-                        .formatTimezoneOffsetFromUTC(archiveTimeZone, dstDate));
+                    attrs.setTimezoneOffsetFromUTC(DateUtils
+                            .formatTimezoneOffsetFromUTC(remoteAETimeZone, dstDate));
+                } else {
+                    LOG.debug("{}: No Timezone configured for remote AE " +
+                            "- assume Archive Timezone: {}", session
+                            , archiveTimeZone.getID());
+
+                    attrs.setTimezoneOffsetFromUTC(DateUtils
+                            .formatTimezoneOffsetFromUTC(archiveTimeZone, dstDate));
+                }
             }
-        }
 //        try {
 //            TimeZone timeZone = attrs.getTimeZone();
 //            context.setSourceTimeZone(timeZone);
@@ -109,5 +113,6 @@ public class StoreServiceTimeZoneDecorator extends DelegatingStoreService {
 //        } catch (Exception e) {
 //            throw new DicomServiceException(Status.UnableToProcess, e);
 //        }
+        }
     }
 }

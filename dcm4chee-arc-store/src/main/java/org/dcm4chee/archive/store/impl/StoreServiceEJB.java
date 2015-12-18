@@ -183,7 +183,7 @@ public class StoreServiceEJB {
                 storeParam.getAttributeFilter(Entity.Instance),
                 storeParam.getFuzzyStr(), storeParam.getNullValueForQueryFields());
         //update time on db
-        updateInstanceTime(inst,device,context);
+        updateInstanceTime(inst, device, context);
         em.persist(inst);
         LOG.info("{}: Create {}", session, inst);
         return inst;
@@ -556,42 +556,46 @@ public class StoreServiceEJB {
     }
 
     private void updateInstanceTime(Instance inst, Device arcDevice, StoreContext ctx) {
-
-        Attributes temp = getModifiedAttributes(arcDevice, ctx
-                , Tag.ContentDateAndTime
-                , inst.getAttributes()
-                .getDate(Tag.ContentDateAndTime));
-        Date dt = temp.getDate(Tag.ContentDateAndTime);
-        inst.setContentDateTime(dt);
+        if(!arcDevice.getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+            Attributes temp = getModifiedAttributes(arcDevice, ctx
+                    , Tag.ContentDateAndTime
+                    , inst.getAttributes()
+                    .getDate(Tag.ContentDateAndTime));
+            Date dt = temp.getDate(Tag.ContentDateAndTime);
+            inst.setContentDateTime(dt);
+        }
     }
 
     private void updateSeriesTime(Series series, Device arcDevice, StoreContext ctx) {
-
-        Attributes temp = getModifiedAttributes(arcDevice, ctx
-                , Tag.PerformedProcedureStepStartDateAndTime
-                , series.getAttributes()
-                .getDate(Tag.PerformedProcedureStepStartDateAndTime));
-        Date dt = temp.getDate(Tag.PerformedProcedureStepStartDateAndTime);
-        series.setPerformedProcedureStepStartDateTime(dt);
+        if(!arcDevice.getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+            Attributes temp = getModifiedAttributes(arcDevice, ctx
+                    , Tag.PerformedProcedureStepStartDateAndTime
+                    , series.getAttributes()
+                    .getDate(Tag.PerformedProcedureStepStartDateAndTime));
+            Date dt = temp.getDate(Tag.PerformedProcedureStepStartDateAndTime);
+            series.setPerformedProcedureStepStartDateTime(dt);
+        }
     }
 
     private void updateStudyTime(Study study, Device arcDevice, StoreContext ctx) {
-
-        Attributes temp = getModifiedAttributes(arcDevice, ctx
-                , Tag.StudyDateAndTime
-                , study.getAttributes()
-                .getDate(Tag.StudyDateAndTime));
-        Date dt = temp.getDate(Tag.StudyDateAndTime);
-        study.setStudyDateTime(dt);
+        if(!arcDevice.getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+            Attributes temp = getModifiedAttributes(arcDevice, ctx
+                    , Tag.StudyDateAndTime
+                    , study.getAttributes()
+                    .getDate(Tag.StudyDateAndTime));
+            Date dt = temp.getDate(Tag.StudyDateAndTime);
+            study.setStudyDateTime(dt);
+        }
     }
 
     private void updateVerifyingObserverTime(VerifyingObserver observer, Device arcDevice, StoreContext ctx) {
+        if(!arcDevice.getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+            Attributes temp = getModifiedAttributes(arcDevice, ctx
+                    , Tag.VerificationDateTime
+                    , observer.getVerificationDateTime());
 
-        Attributes temp = getModifiedAttributes(arcDevice, ctx
-                , Tag.VerificationDateTime
-                , observer.getVerificationDateTime());
-
-        observer.setVerificationDateTime(temp.getDate(Tag.VerificationDateTime));
+            observer.setVerificationDateTime(temp.getDate(Tag.VerificationDateTime));
+        }
     }
 
     private Attributes getModifiedAttributes(Device arcDevice, StoreContext ctx, long tagDateAndTime, Date date) {

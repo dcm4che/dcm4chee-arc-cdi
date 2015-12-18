@@ -68,36 +68,37 @@ public class QueryServiceTimeZoneDecorator extends DelegatingQueryService {
 
         getNextDecorator().coerceRequestAttributes(context);
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
-        TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
-                .getDeviceExtension(ArchiveDeviceExtension.class).getDataBaseTimeZone();
-        if (archiveTimeZone == null)    // no Timezone support configured
-            return;
+        if (!arcAE.getApplicationEntity().getDevice().getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+            TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
+                    .getDeviceExtension(ArchiveDeviceExtension.class).getDataBaseTimeZone();
+            if (archiveTimeZone == null)    // no Timezone support configured
+                return;
 
-        Attributes keys = context.getKeys();
-        if (!keys.containsTimezoneOffsetFromUTC()) {
-            TimeZone remoteAETimeZone = context.getRemoteDeviceTimeZone();
-            if (remoteAETimeZone != null) {
-                LOG.debug("{}: No Timezone Offset in query request - use configured Timezone: {}",
-                        context.getRemoteAET(), remoteAETimeZone.getID());
-                keys.setDefaultTimeZone(remoteAETimeZone);
-            } else {
-                LOG.debug("{}: No Timezone configured for remote AE - assume Archive Timezone: {}",
-                        context.getRemoteAET(), archiveTimeZone.getID());
-                keys.setDefaultTimeZone(archiveTimeZone);
+            Attributes keys = context.getKeys();
+            if (!keys.containsTimezoneOffsetFromUTC()) {
+                TimeZone remoteAETimeZone = context.getRemoteDeviceTimeZone();
+                if (remoteAETimeZone != null) {
+                    LOG.debug("{}: No Timezone Offset in query request - use configured Timezone: {}",
+                            context.getRemoteAET(), remoteAETimeZone.getID());
+                    keys.setDefaultTimeZone(remoteAETimeZone);
+                } else {
+                    LOG.debug("{}: No Timezone configured for remote AE - assume Archive Timezone: {}",
+                            context.getRemoteAET(), archiveTimeZone.getID());
+                    keys.setDefaultTimeZone(archiveTimeZone);
+                }
+            }
+            try {
+                TimeZone timeZone = keys.getTimeZone();
+                context.setRequestedTimeZone(timeZone);
+                if (!timeZone.hasSameRules(archiveTimeZone)) {
+                    LOG.debug("{}: Coerce query request from Timezone {} to Archive Timezone {}",
+                            context.getRemoteAET(), timeZone.getID(), archiveTimeZone.getID());
+                    keys.setTimezone(archiveTimeZone);
+                }
+            } catch (Exception e) {
+                throw new DicomServiceException(Status.UnableToProcess, e);
             }
         }
-        try {
-            TimeZone timeZone = keys.getTimeZone();
-            context.setRequestedTimeZone(timeZone);
-            if (!timeZone.hasSameRules(archiveTimeZone)) {
-                LOG.debug("{}: Coerce query request from Timezone {} to Archive Timezone {}",
-                        context.getRemoteAET(), timeZone.getID(), archiveTimeZone.getID());
-                keys.setTimezone(archiveTimeZone);
-            }
-        } catch (Exception e) {
-            throw new DicomServiceException(Status.UnableToProcess, e);
-        }
-    }
 
 /*    @Override
     public void coerceResponseAttributes(QueryContext context, Attributes match)
@@ -131,5 +132,5 @@ public class QueryServiceTimeZoneDecorator extends DelegatingQueryService {
         Date date = match.getDate(Tag.ContentDateAndTime, new DatePrecision(Calendar.SECOND));
         return date != null ? date : match.getDate(Tag.StudyDateAndTime, new DatePrecision(Calendar.SECOND));
     }*/
-
+    }
 }

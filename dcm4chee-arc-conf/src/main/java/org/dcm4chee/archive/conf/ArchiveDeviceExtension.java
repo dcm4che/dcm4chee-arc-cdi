@@ -112,6 +112,9 @@ public class ArchiveDeviceExtension extends DeviceExtension {
     @ConfigurableProperty(name = "dcmDBTimeZone")
     private TimeZone dataBaseTimeZone = TimeZone.getTimeZone("GMT+00:00");
 
+    @ConfigurableProperty(name = "dcmDisableTimeZoneSupport", defaultValue = "true")
+    private boolean disableTimeZoneSupport = true;
+
     @LDAP(noContainerNode = true)
     @ConfigurableProperty(name = "dcmPrivateDerivedFields")
     private final PrivateDerivedFields privateDerivedFields = new PrivateDerivedFields();
@@ -296,6 +299,14 @@ public class ArchiveDeviceExtension extends DeviceExtension {
         this.externalArchivesMap.clear();
         if (externalArchivesMap!=null)
             this.externalArchivesMap.putAll(externalArchivesMap);
+    }
+
+    public boolean isDisableTimeZoneSupport() {
+        return disableTimeZoneSupport;
+    }
+
+    public void setDisableTimeZoneSupport(boolean disableTimeZoneSupport) {
+        this.disableTimeZoneSupport = disableTimeZoneSupport;
     }
 
     public Code getIncorrectWorklistEntrySelectedCode() {
