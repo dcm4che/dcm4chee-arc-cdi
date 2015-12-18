@@ -819,7 +819,7 @@ Use DCM4CHE 3.x's `dcmdump` utility to determine `Study`, `Series` and
 
 Invoke
 
-    GET http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE?requestType=WADO
+    GET http://localhost:8080/dicom-web/DCM4CHEE?requestType=WADO
       &studyUID=1.2.840.113674.514.212.200
       &seriesUID=1.2.840.113674.514.212.81.300
       &objectUID=1.2.840.113674.950809132354242.100
@@ -829,7 +829,7 @@ by your Web Browser or any other HTTP client to retrieve the DICOM object.
 
 Invoke
 
-    GET http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE/studies/1.2.840.113674.514.212.200
+    GET http://localhost:8080/dicom-web/DCM4CHEE/studies/1.2.840.113674.514.212.200
 
 by your Web Browser or any other HTTP client to retrieve all DICOM objects of
 the Study in a ZIP Archive.

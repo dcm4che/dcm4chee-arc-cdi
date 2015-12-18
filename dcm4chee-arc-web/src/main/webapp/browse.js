@@ -14,7 +14,7 @@
 
     PDF_CUID = "1.2.840.10008.5.1.4.1.1.104.1",
 
-    QIDO_PATH = "/dcm4chee-arc/qido/",
+    QIDO_PATH = "/dicom-web/",
 
     ATTRS_HEADER = "<td><a href='#' title='Hide Attributes'>X</a></td>"
             + "<th>Attribute Name</th>" + "<th>Tag</th>" + "<th>VR</th>"

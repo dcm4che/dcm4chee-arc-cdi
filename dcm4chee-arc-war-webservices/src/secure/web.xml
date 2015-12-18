@@ -11,9 +11,7 @@
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>DICOM-RS</web-resource-name>
-      <url-pattern>/stow/*</url-pattern>
-      <url-pattern>/qido/*</url-pattern>
-      <url-pattern>/wado/*</url-pattern>
+      <url-pattern>/*</url-pattern>
     </web-resource-collection>
     <auth-constraint>
       <role-name>user</role-name>

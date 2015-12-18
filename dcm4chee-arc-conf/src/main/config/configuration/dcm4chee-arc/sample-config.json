@@ -2458,10 +2458,10 @@
                 "dcmAEFetchPriority" : 0
               },
               "WebServiceAEExtension" : {
-                "dcmQidoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/qido/DCM4CHEE",
-                "dcmStowRSBaseURL" : "http://localhost:8080/dcm4chee-arc/stow/DCM4CHEE",
-                "dcmWadoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE",
-                "dcmWadoURIBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE"
+                "dcmQidoRSBaseURL" : "http://localhost:8080/dicom-web/DCM4CHEE",
+                "dcmStowRSBaseURL" : "http://localhost:8080/dicom-web/DCM4CHEE",
+                "dcmWadoRSBaseURL" : "http://localhost:8080/dicom-web/DCM4CHEE",
+                "dcmWadoURIBaseURL" : "http://localhost:8080/dicom-web/DCM4CHEE"
               }
             },
             "dcmTransferCapability" : [ {
@@ -4401,10 +4401,10 @@
                 "dcmAEFetchPriority" : 0
               },
               "WebServiceAEExtension" : {
-                "dcmQidoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/qido/DCM4CHEE_FETCH",
-                "dcmStowRSBaseURL" : "http://localhost:8080/dcm4chee-arc/stow/DCM4CHEE_FETCH",
-                "dcmWadoRSBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE_FETCH",
-                "dcmWadoURIBaseURL" : "http://localhost:8080/dcm4chee-arc/wado/DCM4CHEE_FETCH"
+                "dcmQidoRSBaseURL" : "http://localhost:8080/dicom-web/DCM4CHEE_FETCH",
+                "dcmStowRSBaseURL" : "http://localhost:8080/dicom-web/DCM4CHEE_FETCH",
+                "dcmWadoRSBaseURL" : "http://localhost:8080/dicom-web/DCM4CHEE_FETCH",
+                "dcmWadoURIBaseURL" : "http://localhost:8080/dicom-web/DCM4CHEE_FETCH"
               }
             },
             "dcmTransferCapability" : [ {
