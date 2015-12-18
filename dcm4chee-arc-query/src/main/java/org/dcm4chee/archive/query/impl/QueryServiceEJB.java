@@ -268,15 +268,16 @@ public class QueryServiceEJB {
     public void persistStudyQueryAttributes(StudyQueryAttributes queryAttrs, long calculatedForVersion) {
         // locking here ensures that we really never save the wrong version of the calculated fields
         Study study = em.find(Study.class, queryAttrs.getStudy().getPk(), LockModeType.PESSIMISTIC_READ);
+        if(study != null) {
+            long version = study.getVersion();
 
-        long version = study.getVersion();
-
-        // somebody might have changed the study in between (while we were calculating), then we must not save the results
-        if (calculatedForVersion == version) {
-            queryAttrs.setStudy(study);
-            em.persist(queryAttrs);
-        } else {
-            LOG.info("Not saving study query attributes, because there was a concurrent modification");
+            // somebody might have changed the study in between (while we were calculating), then we must not save the results
+            if (calculatedForVersion == version) {
+                queryAttrs.setStudy(study);
+                em.persist(queryAttrs);
+            } else {
+                LOG.info("Not saving study query attributes, because there was a concurrent modification");
+            }
         }
     }
 
@@ -342,15 +343,16 @@ public class QueryServiceEJB {
     public void persistSeriesQueryAttributes(SeriesQueryAttributes queryAttrs, long calculatedForVersion) {
         // locking here ensures that we really never save the wrong version of the calculated fields
         Series series = em.find(Series.class, queryAttrs.getSeries().getPk(), LockModeType.PESSIMISTIC_READ);
+        if(series != null) {
+            long version = series.getVersion();
 
-        long version = series.getVersion();
-
-        // somebody might have changed the series in between (while we were calculating), then we must not save the results
-        if (calculatedForVersion == version) {
-            queryAttrs.setSeries(series);
-            em.persist(queryAttrs);
-        } else {
-            LOG.info("Not saving series query attributes, because there was a concurrent modification");
+            // somebody might have changed the series in between (while we were calculating), then we must not save the results
+            if (calculatedForVersion == version) {
+                queryAttrs.setSeries(series);
+                em.persist(queryAttrs);
+            } else {
+                LOG.info("Not saving series query attributes, because there was a concurrent modification");
+            }
         }
     }
 
