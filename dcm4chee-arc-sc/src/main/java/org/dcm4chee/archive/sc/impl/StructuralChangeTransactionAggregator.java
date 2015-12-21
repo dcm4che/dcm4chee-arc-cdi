@@ -112,13 +112,26 @@ public class StructuralChangeTransactionAggregator {
             return changeContainer;
         }
         
-        // only called for active (not-rolled-back) transactions
+        /*
+         * Method ONLY CALLED for ACTIVE (not-rolled-back) transactions!
+         * 
+         * Reason for setting the context classloader: the beforeCompletion() might be called
+         * when committing a transaction started / associated with another deployment (EAR). 
+         * CDI (Weld) would use the context classloader from the other EAR to resolve scChangeHookExecutor 
+         * => fails with exception.
+         */
         @Override
         public void beforeCompletion() {
             if (changeContainer != null) {
-                if (!scChangeHookExecutor.executeBeforeCommitStructuralChangeHooks(changeContainer)) {
-                    // let transaction fail
-                    throw new StructuralChangeRejectedException();
+                ClassLoader origCtxClassLoader = Thread.currentThread().getContextClassLoader();
+                try {
+                    Thread.currentThread().setContextClassLoader(StructuralChangeTransactionAggregator.class.getClassLoader());
+                    if (!scChangeHookExecutor.executeBeforeCommitStructuralChangeHooks(changeContainer)) {
+                        // let transaction fail
+                        throw new StructuralChangeRejectedException();
+                    }
+                } finally {
+                    Thread.currentThread().setContextClassLoader(origCtxClassLoader);
                 }
             }
         }
@@ -126,12 +139,15 @@ public class StructuralChangeTransactionAggregator {
         @Override
         public void afterCompletion(int status) {
             if (changeContainer != null) {
+                ClassLoader origCtxClassLoader = Thread.currentThread().getContextClassLoader();
                 try {
+                    Thread.currentThread().setContextClassLoader(StructuralChangeTransactionAggregator.class.getClassLoader());
                     if(status == Status.STATUS_COMMITTED) {
                         scChangeHookExecutor.asyncExecuteAfterCommitStructuralChangeHooks(changeContainer);
                     }
                 } finally {
                     changeContainer = null;
+                    Thread.currentThread().setContextClassLoader(origCtxClassLoader);
                 }
             }
         }
