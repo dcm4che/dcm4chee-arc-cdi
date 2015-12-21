@@ -2,27 +2,26 @@ package org.dcm4chee.archive.entity.history;
 
 import java.io.Serializable;
 
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.AttributesBlob;
+
+@NamedQueries({
+        @NamedQuery(
+                name = "StudyHistory.findByOldStudyUID",
+                query = "SELECT sh FROM StudyHistory sh "
+                        + "where sh.oldStudyUID = ?1 ")
+})
+
 
 @Entity
 @Table(name="study_history")
 public class StudyHistory implements Serializable{
 
     private static final long serialVersionUID = 7403364046696013058L;
+
+    public static final String FIND_BY_OLD_STUDY_UID = "StudyHistory.findByOldStudyUID";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

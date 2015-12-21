@@ -1150,7 +1150,8 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      *            the study history
      * @return the QC series history
      */
-    private SeriesHistory createQCSeriesHistory(String seriesInstanceUID,
+    @Override
+    public SeriesHistory createQCSeriesHistory(String seriesInstanceUID,
             Attributes oldAttributes, StudyHistory studyHistory, String noneIocmSourceAET) {
         SeriesHistory seriesHistory = new SeriesHistory();
         seriesHistory.setStudy(studyHistory);
@@ -1175,7 +1176,8 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      *            the qc action history
      * @return the QC study history
      */
-    private StudyHistory createQCStudyHistory(String studyInstanceUID,
+    @Override
+    public StudyHistory createQCStudyHistory(String studyInstanceUID,
             String targetStudyUID, Attributes oldAttributes, ActionHistory actionHistory) {
         StudyHistory studyHistory = new StudyHistory();
         studyHistory.setAction(actionHistory);
@@ -1442,6 +1444,23 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             if (LOG.isDebugEnabled()) {
                 LOG.debug("{} : QC info[findStudy] Failure - "
                         + "Unable to find study {}", qcSource, studyInstanceUID);
+            }
+            return null;
+        }
+    }
+
+    @Override
+    public List<StudyHistory> findStudyHistory(String oldStudyInstanceUID) {
+        try{
+            Query query = em.createNamedQuery(StudyHistory.FIND_BY_OLD_STUDY_UID);
+            query.setParameter(1, oldStudyInstanceUID);
+            List<StudyHistory> resultList = (List<StudyHistory>) query.getResultList();
+            return resultList;
+        }
+        catch(NoResultException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("{} : QC info[findStudyHistory] Failure - "
+                        + "Unable to find studyHistory {}", qcSource, oldStudyInstanceUID);
             }
             return null;
         }
@@ -2414,7 +2433,8 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      *            the operation
      * @return the QC action history
      */
-    private ActionHistory generateQCAction(QC_OPERATION operation, ActionHistory.HierarchyLevel hierarchyLevel) {
+    @Override
+    public ActionHistory generateQCAction(QC_OPERATION operation, ActionHistory.HierarchyLevel hierarchyLevel) {
         ActionHistory action = new ActionHistory();
         action.setCreatedTime(new Date());
         action.setAction(operation.toString());
@@ -2672,6 +2692,8 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         }
         return result;
     }
+
+
 
     private ArchiveAEExtension getAEExtensionForRejectionNoteStorage() {
         ArchiveDeviceExtension archiveDeviceExtension = device.getDeviceExtension(ArchiveDeviceExtension.class);

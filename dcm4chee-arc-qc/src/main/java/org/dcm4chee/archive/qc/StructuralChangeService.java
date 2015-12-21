@@ -40,6 +40,7 @@
 package org.dcm4chee.archive.qc;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.EntityNotFoundException;
@@ -51,6 +52,9 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
+import org.dcm4chee.archive.entity.history.ActionHistory;
+import org.dcm4chee.archive.entity.history.SeriesHistory;
+import org.dcm4chee.archive.entity.history.StudyHistory;
 import org.dcm4chee.archive.entity.history.UpdateHistory;
 
 
@@ -355,4 +359,45 @@ public interface StructuralChangeService {
      */
     QCOperationContext replaced(Enum<?> structuralChangeCtx, Map<String, String> oldToNewIUIDs, Code qcRejectionCode) throws QCOperationNotPermittedException;
 
+    /**
+     * Creates a new Action History entry
+     *
+     * @param operation QC operation
+     * @param hierarchyLevel dicom level
+     * @return created ActionHistory
+     */
+    ActionHistory generateQCAction(QC_OPERATION operation, ActionHistory.HierarchyLevel hierarchyLevel);
+
+    /**
+     * Creates a new Series History entry
+     *
+     * @param seriesInstanceUID series iuid
+     * @param oldAttributes original attributes of the series
+     * @param studyHistory associated study history entry
+     * @param noneIocmSourceAET source AET
+     * @return created SeriesHistory
+     */
+    SeriesHistory createQCSeriesHistory(String seriesInstanceUID,
+            Attributes oldAttributes, StudyHistory studyHistory, String noneIocmSourceAET);
+
+    /**
+     * Creates a new Study History entry
+     *
+     * @param studyInstanceUID original study UID
+     * @param targetStudyUID new study UID
+     * @param oldAttributes original attributes of the study
+     * @param actionHistory associated action history entry
+     * @return created StudyHistory
+     */
+    StudyHistory createQCStudyHistory(String studyInstanceUID,
+            String targetStudyUID, Attributes oldAttributes, ActionHistory actionHistory);
+
+    /**
+     * Given an original study uid, returns one ore more (a list) of study history
+     * entities that replaced it.
+     *
+     * @param oldStudyInstanceUID original study uid
+     * @return list of study History entities that replaced the original study.
+     */
+    List<StudyHistory> findStudyHistory(String oldStudyInstanceUID);
 }
