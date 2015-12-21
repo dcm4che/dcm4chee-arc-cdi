@@ -51,7 +51,8 @@ import java.util.Set;
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.dto.QCEventInstance;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.history.UpdateHistory;
+import org.dcm4chee.archive.entity.history.UpdateHistory.UpdateScope;
 import org.dcm4chee.archive.qc.QCEvent;
 import org.dcm4chee.archive.qc.QCOperationContext;
 import org.dcm4chee.archive.qc.QC_OPERATION;
@@ -88,7 +89,7 @@ public class QCContextImpl extends BasicStructuralChangeContext implements QCOpe
     
     public static QCEvent toQCEvent(QCOperationContext qcContext) {
         QCEvent.QCOperation qcOperation = QCEvent.QCOperation.valueOf(qcContext.getChangeTypeValue(QC_OPERATION.class).toString());
-        QCUpdateScope qcUpdateScope = qcContext.getChangeTypeValue(QCUpdateScope.class);
+        UpdateHistory.UpdateScope qcUpdateScope = qcContext.getChangeTypeValue(UpdateScope.class);
         String updateScope = (qcUpdateScope != null) ? qcUpdateScope.toString() : null;
      
         List<QCEventInstance> qcSourceInstances = new ArrayList<>();

@@ -50,8 +50,7 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.history.UpdateHistory;
 import org.dcm4chee.archive.qc.impl.QCPostProcessor;
 
 /**
@@ -266,7 +265,7 @@ public interface QCBean {
      * @throws EntityNotFoundException
      *             the entity not found exception
      */
-    QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt, QCUpdateScope scope,
+    QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt, UpdateHistory.UpdateScope scope,
             Attributes attributes) throws QCOperationNotPermittedException, EntityNotFoundException;
     
     /**

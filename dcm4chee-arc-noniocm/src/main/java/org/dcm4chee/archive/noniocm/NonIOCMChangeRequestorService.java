@@ -45,7 +45,7 @@ import javax.enterprise.event.Observes;
 import org.dcm4che3.data.Attributes;
 import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.history.InstanceHistory;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.session.StudyUpdatedEvent;
 
@@ -72,7 +72,7 @@ public interface NonIOCMChangeRequestorService {
     
     NonIOCMChangeType performChange(Instance inst, StoreContext context);
 
-    List<QCInstanceHistory> findInstanceHistory(String sopInstanceUID);
+    List<InstanceHistory> findInstanceHistory(String sopInstanceUID);
 
     void onStudyUpdated(@Observes StudyUpdatedEvent studyUpdatedEvent);
 
@@ -82,7 +82,7 @@ public interface NonIOCMChangeRequestorService {
     
     void hideOrUnhideInstance(Instance instance, org.dcm4che3.data.Code rejNoteCode);
     
-	QCInstanceHistory getLastQCInstanceHistory(String sopIUID);
+	InstanceHistory getLastQCInstanceHistory(String sopIUID);
 	
 	void processNonIOCMRequest(String processStudyIUID,  List<ActiveProcessing> nonIocmProcessings);
 

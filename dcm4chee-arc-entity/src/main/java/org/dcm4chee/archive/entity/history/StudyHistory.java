@@ -1,4 +1,4 @@
-package org.dcm4chee.archive.entity;
+package org.dcm4chee.archive.entity.history;
 
 import java.io.Serializable;
 
@@ -16,10 +16,11 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4chee.archive.entity.AttributesBlob;
 
 @Entity
-@Table(name="qc_study_history")
-public class QCStudyHistory implements Serializable{
+@Table(name="study_history")
+public class StudyHistory implements Serializable{
 
     private static final long serialVersionUID = 7403364046696013058L;
 
@@ -42,22 +43,22 @@ public class QCStudyHistory implements Serializable{
     private String nextStudyUID;
 
     @ManyToOne(cascade=CascadeType.ALL)
-    @JoinColumn(name = "qc_action_history_fk")
-    private QCActionHistory action;
+    @JoinColumn(name = "action_history_fk")
+    private ActionHistory action;
     
 
-    public QCStudyHistory(){}
-    public QCStudyHistory(Attributes attrs , QCActionHistory action) {
+    public StudyHistory(){}
+    public StudyHistory(Attributes attrs, ActionHistory action) {
         this.action = action;
         if(attrs != null)
         this.updatedAttributesBlob = new AttributesBlob(attrs);
     }
 
-    public QCActionHistory getAction() {
+    public ActionHistory getAction() {
         return action;
     }
 
-    public void setAction(QCActionHistory action) {
+    public void setAction(ActionHistory action) {
         this.action = action;
     }
 
@@ -75,7 +76,7 @@ public class QCStudyHistory implements Serializable{
 
     @Override
     public String toString() {
-        return "QCStudyHistory[pk=" + pk+ "]";
+        return "StudyHistory[pk=" + pk+ "]";
     }
 
 

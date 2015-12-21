@@ -49,7 +49,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.history.UpdateHistory.UpdateScope;
 import org.dcm4chee.archive.qc.QCOperationContext;
 import org.dcm4chee.archive.qc.QCOperationNotPermittedException;
 import org.dcm4chee.archive.qc.QCService;
@@ -97,7 +97,7 @@ public class QCServiceImpl implements QCService {
 
     @Override
     public QCOperationContext updateDicomObject(ArchiveDeviceExtension arcDevExt,
-            QCUpdateScope scope, Attributes attributes) throws QCOperationNotPermittedException,
+            UpdateScope scope, Attributes attributes) throws QCOperationNotPermittedException,
             EntityNotFoundException {
         return scService.updateDicomObject(STRUCTURAL_CHANGE.QC, arcDevExt, scope, attributes);
     }

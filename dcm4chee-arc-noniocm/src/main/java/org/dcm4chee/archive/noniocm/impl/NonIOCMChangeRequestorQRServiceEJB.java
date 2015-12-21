@@ -56,8 +56,9 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.Device;
-import org.dcm4chee.archive.entity.QCActionHistory.QCLevel;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.history.ActionHistory;
+import org.dcm4chee.archive.entity.history.ActionHistory.HierarchyLevel;
+import org.dcm4chee.archive.entity.history.InstanceHistory;
 import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorQRService;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
@@ -94,12 +95,12 @@ public class NonIOCMChangeRequestorQRServiceEJB implements NonIOCMChangeRequesto
                     NonIocmQRLevel.valueOf(keys.getString(Tag.QueryRetrieveLevel)) : getLevelWithUIDs(keys);
             if (level != null) {
                 @SuppressWarnings("unchecked")
-                HashMap<String, List<QCInstanceHistory>> historyMap = (HashMap<String, List<QCInstanceHistory>>) context.getProperty(NON_IOCM_QC_HISTORY);
+                HashMap<String, List<InstanceHistory>> historyMap = (HashMap<String, List<InstanceHistory>>) context.getProperty(NON_IOCM_QC_HISTORY);
                 if (historyMap == null) {
-                    historyMap = new HashMap<String, List<QCInstanceHistory>>();
+                    historyMap = new HashMap<String, List<InstanceHistory>>();
                     context.setProperty(NON_IOCM_QC_HISTORY, historyMap);
                 }
-                List<QCInstanceHistory> history = historyMap.get(studyIUID);
+                List<InstanceHistory> history = historyMap.get(studyIUID);
                 if(history == null) {
                     history = findHistory(NonIocmQRLevel.STUDY, false, studyIUID);
                     historyMap.put(studyIUID, history);
@@ -134,12 +135,12 @@ public class NonIOCMChangeRequestorQRServiceEJB implements NonIOCMChangeRequesto
     public void updateRetrieveResponseAttributes(CStoreSCUContext context,
             Attributes attrs) {
         String studyIUID = attrs.getString(Tag.StudyInstanceUID);
-        List<QCInstanceHistory> history = null;
+        List<InstanceHistory> history = null;
         @SuppressWarnings("unchecked")
-        HashMap<String, List<QCInstanceHistory>> historyMap = (HashMap<String, List<QCInstanceHistory>>) context
+        HashMap<String, List<InstanceHistory>> historyMap = (HashMap<String, List<InstanceHistory>>) context
                 .getProperty(NON_IOCM_QC_HISTORY);
         if (historyMap == null) {
-            historyMap = new HashMap<String, List<QCInstanceHistory>>();
+            historyMap = new HashMap<String, List<InstanceHistory>>();
             context.setProperty(NON_IOCM_QC_HISTORY, historyMap);
         }
         if (historyMap.containsKey(attrs.getString(Tag.StudyInstanceUID))) {
@@ -162,18 +163,18 @@ public class NonIOCMChangeRequestorQRServiceEJB implements NonIOCMChangeRequesto
     }
 
     @SuppressWarnings("unchecked")
-    private List<QCInstanceHistory> findHistory(NonIocmQRLevel level, boolean oldToNew, String... uids) {
+    private List<InstanceHistory> findHistory(NonIocmQRLevel level, boolean oldToNew, String... uids) {
         Query query = em.createNamedQuery(level.getHistoryQueryName(oldToNew));
         query.setParameter("uids", Arrays.asList(uids));
-        return (List<QCInstanceHistory>) query.getResultList();
+        return (List<InstanceHistory>) query.getResultList();
     }
     
-    private void updateRequestUIDs(Collection<String> collection, NonIocmQRLevel qrLevel, Attributes keys, List<QCInstanceHistory> histories, boolean isRetrieve) {
+    private void updateRequestUIDs(Collection<String> collection, NonIocmQRLevel qrLevel, Attributes keys, List<InstanceHistory> histories, boolean isRetrieve) {
         String[] uids = qrLevel.getUids(keys);
         if (histories != null && histories.size() != 0) {
-            QCInstanceHistory history = null;
+            InstanceHistory history = null;
             for (int i = 0 ; i < uids.length ; i++) {
-                for (QCInstanceHistory h : histories) {
+                for (InstanceHistory h : histories) {
                     if (qrLevel.getOldUID(h).equals(uids[i])) {
                         String noneIocmSourceAET = h.getSeries().getNoneIOCMSourceAET();
                         if (noneIocmSourceAET != null && collection.contains(noneIocmSourceAET)) {
@@ -186,18 +187,18 @@ public class NonIOCMChangeRequestorQRServiceEJB implements NonIOCMChangeRequesto
             }
 
             if (history != null) {
-                QCLevel qcLevel = isRetrieve ? QCLevel.PATIENT : history.getSeries().getStudy().getAction().getLevel();
+                ActionHistory.HierarchyLevel hierarchyLevel = isRetrieve ? HierarchyLevel.PATIENT : history.getSeries().getStudy().getAction().getHierarchyLevel();
                 switch (qrLevel) {
                 case IMAGE:
                     keys.setString(Tag.SOPInstanceUID, VR.UI, uids);
                     uids = new String[] { NonIocmQRLevel.SERIES.getNewUID(history) };
                 case SERIES:
-                    if (qcLevel == QCLevel.SERIES || qcLevel == QCLevel.INSTANCE)
+                    if (hierarchyLevel == ActionHistory.HierarchyLevel.SERIES || hierarchyLevel == HierarchyLevel.INSTANCE)
                         break;
                     keys.setString(Tag.SeriesInstanceUID, VR.UI, uids);
                     uids = new String[] { NonIocmQRLevel.STUDY.getNewUID(history) };
                 case STUDY:
-                    if (qcLevel == QCLevel.PATIENT)
+                    if (hierarchyLevel == ActionHistory.HierarchyLevel.PATIENT)
                         keys.setString(Tag.StudyInstanceUID, VR.UI, uids);
                 default:
                     break;
@@ -205,20 +206,20 @@ public class NonIOCMChangeRequestorQRServiceEJB implements NonIOCMChangeRequesto
             }
         }
     }
-    private void updateResponseUIDs(Collection<String> remoteAETs, NonIocmQRLevel qrLevel, Attributes match, List<QCInstanceHistory> history) {
-        QCInstanceHistory oldest = selectOldestHistory(qrLevel, match, history);
+    private void updateResponseUIDs(Collection<String> remoteAETs, NonIocmQRLevel qrLevel, Attributes match, List<InstanceHistory> history) {
+        InstanceHistory oldest = selectOldestHistory(qrLevel, match, history);
         if (oldest != null && oldest != null) {
             String noneIocmSourceAET = oldest.getSeries().getNoneIOCMSourceAET();
             if (noneIocmSourceAET != null && remoteAETs.contains(noneIocmSourceAET)) {
-                QCLevel qcLevel = oldest.getSeries().getStudy().getAction().getLevel();
+                ActionHistory.HierarchyLevel hierarchyLevel = oldest.getSeries().getStudy().getAction().getHierarchyLevel();
                 switch (qrLevel) {
                 case IMAGE:
                     match.setString(Tag.SOPInstanceUID, VR.UI, NonIocmQRLevel.IMAGE.getOldUID(oldest));
                 case SERIES:
-                    if (qcLevel == QCLevel.STUDY || qcLevel == QCLevel.PATIENT)
+                    if (hierarchyLevel == ActionHistory.HierarchyLevel.STUDY || hierarchyLevel == HierarchyLevel.PATIENT)
                         match.setString(Tag.SeriesInstanceUID, VR.UI, NonIocmQRLevel.SERIES.getOldUID(oldest));
                 case STUDY: 
-                    if (qcLevel == QCLevel.PATIENT)
+                    if (hierarchyLevel == ActionHistory.HierarchyLevel.PATIENT)
                         match.setString(Tag.StudyInstanceUID, VR.UI, NonIocmQRLevel.STUDY.getOldUID(oldest));
                 default:
                     break;
@@ -227,13 +228,13 @@ public class NonIOCMChangeRequestorQRServiceEJB implements NonIOCMChangeRequesto
         }
     }
     
-    private QCInstanceHistory selectOldestHistory(NonIocmQRLevel level, Attributes match, List<QCInstanceHistory> history) {
+    private InstanceHistory selectOldestHistory(NonIocmQRLevel level, Attributes match, List<InstanceHistory> history) {
         if (level.getUids(match) == null)
             return null;
         String uid = level.getUids(match)[0];
-        QCInstanceHistory result = null;
+        InstanceHistory result = null;
         if (history != null && history.size() != 0) {
-             for (QCInstanceHistory h : history) {
+             for (InstanceHistory h : history) {
                 if (level.getNewUID(h).equals(uid) && (result == null || result.getPk() > h.getPk())) {
                     result = h;
                 }

@@ -87,13 +87,10 @@ import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
-import org.dcm4chee.archive.entity.QCActionHistory;
-import org.dcm4chee.archive.entity.QCActionHistory.QCLevel;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.entity.QCSeriesHistory;
-import org.dcm4chee.archive.entity.QCStudyHistory;
-import org.dcm4chee.archive.entity.QCUpdateHistory;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.history.*;
+import org.dcm4chee.archive.entity.history.ActionHistory;
+import org.dcm4chee.archive.entity.history.ActionHistory.HierarchyLevel;
+import org.dcm4chee.archive.entity.history.UpdateHistory.UpdateScope;
 import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
@@ -283,14 +280,14 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         String sourceStudyUID = source.getStudyInstanceUID();
         String targetStudyUID = target.getStudyInstanceUID();
         
-        QCActionHistory mergeAction = generateQCAction(QC_OPERATION.MERGE, QCLevel.STUDY);
+        ActionHistory mergeAction = generateQCAction(QC_OPERATION.MERGE, ActionHistory.HierarchyLevel.STUDY);
         List<InstanceIdentifier> sourceUIDs = new ArrayList<>();
         List<InstanceIdentifier> targetUIDs = new ArrayList<>();
         List<Instance> rejectedInstances = new ArrayList<>();
 
-        List<QCInstanceHistory> instancesHistory = new ArrayList<>();
+        List<InstanceHistory> instancesHistory = new ArrayList<>();
         
-        QCStudyHistory studyHistory = createQCStudyHistory(sourceStudyUID,
+        StudyHistory studyHistory = createQCStudyHistory(sourceStudyUID,
                 targetStudyUID, target.getAttributes(), mergeAction);
 
         if(targetStudyAttrs != null && targetStudyAttrs.size() > 0) {
@@ -304,7 +301,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             Series newSeries = createSeries(series, target, targetSeriesAttrs);
             String newSeriesUID = newSeries.getSeriesInstanceUID();
 
-            QCSeriesHistory seriesHistory = createQCSeriesHistory(
+            SeriesHistory seriesHistory = createQCSeriesHistory(
                     seriesUID, series.getAttributes(), studyHistory, null);
 
             for(Instance inst: series.getInstances()) {
@@ -313,7 +310,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
                 Instance newInstance = move(inst, newSeries, qcRejectionCode);
                 String newInstanceUID = newInstance.getSopInstanceUID();
                 
-                QCInstanceHistory instanceHistory = new QCInstanceHistory(targetStudyUID, 
+                InstanceHistory instanceHistory = new InstanceHistory(targetStudyUID,
                         newSeriesUID, instanceUID,
                         newInstanceUID, newInstanceUID, false);
                 instanceHistory.setSeries(seriesHistory);
@@ -365,25 +362,25 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         checkIfQCPermittedForStudy(sourceStudy);
         
         Study targetStudy = findStudy(targetStudyUID);
-        QCLevel qcLevel;
+        ActionHistory.HierarchyLevel hierarchyLevel;
         if (targetStudy == null) {
             LOG.debug("{} : QC info[Split] - Target study"
                     + " didn't exist, creating target study",qcSource);
             targetStudy = createStudy(pid, sourceStudy, targetStudyUID, createdStudyAttrs);
-            qcLevel = pid == null ? QCLevel.STUDY : QCLevel.PATIENT;
+            hierarchyLevel = pid == null ? ActionHistory.HierarchyLevel.STUDY : ActionHistory.HierarchyLevel.PATIENT;
         } else {
         	if (createdStudyAttrs != null && createdStudyAttrs.size() > 0) {
         		checkIfQCPermittedForStudy(targetStudy);
         		updateStudy(archiveDeviceExtension, targetStudy, createdStudyAttrs);
         	}
-        	qcLevel = targetSeriesAttrs != null && !toMove.iterator().next().getSeries().getSeriesInstanceUID()
-        			.equals(targetSeriesAttrs.getString(Tag.SeriesInstanceUID)) ? QCLevel.SERIES : QCLevel.STUDY;
+        	hierarchyLevel = targetSeriesAttrs != null && !toMove.iterator().next().getSeries().getSeriesInstanceUID()
+        			.equals(targetSeriesAttrs.getString(Tag.SeriesInstanceUID)) ? ActionHistory.HierarchyLevel.SERIES : HierarchyLevel.STUDY;
         }
 
         String sourceStudyUID = sourceStudy.getStudyInstanceUID();
         
-        QCActionHistory splitAction = generateQCAction(QC_OPERATION.SPLIT, qcLevel);
-        QCStudyHistory studyHistory = createQCStudyHistory(
+        ActionHistory splitAction = generateQCAction(QC_OPERATION.SPLIT, hierarchyLevel);
+        StudyHistory studyHistory = createQCStudyHistory(
                 sourceStudyUID, targetStudy.getStudyInstanceUID(),
                 sourceStudy.getAttributes(), splitAction);
 
@@ -391,7 +388,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         
         List<InstanceIdentifier> sourceUIDs = new ArrayList<>();
         List<InstanceIdentifier> targetUIDs = new ArrayList<>();
-        List<QCInstanceHistory> instancesHistory = new ArrayList<>();
+        List<InstanceHistory> instancesHistory = new ArrayList<>();
         
         Series newSeries = null;
         for (Instance instance : toMove) {
@@ -399,7 +396,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             String seriesUID = series.getSeriesInstanceUID();
             
             if (!oldToNewSeries.containsKey(seriesUID)) {
-                if (qcLevel == QCLevel.SERIES) {
+                if (hierarchyLevel == ActionHistory.HierarchyLevel.SERIES) {
                     try {
                         Query q = em.createNamedQuery(Series.FIND_BY_SERIES_INSTANCE_UID);
                         q.setParameter(1, targetSeriesAttrs.getString(Tag.SeriesInstanceUID));
@@ -410,7 +407,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
                 if (newSeries == null) {
                     newSeries = createSeries(series, targetStudy, targetSeriesAttrs);
                 }
-                QCSeriesHistory seriesHistory = createQCSeriesHistory(seriesUID, 
+                SeriesHistory seriesHistory = createQCSeriesHistory(seriesUID,
                         series.getAttributes(), studyHistory, checkNoneIOCMSource(instance));
                 oldToNewSeries.put(seriesUID, new NewSeriesTuple(newSeries.getPk(), seriesHistory));
             } else {
@@ -426,7 +423,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             String newInstanceUID = newInstance.getSopInstanceUID();
             
             
-            QCInstanceHistory instanceHistory = new QCInstanceHistory(
+            InstanceHistory instanceHistory = new InstanceHistory(
                     targetStudyUID, newSeries.getSeriesInstanceUID(),
                     instanceUID,
                     newInstanceUID,
@@ -495,14 +492,14 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             throw new EJBException();
         }
         
-        QCActionHistory segmentAction = generateQCAction(QC_OPERATION.SEGMENT, QCLevel.STUDY);
+        ActionHistory segmentAction = generateQCAction(QC_OPERATION.SEGMENT, ActionHistory.HierarchyLevel.STUDY);
         List<InstanceIdentifier> movedSourceUIDs = new ArrayList<>();
         List<InstanceIdentifier> movedTargetUIDs = new ArrayList<>();
         List<InstanceIdentifier> clonedSourceUIDs = new ArrayList<>();
         List<InstanceIdentifier> clonedTargetUIDs = new ArrayList<>();
-        List<QCInstanceHistory> instancesHistory = new ArrayList<>();
+        List<InstanceHistory> instancesHistory = new ArrayList<>();
         
-        QCStudyHistory studyHistory = createQCStudyHistory(sourceStudy.getStudyInstanceUID(), 
+        StudyHistory studyHistory = createQCStudyHistory(sourceStudy.getStudyInstanceUID(),
                 targetStudyUID, sourceStudy.getAttributes(), segmentAction);
         HashMap<String,NewSeriesTuple> oldToNewSeries = new HashMap<>();
         Series newSeries;
@@ -514,7 +511,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             if(!oldToNewSeries.containsKey(oldSeriesInstanceUID)) {
                 Series series = instance.getSeries();
                 newSeries= createSeries(series, targetStudy, targetSeriesAttrs);
-                QCSeriesHistory seriesHistory = createQCSeriesHistory(oldSeriesInstanceUID,
+                SeriesHistory seriesHistory = createQCSeriesHistory(oldSeriesInstanceUID,
                         series.getAttributes(), studyHistory, null);
                 oldToNewSeries.put(oldSeriesInstanceUID, 
                         new NewSeriesTuple(newSeries.getPk(), seriesHistory));
@@ -528,7 +525,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             Instance newInstance = move(instance, newSeries, qcRejectionCode);
             String newInstanceUID = newInstance.getSopInstanceUID();
             
-            QCInstanceHistory instanceHistory = new QCInstanceHistory(targetStudyUID,
+            InstanceHistory instanceHistory = new InstanceHistory(targetStudyUID,
                     newSeriesInstanceUID, oldInstanceUID,
                     newInstanceUID, newInstanceUID, false);
 
@@ -545,7 +542,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             if(!oldToNewSeries.containsKey(oldSeriesInstanceUID)) {
                 Series series = instance.getSeries();
                 newSeries= createSeries(series, targetStudy, targetSeriesAttrs);
-                QCSeriesHistory seriesHistory = createQCSeriesHistory(oldSeriesInstanceUID,
+                SeriesHistory seriesHistory = createQCSeriesHistory(oldSeriesInstanceUID,
                         series.getAttributes(), studyHistory, null);
                 oldToNewSeries.put(oldSeriesInstanceUID, 
                         new NewSeriesTuple(newSeries.getPk(),seriesHistory));
@@ -559,7 +556,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
             Instance newInstance = clone(instance, newSeries);
             String newInstanceUID = newInstance.getSopInstanceUID();
             
-            QCInstanceHistory instanceHistory = new QCInstanceHistory(targetStudyUID,
+            InstanceHistory instanceHistory = new InstanceHistory(targetStudyUID,
                     newSeriesInstanceUID, oldInstanceUID,
                     newInstanceUID, newInstanceUID, true);
             
@@ -629,10 +626,10 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         Collection<Instance> newInstances = locateInstances(newToOldIUIDs.keySet());
         
         Study study = null;
-        List<QCInstanceHistory> instancesHistory = new ArrayList<>();
-        QCActionHistory action = generateQCAction(QC_OPERATION.UPDATE, QCLevel.INSTANCE);
-        QCStudyHistory studyHistory = null;
-        QCSeriesHistory seriesHistory = null;
+        List<InstanceHistory> instancesHistory = new ArrayList<>();
+        ActionHistory action = generateQCAction(QC_OPERATION.UPDATE, HierarchyLevel.INSTANCE);
+        StudyHistory studyHistory = null;
+        SeriesHistory seriesHistory = null;
         int replacedInstances = 0;
     	for (Instance newInstance : newInstances) {
 	        if (study == null) {
@@ -656,7 +653,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
 	        	studyHistory = createQCStudyHistory(studyIUID, studyIUID, null, action);
 	        if (seriesHistory == null)
 	        	seriesHistory = createQCSeriesHistory(seriesIUID, null, studyHistory, newInstance.getSeries().getSourceAET());
-	        QCInstanceHistory instanceHistory = new QCInstanceHistory(
+	        InstanceHistory instanceHistory = new InstanceHistory(
 	                studyIUID, seriesIUID, oldIUID, newIUID, newIUID, false);
 	        instanceHistory.setSeries(seriesHistory);
 	        instancesHistory.add(instanceHistory);
@@ -722,9 +719,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
 
     @Override
     public QCOperationContext updateDicomObject(Enum<?> structuralChangeType, ArchiveDeviceExtension arcDevExt,
-            QCUpdateScope scope, Attributes attrs)
+            UpdateScope scope, Attributes attrs)
             throws QCOperationNotPermittedException, EntityNotFoundException {
-        QCActionHistory updateAction = generateQCAction(QC_OPERATION.UPDATE, QCLevel.INSTANCE);
+        ActionHistory updateAction = generateQCAction(QC_OPERATION.UPDATE, ActionHistory.HierarchyLevel.INSTANCE);
         LOG.info("{}:  QC info[Update] info - Performing QC update DICOM header on {} scope : ", qcSource, scope);
         Attributes unmodified;
         PatientAttrsPKTuple unmodifiedAndPK = null;
@@ -755,7 +752,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         }
         LOG.info("{} : QC info[Update] info - Update successful, adding update history entry", qcSource);
         addUpdateHistoryEntry(updateAction, scope, unmodified,
-                scope == QCUpdateScope.PATIENT ? Long.toString(unmodifiedAndPK.getPK()) : null);
+                scope == UpdateHistory.UpdateScope.PATIENT ? Long.toString(unmodifiedAndPK.getPK()) : null);
        
         List<InstanceIdentifier> updatedIUIDs = new ArrayList<>();
         
@@ -1045,27 +1042,27 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
     }
 
     private void createQCDeleteHistory(Collection<Instance> rejectedInstances) {
-        QCActionHistory deleteAction = generateQCAction(QC_OPERATION.DELETE, QCLevel.INSTANCE);
-        Map<String, QCStudyHistory> studiesInHistory = new HashMap<String, QCStudyHistory>();
-        Map<String, QCSeriesHistory> seriesInHistory = new HashMap<String, QCSeriesHistory>();
-        Collection<QCInstanceHistory> instancesInHistory = new ArrayList<QCInstanceHistory>();
+        ActionHistory deleteAction = generateQCAction(QC_OPERATION.DELETE, ActionHistory.HierarchyLevel.INSTANCE);
+        Map<String, StudyHistory> studiesInHistory = new HashMap<String, StudyHistory>();
+        Map<String, SeriesHistory> seriesInHistory = new HashMap<String, SeriesHistory>();
+        Collection<InstanceHistory> instancesInHistory = new ArrayList<InstanceHistory>();
         String studyIUID, seriesIUID, sopIUID;
         for(Instance inst : rejectedInstances) {
             sopIUID = inst.getSopInstanceUID();
             seriesIUID = inst.getSeries().getSeriesInstanceUID();
             studyIUID = inst.getSeries().getStudy().getStudyInstanceUID();
             if(!studiesInHistory.containsKey(studyIUID)) {
-                QCStudyHistory studyHistory = createQCStudyHistory(
+                StudyHistory studyHistory = createQCStudyHistory(
                         studyIUID, studyIUID, inst.getSeries().getStudy().getAttributes(), deleteAction);
                 studiesInHistory.put(studyIUID, studyHistory);
             }
-            QCSeriesHistory seriesHistory = seriesInHistory.get(seriesIUID);
+            SeriesHistory seriesHistory = seriesInHistory.get(seriesIUID);
             if(seriesHistory == null) {
                 seriesHistory = createQCSeriesHistory(
                         seriesIUID, inst.getSeries().getAttributes(), studiesInHistory.get(studyIUID), checkNoneIOCMSource(inst));
                 seriesInHistory.put(seriesIUID, seriesHistory);
             }
-            QCInstanceHistory instanceHistory = new QCInstanceHistory(
+            InstanceHistory instanceHistory = new InstanceHistory(
                     studyIUID, seriesIUID, sopIUID, sopIUID, sopIUID, false);
             instanceHistory.setSeries(seriesHistory);
             instancesInHistory.add(instanceHistory);
@@ -1121,7 +1118,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
     }
     
     private void reject(Collection<Instance> instances, org.dcm4che3.data.Code qcRejectionCode) {
-        //QCActionHistory rejectAction = generateQCAction(QCOperation.REJECT);
+        //ActionHistory rejectAction = generateQCAction(QCOperation.REJECT);
         ArrayList<String> sopInstanceUIDs = new ArrayList<String>();
         try {
         rejectionService.reject(qcSource, instances, findOrCreateCode(qcRejectionCode), null);
@@ -1153,9 +1150,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      *            the study history
      * @return the QC series history
      */
-    private QCSeriesHistory createQCSeriesHistory(String seriesInstanceUID,
-            Attributes oldAttributes, QCStudyHistory studyHistory, String noneIocmSourceAET) {
-        QCSeriesHistory seriesHistory = new QCSeriesHistory();
+    private SeriesHistory createQCSeriesHistory(String seriesInstanceUID,
+            Attributes oldAttributes, StudyHistory studyHistory, String noneIocmSourceAET) {
+        SeriesHistory seriesHistory = new SeriesHistory();
         seriesHistory.setStudy(studyHistory);
         if(oldAttributes != null && !oldAttributes.isEmpty())
           seriesHistory.setUpdatedAttributesBlob(new AttributesBlob(oldAttributes));
@@ -1174,14 +1171,14 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      * @param target 
      * @param oldAttributes
      *            the old attributes
-     * @param qcActionHistory
+     * @param actionHistory
      *            the qc action history
      * @return the QC study history
      */
-    private QCStudyHistory createQCStudyHistory(String studyInstanceUID,
-            String targetStudyUID, Attributes oldAttributes, QCActionHistory qcActionHistory) {
-        QCStudyHistory studyHistory = new QCStudyHistory();
-        studyHistory.setAction(qcActionHistory);
+    private StudyHistory createQCStudyHistory(String studyInstanceUID,
+            String targetStudyUID, Attributes oldAttributes, ActionHistory actionHistory) {
+        StudyHistory studyHistory = new StudyHistory();
+        studyHistory.setAction(actionHistory);
         if(oldAttributes != null && !oldAttributes.isEmpty())
           studyHistory.setUpdatedAttributesBlob(new AttributesBlob(oldAttributes));
         studyHistory.setOldStudyUID(studyInstanceUID);
@@ -2280,12 +2277,12 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      *            the old to new series
      * @return the collection
      */
-    private Collection<QCInstanceHistory> handleKOPRSR(org.dcm4che3.data.Code qcRejectionCode,
-            QCStudyHistory studyHistory, Collection<InstanceIdentifier> sourceUIDs,
+    private Collection<InstanceHistory> handleKOPRSR(org.dcm4che3.data.Code qcRejectionCode,
+            StudyHistory studyHistory, Collection<InstanceIdentifier> sourceUIDs,
             Collection<InstanceIdentifier> targetUIDs, Study sourceStudy,
             Study targetStudy, HashMap<String, NewSeriesTuple> oldToNewSeries) {
         sourceStudy = em.find(Study.class, sourceStudy.getPk());
-        Collection<QCInstanceHistory> instancesHistory = new ArrayList<QCInstanceHistory>();
+        Collection<InstanceHistory> instancesHistory = new ArrayList<InstanceHistory>();
         Series newSeries;
         Collection<Series> seriesKOPRSR = findSeriesKOPRSR(sourceStudy);
          for(Series series: seriesKOPRSR) {
@@ -2302,7 +2299,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
                  
                  Instance newInstance ;
 
-                 QCInstanceHistory instanceHistory;
+                 InstanceHistory instanceHistory;
                  switch (referenceState) {
                  
                 case ALLMOVED:
@@ -2313,7 +2310,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
                     if(!oldToNewSeries.keySet().contains(
                             inst.getSeries().getSeriesInstanceUID())) {
                         newSeries= createSeries(inst.getSeries(), targetStudy, null);
-                        QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
+                        SeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
                                 series.getAttributes(), studyHistory, null);
                         oldToNewSeries.put(inst.getSeries().getSeriesInstanceUID(), 
                                 new NewSeriesTuple(newSeries.getPk(),seriesHistory));
@@ -2323,7 +2320,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
                                 inst.getSeries().getSeriesInstanceUID()).getPK());
                     }
                     newInstance= move(inst,newSeries,qcRejectionCode);
-                    instanceHistory = new QCInstanceHistory(
+                    instanceHistory = new InstanceHistory(
                             targetStudy.getStudyInstanceUID(),  newSeries.getSeriesInstanceUID(),
                             inst.getSopInstanceUID(), newInstance.getSopInstanceUID(),
                             newInstance.getSopInstanceUID(), false);
@@ -2355,7 +2352,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
                     if(!oldToNewSeries.keySet().contains(
                             inst.getSeries().getSeriesInstanceUID())) {
                         newSeries= createSeries(inst.getSeries(), targetStudy, null);
-                        QCSeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
+                        SeriesHistory seriesHistory = createQCSeriesHistory(series.getSeriesInstanceUID(),
                                 series.getAttributes(), studyHistory, null);
                         oldToNewSeries.put(inst.getSeries().getSeriesInstanceUID(), 
                                 new NewSeriesTuple(newSeries.getPk(),seriesHistory));
@@ -2367,7 +2364,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
                     newInstance = clone(inst,newSeries);
                     inst = em.find(Instance.class, inst.getPk());
                     newInstance = em.find(Instance.class, newInstance.getPk());
-                    instanceHistory = new QCInstanceHistory(
+                    instanceHistory = new InstanceHistory(
                             targetStudy.getStudyInstanceUID(), newSeries.getSeriesInstanceUID(),
                             inst.getSopInstanceUID(), newInstance.getSopInstanceUID(),
                             newInstance.getSopInstanceUID(), true);
@@ -2417,11 +2414,11 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      *            the operation
      * @return the QC action history
      */
-    private QCActionHistory generateQCAction(QC_OPERATION operation, QCLevel level) {
-        QCActionHistory action = new QCActionHistory();
+    private ActionHistory generateQCAction(QC_OPERATION operation, ActionHistory.HierarchyLevel hierarchyLevel) {
+        ActionHistory action = new ActionHistory();
         action.setCreatedTime(new Date());
         action.setAction(operation.toString());
-        action.setLevel(level);
+        action.setHierarchyLevel(hierarchyLevel);
         em.persist(action);
         return action;
     }
@@ -2434,9 +2431,9 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      * @param instances
      *            the instances to be persisted
      */
-    private void recordHistoryEntry(Collection<QCInstanceHistory> instances) {
+    private void recordHistoryEntry(Collection<InstanceHistory> instances) {
         updateOldHistoryRecords(instances);
-        for(QCInstanceHistory instance : instances) {
+        for(InstanceHistory instance : instances) {
             LOG.debug("{} : QC info[recordHistoryEntry] info - "
                     + "Adding history entry {}",qcSource,instance.toString());
             em.persist(instance);
@@ -2451,13 +2448,13 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      * @param instanceRecords
      *            the instance records to be updated
      */
-    private void updateOldHistoryRecords(Collection<QCInstanceHistory> instanceRecords) {
-        Collection<QCInstanceHistory> associatedRecords = new ArrayList<QCInstanceHistory>();
-        for(QCInstanceHistory newInstanceRecord : instanceRecords) {
+    private void updateOldHistoryRecords(Collection<InstanceHistory> instanceRecords) {
+        Collection<InstanceHistory> associatedRecords = new ArrayList<InstanceHistory>();
+        for(InstanceHistory newInstanceRecord : instanceRecords) {
             if(!newInstanceRecord.isCloned()) {
                 if(!newInstanceRecord.getSeries().getStudy().getAction().getAction().equalsIgnoreCase(QC_OPERATION.REJECT.name())) {
                     associatedRecords = findInstanceHistoryByCurrentUID(newInstanceRecord.getOldUID());
-                    for(QCInstanceHistory associatedRecord : associatedRecords) {
+                    for(InstanceHistory associatedRecord : associatedRecords) {
                         if(associatedRecord.getNextUID().equals(associatedRecord.getCurrentUID())) {
                             associatedRecord.setNextUID(newInstanceRecord.getOldUID());
                 }
@@ -2471,7 +2468,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         if(associatedRecords.isEmpty())
             LOG.debug("{} : QC info[updateOldHistoryRecords] info - No associated history"
                     + " records found, no history update required", qcSource);
-        for(QCInstanceHistory record : associatedRecords) {
+        for(InstanceHistory record : associatedRecords) {
             LOG.info("{} : QC info[updateOldHistoryRecords] info - Updating the following QCHistory Records"
                     + " for referential integrity :\n", qcSource);
             LOG.info(record.toString());
@@ -2487,8 +2484,8 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      * @return the records found by current UID
      */
     @SuppressWarnings("unchecked")
-    private Collection<QCInstanceHistory> findInstanceHistoryByCurrentUID(String oldUID) {
-        Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_CURRENT_UID);
+    private Collection<InstanceHistory> findInstanceHistoryByCurrentUID(String oldUID) {
+        Query query = em.createNamedQuery(InstanceHistory.FIND_BY_CURRENT_UID);
         query.setParameter(1, oldUID);
         return query.getResultList();
     }
@@ -2506,36 +2503,36 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      * @param unmodified
      *            the unmodified
      */
-    private void addUpdateHistoryEntry(QCActionHistory action, 
-            QCUpdateScope scope, Attributes unmodified, String patientPK) {
-        QCUpdateHistory qcUpdateHistory = new QCUpdateHistory();
-        qcUpdateHistory.setCreatedTime(new Date());
-        qcUpdateHistory.setScope(scope);
-        qcUpdateHistory.setUpdatedAttributesBlob(new AttributesBlob(unmodified));
+    private void addUpdateHistoryEntry(ActionHistory action,
+            UpdateHistory.UpdateScope scope, Attributes unmodified, String patientPK) {
+        UpdateHistory updateHistory = new UpdateHistory();
+        updateHistory.setCreatedTime(new Date());
+        updateHistory.setScope(scope);
+        updateHistory.setUpdatedAttributesBlob(new AttributesBlob(unmodified));
         switch (scope) {
         case PATIENT:
-            qcUpdateHistory.setObjectUID(patientPK);
+            updateHistory.setObjectUID(patientPK);
             break;
         case STUDY:
-            qcUpdateHistory.setObjectUID(unmodified.getString(Tag.StudyInstanceUID));
+            updateHistory.setObjectUID(unmodified.getString(Tag.StudyInstanceUID));
             break;
         case SERIES:
-            qcUpdateHistory.setObjectUID(unmodified.getString(Tag.SeriesInstanceUID));
+            updateHistory.setObjectUID(unmodified.getString(Tag.SeriesInstanceUID));
             break;
         case INSTANCE:
-            qcUpdateHistory.setObjectUID(unmodified.getString(Tag.SOPInstanceUID));
+            updateHistory.setObjectUID(unmodified.getString(Tag.SOPInstanceUID));
             break;
         default:
             LOG.error("{} : QC info[adUpdateHistoryEntry] Failure -  "
                     + "Unsupported Scode provided to update history creation", qcSource);
             throw new EJBException();
         }
-        QCUpdateHistory prevHistoryNode = findPreviousHistoryNode(
-                qcUpdateHistory.getObjectUID());
+        UpdateHistory prevHistoryNode = findPreviousHistoryNode(
+                updateHistory.getObjectUID());
         if(prevHistoryNode != null) {
-            prevHistoryNode.setNext(qcUpdateHistory);
+            prevHistoryNode.setNext(updateHistory);
         }
-        em.persist(qcUpdateHistory);
+        em.persist(updateHistory);
 
     }
 
@@ -2574,10 +2571,10 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
     }
     
     @SuppressWarnings("unchecked")
-	private List<QCInstanceHistory> getQCInstanceHistory(String sopIUID) {
-        Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_OLD_UID);
+	private List<InstanceHistory> getQCInstanceHistory(String sopIUID) {
+        Query query = em.createNamedQuery(InstanceHistory.FIND_BY_OLD_UID);
         query.setParameter(1, sopIUID);
-        return (List<QCInstanceHistory>) query.getResultList();
+        return (List<InstanceHistory>) query.getResultList();
     }
     
     /**
@@ -2588,12 +2585,12 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      *            the object uid
      * @return the prev history node
      */
-    private QCUpdateHistory findPreviousHistoryNode(String objectUID) {
-        Query query = em.createNamedQuery(QCUpdateHistory.FIND_FIRST_UPDATE_ENTRY);
+    private UpdateHistory findPreviousHistoryNode(String objectUID) {
+        Query query = em.createNamedQuery(UpdateHistory.FIND_FIRST_UPDATE_ENTRY);
         query.setParameter(1, objectUID);
-        QCUpdateHistory result=null;
+        UpdateHistory result=null;
         if(query.getResultList().size()>0)
-         result= (QCUpdateHistory) query.getSingleResult();
+         result= (UpdateHistory) query.getSingleResult();
 
         return result;  
     }
@@ -2610,15 +2607,15 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      *            the history action for the operation
      */
     private void addIdenticalDocumentSequenceHistory(Instance ident, 
-            QCActionHistory identHistoryAction) {
-        QCStudyHistory identStudyHistory = createQCStudyHistory(
+            ActionHistory identHistoryAction) {
+        StudyHistory identStudyHistory = createQCStudyHistory(
                 ident.getSeries().getStudy().getStudyInstanceUID(), 
                 ident.getSeries().getStudy().getStudyInstanceUID(), 
                 new Attributes(), identHistoryAction);
-        QCSeriesHistory identSeriesHistory = createQCSeriesHistory(
+        SeriesHistory identSeriesHistory = createQCSeriesHistory(
                 ident.getSeries().getSeriesInstanceUID(), 
                 new Attributes(), identStudyHistory, null);
-        QCInstanceHistory identInstanceHistory = new QCInstanceHistory(
+        InstanceHistory identInstanceHistory = new InstanceHistory(
                 ident.getSopInstanceUID(), identSeriesHistory.getOldSeriesUID(),
                 ident.getSopInstanceUID(), ident.getSopInstanceUID(),
                 ident.getSopInstanceUID(), false);
@@ -2642,8 +2639,8 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      * @return true, if successful
      */
     private boolean identicalDocumentSequenceHistoryExists(Instance ident,
-            QCActionHistory identHistoryAction) {
-        QCInstanceHistory identHistory = findIdenticalDocumentHistory(ident, identHistoryAction);
+            ActionHistory identHistoryAction) {
+        InstanceHistory identHistory = findIdenticalDocumentHistory(ident, identHistoryAction);
         return identHistory==null ? false : true;
     }
 
@@ -2658,14 +2655,14 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
      *            the ident history action
      * @return the QC instance history
      */
-    private QCInstanceHistory findIdenticalDocumentHistory(Instance ident, 
-            QCActionHistory identHistoryAction) {
-        QCInstanceHistory result;
-        Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_CURRENT_UID_FOR_ACTION);
+    private InstanceHistory findIdenticalDocumentHistory(Instance ident,
+            ActionHistory identHistoryAction) {
+        InstanceHistory result;
+        Query query = em.createNamedQuery(InstanceHistory.FIND_BY_CURRENT_UID_FOR_ACTION);
         query.setParameter(1, ident.getSopInstanceUID());
         query.setParameter(2, identHistoryAction.getAction());
         try {
-            result = (QCInstanceHistory) query.getSingleResult();
+            result = (InstanceHistory) query.getSingleResult();
         }
         catch (NoResultException e) {
             LOG.error("{} : QC info[findIdenticalDocumentHistory] Failure - "
@@ -2799,14 +2796,14 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
 
     /**
      * A tuple that carries a series instance UID for a new series as well as a
-     * QCSeriesHistory entry Used to associate one series only to one history
+     * SeriesHistory entry Used to associate one series only to one history
      * entry to be passed to each instance history created of the same series.
      * 
      * @author Hesham Elbadawi <bsdreko@gmail.com>
      */
     private static class NewSeriesTuple {
         private final long pk;
-        private final QCSeriesHistory seriesHistory;
+        private final SeriesHistory seriesHistory;
 
         /**
          * Instantiates a new new series tuple.
@@ -2816,7 +2813,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
          * @param seriesHistory
          *            the series history
          */
-        NewSeriesTuple(long pk, QCSeriesHistory seriesHistory) {
+        NewSeriesTuple(long pk, SeriesHistory seriesHistory) {
             this.pk = pk;
             this.seriesHistory = seriesHistory;
         }
@@ -2835,7 +2832,7 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
          * 
          * @return the series history
          */
-        public QCSeriesHistory getSeriesHistory() {
+        public SeriesHistory getSeriesHistory() {
             return seriesHistory;
         }
         

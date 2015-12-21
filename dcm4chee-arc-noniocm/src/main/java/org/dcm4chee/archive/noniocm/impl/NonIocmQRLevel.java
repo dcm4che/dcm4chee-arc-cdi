@@ -40,7 +40,7 @@ package org.dcm4chee.archive.noniocm.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.history.InstanceHistory;
 
 
 /**
@@ -51,35 +51,35 @@ enum NonIocmQRLevel {
     PATIENT {
         String getHistoryQueryName(boolean b) { return null; }
         String[] getUids(Attributes keys) { return null; }
-        String getOldUID(QCInstanceHistory history) { return null; }
-        String getNewUID(QCInstanceHistory history) { return null; }
+        String getOldUID(InstanceHistory history) { return null; }
+        String getNewUID(InstanceHistory history) { return null; }
         NonIocmQRLevel parent() { return null; }
     },
     STUDY {
-        String getHistoryQueryName(boolean b) { return b ? QCInstanceHistory.FIND_BY_OLD_STUDY_UIDS : QCInstanceHistory.FIND_BY_NEW_STUDY_UIDS; }
+        String getHistoryQueryName(boolean b) { return b ? InstanceHistory.FIND_BY_OLD_STUDY_UIDS : InstanceHistory.FIND_BY_NEW_STUDY_UIDS; }
         String[] getUids(Attributes keys) { return keys.getStrings(Tag.StudyInstanceUID); }
-        String getOldUID(QCInstanceHistory history) { return history.getSeries().getStudy().getOldStudyUID(); }
-        String getNewUID(QCInstanceHistory history) { return history.getCurrentStudyUID(); }
+        String getOldUID(InstanceHistory history) { return history.getSeries().getStudy().getOldStudyUID(); }
+        String getNewUID(InstanceHistory history) { return history.getCurrentStudyUID(); }
         NonIocmQRLevel parent() { return PATIENT; }
     },
     SERIES {
-        String getHistoryQueryName(boolean b) { return b ? QCInstanceHistory.FIND_BY_OLD_SERIES_UIDS : QCInstanceHistory.FIND_BY_NEW_SERIES_UIDS; }
+        String getHistoryQueryName(boolean b) { return b ? InstanceHistory.FIND_BY_OLD_SERIES_UIDS : InstanceHistory.FIND_BY_NEW_SERIES_UIDS; }
         String[] getUids(Attributes keys) { return keys.getStrings(Tag.SeriesInstanceUID); }
-        String getOldUID(QCInstanceHistory history) { return history.getSeries().getOldSeriesUID(); }
-        String getNewUID(QCInstanceHistory history) { return history.getCurrentSeriesUID(); }
+        String getOldUID(InstanceHistory history) { return history.getSeries().getOldSeriesUID(); }
+        String getNewUID(InstanceHistory history) { return history.getCurrentSeriesUID(); }
         NonIocmQRLevel parent() { return STUDY; }
     },
     IMAGE {
-        String getHistoryQueryName(boolean b) { return b ? QCInstanceHistory.FIND_BY_OLD_SOP_UIDS : QCInstanceHistory.FIND_BY_NEW_SOP_UIDS; }
+        String getHistoryQueryName(boolean b) { return b ? InstanceHistory.FIND_BY_OLD_SOP_UIDS : InstanceHistory.FIND_BY_NEW_SOP_UIDS; }
         String[] getUids(Attributes keys) { return keys.getStrings(Tag.SOPInstanceUID); }
-        String getOldUID(QCInstanceHistory history) { return history.getOldUID(); }
-        String getNewUID(QCInstanceHistory history) { return history.getCurrentUID(); }
+        String getOldUID(InstanceHistory history) { return history.getOldUID(); }
+        String getNewUID(InstanceHistory history) { return history.getCurrentUID(); }
         NonIocmQRLevel parent() { return SERIES; }
     };
 
     abstract String getHistoryQueryName(boolean oldToNew);
     abstract String[] getUids(Attributes keys);
-    abstract String getOldUID(QCInstanceHistory history);
-    abstract String getNewUID(QCInstanceHistory history);
+    abstract String getOldUID(InstanceHistory history);
+    abstract String getNewUID(InstanceHistory history);
     abstract NonIocmQRLevel parent();
 }

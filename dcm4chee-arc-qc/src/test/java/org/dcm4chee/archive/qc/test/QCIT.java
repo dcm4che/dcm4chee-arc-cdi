@@ -76,12 +76,9 @@ import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.QCActionHistory;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.entity.QCSeriesHistory;
-import org.dcm4chee.archive.entity.QCStudyHistory;
-import org.dcm4chee.archive.entity.QCUpdateHistory;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.history.*;
+import org.dcm4chee.archive.entity.history.ActionHistory;
+import org.dcm4chee.archive.entity.history.UpdateHistory.UpdateScope;
 import org.dcm4chee.archive.entity.RequestAttributes;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
@@ -202,9 +199,9 @@ public class QCIT {
             "DELETE FROM study", "DELETE FROM rel_linked_patient_id",
             "DELETE FROM patient_id", "DELETE FROM id_issuer",
             "DELETE FROM patient", "DELETE FROM soundex_code",
-            "DELETE FROM person_name", "DELETE FROM qc_instance_history",
-            "DELETE FROM qc_series_history", "DELETE FROM qc_study_history",
-            "DELETE FROM qc_action_history", "DELETE FROM qc_update_history",
+            "DELETE FROM person_name", "DELETE FROM instance_history",
+            "DELETE FROM series_history", "DELETE FROM study_history",
+            "DELETE FROM action_history", "DELETE FROM update_history",
             "DELETE FROM code", "DELETE FROM dicomattrs" };
 
     @Deployment
@@ -281,7 +278,7 @@ public class QCIT {
         Patient pat = instances.get(0).getSeries().getStudy().getPatient();
         Attributes attrs = load(UPDATE_ATTRS[0]);
         QCEvent event = qcManager.updateDicomObject(archDevExt,
-                QCUpdateScope.PATIENT, attrs);
+                UpdateScope.PATIENT, attrs);
         pat = em.merge(pat);
         utx.commit();
         assertTrue(pat.getAttributes().getString(Tag.PatientBirthDate)
@@ -302,7 +299,7 @@ public class QCIT {
         eventUIDs.add(new QCEventInstance(instancesSOPUID[0], instances.get(0).getSeries().getSeriesInstanceUID(), study.getStudyInstanceUID()));
         Attributes attrs = load(UPDATE_ATTRS[1]);
         QCEvent event = qcManager.updateDicomObject(archDevExt,
-                QCUpdateScope.STUDY, attrs);
+                UpdateHistory.UpdateScope.STUDY, attrs);
         study = em.merge(study);
         utx.commit();
 
@@ -343,7 +340,7 @@ public class QCIT {
         Study study = instances.get(0).getSeries().getStudy();
         Attributes attrs = load(UPDATE_ATTRS[1]);
         QCEvent event = qcManager.updateDicomObject(archDevExt,
-                QCUpdateScope.STUDY, attrs);
+                UpdateHistory.UpdateScope.STUDY, attrs);
         study = em.merge(study);
         utx.commit();
         utx.begin();
@@ -353,15 +350,15 @@ public class QCIT {
         attrs2.setString(Tag.StudyInstanceUID, VR.UI,
                 study.getStudyInstanceUID());
         QCEvent event2 = qcManager.updateDicomObject(archDevExt,
-                QCUpdateScope.STUDY, attrs2);
+                UpdateHistory.UpdateScope.STUDY, attrs2);
 
         // now retrieve the history
-        Query query = em.createQuery("SELECT q FROM QCUpdateHistory q"
+        Query query = em.createQuery("SELECT q FROM UpdateHistory q"
                 + " WHERE q.objectUID = ?1" + " AND q.next IS NOT NULL");
         query.setParameter(1, study.getStudyInstanceUID());
-        QCUpdateHistory prevHistoryNode = (QCUpdateHistory) query
+        UpdateHistory prevHistoryNode = (UpdateHistory) query
                 .getSingleResult();
-        QCUpdateHistory nextHistoryNode = prevHistoryNode.getNext();
+        UpdateHistory nextHistoryNode = prevHistoryNode.getNext();
         utx.commit();
 
         Attributes newStudyAttrs = study.getAttributes();
@@ -386,7 +383,7 @@ public class QCIT {
         Series series = instances.get(0).getSeries();
         Attributes attrs = load(UPDATE_ATTRS[2]);
         QCEvent event = qcManager.updateDicomObject(archDevExt,
-                QCUpdateScope.SERIES, attrs);
+                UpdateScope.SERIES, attrs);
         series = em.merge(series);
 
         ArrayList<RequestAttributes> reqAttrs = new ArrayList<RequestAttributes>();
@@ -416,7 +413,7 @@ public class QCIT {
         Instance instance = instances.get(0);
         Attributes attrs = load(UPDATE_ATTRS[3]);
         QCEvent event = qcManager.updateDicomObject(archDevExt,
-                QCUpdateScope.INSTANCE, attrs);
+                UpdateScope.INSTANCE, attrs);
         instance = em.merge(instance);
 
         Attributes instanceAttributes = instance.getAttributes();
@@ -446,19 +443,19 @@ public class QCIT {
     public void testFmergeStudiesUpdateAccessionNumberUpdateBodyPartExamined()
             throws Exception {
         utx.begin();
-        QCActionHistory prevaction = new QCActionHistory();
+        ActionHistory prevaction = new ActionHistory();
         prevaction.setCreatedTime(new Date());
         prevaction.setAction("SPLIT");
         em.persist(prevaction);
-        QCStudyHistory prevStudyHistory = new QCStudyHistory(null, prevaction);
+        StudyHistory prevStudyHistory = new StudyHistory(null, prevaction);
         prevStudyHistory.setOldStudyUID("X.X.X");
         prevStudyHistory.setNextStudyUID("3.3.3.3");
         em.persist(prevStudyHistory);
-        QCSeriesHistory prevSeriesHistory = new QCSeriesHistory(null,
+        SeriesHistory prevSeriesHistory = new SeriesHistory(null,
                 prevStudyHistory);
         prevSeriesHistory.setOldSeriesUID("Y.Y.Y");
         em.persist(prevSeriesHistory);
-        QCInstanceHistory prevInstForKO = new QCInstanceHistory("3.3.3.3",
+        InstanceHistory prevInstForKO = new InstanceHistory("3.3.3.3",
                 "2.2.2.100", "KOX", "KO1", "KO1", false);
         prevInstForKO.setSeries(prevSeriesHistory);
         em.persist(prevInstForKO);
@@ -486,8 +483,8 @@ public class QCIT {
         catch(Exception e ) {
             System.out.println(e.getMessage());
         }
-        QCInstanceHistory firstKO = getInstanceHistoryByOldUID("KOX");
-        QCInstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
+        InstanceHistory firstKO = getInstanceHistoryByOldUID("KOX");
+        InstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
         String[] instanceSOPUID = { newKO.getCurrentUID() };
 
         ArrayList<Instance> instances = new ArrayList<Instance>();
@@ -558,10 +555,10 @@ public class QCIT {
                         "(113001, DCM, \"Rejected for Quality Reasons\")"));
         utx.commit();
 
-        QCInstanceHistory firstKO = getInstanceHistoryByOldUID("IMGX");
-        QCInstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
-        QCInstanceHistory newIMG2 = getInstanceHistoryByOldUID("IMG2");
-        QCInstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
+        InstanceHistory firstKO = getInstanceHistoryByOldUID("IMGX");
+        InstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
+        InstanceHistory newIMG2 = getInstanceHistoryByOldUID("IMG2");
+        InstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
 
         String[] instanceSOPUID = { newIMG1.getCurrentUID(),
                 newIMG2.getCurrentUID(), newKO.getCurrentUID() };
@@ -685,9 +682,9 @@ public class QCIT {
                         "(113001, DCM, \"Rejected for Quality Reasons\")"));
         utx.commit();
 
-        QCInstanceHistory firstIMG = getInstanceHistoryByOldUID("IMGX");
-        QCInstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
-        QCInstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
+        InstanceHistory firstIMG = getInstanceHistoryByOldUID("IMGX");
+        InstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
+        InstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
 
         String[] instanceSOPUID = { newIMG1.getCurrentUID(),
                 newKO.getCurrentUID() };
@@ -789,10 +786,10 @@ public class QCIT {
                         "(113001, DCM, \"Rejected for Quality Reasons\")"));
         utx.commit();
 
-        QCInstanceHistory firstKO = getInstanceHistoryByOldUID("IMGX");
-        QCInstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
-        QCInstanceHistory newIMG2 = getInstanceHistoryByOldUID("IMG2");
-        QCInstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
+        InstanceHistory firstKO = getInstanceHistoryByOldUID("IMGX");
+        InstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
+        InstanceHistory newIMG2 = getInstanceHistoryByOldUID("IMG2");
+        InstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
 
         String[] instanceSOPUID = { newIMG1.getCurrentUID(),
                 newIMG2.getCurrentUID(), newKO.getCurrentUID() };
@@ -904,9 +901,9 @@ public class QCIT {
                         "(113001, DCM, \"Rejected for Quality Reasons\")"));
         utx.commit();
 
-        QCInstanceHistory firstKO = getInstanceHistoryByOldUID("IMGX");
-        QCInstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
-        QCInstanceHistory newIMG2 = getInstanceHistoryByOldUID("IMG2");
+        InstanceHistory firstKO = getInstanceHistoryByOldUID("IMGX");
+        InstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
+        InstanceHistory newIMG2 = getInstanceHistoryByOldUID("IMG2");
 
         String[] instanceSOPUID = { newIMG1.getCurrentUID(),
                 newIMG2.getCurrentUID(), };
@@ -984,10 +981,10 @@ public class QCIT {
                         "(113001, DCM, \"Rejected for Quality Reasons\")"));
         utx.commit();
 
-        QCInstanceHistory firstIMG = getInstanceHistoryByOldUID("IMGX");
-        QCInstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
-        QCInstanceHistory newIMG2 = getInstanceHistoryByOldUID("IMG2");
-        QCInstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
+        InstanceHistory firstIMG = getInstanceHistoryByOldUID("IMGX");
+        InstanceHistory newIMG1 = getInstanceHistoryByOldUID("IMG1");
+        InstanceHistory newIMG2 = getInstanceHistoryByOldUID("IMG2");
+        InstanceHistory newKO = getInstanceHistoryByOldUID("KO1");
 
         String[] instanceSOPUID = { newIMG1.getCurrentUID(),
                 newKO.getCurrentUID() };
@@ -1072,7 +1069,7 @@ public class QCIT {
                 instances.get(1), thirdParty.get(0));
 
         // test old attributes are logged
-        QCInstanceHistory identKO = getInstanceHistoryByOldUID("KO1IDENT");
+        InstanceHistory identKO = getInstanceHistoryByOldUID("KO1IDENT");
         assertTrue(identKO.getPreviousAtributesBlob() != null);
         // test IMG2 is cloned
         assertTrue(newIMG2.isCloned());
@@ -1137,19 +1134,19 @@ public class QCIT {
             HeuristicRollbackException {
         utx.begin();
 
-        QCActionHistory prevaction = new QCActionHistory();
+        ActionHistory prevaction = new ActionHistory();
         prevaction.setCreatedTime(new Date());
         prevaction.setAction("SPLIT");
         em.persist(prevaction);
-        QCStudyHistory prevStudyHistory = new QCStudyHistory(null, prevaction);
+        StudyHistory prevStudyHistory = new StudyHistory(null, prevaction);
         prevStudyHistory.setOldStudyUID("X.X.X");
         prevStudyHistory.setNextStudyUID("STUDY1");
         em.persist(prevStudyHistory);
-        QCSeriesHistory prevSeriesHistory = new QCSeriesHistory(null,
+        SeriesHistory prevSeriesHistory = new SeriesHistory(null,
                 prevStudyHistory);
         prevSeriesHistory.setOldSeriesUID("Y.Y.Y");
         em.persist(prevSeriesHistory);
-        QCInstanceHistory prevInstForKO = new QCInstanceHistory("STUDY1",
+        InstanceHistory prevInstForKO = new InstanceHistory("STUDY1",
                 "SERIES2", "IMGX", "IMG1", "IMG1", false);
         prevInstForKO.setSeries(prevSeriesHistory);
         em.persist(prevInstForKO);
@@ -1166,10 +1163,10 @@ public class QCIT {
         return query.getResultList();
     }
 
-    private QCInstanceHistory getInstanceHistoryByOldUID(String uid) {
-        Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_OLD_UID);
+    private InstanceHistory getInstanceHistoryByOldUID(String uid) {
+        Query query = em.createNamedQuery(InstanceHistory.FIND_BY_OLD_UID);
         query.setParameter(1, uid);
-        return (QCInstanceHistory) query.getSingleResult();
+        return (InstanceHistory) query.getSingleResult();
     }
 
     private void clearDB() throws NotSupportedException, SystemException,

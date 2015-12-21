@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.entity;
+package org.dcm4chee.archive.entity.history;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -53,12 +53,12 @@ import javax.persistence.Table;
  */
 
 @Entity
-@Table(name = "qc_action_history")
-public class QCActionHistory implements Serializable{
+@Table(name = "action_history")
+public class ActionHistory implements Serializable{
 
     private static final long serialVersionUID = 87307281912599202L;
     
-    public enum QCLevel {PATIENT, STUDY, SERIES, INSTANCE}
+    public enum HierarchyLevel {PATIENT, STUDY, SERIES, INSTANCE}
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -74,8 +74,8 @@ public class QCActionHistory implements Serializable{
     private String action;
 
     @Basic(optional = true)
-    @Column(name = "qc_level", updatable = false)
-    private QCLevel level;
+    @Column(name = "hierarchy_level", updatable = false)
+    private HierarchyLevel hierarchyLevel;
 
     public long getPk() {
         return pk;
@@ -97,16 +97,16 @@ public class QCActionHistory implements Serializable{
         this.action = action;
     }
 
-    public QCLevel getLevel() {
-		return level;
+    public HierarchyLevel getHierarchyLevel() {
+		return hierarchyLevel;
 	}
 
-	public void setLevel(QCLevel level) {
-		this.level = level;
+	public void setHierarchyLevel(HierarchyLevel hierarchyLevel) {
+		this.hierarchyLevel = hierarchyLevel;
 	}
 
 	@Override
     public String toString() {
-        return "QCActionHistory[pk=" + pk+ "]";
+        return "ActionHistory[pk=" + pk+ "]";
     }
 }

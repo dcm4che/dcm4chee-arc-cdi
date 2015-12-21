@@ -58,7 +58,7 @@ import org.dcm4chee.archive.dto.ServiceType;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.history.UpdateHistory;
 import org.dcm4chee.archive.qc.PatientCommands;
 import org.dcm4chee.archive.qc.QCBean;
 import org.dcm4chee.archive.qc.QCEvent;
@@ -149,7 +149,7 @@ public class LegacyQCBeanImpl implements QCBean {
     }
 
     @Override
-    public QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt, QCUpdateScope scope,
+    public QCEvent updateDicomObject(ArchiveDeviceExtension arcDevExt, UpdateHistory.UpdateScope scope,
             Attributes attributes) throws QCOperationNotPermittedException, EntityNotFoundException {
         QCOperationContext qcContext = structuralChangeService.updateDicomObject(STRUCTURAL_CHANGE.QC, arcDevExt, scope, attributes);
         QCEvent qcEvent = QCContextImpl.toQCEvent(qcContext);

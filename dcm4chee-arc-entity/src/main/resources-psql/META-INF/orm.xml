@@ -278,8 +278,8 @@
     </attributes>
   </entity>
 
-  <entity class="QCActionHistory">
-    <sequence-generator name="seq" sequence-name="qc_action_history_pks" allocation-size="1" />
+  <entity class="org.dcm4chee.archive.entity.history.ActionHistory">
+    <sequence-generator name="seq" sequence-name="action_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -288,8 +288,8 @@
     </attributes>
   </entity>
 
-  <entity class="QCInstanceHistory">
-    <sequence-generator name="seq" sequence-name="qc_instance_history_pks" allocation-size="1" />
+  <entity class="org.dcm4chee.archive.entity.history.InstanceHistory">
+    <sequence-generator name="seq" sequence-name="instance_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -298,8 +298,8 @@
     </attributes>
   </entity>
 
-  <entity class="QCSeriesHistory">
-    <sequence-generator name="seq" sequence-name="qc_series_history_pks" allocation-size="1" />
+  <entity class="org.dcm4chee.archive.entity.history.SeriesHistory">
+    <sequence-generator name="seq" sequence-name="series_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -308,8 +308,8 @@
     </attributes>
   </entity>
 
-  <entity class="QCStudyHistory">
-    <sequence-generator name="seq" sequence-name="qc_study_history_pks" allocation-size="1" />
+  <entity class="org.dcm4chee.archive.entity.history.StudyHistory">
+    <sequence-generator name="seq" sequence-name="study_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -318,8 +318,8 @@
     </attributes>
   </entity>
 
-  <entity class="QCUpdateHistory">
-    <sequence-generator name="seq" sequence-name="qc_update_history_pks" allocation-size="1" />
+  <entity class="org.dcm4chee.archive.entity.history.UpdateHistory">
+    <sequence-generator name="seq" sequence-name="update_history_pks" allocation-size="1" />
     <attributes>
       <id name="pk">
         <column name="pk" />
@@ -328,7 +328,7 @@
     </attributes>
   </entity>
 
-  <entity class="org.dcm4chee.archive.entity.StudyUpdateSession">
+  <entity class="StudyUpdateSession">
     <sequence-generator name="seq" sequence-name="study_update_session_pks" allocation-size="1" />
     <attributes>
       <id name="pk">

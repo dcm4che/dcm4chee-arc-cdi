@@ -1,4 +1,4 @@
-package org.dcm4chee.archive.entity;
+package org.dcm4chee.archive.entity.history;
 
 import java.io.Serializable;
 
@@ -16,10 +16,11 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4chee.archive.entity.AttributesBlob;
 
 @Entity
-@Table(name="qc_series_history")
-public class QCSeriesHistory implements Serializable{
+@Table(name="series_history")
+public class SeriesHistory implements Serializable{
 
     private static final long serialVersionUID = -4611155198722940779L;
     
@@ -37,16 +38,16 @@ public class QCSeriesHistory implements Serializable{
     private String oldSeriesUID;
 
     @ManyToOne(cascade=CascadeType.ALL)
-    @JoinColumn(name="qc_study_history_fk")
-    private QCStudyHistory study;
+    @JoinColumn(name="study_history_fk")
+    private StudyHistory study;
 
     @Basic(optional = true)
     @Column(name = "none_iocm_src_aet", updatable = false)
     private String noneIOCMSourceAET;
 
-    public QCSeriesHistory(){}
+    public SeriesHistory(){}
 
-    public QCSeriesHistory(Attributes attrs , QCStudyHistory study) {
+    public SeriesHistory(Attributes attrs, StudyHistory study) {
         this.study = study;
         if(attrs != null)
         this.updatedAttributesBlob = new AttributesBlob(attrs);
@@ -60,7 +61,7 @@ public class QCSeriesHistory implements Serializable{
         this.updatedAttributesBlob = updatedAttributesBlob;
     }
 
-    public QCStudyHistory getStudy() {
+    public StudyHistory getStudy() {
         return study;
     }
 
@@ -72,7 +73,7 @@ public class QCSeriesHistory implements Serializable{
         this.oldSeriesUID = oldSeriesUID;
     }
 
-    public void setStudy(QCStudyHistory study) {
+    public void setStudy(StudyHistory study) {
         this.study = study;
     }
 
@@ -90,6 +91,6 @@ public class QCSeriesHistory implements Serializable{
 
     @Override
     public String toString() {
-        return "QCSeriesHistory[pk=" + pk+ "]";
+        return "SeriesHistory[pk=" + pk+ "]";
     }
 }

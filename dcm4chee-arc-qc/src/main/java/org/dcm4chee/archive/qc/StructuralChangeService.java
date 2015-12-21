@@ -51,7 +51,7 @@ import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.entity.Instance;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.history.UpdateHistory;
 
 
 /**
@@ -193,7 +193,7 @@ public interface StructuralChangeService {
      * @throws EntityNotFoundException
      *             the entity not found exception
      */
-    QCOperationContext updateDicomObject(Enum<?> structuralChangeCtx, ArchiveDeviceExtension arcDevExt, QCUpdateScope scope,
+    QCOperationContext updateDicomObject(Enum<?> structuralChangeCtx, ArchiveDeviceExtension arcDevExt, UpdateHistory.UpdateScope scope,
             Attributes attributes) throws QCOperationNotPermittedException, EntityNotFoundException;
     
     /**

@@ -60,8 +60,8 @@ import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
 import org.dcm4chee.archive.conf.QueryRetrieveView;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.history.InstanceHistory;
+import org.dcm4chee.archive.entity.history.UpdateHistory;
 import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.qc.QCOperationContext;
@@ -106,7 +106,7 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
     public boolean requiresReferenceUpdate(String studyInstanceUID, Patient pat) {
         
         if(studyInstanceUID != null) {
-            Query query = em.createNamedQuery(QCInstanceHistory.STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
+            Query query = em.createNamedQuery(InstanceHistory.STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
             query.setParameter(1, studyInstanceUID);
             query.setMaxResults(1);
             return query.getResultList().isEmpty()? false: true;
@@ -120,7 +120,7 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
         Query queryStudy = em.createQuery("SELECT s.studyInstanceUID FROM Study s WHERE s.patient = ?1");
         queryStudy.setParameter(1, pat);
         List<String> uids = queryStudy.getResultList();
-        Query query = em.createNamedQuery(QCInstanceHistory.STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
+        Query query = em.createNamedQuery(InstanceHistory.STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT);
         query.setParameter("uids", uids);
         query.setMaxResults(1);
         return query.getResultList().isEmpty()? false : true;
@@ -141,19 +141,19 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<QCInstanceHistory> getReferencedHistory(CStoreSCUContext ctx,
+    public Collection<InstanceHistory> getReferencedHistory(CStoreSCUContext ctx,
             Collection<String> referencedStudyInstanceUIDs) {
         //check if cache has UIDs and filter the referencedStudyInstanceUIDs list to remove the cached ones
         Collection<String> cachedUIDs = (Collection<String>) ctx.getProperty(CACHED_UIDS);
-        Collection<QCInstanceHistory> cachedHistory = (Collection<QCInstanceHistory>) ctx.getProperty(CACHED_HISTORY_OBJECTS);
+        Collection<InstanceHistory> cachedHistory = (Collection<InstanceHistory>) ctx.getProperty(CACHED_HISTORY_OBJECTS);
         Collection<String> diff = getUIDsMissingFromCache(referencedStudyInstanceUIDs, cachedUIDs);
         if(diff.size() > 0) {
-            Collection<QCInstanceHistory> resultList = new ArrayList<QCInstanceHistory>();
-            Query query = em.createNamedQuery(QCInstanceHistory.FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST);
+            Collection<InstanceHistory> resultList = new ArrayList<InstanceHistory>();
+            Query query = em.createNamedQuery(InstanceHistory.FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST);
             query.setParameter("uids", diff);
             for(Iterator<Object[]> iter =  query.getResultList().iterator();iter.hasNext();) {
                 Object[] row = iter.next();
-                resultList.add((QCInstanceHistory) row[0]);
+                resultList.add((InstanceHistory) row[0]);
             }
         
             if(ctx.getProperty(NUM_QC_REF_QUERIES)==null) {
@@ -166,16 +166,16 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
         return cachedHistory;
     }
 
-    private Collection<QCInstanceHistory> complementCache(CStoreSCUContext ctx, Collection<String> cachedUIDs, 
-            Collection<QCInstanceHistory> cachedHistory, Collection<QCInstanceHistory> resultList, Collection<String> diff) {
+    private Collection<InstanceHistory> complementCache(CStoreSCUContext ctx, Collection<String> cachedUIDs,
+            Collection<InstanceHistory> cachedHistory, Collection<InstanceHistory> resultList, Collection<String> diff) {
         if(diff.isEmpty())
             return cachedHistory;
         else {
             if(cachedUIDs==null)
                 cachedUIDs = new ArrayList<String>();
             if(cachedHistory==null)
-                cachedHistory = new ArrayList<QCInstanceHistory>();
-            for(QCInstanceHistory qci : resultList) {
+                cachedHistory = new ArrayList<InstanceHistory>();
+            for(InstanceHistory qci : resultList) {
                 if(!cachedHistory.contains(qci)) {
                     cachedHistory.add(qci);
                 }
@@ -232,11 +232,11 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
 //        if (event.getOperation() == QCOperation.UPDATE) {
 //            String updateScope = event.getUpdateScope();
 //            try {
-//                if (updateScope.compareTo(QCUpdateScope.STUDY.toString()) == 0) {
+//                if (updateScope.compareTo(UpdateScope.STUDY.toString()) == 0) {
 //                    Study study = findStudyByUID(event.getUpdateAttributes().getString(Tag.StudyInstanceUID));
 //                    queryService.createStudyView(study.getPk(), param);
 //                }
-//                if (updateScope.compareTo(QCUpdateScope.SERIES.toString()) == 0) {
+//                if (updateScope.compareTo(UpdateScope.SERIES.toString()) == 0) {
 //                    Series series = findSeriesByUID(event.getUpdateAttributes().getString(Tag.SeriesInstanceUID));
 //                    queryService.createSeriesView(series.getPk(), param);
 //                }
@@ -291,13 +291,13 @@ public class QCRetrieveBeanImpl implements QCRetrieveBean{
             Enum<?>[] qcUpdateChangeTypes = changeCtx.getSubChangeTypeHierarchy(QC_OPERATION.UPDATE);
             if(qcUpdateChangeTypes != null) {
                 QCOperationContext qcCtx = (QCOperationContext)changeCtx;
-                QCUpdateScope updateScope = (QCUpdateScope)qcUpdateChangeTypes[1];
+                UpdateHistory.UpdateScope updateScope = (UpdateHistory.UpdateScope)qcUpdateChangeTypes[1];
                 try {
-                    if (QCUpdateScope.STUDY.equals(updateScope)) {
+                    if (UpdateHistory.UpdateScope.STUDY.equals(updateScope)) {
                         Study study = findStudyByUID(qcCtx.getUpdateAttributes().getString(Tag.StudyInstanceUID));
                         queryService.createStudyView(study.getPk(), param);
                     }
-                    if (QCUpdateScope.SERIES.equals(updateScope)) {
+                    if (UpdateHistory.UpdateScope.SERIES.equals(updateScope)) {
                         Series series = findSeriesByUID(qcCtx.getUpdateAttributes().getString(Tag.SeriesInstanceUID));
                         queryService.createSeriesView(series.getPk(), param);
                     }

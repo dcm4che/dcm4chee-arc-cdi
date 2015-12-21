@@ -52,7 +52,7 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.dto.ReferenceUpdateOnRetrieveScope;
 import org.dcm4chee.archive.entity.Patient;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.history.InstanceHistory;
 import org.dcm4chee.archive.qc.QCRetrieveBean;
 import org.dcm4chee.archive.qc.StructuralChangeService;
 import org.dcm4chee.archive.store.scu.CStoreSCUContext;
@@ -111,7 +111,7 @@ public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
             qcRetrieveManager.scanForReferencedStudyUIDs(attrs,
                     referencedStudyInstanceUIDs);
 
-            final Collection<QCInstanceHistory> referencesHistory = qcRetrieveManager
+            final Collection<InstanceHistory> referencesHistory = qcRetrieveManager
                     .getReferencedHistory(context,
                             referencedStudyInstanceUIDs);
             // final HashMap<String, String> mapping =
@@ -177,7 +177,7 @@ public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
                                 } else {
                                     // non hierarchical
                                     // change in place
-                                    QCInstanceHistory foundHistoryEntry = findRequestedReference(
+                                    InstanceHistory foundHistoryEntry = findRequestedReference(
                                             studyInstanceUID,
                                             referencesHistory,
                                             null,
@@ -199,7 +199,7 @@ public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
                             final ElementDictionary dict, Attributes attrs,
                             Stack<String> tmp, String oldSeriesUID,
                             String oldSopUID) {
-                        QCInstanceHistory foundReference = findRequestedReference(
+                        InstanceHistory foundReference = findRequestedReference(
                                 studyInstanceUID, referencesHistory, null,
                                 oldSeriesUID, oldSopUID);
                         Attributes newSeriesAttrs = new Attributes();
@@ -228,7 +228,7 @@ public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
                             final ElementDictionary dict, Attributes attrs,
                             Stack<String> tmp, String oldStudyUID,
                             String oldSeriesUID, String oldSopUID) {
-                        QCInstanceHistory foundReference = findRequestedReference(
+                        InstanceHistory foundReference = findRequestedReference(
                                 studyInstanceUID, referencesHistory,
                                 oldStudyUID, oldSeriesUID, oldSopUID);
                         Attributes newStudyAttrs = new Attributes();
@@ -288,14 +288,14 @@ public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
 
     }
 
-    protected QCInstanceHistory findRequestedReference(String studyInstanceUID,
-            Collection<QCInstanceHistory> referencesHistory,
+    protected InstanceHistory findRequestedReference(String studyInstanceUID,
+            Collection<InstanceHistory> referencesHistory,
             String oldStudyUID, String oldSeriesUID, String oldSopUID) {
         int matchesToSameStudy = 0;
         if (referencesHistory.isEmpty())
             return null;
-        ArrayList<QCInstanceHistory> filteredByOldSopUID = new ArrayList<QCInstanceHistory>();
-        for (QCInstanceHistory inst : referencesHistory) {
+        ArrayList<InstanceHistory> filteredByOldSopUID = new ArrayList<InstanceHistory>();
+        for (InstanceHistory inst : referencesHistory) {
             boolean sameStudy = oldStudyUID != null ? inst.getSeries()
                     .getStudy().getOldStudyUID().equals(oldStudyUID)
                     : true;
@@ -327,7 +327,7 @@ public class StoreSCUServiceQCDecorator extends DelegatingCStoreSCUService {
             } else {
                 // sub-case 3 some matches belong to the same study
                 // of the retrieved instance then pick same study and latest
-                for (QCInstanceHistory inst : filteredByOldSopUID) {
+                for (InstanceHistory inst : filteredByOldSopUID) {
                     if (inst.getCurrentStudyUID().equals(studyInstanceUID))
                         return inst;
                 }

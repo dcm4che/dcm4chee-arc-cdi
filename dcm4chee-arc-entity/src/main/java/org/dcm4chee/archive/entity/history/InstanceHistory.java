@@ -35,7 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-package org.dcm4chee.archive.entity;
+package org.dcm4chee.archive.entity.history;
 
 import java.io.Serializable;
 
@@ -54,7 +54,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Cascade;
+import org.dcm4chee.archive.entity.AttributesBlob;
 
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
@@ -62,96 +62,96 @@ import org.hibernate.annotations.Cascade;
 
 @NamedQueries({
 @NamedQuery(
-    name="QCInstanceHistory.findByCurrentUID",
-    query="SELECT qci FROM QCInstanceHistory qci "
-            + "JOIN qci.series qcse "
-            + "JOIN qcse.study qcst "
-            + "JOIN qcst.action qca "
-            + "where qci.currentUID = ?1 "),
+    name="InstanceHistory.findByCurrentUID",
+    query="SELECT ih FROM InstanceHistory ih "
+            + "JOIN ih.series seh "
+            + "JOIN seh.study sth "
+            + "JOIN sth.action qca "
+            + "where ih.currentUID = ?1 "),
 
 @NamedQuery(
-    name="QCInstanceHistory.findByCurrentUIDForAction",
-    query="SELECT qci FROM QCInstanceHistory qci "
-            + "JOIN qci.series qcse "
-            + "JOIN qcse.study qcst "
-            + "JOIN qcst.action qca "
-            + "where qci.currentUID = ?1 AND qca.action = ?2 "),
+    name="InstanceHistory.findByCurrentUIDForAction",
+    query="SELECT ih FROM InstanceHistory ih "
+            + "JOIN ih.series seh "
+            + "JOIN seh.study sth "
+            + "JOIN sth.action qca "
+            + "where ih.currentUID = ?1 AND qca.action = ?2 "),
 
 @NamedQuery(
-    name="QCInstanceHistory.findByOldUID",
-    query="SELECT qci FROM QCInstanceHistory qci "
-            + "LEFT JOIN FETCH qci.series qcse "
-            + "LEFT JOIN FETCH qcse.updatedAttributesBlob "
-            + "LEFT JOIN FETCH qcse.study qcst "
-            + "LEFT JOIN FETCH qcst.updatedAttributesBlob "
-            + "LEFT JOIN FETCH qcst.action qca "
-            + "where qci.oldUID = ?1"),
+    name="InstanceHistory.findByOldUID",
+    query="SELECT ih FROM InstanceHistory ih "
+            + "LEFT JOIN FETCH ih.series seh "
+            + "LEFT JOIN FETCH seh.updatedAttributesBlob "
+            + "LEFT JOIN FETCH seh.study sth "
+            + "LEFT JOIN FETCH sth.updatedAttributesBlob "
+            + "LEFT JOIN FETCH sth.action qca "
+            + "where ih.oldUID = ?1"),
 @NamedQuery(
-    name="QCInstanceHistory.studyExistsInQCHistoryAsOldOrNext",
-    query="SELECT qcst.oldStudyUID FROM QCStudyHistory qcst "
+    name="InstanceHistory.studyExistsInQCHistoryAsOldOrNext",
+    query="SELECT sth.oldStudyUID FROM StudyHistory sth "
             + " where exists "
-            + " (select qcst2.oldStudyUID from QCStudyHistory qcst2"
-            + " where qcst2.oldStudyUID = ?1 OR qcst2.nextStudyUID = ?1)"
+            + " (select sth2.oldStudyUID from StudyHistory sth2"
+            + " where sth2.oldStudyUID = ?1 OR sth2.nextStudyUID = ?1)"
     ),
 @NamedQuery(
-    name="QCInstanceHistory.studiesExistsInQCHistoryAsOldOrNext",
-    query="SELECT qcst.oldStudyUID FROM QCStudyHistory qcst "
+    name="InstanceHistory.studiesExistsInQCHistoryAsOldOrNext",
+    query="SELECT sth.oldStudyUID FROM StudyHistory sth "
             + " where exists "
-            + " (select qcst2.oldStudyUID from QCStudyHistory qcst2"
-            + " where qcst2.oldStudyUID IN (:uids) OR qcst2.nextStudyUID IN (:uids))"
+            + " (select sth2.oldStudyUID from StudyHistory sth2"
+            + " where sth2.oldStudyUID IN (:uids) OR sth2.nextStudyUID IN (:uids))"
     ),
 @NamedQuery(
-    name="QCInstanceHistory.findDistinctInstancesWhereStudyOldOrCurrentInList",
-    query="SELECT DISTINCT qci , qci.series.study.action.createdTime from QCInstanceHistory qci  "
-            + "LEFT JOIN qci.series.study qcst "
-            + "where qcst.oldStudyUID IN (:uids) "
-            + "OR qci.currentStudyUID IN (:uids) order by qci.series.study.action.createdTime DESC"
+    name="InstanceHistory.findDistinctInstancesWhereStudyOldOrCurrentInList",
+    query="SELECT DISTINCT ih , ih.series.study.action.createdTime from InstanceHistory ih  "
+            + "LEFT JOIN ih.series.study sth "
+            + "where sth.oldStudyUID IN (:uids) "
+            + "OR ih.currentStudyUID IN (:uids) order by ih.series.study.action.createdTime DESC"
     ),
 @NamedQuery(
-    name="QCInstanceHistory.findByOldStudyUIDs",
-    query="SELECT qci from QCInstanceHistory qci LEFT JOIN qci.series.study qcs WHERE qcs.oldStudyUID IN (:uids)"
+    name="InstanceHistory.findByOldStudyUIDs",
+    query="SELECT ih from InstanceHistory ih LEFT JOIN ih.series.study qcs WHERE qcs.oldStudyUID IN (:uids)"
     ),
 @NamedQuery(
-    name="QCInstanceHistory.findByOldSeriesUIDs",
-    query="SELECT qci from QCInstanceHistory qci LEFT JOIN qci.series qcs WHERE qcs.oldSeriesUID IN (:uids)"
+    name="InstanceHistory.findByOldSeriesUIDs",
+    query="SELECT ih from InstanceHistory ih LEFT JOIN ih.series qcs WHERE qcs.oldSeriesUID IN (:uids)"
     ),
 @NamedQuery(
-    name="QCInstanceHistory.findByOldSopUIDs",
-    query="SELECT qci from QCInstanceHistory qci WHERE qci.currentUID IN (SELECT DISTINCT sub.currentUID from QCInstanceHistory sub WHERE sub.oldUID IN (:uids))"
+    name="InstanceHistory.findByOldSopUIDs",
+    query="SELECT ih from InstanceHistory ih WHERE ih.currentUID IN (SELECT DISTINCT sub.currentUID from InstanceHistory sub WHERE sub.oldUID IN (:uids))"
     ),
 @NamedQuery(
-    name="QCInstanceHistory.findByNewStudyUIDs",
-    query="SELECT qci from QCInstanceHistory qci LEFT JOIN qci.series.study qcs WHERE qci.currentStudyUID IN (:uids)"
+    name="InstanceHistory.findByNewStudyUIDs",
+    query="SELECT ih from InstanceHistory ih LEFT JOIN ih.series.study qcs WHERE ih.currentStudyUID IN (:uids)"
     ),
 @NamedQuery(
-    name="QCInstanceHistory.findByNewSeriesUIDs",
-    query="SELECT qci from QCInstanceHistory qci LEFT JOIN qci.series qcs WHERE qci.currentSeriesUID IN (:uids)"
+    name="InstanceHistory.findByNewSeriesUIDs",
+    query="SELECT ih from InstanceHistory ih LEFT JOIN ih.series qcs WHERE ih.currentSeriesUID IN (:uids)"
     ),
 @NamedQuery(
-    name="QCInstanceHistory.findByNewSopUIDs",
-    query="SELECT qci from QCInstanceHistory qci WHERE qci.currentUID IN (:uids)"
+    name="InstanceHistory.findByNewSopUIDs",
+    query="SELECT ih from InstanceHistory ih WHERE ih.currentUID IN (:uids)"
     )
 
 })
 
 @Entity
-@Table(name="qc_instance_history")
-public class QCInstanceHistory implements Serializable{
+@Table(name="instance_history")
+public class InstanceHistory implements Serializable{
 
     private static final long serialVersionUID = -8359497624548247954L;
 
-    public static final String FIND_BY_CURRENT_UID="QCInstanceHistory.findByCurrentUID";
-    public static final String FIND_BY_OLD_UID="QCInstanceHistory.findByOldUID";
-    public static final String FIND_BY_CURRENT_UID_FOR_ACTION="QCInstanceHistory.findByCurrentUIDForAction";
-    public static final String STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT= "QCInstanceHistory.studyExistsInQCHistoryAsOldOrNext";
-    public static final String STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT= "QCInstanceHistory.studiesExistsInQCHistoryAsOldOrNext";
-    public static final String FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST = "QCInstanceHistory.findDistinctInstancesWhereStudyOldOrCurrentInList";
-    public static final String FIND_BY_OLD_STUDY_UIDS = "QCInstanceHistory.findByOldStudyUIDs";
-    public static final String FIND_BY_OLD_SERIES_UIDS = "QCInstanceHistory.findByOldSeriesUIDs";
-    public static final String FIND_BY_OLD_SOP_UIDS = "QCInstanceHistory.findByOldSopUIDs";
-    public static final String FIND_BY_NEW_STUDY_UIDS = "QCInstanceHistory.findByNewStudyUIDs";
-    public static final String FIND_BY_NEW_SERIES_UIDS = "QCInstanceHistory.findByNewSeriesUIDs";
-    public static final String FIND_BY_NEW_SOP_UIDS = "QCInstanceHistory.findByNewSopUIDs";
+    public static final String FIND_BY_CURRENT_UID="InstanceHistory.findByCurrentUID";
+    public static final String FIND_BY_OLD_UID="InstanceHistory.findByOldUID";
+    public static final String FIND_BY_CURRENT_UID_FOR_ACTION="InstanceHistory.findByCurrentUIDForAction";
+    public static final String STUDY_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT= "InstanceHistory.studyExistsInQCHistoryAsOldOrNext";
+    public static final String STUDIES_EXISTS_IN_QC_HISTORY_AS_OLD_OR_NEXT= "InstanceHistory.studiesExistsInQCHistoryAsOldOrNext";
+    public static final String FIND_DISTINCT_INSTANCES_WHERE_STUDY_OLD_OR_CURRENT_IN_LIST = "InstanceHistory.findDistinctInstancesWhereStudyOldOrCurrentInList";
+    public static final String FIND_BY_OLD_STUDY_UIDS = "InstanceHistory.findByOldStudyUIDs";
+    public static final String FIND_BY_OLD_SERIES_UIDS = "InstanceHistory.findByOldSeriesUIDs";
+    public static final String FIND_BY_OLD_SOP_UIDS = "InstanceHistory.findByOldSopUIDs";
+    public static final String FIND_BY_NEW_STUDY_UIDS = "InstanceHistory.findByNewStudyUIDs";
+    public static final String FIND_BY_NEW_SERIES_UIDS = "InstanceHistory.findByNewSeriesUIDs";
+    public static final String FIND_BY_NEW_SOP_UIDS = "InstanceHistory.findByNewSopUIDs";
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -187,16 +187,16 @@ public class QCInstanceHistory implements Serializable{
     private boolean cloned;
 
     @ManyToOne(cascade=CascadeType.ALL)
-    @JoinColumn(name="qc_series_history_fk")
-    private QCSeriesHistory series;
+    @JoinColumn(name="series_history_fk")
+    private SeriesHistory series;
     
     public long getPk() {
         return pk;
     }
 
-    public QCInstanceHistory() {}
+    public InstanceHistory() {}
 
-    public QCInstanceHistory(String currentStudyUID,
+    public InstanceHistory(String currentStudyUID,
             String currentSeriesUID, String oldUID,
             String currentUID, String nextUID, boolean cloned) {
         this.cloned=cloned;
@@ -254,11 +254,11 @@ public class QCInstanceHistory implements Serializable{
         this.cloned = cloned;
     }
 
-    public QCSeriesHistory getSeries() {
+    public SeriesHistory getSeries() {
         return series;
     }
 
-    public void setSeries(QCSeriesHistory series) {
+    public void setSeries(SeriesHistory series) {
         this.series = series;
     }
 
@@ -272,7 +272,7 @@ public class QCInstanceHistory implements Serializable{
 
     @Override
     public String toString() {
-        return "QCInstanceHistory[pk=" + pk 
+        return "InstanceHistory[pk=" + pk
                 + ", oldUID= " + oldUID
                 + ", nextUID= " + nextUID
                 + ", currentUID= " + currentUID

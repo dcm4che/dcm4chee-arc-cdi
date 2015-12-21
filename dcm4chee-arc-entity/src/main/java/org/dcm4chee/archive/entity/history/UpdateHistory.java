@@ -1,4 +1,6 @@
-package org.dcm4chee.archive.entity;
+package org.dcm4chee.archive.entity.history;
+
+import org.dcm4chee.archive.entity.AttributesBlob;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -20,20 +22,20 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 @NamedQueries({
 @NamedQuery(
-    name="QCUpdateHistory.findFirstUpdateEntry",
-    query="SELECT q FROM QCUpdateHistory q where q.objectUID = ?1 "
-            + "AND q.next IS NULL"
+    name="UpdateHistory.findFirstUpdateEntry",
+    query="SELECT uh FROM UpdateHistory uh where uh.objectUID = ?1 "
+            + "AND uh.next IS NULL"
 )
 })
 @Entity
-@Table(name="qc_update_history")
-public class QCUpdateHistory implements Serializable{
+@Table(name="update_history")
+public class UpdateHistory implements Serializable{
 
     private static final long serialVersionUID = -4407564849668358911L;
 
-    public static final String FIND_FIRST_UPDATE_ENTRY = "QCUpdateHistory.findFirstUpdateEntry";
+    public static final String FIND_FIRST_UPDATE_ENTRY = "UpdateHistory.findFirstUpdateEntry";
     
-    public enum QCUpdateScope {NONE,PATIENT, STUDY, SERIES, INSTANCE}
+    public enum UpdateScope {NONE,PATIENT, STUDY, SERIES, INSTANCE}
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -54,11 +56,11 @@ public class QCUpdateHistory implements Serializable{
 
     @Basic(optional = false) @Enumerated(EnumType.STRING)
     @Column(name= "scope", updatable=false)
-    private QCUpdateScope scope;
+    private UpdateScope scope;
 
     @OneToOne(optional = true)
-    @JoinColumn(name = "qc_update_history_fk")
-    private QCUpdateHistory next;
+    @JoinColumn(name = "update_history_fk")
+    private UpdateHistory next;
 
     public Date getCreatedTime() {
         return createdTime;
@@ -76,19 +78,19 @@ public class QCUpdateHistory implements Serializable{
         this.updatedAttributesBlob = updatedAttributesBlob;
     }
 
-    public QCUpdateScope getScope() {
+    public UpdateScope getScope() {
         return scope;
     }
 
-    public void setScope(QCUpdateScope scope) {
+    public void setScope(UpdateScope scope) {
         this.scope = scope;
     }
 
-    public QCUpdateHistory getNext() {
+    public UpdateHistory getNext() {
         return next;
     }
 
-    public void setNext(QCUpdateHistory next) {
+    public void setNext(UpdateHistory next) {
         this.next = next;
     }
 

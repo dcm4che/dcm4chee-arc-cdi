@@ -47,7 +47,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Code;
 import org.dcm4che3.data.IDWithIssuer;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
-import org.dcm4chee.archive.entity.QCUpdateHistory.QCUpdateScope;
+import org.dcm4chee.archive.entity.history.UpdateHistory.UpdateScope;
 
 /**
  * @author Alexander Hoermandinger <alexander.hoermandinger@agfa.com>
@@ -157,7 +157,7 @@ public interface QCService {
      * @throws EntityNotFoundException
      * @throws QCOperationNotPermittedException
      */
-    QCOperationContext updateDicomObject(ArchiveDeviceExtension arcDevExt, QCUpdateScope scope,
+    QCOperationContext updateDicomObject(ArchiveDeviceExtension arcDevExt, UpdateScope scope,
             Attributes attributes) throws QCOperationNotPermittedException, EntityNotFoundException;
 
     /**

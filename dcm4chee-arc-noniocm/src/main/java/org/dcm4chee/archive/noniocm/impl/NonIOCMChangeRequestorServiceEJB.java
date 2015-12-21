@@ -77,10 +77,10 @@ import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.QCActionHistory;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
-import org.dcm4chee.archive.entity.QCSeriesHistory;
-import org.dcm4chee.archive.entity.QCStudyHistory;
+import org.dcm4chee.archive.entity.history.ActionHistory;
+import org.dcm4chee.archive.entity.history.InstanceHistory;
+import org.dcm4chee.archive.entity.history.SeriesHistory;
+import org.dcm4chee.archive.entity.history.StudyHistory;
 import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorService;
 import org.dcm4chee.archive.noniocm.NonIocmChangeRequestorMDB;
 import org.dcm4chee.archive.patient.PatientCircularMergedException;
@@ -213,8 +213,8 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
         return NonIOCMChangeType.INSTANCE_CHANGE;
     }
 
-    public List<QCInstanceHistory> findInstanceHistory(String sopInstanceUID) {
-        return new ArrayList<QCInstanceHistory>();
+    public List<InstanceHistory> findInstanceHistory(String sopInstanceUID) {
+        return new ArrayList<InstanceHistory>();
     }
 
     @Override
@@ -264,11 +264,11 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
     }
 
     @Override
-    public QCInstanceHistory getLastQCInstanceHistory(String sopIUID) {
-        Query query = em.createNamedQuery(QCInstanceHistory.FIND_BY_OLD_UID);
+    public InstanceHistory getLastQCInstanceHistory(String sopIUID) {
+        Query query = em.createNamedQuery(InstanceHistory.FIND_BY_OLD_UID);
         query.setParameter(1, sopIUID);
         @SuppressWarnings("unchecked")
-        List<QCInstanceHistory> tmp = (List<QCInstanceHistory>) query.getResultList();
+        List<InstanceHistory> tmp = (List<InstanceHistory>) query.getResultList();
         return tmp.size() == 0 ? null : tmp.get(0);
     }
 
@@ -304,22 +304,22 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
 
         if(context.getOldNONEIOCMChangeUID() != null) {
             //create Split QC history for none IOCM
-            QCActionHistory action = new QCActionHistory();
+            ActionHistory action = new ActionHistory();
             action.setAction(QCOperation.SPLIT.toString());
             action.setCreatedTime(new Date(System.currentTimeMillis()));
             em.persist(action);
-            QCStudyHistory studyHistory = new QCStudyHistory();
+            StudyHistory studyHistory = new StudyHistory();
             studyHistory.setAction(action);
             studyHistory.setUpdatedAttributesBlob(null); //no change (expect same attrs in study)
             studyHistory.setOldStudyUID(context.getAttributes().getString(Tag.StudyInstanceUID));
             studyHistory.setNextStudyUID(context.getAttributes().getString(Tag.StudyInstanceUID));
             em.persist(studyHistory);
-            QCSeriesHistory seriesHistory = new QCSeriesHistory();
+            SeriesHistory seriesHistory = new SeriesHistory();
             seriesHistory.setStudy(studyHistory);
             seriesHistory.setUpdatedAttributesBlob(null); //no change (expect same attrs in series)
             seriesHistory.setOldSeriesUID(context.getAttributes().getString(Tag.SeriesInstanceUID));
             em.persist(seriesHistory);
-            QCInstanceHistory instanceHistory = new QCInstanceHistory(
+            InstanceHistory instanceHistory = new InstanceHistory(
                     context.getAttributes().getString(Tag.StudyInstanceUID),
                     context.getAttributes().getString(Tag.SeriesInstanceUID),
                     context.getOldNONEIOCMChangeUID(),
@@ -331,19 +331,19 @@ public class NonIOCMChangeRequestorServiceEJB implements NonIOCMChangeRequestorS
     }
     
     private boolean withinGracePeriodAndNonIOCMSource(Instance inst, int gracePeriodInSeconds) {
-        Query query = em.createNamedQuery(QCInstanceHistory
-                .FIND_BY_CURRENT_UID_FOR_ACTION, QCInstanceHistory.class);
+        Query query = em.createNamedQuery(InstanceHistory
+                .FIND_BY_CURRENT_UID_FOR_ACTION, InstanceHistory.class);
         query.setParameter(1, inst.getSopInstanceUID());
         query.setParameter(2, QCOperation.DELETE.toString());
-        QCInstanceHistory foundQCInstanceHistory = (QCInstanceHistory) query.getSingleResult();
+        InstanceHistory foundInstanceHistory = (InstanceHistory) query.getSingleResult();
 
-        if(foundQCInstanceHistory == null)
+        if(foundInstanceHistory == null)
             return false;
 
-        if(foundQCInstanceHistory.getSeries().getNoneIOCMSourceAET() == null)
+        if(foundInstanceHistory.getSeries().getNoneIOCMSourceAET() == null)
             return false;
 
-        long createdTime = foundQCInstanceHistory.getSeries()
+        long createdTime = foundInstanceHistory.getSeries()
                 .getStudy().getAction().getCreatedTime().getTime();
         long now = System.currentTimeMillis();
 

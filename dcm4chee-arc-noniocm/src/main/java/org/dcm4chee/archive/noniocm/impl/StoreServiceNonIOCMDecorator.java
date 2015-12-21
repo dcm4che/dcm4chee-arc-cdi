@@ -49,7 +49,7 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.StoreAction;
 import org.dcm4chee.archive.entity.Instance;
-import org.dcm4chee.archive.entity.QCInstanceHistory;
+import org.dcm4chee.archive.entity.history.InstanceHistory;
 import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorService;
 import org.dcm4chee.archive.noniocm.NonIOCMChangeRequestorService.NonIOCMChangeType;
 import org.dcm4chee.archive.qc.StructuralChangeService;
@@ -83,7 +83,7 @@ public class StoreServiceNonIOCMDecorator extends DelegatingStoreService {
     	if (nonIocmService.isNonIOCMChangeRequestor(context.getStoreSession().getRemoteAET())) {
     		Attributes attrs = context.getAttributes();
     		String origSopIUID = attrs.getString(Tag.SOPInstanceUID);
-    		QCInstanceHistory h = nonIocmService.getLastQCInstanceHistory(origSopIUID);
+    		InstanceHistory h = nonIocmService.getLastQCInstanceHistory(origSopIUID);
     		if (h != null) {
     			Collection<Instance> instances = scService.locateInstances(origSopIUID);
     			if (instances.size() > 0) {

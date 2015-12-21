@@ -107,9 +107,9 @@ public class StoreAndVerifyOTWServiceIT {
         "DELETE FROM study", "DELETE FROM rel_linked_patient_id",
         "DELETE FROM patient_id", "DELETE FROM id_issuer",
         "DELETE FROM patient", "DELETE FROM soundex_code",
-        "DELETE FROM person_name", "DELETE FROM qc_instance_history",
-        "DELETE FROM qc_series_history", "DELETE FROM qc_study_history",
-        "DELETE FROM qc_action_history", "DELETE FROM qc_update_history",
+        "DELETE FROM person_name", "DELETE FROM instance_history",
+        "DELETE FROM series_history", "DELETE FROM study_history",
+        "DELETE FROM action_history", "DELETE FROM update_history",
         "DELETE FROM code", "DELETE FROM dicomattrs" };
 
         @Inject
