@@ -93,7 +93,7 @@ public class QueryServiceDynamicDecorator extends DynamicDecoratorWrapper<QueryS
 	}
 
 	@Override
-	public void recalculateDerivedFields(Study study, ApplicationEntity ae) {
-		wrapWithDynamicDecorators(delegate).recalculateDerivedFields(study, ae);
+	public void calculateDerivedFields(Study study, ApplicationEntity ae) {
+		wrapWithDynamicDecorators(delegate).calculateDerivedFields(study, ae);
 	}
 }

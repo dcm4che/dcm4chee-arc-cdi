@@ -5,10 +5,7 @@ import org.dcm4che3.net.ApplicationEntity;
 import org.dcm4che3.net.QueryOption;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
-import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
 import org.dcm4chee.archive.conf.QueryParam;
-import org.dcm4chee.archive.conf.QueryRetrieveView;
-import org.dcm4chee.archive.entity.Series;
 import org.dcm4chee.archive.entity.SeriesQueryAttributes;
 import org.dcm4chee.archive.entity.Study;
 import org.dcm4chee.archive.entity.StudyQueryAttributes;
@@ -90,7 +87,7 @@ public class DelegatingQueryService extends DelegatingServiceImpl<QueryService> 
 	}
 
 	@Override
-	public void recalculateDerivedFields(Study study, ApplicationEntity ae) {
-		getNextDecorator().recalculateDerivedFields(study, ae);
+	public void calculateDerivedFields(Study study, ApplicationEntity ae) {
+		getNextDecorator().calculateDerivedFields(study, ae);
 	}
 }

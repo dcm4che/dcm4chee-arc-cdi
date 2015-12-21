@@ -241,8 +241,8 @@ public class StudyUpdateSessionManager {
         ApplicationEntity ae = device.getApplicationEntityNotNull(studyUpdatedEvent.getLocalAETs().iterator().next());
         Study studyByUID = ejb.findStudyByUID(studyUpdatedEvent.getStudyInstanceUID());
         if (studyByUID != null) {
-            LOG.info("Recalculating derived fields for study {}", studyUpdatedEvent.getStudyInstanceUID());
-            queryService.recalculateDerivedFields(studyByUID, ae);
+            LOG.info("Calculating derived fields for study {}", studyUpdatedEvent.getStudyInstanceUID());
+            queryService.calculateDerivedFields(studyByUID, ae);
 
             LOG.info("Triggering StudyUpdatedEvent for study {}", studyUpdatedEvent.getStudyInstanceUID());
             studyUpdatedEventTrigger.fire(studyUpdatedEvent);

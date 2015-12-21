@@ -234,7 +234,7 @@ public class DefaultQueryService implements QueryService {
     }
 
     @Override
-    public void recalculateDerivedFields(Study study, ApplicationEntity ae) {
+    public void calculateDerivedFields(Study study, ApplicationEntity ae) {
         LOG.info("Calculating derived fields");
         ArchiveDeviceExtension arcDevExt = device.getDeviceExtension(ArchiveDeviceExtension.class);
 

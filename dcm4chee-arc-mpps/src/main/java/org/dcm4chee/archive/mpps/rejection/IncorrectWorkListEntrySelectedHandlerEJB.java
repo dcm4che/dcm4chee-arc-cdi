@@ -87,7 +87,7 @@ public class IncorrectWorkListEntrySelectedHandlerEJB {
         if (study!=null) {
             // TODO: when the source AET permanently stored - update here
             String defaultAETitle = device.getDeviceExtensionNotNull(ArchiveDeviceExtension.class).getDefaultAETitle();
-            queryService.recalculateDerivedFields(study, device.getApplicationEntityNotNull(defaultAETitle));
+            queryService.calculateDerivedFields(study, device.getApplicationEntityNotNull(defaultAETitle));
         }
     }
     private Code incorrectWorklistEntrySelectedCode() {

@@ -89,5 +89,5 @@ public interface QueryService {
 
     SeriesQueryAttributes createSeriesView(Long seriesPk, QueryParam queryParam);
 
-    void recalculateDerivedFields(Study study, ApplicationEntity ae);
+    void calculateDerivedFields(Study study, ApplicationEntity ae);
 }
