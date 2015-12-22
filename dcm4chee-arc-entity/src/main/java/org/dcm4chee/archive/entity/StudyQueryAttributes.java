@@ -51,7 +51,11 @@ import java.util.Date;
 @NamedQueries({
         @NamedQuery(
                 name = StudyQueryAttributes.FIND_BY_VIEW_ID_AND_STUDY_FK,
-                query = "SELECT sqa FROM StudyQueryAttributes sqa WHERE sqa.viewID = ?1 AND sqa.study.pk = ?2")
+                query = "SELECT sqa FROM StudyQueryAttributes sqa WHERE sqa.viewID = ?1 AND sqa.study.pk = ?2"),
+        @NamedQuery(
+                name = StudyQueryAttributes.CLEAN_FOR_STUDY,
+                query="DELETE FROM StudyQueryAttributes queryAttributes "
+                        + "WHERE queryAttributes.study.pk = ?1")
 })
 @Entity
 @Table(name = "study_query_attrs",
@@ -59,6 +63,7 @@ import java.util.Date;
 public class StudyQueryAttributes {
 
     public static final String FIND_BY_VIEW_ID_AND_STUDY_FK = "StudyQueryAttributes.findByViewIdAndStudyFK";
+    public static final String CLEAN_FOR_STUDY = "StudyQueryAttributes.cleanForStudy";
 
 
     @Id

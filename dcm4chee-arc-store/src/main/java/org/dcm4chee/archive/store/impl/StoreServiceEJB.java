@@ -117,6 +117,12 @@ public class StoreServiceEJB {
         Instance instance = service.findOrCreateInstance(em, context);
         context.setInstance(instance);
 
+        // flush and then clean derived study/series fields, to make sure that it happens "after" in the transaction
+        // (otherwise there was a race-condition that a concurrent calculation of derived fields using an old state was able to persist)
+        em.flush();
+        em.createNamedQuery(SeriesQueryAttributes.CLEAN_FOR_SERIES).setParameter(1, instance.getSeries().getPk()).executeUpdate();
+        em.createNamedQuery(StudyQueryAttributes.CLEAN_FOR_STUDY).setParameter(1, instance.getSeries().getStudy().getPk()).executeUpdate();
+
         if (context.getStoreAction() != StoreAction.IGNORE &&
                 context.getStoreAction() != StoreAction.UPDATEDB) {
             try {
@@ -362,7 +368,6 @@ public class StoreServiceEJB {
         StoreParam storeParam = session.getStoreParam();
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
-        study.clearQueryAttributes();
         AttributeFilter studyFilter = storeParam.getAttributeFilter(Entity.Study);
         Attributes studyAttrs = study.getAttributes();
         Attributes modified = new Attributes();
@@ -409,7 +414,6 @@ public class StoreServiceEJB {
         StoreParam storeParam = session.getStoreParam();
         String nullValue = session.getStoreParam().getNullValueForQueryFields();
         FuzzyStr fuzzyStr = session.getStoreParam().getFuzzyStr();
-        series.clearQueryAttributes();
         Attributes seriesAttrs = series.getAttributes();
         AttributeFilter seriesFilter = storeParam.getAttributeFilter(Entity.Series);
         Attributes modified = new Attributes();

@@ -52,7 +52,11 @@ import java.util.Date;
 @NamedQueries({
         @NamedQuery(
                 name=SeriesQueryAttributes.FIND_BY_VIEW_ID_AND_SERIES_FK,
-                query="SELECT sqa FROM SeriesQueryAttributes sqa WHERE sqa.viewID = ?1 AND sqa.series.pk = ?2")
+                query="SELECT sqa FROM SeriesQueryAttributes sqa WHERE sqa.viewID = ?1 AND sqa.series.pk = ?2"),
+        @NamedQuery(
+                name = SeriesQueryAttributes.CLEAN_FOR_SERIES,
+                query="DELETE FROM SeriesQueryAttributes queryAttributes "
+                        + "WHERE queryAttributes.series.pk = ?1")
 })
 @Entity
 @Table(name = "series_query_attrs",
@@ -61,6 +65,7 @@ public class SeriesQueryAttributes {
 
 
     public static final String FIND_BY_VIEW_ID_AND_SERIES_FK = "SeriesQueryAttributes.findByViewIDAndSeriesFK";
+    public static final String CLEAN_FOR_SERIES = "SeriesQueryAttributes.cleanForSeries";
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

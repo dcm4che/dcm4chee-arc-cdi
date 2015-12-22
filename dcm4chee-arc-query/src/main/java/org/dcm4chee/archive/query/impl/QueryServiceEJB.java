@@ -259,6 +259,7 @@ public class QueryServiceEJB {
             self.persistStudyQueryAttributes(queryAttrs, calculatedForVersion);
         } catch (EJBTransactionRolledbackException transactionRolledbackException) {
             LOG.warn("Study derived fields could not be persisted, this is usually okay - probably there was a concurrent calculation/update.", transactionRolledbackException);
+            // ... it could also mean that we forgot to clean the outdated query attributes when updating a study!
         }
 
         return queryAttrs;
@@ -334,6 +335,7 @@ public class QueryServiceEJB {
             self.persistSeriesQueryAttributes(queryAttrs, calculatedForVersion);
         } catch (EJBTransactionRolledbackException transactionRolledbackException) {
             LOG.warn("Series derived fields could not be persisted, this is usually okay - probably there was a concurrent calculation/update.", transactionRolledbackException);
+            // ... it could also mean that we forgot to clean the outdated query attributes when updating a series!
         }
 
         return queryAttrs;

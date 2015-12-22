@@ -87,6 +87,8 @@ import org.dcm4chee.archive.entity.Issuer;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Patient;
 import org.dcm4chee.archive.entity.PatientID;
+import org.dcm4chee.archive.entity.SeriesQueryAttributes;
+import org.dcm4chee.archive.entity.StudyQueryAttributes;
 import org.dcm4chee.archive.entity.history.*;
 import org.dcm4chee.archive.entity.history.ActionHistory;
 import org.dcm4chee.archive.entity.history.ActionHistory.HierarchyLevel;
@@ -901,8 +903,8 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         for(Instance inst : insts) {
             deletedUIDs.add(new InstanceIdentifierImpl(study.getStudyInstanceUID(), series.getSeriesInstanceUID(), inst.getSopInstanceUID()));
         }
-        
-        study.clearQueryAttributes();
+
+        em.createNamedQuery(StudyQueryAttributes.CLEAN_FOR_STUDY).setParameter(1, study.getPk()).executeUpdate();
         LOG.info("{}:  QC info[Delete] info - Rejected series instances {} "
                 + "- scheduled for delete",qcSource, seriesInstanceUID);
         Instance rejNote = createAndStoreRejectionNote(qcRejectionCode, insts);
@@ -937,8 +939,8 @@ public class StructuralChangeServiceImpl implements StructuralChangeService
         checkIfQCPermittedForStudy(study);
         
         LOG.info("{}:  QC info[Delete] info - Rejected instance {} - scheduled for delete", qcSource, sopInstanceUID);
-        series.clearQueryAttributes();
-        study.clearQueryAttributes();
+        em.createNamedQuery(SeriesQueryAttributes.CLEAN_FOR_SERIES).setParameter(1, series.getPk()).executeUpdate();
+        em.createNamedQuery(StudyQueryAttributes.CLEAN_FOR_STUDY).setParameter(1, study.getPk()).executeUpdate();
         
         List<InstanceIdentifier> deletedUIDs = new ArrayList<>();
         for(Instance inst : deletedInstances) {

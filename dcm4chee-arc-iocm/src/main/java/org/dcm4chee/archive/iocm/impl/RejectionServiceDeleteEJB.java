@@ -54,6 +54,10 @@ import javax.persistence.TypedQuery;
 import org.dcm4chee.archive.entity.Code;
 import org.dcm4chee.archive.entity.Location;
 import org.dcm4chee.archive.entity.Instance;
+import org.dcm4chee.archive.entity.Series;
+import org.dcm4chee.archive.entity.SeriesQueryAttributes;
+import org.dcm4chee.archive.entity.Study;
+import org.dcm4chee.archive.entity.StudyQueryAttributes;
 import org.dcm4chee.archive.iocm.RejectionServiceDeleteBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,11 +77,19 @@ public class RejectionServiceDeleteEJB implements RejectionServiceDeleteBean {
     public Collection<Location> deleteRejected(Object source, Collection<Instance> instances) {
         try {
             Collection<Location> toBeDeleted = new HashSet<Location>();
+            Study study = null;
+            Series series = null;
             for (Instance inst : instances) {
                 inst = em.find(Instance.class, inst.getPk());
                 if (isRejected(inst)) {
-                    inst.getSeries().clearQueryAttributes();
-                    inst.getSeries().getStudy().clearQueryAttributes();
+                    if(series != inst.getSeries()) {
+                        series = inst.getSeries();
+                        em.createNamedQuery(SeriesQueryAttributes.CLEAN_FOR_SERIES).setParameter(1, series.getPk()).executeUpdate();
+                    }
+                    if(study != inst.getSeries().getStudy()) {
+                        study = inst.getSeries().getStudy();
+                        em.createNamedQuery(StudyQueryAttributes.CLEAN_FOR_STUDY).setParameter(1, study.getPk()).executeUpdate();
+                    }
                     toBeDeleted.addAll(detachReferences(inst));
                     em.remove(inst);
                     LOG.info("Removing {} and Scheduling delete for associated file references", inst);
