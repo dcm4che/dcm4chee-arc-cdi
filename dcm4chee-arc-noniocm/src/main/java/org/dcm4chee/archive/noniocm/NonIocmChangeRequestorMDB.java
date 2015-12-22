@@ -54,6 +54,7 @@ import javax.jms.MessageListener;
 import org.dcm4chee.archive.dto.ActiveService;
 import org.dcm4chee.archive.entity.ActiveProcessing;
 import org.dcm4chee.archive.processing.ActiveProcessingService;
+import org.dcm4chee.archive.util.NotRetryable;
 import org.dcm4chee.archive.util.RetryBean;
 import org.dcm4chee.util.jms.JMSUtils;
 import org.slf4j.Logger;
@@ -103,7 +104,7 @@ public class NonIocmChangeRequestorMDB implements MessageListener {
         } catch (Throwable th) {
             LOG.warn("Failed to process Non-IOCM active-processing message", th);
          
-            boolean retryable = RetryBean.isRetryable(th);
+            boolean retryable = isRetryable(th);
             int msgDeliveryCount = JMSUtils.getMessageDeliveryCount(msg);
             //TODO: remove hard-coded number of retries
             // throw exception to force JMS retry
@@ -115,6 +116,21 @@ public class NonIocmChangeRequestorMDB implements MessageListener {
             }
         } 
         
+    }
+
+    /**
+     * Determines if an exception is retry-able by inspecting the cause-stack.
+     * @param t
+     * @return Returns <code>true</code> if the exception is considered retry-able,
+     * returns <code>false</code> otherwise.
+     */
+    public static boolean isRetryable(Throwable t) {
+        if(t.getClass().getAnnotation(NotRetryable.class) != null) {
+            return false;
+        }
+
+        Throwable cause = t.getCause();
+        return (cause != null) ? isRetryable(cause) : true;
     }
     
     private static String getProcessStudyUID(Message msg) {

@@ -75,9 +75,9 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         try {
             final String iuid = cmd.getString(Tag.AffectedSOPInstanceUID);
 
-            retry.retry(new Callable<Void>() {
+            retry.retry(new RetryBean.Retryable<Void, DicomServiceException>() {
                 @Override
-                public Void call() throws Exception {
+                public Void call() throws DicomServiceException {
                     mppsService.createPerformedProcedureStep(data, new MPPSContext(as.getCallingAET(), as.getCalledAET(), iuid, Dimse.N_CREATE_RQ));
                     return null;
                 }
@@ -97,9 +97,9 @@ public class MPPSSCP extends BasicMPPSSCP implements DicomService {
         try {
             final String iuid = cmd.getString(Tag.RequestedSOPInstanceUID);
 
-            retry.retry(new Callable<Void>() {
+            retry.retry(new RetryBean.Retryable<Void, DicomServiceException>() {
                 @Override
-                public Void call() throws Exception {
+                public Void call() throws DicomServiceException {
                     mppsService.updatePerformedProcedureStep(data, new MPPSContext(as.getCallingAET(), as.getCalledAET(), iuid, Dimse.N_SET_RQ));
                     return null;
                 }

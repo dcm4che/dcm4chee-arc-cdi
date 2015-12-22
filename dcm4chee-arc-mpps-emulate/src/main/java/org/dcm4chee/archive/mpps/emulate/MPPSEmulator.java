@@ -81,9 +81,9 @@ public class MPPSEmulator {
         }
 
         try {
-            return retry.retry(new Callable<MPPS>() {
+            return retry.retry(new RetryBean.Retryable<MPPS,DicomServiceException>() {
                 @Override
-                public MPPS call() throws Exception {
+                public MPPS call() throws DicomServiceException {
                     return ejb.emulateMPPS(studyUpdatedEvent);
                 }
             });

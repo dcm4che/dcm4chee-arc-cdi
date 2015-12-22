@@ -531,7 +531,7 @@ public class StoreServiceImpl implements StoreService {
     public void updateDB(final StoreContext context) throws DicomServiceException {
 
         // try to call updateDB, eventually retries
-        retry.retry(new Callable<Void>() {
+        retry.retry(new RetryBean.Retryable<Void, DicomServiceException>() {
             @Override
             public Void call() throws DicomServiceException {
                 storeServiceEJB.updateDB(context);

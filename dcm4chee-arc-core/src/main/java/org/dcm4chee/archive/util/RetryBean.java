@@ -40,8 +40,10 @@ package org.dcm4chee.archive.util;
 
 import java.util.concurrent.Callable;
 
+import javax.ejb.EJBException;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
+import javax.persistence.PersistenceException;
 import javax.transaction.Status;
 
 import org.dcm4che3.net.Device;
@@ -51,7 +53,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Created by umberto on 9/30/15.
+ * Retry mechanism for transactional database updates.
+ *
+ * A retry is typically necessary if a database update fails due to an OptimisticLockException or
+ * ConstraintViolationException caused by a concurrent transaction.
+ *
+ * @author Umberto Cappellini
  */
 @Dependent
 public class RetryBean<T, E extends Exception> {
@@ -64,7 +71,7 @@ public class RetryBean<T, E extends Exception> {
     @Inject
     TransactionSynchronization transaction;
 
-    public T retry(Callable<T> callable) throws E {
+    public T retry(Retryable<T,E> callable) throws E {
         ArchiveDeviceExtension dE = device.getDeviceExtension(ArchiveDeviceExtension.class);
 
         int updateDbRetries = dE.getUpdateDbRetries();
@@ -77,19 +84,22 @@ public class RetryBean<T, E extends Exception> {
 
         return new RetryTask<T,E>(updateDbRetries, dE.getUpdateDbDelay(), callable).call();
     }
-    
+
     /**
      * Determines if an exception is retry-able by inspecting the cause-stack.
      * @param t
-     * @return Returns <code>true</code> if the exception is considered retry-able, 
+     * @return Returns <code>true</code> if the exception is considered retry-able,
      * returns <code>false</code> otherwise.
      */
     public static boolean isRetryable(Throwable t) {
-        if(t.getClass().getAnnotation(NotRetryable.class) != null) {
-            return false;
-        }
-        
-        Throwable cause = t.getCause();
-        return (cause != null) ? isRetryable(cause) : true;
+        if((t instanceof EJBException) && t.getCause() instanceof PersistenceException)
+            return true;
+
+        return false;
+    }
+
+    public interface Retryable<T,E extends Exception> extends Callable<T> {
+        @Override
+        T call() throws E;
     }
 }
