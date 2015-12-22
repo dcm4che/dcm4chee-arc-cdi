@@ -233,6 +233,10 @@ public class QueryServiceEJB {
         DerivedStudyFields studyDerivedFields = new DefaultDerivedStudyFields(device);
 
         Study study = em.find(Study.class, studyPk);
+        if(study == null) {
+            LOG.warn("Not calculating study query attributes. Study has been deleted in the meantime. {}", studyPk);
+            return null;
+        }
 
         long calculatedForVersion = study.getVersion();
 
@@ -311,6 +315,10 @@ public class QueryServiceEJB {
         DerivedSeriesFields seriesDerivedFields = new DefaultDerivedSeriesFields(device);
 
         Series series = em.find(Series.class, seriesPk);
+        if(series == null) {
+            LOG.warn("Not calculating series query attributes. Series has been deleted in the meantime. {}", seriesPk);
+            return null;
+        }
 
         long calculatedForVersion = series.getVersion();
 
