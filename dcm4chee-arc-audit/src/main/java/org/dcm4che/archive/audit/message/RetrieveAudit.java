@@ -78,6 +78,7 @@ public class RetrieveAudit extends AuditMessage {
             Participant requestor,
             List<ArchiveInstanceLocator> instances,
             EventID eventID,
+            String eventActionCode,
             String eventOutcomeIndicator,
             AuditLogger logger) {
         super();
@@ -88,14 +89,14 @@ public class RetrieveAudit extends AuditMessage {
         this.eventID = eventID;
         this.eventOutcomeIndicator = eventOutcomeIndicator;
         this.logger = logger;
-        init();
+        init(eventActionCode);
     }
 
-    private void init() {
+    private void init(String eventActionCode) {
 
         // Event
         this.setEventIdentification(AuditMessages.createEventIdentification(
-                eventID, EventActionCode.Read,
+                eventID, eventActionCode,
                 logger.timeStamp(), eventOutcomeIndicator, null));
 
         // Active Participant 1: Process that sent the data
@@ -104,7 +105,7 @@ public class RetrieveAudit extends AuditMessage {
                         .getIdentity() != null) ? source.getIdentity()
                         : "ANONYMOUS", null, null, true, source.getHost(),
                         AuditMessages.NetworkAccessPointTypeCode.MachineName,
-                        null, AuditMessages.RoleIDCode.Destination));
+                        null, AuditMessages.RoleIDCode.Source));
 
         // Active Participant 2: The process that received the data.
         this.getActiveParticipant().add(

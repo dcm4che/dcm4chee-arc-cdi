@@ -154,7 +154,7 @@ public class AuditObserver {
         sendAuditMessage (new RetrieveAudit(event.getSource(),
                 event.getDestination(), event.getRequestor(),
                 event.getInstances(),
-                EventID.BeginTransferringDICOMInstances,
+                EventID.BeginTransferringDICOMInstances, EventActionCode.Execute,
                 EventOutcomeIndicator.Success, logger), logger);
     }
     
@@ -179,7 +179,7 @@ public class AuditObserver {
             sendAuditMessage (new RetrieveAudit(event.getSource(),
                     event.getDestination(), event.getRequestor(),
                     success,
-                    EventID.DICOMInstancesTransferred,
+                    EventID.DICOMInstancesTransferred, EventActionCode.Read,
                     EventOutcomeIndicator.Success, logger), logger);
         
         if (event.getFailed()!=null && event.getFailed().size()>0) {
@@ -188,13 +188,13 @@ public class AuditObserver {
                 sendAuditMessage (new RetrieveAudit(event.getSource(),
                         event.getDestination(), event.getRequestor(),
                         event.getFailed(),
-                        EventID.DICOMInstancesTransferred,
+                        EventID.DICOMInstancesTransferred, EventActionCode.Read,
                         EventOutcomeIndicator.MinorFailure, logger), logger);
             else //all the instance are failed: major failure
                 sendAuditMessage (new RetrieveAudit(event.getSource(),
                         event.getDestination(), event.getRequestor(),
                         event.getFailed(),
-                        EventID.DICOMInstancesTransferred,
+                        EventID.DICOMInstancesTransferred, EventActionCode.Read,
                         EventOutcomeIndicator.MajorFailure, logger), logger);
         }
     } 
