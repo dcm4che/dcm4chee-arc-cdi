@@ -560,7 +560,8 @@ public class StoreServiceEJB {
     }
 
     private void updateInstanceTime(Instance inst, Device arcDevice, StoreContext ctx) {
-        if(!arcDevice.getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+        if(arcDevice.getDeviceExtension(ArchiveDeviceExtension.class)
+                .getTimeZoneSupport() != TimeZoneOption.DISABLED) {
             Attributes temp = getModifiedAttributes(arcDevice, ctx
                     , Tag.ContentDateAndTime
                     , inst.getAttributes()
@@ -571,7 +572,8 @@ public class StoreServiceEJB {
     }
 
     private void updateSeriesTime(Series series, Device arcDevice, StoreContext ctx) {
-        if(!arcDevice.getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+        if(arcDevice.getDeviceExtension(ArchiveDeviceExtension.class)
+                .getTimeZoneSupport() != TimeZoneOption.DISABLED) {
             Attributes temp = getModifiedAttributes(arcDevice, ctx
                     , Tag.PerformedProcedureStepStartDateAndTime
                     , series.getAttributes()
@@ -582,7 +584,8 @@ public class StoreServiceEJB {
     }
 
     private void updateStudyTime(Study study, Device arcDevice, StoreContext ctx) {
-        if(!arcDevice.getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+        if(arcDevice.getDeviceExtension(ArchiveDeviceExtension.class)
+                .getTimeZoneSupport() != TimeZoneOption.DISABLED) {
             Attributes temp = getModifiedAttributes(arcDevice, ctx
                     , Tag.StudyDateAndTime
                     , study.getAttributes()
@@ -593,7 +596,8 @@ public class StoreServiceEJB {
     }
 
     private void updateVerifyingObserverTime(VerifyingObserver observer, Device arcDevice, StoreContext ctx) {
-        if(!arcDevice.getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+        if(arcDevice.getDeviceExtension(ArchiveDeviceExtension.class)
+                .getTimeZoneSupport() != TimeZoneOption.DISABLED) {
             Attributes temp = getModifiedAttributes(arcDevice, ctx
                     , Tag.VerificationDateTime
                     , observer.getVerificationDateTime());

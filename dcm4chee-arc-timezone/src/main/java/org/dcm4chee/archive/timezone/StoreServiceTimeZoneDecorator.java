@@ -45,6 +45,7 @@ import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.util.DateUtils;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.TimeZoneOption;
 import org.dcm4chee.archive.store.StoreContext;
 import org.dcm4chee.archive.store.StoreSession;
 import org.dcm4chee.archive.store.decorators.DelegatingStoreService;
@@ -59,7 +60,6 @@ import java.util.TimeZone;
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
- * 
  */
 @DynamicDecorator
 public class StoreServiceTimeZoneDecorator extends DelegatingStoreService {
@@ -73,7 +73,8 @@ public class StoreServiceTimeZoneDecorator extends DelegatingStoreService {
         getNextDecorator().coerceAttributes(context);
         StoreSession session = context.getStoreSession();
         ArchiveAEExtension arcAE = session.getArchiveAEExtension();
-        if(!arcAE.getApplicationEntity().getDevice().getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+        if (arcAE.getApplicationEntity().getDevice().getDeviceExtension(ArchiveDeviceExtension.class)
+                .getTimeZoneSupport() != TimeZoneOption.DISABLED) {
 
             TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice().getTimeZoneOfDevice();
             if (archiveTimeZone == null)    // no Timezone support configured

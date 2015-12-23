@@ -39,10 +39,12 @@
 package org.dcm4chee.archive.timezone;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4chee.archive.conf.ArchiveAEExtension;
 import org.dcm4chee.archive.conf.ArchiveDeviceExtension;
+import org.dcm4chee.archive.conf.TimeZoneOption;
 import org.dcm4chee.archive.query.QueryContext;
 import org.dcm4chee.archive.query.decorators.DelegatingQueryService;
 import org.dcm4chee.conf.decorators.DynamicDecorator;
@@ -54,7 +56,6 @@ import java.util.TimeZone;
 /**
  * @author Hesham Elbadawi <bsdreko@gmail.com>
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
  */
 @DynamicDecorator
 public class QueryServiceTimeZoneDecorator extends DelegatingQueryService {
@@ -68,33 +69,41 @@ public class QueryServiceTimeZoneDecorator extends DelegatingQueryService {
 
         getNextDecorator().coerceRequestAttributes(context);
         ArchiveAEExtension arcAE = context.getArchiveAEExtension();
-        if (!arcAE.getApplicationEntity().getDevice().getDeviceExtension(ArchiveDeviceExtension.class).isDisableTimeZoneSupport()) {
+        if (arcAE.getApplicationEntity().getDevice().getDeviceExtension(ArchiveDeviceExtension.class)
+                .getTimeZoneSupport() != TimeZoneOption.DISABLED) {
             TimeZone archiveTimeZone = arcAE.getApplicationEntity().getDevice()
                     .getDeviceExtension(ArchiveDeviceExtension.class).getDataBaseTimeZone();
             if (archiveTimeZone == null)    // no Timezone support configured
                 return;
 
             Attributes keys = context.getKeys();
-            if (!keys.containsTimezoneOffsetFromUTC()) {
+            Attributes temp = new Attributes(keys);
+            if (!temp.containsTimezoneOffsetFromUTC()) {
                 TimeZone remoteAETimeZone = context.getRemoteDeviceTimeZone();
                 if (remoteAETimeZone != null) {
                     LOG.debug("{}: No Timezone Offset in query request - use configured Timezone: {}",
                             context.getRemoteAET(), remoteAETimeZone.getID());
-                    keys.setDefaultTimeZone(remoteAETimeZone);
+                    temp.setDefaultTimeZone(remoteAETimeZone);
                 } else {
                     LOG.debug("{}: No Timezone configured for remote AE - assume Archive Timezone: {}",
                             context.getRemoteAET(), archiveTimeZone.getID());
-                    keys.setDefaultTimeZone(archiveTimeZone);
+                    temp.setDefaultTimeZone(archiveTimeZone);
                 }
             }
             try {
-                TimeZone timeZone = keys.getTimeZone();
+                TimeZone timeZone = temp.getTimeZone();
                 context.setRequestedTimeZone(timeZone);
                 if (!timeZone.hasSameRules(archiveTimeZone)) {
                     LOG.debug("{}: Coerce query request from Timezone {} to Archive Timezone {}",
                             context.getRemoteAET(), timeZone.getID(), archiveTimeZone.getID());
-                    keys.setTimezone(archiveTimeZone);
+                    temp.setTimezone(archiveTimeZone);
                 }
+                //disable automatic conversion by library due to presence of offset
+                if (temp.contains(Tag.TimezoneOffsetFromUTC))
+                    temp.remove(Tag.TimezoneOffsetFromUTC);
+                //update time value (no further conversion)
+                keys.update(temp, temp);
+
             } catch (Exception e) {
                 throw new DicomServiceException(Status.UnableToProcess, e);
             }
