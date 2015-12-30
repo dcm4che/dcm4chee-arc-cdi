@@ -1,3 +1,4 @@
+#[The Project is no longer maintained on open source, there will be no more releases for the open source community version of DCM4CHEE-ARC-CDI]
 DCM4CHEE Archive 4.x
 ====================
 Sources: https://github.com/dcm4che/dcm4chee-arc-cdi  
